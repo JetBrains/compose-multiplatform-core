@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.focus
 
-import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
@@ -49,12 +48,8 @@ import org.junit.runner.RunWith
 class FocusTargetModifierNodeTest {
     @get:Rule val rule = createComposeRule()
 
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
     @After
-    fun resetTouchMode() =
-        with(InstrumentationRegistry.getInstrumentation()) {
-            if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
-        }
+    fun resetTouchMode() = InstrumentationRegistry.getInstrumentation().resetInTouchModeCompat()
 
     @Test
     fun requestFocus() {
@@ -275,11 +270,11 @@ class FocusTargetModifierNodeTest {
         rule.setFocusableContent {
             FocusTargetModifierNodeBox(
                 parentFocusTargetModifierNode,
-                Modifier.focusRequester(parentFocusRequester)
+                Modifier.focusRequester(parentFocusRequester),
             ) {
                 FocusTargetModifierNodeBox(
                     childFocusTargetModifierNode,
-                    Modifier.focusRequester(childFocusRequester)
+                    Modifier.focusRequester(childFocusRequester),
                 ) {}
             }
         }
@@ -375,7 +370,7 @@ class FocusTargetModifierNodeTest {
 private fun FocusTargetModifierNodeBox(
     focusTargetModifierNode: FocusTargetModifierNode,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit = {}
+    content: @Composable BoxScope.() -> Unit = {},
 ) {
     val node = remember {
         object : DelegatingNode() {

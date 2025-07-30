@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.sizeIn
@@ -65,7 +66,6 @@ import androidx.compose.ui.window.PopupProperties
 /**
  * Layout constants from the [Material 3 Menu Spec](https://m3.material.io/components/menus/specs).
  */
-@VisibleForTesting
 internal object ContextMenuSpec {
     // dimensions
     val ContainerWidthMin = 112.dp
@@ -78,6 +78,8 @@ internal object ContextMenuSpec {
     val HorizontalPadding = 12.dp // left/right of column and between elements in rows
     val VerticalPadding = 8.dp // top/bottom of column and around dividers
     val IconSize = 24.dp
+    val DividerHeight = 1.dp
+    val DividerVerticalPadding = 8.dp
 
     // text
     val FontSize = 14.sp
@@ -110,7 +112,7 @@ internal fun ContextMenuPopup(
         onDismiss = onDismiss,
         modifier = modifier,
         colors = computeContextMenuColors(),
-        contextMenuBuilderBlock = contextMenuBuilderBlock
+        contextMenuBuilderBlock = contextMenuBuilderBlock,
     )
 }
 
@@ -128,13 +130,22 @@ internal fun ContextMenuPopup(
         onDismissRequest = onDismiss,
         properties = DefaultPopupProperties,
     ) {
-        ContextMenuColumn(colors, modifier) {
-            val scope = remember { ContextMenuScope() }
-            with(scope) {
-                clear()
-                contextMenuBuilderBlock()
-                Content(colors)
-            }
+        ContextMenuColumnBuilder(modifier, colors, contextMenuBuilderBlock)
+    }
+}
+
+@Composable
+internal fun ContextMenuColumnBuilder(
+    modifier: Modifier = Modifier,
+    colors: ContextMenuColors = DefaultContextMenuColors,
+    contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
+) {
+    ContextMenuColumn(colors, modifier) {
+        val scope = remember { ContextMenuScope() }
+        with(scope) {
+            clear()
+            contextMenuBuilderBlock()
+            Content(colors)
         }
     }
 }
@@ -151,7 +162,7 @@ internal fun ContextMenuColumn(
             modifier
                 .shadow(
                     ContextMenuSpec.MenuContainerElevation,
-                    RoundedCornerShape(ContextMenuSpec.CornerRadius)
+                    RoundedCornerShape(ContextMenuSpec.CornerRadius),
                 )
                 .background(colors.backgroundColor)
                 .width(IntrinsicSize.Max)
@@ -189,10 +200,7 @@ internal fun ContextMenuItem(
         horizontalArrangement = Arrangement.spacedBy(ContextMenuSpec.HorizontalPadding),
         modifier =
             modifier
-                .clickable(
-                    enabled = enabled,
-                    onClickLabel = label,
-                ) {
+                .clickable(enabled = enabled, onClickLabel = label) {
                     // Semantics can call this even if it is disabled (at least in tests),
                     // so check enabled status again before invoking any callbacks.
                     if (enabled) onClick()
@@ -204,7 +212,7 @@ internal fun ContextMenuItem(
                     minHeight = ContextMenuSpec.ListItemHeight,
                     maxHeight = ContextMenuSpec.ListItemHeight,
                 )
-                .padding(horizontal = ContextMenuSpec.HorizontalPadding)
+                .padding(horizontal = ContextMenuSpec.HorizontalPadding),
     ) {
         leadingIcon?.let { icon ->
             Box(
@@ -222,10 +230,10 @@ internal fun ContextMenuItem(
             text = label,
             style =
                 ContextMenuSpec.textStyle(
-                    color = if (enabled) colors.textColor else colors.disabledTextColor,
+                    color = if (enabled) colors.textColor else colors.disabledTextColor
                 ),
             maxLines = 1,
-            modifier = Modifier.weight(1f, fill = true)
+            modifier = Modifier.weight(1f, fill = true),
         )
     }
 }
@@ -288,7 +296,19 @@ internal class ContextMenuScope internal constructor() {
                 enabled = enabled,
                 colors = colors,
                 leadingIcon = leadingIcon,
-                onClick = onClick
+                onClick = onClick,
+            )
+        }
+    }
+
+    fun separator() {
+        composables += { colors ->
+            Box(
+                modifier =
+                    Modifier.padding(vertical = ContextMenuSpec.DividerVerticalPadding)
+                        .fillMaxWidth()
+                        .height(ContextMenuSpec.DividerHeight)
+                        .background(colors.iconColor)
             )
         }
     }
@@ -372,10 +392,7 @@ internal fun computeContextMenuColors(
             )
 
         val textColorStateList =
-            context.resolveColorStateList(
-                foregroundStyleId,
-                R.attr.textColorPrimary,
-            )
+            context.resolveColorStateList(foregroundStyleId, R.attr.textColorPrimary)
         val enabledColor = textColorStateList.enabledColor(DefaultContextMenuColors.textColor)
         val disabledColor =
             textColorStateList.disabledColor(DefaultContextMenuColors.disabledTextColor)
@@ -393,7 +410,7 @@ internal fun computeContextMenuColors(
 private fun Context.resolveColor(
     @StyleRes resId: Int,
     @AttrRes attrId: Int,
-    defaultColor: Color
+    defaultColor: Color,
 ): Color {
     val typedArray = obtainStyledAttributes(resId, intArrayOf(attrId))
     val defaultColorAndroid = defaultColor.toArgb()

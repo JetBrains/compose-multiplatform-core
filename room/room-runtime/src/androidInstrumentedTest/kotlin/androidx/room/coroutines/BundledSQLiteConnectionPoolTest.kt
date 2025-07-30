@@ -70,7 +70,7 @@ class BundledSQLiteConnectionPoolTest : BaseConnectionPoolTest() {
                 driver = driver,
                 fileName = fileName,
                 maxNumOfReaders = 1,
-                maxNumOfWriters = 1
+                maxNumOfWriters = 1,
             )
         var count = 0
         withContext(NewThreadDispatcher()) {
@@ -97,7 +97,7 @@ class BundledSQLiteConnectionPoolTest : BaseConnectionPoolTest() {
                 driver = driver,
                 fileName = fileName,
                 maxNumOfReaders = 1,
-                maxNumOfWriters = 1
+                maxNumOfWriters = 1,
             )
         val job = launch(Dispatchers.IO) { pool.useReaderConnection { delay(500) } }
         withContext(NewThreadDispatcher()) {
@@ -150,7 +150,7 @@ class BundledSQLiteConnectionPoolTest : BaseConnectionPoolTest() {
 
     private fun <R> ConnectionPool.useConnectionBlocking(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
         return runBlocking(Dispatchers.Unconfined) { useConnection(isReadOnly, block) }
     }

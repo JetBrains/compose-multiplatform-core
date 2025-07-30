@@ -20,11 +20,15 @@ import androidx.collection.mutableLongListOf
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.VectorConverter
 import androidx.compose.animation.animateColor
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +38,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -64,7 +69,7 @@ class TransitionTest {
 
     private enum class AnimStates {
         From,
-        To
+        To,
     }
 
     @OptIn(InternalAnimationApi::class)
@@ -76,17 +81,17 @@ class TransitionTest {
                 spring(dampingRatio = Spring.DampingRatioHighBouncy),
                 Float.VectorConverter,
                 0f,
-                1f
+                1f,
             )
         val floatAnim2 =
             TargetBasedAnimation(
                 spring(
                     dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
+                    stiffness = Spring.StiffnessLow,
                 ),
                 Float.VectorConverter,
                 1f,
-                0f
+                0f,
             )
 
         val colorAnim1 =
@@ -94,7 +99,7 @@ class TransitionTest {
                 tween(1000),
                 Color.VectorConverter(Color.Red.colorSpace),
                 Color.Red,
-                Color.Green
+                Color.Green,
             )
         val colorAnim2 =
             TargetBasedAnimation(
@@ -137,7 +142,7 @@ class TransitionTest {
                             } else {
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
+                                    stiffness = Spring.StiffnessLow,
                                 )
                             }
                         }
@@ -181,16 +186,16 @@ class TransitionTest {
                     assertEquals(
                         floatAnim1.getValueFromNanos(transition.playTimeNanos),
                         animFloat.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(
                         colorAnim1.getValueFromNanos(transition.playTimeNanos),
-                        animColor.value
+                        animColor.value,
                     )
                     assertEquals(
                         keyframesAnim1.getValueFromNanos(transition.playTimeNanos),
                         animFloatWithKeyframes.value,
-                        0.00001f
+                        0.00001f,
                     )
 
                     assertEquals(AnimStates.To, transition.segment.targetState)
@@ -199,16 +204,16 @@ class TransitionTest {
                     assertEquals(
                         floatAnim2.getValueFromNanos(transition.playTimeNanos),
                         animFloat.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(
                         colorAnim2.getValueFromNanos(transition.playTimeNanos),
-                        animColor.value
+                        animColor.value,
                     )
                     assertEquals(
                         keyframesAnim2.getValueFromNanos(transition.playTimeNanos),
                         animFloatWithKeyframes.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(AnimStates.From, transition.segment.targetState)
                     assertEquals(AnimStates.To, transition.segment.initialState)
@@ -575,11 +580,60 @@ class TransitionTest {
     }
 
     @Test
+    fun testRecompositionCountWhenPassingTransition() {
+        // Verify that when passing Transition object to the composable (in contrast to
+        // TransitionState), there is no extra recomposition. More specifically, rememberTransition
+        // and Transition.animateFloat/animateValue only triggers one recomposition per
+        // transition (i.e. per target state change).
+        var showContent by mutableStateOf(false)
+        var transitionState by mutableStateOf(MutableTransitionState(false))
+        val recompositionCount = arrayOf(0, 0)
+        rule.setContent {
+            @Composable
+            fun animateContentAlpha(transition: Transition<Boolean>): State<Float> {
+                val animationSpec = tween<Float>(durationMillis = 2000)
+                return transition.animateFloat(
+                    transitionSpec = { animationSpec },
+                    label = "background-scrim-alpha",
+                ) { stage ->
+                    if (stage) 1f else 0f
+                }
+            }
+            val transition = rememberTransition(transitionState)
+
+            val shouldShow by remember {
+                derivedStateOf { showContent || transitionState.currentState }
+            }
+
+            Box(Modifier.fillMaxSize()) {}
+            recompositionCount[if (shouldShow) 1 else 0] += 1
+            if (shouldShow) {
+                val contentAlpha by animateContentAlpha(transition)
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .graphicsLayer { alpha = contentAlpha }
+                            .background(Color.Red)
+                ) {}
+            }
+        }
+        rule.runOnIdle {
+            showContent = true
+            transitionState.targetState = true
+        }
+        rule.runOnIdle {
+            // Verify that there is exactly one recomposition for each target state
+            assertEquals(1, recompositionCount[0])
+            assertEquals(1, recompositionCount[1])
+        }
+    }
+
+    @Test
     fun animateFloatCallerRecompositionCount() {
         @Composable
         fun TestAnimatedContent(
             transitionState: MutableTransitionState<Boolean>,
-            onRecomposition: () -> Unit
+            onRecomposition: () -> Unit,
         ) {
             onRecomposition()
             val transition = rememberTransition(transitionState)
@@ -597,8 +651,8 @@ class TransitionTest {
         rule.runOnIdle { transitionState.targetState = true }
 
         rule.runOnIdle {
-            // TODO(b/381537138): Once the bug is fixed, there should only be a single recomposition
-            assertEquals(2, recompositionCount)
+            assertEquals(1, recompositionCount)
+            assertTrue(transitionState.currentState)
         }
     }
 
@@ -620,21 +674,21 @@ class TransitionTest {
                         // easy to distinguish from the interrupted AnimationSpec
                         keyframes { Color.Yellow atFraction 0f }
                     },
-                    targetValueByState = { if (it) Color.Red else Color.Blue }
+                    targetValueByState = { if (it) Color.Red else Color.Blue },
                 )
 
             Column {
                 Text(
                     // Presenting the Color as text to avoid capturing into images
                     text = color.toString(),
-                    modifier = Modifier.testTag("animatedColor")
+                    modifier = Modifier.testTag("animatedColor"),
                 )
                 // Presents the currentState of the TransitionState, used as an indicator of the
                 // Transition animation as it will be updated to the target state when the
                 // animation finishes, or immediately if there's no animation
                 Text(
                     text = transitionState.currentState.toString(),
-                    modifier = Modifier.testTag("currentStateText")
+                    modifier = Modifier.testTag("currentStateText"),
                 )
             }
         }
@@ -717,21 +771,21 @@ class TransitionTest {
                         // easy to distinguish from the interrupted AnimationSpec
                         keyframes { Color.Yellow atFraction 0f }
                     },
-                    targetValueByState = { if (it) Color.Red else Color.Blue }
+                    targetValueByState = { if (it) Color.Red else Color.Blue },
                 )
 
             Column {
                 Text(
                     // Presenting the Color as text to avoid capturing into images
                     text = color.toString(),
-                    modifier = Modifier.testTag("animatedColor")
+                    modifier = Modifier.testTag("animatedColor"),
                 )
                 // Presents the currentState of the TransitionState, used as an indicator of the
                 // Transition animation as it will be updated to the target state when the
                 // animation finishes, or immediately if there's no animation
                 Text(
                     text = transitionState.currentState.toString(),
-                    modifier = Modifier.testTag("currentStateText")
+                    modifier = Modifier.testTag("currentStateText"),
                 )
             }
         }
@@ -778,5 +832,124 @@ class TransitionTest {
         // updated currentState
         rule.onNodeWithTag("animatedColor").assertTextEquals(Color.Red.toString())
         rule.onNodeWithTag("currentStateText").assertTextEquals("2")
+    }
+
+    @Test
+    fun recreatedTransition_animatesAsExpected() {
+        val animDuration = 10 * 16 // have to assume frame time duration
+
+        // Generic number to change calculations between test cases
+        var baseValue = 0
+
+        var transitionState by mutableStateOf(MutableTransitionState(AnimStates.From))
+
+        fun recreateTransitionState(initialState: AnimStates) {
+            val state = MutableTransitionState(initialState)
+
+            if (baseValue == 0) {
+                transitionState = state
+            } else {
+                // Double check
+                assert(transitionState != state)
+                transitionState = state
+            }
+        }
+
+        /**
+         * Convenient method to generate distinct animation values from the Transition targetState
+         * and a `baseValue`
+         */
+        @Suppress("REDUNDANT_ELSE_IN_WHEN") // Easier to change when using 'else'
+        fun animationValueFor(animState: AnimStates): Float =
+            when (animState) {
+                AnimStates.From -> {
+                    // values: 0, 2
+                    baseValue * 2f
+                }
+                AnimStates.To -> {
+                    // values: 1, 3
+                    (baseValue * 2f) + 1f
+                }
+                else -> {
+                    throw Exception("Unexpected target value")
+                }
+            }
+
+        rule.setContent {
+            val transition = rememberTransition(transitionState)
+
+            val animatedFloat =
+                transition.animateFloat(
+                    transitionSpec = {
+                        when {
+                            AnimStates.From isTransitioningTo AnimStates.To -> {
+                                // If segment is updated properly across recomposition, this
+                                // AnimationSpec should be used
+                                tween(animDuration, easing = LinearEasing)
+                            }
+                            else -> {
+                                // If we end up using stale `segment` information it will be
+                                // evident since it'll use this animationSpec from the initial setup
+                                // meaning initial and target state will be the same value
+                                tween(animDuration * 2, easing = LinearEasing)
+                            }
+                        }
+                    }
+                ) { targetState ->
+                    // Here we'll generate distinct animation targets for each state and `baseValue`
+                    animationValueFor(targetState)
+                }
+            Text(text = animatedFloat.value.toString(), modifier = Modifier.testTag("text"))
+        }
+        rule.waitForIdle()
+        rule.onNodeWithTag("text").assertTextEquals("0.0")
+        assertEquals(AnimStates.From, transitionState.currentState)
+        assertEquals(AnimStates.From, transitionState.targetState)
+
+        // Here we effectively recreate the Transition with the same values, however if we don't
+        // invalidate `segment` properly, the rest of the animations will always calculate using
+        // AnimStates.From for current and target state
+        recreateTransitionState(AnimStates.From)
+
+        rule.mainClock.autoAdvance = false
+        transitionState.targetState = AnimStates.To
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // Test at half duration
+        rule.onNodeWithTag("text").assertTextEquals("0.0")
+        rule.mainClock.advanceTimeBy(animDuration / 2L)
+        rule.onNodeWithTag("text").assertTextEquals("0.5")
+
+        // Advance until animations are finished
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(transitionState.isRunning)
+        assertEquals(AnimStates.To, transitionState.targetState)
+        assertEquals(AnimStates.To, transitionState.currentState)
+
+        rule.mainClock.autoAdvance = false
+        // Update base value for calculations and force a recompostion by recreating the
+        // TransitionState
+        baseValue = 1
+        recreateTransitionState(AnimStates.From)
+
+        // Reset Transition, despite moving to AnimState.From, there should be no animation, visible
+        // on the target/current state and text with animated value
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+        assertEquals(AnimStates.From, transitionState.targetState)
+        assertEquals(AnimStates.From, transitionState.currentState)
+        rule.onNodeWithTag("text").assertTextEquals("2.0")
+
+        // Trigger another animation, this time it should reflect with the new values from 2f to 3f
+        transitionState.targetState = AnimStates.To
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        rule.mainClock.advanceTimeBy(animDuration / 2L)
+        assertEquals(AnimStates.To, transitionState.targetState)
+        assertEquals(AnimStates.From, transitionState.currentState)
+        rule.onNodeWithTag("text").assertTextEquals("2.5")
     }
 }

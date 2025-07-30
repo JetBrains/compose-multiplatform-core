@@ -19,15 +19,20 @@ package androidx.wear.protolayout.modifiers
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.wear.protolayout.ActionBuilders.LoadAction
-import androidx.wear.protolayout.DimensionBuilders.dp
-import androidx.wear.protolayout.ModifiersBuilders.Corner
+import androidx.wear.protolayout.ColorBuilders.LinearGradient
+import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeInSlideIn
+import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeOutSlideOut
+import androidx.wear.protolayout.ModifiersBuilders.FadeInTransition
+import androidx.wear.protolayout.ModifiersBuilders.FadeOutTransition
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_BUTTON
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_NONE
-import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.ModifiersBuilders.SLIDE_DIRECTION_BOTTOM_TO_TOP
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool
-import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
-import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue
+import androidx.wear.protolayout.expression.dynamicDataMapOf
+import androidx.wear.protolayout.expression.intAppDataKey
+import androidx.wear.protolayout.expression.mapTo
+import androidx.wear.protolayout.expression.stringAppDataKey
 import androidx.wear.protolayout.types.LayoutColor
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -41,7 +46,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .toProtoLayoutModifiers()
 
@@ -65,7 +70,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
                 .toProtoLayoutModifiers()
@@ -75,6 +80,28 @@ class ModifiersTest {
         assertThat(modifiers.semantics?.contentDescription?.dynamicValue?.toDynamicStringProto())
             .isEqualTo(DYNAMIC_CONTENT_DESCRIPTION.toDynamicStringProto())
         assertThat(modifiers.semantics?.role).isEqualTo(SEMANTICS_ROLE_BUTTON)
+    }
+
+    @Test
+    fun semanticsHeading_toModifier() {
+        val modifiers = LayoutModifier.semanticsHeading(true).toProtoLayoutModifiers()
+
+        assertThat(modifiers.semantics?.isHeading).isTrue()
+    }
+
+    @Test
+    fun clearSemantics_fromModifier() {
+        val modifiers =
+            LayoutModifier.contentDescription(
+                    STATIC_CONTENT_DESCRIPTION,
+                    DYNAMIC_CONTENT_DESCRIPTION,
+                )
+                .semanticsRole(SEMANTICS_ROLE_BUTTON)
+                .semanticsHeading(true)
+                .clearSemantics()
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.semantics).isNull()
     }
 
     @Test
@@ -103,13 +130,13 @@ class ModifiersTest {
     }
 
     @Test
-    fun background_withCorner_toModifier() {
-        val modifiers =
-            LayoutModifier.background(COLOR, Corner.Builder().setRadius(dp(CORNER_RADIUS)).build())
-                .toProtoLayoutModifiers()
+    fun backgroundBrush_toModifier() {
+        val brush = LinearGradient.Builder(COLOR.prop, COLOR1.prop).build()
+        val modifiers = LayoutModifier.background(brush).toProtoLayoutModifiers()
 
-        assertThat(modifiers.background?.color?.argb).isEqualTo(COLOR.prop.argb)
-        assertThat(modifiers.background?.corner?.radius?.value).isEqualTo(CORNER_RADIUS)
+        assertThat(modifiers.background?.brush).isInstanceOf(LinearGradient::class.java)
+        assertThat((modifiers.background?.brush as LinearGradient).colorStops.map { it.color.argb })
+            .containsExactlyElementsIn(listOf(COLOR.staticArgb, COLOR1.staticArgb))
     }
 
     @Test
@@ -145,18 +172,11 @@ class ModifiersTest {
         val id = "ID"
         val minTouchWidth = 51f
         val minTouchHeight = 52f
-        val statePair1 = Pair(AppDataKey<DynamicInt32>("Int"), DynamicDataValue.fromInt(42))
-        val statePair2 =
-            Pair(AppDataKey<DynamicString>("String"), DynamicDataValue.fromString("42"))
+        val statePair1 = intAppDataKey("Int") mapTo 42
+        val statePair2 = stringAppDataKey("String") mapTo "42"
 
         val modifiers =
-            LayoutModifier.clickable(
-                    loadAction {
-                        addKeyToValueMapping(statePair1.first, statePair1.second)
-                        addKeyToValueMapping(statePair2.first, statePair2.second)
-                    },
-                    id
-                )
+            LayoutModifier.clickable(loadAction(dynamicDataMapOf(statePair1, statePair2)), id)
                 .minimumTouchTargetSize(minTouchWidth, minTouchHeight)
                 .toProtoLayoutModifiers()
 
@@ -166,7 +186,7 @@ class ModifiersTest {
         assertThat(modifiers.clickable?.onClick).isInstanceOf(LoadAction::class.java)
         val action = modifiers.clickable?.onClick as LoadAction
         assertThat(action.requestState?.keyToValueMapping)
-            .containsExactlyEntriesIn(mapOf(statePair1, statePair2))
+            .containsExactlyEntriesIn(mapOf(statePair1.asPair(), statePair2.asPair()))
     }
 
     @Test
@@ -174,20 +194,16 @@ class ModifiersTest {
         val id = "ID"
         val minTouchWidth = 51f
         val minTouchHeight = 52f
-        val statePair1 = Pair(AppDataKey<DynamicInt32>("Int"), DynamicDataValue.fromInt(42))
-        val statePair2 =
-            Pair(AppDataKey<DynamicString>("String"), DynamicDataValue.fromString("42"))
+        val statePair1 = intAppDataKey("Int") mapTo 42
+        val statePair2 = stringAppDataKey("String") mapTo "42"
 
         val modifiers =
             LayoutModifier.clickable(
                     clickable(
-                        loadAction {
-                            addKeyToValueMapping(statePair1.first, statePair1.second)
-                            addKeyToValueMapping(statePair2.first, statePair2.second)
-                        },
+                        loadAction(dynamicDataMapOf(statePair1, statePair2)),
                         id = id,
                         minClickableWidth = minTouchWidth,
-                        minClickableHeight = minTouchHeight
+                        minClickableHeight = minTouchHeight,
                     )
                 )
                 .toProtoLayoutModifiers()
@@ -198,7 +214,7 @@ class ModifiersTest {
         assertThat(modifiers.clickable?.onClick).isInstanceOf(LoadAction::class.java)
         val action = modifiers.clickable?.onClick as LoadAction
         assertThat(action.requestState?.keyToValueMapping)
-            .containsExactlyEntriesIn(mapOf(statePair1, statePair2))
+            .containsExactlyEntriesIn(mapOf(statePair1.asPair(), statePair2.asPair()))
     }
 
     @Test
@@ -223,7 +239,7 @@ class ModifiersTest {
                     top = TOP_PADDING,
                     end = END_PADDING,
                     bottom = BOTTOM_PADDING,
-                    rtlAware = true
+                    rtlAware = true,
                 )
                 .padding(PADDING_ALL)
                 .toProtoLayoutModifiers()
@@ -262,10 +278,37 @@ class ModifiersTest {
             .isEqualTo(DYNAMIC_BOOL.toDynamicBoolProto())
     }
 
+    @Test
+    fun enterTransition_toModifier() {
+        val modifier =
+            LayoutModifier.enterTransition(fadeInSlideIn(SLIDE_DIRECTION_BOTTOM_TO_TOP))
+                .enterTransition(fadeIn = FadeInTransition.Builder().setInitialAlpha(ALPHA).build())
+                .toProtoLayoutModifiers()
+
+        assertThat(modifier.contentUpdateAnimation?.enterTransition?.fadeIn?.initialAlpha)
+            .isEqualTo(ALPHA)
+        assertThat(modifier.contentUpdateAnimation?.enterTransition?.slideIn?.direction)
+            .isEqualTo(SLIDE_DIRECTION_BOTTOM_TO_TOP)
+    }
+
+    @Test
+    fun exitTransition_toModifier() {
+        val modifier =
+            LayoutModifier.exitTransition(fadeOutSlideOut(SLIDE_DIRECTION_BOTTOM_TO_TOP))
+                .exitTransition(fadeOut = FadeOutTransition.Builder().setTargetAlpha(ALPHA).build())
+                .toProtoLayoutModifiers()
+
+        assertThat(modifier.contentUpdateAnimation?.exitTransition?.fadeOut?.targetAlpha)
+            .isEqualTo(ALPHA)
+        assertThat(modifier.contentUpdateAnimation?.exitTransition?.slideOut?.direction)
+            .isEqualTo(SLIDE_DIRECTION_BOTTOM_TO_TOP)
+    }
+
     companion object {
         const val STATIC_CONTENT_DESCRIPTION = "content desc"
         val DYNAMIC_CONTENT_DESCRIPTION = DynamicString.constant("dynamic content")
         val COLOR = LayoutColor(Color.RED)
+        val COLOR1 = LayoutColor(Color.GREEN)
         const val CORNER_RADIUS_X = 1.2f
         const val CORNER_RADIUS_Y = 3.4f
         const val CORNER_RADIUS = 5.6f
@@ -278,5 +321,6 @@ class ModifiersTest {
         val METADATA_BYTE_ARRAY = METADATA.toByteArray()
         const val WIDTH_DP = 5f
         val DYNAMIC_BOOL = DynamicBool.constant(true)
+        const val ALPHA = 0.7f
     }
 }

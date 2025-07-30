@@ -22,18 +22,19 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.compose.ui.test.accessibility"
+        compileSdk = 35
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -73,15 +74,8 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Accessibility Testing"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Compose testing library for accessibility checks"
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     samples(project(":compose:ui:ui-test-accessibility:ui-test-accessibility-samples"))
-}
-
-android {
-    namespace = "androidx.compose.ui.test.accessibility"
-    compileSdk = 35
 }

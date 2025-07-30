@@ -118,5 +118,5 @@ public annotation class Database(
      *
      * @return List of [AutoMigration] annotations.
      */
-    val autoMigrations: Array<AutoMigration> = []
+    val autoMigrations: Array<AutoMigration> = [],
 )

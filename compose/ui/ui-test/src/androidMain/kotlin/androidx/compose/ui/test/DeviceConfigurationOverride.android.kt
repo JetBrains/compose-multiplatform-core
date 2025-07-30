@@ -64,7 +64,7 @@ actual fun DeviceConfigurationOverride.Companion.ForcedSize(
                     densityDpi =
                         floor(LocalDensity.current.density * DisplayMetrics.DENSITY_DEFAULT).toInt()
                 },
-            content = contentUnderTest
+            content = contentUnderTest,
         )
     }
 }
@@ -81,7 +81,7 @@ actual fun DeviceConfigurationOverride.Companion.FontScale(
                 // Override font scale
                 this.fontScale = fontScale
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -103,7 +103,7 @@ actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
                             LayoutDirection.Rtl -> Configuration.SCREENLAYOUT_LAYOUTDIR_RTL
                         }
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -116,7 +116,7 @@ actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideLocalesSample
  */
 fun DeviceConfigurationOverride.Companion.Locales(
-    locales: LocaleList,
+    locales: LocaleList
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -129,10 +129,10 @@ fun DeviceConfigurationOverride.Companion.Locales(
                     this,
                     LocaleListCompat.forLanguageTags(
                         locales.localeList.fastJoinToString(",", transform = Locale::toLanguageTag)
-                    )
+                    ),
                 )
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -144,7 +144,7 @@ fun DeviceConfigurationOverride.Companion.Locales(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideDarkModeSample
  */
 fun DeviceConfigurationOverride.Companion.DarkMode(
-    isDarkMode: Boolean,
+    isDarkMode: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -162,7 +162,7 @@ fun DeviceConfigurationOverride.Companion.DarkMode(
                             Configuration.UI_MODE_NIGHT_NO
                         }
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -174,7 +174,7 @@ fun DeviceConfigurationOverride.Companion.DarkMode(
  */
 @RequiresApi(31)
 fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
-    fontWeightAdjustment: Int,
+    fontWeightAdjustment: Int
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -185,7 +185,7 @@ fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
                 // Override fontWeightAdjustment
                 this.fontWeightAdjustment = fontWeightAdjustment
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -197,7 +197,7 @@ fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
  */
 @RequiresApi(23)
 fun DeviceConfigurationOverride.Companion.RoundScreen(
-    isScreenRound: Boolean,
+    isScreenRound: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -216,7 +216,7 @@ fun DeviceConfigurationOverride.Companion.RoundScreen(
                                 Configuration.SCREENLAYOUT_ROUND_NO
                     }
             },
-        content = contentUnderTest
+        content = contentUnderTest,
     )
 }
 
@@ -226,7 +226,7 @@ fun DeviceConfigurationOverride.Companion.RoundScreen(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideWindowInsetsSample
  */
 fun DeviceConfigurationOverride.Companion.WindowInsets(
-    windowInsets: WindowInsetsCompat,
+    windowInsets: WindowInsetsCompat
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     val currentContentUnderTest by rememberUpdatedState(contentUnderTest)
     val currentWindowInsets by rememberUpdatedState(windowInsets)
@@ -257,7 +257,7 @@ fun DeviceConfigurationOverride.Companion.WindowInsets(
                 }
             }
         },
-        update = { with(currentWindowInsets) { it.requestApplyInsets() } }
+        update = { with(currentWindowInsets) { it.requestApplyInsets() } },
     )
 }
 
@@ -288,9 +288,9 @@ private fun OverriddenConfiguration(configuration: Configuration, content: @Comp
         LocalDensity provides
             Density(
                 configuration.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT,
-                configuration.fontScale
+                configuration.fontScale,
             ),
         LocalFontFamilyResolver provides createFontFamilyResolver(newContext),
-        content = content
+        content = content,
     )
 }

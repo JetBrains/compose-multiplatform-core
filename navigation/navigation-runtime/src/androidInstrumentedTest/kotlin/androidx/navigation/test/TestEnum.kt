@@ -18,5 +18,5 @@ package androidx.navigation.test
 
 public enum class TestEnum {
     VALUE_ONE,
-    VALUE_TWO
+    VALUE_TWO,
 }

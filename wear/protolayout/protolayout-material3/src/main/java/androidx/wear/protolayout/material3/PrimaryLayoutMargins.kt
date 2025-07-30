@@ -33,7 +33,8 @@ import androidx.wear.protolayout.material3.PrimaryLayoutMarginsImpl.Companion.MI
 import kotlin.Float.Companion.NaN
 
 /**
- * The set of margins for the [primaryLayout]'s customization.
+ * The set of margins for the [primaryLayout]'s customization, represented as fraction of the screen
+ * size.
  *
  * It is highly recommended to use these predefined values that are optimized for different screen
  * sizes, content's corners and slots presences. Those are:
@@ -91,7 +92,10 @@ public abstract class PrimaryLayoutMargins internal constructor() {
 
         /**
          * Creates new set of margins to be used for [primaryLayout] customization. The passed in
-         * values represent percentages based on the screen width.
+         * values represent fraction of the screen size.
+         *
+         * Top margin is not included as it can't be customized in [primaryLayout] due to reserved
+         * space at the top for the system placed icon.
          *
          * It is highly recommended to use predefined values instead of creating this custom one,
          * because they are optimized for different screen sizes, content's corners and slots
@@ -101,19 +105,21 @@ public abstract class PrimaryLayoutMargins internal constructor() {
          * * [DEFAULT_PRIMARY_LAYOUT_MARGIN]
          * * [MAX_PRIMARY_LAYOUT_MARGIN].
          *
-         * @param start Percentage of the screen width that should be applied as margin on the start
+         * @param start Fraction of the screen width that should be applied as margin on the start
          *   side
-         * @param end Percentage of the screen width that should be applied as margin on the end
-         *   side
+         * @param end Fraction of the screen width that should be applied as margin on the end side
          */
         public fun customizedPrimaryLayoutMargin(
             @FloatRange(from = 0.0, to = 1.0) start: Float,
-            @FloatRange(from = 0.0, to = 1.0) end: Float
+            @FloatRange(from = 0.0, to = 1.0) end: Float,
         ): PrimaryLayoutMargins = CustomPrimaryLayoutMargins(start = start, end = end)
 
         /**
          * Creates new set of margins to be used for [primaryLayout] customization. The passed in
-         * values represent percentages based on the screen width and screen height.
+         * values represent fraction of the screen size.
+         *
+         * Top margin is not included as it can't be customized in [primaryLayout] due to reserved
+         * space at the top for the system placed icon.
          *
          * It is highly recommended to use predefined values instead of creating this custom one,
          * because they are optimized for different screen sizes, content's corners and slots
@@ -123,24 +129,24 @@ public abstract class PrimaryLayoutMargins internal constructor() {
          * * [DEFAULT_PRIMARY_LAYOUT_MARGIN]
          * * [MAX_PRIMARY_LAYOUT_MARGIN].
          *
-         * @param start Percentage of the screen width that should be applied as margin on the start
+         * @param start Fraction of the screen width that should be applied as margin on the start
          *   side
-         * @param end Percentage of the screen width that should be applied as margin on the end
-         *   side
-         * @param bottom Percentage of the screen height that should be applied as margin on the
+         * @param end Fraction of the screen width that should be applied as margin on the end side
+         * @param bottom Fraction of the screen height that should be applied as margin on the
          *   bottom
          */
         public fun customizedPrimaryLayoutMargin(
             @FloatRange(from = 0.0, to = 1.0) start: Float,
             @FloatRange(from = 0.0, to = 1.0) end: Float,
-            @FloatRange(from = 0.0, to = 1.0) bottom: Float
+            @FloatRange(from = 0.0, to = 1.0) bottom: Float,
         ): PrimaryLayoutMargins =
             CustomPrimaryLayoutMargins(start = start, end = end, bottom = bottom)
     }
 }
 
 /**
- * The predefined set of margin style sizes to be used by [primaryLayout] tod define default values.
+ * The predefined set of margin style sizes to be used by [primaryLayout] to define default values,
+ * as fraction of the screen size.
  */
 internal class PrimaryLayoutMarginsImpl internal constructor(internal val size: Int) :
     PrimaryLayoutMargins() {
@@ -158,7 +164,8 @@ internal class PrimaryLayoutMarginsImpl internal constructor(internal val size: 
 }
 
 /**
- * The custom set of margins for the [primaryLayout]'s customization.
+ * The custom set of margins represented as fraction of the screen size for the [primaryLayout]'s
+ * customization.
  *
  * It is highly recommended to use predefined values instead of creating this custom once, because
  * they are optimized for different screen sizes, content's corners and slots presences. Those
@@ -178,7 +185,7 @@ internal class CustomPrimaryLayoutMargins
  */
 (
     @FloatRange(from = 0.0, to = 1.0) internal val start: Float,
-    @FloatRange(from = 0.0, to = 1.0) internal val end: Float
+    @FloatRange(from = 0.0, to = 1.0) internal val end: Float,
 ) : PrimaryLayoutMargins() {
     internal var bottom: Float = NaN
 
@@ -194,7 +201,7 @@ internal class CustomPrimaryLayoutMargins
     constructor(
         @FloatRange(from = 0.0, to = 1.0) start: Float,
         @FloatRange(from = 0.0, to = 1.0) end: Float,
-        @FloatRange(from = 0.0, to = 1.0) bottom: Float
+        @FloatRange(from = 0.0, to = 1.0) bottom: Float,
     ) : this(start = start, end = end) {
         this.bottom = bottom
     }
@@ -210,6 +217,8 @@ internal class CustomPrimaryLayoutMargins
 
 /**
  * Default values for margins used in [primaryLayout] based on slots presence from [materialScope].
+ *
+ * These are represented as fractions of the screen size.
  */
 internal object PredefinedPrimaryLayoutMargins {
     /**
@@ -223,17 +232,21 @@ internal object PredefinedPrimaryLayoutMargins {
     fun MaterialScope.defaultPrimaryLayoutMargins(): Padding =
         if (layoutSlotsPresence.isTitleSlotPresent) {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     defaultPrimaryLayoutMarginsWithTitleWithEdgeButton()
-                else defaultPrimaryLayoutMarginsWithBottomSlotAsOther()
+                } else {
+                    defaultPrimaryLayoutMarginsWithBottomSlotAsOther()
+                }
             } else {
                 defaultPrimaryLayoutMarginsWithTitleWithoutBottomSlot()
             }
         } else {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     defaultPrimaryLayoutMarginsWithoutTitleWithEdgeButton()
-                else defaultPrimaryLayoutMarginsWithBottomSlotAsOther()
+                } else {
+                    defaultPrimaryLayoutMarginsWithBottomSlotAsOther()
+                }
             } else {
                 defaultPrimaryLayoutMarginsWithoutTitleWithoutBottomSlot()
             }
@@ -250,8 +263,11 @@ internal object PredefinedPrimaryLayoutMargins {
     internal fun MaterialScope.minPrimaryLayoutMargins(): Padding =
         // Values are the same regardless of title slot presence.
         if (layoutSlotsPresence.isBottomSlotPresent) {
-            if (layoutSlotsPresence.isBottomSlotEdgeButton) minPrimaryLayoutMarginsWithEdgeButton()
-            else minPrimaryLayoutMarginsWithBottomSlotAsOther()
+            if (layoutSlotsPresence.isBottomSlotEdgeButton) {
+                minPrimaryLayoutMarginsWithEdgeButton()
+            } else {
+                minPrimaryLayoutMarginsWithBottomSlotAsOther()
+            }
         } else {
             minPrimaryLayoutMarginsWithoutBottomSlot()
         }
@@ -267,17 +283,21 @@ internal object PredefinedPrimaryLayoutMargins {
     internal fun MaterialScope.midPrimaryLayoutMargins(): Padding =
         if (layoutSlotsPresence.isTitleSlotPresent) {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     midPrimaryLayoutMarginsWithTitleWithEdgeButton()
-                else midPrimaryLayoutMarginsWithTitleWithBottomSlotAsOther()
+                } else {
+                    midPrimaryLayoutMarginsWithTitleWithBottomSlotAsOther()
+                }
             } else {
                 midPrimaryLayoutMarginsWithTitleWithoutBottomSlot()
             }
         } else {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     midPrimaryLayoutMarginsWithoutTitleWithEdgeButton()
-                else midPrimaryLayoutMarginsWithoutTitleWithBottomSlotAsOther()
+                } else {
+                    midPrimaryLayoutMarginsWithoutTitleWithBottomSlotAsOther()
+                }
             } else {
                 midPrimaryLayoutMarginsWithoutTitleWithoutBottomSlot()
             }
@@ -294,17 +314,21 @@ internal object PredefinedPrimaryLayoutMargins {
     internal fun MaterialScope.maxPrimaryLayoutMargins(): Padding =
         if (layoutSlotsPresence.isTitleSlotPresent) {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     maxPrimaryLayoutMarginsWithTitleWithEdgeButton()
-                else maxPrimaryLayoutMarginsWithTitleWithBottomSlotAsOther()
+                } else {
+                    maxPrimaryLayoutMarginsWithTitleWithBottomSlotAsOther()
+                }
             } else {
                 maxPrimaryLayoutMarginsWithTitleWithoutBottomSlot()
             }
         } else {
             if (layoutSlotsPresence.isBottomSlotPresent) {
-                if (layoutSlotsPresence.isBottomSlotEdgeButton)
+                if (layoutSlotsPresence.isBottomSlotEdgeButton) {
                     maxPrimaryLayoutMarginsWithoutTitleWithEdgeButton()
-                else maxPrimaryLayoutMarginsWithoutTitleWithBottomSlotAsOther()
+                } else {
+                    maxPrimaryLayoutMarginsWithoutTitleWithBottomSlotAsOther()
+                }
             } else {
                 maxPrimaryLayoutMarginsWithoutTitleWithoutBottomSlot()
             }

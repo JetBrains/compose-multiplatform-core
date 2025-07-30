@@ -90,7 +90,7 @@ fun interface MultiContentMeasurePolicy {
      */
     fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult
 
     /**
@@ -105,7 +105,7 @@ fun interface MultiContentMeasurePolicy {
      */
     fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
-        height: Int
+        height: Int,
     ): Int {
         val mapped =
             measurables.fastMap { list ->
@@ -131,7 +131,7 @@ fun interface MultiContentMeasurePolicy {
      */
     fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
-        width: Int
+        width: Int,
     ): Int {
         val mapped =
             measurables.fastMap { list ->
@@ -156,7 +156,7 @@ fun interface MultiContentMeasurePolicy {
      */
     fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
-        height: Int
+        height: Int,
     ): Int {
         val mapped =
             measurables.fastMap { list ->
@@ -181,7 +181,7 @@ fun interface MultiContentMeasurePolicy {
      */
     fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
-        width: Int
+        width: Int,
     ): Int {
         val mapped =
             measurables.fastMap { list ->
@@ -207,7 +207,7 @@ internal data class MultiContentMeasurePolicyImpl(val measurePolicy: MultiConten
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         with(measurePolicy) {
             minIntrinsicWidth(getChildrenOfVirtualChildren(this@minIntrinsicWidth), height)
@@ -215,7 +215,7 @@ internal data class MultiContentMeasurePolicyImpl(val measurePolicy: MultiConten
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         with(measurePolicy) {
             minIntrinsicHeight(getChildrenOfVirtualChildren(this@minIntrinsicHeight), width)
@@ -223,7 +223,7 @@ internal data class MultiContentMeasurePolicyImpl(val measurePolicy: MultiConten
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         with(measurePolicy) {
             maxIntrinsicWidth(getChildrenOfVirtualChildren(this@maxIntrinsicWidth), height)
@@ -231,7 +231,7 @@ internal data class MultiContentMeasurePolicyImpl(val measurePolicy: MultiConten
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         with(measurePolicy) {
             maxIntrinsicHeight(getChildrenOfVirtualChildren(this@maxIntrinsicHeight), width)

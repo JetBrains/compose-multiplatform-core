@@ -41,7 +41,7 @@ class XrHelper(private val environment: InspectorEnvironment) {
             val helper = findHelperAndGetViewsMethod() ?: return emptyList()
             helper.execute()
         } catch (ex: Exception) {
-            Log.w("ComposeLayoutInspector", "An error happened trying to find XR views", ex)
+            Log.w(SPAM_LOG_TAG, "An error happened trying to find XR views", ex)
             emptyList()
         }
     }
@@ -60,10 +60,7 @@ class XrHelper(private val environment: InspectorEnvironment) {
         return viewHelper
     }
 
-    private data class ViewXrHelper(
-        private val helper: Any,
-        private val getViewsMethod: Method,
-    ) {
+    private data class ViewXrHelper(private val helper: Any, private val getViewsMethod: Method) {
         @RequiresApi(Build.VERSION_CODES.R)
         @Suppress("UNCHECKED_CAST")
         @SuppressLint("BanUncheckedReflection")

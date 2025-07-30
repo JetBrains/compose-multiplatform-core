@@ -16,8 +16,6 @@
 
 package androidx.compose.material3.samples
 
-import android.content.Context
-import android.view.accessibility.AccessibilityManager
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,10 +31,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.outlined.MarkEmailUnread
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.AppBarRow
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -60,17 +64,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TwoRowsTopAppBar
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 
 /**
  * A sample for a simple use of small [TopAppBar].
@@ -92,7 +97,7 @@ fun SimpleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -100,27 +105,135 @@ fun SimpleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Sampled
+@Composable
+fun SimpleTopAppBarWithAdaptiveActions() {
+    val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    // Material guidelines state 3 items max in compact, and 5 items max elsewhere.
+    // To test this, try a resizable emulator, or a phone in landscape and portrait orientation.
+    val maxItemCount =
+        if (sizeClass.minWidthDp >= WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) {
+            5
+        } else {
+            3
         }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description",
+                        )
+                    }
+                },
+                actions = {
+                    AppBarRow(
+                        maxItemCount = maxItemCount,
+                        overflowIndicator = {
+                            IconButton(onClick = { it.show() }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = "Localized description",
+                                )
+                            }
+                        },
+                    ) {
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Attachment,
+                                    contentDescription = null,
+                                )
+                            },
+                            label = "Attachment",
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Filled.Edit, contentDescription = null)
+                            },
+                            label = "Edit",
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Outlined.Star, contentDescription = null)
+                            },
+                            label = "Favorite",
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(imageVector = Icons.Filled.Snooze, contentDescription = null)
+                            },
+                            label = "Alarm",
+                        )
+
+                        clickableItem(
+                            onClick = {},
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.MarkEmailUnread,
+                                    contentDescription = "Localized description",
+                                )
+                            },
+                            label = "Email",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
     )
 }
 
@@ -147,7 +260,7 @@ fun SimpleTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -155,28 +268,28 @@ fun SimpleTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -200,7 +313,7 @@ fun SimpleCenterAlignedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -208,27 +321,27 @@ fun SimpleCenterAlignedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -256,7 +369,7 @@ fun SimpleCenterAlignedTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -264,28 +377,28 @@ fun SimpleCenterAlignedTopAppBarWithSubtitle() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -310,7 +423,7 @@ fun PinnedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -319,34 +432,34 @@ fun PinnedTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -370,7 +483,7 @@ fun EnterAlwaysTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -378,28 +491,28 @@ fun EnterAlwaysTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -424,7 +537,7 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -432,28 +545,28 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -480,7 +593,7 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -488,28 +601,28 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -532,7 +645,7 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -540,28 +653,28 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -586,7 +699,7 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -594,28 +707,28 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -646,28 +759,23 @@ fun CustomTwoRowsTopAppBar() {
                             "Expanded Subtitle",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(bottom = 24.dp)
+                            modifier = Modifier.padding(bottom = 24.dp),
                         )
                     } else {
                         Text("Collapsed Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
-                height = { expanded ->
-                    if (expanded) {
-                        156.dp
-                    } else {
-                        64.dp
-                    }
-                },
+                collapsedHeight = 64.dp,
+                expandedHeight = 156.dp,
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         content = { innerPadding ->
@@ -680,7 +788,7 @@ fun CustomTwoRowsTopAppBar() {
                     Text(text = remember { LoremIpsum().values.first() })
                 }
             }
-        }
+        },
     )
 }
 
@@ -707,21 +815,18 @@ fun BottomAppBarWithFAB() {
                 Icon(Icons.Filled.Check, contentDescription = "Localized description")
             }
             IconButton(onClick = { /* doSomething() */ }) {
-                Icon(
-                    Icons.Filled.Edit,
-                    contentDescription = "Localized description",
-                )
+                Icon(Icons.Filled.Edit, contentDescription = "Localized description")
             }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* do something */ },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
             ) {
                 Icon(Icons.Filled.Add, "Localized description")
             }
-        }
+        },
     )
 }
 
@@ -734,11 +839,6 @@ fun BottomAppBarWithFAB() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBar() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -752,7 +852,7 @@ fun ExitAlwaysBottomAppBar() {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
                 },
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
             )
         },
         floatingActionButton = {
@@ -760,7 +860,7 @@ fun ExitAlwaysBottomAppBar() {
                 modifier = Modifier.offset(y = 4.dp),
                 onClick = { /* do something */ },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
             ) {
                 Icon(Icons.Filled.Add, "Localized description")
             }
@@ -769,18 +869,18 @@ fun ExitAlwaysBottomAppBar() {
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -793,11 +893,6 @@ fun ExitAlwaysBottomAppBar() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBarSpacedAround() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -805,23 +900,23 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
             FlexibleBottomAppBar(
                 horizontalArrangement = Arrangement.SpaceAround,
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
                 content = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -831,24 +926,24 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -861,34 +956,29 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBarSpacedBetween() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         bottomBar = {
             FlexibleBottomAppBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
                 content = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -898,24 +988,24 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -928,11 +1018,6 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBarSpacedEvenly() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -940,23 +1025,23 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
             FlexibleBottomAppBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
                 content = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -966,24 +1051,24 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -996,34 +1081,29 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBarFixed() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         bottomBar = {
             FlexibleBottomAppBar(
                 horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
                 content = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -1033,24 +1113,24 @@ fun ExitAlwaysBottomAppBarFixed() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -1063,36 +1143,31 @@ fun ExitAlwaysBottomAppBarFixed() {
 @Sampled
 @Composable
 fun ExitAlwaysBottomAppBarFixedVibrant() {
-    val context = LocalContext.current
-    val isTouchExplorationEnabled = remember {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        am.isEnabled && am.isTouchExplorationEnabled
-    }
     val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         bottomBar = {
             FlexibleBottomAppBar(
                 horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
-                scrollBehavior = if (!isTouchExplorationEnabled) scrollBehavior else null,
+                scrollBehavior = scrollBehavior,
                 containerColor =
                     MaterialTheme.colorScheme.primaryContainer, // TODO(b/356885344): tokens
                 content = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                     FilledIconButton(
                         modifier = Modifier.width(56.dp),
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = "Localized description")
                     }
@@ -1102,23 +1177,97 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         },
         content = { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
                 items(count = list.size) {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
-        }
+        },
     )
+}
+
+/** A sample for a [FlexibleBottomAppBar] with an overflow behavior when the content doesn't fit. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun BottomAppBarWithOverflow() {
+    FlexibleBottomAppBar(
+        contentPadding = PaddingValues(horizontal = 96.dp),
+        horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+    ) {
+        AppBarRow(
+            overflowIndicator = { menuState ->
+                IconButton(
+                    onClick = {
+                        if (menuState.isExpanded) {
+                            menuState.dismiss()
+                        } else {
+                            menuState.show()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Localized description",
+                    )
+                }
+            }
+        ) {
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Localized description",
+                    )
+                },
+                label = "ArrowBack",
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Localized description",
+                    )
+                },
+                label = "ArrowForward",
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Localized description") },
+                label = "Add",
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Check, contentDescription = "Localized description") },
+                label = "Check",
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = { Icon(Icons.Filled.Edit, contentDescription = "Localized description") },
+                label = "Edit",
+            )
+            clickableItem(
+                onClick = { /* doSomething() */ },
+                icon = {
+                    Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+                },
+                label = "Favorite",
+            )
+        }
+    }
 }

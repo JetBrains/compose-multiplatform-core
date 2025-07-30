@@ -107,7 +107,7 @@ internal sealed class AlignmentLines(val alignmentLinesOwner: AlignmentLinesOwne
     private fun addAlignmentLine(
         alignmentLine: AlignmentLine,
         initialPosition: Int,
-        initialCoordinator: NodeCoordinator
+        initialCoordinator: NodeCoordinator,
     ) {
         var position = Offset(initialPosition.toFloat(), initialPosition.toFloat())
         var coordinator = initialCoordinator

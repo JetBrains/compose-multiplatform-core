@@ -245,11 +245,7 @@ abstract class BaseMigrationTest {
         suspend fun getSingleItem(pk: Long): MigrationEntity?
     }
 
-    @Database(
-        entities = [MigrationEntity::class],
-        version = 2,
-        exportSchema = true,
-    )
+    @Database(entities = [MigrationEntity::class], version = 2, exportSchema = true)
     @ConstructedBy(BaseMigrationTest_MigrationDatabaseConstructor::class)
     abstract class MigrationDatabase : RoomDatabase() {
         abstract fun dao(): MigrationDao

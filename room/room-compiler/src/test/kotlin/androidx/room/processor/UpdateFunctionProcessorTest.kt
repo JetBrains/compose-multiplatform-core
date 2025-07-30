@@ -40,7 +40,7 @@ class UpdateFunctionProcessorTest :
     override fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): UpdateFunction {
         return UpdateFunctionProcessor(baseContext, containing, executableElement).process()
     }
@@ -83,20 +83,20 @@ class UpdateFunctionProcessorTest :
             public class Username {
                 String name;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @Update(entity = User.class)
                 abstract public int foo(Username username);
                 """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.missingPrimaryKeysInPartialEntityForUpdate(
                         partialEntityName = "foo.bar.Username",
-                        primaryKeyNames = listOf("uid")
+                        primaryKeyNames = listOf("uid"),
                     )
                 )
             }

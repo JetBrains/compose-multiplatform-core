@@ -85,11 +85,11 @@ private constructor(
     fun copy(
         excludeMethodsWithInvalidJvmSourceNames: Boolean =
             this.excludeMethodsWithInvalidJvmSourceNames,
-        disableAnnotatedElementValidation: Boolean = this.disableAnnotatedElementValidation
+        disableAnnotatedElementValidation: Boolean = this.disableAnnotatedElementValidation,
     ) =
         XProcessingEnvConfig(
             excludeMethodsWithInvalidJvmSourceNames = excludeMethodsWithInvalidJvmSourceNames,
-            disableAnnotatedElementValidation = disableAnnotatedElementValidation
+            disableAnnotatedElementValidation = disableAnnotatedElementValidation,
         )
 
     fun toBuilder() = Builder(this)

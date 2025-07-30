@@ -58,6 +58,7 @@ import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.concurrent.CameraCoordinator;
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigs;
@@ -236,6 +237,7 @@ final class Camera2CameraImpl implements CameraInternal {
      * @throws CameraUnavailableException if the {@link CameraCharacteristics} is unavailable. This
      *                                    could occur if the camera was disconnected.
      */
+    @SuppressLint("NullAnnotationGroup")
     Camera2CameraImpl(
             @NonNull Context context,
             @NonNull CameraManagerCompat cameraManager,
@@ -308,7 +310,10 @@ final class Camera2CameraImpl implements CameraInternal {
                         public CamcorderProfile get(int cameraId, int quality) {
                             return CamcorderProfile.get(cameraId, quality);
                         }
-                    });
+                    },
+                // TODO: b/406367951 - Create and use a proper impl. of FeatureCombinationQuery in
+                //   order to handle MeteringRepeating scenarios
+                FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY);
     }
 
     private @NonNull CaptureSessionInterface newCaptureSession() {
@@ -1280,7 +1285,8 @@ final class Camera2CameraImpl implements CameraInternal {
             for (DeferrableSurface surface: sessionConfig.getSurfaces()) {
                 SurfaceConfig surfaceConfig =
                         mSupportedSurfaceCombination.transformSurfaceConfig(cameraMode,
-                                useCaseConfig.getInputFormat(), surface.getPrescribedSize());
+                                useCaseConfig.getInputFormat(), surface.getPrescribedSize(),
+                                useCaseConfig.getStreamUseCase());
 
                 AttachedSurfaceInfo attachedSurfaceInfo = AttachedSurfaceInfo.create(surfaceConfig,
                         useCaseConfig.getInputFormat(),
@@ -1288,7 +1294,9 @@ final class Camera2CameraImpl implements CameraInternal {
                         useCaseInfo.getStreamSpec().getDynamicRange(),
                         useCaseInfo.getCaptureTypes(),
                         useCaseInfo.getStreamSpec().getImplementationOptions(),
-                        useCaseConfig.getTargetFrameRate(null));
+                        useCaseInfo.getStreamSpec().getSessionType(),
+                        useCaseInfo.getStreamSpec().getExpectedFrameRateRange(),
+                        useCaseConfig.isStrictFrameRateRequired());
 
                 attachedSurfaces.add(attachedSurfaceInfo);
             }
@@ -1301,8 +1309,10 @@ final class Camera2CameraImpl implements CameraInternal {
                 Collections.singletonList(mMeteringRepeatingSession.getMeteringRepeatingSize()));
 
         try {
+            // TODO: b/406367951 - Pass true for isFeatureComboInvocation param when
+            //   MeteringRepeating scenarios with feature combination are handled
             mSupportedSurfaceCombination.getSuggestedStreamSpecifications(cameraMode,
-                    attachedSurfaces, useCaseConfigToSizeMap, false, false, null);
+                    attachedSurfaces, useCaseConfigToSizeMap, false, false, false, false);
         } catch (IllegalArgumentException e) {
             debugLog("Surface combination with metering repeating  not supported!", e);
             return false;

@@ -41,7 +41,7 @@ class BloodPressureRecordTest {
                     diastolic = 112.millimetersOfMercury,
                     bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                     measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                    metadata = Metadata.EMPTY,
+                    metadata = Metadata.manualEntry(),
                 )
             )
             .isEqualTo(
@@ -52,7 +52,7 @@ class BloodPressureRecordTest {
                     diastolic = 112.millimetersOfMercury,
                     bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                     measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                    metadata = Metadata.EMPTY,
+                    metadata = Metadata.manualEntry(),
                 )
             )
     }
@@ -68,7 +68,7 @@ class BloodPressureRecordTest {
                 diastolic = 500.millimetersOfMercury,
                 bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                 measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                metadata = Metadata.EMPTY,
+                metadata = Metadata.manualEntry(),
             )
         }
     }
@@ -84,7 +84,7 @@ class BloodPressureRecordTest {
                     diastolic = 112.millimetersOfMercury,
                     bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                     measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                    metadata = Metadata.EMPTY,
+                    metadata = Metadata.manualEntry(),
                 )
             )
             .isEqualTo(
@@ -95,7 +95,7 @@ class BloodPressureRecordTest {
                     diastolic = 112.millimetersOfMercury,
                     bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                     measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                    metadata = Metadata.EMPTY,
+                    metadata = Metadata.manualEntry(),
                 )
             )
     }
@@ -111,7 +111,7 @@ class BloodPressureRecordTest {
                 diastolic = 200.millimetersOfMercury,
                 bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                 measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                metadata = Metadata.EMPTY,
+                metadata = Metadata.manualEntry(),
             )
         }
     }
@@ -147,7 +147,7 @@ class BloodPressureRecordTest {
                         diastolic = Pressure.millimetersOfMercury(112.0),
                         bodyPosition = BloodPressureRecord.BODY_POSITION_RECLINING,
                         measurementLocation = BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
-                        metadata = Metadata.EMPTY,
+                        metadata = Metadata.unknownRecordingMethod(),
                     )
                     .toString()
             )

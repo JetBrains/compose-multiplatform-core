@@ -55,7 +55,7 @@ val ScalingLazyColumnBenchmark =
                             ) {
                                 Text("To top")
                             }
-                        }
+                        },
                     ) { contentPadding ->
                         ScalingLazyColumn(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -63,14 +63,14 @@ val ScalingLazyColumnBenchmark =
                             state = state,
                             modifier =
                                 Modifier.background(MaterialTheme.colorScheme.background)
-                                    .semantics { contentDescription = CONTENT_DESCRIPTION }
+                                    .semantics { contentDescription = CONTENT_DESCRIPTION },
                         ) {
                             items(5000) {
                                 Text(
                                     "Item $it",
                                     color = MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(10.dp),
                                 )
                             }
                         }
@@ -80,16 +80,11 @@ val ScalingLazyColumnBenchmark =
 
         override val exercise: MacrobenchmarkScope.() -> Unit
             get() = {
+                val swipeStartY = device.displayHeight * 9 / 10 // scroll up
+                val swipeEndY = device.displayHeight / 2
+                val midX = device.displayWidth / 2
                 repeat(20) {
-                    val endY = device.displayHeight * 9 / 10 // scroll down
-
-                    device.swipe(
-                        device.displayWidth / 2,
-                        device.displayHeight / 2,
-                        device.displayWidth / 2,
-                        endY,
-                        10
-                    )
+                    device.swipe(midX, swipeStartY, midX, swipeEndY, 5)
                     device.waitForIdle()
                     SystemClock.sleep(500)
                 }

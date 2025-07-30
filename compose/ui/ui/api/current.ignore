@@ -1,7 +1,0 @@
-// Baseline format: 1.0
-AddedMethod: androidx.compose.ui.semantics.SemanticsProperties#getInputText():
-    Added method androidx.compose.ui.semantics.SemanticsProperties.getInputText()
-AddedMethod: androidx.compose.ui.semantics.SemanticsPropertiesKt#getInputText(androidx.compose.ui.semantics.SemanticsPropertyReceiver):
-    Added method androidx.compose.ui.semantics.SemanticsPropertiesKt.getInputText(androidx.compose.ui.semantics.SemanticsPropertyReceiver)
-AddedMethod: androidx.compose.ui.semantics.SemanticsPropertiesKt#setInputText(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.text.AnnotatedString):
-    Added method androidx.compose.ui.semantics.SemanticsPropertiesKt.setInputText(androidx.compose.ui.semantics.SemanticsPropertyReceiver,androidx.compose.ui.text.AnnotatedString)

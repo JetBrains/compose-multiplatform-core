@@ -126,7 +126,7 @@ private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocume
                 pdfDocument = fakePdfDocument
                 id = PDF_VIEW_ID
             },
-            ViewGroup.LayoutParams(width, height)
+            ViewGroup.LayoutParams(width, height),
         )
         activity.setContentView(container)
     }

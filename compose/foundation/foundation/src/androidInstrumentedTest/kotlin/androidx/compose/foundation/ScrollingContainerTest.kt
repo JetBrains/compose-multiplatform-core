@@ -96,7 +96,7 @@ class ScrollingContainerTest {
                         interactionSource = null,
                         useLocalOverscrollFactory = false,
                         overscrollEffect = null,
-                        bringIntoViewSpec = null
+                        bringIntoViewSpec = null,
                     ) as CombinedModifier)
                     .toList()
             val clip = modifiers[0] as InspectableValue
@@ -114,7 +114,7 @@ class ScrollingContainerTest {
                     "interactionSource",
                     "useLocalOverscrollFactory",
                     "overscrollEffect",
-                    "bringIntoViewSpec"
+                    "bringIntoViewSpec",
                 )
         }
     }
@@ -137,7 +137,7 @@ class ScrollingContainerTest {
                             flingBehavior = null,
                             interactionSource = null,
                             useLocalOverscrollFactory = false,
-                            overscrollEffect = null
+                            overscrollEffect = null,
                         )
                 ) {
                     repeat(4) { Box(Modifier.size(20.dp).drawOutsideOfBounds()) }
@@ -154,7 +154,7 @@ class ScrollingContainerTest {
                 shapeColor = Color.Red,
                 backgroundColor = Color.Gray,
                 horizontalPadding = 20.dp,
-                verticalPadding = 0.dp
+                verticalPadding = 0.dp,
             )
 
         rule.runOnIdle { orientation = Vertical }
@@ -168,7 +168,7 @@ class ScrollingContainerTest {
                 shapeColor = Color.Red,
                 backgroundColor = Color.Gray,
                 horizontalPadding = 0.dp,
-                verticalPadding = 20.dp
+                verticalPadding = 20.dp,
             )
     }
 
@@ -195,7 +195,7 @@ class ScrollingContainerTest {
                                 flingBehavior = null,
                                 interactionSource = null,
                                 useLocalOverscrollFactory = false,
-                                overscrollEffect = null
+                                overscrollEffect = null,
                             )
                     )
                 }
@@ -230,7 +230,7 @@ class ScrollingContainerTest {
                     interactionSource = null,
                     useLocalOverscrollFactory = false,
                     overscrollEffect = overscrollEffect,
-                    bringIntoViewSpec = null
+                    bringIntoViewSpec = null,
                 )
             )
         }
@@ -256,7 +256,7 @@ class ScrollingContainerTest {
                         interactionSource = null,
                         useLocalOverscrollFactory = false,
                         overscrollEffect = overscrollEffect,
-                        bringIntoViewSpec = null
+                        bringIntoViewSpec = null,
                     )
                 } else {
                     Modifier
@@ -306,7 +306,7 @@ class ScrollingContainerTest {
                     interactionSource = null,
                     useLocalOverscrollFactory = false,
                     overscrollEffect = effect,
-                    bringIntoViewSpec = null
+                    bringIntoViewSpec = null,
                 )
             )
         }
@@ -359,7 +359,7 @@ class ScrollingContainerTest {
                             interactionSource = null,
                             useLocalOverscrollFactory = false,
                             overscrollEffect = overscrollEffect,
-                            bringIntoViewSpec = null
+                            bringIntoViewSpec = null,
                         )
                     else Modifier
                 )
@@ -402,7 +402,7 @@ class ScrollingContainerTest {
                             interactionSource = null,
                             useLocalOverscrollFactory = true,
                             overscrollEffect = null,
-                            bringIntoViewSpec = null
+                            bringIntoViewSpec = null,
                         )
                 )
             }
@@ -461,7 +461,7 @@ class ScrollingContainerTest {
                             interactionSource = null,
                             useLocalOverscrollFactory = true,
                             overscrollEffect = null,
-                            bringIntoViewSpec = null
+                            bringIntoViewSpec = null,
                         )
                 )
             }
@@ -536,7 +536,7 @@ class ScrollingContainerTest {
                             interactionSource = null,
                             useLocalOverscrollFactory = useLocalOverscrollFactory,
                             overscrollEffect = overscrollEffect2,
-                            bringIntoViewSpec = null
+                            bringIntoViewSpec = null,
                         )
                 )
             }
@@ -635,7 +635,7 @@ class ScrollingContainerTest {
                         interactionSource = null,
                         useLocalOverscrollFactory = true,
                         overscrollEffect = overscrollEffect,
-                        bringIntoViewSpec = null
+                        bringIntoViewSpec = null,
                     )
                 )
             }
@@ -675,20 +675,20 @@ class ScrollingContainerTest {
 
                 override suspend fun applyToFling(
                     velocity: Velocity,
-                    performFling: suspend (Velocity) -> Velocity
+                    performFling: suspend (Velocity) -> Velocity,
                 ) {}
 
                 override fun applyToScroll(
                     delta: Offset,
                     source: NestedScrollSource,
-                    performScroll: (Offset) -> Offset
+                    performScroll: (Offset) -> Offset,
                 ): Offset = performScroll(delta)
 
                 override val node: DelegatableNode =
                     object : Modifier.Node(), LayoutModifierNode {
                         override fun MeasureScope.measure(
                             measurable: Measurable,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             val placeable = measurable.measure(constraints)
                             return layout(placeable.width, placeable.height) {
@@ -709,7 +709,7 @@ class ScrollingContainerTest {
                     interactionSource = null,
                     useLocalOverscrollFactory = false,
                     overscrollEffect = overscrollEffect,
-                    bringIntoViewSpec = null
+                    bringIntoViewSpec = null,
                 )
             ) {
                 Box(Modifier.size(20.dp).background(Color.Red).testTag("content"))
@@ -729,7 +729,7 @@ class ScrollingContainerTest {
         drawRect(
             Color.Red,
             Offset(-inflate, -inflate),
-            Size(size.width + inflate * 2, size.height + inflate * 2)
+            Size(size.width + inflate * 2, size.height + inflate * 2),
         )
     }
 }

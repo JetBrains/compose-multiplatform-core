@@ -16,9 +16,7 @@
 
 package androidx.core.telecom.test
 
-import android.os.Build
 import android.os.Build.VERSION_CODES
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_BLUETOOTH
 import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_EARPIECE
@@ -35,7 +33,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = VERSION_CODES.O /* api=26 */)
-@RequiresApi(Build.VERSION_CODES.O)
 class PreCallEndpointsTest {
     val mSessionId: Int = 111
 

@@ -68,7 +68,7 @@ private var Impl: EdgeToEdgeImpl? = null
 @JvmOverloads
 fun ComponentActivity.enableEdgeToEdge(
     statusBarStyle: SystemBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
-    navigationBarStyle: SystemBarStyle = SystemBarStyle.auto(DefaultLightScrim, DefaultDarkScrim)
+    navigationBarStyle: SystemBarStyle = SystemBarStyle.auto(DefaultLightScrim, DefaultDarkScrim),
 ) {
     val view = window.decorView
     val statusBarIsDark = statusBarStyle.detectDarkMode(view.resources)
@@ -98,7 +98,7 @@ fun ComponentActivity.enableEdgeToEdge(
         window,
         view,
         statusBarIsDark,
-        navigationBarIsDark
+        navigationBarIsDark,
     )
     impl.adjustLayoutInDisplayCutoutMode(window)
 }
@@ -109,7 +109,7 @@ private constructor(
     private val lightScrim: Int,
     internal val darkScrim: Int,
     internal val nightMode: Int,
-    internal val detectDarkMode: (Resources) -> Boolean
+    internal val detectDarkMode: (Resources) -> Boolean,
 ) {
 
     companion object {
@@ -142,13 +142,13 @@ private constructor(
             detectDarkMode: (Resources) -> Boolean = { resources ->
                 (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                     Configuration.UI_MODE_NIGHT_YES
-            }
+            },
         ): SystemBarStyle {
             return SystemBarStyle(
                 lightScrim = lightScrim,
                 darkScrim = darkScrim,
                 nightMode = UiModeManager.MODE_NIGHT_AUTO,
-                detectDarkMode = detectDarkMode
+                detectDarkMode = detectDarkMode,
             )
         }
 
@@ -165,7 +165,7 @@ private constructor(
                 lightScrim = scrim,
                 darkScrim = scrim,
                 nightMode = UiModeManager.MODE_NIGHT_YES,
-                detectDarkMode = { _ -> true }
+                detectDarkMode = { _ -> true },
             )
         }
 
@@ -184,7 +184,7 @@ private constructor(
                 lightScrim = scrim,
                 darkScrim = darkScrim,
                 nightMode = UiModeManager.MODE_NIGHT_NO,
-                detectDarkMode = { _ -> false }
+                detectDarkMode = { _ -> false },
             )
         }
     }
@@ -208,7 +208,7 @@ private interface EdgeToEdgeImpl {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     )
 
     fun adjustLayoutInDisplayCutoutMode(window: Window)
@@ -222,7 +222,7 @@ private open class EdgeToEdgeBase : EdgeToEdgeImpl {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     ) {
         // No edge-to-edge before SDK 21.
     }
@@ -243,7 +243,7 @@ private class EdgeToEdgeApi21 : EdgeToEdgeBase() {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     ) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -262,7 +262,7 @@ private class EdgeToEdgeApi23 : EdgeToEdgeBase() {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     ) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = statusBarStyle.getScrim(statusBarIsDark)
@@ -282,7 +282,7 @@ private open class EdgeToEdgeApi26 : EdgeToEdgeBase() {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     ) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = statusBarStyle.getScrim(statusBarIsDark)
@@ -315,7 +315,7 @@ private open class EdgeToEdgeApi29 : EdgeToEdgeApi28() {
         window: Window,
         view: View,
         statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean
+        navigationBarIsDark: Boolean,
     ) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = statusBarStyle.getScrimWithEnforcedContrast(statusBarIsDark)

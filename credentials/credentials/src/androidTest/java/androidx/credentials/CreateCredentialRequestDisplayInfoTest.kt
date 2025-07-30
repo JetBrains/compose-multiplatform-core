@@ -75,7 +75,7 @@ class CreateCredentialRequestDisplayInfoTest {
             DisplayInfo(
                 userId = expectedUserId,
                 userDisplayName = expectedDisplayName,
-                preferDefaultProvider = expectedDefaultProvider
+                preferDefaultProvider = expectedDefaultProvider,
             )
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)

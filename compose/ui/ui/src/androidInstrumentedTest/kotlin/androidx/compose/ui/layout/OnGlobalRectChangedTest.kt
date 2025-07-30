@@ -35,8 +35,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.SimpleRow
 import androidx.compose.ui.Wrap
 import androidx.compose.ui.background
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.padding
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.spatial.RelativeLayoutBounds
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -89,6 +91,198 @@ class OnGlobalRectChangedTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
+    fun correctPositionInRootWhenMovingBothGrandParentAndNodeItself() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeable.place(offset, offset)
+                    }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenMovingGrandParentWithLayerAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    modifier =
+                        Modifier.graphicsLayer {
+                            translationX = offset.toFloat()
+                            translationY = offset.toFloat()
+                        },
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenMovingBothGrandParentWithLayoutModifierAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    modifier =
+                        Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(constraints.maxWidth, constraints.maxHeight) {
+                                placeable.place(offset, offset)
+                            }
+                        },
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenUnplacingThenPlacingGrandparentWithDifferentOffsetAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            var shouldPlace by mutableStateOf(true)
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        if (shouldPlace) {
+                            placeable.place(offset, offset)
+                        }
+                    }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle {
+                shouldPlace = false
+                offset = 10
+                actualPosition = IntOffset.Max
+            }
+
+            rule.runOnIdle {
+                assertThat(actualPosition).isEqualTo(IntOffset.Max)
+                shouldPlace = true
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
     fun handlesChildrenNodeMoveCorrectly() {
         val size = 50
         var index by mutableStateOf(0)
@@ -104,7 +298,7 @@ class OnGlobalRectChangedTest {
                             modifier =
                                 Modifier.onLayoutRectChanged(0, 0) {
                                     wrap1Position = it.boundsInWindow
-                                }
+                                },
                         )
                     } else {
                         Wrap(
@@ -113,7 +307,7 @@ class OnGlobalRectChangedTest {
                             modifier =
                                 Modifier.onLayoutRectChanged(0, 0) {
                                     wrap2Position = it.boundsInWindow
-                                }
+                                },
                         )
                     }
                 }
@@ -144,7 +338,7 @@ class OnGlobalRectChangedTest {
                     modifier =
                         Modifier.onLayoutRectChanged(0, 0) {
                             realChildSize = it.boundsInRoot.size.width
-                        }
+                        },
                 )
             }
         }
@@ -178,10 +372,10 @@ class OnGlobalRectChangedTest {
                                 Modifier.onLayoutRectChanged(0, 0) { rect ->
                                     childGlobalPosition = rect.boundsInRoot.offset()
                                     latch.countDown()
-                                }
+                                },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -209,21 +403,21 @@ class OnGlobalRectChangedTest {
                         minWidth = 10,
                         minHeight = 10,
                         modifier =
-                            Modifier.onLayoutRectChanged(0, 0) { wrap1OnPositionedCalled = true }
+                            Modifier.onLayoutRectChanged(0, 0) { wrap1OnPositionedCalled = true },
                     )
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
                         modifier =
-                            Modifier.onLayoutRectChanged(0, 0) { wrap2OnPositionedCalled = true }
+                            Modifier.onLayoutRectChanged(0, 0) { wrap2OnPositionedCalled = true },
                     ) {
                         Wrap(
                             minWidth = 10,
                             minHeight = 10,
-                            modifier = Modifier.onLayoutRectChanged(0, 0) { latch.countDown() }
+                            modifier = Modifier.onLayoutRectChanged(0, 0) { latch.countDown() },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -276,10 +470,11 @@ class OnGlobalRectChangedTest {
         changeLambda.value = false
 
         rule.runOnIdle {
-            assertFalse(lambda2Called)
             assertFalse(lambda1Called)
             assertFalse(layoutCalled)
             assertFalse(placementCalled)
+            // we execute the new lambda when the lambda is updated
+            assertTrue(lambda2Called)
         }
     }
 
@@ -292,7 +487,7 @@ class OnGlobalRectChangedTest {
         rule.setContent {
             Column(
                 modifier = Modifier.size(200.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     modifier =
@@ -312,6 +507,49 @@ class OnGlobalRectChangedTest {
             assertNotNull(lastOffsetFromGloballyPositioned)
             assertNotNull(lastOffsetFromRectChanged)
             assertEquals(lastOffsetFromGloballyPositioned, lastOffsetFromRectChanged)
+        }
+    }
+
+    @Test
+    fun callbackIsReExecutedOnReuse() {
+        with(rule.density) {
+            val size = 10
+            var actualSize: Int = Int.MAX_VALUE
+            var reuseKey by mutableStateOf(0)
+            rule.setContent {
+                ReusableContent(reuseKey) {
+                    Box(
+                        Modifier.requiredSize(size.toDp(), size.toDp()).onLayoutRectChanged(0, 0) {
+                            actualSize = it.width
+                        }
+                    )
+                }
+            }
+
+            rule.runOnIdle {
+                actualSize = Int.MAX_VALUE
+                reuseKey++
+            }
+
+            rule.runOnIdle { assertThat(actualSize).isEqualTo(size) }
+        }
+    }
+
+    @Test
+    fun callbackIsCalledWhenAddedLater() {
+        with(rule.density) {
+            val size = 10
+            var actualSize: Int = Int.MAX_VALUE
+            var dynamicModifier by mutableStateOf<Modifier>(Modifier)
+            rule.setContent {
+                Box(Modifier.requiredSize(size.toDp(), size.toDp()).then(dynamicModifier))
+            }
+
+            rule.runOnIdle {
+                dynamicModifier = Modifier.onLayoutRectChanged(0, 0) { actualSize = it.width }
+            }
+
+            rule.runOnIdle { assertThat(actualSize).isEqualTo(size) }
         }
     }
 
@@ -417,7 +655,7 @@ class OnGlobalRectChangedTest {
                         Modifier.onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, _ ->
                     layout(100, 200) {}
                 }
@@ -436,7 +674,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertThat(abs(view.getYInWindow().toInt() - coordinates!!.top) <= 1) }
@@ -456,7 +694,7 @@ class OnGlobalRectChangedTest {
                         .onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
             ) { _, _ ->
                 layout(100, 200) {}
             }
@@ -474,7 +712,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(5, coordinates!!.left) }
@@ -512,7 +750,7 @@ class OnGlobalRectChangedTest {
                         Modifier.onLayoutRectChanged(0, 0) {
                             coordinates = it.boundsInWindow
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, constraints ->
                     layout(constraints.maxWidth, constraints.maxHeight) {}
                 }
@@ -529,7 +767,7 @@ class OnGlobalRectChangedTest {
 
         assertTrue(
             "OnPositioned is not called when the container moved",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(startY - 100, coordinates!!.top) }
@@ -737,7 +975,7 @@ class OnGlobalRectChangedTest {
             if (toggle) {
                 FixedSize(
                     30,
-                    Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it }
+                    Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it },
                 ) { /* no-op */
                 }
             }
@@ -772,7 +1010,7 @@ class OnGlobalRectChangedTest {
         rule.setContent {
             FixedSize(
                 30,
-                Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it }
+                Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it },
             ) { /* no-op */
             }
         }
@@ -780,13 +1018,17 @@ class OnGlobalRectChangedTest {
         // Even though debounce is set to 2s, the callback should get called right away because
         // throttle is non-zero
         rule.runOnIdle {
-            assertEquals(IntRect(0, 0, 30, 30), rect!!.boundsInRoot)
+            val rect = rect!!
+            assertEquals(IntRect(0, 0, 30, 30), rect.boundsInRoot)
             offset = IntOffset(10, 10)
         }
 
         // This ensures that, even though only draw got affected (through layer offset change), the
         // rect should get updated immediately because throttle is set to 1
-        rule.runOnIdle { assertEquals(IntRect(10, 10, 40, 40), rect!!.boundsInRoot) }
+        rule.runOnIdle {
+            val rect = rect!!
+            assertEquals(IntRect(10, 10, 40, 40), rect.boundsInRoot)
+        }
     }
 
     @Test
@@ -800,7 +1042,7 @@ class OnGlobalRectChangedTest {
                         30,
                         Modifier.padding(10).background(Color.Red).onLayoutRectChanged(0, 0) {
                             coords = it.boundsInWindow
-                        }
+                        },
                     ) { /* no-op */
                     }
                 }
@@ -852,7 +1094,7 @@ class OnGlobalRectChangedTest {
         val lambda: (RelativeLayoutBounds) -> Unit = {}
         assertEquals(
             Modifier.onLayoutRectChanged(0, 0, lambda),
-            Modifier.onLayoutRectChanged(0, 0, lambda)
+            Modifier.onLayoutRectChanged(0, 0, lambda),
         )
     }
 
@@ -863,7 +1105,7 @@ class OnGlobalRectChangedTest {
         val lambda2: (RelativeLayoutBounds) -> Unit = { print("bar") }
         Assert.assertNotEquals(
             Modifier.onLayoutRectChanged(0, 0, lambda1),
-            Modifier.onLayoutRectChanged(0, 0, lambda2)
+            Modifier.onLayoutRectChanged(0, 0, lambda2),
         )
     }
 
@@ -980,36 +1222,40 @@ class OnGlobalRectChangedTest {
         var box0CallbackCount = 0
         var box1CallbackCount = 0
         var box2CallbackCount = 0
+
+        val box0Callback = { rectInfo: RelativeLayoutBounds ->
+            box0Bounds = rectInfo
+            box0CallbackCount++
+            box0Occlusions = rectInfo.calculateOcclusions()
+        }
+        val box1Callback = { rectInfo: RelativeLayoutBounds ->
+            box1CallbackCount++
+            box1Occlusions = rectInfo.calculateOcclusions()
+        }
+        val box2Callback = { rectInfo: RelativeLayoutBounds ->
+            box2CallbackCount++
+            box2Occlusions = rectInfo.calculateOcclusions()
+        }
         rule.setContent {
             Box(Modifier.fillMaxSize()) {
                 Box(
                     Modifier.fillMaxWidth()
                         .fillMaxHeight(0.5f)
                         .align(Alignment.TopStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box0Bounds = rectInfo
-                            box0CallbackCount++
-                            box0Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box0Callback)
                 )
                 Box(
                     // Should initially occlude first box
                     Modifier.fillMaxWidth()
                         .fillMaxHeight(0.7f)
                         .align(Alignment.BottomStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box1CallbackCount++
-                            box1Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box1Callback)
                 )
                 Box(
                     // Should initially occlude both boxes
                     Modifier.fillMaxSize(box2Fraction)
                         .align(Alignment.BottomStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box2CallbackCount++
-                            box2Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box2Callback)
                 )
             }
         }
@@ -1100,5 +1346,76 @@ class OnGlobalRectChangedTest {
         // Sibling Box
         assertEquals(IntOffset(0, boxSizePx), bounds4.topLeft)
         assertEquals(IntSize(siblingBoxSizePx, siblingBoxSizePx), bounds4.size)
+    }
+
+    @Test
+    fun correctPositionInRootWhenOffsetIsProvidedByLayoutCooperation() {
+        with(rule.density) {
+            val containerSize = 100
+            val width = 50
+            val height = 40
+            var actualPosition: IntOffset = IntOffset.Max
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(
+                            Modifier.requiredSize(width.toDp(), height.toDp()).onLayoutRectChanged(
+                                0,
+                                0,
+                            ) {
+                                actualPosition = it.positionInRoot
+                            }
+                        )
+                    }
+                ) { measurables, _ ->
+                    val placeable =
+                        measurables.first().measure(Constraints.fixed(containerSize, containerSize))
+                    layout(containerSize, containerSize) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle {
+                val expectedLeft = ((containerSize - width) / 2)
+                val expectedTop = ((containerSize - height) / 2)
+                assertThat(actualPosition).isEqualTo(IntOffset(expectedLeft, expectedTop))
+            }
+        }
+    }
+
+    @Test
+    fun updatingOffsetInParentsLayoutModifier() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(IntOffset(0), neverEqualPolicy())
+            rule.setContent {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val resolvedInMeasureOffset = offset
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.place(resolvedInMeasureOffset)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(10.dp).onLayoutRectChanged(0, 0) {
+                                actualPosition = it.positionInRoot
+                            }
+                    )
+                }
+            }
+
+            rule.runOnIdle { offset = IntOffset(20, 20) }
+
+            rule.runOnIdle {
+                // during the first rerun the parent might clear the cached offset for it
+                // so we rerun again in order to update the cache and re-calculate the child
+                // position based on it again
+                offset = IntOffset(20, 20)
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
     }
 }

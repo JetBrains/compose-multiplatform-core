@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -28,15 +29,17 @@ import android.view.SurfaceControlViewHost;
 import android.view.SurfaceControlViewHost.SurfacePackage;
 import android.view.View;
 
-import androidx.xr.extensions.XrExtensions;
-import androidx.xr.extensions.node.Node;
-import androidx.xr.extensions.node.NodeTransaction;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+
+import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeTransaction;
 
 import java.util.Objects;
 
 /** Class for rendering the border of a panel onto a perception plane. */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 class PanelShadowRenderer {
     private static final float STROKE_WIDTH = 20f;
     private static final float HALF_STROKE_WIDTH = STROKE_WIDTH / 2;
@@ -102,7 +105,7 @@ class PanelShadowRenderer {
                 getUpdatedPanelPoseInActivitySpace(openXrToProposedPanel, openXrtoPlane);
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
             if (!mIsVisible) {
-                transaction.setVisibility(mPanelShadowNode, true);
+                NodeTransaction unused = transaction.setVisibility(mPanelShadowNode, true);
                 mIsVisible = true;
             }
             transaction
@@ -122,7 +125,7 @@ class PanelShadowRenderer {
     }
 
     void hidePlane() {
-        if (!mIsVisible) {
+        if (!mIsVisible || mPanelShadowNode == null) {
             return;
         }
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
@@ -150,12 +153,12 @@ class PanelShadowRenderer {
         // Scale the panel shadow to the size of the PanelEntity in the activity space.
         Vector3 entityScale = panelEntity.getWorldSpaceScale();
         float sizeX =
-                panelEntity.getPixelDimensions().width
+                panelEntity.getSizeInPixels().width
                                 * entityScale.getX()
                                 / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;
         float sizeZ =
-                panelEntity.getPixelDimensions().height
+                panelEntity.getSizeInPixels().height
                                 * entityScale.getZ()
                                 / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;

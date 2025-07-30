@@ -31,6 +31,31 @@ internal class XrResources {
     private val _updatables = CopyOnWriteArrayList<Updatable>()
     val updatables: List<Updatable> = _updatables
 
+    /** The data of hands */
+    val leftHand: OpenXrHand
+    val rightHand: OpenXrHand
+
+    /** The Device tracking data */
+    val arDevice: OpenXrDevice
+
+    /** The view camera data */
+    val viewCameras: List<OpenXrViewCamera>
+
+    /** The data of the Earth */
+    val earth: OpenXrEarth = OpenXrEarth(this)
+
+    val leftDepthMap: OpenXrDepthMap
+    val rightDepthMap: OpenXrDepthMap
+
+    init {
+        this.leftHand = OpenXrHand(isLeftHand = true)
+        this.rightHand = OpenXrHand(isLeftHand = false)
+        this.arDevice = OpenXrDevice()
+        this.viewCameras = listOf(OpenXrViewCamera(), OpenXrViewCamera())
+        this.leftDepthMap = OpenXrDepthMap(/* viewIndex= */ 0)
+        this.rightDepthMap = OpenXrDepthMap(/* viewIndex= */ 1)
+    }
+
     internal fun addTrackable(trackableId: Long, trackable: Trackable) {
         _trackablesMap[trackableId] = trackable
     }

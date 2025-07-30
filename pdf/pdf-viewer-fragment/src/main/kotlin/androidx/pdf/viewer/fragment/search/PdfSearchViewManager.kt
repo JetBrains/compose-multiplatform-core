@@ -63,7 +63,7 @@ internal class PdfSearchViewManager(private val pdfSearchView: PdfSearchView) {
                 context.getString(
                     androidx.pdf.R.string.match_status_description,
                     results.currentMatch,
-                    results.totalMatches
+                    results.totalMatches,
                 )
 
             if (results.totalMatches == 0) {
@@ -102,7 +102,7 @@ internal class PdfSearchViewManager(private val pdfSearchView: PdfSearchView) {
         pdfSearchView.context.getString(
             androidx.pdf.R.string.message_match_status,
             currentSelection, // selection-index
-            totalMatches // total matches
+            totalMatches, // total matches
         )
 
     companion object {

@@ -17,6 +17,7 @@
 package androidx.health.connect.client.impl.platform.aggregate
 
 import android.annotation.SuppressLint
+import android.health.connect.datatypes.Metadata.RECORDING_METHOD_MANUAL_ENTRY
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.records.NutritionRecord
@@ -32,6 +33,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,11 +43,182 @@ import org.junit.runner.RunWith
 class ResultGroupByDurationAggregatorTest {
 
     @Test
+    fun getResult_localTimeRange_filterRecordsBasedOnLocalTime() {
+        val aggregator =
+            ResultGroupedByDurationAggregator(
+                LocalTimeRange(
+                    startTime = LocalDateTime.parse("2025-02-03T00:00:00"),
+                    endTime = LocalDateTime.parse("2025-02-03T02:00:00"),
+                ),
+                bucketDuration = Duration.ofHours(1),
+            ) {
+                TransFatTotalAggregationProcessor(it)
+            }
+
+        aggregator.filterAndAggregate(
+            NutritionRecord(
+                startTime =
+                    LocalDateTime.parse("2025-02-03T00:10:00").toInstant(ZoneOffset.ofHours(10)),
+                endTime =
+                    LocalDateTime.parse("2025-02-03T00:15:00").toInstant(ZoneOffset.ofHours(10)),
+                startZoneOffset = ZoneOffset.ofHours(10),
+                endZoneOffset = ZoneOffset.ofHours(10),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("within.range"),
+                    ),
+                transFat = 5.grams,
+            )
+        )
+
+        aggregator.filterAndAggregate(
+            NutritionRecord(
+                startTime =
+                    LocalDateTime.parse("2025-02-03T00:20:00").toInstant(ZoneOffset.ofHours(10)),
+                endTime =
+                    LocalDateTime.parse("2025-02-03T00:25:00").toInstant(ZoneOffset.ofHours(10)),
+                startZoneOffset = ZoneOffset.UTC,
+                endZoneOffset = ZoneOffset.UTC,
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("out.of.range"),
+                    ),
+                transFat = 15.grams,
+            )
+        )
+
+        assertThat(aggregator.getResult())
+            .containsExactly(
+                AggregationResultGroupedByDurationWithMinTime(
+                    aggregationResultGroupedByDuration =
+                        AggregationResultGroupedByDuration(
+                            result = aggregationResult(5.grams, "within.range"),
+                            startTime =
+                                LocalDateTime.parse("2025-02-03T00:00:00")
+                                    .toInstant(ZoneOffset.ofHours(10)),
+                            endTime =
+                                LocalDateTime.parse("2025-02-03T01:00:00")
+                                    .toInstant(ZoneOffset.ofHours(10)),
+                            zoneOffset = ZoneOffset.ofHours(10),
+                        ),
+                    minTime =
+                        LocalDateTime.parse("2025-02-03T00:10:00").toInstant(ZoneOffset.ofHours(10)),
+                )
+            )
+    }
+
+    @Test
+    fun getResult_localTimeRange_bucketsAreCalculatedUsingInstantTime() {
+        val aggregator =
+            ResultGroupedByDurationAggregator(
+                LocalTimeRange(
+                    startTime = LocalDateTime.parse("2025-02-03T00:00:00"),
+                    endTime = LocalDateTime.parse("2025-02-03T02:00:00"),
+                ),
+                bucketDuration = Duration.ofHours(1),
+            ) {
+                TransFatTotalAggregationProcessor(it)
+            }
+
+        aggregator.filterAndAggregate(
+            NutritionRecord(
+                startTime =
+                    LocalDateTime.parse("2025-02-03T00:30:00").toInstant(ZoneOffset.ofHours(1)),
+                endTime =
+                    LocalDateTime.parse("2025-02-03T00:35:00").toInstant(ZoneOffset.ofHours(1)),
+                startZoneOffset = ZoneOffset.ofHours(1),
+                endZoneOffset = ZoneOffset.ofHours(1),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("first.hour.offset1"),
+                    ),
+                transFat = 5.grams,
+            )
+        )
+
+        aggregator.filterAndAggregate(
+            NutritionRecord(
+                startTime =
+                    LocalDateTime.parse("2025-02-03T01:20:00").toInstant(ZoneOffset.ofHours(2)),
+                endTime =
+                    LocalDateTime.parse("2025-02-03T01:25:00").toInstant(ZoneOffset.ofHours(2)),
+                startZoneOffset = ZoneOffset.ofHours(2),
+                endZoneOffset = ZoneOffset.ofHours(2),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("second.hour.offset2"),
+                    ),
+                transFat = 50.grams,
+            )
+        )
+
+        aggregator.filterAndAggregate(
+            NutritionRecord(
+                startTime =
+                    LocalDateTime.parse("2025-02-03T01:10:00").toInstant(ZoneOffset.ofHours(3)),
+                endTime =
+                    LocalDateTime.parse("2025-02-03T01:15:00").toInstant(ZoneOffset.ofHours(3)),
+                startZoneOffset = ZoneOffset.ofHours(3),
+                endZoneOffset = ZoneOffset.ofHours(3),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("second.hour.offset3"),
+                    ),
+                transFat = 500.grams,
+            )
+        )
+
+        assertThat(aggregator.getResult())
+            .containsExactly(
+                AggregationResultGroupedByDurationWithMinTime(
+                    aggregationResultGroupedByDuration =
+                        AggregationResultGroupedByDuration(
+                            result = aggregationResult(500.grams, "second.hour.offset3"),
+                            startTime =
+                                LocalDateTime.parse("2025-02-03T01:00:00")
+                                    .toInstant(ZoneOffset.ofHours(3)),
+                            endTime =
+                                LocalDateTime.parse("2025-02-03T02:00:00")
+                                    .toInstant(ZoneOffset.ofHours(3)),
+                            zoneOffset = ZoneOffset.ofHours(3),
+                        ),
+                    minTime =
+                        LocalDateTime.parse("2025-02-03T01:10:00").toInstant(ZoneOffset.ofHours(3)),
+                ),
+                AggregationResultGroupedByDurationWithMinTime(
+                    aggregationResultGroupedByDuration =
+                        AggregationResultGroupedByDuration(
+                            result =
+                                aggregationResult(
+                                    55.grams,
+                                    "first.hour.offset1",
+                                    "second.hour.offset2",
+                                ),
+                            startTime =
+                                LocalDateTime.parse("2025-02-03T01:00:00")
+                                    .toInstant(ZoneOffset.ofHours(2)),
+                            endTime =
+                                LocalDateTime.parse("2025-02-03T02:00:00")
+                                    .toInstant(ZoneOffset.ofHours(2)),
+                            zoneOffset = ZoneOffset.ofHours(2),
+                        ),
+                    minTime =
+                        LocalDateTime.parse("2025-02-03T01:20:00").toInstant(ZoneOffset.ofHours(2)),
+                ),
+            )
+    }
+
+    @Test
     fun getResult_filterShorterThanDuration_singleBucket() {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 InstantTimeRange(Instant.ofEpochMilli(100), Instant.ofEpochMilli(1000)),
-                bucketDuration = Duration.ofHours(1)
+                bucketDuration = Duration.ofHours(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -56,8 +229,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(1000),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                transFat = 5.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                transFat = 5.grams,
             )
         )
 
@@ -69,9 +246,9 @@ class ResultGroupByDurationAggregatorTest {
                             result = aggregationResult(5.grams, "some.package"),
                             startTime = Instant.ofEpochMilli(100),
                             endTime = Instant.ofEpochMilli(1000),
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = Instant.ofEpochMilli(100)
+                    minTime = Instant.ofEpochMilli(100),
                 )
             )
     }
@@ -84,7 +261,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 InstantTimeRange(filterStartTime, filterEndTime),
-                bucketDuration = Duration.ofHours(1)
+                bucketDuration = Duration.ofHours(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -95,8 +272,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = filterEndTime.plus(Duration.ofHours(1)),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                transFat = 20.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                transFat = 20.grams,
             )
         )
 
@@ -112,9 +293,9 @@ class ResultGroupByDurationAggregatorTest {
                             result = bucketResult,
                             startTime = filterStartTime,
                             endTime = filterStartTime.plus(Duration.ofHours(1)),
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = filterStartTime.minus(Duration.ofHours(1))
+                    minTime = filterStartTime.minus(Duration.ofHours(1)),
                 ),
                 AggregationResultGroupedByDurationWithMinTime(
                     aggregationResultGroupedByDuration =
@@ -122,10 +303,10 @@ class ResultGroupByDurationAggregatorTest {
                             result = bucketResult,
                             startTime = filterStartTime.plus(Duration.ofHours(1)),
                             endTime = filterEndTime,
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = filterStartTime.minus(Duration.ofHours(1))
-                )
+                    minTime = filterStartTime.minus(Duration.ofHours(1)),
+                ),
             )
     }
 
@@ -137,7 +318,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 InstantTimeRange(filterStartTime, filterEndTime),
-                bucketDuration = Duration.ofMinutes(1)
+                bucketDuration = Duration.ofMinutes(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -149,8 +330,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(99),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("out.package")),
-                transFat = 10.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("out.package"),
+                    ),
+                transFat = 10.grams,
             )
         )
 
@@ -161,8 +346,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = filterStartTime.plus(Duration.ofMinutes(1)).plusMillis(100),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("bucket_1.package")),
-                transFat = 10.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("bucket_1.package"),
+                    ),
+                transFat = 10.grams,
             )
         )
 
@@ -173,8 +362,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = filterStartTime.plus(Duration.ofMinutes(2)).plusMillis(100),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("bucket_2.package")),
-                transFat = 100.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("bucket_2.package"),
+                    ),
+                transFat = 100.grams,
             )
         )
 
@@ -185,8 +378,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = filterStartTime.plus(Duration.ofMinutes(2)).plusSeconds(30),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("buckets_1_2.package")),
-                transFat = 1.kilograms
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("buckets_1_2.package"),
+                    ),
+                transFat = 1.kilograms,
             )
         )
 
@@ -197,8 +394,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = filterStartTime.plus(Duration.ofMinutes(5)).plusSeconds(45),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("bucket_4.package")),
-                transFat = 10.kilograms
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("bucket_4.package"),
+                    ),
+                transFat = 10.kilograms,
             )
         )
 
@@ -211,13 +412,13 @@ class ResultGroupByDurationAggregatorTest {
                                 aggregationResult(
                                     510.grams,
                                     "bucket_1.package",
-                                    "buckets_1_2.package"
+                                    "buckets_1_2.package",
                                 ),
                             startTime = filterStartTime.plus(Duration.ofMinutes(1)),
                             endTime = filterStartTime.plus(Duration.ofMinutes(2)),
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = filterStartTime.plus(Duration.ofMinutes(1)).plusMillis(1)
+                    minTime = filterStartTime.plus(Duration.ofMinutes(1)).plusMillis(1),
                 ),
                 AggregationResultGroupedByDurationWithMinTime(
                     aggregationResultGroupedByDuration =
@@ -226,13 +427,13 @@ class ResultGroupByDurationAggregatorTest {
                                 aggregationResult(
                                     600.grams,
                                     "bucket_2.package",
-                                    "buckets_1_2.package"
+                                    "buckets_1_2.package",
                                 ),
                             startTime = filterStartTime.plus(Duration.ofMinutes(2)),
                             endTime = filterStartTime.plus(Duration.ofMinutes(3)),
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = filterStartTime.plus(Duration.ofMinutes(1)).plusSeconds(30)
+                    minTime = filterStartTime.plus(Duration.ofMinutes(1)).plusSeconds(30),
                 ),
                 AggregationResultGroupedByDurationWithMinTime(
                     aggregationResultGroupedByDuration =
@@ -240,9 +441,9 @@ class ResultGroupByDurationAggregatorTest {
                             result = aggregationResult(2.5.kilograms, "bucket_4.package"),
                             startTime = filterStartTime.plus(Duration.ofMinutes(4)),
                             endTime = filterStartTime.plus(Duration.ofMinutes(5)),
-                            zoneOffset = ZoneOffset.UTC
+                            zoneOffset = ZoneOffset.UTC,
                         ),
-                    minTime = filterStartTime.plus(Duration.ofMinutes(4)).plusSeconds(45)
+                    minTime = filterStartTime.plus(Duration.ofMinutes(4)).plusSeconds(45),
                 ),
             )
     }
@@ -252,7 +453,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 createInstantTimeRange(TimeRangeFilter.after(Instant.ofEpochMilli(1))),
-                bucketDuration = Duration.ofHours(1)
+                bucketDuration = Duration.ofHours(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -263,8 +464,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(2000),
                 startZoneOffset = ZoneOffset.ofHours(2),
                 endZoneOffset = ZoneOffset.ofHours(3),
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                transFat = 10.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                transFat = 10.grams,
             )
         )
 
@@ -274,8 +479,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(3000),
                 startZoneOffset = ZoneOffset.ofHours(1),
                 endZoneOffset = ZoneOffset.ofHours(6),
-                metadata = Metadata(dataOrigin = DataOrigin("some.other.package")),
-                transFat = 20.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.other.package"),
+                    ),
+                transFat = 20.grams,
             )
         )
 
@@ -285,8 +494,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(2001),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("yet.some.other.package")),
-                transFat = 30.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("yet.some.other.package"),
+                    ),
+                transFat = 30.grams,
             )
         )
 
@@ -302,11 +515,11 @@ class ResultGroupByDurationAggregatorTest {
                                     60.grams,
                                     "some.package",
                                     "some.other.package",
-                                    "yet.some.other.package"
+                                    "yet.some.other.package",
                                 ),
-                            zoneOffset = ZoneOffset.ofHours(1)
+                            zoneOffset = ZoneOffset.ofHours(1),
                         ),
-                    minTime = Instant.ofEpochMilli(100)
+                    minTime = Instant.ofEpochMilli(100),
                 )
             )
     }
@@ -316,7 +529,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 createInstantTimeRange(TimeRangeFilter.after(Instant.ofEpochMilli(110))),
-                bucketDuration = Duration.ofHours(1)
+                bucketDuration = Duration.ofHours(1),
             ) {
                 SeriesAggregationProcessor(SpeedRecord::class, setOf(SpeedRecord.SPEED_MAX), it)
             }
@@ -327,8 +540,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(2000),
                 startZoneOffset = ZoneOffset.ofHours(2),
                 endZoneOffset = ZoneOffset.ofHours(3),
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                samples = emptyList()
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                samples = emptyList(),
             )
         )
 
@@ -338,12 +555,16 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(3000),
                 startZoneOffset = ZoneOffset.ofHours(1),
                 endZoneOffset = ZoneOffset.ofHours(6),
-                metadata = Metadata(dataOrigin = DataOrigin("some.other.package")),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.other.package"),
+                    ),
                 samples =
                     listOf(
                         SpeedRecord.Sample(Instant.ofEpochMilli(100), 20.kilometersPerHour),
-                        SpeedRecord.Sample(Instant.ofEpochMilli(120), 15.kilometersPerHour)
-                    )
+                        SpeedRecord.Sample(Instant.ofEpochMilli(120), 15.kilometersPerHour),
+                    ),
             )
         )
 
@@ -353,9 +574,13 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(2001),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("yet.some.other.package")),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("yet.some.other.package"),
+                    ),
                 samples =
-                    listOf(SpeedRecord.Sample(Instant.ofEpochMilli(156), 34.kilometersPerHour))
+                    listOf(SpeedRecord.Sample(Instant.ofEpochMilli(156), 34.kilometersPerHour)),
             )
         )
 
@@ -377,12 +602,12 @@ class ResultGroupByDurationAggregatorTest {
                                     dataOrigins =
                                         setOf(
                                             DataOrigin("some.other.package"),
-                                            DataOrigin("yet.some.other.package")
-                                        )
+                                            DataOrigin("yet.some.other.package"),
+                                        ),
                                 ),
-                            zoneOffset = ZoneOffset.ofHours(1)
+                            zoneOffset = ZoneOffset.ofHours(1),
                         ),
-                    minTime = Instant.ofEpochMilli(120)
+                    minTime = Instant.ofEpochMilli(120),
                 )
             )
     }
@@ -392,7 +617,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 createInstantTimeRange(TimeRangeFilter.after(Instant.ofEpochMilli(100))),
-                bucketDuration = Duration.ofMinutes(1)
+                bucketDuration = Duration.ofMinutes(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -403,8 +628,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(1000),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                transFat = 5.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                transFat = 5.grams,
             )
         )
 
@@ -416,7 +645,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 createInstantTimeRange(TimeRangeFilter.after(Instant.ofEpochMilli(100))),
-                bucketDuration = Duration.ofMinutes(1)
+                bucketDuration = Duration.ofMinutes(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -427,7 +656,11 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(1000),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
             )
         )
 
@@ -439,7 +672,7 @@ class ResultGroupByDurationAggregatorTest {
         val aggregator =
             ResultGroupedByDurationAggregator(
                 InstantTimeRange(Instant.ofEpochMilli(100), Instant.ofEpochMilli(200)),
-                bucketDuration = Duration.ofMinutes(1)
+                bucketDuration = Duration.ofMinutes(1),
             ) {
                 TransFatTotalAggregationProcessor(it)
             }
@@ -450,8 +683,12 @@ class ResultGroupByDurationAggregatorTest {
                 endTime = Instant.ofEpochMilli(1000).plus(Duration.ofMinutes(10)),
                 startZoneOffset = ZoneOffset.UTC,
                 endZoneOffset = ZoneOffset.UTC,
-                metadata = Metadata(dataOrigin = DataOrigin("some.package")),
-                transFat = 5.grams
+                metadata =
+                    Metadata(
+                        recordingMethod = RECORDING_METHOD_MANUAL_ENTRY,
+                        dataOrigin = DataOrigin("some.package"),
+                    ),
+                transFat = 5.grams,
             )
         )
 
@@ -464,7 +701,7 @@ class ResultGroupByDurationAggregatorTest {
                 longValues = emptyMap(),
                 doubleValues =
                     mapOf(NutritionRecord.TRANS_FAT_TOTAL.metricKey to transFatTotalMass.inGrams),
-                dataOrigins = packageNames.map { DataOrigin(it) }.toSet()
+                dataOrigins = packageNames.map { DataOrigin(it) }.toSet(),
             )
     }
 }

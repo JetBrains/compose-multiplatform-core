@@ -46,75 +46,72 @@ private val RECORDS_TO_AGGREGATE_METRICS_INFO_MAP =
             AggregateMetricsInfo(
                 averageMetric = CyclingPedalingCadenceRecord.RPM_AVG,
                 maxMetric = CyclingPedalingCadenceRecord.RPM_MAX,
-                minMetric = CyclingPedalingCadenceRecord.RPM_MIN
+                minMetric = CyclingPedalingCadenceRecord.RPM_MIN,
             ),
         SpeedRecord::class to
             AggregateMetricsInfo(
                 averageMetric = SpeedRecord.SPEED_AVG,
                 maxMetric = SpeedRecord.SPEED_MAX,
-                minMetric = SpeedRecord.SPEED_MIN
+                minMetric = SpeedRecord.SPEED_MIN,
             ),
         StepsCadenceRecord::class to
             AggregateMetricsInfo(
                 averageMetric = StepsCadenceRecord.RATE_AVG,
                 maxMetric = StepsCadenceRecord.RATE_MAX,
-                minMetric = StepsCadenceRecord.RATE_MIN
-            )
+                minMetric = StepsCadenceRecord.RATE_MIN,
+            ),
     )
 
-internal suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRecord(
-    recordType: KClass<T>,
+internal suspend inline fun <reified T : SeriesRecord<*>> HealthConnectClient.aggregateSeries(
     aggregateRequest: AggregateRequest
 ): AggregationResult {
     val timeRange = createTimeRange(aggregateRequest.timeRangeFilter)
     return aggregate(
         ReadRecordsRequest(
-            recordType,
+            T::class,
             aggregateRequest.timeRangeFilter.withBufferedStart(),
-            aggregateRequest.dataOriginFilter
+            aggregateRequest.dataOriginFilter,
         ),
         ResultAggregator(
             timeRange,
-            SeriesAggregationProcessor(recordType, aggregateRequest.metrics, timeRange)
-        )
+            SeriesAggregationProcessor(T::class, aggregateRequest.metrics, timeRange),
+        ),
     )
 }
 
-internal suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRecord(
-    recordType: KClass<T>,
+internal suspend inline fun <reified T : SeriesRecord<*>> HealthConnectClient.aggregateSeries(
     aggregateRequest: AggregateGroupByPeriodRequest
 ): List<AggregationResultGroupedByPeriod> {
     return aggregate(
         ReadRecordsRequest(
-            recordType,
+            T::class,
             aggregateRequest.timeRangeFilter.withBufferedStart(),
-            aggregateRequest.dataOriginFilter
+            aggregateRequest.dataOriginFilter,
         ),
         ResultGroupedByPeriodAggregator(
             createLocalTimeRange(aggregateRequest.timeRangeFilter),
-            aggregateRequest.timeRangeSlicer
+            aggregateRequest.timeRangeSlicer,
         ) {
-            SeriesAggregationProcessor(recordType, aggregateRequest.metrics, it)
-        }
+            SeriesAggregationProcessor(T::class, aggregateRequest.metrics, it)
+        },
     )
 }
 
-internal suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRecord(
-    recordType: KClass<T>,
+internal suspend inline fun <reified T : SeriesRecord<*>> HealthConnectClient.aggregateSeries(
     aggregateRequest: AggregateGroupByDurationRequest
 ): List<AggregationResultGroupedByDurationWithMinTime> {
     return aggregate(
         ReadRecordsRequest(
-            recordType,
+            T::class,
             aggregateRequest.timeRangeFilter.withBufferedStart(),
-            aggregateRequest.dataOriginFilter
+            aggregateRequest.dataOriginFilter,
         ),
         ResultGroupedByDurationAggregator(
-            createInstantTimeRange(aggregateRequest.timeRangeFilter),
-            aggregateRequest.timeRangeSlicer
+            createTimeRange(aggregateRequest.timeRangeFilter),
+            aggregateRequest.timeRangeSlicer,
         ) {
-            SeriesAggregationProcessor(recordType, aggregateRequest.metrics, it)
-        }
+            SeriesAggregationProcessor(T::class, aggregateRequest.metrics, it)
+        },
     )
 }
 
@@ -174,5 +171,5 @@ internal class SeriesAggregationProcessor<T : SeriesRecord<*>>(
 internal data class AggregateMetricsInfo<T : Any>(
     val averageMetric: AggregateMetric<T>,
     val minMetric: AggregateMetric<T>,
-    val maxMetric: AggregateMetric<T>
+    val maxMetric: AggregateMetric<T>,
 )

@@ -27,6 +27,8 @@ import androidx.compose.ui.node.LayoutNode.LayoutState.LookaheadMeasuring
 import androidx.compose.ui.node.LayoutNode.LayoutState.Measuring
 import androidx.compose.ui.node.LayoutNode.UsageByParent.InLayoutBlock
 import androidx.compose.ui.node.LayoutNode.UsageByParent.InMeasureBlock
+import androidx.compose.ui.node.LayoutNode.UsageByParent.NotUsed
+import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
 import androidx.compose.ui.unit.Constraints
 
 /**
@@ -87,6 +89,8 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
 
     private var rootConstraints: Constraints? = null
 
+    internal var uncaughtExceptionHandler: UncaughtExceptionHandler? = null
+
     /** @param constraints The constraints to measure the root [LayoutNode] with */
     fun updateRootConstraints(constraints: Constraints) {
         if (rootConstraints != constraints) {
@@ -98,7 +102,14 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                 root.markLookaheadMeasurePending()
             }
             root.markMeasurePending()
-            relayoutNodes.add(root, root.lookaheadRoot != null)
+            relayoutNodes.add(
+                root,
+                if (root.lookaheadRoot != null) {
+                    Invalidation.LookaheadMeasurement
+                } else {
+                    Invalidation.Measurement
+                },
+            )
         }
     }
 
@@ -161,12 +172,12 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                                 layoutNode.canAffectParentInLookahead) &&
                                 layoutNode.parent?.lookaheadMeasurePending != true
                         ) {
-                            relayoutNodes.add(layoutNode, true)
+                            relayoutNodes.add(layoutNode, Invalidation.LookaheadMeasurement)
                         } else if (
                             (layoutNode.isPlaced || layoutNode.canAffectPlacedParent) &&
                                 layoutNode.parent?.measurePending != true
                         ) {
-                            relayoutNodes.add(layoutNode, false)
+                            relayoutNodes.add(layoutNode, Invalidation.Measurement)
                         }
                         !duringFullMeasureLayoutPass
                     }
@@ -213,7 +224,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     } else {
                         if (layoutNode.isPlaced || layoutNode.canAffectPlacedParent) {
                             if (layoutNode.parent?.measurePending != true) {
-                                relayoutNodes.add(layoutNode, false)
+                                relayoutNodes.add(layoutNode, Invalidation.Measurement)
                             }
                             !duringFullMeasureLayoutPass
                         } else {
@@ -268,13 +279,13 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                                 parent?.lookaheadMeasurePending != true &&
                                 parent?.lookaheadLayoutPending != true
                         ) {
-                            relayoutNodes.add(layoutNode, true)
+                            relayoutNodes.add(layoutNode, Invalidation.LookaheadPlacement)
                         } else if (
                             layoutNode.isPlaced &&
                                 parent?.layoutPending != true &&
                                 parent?.measurePending != true
                         ) {
-                            relayoutNodes.add(layoutNode, false)
+                            relayoutNodes.add(layoutNode, Invalidation.Placement)
                         }
                         !duringFullMeasureLayoutPass
                     }
@@ -322,7 +333,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     } else {
                         if (layoutNode.isPlacedByParent && parentIsPlaced) {
                             if (parent?.layoutPending != true && parent?.measurePending != true) {
-                                relayoutNodes.add(layoutNode, false)
+                                relayoutNodes.add(layoutNode, Invalidation.Placement)
                             }
                             !duringFullMeasureLayoutPass
                         } else {
@@ -386,8 +397,21 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         var rootNodeResized = false
         performMeasureAndLayout(fullPass = true) {
             if (relayoutNodes.isNotEmpty()) {
-                relayoutNodes.popEach { layoutNode, affectsLookahead ->
-                    val sizeChanged = remeasureAndRelayoutIfNeeded(layoutNode, affectsLookahead)
+                relayoutNodes.popEach { layoutNode, affectsLookahead, relayoutNeeded ->
+                    val sizeChanged =
+                        remeasureAndRelayoutIfNeeded(layoutNode, affectsLookahead, relayoutNeeded)
+                    if (!relayoutNeeded) {
+                        // If relayout is deferred, it means we are invalidating measurements that
+                        // could affect lookahead. We need to make sure any placement invalidation
+                        // from measure/lookaheadMeasure of the layoutNode above is tracked and
+                        // properly deferred.
+                        if (layoutNode.lookaheadLayoutPending) {
+                            relayoutNodes.add(layoutNode, Invalidation.LookaheadPlacement)
+                        }
+                        if (layoutNode.layoutPending) {
+                            relayoutNodes.add(layoutNode, Invalidation.Placement)
+                        }
+                    }
                     if (layoutNode === root && sizeChanged) {
                         rootNodeResized = true
                     }
@@ -406,7 +430,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     fun measureOnly() {
         if (relayoutNodes.isNotEmpty()) {
             performMeasureAndLayout(fullPass = false) {
-                if (!relayoutNodes.isEmpty(affectsLookahead = true)) {
+                if (relayoutNodes.affectsLookaheadMeasure) {
                     if (root.lookaheadRoot != null) {
                         // This call will walk the tree to look for lookaheadMeasurePending nodes
                         // and
@@ -426,7 +450,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
 
     private fun remeasureLookaheadRootsInSubtree(layoutNode: LayoutNode) {
         layoutNode.forEachChild {
-            if (it.measureAffectsParent) {
+            if (it.remeasureCanAffectParentSize) {
                 if (it.isOutMostLookaheadRoot) {
                     // This call will walk the subtree to look for lookaheadMeasurePending nodes and
                     // do a recursive lookahead remeasure starting at the root.
@@ -500,6 +524,8 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
             duringFullMeasureLayoutPass = fullPass
             try {
                 block()
+            } catch (t: Throwable) {
+                uncaughtExceptionHandler?.onUncaughtException(t) ?: throw t
             } finally {
                 duringMeasureLayout = false
                 duringFullMeasureLayoutPass = false
@@ -535,7 +561,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     private fun remeasureAndRelayoutIfNeeded(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean = true,
-        relayoutNeeded: Boolean = true
+        relayoutNeeded: Boolean = true,
     ): Boolean {
         var sizeChanged = false
         if (layoutNode.isDeactivated) {
@@ -603,12 +629,12 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     if (!request.isLookahead) {
                         request.node.requestRemeasure(
                             forceRequest = request.isForced,
-                            invalidateIntrinsics = false
+                            invalidateIntrinsics = false,
                         )
                     } else {
                         request.node.requestLookaheadRemeasure(
                             forceRequest = request.isForced,
-                            invalidateIntrinsics = false
+                            invalidateIntrinsics = false,
                         )
                     }
                 }
@@ -668,8 +694,8 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         layoutNode.forEachChild { child ->
             // only proceed if child's size can affect the parent size
             if (
-                !affectsLookahead && child.measureAffectsParent ||
-                    affectsLookahead && child.measureAffectsParentLookahead
+                !affectsLookahead && child.remeasureCanAffectParentSize ||
+                    affectsLookahead && child.lookaheadRemeasureCanAffectParentSize
             ) {
                 // When LookaheadRoot's parent gets forceMeasureSubtree call, we need to check
                 // both lookahead invalidation and non-lookahead invalidation, just like a measure()
@@ -716,7 +742,9 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         if (forceDispatch) {
             onPositionedDispatcher.onRootNodePositioned(root)
         }
-        onPositionedDispatcher.dispatch()
+        if (onPositionedDispatcher.isNotEmpty()) {
+            onPositionedDispatcher.dispatch()
+        }
     }
 
     /**
@@ -728,17 +756,18 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         onPositionedDispatcher.remove(node)
     }
 
-    private val LayoutNode.measureAffectsParent
+    private val LayoutNode.remeasureCanAffectParentSize: Boolean
         get() =
-            (measuredByParent == InMeasureBlock ||
-                layoutDelegate.alignmentLinesOwner.alignmentLines.required)
+            measuredByParent == InMeasureBlock ||
+                layoutDelegate.alignmentLinesOwner.alignmentLines.required
 
-    /** Checks if there is a placed parent which size we can theoretically affect by remeasuring. */
-    private val LayoutNode.measureAffectsPlacedParent: Boolean
+    /** Checks if there is a placed parent which is using the measured size of this node. */
+    private val LayoutNode.measuredByPlacedParent: Boolean
         get() {
             var node = this
             while (
-                node.measureAffectsParent ||
+                node.measuredByParent != NotUsed ||
+                    node.layoutDelegate.alignmentLinesOwner.alignmentLines.required ||
                     // if the parent is currently measuring, then measuredByParent on children was
                     // reset to NotUsed beforehand and does not represent the real usage.
                     node.parent?.layoutState == Measuring
@@ -753,12 +782,15 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         }
 
     private val LayoutNode.canAffectPlacedParent
-        get() = measurePending && measureAffectsPlacedParent
+        get() = measurePending && measuredByPlacedParent
 
     private val LayoutNode.canAffectParentInLookahead
-        get() = lookaheadMeasurePending && measureAffectsParentLookahead
+        get() =
+            lookaheadMeasurePending &&
+                (measuredByParentInLookahead != NotUsed ||
+                    layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)
 
-    private val LayoutNode.measureAffectsParentLookahead
+    private val LayoutNode.lookaheadRemeasureCanAffectParentSize
         get() =
             (measuredByParentInLookahead == InMeasureBlock ||
                 layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)
@@ -767,4 +799,11 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         if (affectsLookahead) lookaheadMeasurePending else measurePending
 
     class PostponedRequest(val node: LayoutNode, val isLookahead: Boolean, val isForced: Boolean)
+}
+
+internal enum class Invalidation {
+    LookaheadMeasurement,
+    LookaheadPlacement,
+    Measurement,
+    Placement,
 }

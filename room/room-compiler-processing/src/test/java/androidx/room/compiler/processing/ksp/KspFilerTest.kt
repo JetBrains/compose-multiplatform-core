@@ -181,8 +181,9 @@ class KspFilerTest {
                 .bufferedWriter(Charsets.UTF_8)
                 .use { it.write("Not a real service...") }
             invocation.assertCompilationResult {
-                generatedResourceFileWithPath(logFileName)
-                generatedResourceFileWithPath(serviceFileName)
+                generatedTextResourceFileWithPath(logFileName).isEqualTo("Hello!")
+                generatedTextResourceFileWithPath(serviceFileName)
+                    .isEqualTo("Not a real service...")
                 hasNoWarnings()
             }
         }
@@ -200,7 +201,7 @@ class KspFilerTest {
             msg: String,
             element: XElement?,
             annotation: XAnnotation?,
-            annotationValue: XAnnotationValue?
+            annotationValue: XAnnotationValue?,
         ) {
             var errorMsg =
                 "${kind.name} element: $element " +
@@ -227,7 +228,7 @@ class KspFilerTest {
             sources: List<KSFile>,
             packageName: String,
             fileName: String,
-            extensionName: String
+            extensionName: String,
         ) {
             // no-op for the sake of dependency tracking.
         }
@@ -236,7 +237,7 @@ class KspFilerTest {
             classes: List<KSClassDeclaration>,
             packageName: String,
             fileName: String,
-            extensionName: String
+            extensionName: String,
         ) {
             classDependencies.getOrPut(fileName) { mutableSetOf() }.addAll(classes)
         }
@@ -245,7 +246,7 @@ class KspFilerTest {
             dependencies: Dependencies,
             packageName: String,
             fileName: String,
-            extensionName: String
+            extensionName: String,
         ): OutputStream {
             fileDependencies[fileName] = dependencies
             return OutputStream.nullOutputStream()
@@ -258,7 +259,7 @@ class KspFilerTest {
         override fun createNewFileByPath(
             dependencies: Dependencies,
             path: String,
-            extensionName: String
+            extensionName: String,
         ): OutputStream {
             val fileName = path.split(File.separator).last()
             fileDependencies[fileName] = dependencies
@@ -275,7 +276,7 @@ class KspFilerTest {
 
                 class Baz
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 }

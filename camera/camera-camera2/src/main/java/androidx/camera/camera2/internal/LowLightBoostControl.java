@@ -44,6 +44,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of low-light boost control used within CameraControl and CameraInfo.
@@ -60,6 +61,8 @@ final class LowLightBoostControl {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     private final Camera2CameraControlImpl mCamera2CameraControlImpl;
     private final MutableLiveData<Integer> mLowLightBoostState;
+    private final AtomicInteger mLowLightBoostStateAtomic = new AtomicInteger(
+            LowLightBoostState.OFF);
     private final boolean mIsLowLightBoostSupported;
     private final Object mLock = new Object();
     @GuardedBy("mLock")
@@ -302,11 +305,13 @@ final class LowLightBoostControl {
         return false;
     }
 
-    private <T> void setLiveDataValue(@NonNull MutableLiveData<T> liveData, T value) {
-        if (Threads.isMainThread()) {
-            liveData.setValue(value);
-        } else {
-            liveData.postValue(value);
+    private void setLiveDataValue(@NonNull MutableLiveData<Integer> liveData, int value) {
+        if (mLowLightBoostStateAtomic.getAndSet(value) != value) {
+            if (Threads.isMainThread()) {
+                liveData.setValue(value);
+            } else {
+                liveData.postValue(value);
+            }
         }
     }
 }

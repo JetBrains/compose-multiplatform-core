@@ -78,7 +78,7 @@ class StaticLayoutFactoryTest {
                 paint = TextPaint(),
                 width = Int.MAX_VALUE,
                 start = start,
-                end = end
+                end = end,
             )
 
         // width Int.MAX_VALUE therefore should be only one line
@@ -112,7 +112,7 @@ class StaticLayoutFactoryTest {
                 text = "",
                 paint = TextPaint(),
                 width = Int.MAX_VALUE,
-                textDir = textDir
+                textDir = textDir,
             )
 
         assertThat(staticLayout.getParagraphDirection(0)).isEqualTo(Layout.DIR_RIGHT_TO_LEFT)
@@ -140,7 +140,7 @@ class StaticLayoutFactoryTest {
                 text = "",
                 paint = TextPaint(),
                 width = Int.MAX_VALUE,
-                alignment = align
+                alignment = align,
             )
 
         assertThat(staticLayout.alignment).isEqualTo(align)
@@ -168,7 +168,7 @@ class StaticLayoutFactoryTest {
                 paint = paint,
                 width = width,
                 ellipsize = TextUtils.TruncateAt.END,
-                ellipsizedWidth = ellipsizedWidth
+                ellipsizedWidth = ellipsizedWidth,
             )
 
         // Ellipsized char in the first line should be zero
@@ -191,7 +191,7 @@ class StaticLayoutFactoryTest {
                 width = width,
                 maxLines = 1,
                 ellipsize = TextUtils.TruncateAt.END,
-                ellipsizedWidth = ellipsizedWidth
+                ellipsizedWidth = ellipsizedWidth,
             )
 
         assertThat(staticLayout.getEllipsisCount(0)).isGreaterThan(0)
@@ -205,7 +205,7 @@ class StaticLayoutFactoryTest {
                 text = "",
                 paint = TextPaint(),
                 width = Int.MAX_VALUE,
-                lineSpacingMultiplier = lineSpacingMultiplier
+                lineSpacingMultiplier = lineSpacingMultiplier,
             )
 
         assertThat(staticLayout.spacingMultiplier).isEqualTo(lineSpacingMultiplier)
@@ -227,7 +227,7 @@ class StaticLayoutFactoryTest {
                 text = "",
                 paint = TextPaint(),
                 width = Int.MAX_VALUE,
-                lineSpacingExtra = lineSpacingExtra
+                lineSpacingExtra = lineSpacingExtra,
             )
 
         assertThat(staticLayout.spacingAdd).isEqualTo(lineSpacingExtra)
@@ -255,7 +255,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = width,
-                justificationMode = Layout.JUSTIFICATION_MODE_NONE
+                justificationMode = Layout.JUSTIFICATION_MODE_NONE,
             )
 
         // Last line won't be justified, need two lines.
@@ -279,7 +279,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = width,
-                justificationMode = Layout.JUSTIFICATION_MODE_INTER_WORD
+                justificationMode = Layout.JUSTIFICATION_MODE_INTER_WORD,
             )
 
         // Last line won't be justified, need two lines.
@@ -322,7 +322,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = Int.MAX_VALUE,
-                includePadding = true
+                includePadding = true,
             )
 
         val fontMetrics = paint.fontMetricsInt
@@ -340,7 +340,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = Int.MAX_VALUE,
-                includePadding = false
+                includePadding = false,
             )
 
         val fontMetrics = paint.fontMetricsInt
@@ -367,7 +367,7 @@ class StaticLayoutFactoryTest {
             text = "",
             paint = TextPaint(),
             width = 0,
-            breakStrategy = Layout.BREAK_STRATEGY_SIMPLE
+            breakStrategy = Layout.BREAK_STRATEGY_SIMPLE,
         )
     }
 
@@ -377,7 +377,7 @@ class StaticLayoutFactoryTest {
             text = "",
             paint = TextPaint(),
             width = 0,
-            breakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY
+            breakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY,
         )
     }
 
@@ -387,7 +387,7 @@ class StaticLayoutFactoryTest {
             text = "",
             paint = TextPaint(),
             width = 0,
-            breakStrategy = Layout.BREAK_STRATEGY_BALANCED
+            breakStrategy = Layout.BREAK_STRATEGY_BALANCED,
         )
     }
 
@@ -405,7 +405,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = width.toInt(),
-                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NONE
+                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NONE,
             )
 
         assertThat(staticLayout.getLineCount()).isEqualTo(2)
@@ -428,7 +428,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = width.toInt(),
-                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL
+                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL,
             )
 
         assertThat(staticLayout.getLineCount()).isEqualTo(2)
@@ -451,7 +451,7 @@ class StaticLayoutFactoryTest {
                 text = text,
                 paint = paint,
                 width = width.toInt(),
-                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_FULL
+                hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_FULL,
             )
 
         assertThat(staticLayout.getLineCount()).isEqualTo(2)
@@ -484,7 +484,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            start = -1
+            start = -1,
         )
     }
 
@@ -494,7 +494,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            start = "abc".length + 1
+            start = "abc".length + 1,
         )
     }
 
@@ -504,7 +504,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            end = -1
+            end = -1,
         )
     }
 
@@ -514,7 +514,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            end = "abc".length + 1
+            end = "abc".length + 1,
         )
     }
 
@@ -525,7 +525,7 @@ class StaticLayoutFactoryTest {
             paint = TextPaint(),
             width = Int.MAX_VALUE,
             start = 2,
-            end = 1
+            end = 1,
         )
     }
 
@@ -535,7 +535,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            maxLines = -1
+            maxLines = -1,
         )
     }
 
@@ -550,7 +550,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            ellipsizedWidth = -1
+            ellipsizedWidth = -1,
         )
     }
 
@@ -560,7 +560,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            lineSpacingMultiplier = -1f
+            lineSpacingMultiplier = -1f,
         )
     }
 
@@ -570,7 +570,7 @@ class StaticLayoutFactoryTest {
             text = "abc",
             paint = TextPaint(),
             width = Int.MAX_VALUE,
-            lineSpacingExtra = -1f
+            lineSpacingExtra = -1f,
         )
     }
 

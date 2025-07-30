@@ -23,8 +23,7 @@
  */
 
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -44,13 +43,12 @@ dependencies {
 
 android {
     compileSdk = 35
-    namespace "androidx.compose.ui.test.accessibility.samples"
+    namespace = "androidx.compose.ui.test.accessibility.samples"
 }
 
 androidx {
     name = "Compose Accessibility Testing Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2025"
     description = "Contains the sample code for the Androidx Compose UI Test Accessibility library"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

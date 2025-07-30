@@ -36,7 +36,7 @@ package androidx.room {
     method @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public <T> io.reactivex.Observable<T> createObservable(androidx.room.RoomDatabase database, String[] tableNames, java.util.concurrent.Callable<? extends T> callable);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public <T> io.reactivex.Single<T> createSingle(androidx.room.RoomDatabase db, boolean isReadOnly, boolean inTransaction, kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteConnection,? extends T?> block);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public <T> io.reactivex.Single<T> createSingle(java.util.concurrent.Callable<? extends T> callable);
-    property public final Object NOTHING;
+    property public Object NOTHING;
   }
 
 }

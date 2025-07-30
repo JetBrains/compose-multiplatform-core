@@ -1007,7 +1007,7 @@ dependencyResolutionManagement {
         mavenCentral()
         // Add this
         maven {
-            setUrl("<path-to-sdk>/out/repository/")
+            setUrl("<absolute-path-to-checkout>/out/repository/")
         }
     }
 }

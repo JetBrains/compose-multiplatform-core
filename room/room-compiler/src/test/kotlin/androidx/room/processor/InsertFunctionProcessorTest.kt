@@ -38,11 +38,11 @@ class InsertFunctionProcessorTest :
 
     override fun missingPrimaryKey(
         partialEntityName: String,
-        primaryKeyName: List<String>
+        primaryKeyName: List<String>,
     ): String {
         return ProcessorErrors.missingPrimaryKeysInPartialEntityForInsert(
             partialEntityName,
-            primaryKeyName
+            primaryKeyName,
         )
     }
 
@@ -88,7 +88,7 @@ class InsertFunctionProcessorTest :
                 Pair("ROLLBACK", 2),
                 Pair("ABORT", 3),
                 Pair("FAIL", 4),
-                Pair("IGNORE", 5)
+                Pair("IGNORE", 5),
             )
             .forEach { pair ->
                 singleInsertUpsertShortcutMethod(
@@ -105,7 +105,7 @@ class InsertFunctionProcessorTest :
     override fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): InsertFunction {
         return InsertFunctionProcessor(baseContext, containing, executableElement).process()
     }

@@ -19,7 +19,7 @@ package androidx.room.processor
 import androidx.room.Query
 import androidx.room.SkipQueryVerification
 import androidx.room.Transaction
-import androidx.room.compiler.processing.XAnnotationBox
+import androidx.room.compiler.processing.XAnnotation
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.isNotError
@@ -43,7 +43,7 @@ class QueryFunctionProcessor(
     baseContext: Context,
     val containing: XType,
     val executableElement: XMethodElement,
-    val dbVerifier: DatabaseVerifier? = null
+    val dbVerifier: DatabaseVerifier? = null,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -53,11 +53,11 @@ class QueryFunctionProcessor(
      * as a sub procedure in [InternalQueryProcessor].
      */
     fun process(): QueryFunction {
-        val annotation = executableElement.getAnnotation(Query::class)?.value
+        val annotation = executableElement.getAnnotation(Query::class)
         context.checker.check(
             annotation != null,
             executableElement,
-            ProcessorErrors.MISSING_QUERY_ANNOTATION
+            ProcessorErrors.MISSING_QUERY_ANNOTATION,
         )
 
         /**
@@ -70,9 +70,9 @@ class QueryFunctionProcessor(
                         context = it,
                         executableElement = executableElement,
                         dbVerifier = dbVerifier,
-                        containing = containing
+                        containing = containing,
                     )
-                    .processQuery(annotation?.value)
+                    .processQuery(annotation?.getAsString("value"))
             }
         // check if want to swap the query for a better one
         val finalResult =
@@ -89,7 +89,7 @@ class QueryFunctionProcessor(
                             context = context,
                             executableElement = executableElement,
                             dbVerifier = dbVerifier,
-                            containing = containing
+                            containing = containing,
                         )
                         .processQuery(finalQuery.original)
                 } else {
@@ -110,7 +110,7 @@ private class InternalQueryProcessor(
     val context: Context,
     val executableElement: XMethodElement,
     val containing: XType,
-    val dbVerifier: DatabaseVerifier? = null
+    val dbVerifier: DatabaseVerifier? = null,
 ) {
     fun processQuery(input: String?): QueryFunction {
         val delegate = FunctionProcessorDelegate.createFor(context, containing, executableElement)
@@ -121,7 +121,7 @@ private class InternalQueryProcessor(
         context.checker.check(
             !isSuspendFunction || !returnsDeferredType,
             executableElement,
-            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString())
+            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString()),
         )
 
         val query =
@@ -130,7 +130,7 @@ private class InternalQueryProcessor(
                 // if the target platforms include non-Android targets.
                 context.logger.e(
                     executableElement,
-                    ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID
+                    ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID,
                 )
                 // Early return so we don't generate redundant code.
                 ParsedQuery.MISSING
@@ -139,14 +139,14 @@ private class InternalQueryProcessor(
                 context.checker.check(
                     query.errors.isEmpty(),
                     executableElement,
-                    query.errors.joinToString("\n")
+                    query.errors.joinToString("\n"),
                 )
                 validateQuery(query)
                 context.checker.check(
                     returnType.isNotError(),
                     executableElement,
                     ProcessorErrors.CANNOT_RESOLVE_RETURN_TYPE,
-                    executableElement
+                    executableElement,
                 )
                 query
             } else {
@@ -156,7 +156,7 @@ private class InternalQueryProcessor(
         context.checker.notUnbound(
             returnType,
             executableElement,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_QUERY_FUNCTIONS
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_QUERY_FUNCTIONS,
         )
 
         val isPreparedQuery = PREPARED_TYPES.contains(query.type)
@@ -176,7 +176,7 @@ private class InternalQueryProcessor(
         if (missing.isNotEmpty()) {
             context.logger.e(
                 executableElement,
-                ProcessorErrors.missingParameterForBindVariable(missing)
+                ProcessorErrors.missingParameterForBindVariable(missing),
             )
         }
 
@@ -190,7 +190,7 @@ private class InternalQueryProcessor(
         if (unused.isNotEmpty()) {
             context.logger.e(
                 executableElement,
-                ProcessorErrors.unusedQueryFunctionParameter(unused)
+                ProcessorErrors.unusedQueryFunctionParameter(unused),
             )
         }
         return queryFunction
@@ -205,7 +205,7 @@ private class InternalQueryProcessor(
         if (query.resultInfo?.error != null) {
             context.logger.e(
                 executableElement,
-                DatabaseVerificationErrors.cannotVerifyQuery(query.resultInfo!!.error!!)
+                DatabaseVerificationErrors.cannotVerifyQuery(query.resultInfo!!.error!!),
             )
         }
     }
@@ -213,7 +213,7 @@ private class InternalQueryProcessor(
     private fun getPreparedQueryFunction(
         delegate: FunctionProcessorDelegate,
         returnType: XType,
-        query: ParsedQuery
+        query: ParsedQuery,
     ): WriteQueryFunction {
         val resultBinder = delegate.findPreparedResultBinder(returnType, query)
         context.checker.check(
@@ -221,8 +221,8 @@ private class InternalQueryProcessor(
             executableElement,
             ProcessorErrors.cannotFindPreparedQueryResultAdapter(
                 returnType.asTypeName().toString(context.codeLanguage),
-                query.type
-            )
+                query.type,
+            ),
         )
 
         val parameters = delegate.extractQueryParams(query)
@@ -231,7 +231,7 @@ private class InternalQueryProcessor(
             query = query,
             returnType = returnType,
             parameters = parameters,
-            preparedQueryResultBinder = resultBinder
+            preparedQueryResultBinder = resultBinder,
         )
     }
 
@@ -239,7 +239,7 @@ private class InternalQueryProcessor(
     private fun getQueryFunction(
         delegate: FunctionProcessorDelegate,
         returnType: XType,
-        query: ParsedQuery
+        query: ParsedQuery,
     ): QueryFunction {
         val resultBinder =
             delegate.findResultBinder(returnType, query) {
@@ -252,7 +252,7 @@ private class InternalQueryProcessor(
             executableElement,
             ProcessorErrors.cannotFindQueryResultAdapter(
                 returnType.asTypeName().toString(context.codeLanguage)
-            )
+            ),
         )
 
         val inTransaction = executableElement.hasAnnotation(Transaction::class)
@@ -266,7 +266,7 @@ private class InternalQueryProcessor(
                 context.logger.w(
                     Warning.RELATION_QUERY_WITHOUT_TRANSACTION,
                     executableElement,
-                    ProcessorErrors.TRANSACTION_MISSING_ON_RELATION
+                    ProcessorErrors.TRANSACTION_MISSING_ON_RELATION,
                 )
             }
         }
@@ -293,14 +293,14 @@ private class InternalQueryProcessor(
                     }
             if (unusedColumns.isNotEmpty() || pojoUnusedFields.isNotEmpty()) {
                 val warningMsg =
-                    ProcessorErrors.queryFieldDataClassMismatch(
+                    ProcessorErrors.queryPropertyDataClassMismatch(
                         dataClassTypeNames =
                             dataClassMappings.map {
                                 it.dataClass.typeName.toString(context.codeLanguage)
                             },
                         unusedColumns = unusedColumns,
                         allColumns = columnNames,
-                        dataClassUnusedFields = pojoUnusedFields,
+                        dataClassUnusedProperties = pojoUnusedFields,
                     )
                 context.logger.w(Warning.QUERY_MISMATCH, executableElement, warningMsg)
             }
@@ -314,7 +314,7 @@ private class InternalQueryProcessor(
             returnType = returnType,
             parameters = parameters,
             inTransaction = inTransaction,
-            queryResultBinder = resultBinder
+            queryResultBinder = resultBinder,
         )
     }
 
@@ -324,15 +324,15 @@ private class InternalQueryProcessor(
      */
     @Suppress("DEPRECATION") // Due to @MapInfo usage
     private fun processMapInfo(
-        mapInfoAnnotation: XAnnotationBox<androidx.room.MapInfo>,
+        mapInfoAnnotation: XAnnotation,
         query: ParsedQuery,
         queryExecutableElement: XMethodElement,
         adapterExtras: TypeAdapterExtras,
     ) {
-        val keyColumn = mapInfoAnnotation.value.keyColumn
-        val keyTable = mapInfoAnnotation.value.keyTable.ifEmpty { null }
-        val valueColumn = mapInfoAnnotation.value.valueColumn
-        val valueTable = mapInfoAnnotation.value.valueTable.ifEmpty { null }
+        val keyColumn = mapInfoAnnotation["keyColumn"]?.asString() ?: ""
+        val keyTable = mapInfoAnnotation["keyTable"]?.asString()?.ifEmpty { null }
+        val valueColumn = mapInfoAnnotation["valueColumn"]?.asString() ?: ""
+        val valueTable = mapInfoAnnotation["valueTable"]?.asString()?.ifEmpty { null }
 
         val resultTableAliases = query.tables.associate { it.name to it.alias }
         // Checks if this list of columns contains one with matching name and origin table.
@@ -351,7 +351,7 @@ private class InternalQueryProcessor(
         context.checker.check(
             keyColumn.isNotEmpty() || valueColumn.isNotEmpty(),
             queryExecutableElement,
-            ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED
+            ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED,
         )
 
         val resultColumns = query.resultInfo?.columns
@@ -359,22 +359,22 @@ private class InternalQueryProcessor(
         if (resultColumns != null) {
             context.checker.check(
                 keyColumn.isEmpty() || resultColumns.contains(keyColumn, keyTable),
-                queryExecutableElement
+                queryExecutableElement,
             ) {
                 cannotMapSpecifiedColumn(
                     (if (keyTable != null) "$keyTable." else "") + keyColumn,
                     resultColumns.map { it.name },
-                    androidx.room.MapInfo::class.java.simpleName
+                    androidx.room.MapInfo::class.java.simpleName,
                 )
             }
             context.checker.check(
                 valueColumn.isEmpty() || resultColumns.contains(valueColumn, valueTable),
-                queryExecutableElement
+                queryExecutableElement,
             ) {
                 cannotMapSpecifiedColumn(
                     (if (valueTable != null) "$valueTable." else "") + valueColumn,
                     resultColumns.map { it.name },
-                    androidx.room.MapInfo::class.java.simpleName
+                    androidx.room.MapInfo::class.java.simpleName,
                 )
             }
         }

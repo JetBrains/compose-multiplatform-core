@@ -37,7 +37,7 @@ object KotlinDefaultFunctionDelegateBinder {
         functionName: String,
         returnType: XType,
         parameterNames: List<String>,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.applyTo(CodeLanguage.JAVA) {
             val params = mutableListOf<Any>()

@@ -18,10 +18,9 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="m3_adaptive_default_pane_expansion_drag_handle_content_description" msgid="9058489142432490820">"పేన్‌ను విస్తరించడానికి లాగే హ్యాండిల్"</string>
+    <string name="m3_adaptive_default_pane_expansion_drag_handle_state_description" msgid="3470811934112444098">"ప్రస్తుత పేన్ విభజన, %s"</string>
     <string name="m3_adaptive_default_pane_expansion_drag_handle_action_description" msgid="9031621431415014327">"పేన్ విభజనను %s‌కు మార్చండి"</string>
     <string name="m3_adaptive_default_pane_expansion_proportion_anchor_description" msgid="1205294531112795522">"%d శాతం"</string>
-    <!-- no translation found for m3_adaptive_default_pane_expansion_start_offset_anchor_description (5056616348537665604) -->
-    <skip />
-    <!-- no translation found for m3_adaptive_default_pane_expansion_end_offset_anchor_description (6412636251656811002) -->
-    <skip />
+    <string name="m3_adaptive_default_pane_expansion_start_offset_anchor_description" msgid="5056616348537665604">"మొదటి నుండి %d DPలు"</string>
+    <string name="m3_adaptive_default_pane_expansion_end_offset_anchor_description" msgid="6412636251656811002">"చివరి నుండి %d DPలు"</string>
 </resources>

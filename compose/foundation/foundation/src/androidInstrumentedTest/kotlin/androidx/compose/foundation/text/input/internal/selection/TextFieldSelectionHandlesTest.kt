@@ -102,7 +102,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -117,7 +117,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp),
                 )
             }
 
@@ -146,7 +146,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -164,7 +164,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp),
                 )
             }
         }
@@ -188,7 +188,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                         textAlign = TextAlign.End,
                         letterSpacing = 1.2.sp,
                     ),
-                modifier = Modifier.testTag(TAG).fillMaxWidth()
+                modifier = Modifier.testTag(TAG).fillMaxWidth(),
             )
         }
 
@@ -211,7 +211,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp),
                 )
             }
         }
@@ -242,7 +242,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp),
                 )
             }
         }
@@ -273,7 +273,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 tfsState.value,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -305,7 +305,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -330,7 +330,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -356,7 +356,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -381,7 +381,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2),
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -412,7 +412,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp),
                 )
                 Box(modifier = Modifier.height(12.dp).width(400.dp))
             }
@@ -445,7 +445,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).height(100.dp)
+                    modifier = Modifier.testTag(TAG).height(100.dp),
                 )
                 Box(modifier = Modifier.width(12.dp).height(400.dp))
             }
@@ -470,7 +470,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -487,7 +487,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -504,7 +504,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -524,7 +524,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -552,7 +552,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 scrollState = scrollState,
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -576,7 +576,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 3),
                 scrollState = scrollState,
-                modifier = Modifier.testTag(TAG).width(50.dp)
+                modifier = Modifier.testTag(TAG).width(50.dp),
             )
         }
 
@@ -598,7 +598,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -619,7 +619,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 3),
                 onTextLayout = { layoutResult = it },
-                modifier = Modifier.testTag(TAG).width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp),
             )
         }
 
@@ -641,7 +641,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -661,7 +661,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -681,7 +681,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -701,7 +701,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -721,7 +721,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -738,7 +738,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG).width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp),
             )
         }
 
@@ -757,7 +757,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier.testTag(TAG)
+                modifier = Modifier.testTag(TAG),
             )
         }
 
@@ -781,7 +781,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 KeyCharacterMap.VIRTUAL_KEYBOARD,
                 /* scancode= */ 0,
                 /* flags= */ 0,
-                /* source= */ InputDevice.SOURCE_KEYBOARD
+                /* source= */ InputDevice.SOURCE_KEYBOARD,
             )
         )
 
@@ -801,7 +801,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
     private fun assertHandlesDisplayed(
         assertStartHandle: Boolean = true,
-        assertEndHandle: Boolean = true
+        assertEndHandle: Boolean = true,
     ) {
         if (assertStartHandle) {
             rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertIsDisplayed()
@@ -813,7 +813,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
     private fun assertHandlesNotExist(
         assertStartHandle: Boolean = true,
-        assertEndHandle: Boolean = true
+        assertEndHandle: Boolean = true,
     ) {
         if (assertStartHandle) {
             rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertDoesNotExist()
@@ -839,7 +839,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         handle: Handle,
         toStart: Boolean,
         swipeDistance: Float = 1f,
-        orientation: Orientation = Orientation.Horizontal
+        orientation: Orientation = Orientation.Horizontal,
     ) {
         val handleNode = rule.onNode(isSelectionHandle(handle))
 
@@ -849,13 +849,13 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                     swipeLeft(
                         startX = centerX,
                         endX = centerX - viewConfiguration.touchSlop - swipeDistance,
-                        durationMillis = 1000
+                        durationMillis = 1000,
                     )
                 } else {
                     swipeRight(
                         startX = centerX,
                         endX = centerX + viewConfiguration.touchSlop + swipeDistance,
-                        durationMillis = 1000
+                        durationMillis = 1000,
                     )
                 }
             } else {
@@ -863,13 +863,13 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                     swipeUp(
                         startY = centerY,
                         endY = centerY - viewConfiguration.touchSlop - swipeDistance,
-                        durationMillis = 1000
+                        durationMillis = 1000,
                     )
                 } else {
                     swipeDown(
                         startY = centerY,
                         endY = centerY + viewConfiguration.touchSlop + swipeDistance,
-                        durationMillis = 1000
+                        durationMillis = 1000,
                     )
                 }
             }

@@ -40,6 +40,16 @@
             </intent-filter>
         </service>
 
+        <!-- This CS is needed to test the 1.5 extensions layer with Auto -->
+        <service
+            android:name="androidx.core.telecom.test.utils.VoipConnectionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService"/>
+            </intent-filter>
+        </service>
+
         <service android:name="androidx.core.telecom.test.utils.TestInCallService"
             android:permission="android.permission.BIND_INCALL_SERVICE"
             android:exported="true">

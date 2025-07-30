@@ -52,7 +52,7 @@ import androidx.room.vo.TransactionFunction
 abstract class FunctionProcessorDelegate(
     val context: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
 
     abstract fun extractReturnType(): XType
@@ -67,7 +67,7 @@ abstract class FunctionProcessorDelegate(
                     element = parameterElement,
                     sqlName = parameterElement.name,
                     bindVarSection =
-                        query.bindSections.firstOrNull { it.varName == parameterElement.name }
+                        query.bindSections.firstOrNull { it.varName == parameterElement.name },
                 )
                 .process()
         }
@@ -76,24 +76,24 @@ abstract class FunctionProcessorDelegate(
     abstract fun findResultBinder(
         returnType: XType,
         query: ParsedQuery,
-        extrasCreator: TypeAdapterExtras.() -> Unit
+        extrasCreator: TypeAdapterExtras.() -> Unit,
     ): QueryResultBinder
 
     abstract fun findPreparedResultBinder(
         returnType: XType,
-        query: ParsedQuery
+        query: ParsedQuery,
     ): PreparedQueryResultBinder
 
     abstract fun findInsertFunctionBinder(
         returnType: XType,
-        params: List<ShortcutQueryParameter>
+        params: List<ShortcutQueryParameter>,
     ): InsertOrUpsertFunctionBinder
 
     abstract fun findDeleteOrUpdateFunctionBinder(returnType: XType): DeleteOrUpdateFunctionBinder
 
     abstract fun findUpsertFunctionBinder(
         returnType: XType,
-        params: List<ShortcutQueryParameter>
+        params: List<ShortcutQueryParameter>,
     ): InsertOrUpsertFunctionBinder
 
     abstract fun findTransactionFunctionBinder(
@@ -104,7 +104,7 @@ abstract class FunctionProcessorDelegate(
         fun createFor(
             context: Context,
             containing: XType,
-            executableElement: XMethodElement
+            executableElement: XMethodElement,
         ): FunctionProcessorDelegate {
             val asMember = executableElement.asMemberOf(containing)
             return if (asMember.isSuspendFunction()) {
@@ -130,7 +130,7 @@ class DefaultFunctionProcessorDelegate(
     context: Context,
     containing: XType,
     executableElement: XMethodElement,
-    val executableType: XMethodType
+    val executableType: XMethodType,
 ) : FunctionProcessorDelegate(context, containing, executableElement) {
 
     override fun extractReturnType(): XType {
@@ -142,7 +142,7 @@ class DefaultFunctionProcessorDelegate(
     override fun findResultBinder(
         returnType: XType,
         query: ParsedQuery,
-        extrasCreator: TypeAdapterExtras.() -> Unit
+        extrasCreator: TypeAdapterExtras.() -> Unit,
     ) = context.typeAdapterStore.findQueryResultBinder(returnType, query, extrasCreator)
 
     override fun findPreparedResultBinder(returnType: XType, query: ParsedQuery) =
@@ -164,7 +164,7 @@ class DefaultFunctionProcessorDelegate(
                 TransactionFunctionAdapter(
                     functionName = executableElement.name,
                     jvmMethodName = executableElement.jvmName,
-                    callType = callType
+                    callType = callType,
                 ),
         )
 }
@@ -174,7 +174,7 @@ class SuspendFunctionProcessorDelegate(
     context: Context,
     containing: XType,
     executableElement: XMethodElement,
-    val executableType: XSuspendMethodType
+    val executableType: XSuspendMethodType,
 ) : FunctionProcessorDelegate(context, containing, executableElement) {
 
     private val continuationParam: XVariableElement by lazy {
@@ -193,40 +193,40 @@ class SuspendFunctionProcessorDelegate(
     override fun findResultBinder(
         returnType: XType,
         query: ParsedQuery,
-        extrasCreator: TypeAdapterExtras.() -> Unit
+        extrasCreator: TypeAdapterExtras.() -> Unit,
     ) =
         CoroutineResultBinder(
             typeArg = returnType,
             adapter =
                 context.typeAdapterStore.findQueryResultAdapter(returnType, query, extrasCreator),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     override fun findPreparedResultBinder(returnType: XType, query: ParsedQuery) =
         CoroutinePreparedQueryResultBinder(
             adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(returnType, query),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     override fun findInsertFunctionBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
         CoroutineInsertOrUpsertFunctionBinder(
             typeArg = returnType,
             adapter = context.typeAdapterStore.findInsertAdapter(returnType, params),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     override fun findUpsertFunctionBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
         CoroutineInsertOrUpsertFunctionBinder(
             typeArg = returnType,
             adapter = context.typeAdapterStore.findUpsertAdapter(returnType, params),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     override fun findDeleteOrUpdateFunctionBinder(returnType: XType) =
         CoroutineDeleteOrUpdateFunctionBinder(
             typeArg = returnType,
             adapter = context.typeAdapterStore.findDeleteOrUpdateAdapter(returnType),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     override fun findTransactionFunctionBinder(callType: TransactionFunction.CallType) =
@@ -236,14 +236,14 @@ class SuspendFunctionProcessorDelegate(
                 TransactionFunctionAdapter(
                     functionName = executableElement.name,
                     jvmMethodName = executableElement.jvmName,
-                    callType = callType
+                    callType = callType,
                 ),
-            continuationParamName = continuationParam.name
+            continuationParamName = continuationParam.name,
         )
 
     private fun XCodeBlock.Builder.addCoroutineExecuteStatement(
         callableImpl: XTypeSpec,
-        dbProperty: XPropertySpec
+        dbProperty: XPropertySpec,
     ) {
         when (context.codeLanguage) {
             CodeLanguage.JAVA ->
@@ -253,7 +253,7 @@ class SuspendFunctionProcessorDelegate(
                     dbProperty,
                     "true", // inTransaction
                     callableImpl,
-                    continuationParam.name
+                    continuationParam.name,
                 )
             CodeLanguage.KOTLIN ->
                 addStatement(
@@ -261,7 +261,7 @@ class SuspendFunctionProcessorDelegate(
                     COROUTINES_ROOM,
                     dbProperty,
                     "true", // inTransaction
-                    callableImpl
+                    callableImpl,
                 )
         }
     }

@@ -77,7 +77,7 @@ internal class MouseWheelScrollingLogic(
     private data class MouseWheelScrollDelta(
         val value: Offset,
         val timeMillis: Long,
-        val shouldApplyImmediately: Boolean
+        val shouldApplyImmediately: Boolean,
     ) {
         operator fun plus(other: MouseWheelScrollDelta) =
             MouseWheelScrollDelta(
@@ -89,7 +89,7 @@ internal class MouseWheelScrollingLogic(
                 // Ignore [other.shouldApplyImmediately] to avoid false-positive
                 // [isPreciseWheelScroll]
                 // detection during animation
-                shouldApplyImmediately = shouldApplyImmediately
+                shouldApplyImmediately = shouldApplyImmediately,
             )
     }
 
@@ -140,7 +140,7 @@ internal class MouseWheelScrollingLogic(
                             // with
                             // no notches or trackpads, delta should apply immediately, without any
                             // delays.
-                            || mouseWheelScrollConfig.isPreciseWheelScroll(pointerEvent)
+                            || mouseWheelScrollConfig.isPreciseWheelScroll(pointerEvent),
                     )
                 )
                 .isSuccess
@@ -299,13 +299,13 @@ internal class MouseWheelScrollingLogic(
         animationState: AnimationState<Float, AnimationVector1D>,
         targetValue: Float,
         durationMillis: Int,
-        shouldCancelAnimation: (lastValue: Float) -> Boolean
+        shouldCancelAnimation: (lastValue: Float) -> Boolean,
     ) {
         var lastValue = animationState.value
         animationState.animateTo(
             targetValue,
             animationSpec = tween(durationMillis = durationMillis, easing = LinearEasing),
-            sequentialAnimation = true
+            sequentialAnimation = true,
         ) {
             val delta = value - lastValue
             if (!delta.isLowScrollingDelta()) {
@@ -325,11 +325,7 @@ internal class MouseWheelScrollingLogic(
     private fun NestedScrollScope.dispatchMouseWheelScroll(delta: Float) =
         with(scrollingLogic) {
             val offset = delta.reverseIfNeeded().toOffset()
-            val consumed =
-                scrollBy(
-                    offset,
-                    NestedScrollSource.UserInput,
-                )
+            val consumed = scrollBy(offset, NestedScrollSource.UserInput)
             consumed.reverseIfNeeded().toFloat()
         }
 }

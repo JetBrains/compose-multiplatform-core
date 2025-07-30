@@ -25,11 +25,11 @@ package androidx.security.state {
   public static final class SecurityPatchState.Companion {
     method public androidx.security.state.SecurityPatchState.SecurityPatchLevel getComponentSecurityPatchLevel(String component, String securityPatchLevel);
     method @RequiresApi(26) public android.net.Uri getVulnerabilityReportUrl(optional android.net.Uri serverUrl);
-    property public static final String COMPONENT_KERNEL;
-    property public static final String COMPONENT_SYSTEM;
-    property public static final String COMPONENT_SYSTEM_MODULES;
-    property public final java.util.List<? extends java.lang.String> DEFAULT_SYSTEM_MODULES;
-    property public static final String DEFAULT_VULNERABILITY_REPORTS_URL;
+    property public static String COMPONENT_KERNEL;
+    property public static String COMPONENT_SYSTEM;
+    property public static String COMPONENT_SYSTEM_MODULES;
+    property public java.util.List<java.lang.String> DEFAULT_SYSTEM_MODULES;
+    property public static String DEFAULT_VULNERABILITY_REPORTS_URL;
   }
 
   public static final class SecurityPatchState.DateBasedSecurityPatchLevel extends androidx.security.state.SecurityPatchState.SecurityPatchLevel {
@@ -88,9 +88,9 @@ package androidx.security.state {
   }
 
   public static final class SecurityStateManagerCompat.Companion {
-    property public static final String KEY_KERNEL_VERSION;
-    property public static final String KEY_SYSTEM_SPL;
-    property public static final String KEY_VENDOR_SPL;
+    property public static String KEY_KERNEL_VERSION;
+    property public static String KEY_SYSTEM_SPL;
+    property public static String KEY_VENDOR_SPL;
   }
 
 }

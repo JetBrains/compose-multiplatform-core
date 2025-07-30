@@ -17,6 +17,8 @@
 package androidx.xr.runtime.java
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Session
@@ -25,7 +27,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -43,12 +44,18 @@ class CoroutinesTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
 
-    @get:Rule val activityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
+    @get:Rule
+    val activityScenarioRule =
+        ActivityScenarioRule<ComponentActivity>(ComponentActivity::class.java)
 
     @Before
     fun setUp() {
         activityScenarioRule.scenario.onActivity { this.activity = it }
-        shadowOf(activity).grantPermissions("android.permission.SCENE_UNDERSTANDING")
+        shadowOf(activity)
+            .grantPermissions(
+                "android.permission.SCENE_UNDERSTANDING_COARSE",
+                "android.permission.HAND_TRACKING",
+            )
 
         testDispatcher = StandardTestDispatcher()
         testScope = TestScope(testDispatcher)
@@ -66,7 +73,7 @@ class CoroutinesTest {
                     delay(1.hours)
                     isCoroutineComplete = true
                 }
-            session.destroy()
+            activityScenarioRule.scenario.moveToState(Lifecycle.State.DESTROYED)
             testScope.advanceUntilIdle()
 
             assertThat(future.isCancelled).isTrue()

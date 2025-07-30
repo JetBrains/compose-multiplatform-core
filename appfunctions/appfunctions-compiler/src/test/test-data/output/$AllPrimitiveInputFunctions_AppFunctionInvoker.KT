@@ -2,8 +2,8 @@ package com.testdata
 
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
-import androidx.appfunctions.`internal`.AppFunctionInvoker
-import androidx.appfunctions.`internal`.ConfigurableAppFunctionFactory
+import androidx.appfunctions.service.`internal`.AppFunctionInvoker
+import androidx.appfunctions.service.`internal`.ConfigurableAppFunctionFactory
 import javax.`annotation`.processing.Generated
 import kotlin.Any
 import kotlin.String
@@ -44,7 +44,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInvoker` : AppFunctionInvok
     functionIdentifier: String,
     parameters: Map<String, Any?>,
   ): Any? {
-    val result = when (functionIdentifier) {
+    val result: Any? = when (functionIdentifier) {
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionInt" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
@@ -113,24 +113,21 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInvoker` : AppFunctionInvok
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableDouble(appFunctionContext, parameters["doubleParam"] as
-            kotlin.Double?)
+        .simpleFunctionNullableDouble(appFunctionContext, parameters["doubleParam"] as kotlin.Double?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableBoolean" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableBoolean(appFunctionContext, parameters["booleanParam"] as
-            kotlin.Boolean?)
+        .simpleFunctionNullableBoolean(appFunctionContext, parameters["booleanParam"] as kotlin.Boolean?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableString" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableString(appFunctionContext, parameters["stringParam"] as
-            kotlin.String?)
+        .simpleFunctionNullableString(appFunctionContext, parameters["stringParam"] as kotlin.String?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionIntArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
@@ -144,88 +141,77 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInvoker` : AppFunctionInvok
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionLongArray(appFunctionContext, parameters["longArrayParam"] as
-            kotlin.LongArray)
+        .simpleFunctionLongArray(appFunctionContext, parameters["longArrayParam"] as kotlin.LongArray)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionFloatArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionFloatArray(appFunctionContext, parameters["floatArrayParam"] as
-            kotlin.FloatArray)
+        .simpleFunctionFloatArray(appFunctionContext, parameters["floatArrayParam"] as kotlin.FloatArray)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionDoubleArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionDoubleArray(appFunctionContext, parameters["doubleArrayParam"] as
-            kotlin.DoubleArray)
+        .simpleFunctionDoubleArray(appFunctionContext, parameters["doubleArrayParam"] as kotlin.DoubleArray)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionBooleanArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionBooleanArray(appFunctionContext, parameters["booleanArrayParam"] as
-            kotlin.BooleanArray)
+        .simpleFunctionBooleanArray(appFunctionContext, parameters["booleanArrayParam"] as kotlin.BooleanArray)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionStringList" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionStringList(appFunctionContext, parameters["stringListParam"] as
-            kotlin.collections.List<kotlin.String>)
+        .simpleFunctionStringList(appFunctionContext, parameters["stringListParam"] as kotlin.collections.List<kotlin.String>)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableIntArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableIntArray(appFunctionContext, parameters["intArrayParam"] as
-            kotlin.IntArray?)
+        .simpleFunctionNullableIntArray(appFunctionContext, parameters["intArrayParam"] as kotlin.IntArray?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableLongArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableLongArray(appFunctionContext, parameters["longArrayParam"] as
-            kotlin.LongArray?)
+        .simpleFunctionNullableLongArray(appFunctionContext, parameters["longArrayParam"] as kotlin.LongArray?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableFloatArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableFloatArray(appFunctionContext, parameters["floatArrayParam"] as
-            kotlin.FloatArray?)
+        .simpleFunctionNullableFloatArray(appFunctionContext, parameters["floatArrayParam"] as kotlin.FloatArray?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableDoubleArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableDoubleArray(appFunctionContext, parameters["doubleArrayParam"] as
-            kotlin.DoubleArray?)
+        .simpleFunctionNullableDoubleArray(appFunctionContext, parameters["doubleArrayParam"] as kotlin.DoubleArray?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableBooleanArray" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableBooleanArray(appFunctionContext, parameters["booleanArrayParam"] as
-            kotlin.BooleanArray?)
+        .simpleFunctionNullableBooleanArray(appFunctionContext, parameters["booleanArrayParam"] as kotlin.BooleanArray?)
       }
       "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableStringList" -> {
         ConfigurableAppFunctionFactory<AllPrimitiveInputFunctions>(
           appFunctionContext.context
         )
         .createEnclosingClass(AllPrimitiveInputFunctions::class.java)
-        .simpleFunctionNullableStringList(appFunctionContext, parameters["stringListParam"] as
-            kotlin.collections.List<kotlin.String>?)
+        .simpleFunctionNullableStringList(appFunctionContext, parameters["stringListParam"] as kotlin.collections.List<kotlin.String>?)
       }
       else -> {
         throw AppFunctionFunctionNotFoundException("Unable to find $functionIdentifier")

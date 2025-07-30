@@ -218,7 +218,7 @@ class NavigationDrawerItemTest {
                 ) {
                     Text(
                         text = "Test Text",
-                        modifier = Modifier.testTag(NavigationDrawerItemTextTag).fillMaxWidth()
+                        modifier = Modifier.testTag(NavigationDrawerItemTextTag).fillMaxWidth(),
                     )
                 }
             }
@@ -239,17 +239,17 @@ class NavigationDrawerItemTest {
         (itemBounds.bottom - trailingContentBounds.bottom).assertIsEqualTo(
             12.dp,
             "padding between the bottom of the trailing content and the bottom of the nav " +
-                "drawer item"
+                "drawer item",
         )
 
         (itemBounds.right - trailingContentBounds.right).assertIsEqualTo(
             16.dp,
-            "padding between the end of the trailing content and the end of the nav drawer item"
+            "padding between the end of the trailing content and the end of the nav drawer item",
         )
 
         (trailingContentBounds.left - textBounds.right).assertIsEqualTo(
             8.dp,
-            "padding between the start of the trailing content and the end of the text."
+            "padding between the start of the trailing content and the end of the text.",
         )
     }
 
@@ -419,7 +419,7 @@ class NavigationDrawerItemTest {
 @Composable
 private fun DrawerScope(
     isActivated: Boolean = true,
-    content: @Composable NavigationDrawerScope.() -> Unit
+    content: @Composable NavigationDrawerScope.() -> Unit,
 ) {
     Box { NavigationDrawerScopeImpl(isActivated).apply { content() } }
 }

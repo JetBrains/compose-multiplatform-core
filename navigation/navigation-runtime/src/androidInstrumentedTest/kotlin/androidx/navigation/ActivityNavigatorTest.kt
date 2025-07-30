@@ -132,7 +132,7 @@ class ActivityNavigatorTest {
             targetDestination,
             null,
             navOptions { launchSingleTop = true },
-            null
+            null,
         )
 
         val targetActivity = waitForActivity()
@@ -239,7 +239,7 @@ class ActivityNavigatorTest {
             .isEqualTo(
                 TARGET_DATA_PATTERN.replace(
                     "{$TARGET_ARGUMENT_NAME}",
-                    TARGET_ARGUMENT_INT_VALUE.toString()
+                    TARGET_ARGUMENT_INT_VALUE.toString(),
                 )
             )
         assertWithMessage("Intent should have its arguments in its extras")
@@ -280,7 +280,7 @@ class ActivityNavigatorTest {
             .isEqualTo(
                 TARGET_DATA_PATTERN.replace(
                     "{$TARGET_ARGUMENT_NAME}",
-                    "${TARGET_ARGUMENT_INT_VALUE}Serialized"
+                    "${TARGET_ARGUMENT_INT_VALUE}Serialized",
                 )
             )
         assertWithMessage("Intent should have its arguments in its extras")
@@ -332,7 +332,7 @@ class ActivityNavigatorTest {
         verify(context)
             .startActivity(
                 argThat { intent -> intent.flags and flags != 0 },
-                refEq(activityOptions.toBundle())
+                refEq(activityOptions.toBundle()),
             )
     }
 

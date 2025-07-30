@@ -842,7 +842,7 @@ class RequestFocusTest {
                             }
                         )
                     }
-                }
+                },
             )
         }
         rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }

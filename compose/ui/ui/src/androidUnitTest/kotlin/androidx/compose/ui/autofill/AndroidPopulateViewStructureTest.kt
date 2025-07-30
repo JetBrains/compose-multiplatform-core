@@ -66,7 +66,7 @@ class AndroidPopulateViewStructureTest {
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 
@@ -99,7 +99,7 @@ class AndroidPopulateViewStructureTest {
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += nameAutofillNode
 
@@ -108,7 +108,7 @@ class AndroidPopulateViewStructureTest {
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.EmailAddress),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += emailAutofillNode
 

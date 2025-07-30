@@ -279,4 +279,45 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     public boolean getBackForwardCacheEnabled() {
         return false;
     }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setPaymentRequestEnabled(WebSettings, boolean)}
+     */
+    @Override
+    public void setPaymentRequestEnabled(boolean enabled) {}
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getPaymentRequestEnabled(WebSettings)}
+     */
+    @Override
+    public boolean getPaymentRequestEnabled() {
+        return false;
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setHasEnrolledInstrumentEnabled(WebSettings, boolean)}
+     */
+    @Override
+    public void setHasEnrolledInstrumentEnabled(boolean enabled) {}
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getHasEnrolledInstrumentEnabled(WebSettings)}
+     */
+    @Override
+    public boolean getHasEnrolledInstrumentEnabled() {
+        return false;
+    }
+
+    @Override
+    public void setCookieAccessForShouldInterceptRequestEnabled(boolean enabled) {
+    }
+
+    @Override
+    public boolean getCookieAccessForShouldInterceptRequestEnabled() {
+        return false;
+    }
 }
