@@ -34,16 +34,13 @@ import platform.UIKit.UIView
 class TextFieldFocusOrderTest {
     @Test
     fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTest {
-        val showDialog = mutableStateOf(true)
         val dialogFocusRequester = FocusRequester()
 
         setContent {
             TextField("Text 0", {})
 
-            if (showDialog.value) {
-                Dialog({}) {
-                    TextField("Text 1", {}, modifier = Modifier.focusRequester(dialogFocusRequester))
-                }
+            Dialog({}) {
+                TextField("Text 1", {}, modifier = Modifier.focusRequester(dialogFocusRequester))
                 LaunchedEffect(Unit) {
                     dialogFocusRequester.requestFocus()
                 }
@@ -70,18 +67,18 @@ class TextFieldFocusOrderTest {
             if (showDialog1.value) {
                 Dialog({}) {
                     TextField("Text 1", {}, modifier = Modifier.focusRequester(focusRequester1))
-                }
-                LaunchedEffect(Unit) {
-                    focusRequester1.requestFocus()
+                    LaunchedEffect(Unit) {
+                        focusRequester1.requestFocus()
+                    }
                 }
             }
 
             if (showDialog2.value) {
                 Dialog({}) {
                     TextField("Text 2", {}, modifier = Modifier.focusRequester(focusRequester2))
-                }
-                LaunchedEffect(Unit) {
-                    focusRequester2.requestFocus()
+                    LaunchedEffect(Unit) {
+                        focusRequester2.requestFocus()
+                    }
                 }
             }
         }
@@ -125,18 +122,18 @@ class TextFieldFocusOrderTest {
             if (showDialog1.value) {
                 Dialog({}) {
                     TextField("Text 1", {}, modifier = Modifier.focusRequester(focusRequester1))
-                }
-                LaunchedEffect(Unit) {
-                    focusRequester1.requestFocus()
+                    LaunchedEffect(Unit) {
+                        focusRequester1.requestFocus()
+                    }
                 }
             }
 
             if (showDialog2.value) {
                 Dialog({}) {
                     TextField("Text 2", {}, modifier = Modifier.focusRequester(focusRequester2))
-                }
-                LaunchedEffect(Unit) {
-                    focusRequester2.requestFocus()
+                    LaunchedEffect(Unit) {
+                        focusRequester2.requestFocus()
+                    }
                 }
             }
         }

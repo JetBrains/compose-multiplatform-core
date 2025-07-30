@@ -301,6 +301,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     fun cleanUp() {
         _window?.resignKeyWindow()
+        _window?.windowScene = null
         _window?.rootViewController = null
         _window = null
 
@@ -309,6 +310,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         window.makeKeyAndVisible()
         window.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         dispatch_async(dispatch_get_main_queue()) {
+            window.windowScene = null
             window.resignKeyWindow()
         }
     }
