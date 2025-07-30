@@ -51,7 +51,6 @@ import platform.UIKit.UIAccessibilityTraitTabBar
 import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
-import platform.UIKit.UIApplication
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -131,17 +130,6 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
             element = element
         ).also { node ->
             children.forEach { it.parent = node }
-        }
-    }
-
-    println(">> Current Delegate: $appDelegate")
-    println(">> Current Window: ${appDelegate.window}")
-    println(">> Current Scene: ${appDelegate.window!!.windowScene!!}")
-    UIApplication.sharedApplication.connectedScenes.forEach {
-        it as UIWindowScene
-        println(">>> Scene: $it")
-        it.windows.forEach {
-            println(">>>> Window: $it")
         }
     }
 
