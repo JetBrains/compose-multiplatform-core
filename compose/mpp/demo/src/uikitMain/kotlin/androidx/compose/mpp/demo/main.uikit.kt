@@ -1,25 +1,17 @@
 // Use `xcodegen` first, then `open ./SkikoSample.xcodeproj` and then Run button in XCode.
 package androidx.compose.mpp.demo
 
-import androidx.compose.material.TextField
 import androidx.compose.mpp.demo.bugs.IosBugs
 import androidx.compose.mpp.demo.bugs.StartRecompositionCheck
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.window.ComposeUIViewController
-import androidx.compose.ui.window.Dialog
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.toCValues
-import kotlinx.coroutines.delay
 import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
@@ -50,31 +42,7 @@ fun main(vararg args: String) {
                 parallelRendering = true
             }
         ) {
-            val showDialog = remember { mutableStateOf(false) }
-            val dialogFocusRequester = remember { FocusRequester() }
-
-            TextField("Text 0", {})
-
-            LaunchedEffect(Unit) {
-                delay(4000)
-                showDialog.value = true
-                dialogFocusRequester.requestFocus()
-            }
-
-            if (showDialog.value) {
-                Dialog({}) {
-                    TextField(
-                        "Text 1",
-                        {},
-                        modifier = Modifier.focusRequester(dialogFocusRequester)
-                    )
-                }
-                LaunchedEffect(Unit) {
-                    dialogFocusRequester.requestFocus()
-                }
-            }
-
-            //IosDemo(arg)
+            IosDemo(arg)
         }
     }
 }
