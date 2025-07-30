@@ -63,7 +63,7 @@ class KspTypeTest {
             abstract class AbstractClass {}
             interface MyInterface {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) {
             val subject = it.processingEnv.requireType("foo.bar.Baz")
@@ -80,6 +80,62 @@ class KspTypeTest {
     }
 
     @Test
+    fun assignability_nullability() {
+        val src =
+            Source.java(
+                "Subject",
+                """
+            public class Subject {
+                public Integer method() {
+                    return 0;
+                }
+            }
+            """
+                    .trimIndent(),
+            )
+        runProcessorTest(sources = listOf(src)) {
+            // nullability assignability is only relevant in KSP
+            if (!it.isKsp) return@runProcessorTest
+
+            val nonNullString = it.processingEnv.requireType(XTypeName.STRING)
+            val nullableString = nonNullString.makeNullable()
+
+            assertThat(nonNullString.isAssignableFrom(nullableString)).isFalse()
+            assertThat(nullableString.isAssignableFrom(nonNullString)).isTrue()
+
+            val primitiveInt = it.processingEnv.requireType(XTypeName.PRIMITIVE_INT)
+            val nonNullInt =
+                it.processingEnv.requireType(XTypeName.BOXED_INT.copy(nullable = false))
+            val nullableInt = nonNullInt.makeNullable()
+            val unknownInt =
+                it.processingEnv
+                    .requireTypeElement("Subject")
+                    .getDeclaredMethods()
+                    .single()
+                    .returnType
+
+            assertThat(primitiveInt.isAssignableFrom(primitiveInt)).isTrue()
+            assertThat(primitiveInt.isAssignableFrom(nonNullInt)).isTrue()
+            assertThat(primitiveInt.isAssignableFrom(nullableInt)).isFalse()
+            // when nullability is unknown, it is ignored for assignability
+            // https://kotlinlang.org/docs/java-interop.html#null-safety-and-platform-types
+            assertThat(primitiveInt.isAssignableFrom(unknownInt)).isTrue()
+
+            assertThat(nonNullInt.isAssignableFrom(primitiveInt)).isTrue()
+            assertThat(nonNullInt.isAssignableFrom(nonNullInt)).isTrue()
+            assertThat(nonNullInt.isAssignableFrom(nullableInt)).isFalse()
+            // when nullability is unknown, it is ignored for assignability
+            // https://kotlinlang.org/docs/java-interop.html#null-safety-and-platform-types
+            assertThat(nonNullInt.isAssignableFrom(unknownInt)).isTrue()
+
+            assertThat(nullableInt.isAssignableFrom(primitiveInt)).isTrue()
+            assertThat(nullableInt.isAssignableFrom(nonNullInt)).isTrue()
+            assertThat(nullableInt.isAssignableFrom(nullableInt)).isTrue()
+            assertThat(nullableInt.isAssignableFrom(unknownInt)).isTrue()
+        }
+    }
+
+    @Test
     fun errorType() {
         val src =
             Source.kotlin(
@@ -90,12 +146,12 @@ class KspTypeTest {
                 val listOfErrorType : List<IDontExist> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             listOf(src),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
             val iDontExist = XClassName.get("", "IDontExist")
@@ -129,7 +185,7 @@ class KspTypeTest {
                 val listOfInts : List<Int> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -181,7 +237,7 @@ class KspTypeTest {
                 val nonNullString : String = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         // run with javac when JavacType implements equality via isSameType instead of object
         // equality. Room uses isSameType when we need proper equality so it is not important but
@@ -220,7 +276,7 @@ class KspTypeTest {
                 val listOfMaps : List<Map<String, String>> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -256,7 +312,7 @@ class KspTypeTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val voidMethod =
@@ -289,7 +345,7 @@ class KspTypeTest {
                 val nullableErrorProp : IDontExist? = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -300,7 +356,7 @@ class KspTypeTest {
                             "isLong" to it.isLong(),
                             "isByte" to it.isByte(),
                             "isError" to it.isError(),
-                            "isNone" to it.isNone()
+                            "isNone" to it.isNone(),
                         )
                         .filter { it.second }
                         .map { it.first }
@@ -336,7 +392,7 @@ class KspTypeTest {
                 val stringProp : String = "abc"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -371,7 +427,7 @@ class KspTypeTest {
                 val listProp : List<String> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -401,7 +457,7 @@ class KspTypeTest {
                 val listOfNullableStrings : List<String?> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -431,7 +487,7 @@ class KspTypeTest {
                     class Bar<T : Foo>
                     class Bar_NullableFoo<T : Foo?>
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) { invocation ->
@@ -455,14 +511,14 @@ class KspTypeTest {
                 typeElement = invocation.processingEnv.requireTypeElement("Bar"),
                 typeArgumentJClassName = JTypeVariableName.get("T", JClassName.get("", "Foo")),
                 typeArgumentKClassName = KTypeVariableName("T", KClassName("", "Foo")),
-                nullability = NONNULL
+                nullability = NONNULL,
             )
             checkTypeElement(
                 typeElement = invocation.processingEnv.requireTypeElement("Bar_NullableFoo"),
                 typeArgumentJClassName = JTypeVariableName.get("T", JClassName.get("", "Foo")),
                 typeArgumentKClassName =
                     KTypeVariableName("T", KClassName("", "Foo").copy(nullable = true)),
-                nullability = NULLABLE
+                nullability = NULLABLE,
             )
         }
     }
@@ -481,7 +537,7 @@ class KspTypeTest {
                     }
                     class Bar<T>
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) { invocation ->
@@ -503,14 +559,14 @@ class KspTypeTest {
                 type = foo.getDeclaredField("barFoo").type,
                 typeArgumentJClassName = JWildcardTypeName.subtypeOf(JClassName.get("", "Foo")),
                 typeArgumentKClassName = KWildcardTypeName.producerOf(KClassName("", "Foo")),
-                nullability = NONNULL
+                nullability = NONNULL,
             )
             checkType(
                 type = foo.getDeclaredField("barNullableFoo").type,
                 typeArgumentJClassName = JWildcardTypeName.subtypeOf(JClassName.get("", "Foo")),
                 typeArgumentKClassName =
                     KWildcardTypeName.producerOf(KClassName("", "Foo").copy(nullable = true)),
-                nullability = NULLABLE
+                nullability = NULLABLE,
             )
         }
     }
@@ -528,7 +584,7 @@ class KspTypeTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
             val typeElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
@@ -565,12 +621,12 @@ class KspTypeTest {
             interface B {}
             class Baz extends A implements B, C {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             listOf(src),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             val typeElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
             val exception =

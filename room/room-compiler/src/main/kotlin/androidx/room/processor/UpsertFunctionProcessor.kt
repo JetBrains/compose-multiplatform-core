@@ -20,12 +20,12 @@ import androidx.room.Upsert
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.vo.UpsertFunction
-import androidx.room.vo.findFieldByColumnName
+import androidx.room.vo.findPropertyByColumnName
 
 class UpsertFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -39,44 +39,44 @@ class UpsertFunctionProcessor(
         context.checker.notUnbound(
             returnType,
             executableElement,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_UPSERT_FUNCTIONS
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_UPSERT_FUNCTIONS,
         )
 
         val (entities, params) =
             delegate.extractParams(
-                targetEntityType = annotation?.getAsType("entity"),
+                targetEntityType = annotation?.get("entity")?.asType(),
                 missingParamError = ProcessorErrors.UPSERT_DOES_NOT_HAVE_ANY_PARAMETERS_TO_UPSERT,
                 onValidatePartialEntity = { entity, pojo ->
                     val missingPrimaryKeys =
-                        entity.primaryKey.fields.any {
-                            pojo.findFieldByColumnName(it.columnName) == null
+                        entity.primaryKey.properties.any {
+                            pojo.findPropertyByColumnName(it.columnName) == null
                         }
                     context.checker.check(
                         entity.primaryKey.autoGenerateId || !missingPrimaryKeys,
                         executableElement,
                         ProcessorErrors.missingPrimaryKeysInPartialEntityForUpsert(
                             partialEntityName = pojo.typeName.toString(context.codeLanguage),
-                            primaryKeyNames = entity.primaryKey.fields.columnNames
-                        )
+                            primaryKeyNames = entity.primaryKey.properties.columnNames,
+                        ),
                     )
 
                     // Verify all non null columns without a default value are in the POJO otherwise
                     // the UPSERT will fail with a NOT NULL constraint.
                     val missingRequiredFields =
-                        (entity.fields - entity.primaryKey.fields).filter {
+                        (entity.properties - entity.primaryKey.properties).filter {
                             it.nonNull &&
                                 it.defaultValue == null &&
-                                pojo.findFieldByColumnName(it.columnName) == null
+                                pojo.findPropertyByColumnName(it.columnName) == null
                         }
                     context.checker.check(
                         missingRequiredFields.isEmpty(),
                         executableElement,
                         ProcessorErrors.missingRequiredColumnsInPartialEntity(
                             partialEntityName = pojo.typeName.toString(context.codeLanguage),
-                            missingColumnNames = missingRequiredFields.map { it.columnName }
-                        )
+                            missingColumnNames = missingRequiredFields.map { it.columnName },
+                        ),
                     )
-                }
+                },
             )
 
         val functionBinder = delegate.findUpsertFunctionBinder(returnType, params)
@@ -84,7 +84,7 @@ class UpsertFunctionProcessor(
         context.checker.check(
             functionBinder.adapter != null,
             executableElement,
-            ProcessorErrors.CANNOT_FIND_UPSERT_RESULT_ADAPTER
+            ProcessorErrors.CANNOT_FIND_UPSERT_RESULT_ADAPTER,
         )
 
         return UpsertFunction(
@@ -92,7 +92,7 @@ class UpsertFunctionProcessor(
             returnType = returnType,
             entities = entities,
             parameters = params,
-            functionBinder = functionBinder
+            functionBinder = functionBinder,
         )
     }
 }

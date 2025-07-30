@@ -22,5 +22,5 @@ class DeleteFunction(
     element: XMethodElement,
     entities: Map<String, ShortcutEntity>,
     parameters: List<ShortcutQueryParameter>,
-    functionBinder: DeleteOrUpdateFunctionBinder?
+    functionBinder: DeleteOrUpdateFunctionBinder?,
 ) : DeleteOrUpdateShortcutFunction(element, entities, parameters, functionBinder)

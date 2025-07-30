@@ -157,5 +157,5 @@ public annotation class Relation(
      *
      * @return The list of columns to be selected from the [entity].
      */
-    val projection: Array<String> = []
+    val projection: Array<String> = [],
 )

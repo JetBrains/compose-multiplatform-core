@@ -20,8 +20,6 @@ import androidx.webkit.OutcomeReceiverCompat;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.PrefetchNetworkException;
 
-import org.chromium.support_lib_boundary.PrefetchExceptionBoundaryInterface;
-import org.chromium.support_lib_boundary.PrefetchNetworkExceptionBoundaryInterface;
 import org.chromium.support_lib_boundary.PrefetchOperationCallbackBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
@@ -47,40 +45,18 @@ public class PrefetchOperationCallbackAdapter {
                     }
 
                     @Override
-                    public void onFailure(InvocationHandler failure) {
-                        if (BoundaryInterfaceReflectionUtil.instanceOfInOwnClassLoader(failure,
-                                PrefetchNetworkExceptionBoundaryInterface.class.getName())) {
-                            callback.onError(getNetworkException(failure));
+                    public void onFailure(@PrefetchExceptionTypeBoundaryInterface int type,
+                            @NonNull String message, int networkErrorCode) {
+                        if (type == PrefetchExceptionTypeBoundaryInterface.NETWORK) {
+                            callback.onError(
+                                    new PrefetchNetworkException(message, networkErrorCode));
                         } else {
-                            callback.onError(getPrefetchException(failure));
+                            callback.onError(new PrefetchException(message));
                         }
                     }
                 };
 
         return BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                 operationCallback);
-    }
-
-    private static PrefetchNetworkException getNetworkException(InvocationHandler error) {
-        PrefetchNetworkExceptionBoundaryInterface failure =
-                BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                        PrefetchNetworkExceptionBoundaryInterface.class, error);
-        if (failure.getMessage() != null) {
-            return new PrefetchNetworkException(failure.getMessage(),
-                    failure.getHttpResponseStatusCode());
-        } else {
-            return new PrefetchNetworkException(failure.getHttpResponseStatusCode());
-        }
-    }
-
-    private static PrefetchException getPrefetchException(InvocationHandler error) {
-        PrefetchExceptionBoundaryInterface failure =
-                BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                        PrefetchExceptionBoundaryInterface.class, error);
-        if (failure.getMessage() != null) {
-            return new PrefetchException(failure.getMessage());
-        } else {
-            return new PrefetchException();
-        }
     }
 }

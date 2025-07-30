@@ -117,7 +117,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -161,7 +161,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -249,7 +249,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -281,7 +281,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -313,7 +313,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }

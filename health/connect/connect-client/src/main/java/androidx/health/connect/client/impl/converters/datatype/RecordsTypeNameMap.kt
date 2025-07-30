@@ -18,7 +18,9 @@
 package androidx.health.connect.client.impl.converters.datatype
 
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -41,6 +43,7 @@ import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -60,9 +63,11 @@ import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import kotlin.reflect.KClass
 
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
     mapOf(
         "ActiveCaloriesBurned" to ActiveCaloriesBurnedRecord::class,
+        "ActivityIntensity" to ActivityIntensityRecord::class,
         "ActivitySession" to ExerciseSessionRecord::class, // Keep legacy Activity name
         "BasalBodyTemperature" to BasalBodyTemperatureRecord::class,
         "BasalMetabolicRate" to BasalMetabolicRateRecord::class,
@@ -85,6 +90,7 @@ val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
         "LeanBodyMass" to LeanBodyMassRecord::class,
         "Menstruation" to MenstruationFlowRecord::class,
         "MenstruationPeriod" to MenstruationPeriodRecord::class,
+        "MindfulnessSession" to MindfulnessSessionRecord::class,
         "Nutrition" to NutritionRecord::class,
         "OvulationTest" to OvulationTestRecord::class,
         "OxygenSaturation" to OxygenSaturationRecord::class,

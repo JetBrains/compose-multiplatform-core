@@ -16,21 +16,16 @@
 
 package androidx.appfunctions.compiler.processors
 
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver.AnnotatedAppFunctions
-import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
-import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.compiler.core.ProcessingException
-import androidx.appfunctions.compiler.core.findAnnotation
-import androidx.appfunctions.compiler.core.requirePropertyValueOfType
+import androidx.appfunctions.compiler.core.createElementWithTextNode
+import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.squareup.kotlinpoet.ClassName
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -49,12 +44,19 @@ import org.w3c.dom.Element
  * The new indexer will index additional properties based on the schema defined in SDK instead of
  * the pre-defined one in AppSearch.
  */
-class AppFunctionLegacyIndexXmlProcessor(
-    private val codeGenerator: CodeGenerator,
-) : SymbolProcessor {
+class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerator) :
+    SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        generateLegacyIndexXml(AppFunctionSymbolResolver(resolver).resolveAnnotatedAppFunctions())
+        val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
+        val resolvedAnnotatedSerializableProxies =
+            ResolvedAnnotatedSerializableProxies(
+                appFunctionSymbolResolver.resolveAllAnnotatedSerializableProxiesFromModule()
+            )
+        generateLegacyIndexXml(
+            appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
+            resolvedAnnotatedSerializableProxies,
+        )
         return emptyList()
     }
 
@@ -66,87 +68,22 @@ class AppFunctionLegacyIndexXmlProcessor(
      */
     private fun generateLegacyIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ) {
         if (appFunctionsByClass.isEmpty()) {
             return
         }
-        val xmlDetails = appFunctionsByClass.flatMap(::getAppFunctionXmlDetail)
-        writeXmlFile(xmlDetails, appFunctionsByClass)
-    }
-
-    private fun getAppFunctionXmlDetail(
-        appFunctionsByClass: AnnotatedAppFunctions
-    ): List<AppFunctionXmlDetails> {
-
-        return appFunctionsByClass.appFunctionDeclarations.map {
-            val appFunctionAnnotation =
-                it.annotations.findAnnotation(AppFunctionAnnotation.CLASS_NAME)
-                    ?: throw ProcessingException("Function not annotated with @AppFunction.", it)
-            val enabled =
-                appFunctionAnnotation.requirePropertyValueOfType(
-                    AppFunctionAnnotation.PROPERTY_IS_ENABLED,
-                    Boolean::class,
-                )
-
-            val schemaDetail = getAppFunctionSchemaDetail(it)
-
-            AppFunctionXmlDetails(
-                appFunctionsByClass.getAppFunctionIdentifier(it),
-                enabled,
-                schemaDetail,
-            )
-        }
-    }
-
-    private fun getAppFunctionSchemaDetail(
-        function: KSFunctionDeclaration
-    ): AppFunctionSchemaDetail? {
-        val rootInterfaceWithAppFunctionSchemaDefinition =
-            findRootInterfaceWithAnnotation(
-                function,
-                AppFunctionSchemaDefinitionAnnotation.CLASS_NAME
-            ) ?: return null
-
-        val schemaFunctionAnnotation =
-            rootInterfaceWithAppFunctionSchemaDefinition.annotations.findAnnotation(
-                AppFunctionSchemaDefinitionAnnotation.CLASS_NAME
-            ) ?: return null
-        val schemaCategory =
-            schemaFunctionAnnotation.requirePropertyValueOfType(
-                AppFunctionSchemaDefinitionAnnotation.PROPERTY_CATEGORY,
-                String::class,
-            )
-        val schemaName =
-            schemaFunctionAnnotation.requirePropertyValueOfType(
-                AppFunctionSchemaDefinitionAnnotation.PROPERTY_NAME,
-                String::class,
-            )
-        val schemaVersion =
-            schemaFunctionAnnotation.requirePropertyValueOfType(
-                AppFunctionSchemaDefinitionAnnotation.PROPERTY_VERSION,
-                Int::class,
-            )
-        return AppFunctionSchemaDetail(schemaCategory, schemaName, schemaVersion)
-    }
-
-    private fun findRootInterfaceWithAnnotation(
-        function: KSFunctionDeclaration,
-        annotationName: ClassName
-    ): KSClassDeclaration? {
-        val parentDeclaration = function.parentDeclaration as? KSClassDeclaration ?: return null
-
-        // Check if the enclosing class has the @AppFunctionSchemaDefinition
-        val annotation = parentDeclaration.annotations.findAnnotation(annotationName)
-        if (annotation != null) {
-            return parentDeclaration
-        }
-
-        val superClassFunction = (function.findOverridee() as? KSFunctionDeclaration) ?: return null
-        return findRootInterfaceWithAnnotation(superClassFunction, annotationName)
+        val appFunctionMetadataList =
+            appFunctionsByClass.flatMap {
+                it.createAppFunctionMetadataList(resolvedAnnotatedSerializableProxies).map {
+                    it.toAppFunctionMetadataDocument()
+                }
+            }
+        writeXmlFile(appFunctionMetadataList, appFunctionsByClass)
     }
 
     private fun writeXmlFile(
-        xmlDetailsList: List<AppFunctionXmlDetails>,
+        appFunctionMetadataList: List<AppFunctionMetadataDocument>,
         appFunctionsByClass: List<AnnotatedAppFunctions>,
     ) {
         val xmlDocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -155,8 +92,10 @@ class AppFunctionLegacyIndexXmlProcessor(
         val appFunctionsElement = xmlDocument.createElement(XmlElement.APP_FUNCTIONS_ELEMENTS_TAG)
         xmlDocument.appendChild(appFunctionsElement)
 
-        for (xmlDetails in xmlDetailsList) {
-            appFunctionsElement.appendChild(xmlDocument.createAppFunctionElement(xmlDetails))
+        for (appFunctionMetadata in appFunctionMetadataList) {
+            appFunctionsElement.appendChild(
+                xmlDocument.createAppFunctionElement(appFunctionMetadata)
+            )
         }
 
         val transformer =
@@ -171,66 +110,50 @@ class AppFunctionLegacyIndexXmlProcessor(
             .createNewFile(
                 Dependencies(
                     aggregating = true,
-                    *appFunctionsByClass.mapNotNull { it.getSourceFile() }.toTypedArray()
+                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray(),
                 ),
                 XML_PACKAGE_NAME,
                 XML_FILE_NAME,
-                XML_EXTENSION
+                XML_EXTENSION,
             )
             .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
     }
 
-    private fun Document.createAppFunctionElement(xmlDetails: AppFunctionXmlDetails): Element =
+    private fun Document.createAppFunctionElement(
+        appFunctionMetadata: AppFunctionMetadataDocument
+    ): Element =
         createElement(XmlElement.APP_FUNCTION_ITEM_TAG).apply {
             appendChild(
-                createElementWithTextNode(XmlElement.APP_FUNCTION_ID_TAG, xmlDetails.functionId)
+                createElementWithTextNode(XmlElement.APP_FUNCTION_ID_TAG, appFunctionMetadata.id)
             )
 
-            val schemaDetail = xmlDetails.schemaDetail
-            if (schemaDetail != null) {
+            val schemaName = appFunctionMetadata.schemaName
+            val schemaCategory = appFunctionMetadata.schemaCategory
+            val schemaVersion = appFunctionMetadata.schemaVersion
+            if (schemaName != null && schemaCategory != null && schemaVersion != null) {
                 appendChild(
                     createElementWithTextNode(
                         XmlElement.APP_FUNCTION_SCHEMA_CATEGORY_TAG,
-                        schemaDetail.schemaCategory,
+                        schemaCategory,
                     )
                 )
                 appendChild(
-                    createElementWithTextNode(
-                        XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG,
-                        schemaDetail.schemaName,
-                    )
+                    createElementWithTextNode(XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG, schemaName)
                 )
                 appendChild(
                     createElementWithTextNode(
                         XmlElement.APP_FUNCTION_SCHEMA_VERSION_TAG,
-                        schemaDetail.schemaVersion.toString(),
+                        schemaVersion.toString(),
                     )
                 )
             }
             appendChild(
                 createElementWithTextNode(
                     XmlElement.APP_FUNCTION_ENABLE_BY_DEFAULT_TAG,
-                    xmlDetails.enabled.toString(),
+                    appFunctionMetadata.isEnabledByDefault.toString(),
                 )
             )
         }
-
-    private fun Document.createElementWithTextNode(elementName: String, text: String): Element =
-        createElement(elementName).apply { appendChild(createTextNode(text)) }
-
-    /** Details of an app function that are needed to generate its XML file. */
-    private data class AppFunctionXmlDetails(
-        val functionId: String,
-        val enabled: Boolean,
-        val schemaDetail: AppFunctionSchemaDetail?,
-    )
-
-    /** Details of an schema function that are needed to generate its XML file. */
-    private data class AppFunctionSchemaDetail(
-        val schemaCategory: String,
-        val schemaName: String,
-        val schemaVersion: Int,
-    )
 
     private companion object {
         private const val XML_PACKAGE_NAME = "assets"

@@ -113,8 +113,8 @@ abstract class ComposeBenchmarkBase {
                             override fun captureResumed() {
                                 // Unsupported for now
                             }
-                        }
-                    ),
+                        },
+                    )
             )
         )
 
@@ -137,7 +137,7 @@ abstract class ComposeBenchmarkBase {
             benchmarkRule.measureRepeatedOnMainThread {
                 activity.setContent(recomposer) { CountGroupsAndSlots(block) }
 
-                runWithTimingDisabled {
+                runWithMeasurementDisabled {
                     activity.setContentView(View(activity))
                     testScheduler.advanceUntilIdle()
                 }
@@ -171,7 +171,7 @@ abstract class ComposeBenchmarkBase {
                 }
                 benchmarkState.resumeTiming()
 
-                runWithTimingDisabled {
+                runWithMeasurementDisabled {
                     activity.setContentView(View(activity))
                     testScheduler.advanceUntilIdle()
                 }
@@ -199,18 +199,18 @@ abstract class ComposeBenchmarkBase {
 
         var iterations = 0
         benchmarkRule.measureRepeatedOnMainThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 receiver.updateModelCb()
                 Snapshot.sendApplyNotifications()
                 assertTrue(
                     "recomposer does not have invalidations for frame",
-                    recomposer.hasPendingWork
+                    recomposer.hasPendingWork,
                 )
             }
 
             testScheduler.advanceUntilIdle()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertFalse("recomposer has invalidations for frame", recomposer.hasPendingWork)
                 receiver.resetCb()
                 Snapshot.sendApplyNotifications()
@@ -236,7 +236,7 @@ abstract class ComposeBenchmarkBase {
 @ExperimentalTestApi
 fun runBlockingTestWithFrameClock(
     context: CoroutineContext = EmptyCoroutineContext,
-    testBody: suspend TestScope.() -> Unit
+    testBody: suspend TestScope.() -> Unit,
 ): Unit =
     runTest(UnconfinedTestDispatcher() + context) {
         withContext(TestMonotonicFrameClock(this)) { testBody() }
@@ -244,7 +244,7 @@ fun runBlockingTestWithFrameClock(
 
 fun ControlledComposition.performRecompose(
     readObserver: (Any) -> Unit,
-    writeObserver: (Any) -> Unit
+    writeObserver: (Any) -> Unit,
 ): Boolean {
     val snapshot = Snapshot.takeMutableSnapshot(readObserver, writeObserver)
     val result = snapshot.enter { recompose().also { applyChanges() } }

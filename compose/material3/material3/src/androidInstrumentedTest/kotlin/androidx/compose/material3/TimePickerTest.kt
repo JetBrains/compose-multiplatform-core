@@ -123,17 +123,11 @@ class TimePickerTest {
         rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
 
         rule
-            .onNodeWithTimeValue(
-                number = 2,
-                selection = TimePickerSelectionMode.Hour,
-            )
+            .onNodeWithTimeValue(number = 2, selection = TimePickerSelectionMode.Hour)
             .assertIsSelected()
 
         rule
-            .onNodeWithTimeValue(
-                number = 23,
-                selection = TimePickerSelectionMode.Minute,
-            )
+            .onNodeWithTimeValue(number = 23, selection = TimePickerSelectionMode.Minute)
             .assertExists()
 
         rule.onNodeWithText("AM").assertExists()
@@ -147,10 +141,7 @@ class TimePickerTest {
         rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
 
         rule
-            .onNodeWithTimeValue(
-                number = 23,
-                selection = TimePickerSelectionMode.Minute,
-            )
+            .onNodeWithTimeValue(number = 23, selection = TimePickerSelectionMode.Minute)
             .performClick()
 
         rule.runOnIdle { assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Minute) }
@@ -298,7 +289,11 @@ class TimePickerTest {
             TimePicker(state)
         }
 
-        rule.onNodeWithContentDescription(contentDescription).onChildren().assertAll(isSelectable())
+        rule
+            .onNodeWithContentDescription(contentDescription)
+            .onChildren()
+            .filter(expectValue(SemanticsProperties.Role, Role.Button))
+            .assertAll(isSelectable())
     }
 
     @Test
@@ -404,6 +399,41 @@ class TimePickerTest {
         rule.onNodeWithText("23").assertContentDescriptionContains("for minutes")
     }
 
+    @Test
+    fun timeInput_userOverride_updates() {
+        val state = TimePickerState(initialHour = 14, initialMinute = 0, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state) }
+
+        rule.onNodeWithText("14").assert(isFocusable()).assertContentDescriptionContains("for hour")
+
+        rule.runOnIdle {
+            state.hour = 20
+            state.minute = 12
+        }
+
+        rule.waitForIdle()
+
+        rule.onNodeWithText("20").assertContentDescriptionContains("for hour")
+
+        rule.onAllNodesWithText("12").assertCountEquals(2)
+    }
+
+    @Test
+    fun timePicker_userOverride_updates() {
+        val state = TimePickerState(initialHour = 14, initialMinute = 0, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
+
+        rule.onNodeWithText("14").assertIsSelected()
+
+        rule.runOnIdle { state.hour = 20 }
+
+        rule.waitForIdle()
+
+        rule.onNodeWithText("20").assertIsSelected()
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun timeInput_keyboardInput_valid() {
@@ -488,6 +518,38 @@ class TimePickerTest {
         rule.onNodeWithText("11").performKeyInput { pressKey(Key.Four) }
 
         assertThat(state.isPm).isTrue()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun timeInput_input12_maintainsAm() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state) }
+
+        rule.onNodeWithText("10").performKeyInput {
+            pressKey(Key.One)
+            pressKey(Key.Two)
+        }
+
+        assertThat(state.isPm).isFalse()
+        assertThat(state.hour).isEqualTo(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun timeInput_input12_resultsIn23() {
+        val state = TimePickerState(initialHour = 14, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state) }
+
+        rule.onNodeWithText("02").performKeyInput {
+            pressKey(Key.One)
+            pressKey(Key.Two)
+        }
+
+        assertThat(state.isPm).isTrue()
+        assertThat(state.hour).isEqualTo(12)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -669,7 +731,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -701,7 +763,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -736,7 +798,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -783,7 +845,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -807,7 +869,7 @@ class TimePickerTest {
                 modifier = Modifier,
                 state = state,
                 colors = TimePickerDefaults.colors(),
-                autoSwitchToMinute = true
+                autoSwitchToMinute = true,
             )
         }
 
@@ -829,7 +891,7 @@ internal fun SemanticsNodeInteractionsProvider.onNodeWithTimeValue(
                 InstrumentationRegistry.getInstrumentation().context.resources,
                 selection,
                 is24Hour,
-                number
+                number,
             )
         )
         .onFirst()
@@ -839,7 +901,7 @@ internal fun contentDescriptionForValue(
     resources: Resources,
     selection: TimePickerSelectionMode,
     is24Hour: Boolean,
-    number: Int
+    number: Int,
 ): String {
 
     val id =

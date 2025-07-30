@@ -21,6 +21,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.semantics.SemanticsActions
@@ -41,7 +43,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -224,7 +225,6 @@ internal class BasicTextFieldUndoTest {
         assertThat(state.undoState.canUndo).isFalse()
     }
 
-    @Ignore("b/323405120")
     @Test
     fun clearHistory_removesAllUndoAndRedo() {
         val state = TextFieldState()
@@ -259,7 +259,6 @@ internal class BasicTextFieldUndoTest {
         }
     }
 
-    @Ignore("b/323344335")
     @Test
     fun paste_neverMerges() {
         val state = TextFieldState()
@@ -313,6 +312,99 @@ internal class BasicTextFieldUndoTest {
         state.undoState.undo()
 
         state.assertTextAndSelection("abc def ghi", TextRange(11))
+    }
+
+    @Test
+    fun programmaticEdits_contributeToUndoHistory() {
+        val state = TextFieldState()
+
+        rule.setContent { BasicTextField(state) }
+
+        rule.runOnIdle { state.edit { append("abc") } }
+
+        rule.runOnIdle {
+            assertThat(state.undoState.canUndo).isTrue()
+            assertThat(state.undoState.canRedo).isFalse()
+        }
+
+        state.undoState.undo()
+
+        rule.runOnIdle {
+            assertThat(state.undoState.canUndo).isFalse()
+            assertThat(state.undoState.canRedo).isTrue()
+        }
+
+        state.assertTextAndSelection("", TextRange.Zero)
+
+        state.undoState.redo()
+
+        state.assertTextAndSelection("abc", TextRange(3))
+    }
+
+    @Test
+    fun programmaticEdits_contributeToUndoHistoryUnmerged() {
+        val state = TextFieldState()
+
+        rule.setContent { BasicTextField(state) }
+
+        with(rule.onNode(hasSetTextAction())) {
+            requestFocus()
+            repeat(3) { performKeyInput { pressKey(Key.A) } }
+            performKeyInput { pressKey(Key.Spacebar) }
+        }
+
+        state.assertTextAndSelection("aaa ", TextRange(4))
+
+        rule.runOnIdle { repeat(3) { state.edit { append("a") } } }
+
+        rule.runOnIdle {
+            assertThat(state.undoState.canUndo).isTrue()
+            assertThat(state.undoState.canRedo).isFalse()
+        }
+
+        state.undoState.undo() // makes "aaa aa"
+
+        state.assertTextAndSelection("aaa aa", TextRange(6))
+
+        state.undoState.undo()
+
+        state.assertTextAndSelection("aaa a", TextRange(5))
+
+        state.undoState.undo()
+
+        state.assertTextAndSelection("aaa ", TextRange(4))
+
+        state.undoState.undo()
+
+        state.assertTextAndSelection("", TextRange.Zero)
+    }
+
+    @Test
+    fun undoDoesNotReadSnapshotState_whileInitializing() {
+        var invalidationCount = 0
+        val observer = SnapshotStateObserver(onChangedExecutor = { it() })
+        lateinit var state: TextFieldState
+        observer.start()
+        try {
+            observer.observeReads(scope = Unit, onValueChangedForScope = { invalidationCount++ }) {
+                state = TextFieldState("Hello")
+            }
+            assertThat(invalidationCount).isEqualTo(0)
+
+            // Act.
+            // Change the state in a way that will contribute to UndoManager. The first edit goes
+            // into undo staging area. The second one flushes the staging area and puts the first
+            // edit into undo stack.
+            Snapshot.withMutableSnapshot {
+                state.editAsUser(null) { append(" World!") }
+                state.editAsUser(null) { replace(0, length, "abc") }
+            }
+
+            // Assert.
+            assertThat(invalidationCount).isEqualTo(0)
+        } finally {
+            observer.stop()
+        }
     }
 
     private fun SemanticsNodeInteraction.typeText(text: String) {

@@ -37,4 +37,9 @@ public class SpeculativeLoadingConfigAdapter implements SpeculativeLoadingConfig
     public int getPrefetchTTLSeconds() {
         return mSpeculativeLoadingConfig.getPrefetchTtlSeconds();
     }
+
+    @Override
+    public int getMaxPrerenders() {
+        return mSpeculativeLoadingConfig.getMaxPrerenders();
+    }
 }

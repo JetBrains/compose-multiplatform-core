@@ -43,7 +43,7 @@ interface TextAutoSize {
      */
     fun TextAutoSizeLayoutScope.getFontSize(
         constraints: Constraints,
-        text: AnnotatedString
+        text: AnnotatedString,
     ): TextUnit
 
     /**
@@ -89,12 +89,12 @@ interface TextAutoSize {
         fun StepBased(
             minFontSize: TextUnit = TextAutoSizeDefaults.MinFontSize,
             maxFontSize: TextUnit = TextAutoSizeDefaults.MaxFontSize,
-            stepSize: TextUnit = 0.25.sp
+            stepSize: TextUnit = 0.25.sp,
         ): TextAutoSize =
             AutoSizeStepBased(
                 minFontSize = minFontSize,
                 maxFontSize = maxFontSize,
-                stepSize = stepSize
+                stepSize = stepSize,
             )
     }
 }
@@ -111,7 +111,7 @@ object TextAutoSizeDefaults {
 private class AutoSizeStepBased(
     private var minFontSize: TextUnit,
     private val maxFontSize: TextUnit,
-    private val stepSize: TextUnit
+    private val stepSize: TextUnit,
 ) : TextAutoSize {
     init {
         // Checks for validity of AutoSize instance
@@ -158,7 +158,7 @@ private class AutoSizeStepBased(
 
     override fun TextAutoSizeLayoutScope.getFontSize(
         constraints: Constraints,
-        text: AnnotatedString
+        text: AnnotatedString,
     ): TextUnit {
         val stepSize = stepSize.toPx()
         val smallest = minFontSize.toPx()

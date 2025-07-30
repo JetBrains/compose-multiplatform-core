@@ -55,7 +55,7 @@ import androidx.xr.compose.material3.EnableXrComponentOverrides
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.material3.LocalNavigationBarOrbiterProperties
 import androidx.xr.compose.material3.LocalNavigationRailOrbiterProperties
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.spatial.OrbiterOffsetType
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,15 +68,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Content() {
     var navSuiteType: NavigationSuiteType? by remember { mutableStateOf(null) }
-    var edgeOffset: EdgeOffset? by remember { mutableStateOf(null) }
+    var edgeOffType: OrbiterOffsetType? by remember { mutableStateOf(null) }
 
     var navSuiteSelectedItem by remember { mutableStateOf(NavSuiteItem.HOME) }
 
     CompositionLocalProvider(
         LocalNavigationBarOrbiterProperties provides
-            DefaultNavigationBarOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationBarOrbiterProperties.copy(offsetType = edgeOffType),
         LocalNavigationRailOrbiterProperties provides
-            DefaultNavigationRailOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationRailOrbiterProperties.copy(offsetType = edgeOffType),
     ) {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
@@ -102,7 +102,7 @@ private fun Content() {
                 NavSuiteItem.SETTINGS -> {
                     XrSettingsPane(
                         onNavSuiteTypeChanged = { navSuiteType = it },
-                        onOrbiterEdgeOffsetChanged = { edgeOffset = it },
+                        onOrbiterEdgeOffsetChanged = { edgeOffType = it },
                     )
                 }
             }

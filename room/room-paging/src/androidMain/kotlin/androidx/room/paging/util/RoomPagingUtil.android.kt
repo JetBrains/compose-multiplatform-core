@@ -85,7 +85,7 @@ public fun <Value : Any> queryDatabase(
         prevKey = prevKey,
         nextKey = nextKey,
         itemsBefore = offset,
-        itemsAfter = maxOf(0, itemCount - nextPosToLoad)
+        itemsAfter = maxOf(0, itemCount - nextPosToLoad),
     )
 }
 

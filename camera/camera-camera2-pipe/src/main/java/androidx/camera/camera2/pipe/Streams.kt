@@ -74,7 +74,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
     public class Config
     internal constructor(
         public val outputs: List<OutputStream.Config>,
-        public val imageSourceConfig: ImageSourceConfig? = null
+        public val imageSourceConfig: ImageSourceConfig? = null,
     ) {
         init {
             val firstOutput = outputs.first()
@@ -111,7 +111,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
                         streamUseHint,
                         sensorPixelModes,
                     ),
-                    imageSourceConfig
+                    imageSourceConfig,
                 )
 
             /**
@@ -120,7 +120,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
              */
             public fun create(
                 output: OutputStream.Config,
-                imageSourceConfig: ImageSourceConfig? = null
+                imageSourceConfig: ImageSourceConfig? = null,
             ): Config = Config(listOf(output), imageSourceConfig)
 
             /**
@@ -130,7 +130,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
              */
             public fun create(
                 outputs: List<OutputStream.Config>,
-                imageSourceConfig: ImageSourceConfig? = null
+                imageSourceConfig: ImageSourceConfig? = null,
             ): Config = Config(outputs, imageSourceConfig)
         }
     }
@@ -482,7 +482,7 @@ public class ImageSourceConfig(
     public val capacity: Int,
     public val usageFlags: Long? = null,
     public val defaultDataSpace: Int? = null,
-    public val defaultHardwareBufferFormat: Int? = null
+    public val defaultHardwareBufferFormat: Int? = null,
 )
 
 /** This identifies a single output. */
@@ -502,7 +502,7 @@ public interface InputStream {
     public class Config(
         public val stream: CameraStream.Config,
         public val maxImages: Int,
-        public var streamFormat: StreamFormat
+        public var streamFormat: StreamFormat,
     )
 }
 

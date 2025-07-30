@@ -1,3 +1,233 @@
 // Baseline format: 1.0
-ChangedType: androidx.wear.compose.foundation.CompositionLocalsKt#getLocalReduceMotion():
-    Method androidx.wear.compose.foundation.CompositionLocalsKt.getLocalReduceMotion has changed return type from androidx.compose.runtime.ProvidableCompositionLocal<androidx.wear.compose.foundation.ReduceMotion> to androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean>
+AddedAbstractMethod: androidx.wear.compose.foundation.ArcPaddingValues#calculateAfterPadding-h2ZJBLU(androidx.compose.ui.unit.LayoutDirection, int):
+    Binary breaking change: Added method androidx.wear.compose.foundation.ArcPaddingValues.calculateAfterPadding-h2ZJBLU(androidx.compose.ui.unit.LayoutDirection,int)
+AddedAbstractMethod: androidx.wear.compose.foundation.ArcPaddingValues#calculateBeforePadding-h2ZJBLU(androidx.compose.ui.unit.LayoutDirection, int):
+    Binary breaking change: Added method androidx.wear.compose.foundation.ArcPaddingValues.calculateBeforePadding-h2ZJBLU(androidx.compose.ui.unit.LayoutDirection,int)
+AddedAbstractMethod: androidx.wear.compose.foundation.ArcPaddingValues#calculateInnerPadding-bxc3Tjc(int):
+    Binary breaking change: Added method androidx.wear.compose.foundation.ArcPaddingValues.calculateInnerPadding-bxc3Tjc(int)
+AddedAbstractMethod: androidx.wear.compose.foundation.ArcPaddingValues#calculateOuterPadding-bxc3Tjc(int):
+    Binary breaking change: Added method androidx.wear.compose.foundation.ArcPaddingValues.calculateOuterPadding-bxc3Tjc(int)
+AddedAbstractMethod: androidx.wear.compose.foundation.GestureInclusion#ignoreGestureStart-3MmeM6k(long, androidx.compose.ui.layout.LayoutCoordinates):
+    Binary breaking change: Added method androidx.wear.compose.foundation.GestureInclusion.ignoreGestureStart-3MmeM6k(long,androidx.compose.ui.layout.LayoutCoordinates)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListLayoutInfo#getAnchorType-ZuIr4RU():
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.ScalingLazyListLayoutInfo.getAnchorType-ZuIr4RU()
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListLayoutInfo#getViewportSize-YbymL2g():
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.ScalingLazyListLayoutInfo.getViewportSize-YbymL2g()
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListScope#item(Object, kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.ScalingLazyListItemScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.ScalingLazyListScope.item(Object,kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.ScalingLazyListItemScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListScope#items(int, kotlin.jvm.functions.Function1<? super java.lang.Integer,?>, kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.ScalingLazyListItemScope,? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.ScalingLazyListScope.items(int,kotlin.jvm.functions.Function1<? super java.lang.Integer,?>,kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.ScalingLazyListItemScope,? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.ScalingParams#resolveViewportVerticalOffset-BRTryo0(long):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.ScalingParams.resolveViewportVerticalOffset-BRTryo0(long)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope#getScrollProgress-CyslRjo(androidx.compose.ui.graphics.GraphicsLayerScope):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.getScrollProgress-CyslRjo(androidx.compose.ui.graphics.GraphicsLayerScope)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope#getScrollProgress-CyslRjo(androidx.compose.ui.graphics.drawscope.DrawScope):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.getScrollProgress-CyslRjo(androidx.compose.ui.graphics.drawscope.DrawScope)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnLayoutInfo#getViewportSize-YbymL2g():
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnLayoutInfo.getViewportSize-YbymL2g()
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope#item(Object, Object, kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope.item(Object,Object,kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope#items(int, kotlin.jvm.functions.Function1<? super java.lang.Integer,?>, kotlin.jvm.functions.Function1<? super java.lang.Integer,?>, kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope.items(int,kotlin.jvm.functions.Function1<? super java.lang.Integer,?>,kotlin.jvm.functions.Function1<? super java.lang.Integer,?>,kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo#getScrollProgress-xlmz8Ag():
+    Binary breaking change: Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo.getScrollProgress-xlmz8Ag()
+
+
+AddedMethod: androidx.wear.compose.foundation.AnchorType#box-impl(float):
+    Added method androidx.wear.compose.foundation.AnchorType.box-impl(float)
+AddedMethod: androidx.wear.compose.foundation.AnchorType#unbox-impl():
+    Added method androidx.wear.compose.foundation.AnchorType.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.AnchorType.Companion#getCenter-IUldqTk():
+    Added method androidx.wear.compose.foundation.AnchorType.Companion.getCenter-IUldqTk()
+AddedMethod: androidx.wear.compose.foundation.AnchorType.Companion#getEnd-IUldqTk():
+    Added method androidx.wear.compose.foundation.AnchorType.Companion.getEnd-IUldqTk()
+AddedMethod: androidx.wear.compose.foundation.AnchorType.Companion#getStart-IUldqTk():
+    Added method androidx.wear.compose.foundation.AnchorType.Companion.getStart-IUldqTk()
+AddedMethod: androidx.wear.compose.foundation.BasicCurvedTextKt#basicCurvedText-q1JGhlM(androidx.wear.compose.foundation.CurvedScope, String, androidx.wear.compose.foundation.CurvedTextStyle, androidx.wear.compose.foundation.CurvedModifier, androidx.wear.compose.foundation.CurvedDirection.Angular, int):
+    Added method androidx.wear.compose.foundation.BasicCurvedTextKt.basicCurvedText-q1JGhlM(androidx.wear.compose.foundation.CurvedScope,String,androidx.wear.compose.foundation.CurvedTextStyle,androidx.wear.compose.foundation.CurvedModifier,androidx.wear.compose.foundation.CurvedDirection.Angular,int)
+AddedMethod: androidx.wear.compose.foundation.BasicCurvedTextKt#basicCurvedText-zBu2efk(androidx.wear.compose.foundation.CurvedScope, String, androidx.wear.compose.foundation.CurvedModifier, androidx.wear.compose.foundation.CurvedDirection.Angular, int, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer,? super java.lang.Integer,androidx.wear.compose.foundation.CurvedTextStyle>):
+    Added method androidx.wear.compose.foundation.BasicCurvedTextKt.basicCurvedText-zBu2efk(androidx.wear.compose.foundation.CurvedScope,String,androidx.wear.compose.foundation.CurvedModifier,androidx.wear.compose.foundation.CurvedDirection.Angular,int,kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer,? super java.lang.Integer,androidx.wear.compose.foundation.CurvedTextStyle>)
+AddedMethod: androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt#BasicSwipeToDismissBox(androidx.wear.compose.foundation.SwipeToDismissBoxState, androidx.compose.ui.Modifier, Object, Object, boolean, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.layout.BoxScope,? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt.BasicSwipeToDismissBox(androidx.wear.compose.foundation.SwipeToDismissBoxState,androidx.compose.ui.Modifier,Object,Object,boolean,kotlin.jvm.functions.Function4<? super androidx.compose.foundation.layout.BoxScope,? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt#BasicSwipeToDismissBox(kotlin.jvm.functions.Function0<kotlin.Unit>, androidx.compose.ui.Modifier, androidx.wear.compose.foundation.SwipeToDismissBoxState, Object, Object, boolean, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.layout.BoxScope,? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt.BasicSwipeToDismissBox(kotlin.jvm.functions.Function0<kotlin.Unit>,androidx.compose.ui.Modifier,androidx.wear.compose.foundation.SwipeToDismissBoxState,Object,Object,boolean,kotlin.jvm.functions.Function4<? super androidx.compose.foundation.layout.BoxScope,? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt#edgeSwipeToDismiss-wH6b6FI(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.SwipeToDismissBoxState, float):
+    Added method androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt.edgeSwipeToDismiss-wH6b6FI(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.SwipeToDismissBoxState,float)
+AddedMethod: androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt#rememberSwipeToDismissBoxState(androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.SwipeToDismissValue,java.lang.Boolean>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.BasicSwipeToDismissBoxKt.rememberSwipeToDismissBoxState(androidx.compose.animation.core.AnimationSpec<java.lang.Float>,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.SwipeToDismissValue,java.lang.Boolean>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular#box-impl(float):
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.box-impl(float)
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular#unbox-impl():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion#Custom-MIL3zXU(float):
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion.Custom-MIL3zXU(float)
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion#getCenter-yWRYBYk():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion.getCenter-yWRYBYk()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion#getEnd-yWRYBYk():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion.getEnd-yWRYBYk()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion#getStart-yWRYBYk():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Angular.Companion.getStart-yWRYBYk()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial#box-impl(float):
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.box-impl(float)
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial#unbox-impl():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion#Custom-Tt6c-v8(float):
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion.Custom-Tt6c-v8(float)
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion#getCenter-BjYtHoc():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion.getCenter-BjYtHoc()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion#getInner-BjYtHoc():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion.getInner-BjYtHoc()
+AddedMethod: androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion#getOuter-BjYtHoc():
+    Added method androidx.wear.compose.foundation.CurvedAlignment.Radial.Companion.getOuter-BjYtHoc()
+AddedMethod: androidx.wear.compose.foundation.CurvedBoxKt#curvedBox-wFQxHJU(androidx.wear.compose.foundation.CurvedScope, androidx.wear.compose.foundation.CurvedModifier, androidx.wear.compose.foundation.CurvedAlignment.Radial, androidx.wear.compose.foundation.CurvedAlignment.Angular, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.CurvedBoxKt.curvedBox-wFQxHJU(androidx.wear.compose.foundation.CurvedScope,androidx.wear.compose.foundation.CurvedModifier,androidx.wear.compose.foundation.CurvedAlignment.Radial,androidx.wear.compose.foundation.CurvedAlignment.Angular,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.CurvedColumnKt#curvedColumn-6v4VuIY(androidx.wear.compose.foundation.CurvedScope, androidx.wear.compose.foundation.CurvedModifier, androidx.wear.compose.foundation.CurvedDirection.Radial, androidx.wear.compose.foundation.CurvedAlignment.Angular, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.CurvedColumnKt.curvedColumn-6v4VuIY(androidx.wear.compose.foundation.CurvedScope,androidx.wear.compose.foundation.CurvedModifier,androidx.wear.compose.foundation.CurvedDirection.Radial,androidx.wear.compose.foundation.CurvedAlignment.Angular,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.CurvedComposableKt#curvedComposable-E6nutXQ(androidx.wear.compose.foundation.CurvedScope, androidx.wear.compose.foundation.CurvedModifier, float, kotlin.jvm.functions.Function3):
+    Added method androidx.wear.compose.foundation.CurvedComposableKt.curvedComposable-E6nutXQ(androidx.wear.compose.foundation.CurvedScope,androidx.wear.compose.foundation.CurvedModifier,float,kotlin.jvm.functions.Function3)
+AddedMethod: androidx.wear.compose.foundation.CurvedComposableKt#curvedComposable-y9Iwo_o(androidx.wear.compose.foundation.CurvedScope, androidx.wear.compose.foundation.CurvedModifier, float, boolean, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.CurvedComposableKt.curvedComposable-y9Iwo_o(androidx.wear.compose.foundation.CurvedScope,androidx.wear.compose.foundation.CurvedModifier,float,boolean,kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular#box-impl(int):
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.box-impl(int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular#unbox-impl():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular.Companion#getClockwise-gmlPZk4():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.Companion.getClockwise-gmlPZk4()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular.Companion#getCounterClockwise-gmlPZk4():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.Companion.getCounterClockwise-gmlPZk4()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular.Companion#getNormal-gmlPZk4():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.Companion.getNormal-gmlPZk4()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Angular.Companion#getReversed-gmlPZk4():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Angular.Companion.getReversed-gmlPZk4()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Radial#box-impl(int):
+    Added method androidx.wear.compose.foundation.CurvedDirection.Radial.box-impl(int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Radial#unbox-impl():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Radial.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Radial.Companion#getInsideOut-Ysh6JRM():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Radial.Companion.getInsideOut-Ysh6JRM()
+AddedMethod: androidx.wear.compose.foundation.CurvedDirection.Radial.Companion#getOutsideIn-Ysh6JRM():
+    Added method androidx.wear.compose.foundation.CurvedDirection.Radial.Companion.getOutsideIn-Ysh6JRM()
+AddedMethod: androidx.wear.compose.foundation.CurvedDrawKt#angularGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier, java.util.List<androidx.compose.ui.graphics.Color>, int):
+    Added method androidx.wear.compose.foundation.CurvedDrawKt.angularGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier,java.util.List<androidx.compose.ui.graphics.Color>,int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDrawKt#angularGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier, kotlin.Pair<java.lang.Float,androidx.compose.ui.graphics.Color>[], int):
+    Added method androidx.wear.compose.foundation.CurvedDrawKt.angularGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier,kotlin.Pair<java.lang.Float,androidx.compose.ui.graphics.Color>[],int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDrawKt#background-nkY6TQo(androidx.wear.compose.foundation.CurvedModifier, long, int):
+    Added method androidx.wear.compose.foundation.CurvedDrawKt.background-nkY6TQo(androidx.wear.compose.foundation.CurvedModifier,long,int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDrawKt#radialGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier, java.util.List<androidx.compose.ui.graphics.Color>, int):
+    Added method androidx.wear.compose.foundation.CurvedDrawKt.radialGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier,java.util.List<androidx.compose.ui.graphics.Color>,int)
+AddedMethod: androidx.wear.compose.foundation.CurvedDrawKt#radialGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier, kotlin.Pair<java.lang.Float,androidx.compose.ui.graphics.Color>[], int):
+    Added method androidx.wear.compose.foundation.CurvedDrawKt.radialGradientBackground-dtTnAaA(androidx.wear.compose.foundation.CurvedModifier,kotlin.Pair<java.lang.Float,androidx.compose.ui.graphics.Color>[],int)
+AddedMethod: androidx.wear.compose.foundation.CurvedLayoutKt#CurvedLayout-z6uKIlA(androidx.compose.ui.Modifier, float, float, androidx.wear.compose.foundation.CurvedAlignment.Radial, int, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.CurvedLayoutKt.CurvedLayout-z6uKIlA(androidx.compose.ui.Modifier,float,float,androidx.wear.compose.foundation.CurvedAlignment.Radial,int,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#ArcPaddingValues-0680j_4(float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.ArcPaddingValues-0680j_4(float)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#ArcPaddingValues-YgX7TsA(float, float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.ArcPaddingValues-YgX7TsA(float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#ArcPaddingValues-a9UjIt4(float, float, float, float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.ArcPaddingValues-a9UjIt4(float,float,float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#padding-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier, float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.padding-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#padding-VpY3zN4(androidx.wear.compose.foundation.CurvedModifier, float, float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.padding-VpY3zN4(androidx.wear.compose.foundation.CurvedModifier,float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedPaddingKt#padding-qDBjuR0(androidx.wear.compose.foundation.CurvedModifier, float, float, float, float):
+    Added method androidx.wear.compose.foundation.CurvedPaddingKt.padding-qDBjuR0(androidx.wear.compose.foundation.CurvedModifier,float,float,float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedRowKt#curvedRow-siNV5iY(androidx.wear.compose.foundation.CurvedScope, androidx.wear.compose.foundation.CurvedModifier, androidx.wear.compose.foundation.CurvedAlignment.Radial, androidx.wear.compose.foundation.CurvedDirection.Angular, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.CurvedRowKt.curvedRow-siNV5iY(androidx.wear.compose.foundation.CurvedScope,androidx.wear.compose.foundation.CurvedModifier,androidx.wear.compose.foundation.CurvedAlignment.Radial,androidx.wear.compose.foundation.CurvedDirection.Angular,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.CurvedScope,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.CurvedSizeKt#angularSizeDp-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier, float):
+    Added method androidx.wear.compose.foundation.CurvedSizeKt.angularSizeDp-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedSizeKt#radialSize-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier, float):
+    Added method androidx.wear.compose.foundation.CurvedSizeKt.radialSize-3ABfNKs(androidx.wear.compose.foundation.CurvedModifier,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedSizeKt#size-wH6b6FI(androidx.wear.compose.foundation.CurvedModifier, float, float):
+    Added method androidx.wear.compose.foundation.CurvedSizeKt.size-wH6b6FI(androidx.wear.compose.foundation.CurvedModifier,float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedSizeKt#sizeIn-oZzcvok(androidx.wear.compose.foundation.CurvedModifier, float, float, float, float):
+    Added method androidx.wear.compose.foundation.CurvedSizeKt.sizeIn-oZzcvok(androidx.wear.compose.foundation.CurvedModifier,float,float,float,float)
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#copy-MF-8BNI(long, long, long, androidx.compose.ui.text.font.FontFamily, androidx.compose.ui.text.font.FontWeight, androidx.compose.ui.text.font.FontStyle, androidx.compose.ui.text.font.FontSynthesis, long):
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.copy-MF-8BNI(long,long,long,androidx.compose.ui.text.font.FontFamily,androidx.compose.ui.text.font.FontWeight,androidx.compose.ui.text.font.FontStyle,androidx.compose.ui.text.font.FontSynthesis,long)
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#copy-rRnh6Vg(long, long, long):
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.copy-rRnh6Vg(long,long,long)
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#copy-xgAEyWg(long, long, long, androidx.compose.ui.text.font.FontFamily, androidx.compose.ui.text.font.FontWeight, androidx.compose.ui.text.font.FontStyle, androidx.compose.ui.text.font.FontSynthesis):
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.copy-xgAEyWg(long,long,long,androidx.compose.ui.text.font.FontFamily,androidx.compose.ui.text.font.FontWeight,androidx.compose.ui.text.font.FontStyle,androidx.compose.ui.text.font.FontSynthesis)
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#copy-zt0DKyk(long, long, long, androidx.compose.ui.text.font.FontFamily, androidx.compose.ui.text.font.FontWeight, androidx.compose.ui.text.font.FontStyle, androidx.compose.ui.text.font.FontSynthesis, long, long, long):
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.copy-zt0DKyk(long,long,long,androidx.compose.ui.text.font.FontFamily,androidx.compose.ui.text.font.FontWeight,androidx.compose.ui.text.font.FontStyle,androidx.compose.ui.text.font.FontSynthesis,long,long,long)
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getBackground-0d7_KjU():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getBackground-0d7_KjU()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getColor-0d7_KjU():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getColor-0d7_KjU()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getFontSize-XSAIIZE():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getFontSize-XSAIIZE()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getFontStyle-4Lr2A7w():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getFontStyle-4Lr2A7w()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getFontSynthesis-ZQGJjVo():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getFontSynthesis-ZQGJjVo()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getLetterSpacing-XSAIIZE():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getLetterSpacing-XSAIIZE()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getLetterSpacingCounterClockwise-XSAIIZE():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getLetterSpacingCounterClockwise-XSAIIZE()
+AddedMethod: androidx.wear.compose.foundation.CurvedTextStyle#getLineHeight-XSAIIZE():
+    Added method androidx.wear.compose.foundation.CurvedTextStyle.getLineHeight-XSAIIZE()
+AddedMethod: androidx.wear.compose.foundation.ExpandableKt#expandableButton(androidx.wear.compose.foundation.lazy.ScalingLazyListScope, androidx.wear.compose.foundation.ExpandableState, Object, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.ExpandableKt.expandableButton(androidx.wear.compose.foundation.lazy.ScalingLazyListScope,androidx.wear.compose.foundation.ExpandableState,Object,kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.ExpandableKt#expandableItem(androidx.wear.compose.foundation.lazy.ScalingLazyListScope, androidx.wear.compose.foundation.ExpandableState, Object, kotlin.jvm.functions.Function3<? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
+    Added method androidx.wear.compose.foundation.ExpandableKt.expandableItem(androidx.wear.compose.foundation.lazy.ScalingLazyListScope,androidx.wear.compose.foundation.ExpandableState,Object,kotlin.jvm.functions.Function3<? super java.lang.Boolean,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedMethod: androidx.wear.compose.foundation.ExpandableKt#rememberExpandableState(boolean, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.ExpandableKt.rememberExpandableState(boolean,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.ExpandableState.Companion#saver(androidx.compose.animation.core.AnimationSpec<java.lang.Float>, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, androidx.compose.runtime.Composer, int):
+    Added method androidx.wear.compose.foundation.ExpandableState.Companion.saver(androidx.compose.animation.core.AnimationSpec<java.lang.Float>,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,androidx.compose.runtime.Composer,int)
+AddedMethod: androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt#ActiveFocusListener(kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope,? super java.lang.Boolean,kotlin.Unit>, androidx.compose.runtime.Composer, int):
+    Added method androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt.ActiveFocusListener(kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope,? super java.lang.Boolean,kotlin.Unit>,androidx.compose.runtime.Composer,int)
+AddedMethod: androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt#rememberActiveFocusRequester(androidx.compose.runtime.Composer, int):
+    Added method androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt.rememberActiveFocusRequester(androidx.compose.runtime.Composer,int)
+AddedMethod: androidx.wear.compose.foundation.SwipeToDismissBoxDefaults#getEdgeWidth-D9Ej5fM():
+    Added method androidx.wear.compose.foundation.SwipeToDismissBoxDefaults.getEdgeWidth-D9Ej5fM()
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults#snapFlingBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.ScalingLazyListState, float, androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults.snapFlingBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.ScalingLazyListState,float,androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt#ScalingLazyColumn-7uB0L7Y(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.ScalingLazyListState, androidx.compose.foundation.layout.PaddingValues, boolean, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.lazy.ScalingParams, int, androidx.wear.compose.foundation.lazy.AutoCenteringParams, kotlin.jvm.functions.Function1, androidx.compose.runtime.Composer, int, int, int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt.ScalingLazyColumn-7uB0L7Y(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.ScalingLazyListState,androidx.compose.foundation.layout.PaddingValues,boolean,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.lazy.ScalingParams,int,androidx.wear.compose.foundation.lazy.AutoCenteringParams,kotlin.jvm.functions.Function1,androidx.compose.runtime.Composer,int,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt#ScalingLazyColumn-l7mySQI(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.ScalingLazyListState, androidx.compose.foundation.layout.PaddingValues, boolean, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.lazy.ScalingParams, int, androidx.wear.compose.foundation.lazy.AutoCenteringParams, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior, androidx.compose.foundation.OverscrollEffect, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.ScalingLazyListScope,kotlin.Unit>, androidx.compose.runtime.Composer, int, int, int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt.ScalingLazyColumn-l7mySQI(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.ScalingLazyListState,androidx.compose.foundation.layout.PaddingValues,boolean,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.lazy.ScalingParams,int,androidx.wear.compose.foundation.lazy.AutoCenteringParams,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,androidx.compose.foundation.OverscrollEffect,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.ScalingLazyListScope,kotlin.Unit>,androidx.compose.runtime.Composer,int,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt#ScalingLazyColumn-uNMxmyI(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.ScalingLazyListState, androidx.compose.foundation.layout.PaddingValues, boolean, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.lazy.ScalingParams, int, androidx.wear.compose.foundation.lazy.AutoCenteringParams, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior, kotlin.jvm.functions.Function1, androidx.compose.runtime.Composer, int, int, int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt.ScalingLazyColumn-uNMxmyI(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.ScalingLazyListState,androidx.compose.foundation.layout.PaddingValues,boolean,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.lazy.ScalingParams,int,androidx.wear.compose.foundation.lazy.AutoCenteringParams,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,kotlin.jvm.functions.Function1,androidx.compose.runtime.Composer,int,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType#box-impl(int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.box-impl(int)
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType#unbox-impl():
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.Companion#getItemCenter-ZuIr4RU():
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.Companion.getItemCenter-ZuIr4RU()
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.Companion#getItemStart-ZuIr4RU():
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType.Companion.getItemStart-ZuIr4RU()
+AddedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyListStateKt#rememberScalingLazyListState(int, int, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.lazy.ScalingLazyListStateKt.rememberScalingLazyListState(int,int,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#box-impl(long):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.box-impl(long)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#constructor-impl(float, float):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.constructor-impl(float,float)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#getBottomOffsetFraction-impl(long):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.getBottomOffsetFraction-impl(long)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#getTopOffsetFraction-impl(long):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.getTopOffsetFraction-impl(long)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#isSpecified-impl(long):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.isSpecified-impl(long)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#isUnspecified-impl(long):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.isUnspecified-impl(long)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#unbox-impl():
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.unbox-impl()
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.Companion#getUnspecified-xlmz8Ag():
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress.Companion.getUnspecified-xlmz8Ag()
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt#TransformingLazyColumn(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, androidx.compose.foundation.layout.PaddingValues, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior, androidx.compose.foundation.OverscrollEffect, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt.TransformingLazyColumn(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.TransformingLazyColumnState,androidx.compose.foundation.layout.PaddingValues,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,androidx.compose.foundation.OverscrollEffect,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnStateKt#rememberTransformingLazyColumnState(int, int, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.lazy.TransformingLazyColumnStateKt.rememberTransformingLazyColumnState(int,int,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.pager.PagerDefaults#gestureInclusion(androidx.wear.compose.foundation.pager.PagerState, float, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.pager.PagerDefaults.gestureInclusion(androidx.wear.compose.foundation.pager.PagerState,float,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.pager.PagerDefaults#snapFlingBehavior(androidx.wear.compose.foundation.pager.PagerState, int, androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float>, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, float, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.pager.PagerDefaults.snapFlingBehavior(androidx.wear.compose.foundation.pager.PagerState,int,androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float>,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,float,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.pager.PagerStateKt#rememberPagerState(int, float, kotlin.jvm.functions.Function0<java.lang.Integer>, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.pager.PagerStateKt.rememberPagerState(int,float,kotlin.jvm.functions.Function0<java.lang.Integer>,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#behavior(androidx.compose.foundation.gestures.ScrollableState, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.behavior(androidx.compose.foundation.gestures.ScrollableState,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#snapBehavior-942rkJo(androidx.compose.foundation.gestures.ScrollableState, androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider, float, boolean, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.snapBehavior-942rkJo(androidx.compose.foundation.gestures.ScrollableState,androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider,float,boolean,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.ScalingLazyListState, float, boolean, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.ScalingLazyListState,float,boolean,androidx.compose.runtime.Composer,int,int)
+AddedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.pager.PagerState, float, boolean, androidx.compose.runtime.Composer, int, int):
+    Added method androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.pager.PagerState,float,boolean,androidx.compose.runtime.Composer,int,int)

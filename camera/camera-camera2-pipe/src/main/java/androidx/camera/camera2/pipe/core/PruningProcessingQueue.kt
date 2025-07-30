@@ -188,7 +188,7 @@ internal class PruningProcessingQueue<T>(
     internal companion object {
         /** Launch the processing loop in the provided processing scope. */
         fun <T> PruningProcessingQueue<T>.processIn(
-            scope: CoroutineScope,
+            scope: CoroutineScope
         ): PruningProcessingQueue<T> {
             check(started.compareAndSet(expect = false, update = true)) {
                 "PruningProcessingQueue cannot be re-started!"

@@ -28,7 +28,9 @@ import androidx.wear.protolayout.LayoutElementBuilders.ArcLine
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.DashedArcLine
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
+import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.recommendedAnimationSpec
 import androidx.wear.protolayout.types.dp
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -36,6 +38,10 @@ import kotlin.math.min
  * This method provides the fallback content layout for [circularProgressIndicator] and
  * [segmentedCircularProgressIndicator] using [ArcLine] when the renderer version is lower than
  * 1.403 where [DashedArcLine] is not available.
+ *
+ * This fallback component consumes 2 animation quotas when [dynamicProgress] is specified with
+ * animation by the caller. It is highly recommend to use the [recommendedAnimationSpec] to animate
+ * the progress.
  *
  * Note that we require valid start and end angles for calling this method.
  */
@@ -47,7 +53,7 @@ internal fun MaterialScope.circularProgressIndicatorFallbackImpl(
     dynamicProgress: DynamicFloat?,
     @Dimension(unit = DP) strokeWidth: Float,
     @Dimension(unit = DP) gapSize: Float,
-    colors: ProgressIndicatorColors
+    colors: ProgressIndicatorColors,
 ): Box.Builder {
     // Offset the anchor to make space for the cap and half gap.
     val anchorOffsetDegrees =
@@ -67,10 +73,10 @@ internal fun MaterialScope.circularProgressIndicatorFallbackImpl(
                         sweepAngle = endAngleDegrees - startAngleDegrees,
                         staticProgress = staticProgress,
                         dynamicProgress = dynamicProgress,
-                        lengthAdjustment = anchorOffsetDegrees * 2F
+                        lengthAdjustment = anchorOffsetDegrees * 2F,
                     ),
-                color = colors.trackColor.prop,
-                strokeWidth = strokeWidth
+                color = trackColor(staticProgress, dynamicProgress, colors),
+                strokeWidth = strokeWidth,
             )
         )
         .addContent(
@@ -82,10 +88,10 @@ internal fun MaterialScope.circularProgressIndicatorFallbackImpl(
                         sweepAngle = endAngleDegrees - startAngleDegrees,
                         staticProgress = staticProgress,
                         dynamicProgress = dynamicProgress,
-                        lengthAdjustment = anchorOffsetDegrees * 2F
+                        lengthAdjustment = anchorOffsetDegrees * 2F,
                     ),
                 color = colors.indicatorColor.prop,
-                strokeWidth = strokeWidth
+                strokeWidth = strokeWidth,
             )
         )
 }
@@ -101,7 +107,7 @@ private fun createArc(
     anchorType: Int,
     arcLength: DegreesProp,
     color: ColorProp,
-    @Dimension(unit = DP) strokeWidth: Float
+    @Dimension(unit = DP) strokeWidth: Float,
 ): Arc =
     Arc.Builder()
         .setAnchorAngle(degrees(anchorDegree))
@@ -126,44 +132,50 @@ private fun Float.dpToDegree(radius: Double): Float =
     // radianAngle = arcLength / radius
     Math.toDegrees(this / radius).toFloat()
 
+// Progress overflow is handled with modulo.
 private fun progressInDegrees(
     sweepAngle: Float,
     staticProgress: Float,
     dynamicProgress: DynamicFloat?,
-    lengthAdjustment: Float
+    lengthAdjustment: Float,
 ): DegreesProp =
     arcInDegrees(
         sweepAngle = sweepAngle,
-        staticRatio = staticProgress,
-        dynamicRatio = dynamicProgress,
-        lengthAdjustment = lengthAdjustment
+        staticRatio = staticProgress - floor(staticProgress),
+        dynamicRatio = dynamicProgress?.rem(1F),
+        lengthAdjustment = lengthAdjustment,
     )
 
+// Progress overflow is handled with modulo.
 private fun trackInDegrees(
     sweepAngle: Float,
     staticProgress: Float,
     dynamicProgress: DynamicFloat?,
-    lengthAdjustment: Float
+    lengthAdjustment: Float,
 ): DegreesProp =
     arcInDegrees(
         sweepAngle = sweepAngle,
-        staticRatio = 1F - staticProgress,
+        staticRatio = 1F - (staticProgress - floor(staticProgress)),
         dynamicRatio =
-            if (dynamicProgress == null) null else DynamicFloat.constant(1F).minus(dynamicProgress),
-        lengthAdjustment = lengthAdjustment
+            if (dynamicProgress == null) {
+                null
+            } else {
+                DynamicFloat.constant(1F).minus(dynamicProgress.rem(1F))
+            },
+        lengthAdjustment = lengthAdjustment,
     )
 
 private fun arcInDegrees(
     sweepAngle: Float,
     staticRatio: Float,
     dynamicRatio: DynamicFloat?,
-    lengthAdjustment: Float
+    lengthAdjustment: Float,
 ): DegreesProp {
     val staticValue =
         getCorrectStaticArcLength(
             sweepAngle = sweepAngle,
             ratio = staticRatio,
-            lengthAdjustment = lengthAdjustment
+            lengthAdjustment = lengthAdjustment,
         )
 
     if (dynamicRatio == null) { // static value
@@ -175,7 +187,7 @@ private fun arcInDegrees(
             getApproximateDynamicArcLength(
                 sweepAngle = sweepAngle,
                 ratio = dynamicRatio,
-                lengthAdjustment = lengthAdjustment
+                lengthAdjustment = lengthAdjustment,
             )
         )
         .build()
@@ -197,7 +209,7 @@ private fun arcInDegrees(
 private fun getCorrectStaticArcLength(
     sweepAngle: Float,
     ratio: Float,
-    lengthAdjustment: Float
+    lengthAdjustment: Float,
 ): Float {
     val length = (sweepAngle) * ratio - lengthAdjustment
     val maxLength = sweepAngle - 2F * lengthAdjustment
@@ -220,5 +232,5 @@ private fun getCorrectStaticArcLength(
 private fun getApproximateDynamicArcLength(
     sweepAngle: Float,
     ratio: DynamicFloat,
-    lengthAdjustment: Float
+    lengthAdjustment: Float,
 ) = ratio.times(sweepAngle - lengthAdjustment * 2).plus(ARC_OFFSET_IN_DEGREES)

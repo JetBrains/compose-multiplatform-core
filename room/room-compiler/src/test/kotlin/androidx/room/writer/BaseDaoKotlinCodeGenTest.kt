@@ -17,11 +17,11 @@
 package androidx.room.writer
 
 import androidx.room.DatabaseProcessingStep
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.runKspTest
 import androidx.room.processor.Context
-import androidx.room.runKspTestWithK1
 import java.io.File
 import loadTestSource
 import writeTestSource
@@ -37,7 +37,7 @@ abstract class BaseDaoKotlinCodeGenTest {
         compiledFiles: List<File> = emptyList(),
         jvmDefaultMode: String = "disable",
         withKsp2: Boolean = true,
-        handler: (XTestInvocation) -> Unit = {}
+        handler: (XTestInvocation) -> Unit = {},
     ) {
         val options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true")
         val kotlincArguments = listOf("-jvm-target=11", "-Xjvm-default=${jvmDefaultMode}")
@@ -47,7 +47,7 @@ abstract class BaseDaoKotlinCodeGenTest {
                 .process(
                     it.processingEnv,
                     mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
-                    it.roundEnv.isProcessingOver
+                    it.roundEnv.isProcessingOver,
                 )
             it.assertCompilationResult {
                 val expectedSrc = loadTestSource(expectedFilePath, "MyDao_Impl")
@@ -58,7 +58,7 @@ abstract class BaseDaoKotlinCodeGenTest {
                         checkNotNull(this.findGeneratedSource(expectedSrc.relativePath)) {
                             "Couldn't find gen src: $expectedSrc"
                         },
-                        expectedFilePath
+                        expectedFilePath,
                     )
                 }
                 this.generatedSource(expectedSrc)
@@ -66,22 +66,17 @@ abstract class BaseDaoKotlinCodeGenTest {
             }
             handler.invoke(it)
         }
-        if (withKsp2) {
-            runKspTest(
-                sources = sources,
-                classpath = compiledFiles,
-                options = options,
-                kotlincArguments = kotlincArguments,
-                handler = invocationHandler
-            )
-        } else {
-            runKspTestWithK1(
-                sources = sources,
-                classpath = compiledFiles,
-                options = options,
-                kotlincArguments = kotlincArguments,
-                handler = invocationHandler
-            )
-        }
+        runKspTest(
+            sources = sources,
+            classpath = compiledFiles,
+            options = options,
+            kotlincArguments =
+                if (!withKsp2) {
+                    KOTLINC_LANGUAGE_1_9_ARGS
+                } else {
+                    emptyList<String>()
+                } + kotlincArguments,
+            handler = invocationHandler,
+        )
     }
 }

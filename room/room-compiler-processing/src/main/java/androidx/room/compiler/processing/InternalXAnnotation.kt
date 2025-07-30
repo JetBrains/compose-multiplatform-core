@@ -33,8 +33,6 @@ internal abstract class InternalXAnnotation : XAnnotation {
         return valuesByName[methodName]
             ?: error("No property named $methodName was found in annotation $name")
     }
-
-    abstract fun <T : Annotation> asAnnotationBox(annotationClass: Class<T>): XAnnotationBox<T>
 }
 
 /**
@@ -69,7 +67,7 @@ internal fun XAnnotation.unwrapRepeatedAnnotationsFromContainer(): List<XAnnotat
                     // to how they work (eg different parameters).
                     it.type.typeElement?.hasAnyAnnotation(
                         Repeatable::class,
-                        kotlin.annotation.Repeatable::class
+                        kotlin.annotation.Repeatable::class,
                     ) == true
                 }
 

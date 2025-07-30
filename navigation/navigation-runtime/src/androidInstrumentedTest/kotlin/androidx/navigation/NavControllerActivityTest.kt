@@ -97,7 +97,7 @@ class NavControllerActivityTest {
         navController.navigate(
             R.id.start_test,
             null,
-            navOptions { popUpTo(R.id.second_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.second_test) { inclusive = true } },
         )
         assertThat(navController.currentDestination?.id).isEqualTo(R.id.start_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -129,7 +129,7 @@ class NavControllerActivityTest {
         navController.navigate(
             R.id.start_test,
             null,
-            navOptions { popUpTo(R.id.second_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.second_test) { inclusive = true } },
         )
         assertThat(navController.currentDestination?.id).isEqualTo(R.id.start_test)
         assertThat(navigator.backStack.size).isEqualTo(1)

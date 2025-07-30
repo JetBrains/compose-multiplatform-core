@@ -36,7 +36,7 @@ import javax.tools.Diagnostic
 internal class Ksp2Compilation(
     private val name: String,
     private val symbolProcessorProviders: List<SymbolProcessorProvider>,
-    private val processorOptions: Map<String, String>
+    private val processorOptions: Map<String, String>,
 ) {
     fun execute(workingDir: File, arguments: CompilationStepArguments): CompilationStepResult {
         if (symbolProcessorProviders.isEmpty()) {
@@ -49,7 +49,7 @@ internal class Ksp2Compilation(
             KotlinSymbolProcessing(
                     kspConfig = kspConfig,
                     symbolProcessorProviders = symbolProcessorProviders,
-                    logger = kspDiagnostics
+                    logger = kspDiagnostics,
                 )
                 .execute()
         val generatedSources =
@@ -60,7 +60,7 @@ internal class Ksp2Compilation(
         val diagnostics =
             resolveDiagnostics(
                 diagnostics = kspDiagnostics.messages,
-                sourceSets = arguments.sourceSets + generatedSources
+                sourceSets = arguments.sourceSets + generatedSources,
             )
         val outputResources = workingDir.resolve(RESOURCE_OUT_FOLDER_NAME)
         val outputClasspath = listOf(workingDir.resolve(CLASS_OUT_FOLDER_NAME))
@@ -77,7 +77,7 @@ internal class Ksp2Compilation(
             nextCompilerArguments =
                 arguments.copy(sourceSets = arguments.sourceSets + generatedSources),
             outputClasspath = outputClasspath,
-            generatedResources = generatedResources
+            generatedResources = generatedResources,
         )
     }
 
@@ -155,7 +155,7 @@ internal class Ksp2Compilation(
                 is FileLocation ->
                     RawDiagnosticMessage.Location(
                         path = location.filePath,
-                        line = location.lineNumber
+                        line = location.lineNumber,
                     )
                 NonExistLocation -> null
             }

@@ -42,7 +42,7 @@ internal object KotlinCliRunner {
         /** List of plugin registrars for the compilation. */
         @OptIn(ExperimentalCompilerApi::class)
         pluginRegistrars: PluginRegistrarArguments =
-            PluginRegistrarArguments(emptyList(), emptyList())
+            PluginRegistrarArguments(emptyList(), emptyList()),
     ): KotlinCliResult {
         destinationDir.mkdirs()
         val cliArguments =
@@ -58,14 +58,14 @@ internal object KotlinCliRunner {
                 compiler = compiler,
                 messageCollector = diagnosticsMessageCollector,
                 arguments = cliArguments,
-                registrars = pluginRegistrars
+                registrars = pluginRegistrars,
             )
 
         return KotlinCliResult(
             exitCode = exitCode,
             diagnostics = diagnosticsMessageCollector.getDiagnostics(),
             compiledClasspath = destinationDir,
-            kotlinCliArguments = cliArguments
+            kotlinCliArguments = cliArguments,
         )
     }
 
@@ -154,12 +154,12 @@ internal object KotlinCliRunner {
         /** The output classpath for the compiled files. */
         val compiledClasspath: File,
         /** Compiler arguments that were passed into Kotlin CLI */
-        val kotlinCliArguments: K2JVMCompilerArguments
+        val kotlinCliArguments: K2JVMCompilerArguments,
     )
 
     internal fun getPluginOptions(
         pluginId: String,
-        kotlincArguments: List<String>
+        kotlincArguments: List<String>,
     ): Map<String, String> {
         val options =
             kotlincArguments

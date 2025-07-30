@@ -64,7 +64,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureChain;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
-import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -647,17 +646,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     @ExecutedBy("mExecutor")
     @NonNull Rect getCropSensorRegion() {
         return mZoomControl.getCropSensorRegion();
-    }
-
-    @Override
-    @ExecutedBy("mExecutor")
-    public @NonNull Rect getSensorRect() {
-        Rect sensorRect =
-                mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        if ("robolectric".equals(Build.FINGERPRINT) && sensorRect == null) {
-            return new Rect(0, 0, 4000, 3000);
-        }
-        return Preconditions.checkNotNull(sensorRect);
     }
 
     @ExecutedBy("mExecutor")

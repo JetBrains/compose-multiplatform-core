@@ -46,7 +46,7 @@ internal object AutofillApi27Helper {
         view: View,
         autofillManager: AutofillManager,
         semanticsId: Int,
-        isVisible: Boolean
+        isVisible: Boolean,
     ) {
         autofillManager.notifyViewVisibilityChanged(view, semanticsId, isVisible)
     }
@@ -71,7 +71,7 @@ internal object AutofillApi26Helper {
         id: Int,
         packageName: String?,
         typeName: String?,
-        entryName: String?
+        entryName: String?,
     ) = structure.setId(id, packageName, typeName, entryName)
 
     @RequiresApi(26)
@@ -82,7 +82,7 @@ internal object AutofillApi26Helper {
         scrollX: Int,
         scrollY: Int,
         width: Int,
-        height: Int
+        height: Int,
     ) = structure.setDimens(left, top, scrollX, scrollY, width, height)
 
     @RequiresApi(26) fun getAutofillId(structure: ViewStructure) = structure.autofillId

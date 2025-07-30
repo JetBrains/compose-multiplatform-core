@@ -33,14 +33,14 @@ import androidx.room.solver.transaction.result.TransactionFunctionAdapter
 class CoroutineTransactionFunctionBinder(
     private val returnType: XType,
     adapter: TransactionFunctionAdapter,
-    private val continuationParamName: String
+    private val continuationParamName: String,
 ) : TransactionFunctionBinder(adapter) {
     override fun executeAndReturn(
         parameterNames: List<String>,
         daoName: XClassName,
         daoImplName: XClassName,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         val innerContinuationParamName = scope.getTmpVar("_cont")
         val performBlock =
@@ -59,7 +59,7 @@ class CoroutineTransactionFunctionBinder(
                                 ),
                             parameterName = innerContinuationParamName,
                             returnTypeName = KotlinTypeNames.ANY,
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             val adapterScope = scope.fork()
@@ -72,7 +72,7 @@ class CoroutineTransactionFunctionBinder(
                                     },
                                 daoName = daoName,
                                 daoImplName = daoImplName,
-                                scope = adapterScope
+                                scope = adapterScope,
                             )
                             val returnPrefix =
                                 when (scope.language) {
@@ -81,7 +81,7 @@ class CoroutineTransactionFunctionBinder(
                                 }
                             addStatement("$returnPrefix%L", adapterScope.generate())
                         }
-                    }
+                    },
             )
         scope.builder.add("return %L", performBlock)
     }

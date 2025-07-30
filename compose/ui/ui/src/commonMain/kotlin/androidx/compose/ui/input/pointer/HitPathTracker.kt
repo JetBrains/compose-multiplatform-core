@@ -70,7 +70,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     fun addHitPath(
         pointerId: PointerId,
         pointerInputNodes: List<Modifier.Node>,
-        prunePointerIdsAndChangesNotInNodesList: Boolean = false
+        prunePointerIdsAndChangesNotInNodesList: Boolean = false,
     ) {
         var parent: NodeParent = root
         hitPointerIdsAndNodes.clear()
@@ -136,7 +136,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     // Removes pointers/changes that are not in the latest hit test
     private fun removeInvalidPointerIdsAndChanges(
         pointerId: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
         root.removeInvalidPointerIdsAndChanges(pointerId, hitNodes)
     }
@@ -149,14 +149,14 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      */
     fun dispatchChanges(
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean = true
+        isInBounds: Boolean = true,
     ): Boolean {
         val changed =
             root.buildCache(
                 internalPointerEvent.changes,
                 rootCoordinates,
                 internalPointerEvent,
-                isInBounds
+                isInBounds,
             )
         if (!changed) {
             return false
@@ -172,7 +172,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 internalPointerEvent.changes,
                 rootCoordinates,
                 internalPointerEvent,
-                isInBounds
+                isInBounds,
             )
         dispatchHit = root.dispatchFinalEventPass(internalPointerEvent) || dispatchHit
         dispatchingEvent = false
@@ -240,7 +240,7 @@ internal open class NodeParent {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         var changed = false
         children.forEach {
@@ -267,7 +267,7 @@ internal open class NodeParent {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         var dispatched = false
         children.forEach {
@@ -276,7 +276,7 @@ internal open class NodeParent {
                     changes,
                     parentCoordinates,
                     internalPointerEvent,
-                    isInBounds
+                    isInBounds,
                 ) || dispatched
         }
         return dispatched
@@ -338,7 +338,7 @@ internal open class NodeParent {
 
     open fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
         children.forEach { it.removeInvalidPointerIdsAndChanges(pointerIdValue, hitNodes) }
     }
@@ -383,7 +383,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
         if (this.pointerIds.contains(pointerIdValue)) {
             if (!hitNodes.contains(this)) {
@@ -399,7 +399,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         // TODO(b/158243568): The below dispatching operations may cause the pointerInputFilter to
         //  become detached. Currently, they just no-op if it becomes detached and the detached
@@ -425,7 +425,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                         relevantChanges,
                         coordinates!!,
                         internalPointerEvent,
-                        isInBounds
+                        isInBounds,
                     )
                 }
             }
@@ -476,7 +476,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         val childChanged =
             super.buildCache(changes, parentCoordinates, internalPointerEvent, isInBounds)
@@ -517,9 +517,9 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                                     it.uptimeMillis,
                                     coordinates!!.localPositionOf(
                                         parentCoordinates,
-                                        historicalPosition
+                                        historicalPosition,
                                     ),
-                                    it.originalEventPosition
+                                    it.originalEventPosition,
                                 )
                             )
                         }
@@ -532,8 +532,8 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                                 coordinates!!.localPositionOf(parentCoordinates, prevPosition),
                             currentPosition =
                                 coordinates!!.localPositionOf(parentCoordinates, currentPosition),
-                            historical = historical
-                        )
+                            historical = historical,
+                        ),
                     )
                 }
             }

@@ -56,13 +56,13 @@ sealed class Profiler() {
         val type: ProfilerOutput.Type,
         val outputRelativePath: String,
         val source: Profiler?,
-        val convertBeforeSync: (() -> Unit)? = null
+        val convertBeforeSync: (() -> Unit)? = null,
     ) {
 
         fun embedInPerfettoTrace(perfettoTracePath: String) {
             source?.embedInPerfettoTrace(
                 File(Outputs.outputDirectory, outputRelativePath),
-                File(perfettoTracePath)
+                File(perfettoTracePath),
             )
         }
 
@@ -72,7 +72,7 @@ sealed class Profiler() {
                     label = label,
                     outputRelativePath = Outputs.relativePathFor(absolutePath),
                     type = ProfilerOutput.Type.PerfettoTrace,
-                    source = null
+                    source = null,
                 )
 
             fun ofMethodTrace(label: String, absolutePath: String) =
@@ -80,7 +80,7 @@ sealed class Profiler() {
                     label = label,
                     outputRelativePath = Outputs.relativePathFor(absolutePath),
                     type = ProfilerOutput.Type.MethodTrace,
-                    source = null
+                    source = null,
                 )
 
             fun of(
@@ -88,14 +88,14 @@ sealed class Profiler() {
                 type: ProfilerOutput.Type,
                 outputRelativePath: String,
                 source: Profiler,
-                convertBeforeSync: (() -> Unit)? = null
+                convertBeforeSync: (() -> Unit)? = null,
             ) =
                 ResultFile(
                     label = label,
                     outputRelativePath = outputRelativePath,
                     type = type,
                     source = source,
-                    convertBeforeSync = convertBeforeSync
+                    convertBeforeSync = convertBeforeSync,
                 )
         }
     }
@@ -105,7 +105,7 @@ sealed class Profiler() {
     /** Start profiling only if expected trace duration is unlikely to trigger an ANR */
     fun startIfNotRiskingAnrDeadline(
         traceUniqueName: String,
-        estimatedDurationNs: Long
+        estimatedDurationNs: Long,
     ): ResultFile? {
         val estimatedMethodTraceDurNs =
             estimatedDurationNs * METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR
@@ -179,7 +179,7 @@ sealed class Profiler() {
                     "MethodSamplingSimpleperf" to StackSamplingSimpleperf,
                     "Method" to MethodTracing,
                     "Sampled" to StackSamplingLegacy,
-                    "ConnectedSampled" to ConnectedSampling
+                    "ConnectedSampled" to ConnectedSampling,
                 )
                 .mapKeys { it.key.lowercase() }[name.lowercase()]
 
@@ -202,31 +202,34 @@ internal fun startRuntimeMethodTracing(
     InstrumentationResults.reportAdditionalFileToCopy("profiling_trace", path)
 
     val bufferSize = 16 * 1024 * 1024
-    if (sampled) {
-        val intervalUs = (1_000_000.0 / Arguments.profilerSampleFrequencyHz).toInt()
-        Debug.startMethodTracingSampling(path, bufferSize, intervalUs)
-    } else {
-        // NOTE: 0x10 flag enables low-overhead wall clock timing when ART module version supports
-        // it. Note that this doesn't affect trace parsing, since this doesn't affect wall clock,
-        // it only removes the expensive thread time clock which our parser doesn't use.
-        // TODO: switch to platform-defined constant once available (b/329499422)
-        Debug.startMethodTracing(path, bufferSize, 0x10)
-    }
 
+    // Note: The last thing this method does is start profiling,
+    // since we want to capture as little benchmark infra as possible
     return if (sampled) {
+        val intervalUs = (1_000_000.0 / Arguments.profilerSampleFrequencyHz).toInt()
         Profiler.ResultFile.of(
-            outputRelativePath = traceFileName,
-            label = "Stack Sampling (legacy) Trace",
-            type = ProfilerOutput.Type.StackSamplingTrace,
-            source = profiler
-        )
+                outputRelativePath = traceFileName,
+                label = "Stack Sampling (legacy) Trace",
+                type = ProfilerOutput.Type.StackSamplingTrace,
+                source = profiler,
+            )
+            .also { Debug.startMethodTracingSampling(path, bufferSize, intervalUs) }
     } else {
         Profiler.ResultFile.of(
-            outputRelativePath = traceFileName,
-            label = "Method Trace",
-            type = ProfilerOutput.Type.MethodTrace,
-            source = profiler
-        )
+                outputRelativePath = traceFileName,
+                label = "Method Trace",
+                type = ProfilerOutput.Type.MethodTrace,
+                source = profiler,
+            )
+            .also {
+                // NOTE: 0x10 flag enables low-overhead wall clock timing when ART module version
+                // supports
+                // it. Note that this doesn't affect trace parsing, since this doesn't affect wall
+                // clock,
+                // it only removes the expensive thread time clock which our parser doesn't use.
+                // TODO: switch to platform-defined constant once available (b/329499422)
+                Debug.startMethodTracing(path, bufferSize, 0x10)
+            }
     }
 }
 
@@ -242,7 +245,7 @@ internal object StackSamplingLegacy : Profiler() {
         return startRuntimeMethodTracing(
             traceFileName = traceName(traceUniqueName, "stackSamplingLegacy"),
             sampled = true,
-            profiler = this
+            profiler = this,
         )
     }
 
@@ -260,7 +263,7 @@ internal object MethodTracing : Profiler() {
         return startRuntimeMethodTracing(
             traceFileName = traceName(traceUniqueName, "methodTracing"),
             sampled = false,
-            profiler = this
+            profiler = this,
         )
     }
 
@@ -363,7 +366,7 @@ internal object StackSamplingSimpleperf : Profiler() {
             outputRelativePath = outputRelativePath!!,
             type = ProfilerOutput.Type.StackSamplingTrace,
             source = this,
-            convertBeforeSync = this::convertBeforeSync
+            convertBeforeSync = this::convertBeforeSync,
         )
     }
 

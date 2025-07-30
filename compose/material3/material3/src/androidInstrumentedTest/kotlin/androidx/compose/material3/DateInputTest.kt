@@ -74,7 +74,7 @@ class DateInputTest {
             state =
                 rememberDatePickerState(
                     initialDisplayedMonthMillis = monthInUtcMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -101,7 +101,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -119,7 +119,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
             // Update the delayCompleted till after the focus is acquired. Note that we request the
@@ -143,10 +143,10 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     ),
                 // Prevent the focus from being requested.
-                requestFocus = false
+                focusRequester = null,
             )
             // Although a focus request is not made, apply a delay to ensure that the test checks
             // for focus after that delay.
@@ -169,7 +169,7 @@ class DateInputTest {
                 DatePickerState(
                     locale = Locale.forLanguageTag("he"),
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -195,7 +195,7 @@ class DateInputTest {
                     // Arabic locale with Arabic-Indic digits and symbols
                     locale = Locale.forLanguageTag("ar-u-nu-arab"),
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -208,6 +208,32 @@ class DateInputTest {
         // CompositionLocalProvider with a new Context Configuration, but this test does not cover
         // that.
         rule.onNodeWithText("Sep 10, 2022").assertExists()
+    }
+
+    @Test
+    fun dateInputWithInitialDate_externalDateChange() {
+        lateinit var datePickerState: DatePickerState
+        val selectedDateInUtcMillis = dayInUtcMilliseconds(year = 2010, month = 5, dayOfMonth = 11)
+        rule.setMaterialContent(lightColorScheme()) {
+            datePickerState =
+                rememberDatePickerState(
+                    initialSelectedDateMillis = selectedDateInUtcMillis,
+                    initialDisplayMode = DisplayMode.Input,
+                )
+            DatePicker(state = datePickerState)
+        }
+
+        rule.onNodeWithText("May 11, 2010").assertExists()
+        rule.onNodeWithText("05/11/2010").assertExists()
+
+        // Emulate an external date change action.
+        val now = System.currentTimeMillis()
+        datePickerState.selectedDateMillis = now
+        datePickerState.displayedMonthMillis = now
+
+        rule.waitForIdle()
+        rule.onNodeWithText("May 11, 2010").assertDoesNotExist()
+        rule.onNodeWithText("05/11/2010").assertDoesNotExist()
     }
 
     @Test
@@ -225,7 +251,7 @@ class DateInputTest {
                         object : SelectableDates {
                             // All dates are invalid for the sake of this test.
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = state)
         }
@@ -251,7 +277,7 @@ class DateInputTest {
                 rememberDatePickerState(
                     // Limit the years selection to 2018-2023
                     yearRange = IntRange(2018, 2023),
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -265,7 +291,7 @@ class DateInputTest {
             .assert(
                 expectValue(
                     SemanticsProperties.Error,
-                    errorMessage.format(state.yearRange.first, state.yearRange.last)
+                    errorMessage.format(state.yearRange.first, state.yearRange.last),
                 )
             )
     }
@@ -286,13 +312,12 @@ class DateInputTest {
                     selectableDates =
                         object : SelectableDates {
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = state)
         }
 
-        rule.runOnIdle { assertThat(state.selectedDateMillis).isNull() }
-
+        rule.runOnIdle { assertThat(state.selectedDateMillis).isEqualTo(1898380800000) }
         // Check that the title is displaying the default text and not a date string.
         rule.onNodeWithText(dateInputLabel).assertIsDisplayed()
         // Check for the error semantics.
@@ -354,7 +379,7 @@ class DateInputTest {
             dateInputLabel = getString(string = Strings.DateInputLabel)
             DatePicker(
                 state = rememberDatePickerState(initialDisplayMode = DisplayMode.Input),
-                modifier = Modifier.testTag(DateInputTestTag)
+                modifier = Modifier.testTag(DateInputTestTag),
             )
         }
         val withoutErrorBounds = rule.onNodeWithTag(DateInputTestTag).getBoundsInRoot()
@@ -366,7 +391,7 @@ class DateInputTest {
         // Check that the height of the component did not change after having the error text visible
         withoutErrorBounds.height.assertIsEqualTo(
             withErrorBounds.height,
-            subject = "Date input height"
+            subject = "Date input height",
         )
     }
 
@@ -381,7 +406,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = selectedDateInUtcMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -391,7 +416,7 @@ class DateInputTest {
                 selectedDateInUtcMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
 
         rule

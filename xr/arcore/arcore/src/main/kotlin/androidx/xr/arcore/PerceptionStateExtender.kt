@@ -40,6 +40,14 @@ internal class PerceptionStateExtender : StateExtender {
 
     override fun initialize(runtime: Runtime) {
         perceptionManager = runtime.perceptionManager
+        xrResourcesManager.lifecycleManager = runtime.lifecycleManager
+        xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
+        xrResourcesManager.initiateArDeviceAndViewCameras(
+            perceptionManager.arDevice,
+            perceptionManager.viewCameras,
+        )
+        xrResourcesManager.initiateEarth(perceptionManager.earth)
+        xrResourcesManager.initiateDepthMaps(perceptionManager.depthMaps)
     }
 
     override suspend fun extend(coreState: CoreState) {
@@ -49,6 +57,12 @@ internal class PerceptionStateExtender : StateExtender {
 
         xrResourcesManager.syncTrackables(perceptionManager.trackables)
         xrResourcesManager.update()
+
+        xrResourcesManager.leftHand?.update()
+        xrResourcesManager.rightHand?.update()
+        xrResourcesManager.arDevice.update()
+        xrResourcesManager.viewCameras.forEach { it.update() }
+
         updatePerceptionStateMap(coreState)
     }
 
@@ -61,7 +75,15 @@ internal class PerceptionStateExtender : StateExtender {
     private fun updatePerceptionStateMap(coreState: CoreState) {
         perceptionStateMap.put(
             coreState.timeMark,
-            PerceptionState(coreState.timeMark, xrResourcesManager.trackablesMap.values),
+            PerceptionState(
+                coreState.timeMark,
+                xrResourcesManager.trackablesMap.values,
+                xrResourcesManager.leftHand,
+                xrResourcesManager.rightHand,
+                xrResourcesManager.arDevice,
+                xrResourcesManager.viewCameras,
+                xrResourcesManager.depthMaps,
+            ),
         )
         timeMarkQueue.add(coreState.timeMark)
 

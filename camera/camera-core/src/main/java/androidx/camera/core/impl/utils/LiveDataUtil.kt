@@ -71,7 +71,7 @@ public class RedirectableLiveData<T>(private val initialValue: T) :
  */
 public open class MappingRedirectableLiveData<I, O>(
     private val initialValue: O,
-    private val mapFunction: Function<I, O>
+    private val mapFunction: Function<I, O>,
 ) : MediatorLiveData<O>() {
     private var liveDataSource: LiveData<I>? = null
 

@@ -19,11 +19,18 @@ package androidx.pdf.view
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.DeadObjectException
+import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import androidx.annotation.VisibleForTesting
+import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
+import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -39,6 +46,8 @@ internal class SelectionStateManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val handleTouchTargetSizePx: Int,
+    private val errorFlow: MutableSharedFlow<Throwable>,
+    private val pageMetadataLoader: PageMetadataLoader?,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
@@ -90,7 +99,7 @@ internal class SelectionStateManager(
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
-        updateSelectionAsync(pdfPoint, pdfPoint)
+        updateRangeSelectionAsync(pdfPoint, pdfPoint)
     }
 
     /** Synchronously resets all state of this manager */
@@ -114,19 +123,13 @@ internal class SelectionStateManager(
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
     }
 
-    /**
-     * Updates the selection to include all text on the 0-indexed [pageNum]. [pageSize] is used to
-     * tell [PdfDocument] to select the whole page.
-     */
+    /** Updates the selection to include all text on the 0-indexed [pageNum]. */
     // TODO(b/386398335) Update this to accept a range of pages for select all, once we support
     // multi-page selections
     // TODO(b/386417152) Update this to use index-based selection once that's supported by
     // PdfDocument
-    fun selectAllTextOnPageAsync(pageNum: Int, pageSize: Point) {
-        updateSelectionAsync(
-            PdfPoint(pageNum, PointF(0F, 0F)),
-            PdfPoint(pageNum, PointF(pageSize.x.toFloat(), pageSize.y.toFloat()))
-        )
+    fun selectAllTextOnPageAsync(pageNum: Int) {
+        updateAllSelectionAsync(pageNum)
     }
 
     private fun maybeHandleActionDown(location: PdfPoint, currentZoom: Float): Boolean {
@@ -136,21 +139,20 @@ internal class SelectionStateManager(
         val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
         if (location.pageNum == start.pageNum) {
-            val startPoint = start.pagePoint
             // Touch target is below and behind the start position, like the start handle
             val startTarget =
                 RectF(
-                    startPoint.x - touchTargetContentSize,
-                    startPoint.y,
-                    startPoint.x,
-                    startPoint.y + touchTargetContentSize
+                    start.x - touchTargetContentSize,
+                    start.y,
+                    start.x,
+                    start.y + touchTargetContentSize,
                 )
-            if (startTarget.contains(location.pagePoint.x, location.pagePoint.y)) {
+            if (startTarget.contains(location.x, location.y)) {
                 draggingState =
                     DraggingState(
                         currentSelection.endBoundary,
                         currentSelection.startBoundary,
-                        location.pagePoint
+                        PointF(location.x, location.y),
                     )
                 // Play haptic feedback when the user starts dragging the handles
                 _selectionUiSignalBus.tryEmit(
@@ -160,21 +162,15 @@ internal class SelectionStateManager(
             }
         }
         if (location.pageNum == end.pageNum) {
-            val endPoint = end.pagePoint
             // Touch target is below and ahead of the end position, like the end handle
             val endTarget =
-                RectF(
-                    endPoint.x,
-                    endPoint.y,
-                    endPoint.x + touchTargetContentSize,
-                    endPoint.y + touchTargetContentSize
-                )
-            if (endTarget.contains(location.pagePoint.x, location.pagePoint.y)) {
+                RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+            if (endTarget.contains(location.x, location.y)) {
                 draggingState =
                     DraggingState(
                         currentSelection.startBoundary,
                         currentSelection.endBoundary,
-                        location.pagePoint
+                        PointF(location.x, location.y),
                     )
                 // Play haptic feedback when the user starts dragging the handles
                 _selectionUiSignalBus.tryEmit(
@@ -190,18 +186,25 @@ internal class SelectionStateManager(
         val prevDraggingState = draggingState ?: return false
         // location == null means the user dragged the handle just outside the bounds of any PDF
         // page.
-        // TODO(b/386398335) Properly handle multi-page selections
-        if (location == null || location.pageNum != prevDraggingState.dragging.location.pageNum) {
+        if (location == null) {
             // When the user drags outside the page, or to another page, we should still "capture"
             // the gesture (i.e. return true) to prevent spurious scrolling while the user is
             // attempting to adjust the selection. Return false if no drag is in progress.
             // See b/385291020
             return draggingState != null
         }
-        val dx = location.pagePoint.x - prevDraggingState.downPoint.x
-        val dy = location.pagePoint.y - prevDraggingState.downPoint.y
-        val newEndPoint = prevDraggingState.dragging.location.translateBy(dx, dy)
-        updateSelectionAsync(prevDraggingState.fixed.location, newEndPoint)
+        val dx = location.x - prevDraggingState.downPoint.x
+        val dy = location.y - prevDraggingState.downPoint.y
+        val newEndPoint =
+            if (location.pageNum == prevDraggingState.dragging.location.pageNum)
+                prevDraggingState.dragging.location.translateBy(dx, dy)
+            else PdfPoint(location.pageNum, PointF(location.x, location.y))
+
+        updateRangeSelectionAsync(
+            fixedPoint = prevDraggingState.fixed.location,
+            draggedPoint = newEndPoint,
+        )
+
         // Hide the action mode while the user is actively dragging the handles
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
         return true
@@ -222,34 +225,213 @@ internal class SelectionStateManager(
     }
 
     private fun PdfPoint.translateBy(dx: Float, dy: Float): PdfPoint {
-        return PdfPoint(this.pageNum, PointF(this.pagePoint.x + dx, this.pagePoint.y + dy))
+        return PdfPoint(this.pageNum, PointF(this.x + dx, this.y + dy))
     }
 
-    private fun updateSelectionAsync(start: PdfPoint, end: PdfPoint) {
+    private fun updateAllSelectionAsync(pageNum: Int) {
+        updateSelectionAsync(
+            pageNum..pageNum,
+            selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
+        ) {
+            listOf(pdfDocument.getSelectAllSelectionBounds(pageNum))
+        }
+    }
+
+    private fun updateRangeSelectionAsync(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
+        val oldSelectionModel = selectionModel.value
+        if (oldSelectionModel == null || fixedPoint.pageNum == draggedPoint.pageNum) {
+            return updateSinglePageSelection(fixedPoint, draggedPoint)
+        }
+        updateMultiplePageSelection(fixedPoint, draggedPoint)
+    }
+
+    private fun updateMultiplePageSelection(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
+        val prevSelectionModel = selectionModel.value ?: return
+        val prevStart = prevSelectionModel.startBoundary.location
+        val prevEnd = prevSelectionModel.endBoundary.location
+        val pageRange =
+            if (draggedPoint.pageNum < fixedPoint.pageNum) draggedPoint.pageNum..fixedPoint.pageNum
+            else fixedPoint.pageNum..draggedPoint.pageNum
+        return updateSelectionAsync(
+            pageRange,
+            getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
+            {
+                if (draggedPoint.pageNum < fixedPoint.pageNum) {
+                    // Extending selection in the upwards direction
+                    getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
+                } else {
+                    // Extending selection in the downwards direction
+                    getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
+                }
+            },
+        )
+    }
+
+    private suspend fun getBoundsExtendingUpwards(
+        draggedPoint: PdfPoint,
+        prevStart: PdfPoint,
+        prevEnd: PdfPoint,
+    ): List<PageSelection?> {
+
+        val newPageSize = pageMetadataLoader?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
+        // Find selection bounds for all the skipped pages
+        val intermediateSelection =
+            getPageSelectionsForRange(draggedPoint.pageNum + 1, prevStart.pageNum - 1)
+        return mutableListOf(
+            // Find selection bounds of the page where dragged handles starts
+            pdfDocument.getSelectionBounds(
+                draggedPoint.pageNum,
+                PointF(draggedPoint.x, draggedPoint.y),
+                PointF(newPageSize.x.toFloat(), newPageSize.y.toFloat()),
+            ),
+
+            // Find selection bounds of the page where dragged handle stops
+            getBoundsForFirstSelectedPage(prevStart, prevEnd, draggedPoint),
+        ) + intermediateSelection
+    }
+
+    private suspend fun getBoundsExtendingDownwards(
+        draggedPoint: PdfPoint,
+        prevStart: PdfPoint,
+        prevEnd: PdfPoint,
+    ): List<PageSelection?> {
+
+        // Find selection bounds for all the skipped pages
+        val intermediateSelection =
+            getPageSelectionsForRange(prevEnd.pageNum + 1, draggedPoint.pageNum - 1)
+        return mutableListOf(
+            // Find selection bounds of the page where dragged handles stops
+            pdfDocument.getSelectionBounds(
+                draggedPoint.pageNum,
+                PointF(0f, 0f),
+                PointF(draggedPoint.x, draggedPoint.y),
+            ),
+
+            // Find selection bounds of the page where dragged handle starts
+            getBoundsForLastSelectedPage(prevStart, prevEnd, draggedPoint),
+        ) + intermediateSelection
+    }
+
+    private suspend fun getBoundsForFirstSelectedPage(
+        prevStart: PdfPoint,
+        prevEnd: PdfPoint,
+        draggedPoint: PdfPoint,
+    ): PageSelection? {
+        return if (prevStart.pageNum == prevEnd.pageNum) {
+            pdfDocument.getSelectionBounds(
+                prevEnd.pageNum,
+                PointF(0f, 0f),
+                PointF(prevEnd.x, prevEnd.y),
+            )
+        } else if (prevStart.pageNum > draggedPoint.pageNum) {
+            pdfDocument.getSelectAllSelectionBounds(prevStart.pageNum)
+        } else {
+            null
+        }
+    }
+
+    private suspend fun getBoundsForLastSelectedPage(
+        prevStart: PdfPoint,
+        prevEnd: PdfPoint,
+        draggedPoint: PdfPoint,
+    ): PageSelection? {
+        return if (prevStart.pageNum == prevEnd.pageNum) {
+            val prevPageSize = pageMetadataLoader?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
+            pdfDocument.getSelectionBounds(
+                prevEnd.pageNum,
+                PointF(prevStart.x, prevStart.y),
+                PointF(prevPageSize.x.toFloat(), prevPageSize.y.toFloat()),
+            )
+        } else if (prevEnd.pageNum < draggedPoint.pageNum) {
+            pdfDocument.getSelectAllSelectionBounds(prevEnd.pageNum)
+        } else {
+            null
+        }
+    }
+
+    private suspend fun getPageSelectionsForRange(
+        startPage: Int,
+        endPage: Int,
+    ): List<PageSelection?> {
+        val selections = mutableListOf<PageSelection?>()
+        for (currentPage in startPage..endPage) {
+            selections.add(pdfDocument.getSelectAllSelectionBounds(currentPage))
+        }
+        return selections
+    }
+
+    private fun updateSinglePageSelection(startPoint: PdfPoint, endPoint: PdfPoint) {
+        updateSelectionAsync(
+            startPoint.pageNum..endPoint.pageNum,
+            DocumentSelection(SparseArray()),
+        ) {
+            listOf(
+                pdfDocument.getSelectionBounds(
+                    endPoint.pageNum,
+                    PointF(startPoint.x, startPoint.y),
+                    PointF(endPoint.x, endPoint.y),
+                )
+            )
+        }
+    }
+
+    private fun getOldSelectionBetweenPageRange(
+        oldSelectionModel: SelectionModel?,
+        pageRange: IntRange,
+    ): DocumentSelection {
+
+        val selectedContents =
+            oldSelectionModel?.documentSelection?.selectedContents ?: SparseArray()
+        val keysToRemove = mutableListOf<Int>()
+        selectedContents.forEach { pageNum, _ ->
+            if (pageNum !in pageRange) keysToRemove.add(pageNum)
+        }
+        keysToRemove.forEach { selectedContents.remove(it) }
+
+        return DocumentSelection(selectedContents)
+    }
+
+    private fun updateSelectionAsync(
+        pageRange: IntRange,
+        oldSelection: DocumentSelection,
+        getNewPageSelections: suspend () -> List<PageSelection?>,
+    ) {
         val prevJob = setSelectionJob
         setSelectionJob =
             backgroundScope
                 .launch {
                     prevJob?.cancelAndJoin()
-                    // TODO(b/386398335) Adapt this logic to support selections that span multiple
-                    // pages
-                    val newSelection =
-                        pdfDocument.getSelectionBounds(
-                            start.pageNum,
-                            start.pagePoint,
-                            end.pagePoint
-                        )
-                    if (newSelection != null && newSelection.hasBounds) {
-                        _selectionModel.update {
-                            SelectionModel.fromSinglePageSelection(newSelection)
+                    try {
+                        val newPageSelections = getNewPageSelections()
+                        if (newPageSelections.isNotEmpty()) {
+
+                            _selectionModel.update {
+                                SelectionModel.getCombinedSelectionModel(
+                                    oldSelection,
+                                    newPageSelections,
+                                )
+                            }
+                            _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
+                            // Show the action mode if the user is not actively dragging the handles
+                            if (draggingState == null) {
+                                _selectionUiSignalBus.emit(
+                                    SelectionUiSignal.ToggleActionMode(show = true)
+                                )
+                            }
                         }
-                        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
-                        // Show the action mode if the user is not actively dragging the handles
-                        if (draggingState == null) {
-                            _selectionUiSignalBus.emit(
-                                SelectionUiSignal.ToggleActionMode(show = true)
+                    } catch (e: DeadObjectException) {
+                        val exception =
+                            RequestFailedException(
+                                requestMetadata =
+                                    RequestMetadata(
+                                        requestName = CONTENT_SELECTION_REQUEST_NAME,
+                                        pageRange = pageRange,
+                                    ),
+                                throwable = e,
+                                // Non-critical failure, user can retry the operation.
+                                showError = false,
                             )
-                        }
+                        errorFlow.emit(exception)
                     }
                 }
                 .also { it.invokeOnCompletion { setSelectionJob = null } }
@@ -293,5 +475,5 @@ internal sealed interface SelectionUiSignal {
 private data class DraggingState(
     val fixed: UiSelectionBoundary,
     val dragging: UiSelectionBoundary,
-    val downPoint: PointF
+    val downPoint: PointF,
 )

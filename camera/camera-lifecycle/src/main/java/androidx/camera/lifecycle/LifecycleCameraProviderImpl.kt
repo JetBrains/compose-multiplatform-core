@@ -20,8 +20,9 @@ import android.content.Context
 import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
 import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
+import androidx.annotation.OptIn as JavaOptIn
+import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraInfoUnavailableException
@@ -31,9 +32,12 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
+import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.LegacySessionConfig
 import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -64,21 +68,27 @@ import java.util.Objects
 import java.util.Objects.requireNonNull
 
 /** Implementation of the [LifecycleCameraProvider] interface. */
+@OptIn(ExperimentalSessionConfig::class)
+@JavaOptIn(ExperimentalCameraProviderConfiguration::class)
 internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     private val lock = Any()
-    @GuardedBy("mLock") private var cameraXConfigProvider: CameraXConfig.Provider? = null
+    @VisibleForTesting
+    @GuardedBy("mLock")
+    internal var cameraXConfigProvider: CameraXConfig.Provider? = null
     @GuardedBy("mLock") private var cameraXInitializeFuture: ListenableFuture<Void>? = null
     @GuardedBy("mLock") private var cameraXShutdownFuture = Futures.immediateFuture<Void>(null)
     private val lifecycleCameraRepository = LifecycleCameraRepository.getInstance()
     private var cameraX: CameraX? = null
-    private var context: Context? = null
+    @VisibleForTesting internal var context: Context? = null
     @GuardedBy("mLock")
     private val cameraInfoMap: MutableMap<CameraUseCaseAdapter.CameraId, AdapterCameraInfo> =
         HashMap()
+    private val lifecycleCameraKeys = HashSet<LifecycleCameraRepository.Key>()
+    override var configImplType = CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_UNKNOWN
 
     internal fun initAsync(
         context: Context,
-        cameraXConfig: CameraXConfig? = null
+        cameraXConfig: CameraXConfig? = null,
     ): ListenableFuture<Void> {
         synchronized(lock) {
             if (cameraXInitializeFuture != null) {
@@ -86,6 +96,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             cameraXConfig?.let { configure(it) }
             val cameraX = CameraX(context, cameraXConfigProvider)
+            configImplType = cameraX.configImplType
 
             val initFuture =
                 FutureChain.from(cameraXShutdownFuture)
@@ -103,10 +114,10 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                     }
 
                     override fun onFailure(t: Throwable) {
-                        shutdownAsync()
+                        shutdownAsync(clearConfigProvider = false)
                     }
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
 
             return Futures.nonCancellationPropagating(initFuture)
@@ -128,30 +139,29 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 Preconditions.checkState(
                     cameraXConfigProvider == null,
                     "CameraX has already been configured. To use a different configuration, " +
-                        "shutdown() must be called."
+                        "shutdown() must be called.",
                 )
                 cameraXConfigProvider = CameraXConfig.Provider { cameraXConfig }
             }
         }
 
-    internal fun shutdownAsync(): ListenableFuture<Void> {
+    internal fun shutdownAsync(clearConfigProvider: Boolean = true): ListenableFuture<Void> {
         Threads.runOnMainSync {
             unbindAll()
-            lifecycleCameraRepository.clear()
-        }
-
-        if (cameraX != null) {
-            cameraX!!.cameraFactory.cameraCoordinator.shutdown()
+            lifecycleCameraRepository.removeLifecycleCameras(lifecycleCameraKeys)
         }
 
         val shutdownFuture =
             if (cameraX != null) cameraX!!.shutdown() else Futures.immediateFuture<Void>(null)
 
         synchronized(lock) {
-            cameraXConfigProvider = null
+            if (clearConfigProvider) {
+                cameraXConfigProvider = null
+            }
             cameraXInitializeFuture = null
             cameraXShutdownFuture = shutdownFuture
             cameraInfoMap.clear()
+            lifecycleCameraKeys.clear()
         }
         cameraX = null
         context = null
@@ -168,6 +178,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         return false
     }
 
+    override fun isBound(sessionConfig: SessionConfig): Boolean {
+        for (lifecycleCamera: LifecycleCamera in lifecycleCameraRepository.lifecycleCameras) {
+            if (lifecycleCamera.isBound(sessionConfig)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     @MainThread
     override fun unbind(vararg useCases: UseCase?): Unit =
         trace("CX:unbind") {
@@ -175,11 +195,28 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
             if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
                 throw UnsupportedOperationException(
-                    "Unbind usecase is not supported in concurrent camera mode, call unbindAll() first."
+                    "Unbind UseCase is not supported in concurrent camera mode, call unbindAll() first."
                 )
             }
 
-            lifecycleCameraRepository.unbind(listOf(*useCases))
+            lifecycleCameraRepository.unbind(
+                LegacySessionConfig(useCases = useCases.filterNotNull()),
+                lifecycleCameraKeys,
+            )
+        }
+
+    @MainThread
+    override fun unbind(sessionConfig: SessionConfig): Unit =
+        trace("CX:unbind-sessionConfig") {
+            Threads.checkMainThread()
+            if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
+                throw UnsupportedOperationException(
+                    "Unbind SessionConfig is not supported in concurrent camera mode" +
+                        " call unbindAll() first."
+                )
+            }
+
+            lifecycleCameraRepository.unbind(sessionConfig, lifecycleCameraKeys)
         }
 
     @MainThread
@@ -187,7 +224,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         trace("CX:unbindAll") {
             Threads.checkMainThread()
             cameraOperatingMode = CAMERA_OPERATING_MODE_UNSPECIFIED
-            lifecycleCameraRepository.unbindAll()
+            lifecycleCameraRepository.unbindAll(lifecycleCameraKeys)
         }
 
     @Throws(CameraInfoUnavailableException::class)
@@ -195,7 +232,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         trace("CX:hasCamera") {
             try {
                 cameraSelector.select(cameraX!!.cameraRepository.cameras)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 return@trace false
             }
 
@@ -206,7 +243,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     override fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        vararg useCases: UseCase?
+        vararg useCases: UseCase?,
     ): Camera =
         trace("CX:bindToLifecycle") {
             if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
@@ -217,24 +254,19 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
             val camera =
-                bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    null,
-                    CompositionSettings.DEFAULT,
-                    CompositionSettings.DEFAULT,
-                    null,
-                    emptyList<CameraEffect>(),
-                    *useCases
+                bindToLifecycleInternal(
+                    lifecycleOwner = lifecycleOwner,
+                    primaryCameraSelector = cameraSelector,
+                    sessionConfig = LegacySessionConfig(useCases = useCases.filterNotNull()),
                 )
             return@trace camera
         }
 
     @MainThread
-    public override fun bindToLifecycle(
+    override fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        useCaseGroup: UseCaseGroup
+        useCaseGroup: UseCaseGroup,
     ): Camera =
         trace("CX:bindToLifecycle-UseCaseGroup") {
             if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
@@ -245,15 +277,34 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
             val camera =
-                bindToLifecycle(
+                bindToLifecycleInternal(
                     lifecycleOwner,
                     cameraSelector,
-                    null,
-                    CompositionSettings.DEFAULT,
-                    CompositionSettings.DEFAULT,
-                    useCaseGroup.viewPort,
-                    useCaseGroup.effects,
-                    *useCaseGroup.useCases.toTypedArray<UseCase>()
+                    sessionConfig = LegacySessionConfig(useCaseGroup),
+                )
+            return@trace camera
+        }
+
+    @MainThread
+    override fun bindToLifecycle(
+        lifecycleOwner: LifecycleOwner,
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
+    ): Camera =
+        trace("CX:bindToLifecycle-SessionConfig") {
+            if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
+                throw UnsupportedOperationException(
+                    "bindToLifecycle for single camera is not supported in concurrent camera mode, " +
+                        "call unbindAll() first."
+                )
+            }
+            cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
+
+            val camera =
+                bindToLifecycleInternal(
+                    lifecycleOwner,
+                    cameraSelector,
+                    sessionConfig = sessionConfig,
                 )
             return@trace camera
         }
@@ -313,15 +364,15 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
                 cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
                 val camera =
-                    bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        null,
-                        CompositionSettings.DEFAULT,
-                        CompositionSettings.DEFAULT,
-                        viewPort,
-                        effects,
-                        *useCases.toTypedArray<UseCase>()
+                    bindToLifecycleInternal(
+                        lifecycleOwner = lifecycleOwner,
+                        primaryCameraSelector = cameraSelector,
+                        sessionConfig =
+                            LegacySessionConfig(
+                                useCases = useCases,
+                                viewPort = viewPort,
+                                effects = effects,
+                            ),
                     )
                 cameras.add(camera)
             } else {
@@ -343,7 +394,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 try {
                     firstCameraInfo = getCameraInfo(firstCameraConfig.cameraSelector)
                     secondCameraInfo = getCameraInfo(secondCameraConfig.cameraSelector)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     throw IllegalArgumentException("Invalid camera selectors in camera configs.")
                 }
                 cameraInfosToBind.add(firstCameraInfo)
@@ -366,7 +417,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 if (
                     Objects.equals(
                         firstCameraConfig.useCaseGroup.useCases,
-                        secondCameraConfig.useCaseGroup.useCases
+                        secondCameraConfig.useCaseGroup.useCases,
                     ) && firstCameraConfig.useCaseGroup.useCases.size == 2
                 ) {
                     val useCase0 = firstCameraConfig.useCaseGroup.useCases[0]
@@ -378,29 +429,23 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
                 if (isDualCameraVideoCapture) {
                     cameras.add(
-                        bindToLifecycle(
+                        bindToLifecycleInternal(
                             firstCameraConfig.lifecycleOwner,
                             firstCameraConfig.cameraSelector,
                             secondCameraConfig.cameraSelector,
                             firstCameraConfig.compositionSettings,
                             secondCameraConfig.compositionSettings,
-                            firstCameraConfig.useCaseGroup.viewPort,
-                            firstCameraConfig.useCaseGroup.effects,
-                            *firstCameraConfig.useCaseGroup.useCases.toTypedArray<UseCase>(),
+                            LegacySessionConfig(useCaseGroup = firstCameraConfig.useCaseGroup),
                         )
                     )
                 } else {
                     for (config: SingleCameraConfig? in singleCameraConfigs) {
                         val camera =
-                            bindToLifecycle(
-                                config!!.lifecycleOwner,
-                                config.cameraSelector,
-                                null,
-                                CompositionSettings.DEFAULT,
-                                CompositionSettings.DEFAULT,
-                                config.useCaseGroup.viewPort,
-                                config.useCaseGroup.effects,
-                                *config.useCaseGroup.useCases.toTypedArray<UseCase>()
+                            bindToLifecycleInternal(
+                                lifecycleOwner = config!!.lifecycleOwner,
+                                primaryCameraSelector = config.cameraSelector,
+                                sessionConfig =
+                                    LegacySessionConfig(useCaseGroup = config.useCaseGroup),
                             )
                         cameras.add(camera)
                     }
@@ -436,7 +481,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                         var cameraInfo: CameraInfo
                         try {
                             cameraInfo = getCameraInfo(cameraSelector)
-                        } catch (e: IllegalArgumentException) {
+                        } catch (_: IllegalArgumentException) {
                             continue
                         }
                         cameraInfos.add(cameraInfo)
@@ -503,9 +548,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
      * @param secondaryCameraSelector The secondary camera selector in dual camera case.
      * @param primaryCompositionSettings The composition settings for the primary camera.
      * @param secondaryCompositionSettings The composition settings for the secondary camera.
-     * @param viewPort The viewPort which represents the visible camera sensor rect.
-     * @param effects The effects applied to the camera outputs.
-     * @param useCases The use cases to bind to a lifecycle.
+     * @param sessionConfig The [SessionConfig] that contains the [UseCase]s to be bound to the
+     *   [LifecycleOwner] along with common parameters such as session parameters, [ViewPort] and
+     *   [androidx.camera.core.CameraEffect].
      * @return The [Camera] instance which is determined by the camera selector and internal
      *   requirements.
      * @throws IllegalStateException If the use case has already been bound to another lifecycle or
@@ -514,15 +559,13 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
      *   camera to be used for the given use cases.
      */
     @Suppress("unused")
-    private fun bindToLifecycle(
+    private fun bindToLifecycleInternal(
         lifecycleOwner: LifecycleOwner,
         primaryCameraSelector: CameraSelector,
-        secondaryCameraSelector: CameraSelector?,
-        primaryCompositionSettings: CompositionSettings,
-        secondaryCompositionSettings: CompositionSettings,
-        viewPort: ViewPort?,
-        effects: List<CameraEffect?>,
-        vararg useCases: UseCase?
+        secondaryCameraSelector: CameraSelector? = null,
+        primaryCompositionSettings: CompositionSettings = CompositionSettings.DEFAULT,
+        secondaryCompositionSettings: CompositionSettings = CompositionSettings.DEFAULT,
+        sessionConfig: SessionConfig,
     ): Camera =
         trace("CX:bindToLifecycle-internal") {
             Threads.checkMainThread()
@@ -544,26 +587,32 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                     getCameraInfo(secondaryCameraSelector) as AdapterCameraInfo
             }
 
-            var lifecycleCameraToBind =
-                lifecycleCameraRepository.getLifecycleCamera(
-                    lifecycleOwner,
-                    CameraUseCaseAdapter.generateCameraId(
-                        primaryAdapterCameraInfo,
-                        secondaryAdapterCameraInfo
-                    )
+            val cameraId =
+                CameraUseCaseAdapter.generateCameraId(
+                    primaryAdapterCameraInfo,
+                    secondaryAdapterCameraInfo,
                 )
+            var lifecycleCameraToBind =
+                lifecycleCameraRepository.getLifecycleCamera(lifecycleOwner, cameraId)
 
             // Check if there's another camera that has already been bound.
             val lifecycleCameras = lifecycleCameraRepository.lifecycleCameras
-            useCases.filterNotNull().forEach { useCase ->
+            sessionConfig.useCases.forEach { useCase ->
                 for (lifecycleCamera: LifecycleCamera in lifecycleCameras) {
+                    // We should only check if the useCases are bound in other LifecycleOwners.
+                    // If there are UseCases bound in the same LifecycleOwner but different camera
+                    // id, it will throw exceptions in LifecycleCameraRepository so we don't need to
+                    // check here. For the new SessionConfig, it is allowed to have UseCases bound
+                    // to the same LifecycleOwner with different camera id because binding a
+                    // SessionConfig to the same LifecycleOwner will implicitly unbind them first.
                     if (
-                        lifecycleCamera.isBound(useCase) && lifecycleCamera != lifecycleCameraToBind
+                        lifecycleCamera.isBound(useCase) &&
+                            lifecycleCamera.lifecycleOwner != lifecycleOwner
                     ) {
                         throw IllegalStateException(
                             String.format(
                                 "Use case %s already bound to a different lifecycle.",
-                                useCase
+                                useCase,
                             )
                         )
                     }
@@ -575,31 +624,30 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 lifecycleCameraToBind =
                     lifecycleCameraRepository.createLifecycleCamera(
                         lifecycleOwner,
-                        CameraUseCaseAdapter(
-                            primaryCameraInternal,
-                            secondaryCameraInternal,
-                            primaryAdapterCameraInfo,
-                            secondaryAdapterCameraInfo,
-                            primaryCompositionSettings,
-                            secondaryCompositionSettings,
-                            cameraX!!.cameraFactory.cameraCoordinator,
-                            cameraX!!.cameraDeviceSurfaceManager,
-                            cameraX!!.defaultConfigFactory
-                        )
+                        cameraX!!
+                            .cameraUseCaseAdapterProvider
+                            .provide(
+                                primaryCameraInternal,
+                                secondaryCameraInternal,
+                                primaryAdapterCameraInfo,
+                                secondaryAdapterCameraInfo,
+                                primaryCompositionSettings,
+                                secondaryCompositionSettings,
+                            ),
                     )
             }
 
-            if (useCases.isEmpty()) {
+            if (sessionConfig.useCases.isEmpty()) {
                 return@trace lifecycleCameraToBind!!
             }
 
             lifecycleCameraRepository.bindToLifecycleCamera(
                 lifecycleCameraToBind!!,
-                viewPort,
-                effects,
-                listOf(*useCases),
-                cameraX!!.cameraFactory.cameraCoordinator
+                sessionConfig,
+                cameraX!!.cameraFactory.cameraCoordinator,
             )
+
+            lifecycleCameraKeys.add(LifecycleCameraRepository.Key.create(lifecycleOwner, cameraId))
 
             return@trace lifecycleCameraToBind
         }
@@ -613,7 +661,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             val key =
                 CameraUseCaseAdapter.CameraId.create(
                     cameraInfoInternal.cameraId,
-                    cameraConfig.compatibilityId
+                    cameraConfig.compatibilityId,
                 )
             var adapterCameraInfo: AdapterCameraInfo?
             synchronized(lock) {
@@ -638,7 +686,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
     private fun getCameraConfig(
         cameraSelector: CameraSelector,
-        cameraInfo: CameraInfo
+        cameraInfo: CameraInfo,
     ): CameraConfig {
         var cameraConfig: CameraConfig? = null
         for (cameraFilter: CameraFilter in cameraSelector.cameraFilterSet) {
@@ -674,7 +722,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             return cameraX!!.cameraFactory.cameraCoordinator.cameraOperatingMode
         }
-        private set(cameraOperatingMode) {
+        set(cameraOperatingMode) {
             if (cameraX == null) {
                 return
             }
@@ -688,14 +736,10 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             return cameraX!!.cameraFactory.cameraCoordinator.activeConcurrentCameraInfos
         }
-        private set(cameraInfos) {
+        set(cameraInfos) {
             if (cameraX == null) {
                 return
             }
             cameraX!!.cameraFactory.cameraCoordinator.activeConcurrentCameraInfos = cameraInfos
         }
-
-    companion object {
-        private const val TAG = "LifecycleCameraProvider"
-    }
 }

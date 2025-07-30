@@ -17,6 +17,8 @@
 package androidx.xr.runtime.java
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Session
@@ -43,12 +45,18 @@ class FlowsTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
 
-    @get:Rule val activityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
+    @get:Rule
+    val activityScenarioRule =
+        ActivityScenarioRule<ComponentActivity>(ComponentActivity::class.java)
 
     @Before
     fun setUp() {
         activityScenarioRule.scenario.onActivity { this.activity = it }
-        shadowOf(activity).grantPermissions("android.permission.SCENE_UNDERSTANDING")
+        shadowOf(activity)
+            .grantPermissions(
+                "android.permission.SCENE_UNDERSTANDING_COARSE",
+                "android.permission.HAND_TRACKING",
+            )
 
         testDispatcher = StandardTestDispatcher()
         testScope = TestScope(testDispatcher)
@@ -72,7 +80,7 @@ class FlowsTest {
                     )
                     .doOnTerminate() { isTerminated = true }
             observable.subscribe()
-            session.destroy()
+            activityScenarioRule.scenario.moveToState(Lifecycle.State.DESTROYED)
             testScope.advanceUntilIdle()
 
             assertThat(isTerminated).isTrue()

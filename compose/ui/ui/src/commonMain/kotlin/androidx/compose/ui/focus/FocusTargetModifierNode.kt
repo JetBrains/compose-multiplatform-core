@@ -41,7 +41,7 @@ sealed interface FocusTargetModifierNode : DelegatableNode {
     @Deprecated(
         message = "Use the version accepting FocusDirection",
         replaceWith = ReplaceWith("this.requestFocus()"),
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     fun requestFocus(): Boolean
 
@@ -84,7 +84,7 @@ private object InvalidateSemantics {
  */
 @Deprecated(
     "Use the other overload with added parameters for focusability and onFocusChange",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @JsName("funFocusTargetModifierNode")
 fun FocusTargetModifierNode(): FocusTargetModifierNode =
@@ -104,6 +104,6 @@ fun FocusTargetModifierNode(): FocusTargetModifierNode =
 @JsName("funFocusTargetModifierNode2")
 fun FocusTargetModifierNode(
     focusability: Focusability = Focusability.Always,
-    onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null
+    onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null,
 ): FocusTargetModifierNode =
     FocusTargetNode(focusability = focusability, onFocusChange = onFocusChange)

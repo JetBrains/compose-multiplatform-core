@@ -59,20 +59,20 @@ fun ConfirmationWithoutText() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { showConfirmation = true },
-            label = { Text("Show Confirmation") }
+            label = { Text("Show Confirmation") },
         )
     }
 
     ConfirmationDialog(
         visible = showConfirmation,
         onDismissRequest = { showConfirmation = false },
-        curvedText = null
+        curvedText = null,
     ) {
         Icon(
             imageVector = Icons.Filled.Add,
             contentDescription = null,
             modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -85,7 +85,7 @@ fun ConfirmationWithCustomColors() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { showConfirmation = true },
-            label = { Text("Show Confirmation") }
+            label = { Text("Show Confirmation") },
         )
     }
 
@@ -97,9 +97,9 @@ fun ConfirmationWithCustomColors() {
             ConfirmationDialogDefaults.colors(
                 iconColor = MaterialTheme.colorScheme.tertiary,
                 iconContainerColor = MaterialTheme.colorScheme.onTertiary,
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
-        curvedText = { confirmationDialogCurvedText("Custom confirmation", curvedTextStyle) }
+        curvedText = { confirmationDialogCurvedText("Custom confirmation", curvedTextStyle) },
     ) {
         Icon(
             imageVector = Icons.Filled.Add,

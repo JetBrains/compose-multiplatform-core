@@ -40,12 +40,12 @@ class SupportingFloatingTestNavigator : TestNavigator() {
 /** Construct a new [TestNavigator.Destination] from a [SupportingFloatingTestNavigator]. */
 inline fun NavGraphBuilder.supportingDialog(
     route: String,
-    builder: SupportingFloatingTestNavigatorDestinationBuilder.() -> Unit = {}
+    builder: SupportingFloatingTestNavigatorDestinationBuilder.() -> Unit = {},
 ) =
     destination(
         SupportingFloatingTestNavigatorDestinationBuilder(
                 provider[SupportingFloatingTestNavigator::class],
-                route
+                route,
             )
             .apply(builder)
     )
@@ -56,5 +56,5 @@ inline fun NavGraphBuilder.supportingDialog(
 @NavDestinationDsl
 class SupportingFloatingTestNavigatorDestinationBuilder(
     navigator: SupportingFloatingTestNavigator,
-    route: String
+    route: String,
 ) : NavDestinationBuilder<TestNavigator.Destination>(navigator, route)

@@ -842,7 +842,7 @@ public class ConstraintSet {
     }
 
     /**
-     * Get the delta form the ConstraintSet and aplly to this
+     * Get the delta from the ConstraintSet and apply to this
      * @param cs
      */
     public void applyDeltaFrom(ConstraintSet cs) {
@@ -4216,7 +4216,7 @@ public class ConstraintSet {
     }
 
     /**
-     * Set the guideline's distance form the top or left edge.
+     * Set the guideline's distance from the top or left edge.
      *
      * @param guidelineID ID of the guideline
      * @param margin      the distance to the top or left edge

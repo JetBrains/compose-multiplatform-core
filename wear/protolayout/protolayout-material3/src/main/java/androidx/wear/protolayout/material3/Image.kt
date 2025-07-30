@@ -16,8 +16,10 @@
 
 package androidx.wear.protolayout.material3
 
-import androidx.wear.protolayout.DimensionBuilders.ContainerDimension
+import androidx.wear.protolayout.DimensionBuilders.ExpandedDimensionProp
 import androidx.wear.protolayout.DimensionBuilders.ImageDimension
+import androidx.wear.protolayout.DimensionBuilders.expand
+import androidx.wear.protolayout.DimensionBuilders.wrap
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.ContentScaleMode
 import androidx.wear.protolayout.LayoutElementBuilders.Image
@@ -34,6 +36,13 @@ import androidx.wear.protolayout.types.LayoutColor
  * Material components provide proper defaults for the background image. In order to take advantage
  * of those defaults, this should be used with the resource ID only: `backgroundImage("id")`.
  *
+ * This image can have optional overlay on top of it, that is usually a dark color with opacity.
+ * This is highly recommended to be added when there's additional content like text on top of image,
+ * to improve readability.
+ *
+ * If this is used in [imageButton] as image button with no other content, [overlayColor] can be
+ * omitted, and the overlay color on top of the image would be ignored.
+ *
  * @param protoLayoutResourceId The protolayout resource id of the image. Node that, this is not an
  *   Android resource id.
  * @param modifier Modifiers to set to this element.
@@ -42,9 +51,8 @@ import androidx.wear.protolayout.types.LayoutColor
  * @param height The height of an image. Usually, this matches the height of the parent component
  *   this is used in.
  * @param overlayColor The color used to provide the overlay over the image for better readability.
- *   It's recommended to use [ColorScheme.background] color with 60% opacity.
- * @param overlayWidth The width of the overlay on top of the image background
- * @param overlayHeight The height of the overlay on top of the image background
+ *   It's recommended to use [ColorScheme.background] color with 60% opacity. If `null`, overlay
+ *   would be ignored.
  * @param contentScaleMode The content scale mode for the image to define how image will adapt to
  *   the given size
  */
@@ -53,14 +61,12 @@ public fun MaterialScope.backgroundImage(
     modifier: LayoutModifier = LayoutModifier,
     width: ImageDimension = defaultBackgroundImageStyle.width,
     height: ImageDimension = defaultBackgroundImageStyle.height,
-    overlayColor: LayoutColor = defaultBackgroundImageStyle.overlayColor,
-    overlayWidth: ContainerDimension = defaultBackgroundImageStyle.overlayWidth,
-    overlayHeight: ContainerDimension = defaultBackgroundImageStyle.overlayHeight,
+    overlayColor: LayoutColor? = defaultBackgroundImageStyle.overlayColor,
     @ContentScaleMode contentScaleMode: Int = defaultBackgroundImageStyle.contentScaleMode,
 ): LayoutElement =
     Box.Builder()
-        .setWidth(overlayWidth)
-        .setHeight(overlayHeight)
+        .setWidth(if (width is ExpandedDimensionProp) expand() else wrap())
+        .setHeight(if (height is ExpandedDimensionProp) expand() else wrap())
         // Image content
         .addContent(
             Image.Builder()
@@ -74,14 +80,20 @@ public fun MaterialScope.backgroundImage(
                 .setContentScaleMode(contentScaleMode)
                 .build()
         )
-        // Overlay above it for contrast
-        .addContent(
-            Box.Builder()
-                .setWidth(overlayWidth)
-                .setHeight(overlayHeight)
-                .setModifiers(LayoutModifier.background(overlayColor).toProtoLayoutModifiers())
-                .build()
-        )
+        .apply {
+            // Overlay above it for contrast, if specified.
+            if (overlayColor != null) {
+                this.addContent(
+                    Box.Builder()
+                        .setWidth(expand())
+                        .setHeight(expand())
+                        .setModifiers(
+                            LayoutModifier.background(overlayColor).toProtoLayoutModifiers()
+                        )
+                        .build()
+                )
+            }
+        }
         .build()
 
 /**

@@ -16,10 +16,14 @@
 
 package androidx.pdf.view
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.util.AttributeSet
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.RestrictTo
 import androidx.pdf.PdfDocument
 import androidx.pdf.R
@@ -40,6 +44,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
     /** A callback to get the current page number. */
     private var onCurrentPageRequested: (() -> Int)? = null
+
+    /** Gives the visibility of the toolbox view from edit fab. */
+    public val toolboxVisibility: Int
+        get() = editButton.visibility
 
     init {
         inflate(context, R.layout.tool_box_view, this)
@@ -88,19 +96,44 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     private fun handleEditFabClick() {
+        val document = pdfDocument ?: return
+
+        if (!AnnotationUtils.resolveAnnotationIntent(context, document.uri)) {
+            hideEditFabAndShowToast()
+            return
+        }
 
         pdfDocument?.let {
-            val uri = it.uri
-
-            val intent =
-                AnnotationUtils.getAnnotationIntent(uri).apply {
-                    setData(uri)
-                    putExtra(EXTRA_PDF_FILE_NAME, Uris.extractName(uri, context.contentResolver))
-                    val pageNum = onCurrentPageRequested?.invoke() ?: 0
-                    putExtra(EXTRA_STARTING_PAGE, pageNum)
+            try {
+                val intent = createAnnotationIntent(it.uri)
+                startActivity(context, "", intent)
+            } catch (error: Exception) {
+                when (error) {
+                    is NullPointerException,
+                    is ActivityNotFoundException -> hideEditFabAndShowToast()
+                    else -> throw error
                 }
-            startActivity(context, "", intent)
+            }
         }
+    }
+
+    private fun createAnnotationIntent(uri: Uri): Intent {
+        return AnnotationUtils.getAnnotationIntent(uri).apply {
+            setData(uri)
+            putExtra(EXTRA_PDF_FILE_NAME, Uris.extractName(uri, context.contentResolver))
+            val pageNum = onCurrentPageRequested?.invoke() ?: 0
+            putExtra(EXTRA_STARTING_PAGE, pageNum)
+        }
+    }
+
+    private fun hideEditFabAndShowToast() {
+        editButton.hide()
+        Toast.makeText(
+                context,
+                context?.resources?.getString(R.string.cannot_edit_pdf),
+                Toast.LENGTH_SHORT,
+            )
+            .show()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -121,7 +154,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         // Set measurements
         setMeasuredDimension(
             child.measuredWidth + paddingLeft + paddingRight,
-            child.measuredHeight + paddingTop + paddingBottom
+            child.measuredHeight + paddingTop + paddingBottom,
         )
     }
 
@@ -135,6 +168,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             (right - paddingRight) - left,
             (bottom - paddingBottom) - top,
         )
+    }
+
+    /** Hides the ToolBoxView with a fade-out animation. */
+    public fun hide() {
+        // When we expand toolbox view by adding new views, we need to update the hide animation
+        editButton.hide()
+    }
+
+    /** Shows the ToolBoxView with a fade-in animation. */
+    public fun show() {
+        // When we expand toolbox view by adding new views, we need to update the show animation
+        editButton.show()
     }
 
     public companion object {

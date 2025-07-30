@@ -34,6 +34,7 @@ internal actual object MappedKeys {
     actual val DirectionRight: Key = implementedInJetBrainsFork()
     actual val DirectionUp: Key = implementedInJetBrainsFork()
     actual val DirectionDown: Key = implementedInJetBrainsFork()
+    actual val DirectionCenter: Key = implementedInJetBrainsFork()
     actual val PageUp: Key = implementedInJetBrainsFork()
     actual val PageDown: Key = implementedInJetBrainsFork()
     actual val MoveHome: Key = implementedInJetBrainsFork()

@@ -76,7 +76,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value
+                    initialAnchoredIndex = initialAnchoredIndexState.value,
                 )
         }
 
@@ -102,7 +102,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value
+                    initialAnchoredIndex = initialAnchoredIndexState.value,
                 )
         }
 
@@ -128,7 +128,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value
+                    initialAnchoredIndex = initialAnchoredIndexState.value,
                 )
         }
 
@@ -160,7 +160,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value
+                    initialAnchoredIndex = initialAnchoredIndexState.value,
                 )
         }
 
@@ -182,13 +182,13 @@ class PaneExpansionStateTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
         val mockThreePaneScaffoldValue2 =
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
         val keyProviderState = mutableStateOf(mockThreePaneScaffoldValue1)
         val anchorsState =
@@ -200,7 +200,7 @@ class PaneExpansionStateTest {
                 rememberPaneExpansionState(
                     keyProvider = keyProviderState.value,
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value
+                    initialAnchoredIndex = initialAnchoredIndexState.value,
                 )
         }
 
@@ -224,23 +224,23 @@ class PaneExpansionStateTest {
                 Pair(
                     TwoPaneExpansionStateKeyImpl(
                         ThreePaneScaffoldRole.Primary,
-                        ThreePaneScaffoldRole.Secondary
+                        ThreePaneScaffoldRole.Secondary,
                     ),
-                    PaneExpansionStateData(4, 0.5F, 6, PaneExpansionAnchor.Proportion(0.4F))
+                    PaneExpansionStateData(4, 0.5F, 6, PaneExpansionAnchor.Proportion(0.4F)),
                 ),
                 Pair(
                     TwoPaneExpansionStateKeyImpl(
                         ThreePaneScaffoldRole.Secondary,
-                        ThreePaneScaffoldRole.Tertiary
+                        ThreePaneScaffoldRole.Tertiary,
                     ),
-                    PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset.fromStart(200.dp))
+                    PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset.fromStart(200.dp)),
                 ),
                 Pair(
                     TwoPaneExpansionStateKeyImpl(
                         ThreePaneScaffoldRole.Tertiary,
-                        ThreePaneScaffoldRole.Primary
+                        ThreePaneScaffoldRole.Primary,
                     ),
-                    PaneExpansionStateData(10, 0.3F, 12, null)
+                    PaneExpansionStateData(10, 0.3F, 12, null),
                 ),
             )
 

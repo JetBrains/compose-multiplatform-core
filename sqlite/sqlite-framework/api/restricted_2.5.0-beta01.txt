@@ -15,7 +15,7 @@ package androidx.sqlite.driver {
     method public void close();
     method public android.database.sqlite.SQLiteDatabase getDb();
     method public androidx.sqlite.SQLiteStatement prepare(String sql);
-    property public final android.database.sqlite.SQLiteDatabase db;
+    property public android.database.sqlite.SQLiteDatabase db;
   }
 
   public final class AndroidSQLiteDriver implements androidx.sqlite.SQLiteDriver {

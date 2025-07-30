@@ -146,7 +146,7 @@ class ButtonScreenshotTest {
             FilledTonalButton(
                 onClick = {},
                 enabled = false,
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Filled tonal Button")
             }
@@ -176,7 +176,7 @@ class ButtonScreenshotTest {
             OutlinedButton(
                 onClick = {},
                 enabled = false,
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Outlined Button")
             }
@@ -219,12 +219,12 @@ class ButtonScreenshotTest {
         rule.setMaterialContent(lightColorScheme()) {
             Button(
                 onClick = { /* Do something! */ },
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text("Like")
@@ -244,12 +244,12 @@ class ButtonScreenshotTest {
                 onClick = { /* Do something! */ },
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 enabled = false,
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text("Like")
@@ -267,12 +267,12 @@ class ButtonScreenshotTest {
         rule.setMaterialContent(darkColorScheme()) {
             Button(
                 onClick = { /* Do something! */ },
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text("Like")
@@ -292,12 +292,12 @@ class ButtonScreenshotTest {
                 onClick = { /* Do something! */ },
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 enabled = false,
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text("Like")
@@ -317,7 +317,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -336,7 +336,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -355,7 +355,7 @@ class ButtonScreenshotTest {
             ElevatedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -366,7 +366,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "elevatedButton_withAnimatedShape_default_lightTheme"
+                "elevatedButton_withAnimatedShape_default_lightTheme",
             )
     }
 
@@ -377,7 +377,7 @@ class ButtonScreenshotTest {
             ElevatedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -388,7 +388,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "elevatedButton_withAnimatedShape_default_darkTheme"
+                "elevatedButton_withAnimatedShape_default_darkTheme",
             )
     }
 
@@ -399,7 +399,7 @@ class ButtonScreenshotTest {
             FilledTonalButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -410,7 +410,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "filledTonalButton_withAnimatedShape_default_lightTheme"
+                "filledTonalButton_withAnimatedShape_default_lightTheme",
             )
     }
 
@@ -421,7 +421,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -432,7 +432,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "filledTonalButton_withAnimatedShape_default_darkTheme"
+                "filledTonalButton_withAnimatedShape_default_darkTheme",
             )
     }
 
@@ -443,7 +443,7 @@ class ButtonScreenshotTest {
             OutlinedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -454,7 +454,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "outlinedButton_withAnimatedShape_default_lightTheme"
+                "outlinedButton_withAnimatedShape_default_lightTheme",
             )
     }
 
@@ -465,7 +465,7 @@ class ButtonScreenshotTest {
             OutlinedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -476,7 +476,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "outlinedButton_withAnimatedShape_default_darkTheme"
+                "outlinedButton_withAnimatedShape_default_darkTheme",
             )
     }
 
@@ -487,7 +487,7 @@ class ButtonScreenshotTest {
             TextButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -506,7 +506,7 @@ class ButtonScreenshotTest {
             TextButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -525,7 +525,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -555,7 +555,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -585,7 +585,7 @@ class ButtonScreenshotTest {
             ElevatedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -607,7 +607,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "elevatedButton_withAnimatedShape_pressed_lightTheme"
+                "elevatedButton_withAnimatedShape_pressed_lightTheme",
             )
     }
 
@@ -618,7 +618,7 @@ class ButtonScreenshotTest {
             ElevatedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -640,7 +640,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "elevatedButton_withAnimatedShape_pressed_darkTheme"
+                "elevatedButton_withAnimatedShape_pressed_darkTheme",
             )
     }
 
@@ -651,7 +651,7 @@ class ButtonScreenshotTest {
             FilledTonalButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -673,7 +673,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "filledTonalButton_withAnimatedShape_pressed_lightTheme"
+                "filledTonalButton_withAnimatedShape_pressed_lightTheme",
             )
     }
 
@@ -684,7 +684,7 @@ class ButtonScreenshotTest {
             Button(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -706,7 +706,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "filledTonalButton_withAnimatedShape_pressed_darkTheme"
+                "filledTonalButton_withAnimatedShape_pressed_darkTheme",
             )
     }
 
@@ -717,7 +717,7 @@ class ButtonScreenshotTest {
             OutlinedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -739,7 +739,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "outlinedButton_withAnimatedShape_pressed_lightTheme"
+                "outlinedButton_withAnimatedShape_pressed_lightTheme",
             )
     }
 
@@ -750,7 +750,7 @@ class ButtonScreenshotTest {
             OutlinedButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -772,7 +772,7 @@ class ButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "outlinedButton_withAnimatedShape_pressed_darkTheme"
+                "outlinedButton_withAnimatedShape_pressed_darkTheme",
             )
     }
 
@@ -783,7 +783,7 @@ class ButtonScreenshotTest {
             TextButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }
@@ -813,7 +813,7 @@ class ButtonScreenshotTest {
             TextButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.testTag(buttonTestTag)
+                modifier = Modifier.testTag(buttonTestTag),
             ) {
                 Text("Button")
             }

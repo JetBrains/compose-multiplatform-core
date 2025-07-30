@@ -6,41 +6,53 @@ package androidx.glance.template {
     ctor public ActionBlock(optional java.util.List<? extends androidx.glance.template.TemplateButton> actionButtons, optional int type);
     method public java.util.List<androidx.glance.template.TemplateButton> getActionButtons();
     method public int getType();
-    property public final java.util.List<androidx.glance.template.TemplateButton> actionButtons;
-    property public final int type;
+    method @BytecodeOnly public int getType-r0b0Q_E();
+    property public java.util.List<androidx.glance.template.TemplateButton> actionButtons;
+    property public int type;
   }
 
   @kotlin.jvm.JvmInline public final value class AspectRatio {
+    method @BytecodeOnly public static androidx.glance.template.AspectRatio! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.template.AspectRatio.Companion Companion;
   }
 
   public static final class AspectRatio.Companion {
     method public int getRatio16x9();
+    method @BytecodeOnly public int getRatio16x9-ja8jjaE();
     method public int getRatio1x1();
+    method @BytecodeOnly public int getRatio1x1-ja8jjaE();
     method public int getRatio2x3();
-    property public final int Ratio16x9;
-    property public final int Ratio1x1;
-    property public final int Ratio2x3;
+    method @BytecodeOnly public int getRatio2x3-ja8jjaE();
+    property public int Ratio16x9;
+    property public int Ratio1x1;
+    property public int Ratio2x3;
   }
 
   @kotlin.jvm.JvmInline public final value class ButtonType {
+    method @BytecodeOnly public static androidx.glance.template.ButtonType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.template.ButtonType.Companion Companion;
   }
 
   public static final class ButtonType.Companion {
     method public int getFab();
+    method @BytecodeOnly public int getFab-r0b0Q_E();
     method public int getIcon();
+    method @BytecodeOnly public int getIcon-r0b0Q_E();
     method public int getText();
+    method @BytecodeOnly public int getText-r0b0Q_E();
     method public int getTextIcon();
-    property public final int Fab;
-    property public final int Icon;
-    property public final int Text;
-    property public final int TextIcon;
+    method @BytecodeOnly public int getTextIcon-r0b0Q_E();
+    property public int Fab;
+    property public int Icon;
+    property public int Text;
+    property public int TextIcon;
   }
 
   public final class CompositionLocalsKt {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.glance.template.TemplateMode> getLocalTemplateMode();
-    property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.glance.template.TemplateMode> LocalTemplateMode;
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.glance.template.TemplateMode> LocalTemplateMode;
   }
 
   public final class FreeformTemplateData {
@@ -52,17 +64,18 @@ package androidx.glance.template {
     method public androidx.glance.template.TemplateImageWithDescription getHeaderIcon();
     method public androidx.glance.template.TemplateText? getSubtitle();
     method public androidx.glance.template.TemplateText? getTitle();
-    property public final androidx.glance.template.TemplateImageButton? actionIcon;
-    property public final androidx.glance.unit.ColorProvider backgroundColor;
-    property public final androidx.glance.ImageProvider? backgroundImage;
-    property public final androidx.glance.template.TemplateText? header;
-    property public final androidx.glance.template.TemplateImageWithDescription headerIcon;
-    property public final androidx.glance.template.TemplateText? subtitle;
-    property public final androidx.glance.template.TemplateText? title;
+    property public androidx.glance.template.TemplateImageButton? actionIcon;
+    property public androidx.glance.unit.ColorProvider backgroundColor;
+    property public androidx.glance.ImageProvider? backgroundImage;
+    property public androidx.glance.template.TemplateText? header;
+    property public androidx.glance.template.TemplateImageWithDescription headerIcon;
+    property public androidx.glance.template.TemplateText? subtitle;
+    property public androidx.glance.template.TemplateText? title;
   }
 
   public final class FreeformTemplateLayoutsKt {
     method @androidx.compose.runtime.Composable public static void FreeformTemplate(androidx.glance.template.FreeformTemplateData data);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void FreeformTemplate(androidx.glance.template.FreeformTemplateData, androidx.compose.runtime.Composer?, int);
   }
 
   public final class GalleryTemplateData {
@@ -72,20 +85,22 @@ package androidx.glance.template {
     method public androidx.glance.template.ActionBlock? getMainActionBlock();
     method public androidx.glance.template.ImageBlock getMainImageBlock();
     method public androidx.glance.template.TextBlock getMainTextBlock();
-    property public final androidx.glance.template.ImageBlock galleryImageBlock;
-    property public final androidx.glance.template.HeaderBlock? header;
-    property public final androidx.glance.template.ActionBlock? mainActionBlock;
-    property public final androidx.glance.template.ImageBlock mainImageBlock;
-    property public final androidx.glance.template.TextBlock mainTextBlock;
+    property public androidx.glance.template.ImageBlock galleryImageBlock;
+    property public androidx.glance.template.HeaderBlock? header;
+    property public androidx.glance.template.ActionBlock? mainActionBlock;
+    property public androidx.glance.template.ImageBlock mainImageBlock;
+    property public androidx.glance.template.TextBlock mainTextBlock;
   }
 
   public final class GalleryTemplateLayoutsKt {
     method @androidx.compose.runtime.Composable public static void GalleryTemplate(androidx.glance.template.GalleryTemplateData data);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void GalleryTemplate(androidx.glance.template.GalleryTemplateData, androidx.compose.runtime.Composer?, int);
   }
 
   public abstract class GlanceTemplateAppWidget extends androidx.glance.appwidget.GlanceAppWidget {
     ctor public GlanceTemplateAppWidget();
     method @androidx.compose.runtime.Composable @androidx.glance.GlanceComposable public abstract void TemplateContent();
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.glance.GlanceComposable public abstract void TemplateContent(androidx.compose.runtime.Composer?, int);
     method public final suspend Object? provideGlance(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<? extends java.lang.Object?>);
     property public androidx.glance.appwidget.SizeMode sizeMode;
     property public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? stateDefinition;
@@ -99,47 +114,59 @@ package androidx.glance.template {
     ctor public HeaderBlock(androidx.glance.template.TemplateText text, optional androidx.glance.template.TemplateImageWithDescription? icon);
     method public androidx.glance.template.TemplateImageWithDescription? getIcon();
     method public androidx.glance.template.TemplateText getText();
-    property public final androidx.glance.template.TemplateImageWithDescription? icon;
-    property public final androidx.glance.template.TemplateText text;
+    property public androidx.glance.template.TemplateImageWithDescription? icon;
+    property public androidx.glance.template.TemplateText text;
   }
 
   public final class ImageBlock {
     ctor public ImageBlock();
     ctor public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional int aspectRatio, optional int size, optional @IntRange(from=0L) int priority);
     method public int getAspectRatio();
+    method @BytecodeOnly public int getAspectRatio-ja8jjaE();
     method public java.util.List<androidx.glance.template.TemplateImageWithDescription> getImages();
     method public int getPriority();
     method public int getSize();
-    property public final int aspectRatio;
-    property public final java.util.List<androidx.glance.template.TemplateImageWithDescription> images;
-    property @IntRange(from=0L) public final int priority;
-    property public final int size;
+    method @BytecodeOnly public int getSize-KRlrA-I();
+    property public int aspectRatio;
+    property public java.util.List<androidx.glance.template.TemplateImageWithDescription> images;
+    property @IntRange(from=0L) public int priority;
+    property public int size;
   }
 
   @kotlin.jvm.JvmInline public final value class ImageSize {
+    method @BytecodeOnly public static androidx.glance.template.ImageSize! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.template.ImageSize.Companion Companion;
   }
 
   public static final class ImageSize.Companion {
     method public int getLarge();
+    method @BytecodeOnly public int getLarge-KRlrA-I();
     method public int getMedium();
+    method @BytecodeOnly public int getMedium-KRlrA-I();
     method public int getSmall();
+    method @BytecodeOnly public int getSmall-KRlrA-I();
     method public int getUndefined();
-    property public final int Large;
-    property public final int Medium;
-    property public final int Small;
-    property public final int Undefined;
+    method @BytecodeOnly public int getUndefined-KRlrA-I();
+    property public int Large;
+    property public int Medium;
+    property public int Small;
+    property public int Undefined;
   }
 
   @kotlin.jvm.JvmInline public final value class ListStyle {
+    method @BytecodeOnly public static androidx.glance.template.ListStyle! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.template.ListStyle.Companion Companion;
   }
 
   public static final class ListStyle.Companion {
     method public int getBrief();
+    method @BytecodeOnly public int getBrief-wieCnIM();
     method public int getFull();
-    property public final int Brief;
-    property public final int Full;
+    method @BytecodeOnly public int getFull-wieCnIM();
+    property public int Brief;
+    property public int Full;
   }
 
   public final class ListTemplateData {
@@ -148,9 +175,10 @@ package androidx.glance.template {
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public java.util.List<androidx.glance.template.ListTemplateItem> getListContent();
     method public int getListStyle();
-    property public final androidx.glance.template.HeaderBlock? headerBlock;
-    property public final java.util.List<androidx.glance.template.ListTemplateItem> listContent;
-    property public final int listStyle;
+    method @BytecodeOnly public int getListStyle-wieCnIM();
+    property public androidx.glance.template.HeaderBlock? headerBlock;
+    property public java.util.List<androidx.glance.template.ListTemplateItem> listContent;
+    property public int listStyle;
   }
 
   public final class ListTemplateItem {
@@ -158,13 +186,14 @@ package androidx.glance.template {
     method public androidx.glance.template.ActionBlock? getActionBlock();
     method public androidx.glance.template.ImageBlock? getImageBlock();
     method public androidx.glance.template.TextBlock getTextBlock();
-    property public final androidx.glance.template.ActionBlock? actionBlock;
-    property public final androidx.glance.template.ImageBlock? imageBlock;
-    property public final androidx.glance.template.TextBlock textBlock;
+    property public androidx.glance.template.ActionBlock? actionBlock;
+    property public androidx.glance.template.ImageBlock? imageBlock;
+    property public androidx.glance.template.TextBlock textBlock;
   }
 
   @androidx.glance.GlanceComposable public final class ListTemplateLayoutsKt {
     method @androidx.compose.runtime.Composable public static void ListTemplate(androidx.glance.template.ListTemplateData data);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void ListTemplate(androidx.glance.template.ListTemplateData, androidx.compose.runtime.Composer?, int);
   }
 
   public final class SingleEntityTemplateData {
@@ -174,14 +203,15 @@ package androidx.glance.template {
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public androidx.glance.template.ImageBlock? getImageBlock();
     method public androidx.glance.template.TextBlock? getTextBlock();
-    property public final androidx.glance.template.ActionBlock? actionBlock;
-    property public final androidx.glance.template.HeaderBlock? headerBlock;
-    property public final androidx.glance.template.ImageBlock? imageBlock;
-    property public final androidx.glance.template.TextBlock? textBlock;
+    property public androidx.glance.template.ActionBlock? actionBlock;
+    property public androidx.glance.template.HeaderBlock? headerBlock;
+    property public androidx.glance.template.ImageBlock? imageBlock;
+    property public androidx.glance.template.TextBlock? textBlock;
   }
 
   public final class SingleEntityTemplateLayoutsKt {
     method @androidx.compose.runtime.Composable public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData data);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData, androidx.compose.runtime.Composer?, int);
   }
 
   public abstract sealed class TemplateButton {
@@ -192,17 +222,18 @@ package androidx.glance.template {
   public final class TemplateImageButton extends androidx.glance.template.TemplateButton {
     ctor public TemplateImageButton(androidx.glance.action.Action action, androidx.glance.template.TemplateImageWithDescription image);
     method public androidx.glance.template.TemplateImageWithDescription getImage();
-    property public final androidx.glance.template.TemplateImageWithDescription image;
+    property public androidx.glance.template.TemplateImageWithDescription image;
   }
 
   public final class TemplateImageWithDescription {
     ctor public TemplateImageWithDescription(androidx.glance.ImageProvider image, String description, optional float cornerRadius);
     method public float getCornerRadius();
+    method @BytecodeOnly public float getCornerRadius-D9Ej5fM();
     method public String getDescription();
     method public androidx.glance.ImageProvider getImage();
-    property public final float cornerRadius;
-    property public final String description;
-    property public final androidx.glance.ImageProvider image;
+    property public float cornerRadius;
+    property public String description;
+    property public androidx.glance.ImageProvider image;
   }
 
   public enum TemplateMode {
@@ -215,14 +246,15 @@ package androidx.glance.template {
     ctor public TemplateText(String text, optional int type);
     method public String getText();
     method public int getType();
-    property public final String text;
-    property public final int type;
+    method @BytecodeOnly public int getType-FY95lY0();
+    property public String text;
+    property public int type;
   }
 
   public final class TemplateTextButton extends androidx.glance.template.TemplateButton {
     ctor public TemplateTextButton(androidx.glance.action.Action action, String text);
     method public String getText();
-    property public final String text;
+    property public String text;
   }
 
   public final class TextBlock {
@@ -231,27 +263,34 @@ package androidx.glance.template {
     method public androidx.glance.template.TemplateText getText1();
     method public androidx.glance.template.TemplateText? getText2();
     method public androidx.glance.template.TemplateText? getText3();
-    property @IntRange(from=0L) public final int priority;
-    property public final androidx.glance.template.TemplateText text1;
-    property public final androidx.glance.template.TemplateText? text2;
-    property public final androidx.glance.template.TemplateText? text3;
+    property @IntRange(from=0L) public int priority;
+    property public androidx.glance.template.TemplateText text1;
+    property public androidx.glance.template.TemplateText? text2;
+    property public androidx.glance.template.TemplateText? text3;
   }
 
   @kotlin.jvm.JvmInline public final value class TextType {
+    method @BytecodeOnly public static androidx.glance.template.TextType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.template.TextType.Companion Companion;
   }
 
   public static final class TextType.Companion {
     method public int getBody();
+    method @BytecodeOnly public int getBody-FY95lY0();
     method public int getDisplay();
+    method @BytecodeOnly public int getDisplay-FY95lY0();
     method public int getHeadline();
+    method @BytecodeOnly public int getHeadline-FY95lY0();
     method public int getLabel();
+    method @BytecodeOnly public int getLabel-FY95lY0();
     method public int getTitle();
-    property public final int Body;
-    property public final int Display;
-    property public final int Headline;
-    property public final int Label;
-    property public final int Title;
+    method @BytecodeOnly public int getTitle-FY95lY0();
+    property public int Body;
+    property public int Display;
+    property public int Headline;
+    property public int Label;
+    property public int Title;
   }
 
 }

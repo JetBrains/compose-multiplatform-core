@@ -16,14 +16,22 @@
 
 package androidx.camera.camera2.internal
 
-import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
+import androidx.camera.core.DynamicRange
+import androidx.camera.core.DynamicRange.SDR
+import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.ImageFormatConstants
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.SurfaceConfig
+import androidx.camera.core.impl.SurfaceConfig.ConfigSize
+import androidx.camera.core.impl.SurfaceConfig.ConfigType
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.CompareSizesByArea
@@ -33,6 +41,7 @@ import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,12 +78,7 @@ class HighSpeedResolverTest {
         private val COMMON_HIGH_SPEED_SUPPORTED_SIZE_FPS_MAP =
             mapOf(
                 RESOLUTION_1080P to
-                    listOf(
-                        RANGE_30_120,
-                        RANGE_120_120,
-                        RANGE_30_240,
-                        RANGE_240_240,
-                    ),
+                    listOf(RANGE_30_120, RANGE_120_120, RANGE_30_240, RANGE_240_240),
                 RESOLUTION_720P to
                     listOf(
                         RANGE_30_120,
@@ -82,8 +86,8 @@ class HighSpeedResolverTest {
                         RANGE_30_240,
                         RANGE_240_240,
                         RANGE_30_480,
-                        RANGE_480_480
-                    )
+                        RANGE_480_480,
+                    ),
             )
     }
 
@@ -92,12 +96,73 @@ class HighSpeedResolverTest {
         createHighSpeedResolver(createCharacteristics(supportedHighSpeedSizeAndFpsMap = emptyMap()))
 
     @Test
+    fun isHighSpeedOn_configsHaveSameSessionTypeHighSpeed_returnsTrue() {
+        val attachedSurfaceInfos =
+            listOf(createAttachedSurfaceInfo(sessionType = SESSION_TYPE_HIGH_SPEED))
+        val useCaseConfigs =
+            listOf<UseCaseConfig<*>>(
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_HIGH_SPEED),
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_HIGH_SPEED),
+            )
+
+        val result = HighSpeedResolver.isHighSpeedOn(attachedSurfaceInfos, useCaseConfigs)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun isHighSpeedOn_configsDoNotHaveSessionTypeHighSpeed_returnsFalse() {
+        val attachedSurfaceInfos =
+            listOf(createAttachedSurfaceInfo(sessionType = SESSION_TYPE_REGULAR))
+        val useCaseConfigs =
+            listOf<UseCaseConfig<*>>(
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_REGULAR),
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_REGULAR),
+            )
+
+        val result = HighSpeedResolver.isHighSpeedOn(attachedSurfaceInfos, useCaseConfigs)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun isHighSpeedOn_configsHaveDifferentSessionTypes_throwsException() {
+        // Differ in AttachedSurfaceInfo list
+        val attachedSurfaceInfos =
+            listOf(
+                createAttachedSurfaceInfo(sessionType = SESSION_TYPE_HIGH_SPEED),
+                createAttachedSurfaceInfo(sessionType = SESSION_TYPE_REGULAR),
+            )
+        assertThrows(IllegalArgumentException::class.java) {
+            HighSpeedResolver.isHighSpeedOn(attachedSurfaceInfos, emptyList())
+        }
+
+        // Differ in UseCaseConfig list
+        val useCaseConfigs =
+            listOf(
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_HIGH_SPEED),
+                createFakeUseCaseConfig(sessionType = SESSION_TYPE_REGULAR),
+            )
+        assertThrows(IllegalArgumentException::class.java) {
+            HighSpeedResolver.isHighSpeedOn(emptyList(), useCaseConfigs)
+        }
+
+        // Differ from AttachedSurfaceInfo list and UseCaseConfig list
+        val attachedSurfaceInfos2 =
+            listOf(createAttachedSurfaceInfo(sessionType = SESSION_TYPE_HIGH_SPEED))
+        val useCaseConfigs2 = listOf(createFakeUseCaseConfig(sessionType = SESSION_TYPE_REGULAR))
+        assertThrows(IllegalArgumentException::class.java) {
+            HighSpeedResolver.isHighSpeedOn(attachedSurfaceInfos2, useCaseConfigs2)
+        }
+    }
+
+    @Test
     fun filterCommonSupportedSizes_returnsCorrectMap() {
         val useCaseSupportedSizeMap =
             listOf(
                     listOf(RESOLUTION_480P, RESOLUTION_720P, RESOLUTION_1080P),
                     listOf(RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_2160P),
-                    listOf(RESOLUTION_480P, RESOLUTION_720P, RESOLUTION_1080P, RESOLUTION_VGA)
+                    listOf(RESOLUTION_480P, RESOLUTION_720P, RESOLUTION_1080P, RESOLUTION_VGA),
                 )
                 .toUseCaseSupportedSizeMap()
 
@@ -108,7 +173,7 @@ class HighSpeedResolverTest {
             .containsExactly(
                 listOf(RESOLUTION_720P, RESOLUTION_1080P),
                 listOf(RESOLUTION_1080P, RESOLUTION_720P),
-                listOf(RESOLUTION_720P, RESOLUTION_1080P)
+                listOf(RESOLUTION_720P, RESOLUTION_1080P),
             )
             .inOrder()
     }
@@ -128,22 +193,15 @@ class HighSpeedResolverTest {
     }
 
     @Test
-    fun getMaxFrameRate_unsupportedImageFormat_returnsZero() {
-        val result = defaultHighSpeedResolver.getMaxFrameRate(ImageFormat.JPEG, RESOLUTION_1080P)
-
-        assertThat(result).isEqualTo(0)
-    }
-
-    @Test
     fun getMaxFrameRate_noSupportedFpsRanges_returnsZero() {
-        val result = emptyHighSpeedResolver.getMaxFrameRate(FORMAT_PRIVATE, RESOLUTION_1080P)
+        val result = emptyHighSpeedResolver.getMaxFrameRate(RESOLUTION_1080P)
 
         assertThat(result).isEqualTo(0)
     }
 
     @Test
     fun getMaxFrameRate_supportedFpsRangesExist_returnMaxFps() {
-        val result = defaultHighSpeedResolver.getMaxFrameRate(FORMAT_PRIVATE, RESOLUTION_1080P)
+        val result = defaultHighSpeedResolver.getMaxFrameRate(RESOLUTION_1080P)
 
         assertThat(result).isEqualTo(FPS_240)
     }
@@ -163,7 +221,7 @@ class HighSpeedResolverTest {
             listOf(
                 listOf(RESOLUTION_480P, common720p, common1080p),
                 listOf(common1080p, common720p, RESOLUTION_2160P),
-                listOf(RESOLUTION_480P, common720p, common1080p, RESOLUTION_VGA)
+                listOf(RESOLUTION_480P, common720p, common1080p, RESOLUTION_VGA),
             )
         val sizeArrangements =
             defaultHighSpeedResolver.getSizeArrangements(supportedOutputSizesList)
@@ -171,7 +229,7 @@ class HighSpeedResolverTest {
         assertThat(sizeArrangements)
             .containsExactly(
                 listOf(common720p, common720p, common720p),
-                listOf(common1080p, common1080p, common1080p)
+                listOf(common1080p, common1080p, common1080p),
             )
             .inOrder()
     }
@@ -182,7 +240,7 @@ class HighSpeedResolverTest {
             listOf(
                 listOf(RESOLUTION_480P, RESOLUTION_720P),
                 listOf(RESOLUTION_1080P, RESOLUTION_2160P),
-                listOf(RESOLUTION_1080P, RESOLUTION_720P)
+                listOf(RESOLUTION_1080P, RESOLUTION_720P),
             )
 
         val result = defaultHighSpeedResolver.getSizeArrangements(supportedOutputSizesList)
@@ -228,7 +286,7 @@ class HighSpeedResolverTest {
                 RANGE_30_240,
                 RANGE_240_240,
                 RANGE_30_480,
-                RANGE_480_480
+                RANGE_480_480,
             )
     }
 
@@ -243,7 +301,7 @@ class HighSpeedResolverTest {
     }
 
     private fun createHighSpeedResolver(
-        characteristics: CameraCharacteristicsCompat = createCharacteristics(),
+        characteristics: CameraCharacteristicsCompat = createCharacteristics()
     ): HighSpeedResolver {
         return HighSpeedResolver(characteristics = characteristics)
     }
@@ -294,6 +352,38 @@ class HighSpeedResolverTest {
 
         return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(characteristics, cameraId)
     }
+
+    private fun createFakeUseCaseConfig(
+        sessionType: Int = SESSION_TYPE_HIGH_SPEED,
+        targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+    ): FakeUseCaseConfig =
+        FakeUseCaseConfig.Builder()
+            .setSessionType(sessionType)
+            .setTargetFrameRate(targetFrameRate)
+            .useCaseConfig
+
+    private fun createAttachedSurfaceInfo(
+        surfaceConfig: SurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW),
+        imageFormat: Int = ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+        size: Size = RESOLUTION_480P,
+        dynamicRange: DynamicRange = SDR,
+        captureTypes: List<CaptureType> = listOf(CaptureType.PREVIEW),
+        implementationOptions: androidx.camera.core.impl.Config? = null,
+        sessionType: Int = SESSION_TYPE_HIGH_SPEED,
+        targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+        isStrictFrameRateRequired: Boolean = false,
+    ): AttachedSurfaceInfo =
+        AttachedSurfaceInfo.create(
+            surfaceConfig,
+            imageFormat,
+            size,
+            dynamicRange,
+            captureTypes,
+            implementationOptions,
+            sessionType,
+            targetFrameRate,
+            isStrictFrameRateRequired,
+        )
 
     private fun List<List<Size>>.toUseCaseSupportedSizeMap(): Map<UseCaseConfig<*>, List<Size>> {
         return associate { sizes ->
