@@ -105,8 +105,8 @@ class TextFieldFocusOrderTest {
     @Test
     fun testModalTextFieldsRefocusWhenParentDismissed() = runUIKitInstrumentedTest {
         val showTextField = mutableStateOf(true)
-        val showDialog1 = mutableStateOf(true)
-        val showDialog2 = mutableStateOf(true)
+        val showDialog1 = mutableStateOf(false)
+        val showDialog2 = mutableStateOf(false)
         val focusRequester0 = FocusRequester()
         val focusRequester1 = FocusRequester()
         val focusRequester2 = FocusRequester()
@@ -137,6 +137,11 @@ class TextFieldFocusOrderTest {
                 }
             }
         }
+
+        showDialog1.value = true
+        waitForIdle()
+        showDialog2.value = true
+        waitForIdle()
 
         assertEquals("Text 2", findFocusedUITextInput()?.text)
 
