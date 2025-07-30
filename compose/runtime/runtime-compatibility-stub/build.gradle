@@ -59,6 +59,12 @@ kotlin {
                 api("androidx.compose.runtime:runtime:$version")
             }
         }
+
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
     }
 }
 
