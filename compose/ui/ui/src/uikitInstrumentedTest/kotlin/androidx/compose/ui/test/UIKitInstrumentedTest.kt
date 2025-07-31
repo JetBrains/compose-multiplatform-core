@@ -30,8 +30,10 @@ import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.window.KeyboardVisibilityListener
@@ -95,6 +97,16 @@ internal class UIKitInstrumentedTest {
     val keyboardHeight: Dp get() =
         KeyboardVisibilityListener.keyboardFrame.useContents { size.height.dp }
     val screenSize: DpSize = screen.bounds().useContents { DpSize(size.width.dp, size.height.dp) }
+    val safeDrawingRect: DpRect get() = screen.bounds().asDpRect().let { rect ->
+        hostingViewController.view.safeAreaInsets.useContents {
+            DpRect(
+                left = rect.left + Dp(this.left.toFloat()),
+                top = rect.top + Dp(this.top.toFloat()),
+                right = rect.right - Dp(this.right.toFloat()),
+                bottom = rect.bottom - Dp(this.bottom.toFloat()),
+            )
+        }
+    }
     internal lateinit var hostingViewController: ComposeHostingViewController
 
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
