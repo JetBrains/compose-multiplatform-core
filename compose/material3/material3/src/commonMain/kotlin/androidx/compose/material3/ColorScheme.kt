@@ -678,11 +678,6 @@ class ColorScheme(
     internal var defaultOutlinedIconToggleButtonColorsCached: IconToggleButtonColors? = null
     internal var defaultOutlinedIconToggleButtonVibrantColorsCached: IconToggleButtonColors? = null
 
-    internal var defaultToggleButtonColorsCached: ToggleButtonColors? = null
-    internal var defaultElevatedToggleButtonColorsCached: ToggleButtonColors? = null
-    internal var defaultTonalToggleButtonColorsCached: ToggleButtonColors? = null
-    internal var defaultOutlinedToggleButtonColorsCached: ToggleButtonColors? = null
-
     internal var defaultListItemColorsCached: ListItemColors? = null
 
     internal var defaultMenuItemColorsCached: MenuItemColors? = null
@@ -710,11 +705,6 @@ class ColorScheme(
 
     @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultRichTooltipColorsCached: RichTooltipColors? = null
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal var defaultFloatingToolbarStandardColorsCached: FloatingToolbarColors? = null
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal var defaultFloatingToolbarVibrantColorsCached: FloatingToolbarColors? = null
 
     @Deprecated(
         level = DeprecationLevel.WARNING,
@@ -1148,11 +1138,8 @@ fun ColorScheme.surfaceColorAtElevation(elevation: Dp): Color {
  * The default color scheme for [MaterialExpressiveTheme]. For dark mode, use [darkColorScheme].
  *
  * Example of MaterialExpressiveTheme toggling expressiveLightColorScheme and darkTheme.
- *
- * @sample androidx.compose.material3.samples.MaterialExpressiveThemeColorSchemeSample
  */
-@ExperimentalMaterial3ExpressiveApi
-fun expressiveLightColorScheme() =
+internal fun expressiveLightColorScheme() =
     lightColorScheme(
         // TODO: Replace palette references with color token references when available.
         onPrimaryContainer = PaletteTokens.Primary30,

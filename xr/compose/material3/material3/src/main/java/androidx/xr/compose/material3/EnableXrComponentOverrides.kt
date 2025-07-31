@@ -16,26 +16,9 @@
 
 package androidx.xr.compose.material3
 
-import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
-import androidx.compose.material3.LocalBasicAlertDialogOverride
-import androidx.compose.material3.LocalHorizontalFloatingToolbarOverride
-import androidx.compose.material3.LocalHorizontalFloatingToolbarWithFabOverride
-import androidx.compose.material3.LocalNavigationBarOverride
-import androidx.compose.material3.LocalNavigationRailOverride
-import androidx.compose.material3.LocalShortNavigationBarOverride
-import androidx.compose.material3.LocalSingleRowTopAppBarOverride
-import androidx.compose.material3.LocalTwoRowsTopAppBarOverride
-import androidx.compose.material3.LocalVerticalToolbarOverride
-import androidx.compose.material3.LocalVerticalToolbarWithFabOverride
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
-import androidx.compose.material3.adaptive.layout.LocalAnimatedPaneOverride
-import androidx.compose.material3.adaptive.layout.LocalThreePaneScaffoldOverride
-import androidx.compose.material3.adaptive.navigationsuite.LocalNavigationSuiteScaffoldOverride
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ProvidedValue
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 
 /**
@@ -45,92 +28,13 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
  * The [overrideEnabler] param determines whether each component will use an XR version.
  */
 @ExperimentalMaterial3XrApi
-@OptIn(
-    ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
-    ExperimentalMaterial3Api::class,
-)
+@OptIn(ExperimentalMaterial3AdaptiveComponentOverrideApi::class, ExperimentalMaterial3Api::class)
 @Composable
 public fun EnableXrComponentOverrides(
     overrideEnabler: XrComponentOverrideEnabler = DefaultXrComponentOverrideEnabler,
     content: @Composable () -> Unit,
 ) {
-    if (Build.VERSION.SDK_INT < 34) {
-        content()
-        return
-    }
-    val context = XrComponentOverrideEnablerContextImpl
-
-    // Override CompositionLocals for all ComponentOverrides, as specified by the provided enabler.
-    val componentOverrides =
-        buildList<ProvidedValue<*>> {
-            with(overrideEnabler) {
-                val shouldOverrideNavigationSuiteScaffold =
-                    context.shouldOverrideComponent(XrComponentOverride.NavigationSuiteScaffold)
-                if (shouldOverrideNavigationSuiteScaffold) {
-                    add(
-                        LocalNavigationSuiteScaffoldOverride provides
-                            XrNavigationSuiteScaffoldOverride
-                    )
-                }
-                // Automatically enable NavBar and NavRail when NavSuiteScaffold is enabled
-                if (
-                    shouldOverrideNavigationSuiteScaffold ||
-                        context.shouldOverrideComponent(XrComponentOverride.NavigationRail)
-                ) {
-                    add(LocalNavigationRailOverride provides XrNavigationRailOverride)
-                }
-                if (
-                    shouldOverrideNavigationSuiteScaffold ||
-                        context.shouldOverrideComponent(XrComponentOverride.NavigationBar)
-                ) {
-                    add(LocalNavigationBarOverride provides XrNavigationBarOverride)
-                }
-                if (
-                    shouldOverrideNavigationSuiteScaffold ||
-                        context.shouldOverrideComponent(XrComponentOverride.ShortNavigationBar)
-                ) {
-                    add(LocalShortNavigationBarOverride provides XrShortNavigationBarOverride)
-                }
-                if (context.shouldOverrideComponent(XrComponentOverride.ThreePaneScaffold)) {
-                    add(LocalThreePaneScaffoldOverride provides XrThreePaneScaffoldOverride)
-                    add(LocalAnimatedPaneOverride provides XrAnimatedPaneOverride)
-                }
-
-                if (context.shouldOverrideComponent(XrComponentOverride.SingleRowTopAppBar)) {
-                    add(LocalSingleRowTopAppBarOverride provides XrSingleRowTopAppBarOverride)
-                }
-                if (context.shouldOverrideComponent(XrComponentOverride.TwoRowsTopAppBar)) {
-                    add(LocalTwoRowsTopAppBarOverride provides XrTwoRowsTopAppBarOverride)
-                }
-
-                if (context.shouldOverrideComponent(XrComponentOverride.BasicAlertDialog)) {
-                    add(LocalBasicAlertDialogOverride provides XrBasicAlertDialogOverride)
-                }
-
-                if (
-                    context.shouldOverrideComponent(XrComponentOverride.HorizontalFloatingToolbar)
-                ) {
-                    add(
-                        LocalHorizontalFloatingToolbarOverride provides
-                            XrHorizontalFloatingToolbarOverride
-                    )
-                    add(
-                        LocalHorizontalFloatingToolbarWithFabOverride provides
-                            XrHorizontalFloatingToolbarWithFabOverride
-                    )
-                }
-
-                if (context.shouldOverrideComponent(XrComponentOverride.VerticalFloatingToolbar)) {
-                    add(LocalVerticalToolbarOverride provides XrVerticalFloatingToolbarOverride)
-                    add(
-                        LocalVerticalToolbarWithFabOverride provides
-                            XrVerticalFloatingToolbarWithFabOverride
-                    )
-                }
-            }
-        }
-    CompositionLocalProvider(values = componentOverrides.toTypedArray(), content = content)
+    content()
 }
 
 /** Interface that a client can provide to enable/disable XR overrides on a per-component basis. */
