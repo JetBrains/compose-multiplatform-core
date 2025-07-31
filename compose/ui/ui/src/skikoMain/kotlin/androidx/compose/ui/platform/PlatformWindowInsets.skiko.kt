@@ -187,6 +187,20 @@ fun PlatformInsets(
     bottom: Int = 0
 ): PlatformInsets = ValuePlatformInsets(left, top, right, bottom)
 
+internal fun PlatformInsets.exclude(insets: PlatformInsets) = PlatformInsets(
+    left = (left - insets.left).coerceAtLeast(0),
+    top = (top - insets.top).coerceAtLeast(0),
+    right = (right - insets.right).coerceAtLeast(0),
+    bottom = (bottom - insets.bottom).coerceAtLeast(0)
+)
+
+internal fun PlatformInsets.union(insets: PlatformInsets) = PlatformInsets(
+    left = maxOf(left, insets.left),
+    top = maxOf(top, insets.top),
+    right = maxOf(right, insets.right),
+    bottom = maxOf(bottom, insets.bottom)
+)
+
 @JvmInline
 private value class ValuePlatformInsets(
     val packedValue: Long
