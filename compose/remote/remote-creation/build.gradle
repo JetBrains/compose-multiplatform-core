@@ -40,4 +40,5 @@ dependencies {
     implementation(project(":graphics:graphics-path"))
     androidTestImplementation(libs.testRunner)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinTest)
 }

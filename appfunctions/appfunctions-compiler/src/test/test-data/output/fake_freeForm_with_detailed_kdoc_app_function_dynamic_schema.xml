@@ -3,9 +3,7 @@
     <appfunction>
         <id>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_inputClassDescribedByKdoc_false</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>
- Tests that the input class description is empty when class's isDescribedByKdoc = false,
-</description>
+        <description>Tests that the input class description is empty when class's isDescribedByKdoc = false.</description>
         <parameters>
             <dataTypeMetadata>
                 <dataTypeReference>com.testdata.NotDescribedByKdoc</dataTypeReference>
@@ -54,18 +52,11 @@
     <appfunction>
         <id>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_isDescribedByKdoc_true</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>
- A fake free-form AppFunction to test the description element in the function's generated
+        <description>A fake free-form AppFunction to test the description element in the function's generated
  metadata xml.
 
  This kdoc consists of multiple paragraphs and is used as the function's description to the
- agent.
-
- @param appFunctionContext the AppFunction's context.
- @param input an input AppFunctionSerializable.
- @return a string.
- @throws IllegalArgumentException if the inputString is in an incorrect format.
-</description>
+ agent.</description>
         <parameters>
             <dataTypeMetadata>
                 <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
@@ -75,7 +66,8 @@
             </dataTypeMetadata>
             <id>unused</id>
             <isRequired>true</isRequired>
-            <name>input</name>
+            <name>serializableParam</name>
+            <description>an input AppFunctionSerializable.</description>
         </parameters>
         <response>
             <id>unused</id>
@@ -90,18 +82,11 @@
     <appfunction>
         <id>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_isDescribedByKdoc_withDerivedSerializable_true</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>
- A fake free-form AppFunction to test the description elements in the function generated
+        <description>A fake free-form AppFunction to test the description elements in the function generated
  metadata xml. This version uses a derived serializable class.
 
  This kdoc consists of multiple paragraphs and is used as the function's description to the
- agent.
-
- @param appFunctionContext the AppFunction's context.
- @param input an input AppFunctionSerializable.
- @return a string.
- @throws IllegalArgumentException if the inputString is in an incorrect format.
-</description>
+ agent.</description>
         <parameters>
             <dataTypeMetadata>
                 <dataTypeReference>com.testdata.DerivedInputToFakeFreeFormFunction</dataTypeReference>
@@ -112,6 +97,7 @@
             <id>unused</id>
             <isRequired>true</isRequired>
             <name>input</name>
+            <description>an input AppFunctionSerializable.</description>
         </parameters>
         <response>
             <id>unused</id>
@@ -126,7 +112,7 @@
     <appfunction>
         <id>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_withParametrizedTypes</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>Tests the description elements for serializable's parametrized properties. </description>
+        <description>Tests the description elements for serializable's parametrized properties.</description>
         <parameters>
             <dataTypeMetadata>
                 <dataTypeReference>com.testdata.InputWithParametrizedTypes</dataTypeReference>
@@ -151,7 +137,7 @@
     <appfunction>
         <id>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_withRepeatedTypes</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>Tests the description elements for serializable's repeated properties. </description>
+        <description>Tests the description elements for serializable's repeated properties.</description>
         <parameters>
             <dataTypeMetadata>
                 <dataTypeReference>com.testdata.InputWithRepeatedTypes</dataTypeReference>

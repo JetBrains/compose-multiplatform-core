@@ -39,8 +39,8 @@ import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
     private companion object {
-        // That delay will be used to ensure processing the transferred events after their target
-        // frame time and before the following frame time.
+        // That delay will be used to ensure processing the transferred buffered events after their
+        // target frame time and before the following frame time.
         const val TRANSFERRED_EVENT_DISPATCH_DELAY_MS = 1
     }
 
@@ -70,25 +70,36 @@ internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
 
     fun scheduleMotionEventProcessing(
         motionEvent: MotionEvent,
-        eventTargetFrameTime: Long,
+        eventTargetTime: Long,
         motionEventTransferCallback: IMotionEventTransferCallback?,
+    ) {
+        scheduleDispatchingAtTargetTimeWithDelay(
+            eventTargetTime,
+            { processMotionEvent(motionEvent, motionEventTransferCallback) },
+        )
+    }
+
+    fun scheduleHoverEventProcessing(hoverEvent: MotionEvent, eventTargetTime: Long) {
+        scheduleDispatchingAtTargetTimeWithDelay(eventTargetTime, { processHoverEvent(hoverEvent) })
+    }
+
+    private fun scheduleDispatchingAtTargetTimeWithDelay(
+        eventTargetTime: Long,
+        processingEventRunnable: Runnable,
     ) {
         if (eventDispatchHandler == null) {
             return
         }
-        val dispatchMessage: Message =
-            Message.obtain(eventDispatchHandler) {
-                processMotionEvent(motionEvent, motionEventTransferCallback)
-            }
+        val dispatchMessage: Message = Message.obtain(eventDispatchHandler, processingEventRunnable)
         dispatchMessage.isAsynchronous = true
 
         eventDispatchHandler?.sendMessageAtTime(
             dispatchMessage,
-            eventTargetFrameTime + TRANSFERRED_EVENT_DISPATCH_DELAY_MS,
+            eventTargetTime + TRANSFERRED_EVENT_DISPATCH_DELAY_MS,
         )
     }
 
-    fun processMotionEvent(
+    private fun processMotionEvent(
         motionEvent: MotionEvent,
         motionEventTransferCallback: IMotionEventTransferCallback?,
     ) {
@@ -98,5 +109,9 @@ internal class ProviderViewWrapper(context: Context) : FrameLayout(context) {
         }
         currentMotionEventCallback = motionEventTransferCallback
         dispatchTouchEvent(motionEvent)
+    }
+
+    private fun processHoverEvent(hoverEvent: MotionEvent) {
+        dispatchHoverEvent(hoverEvent)
     }
 }

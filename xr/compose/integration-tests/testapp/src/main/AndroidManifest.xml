@@ -50,6 +50,11 @@
            android:exported="true"
            android:label="ValueBasedAnimations"
            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".animation.SampleAnimations"
+            android:exported="true"
+            android:label="SampleAnimationExamples"
+            android:theme="@style/Theme.IntegrationTestsApp" />
        <activity
            android:name=".curvedlayout.CurvedLayout"
            android:exported="true"

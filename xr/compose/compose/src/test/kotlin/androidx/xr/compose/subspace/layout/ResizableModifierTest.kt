@@ -51,11 +51,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Tests for [Resizable] modifier.
- *
- * TODO(b/354723161): Add tests for minimum and maximum size.
- */
+/** Tests for [Resizable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class ResizableModifierTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
@@ -623,8 +619,8 @@ class ResizableModifierTest {
                 .fetchSemanticsNode()
                 .getLastComponent<ResizableComponent>()
 
-        val maxWidth = resizableComponent.maximumSize.width.meters.toDp()
-        val maxHeight = resizableComponent.maximumSize.height.meters.toDp()
+        val maxWidth = resizableComponent.maximumEntitySize.width.meters.toDp()
+        val maxHeight = resizableComponent.maximumEntitySize.height.meters.toDp()
 
         assertEquals(size.width, maxWidth)
         assertEquals(size.height, maxHeight)
@@ -637,8 +633,8 @@ class ResizableModifierTest {
                 .fetchSemanticsNode()
                 .getLastComponent<ResizableComponent>()
 
-        val maxWidth = resizableComponent.maximumSize.width.meters.toDp()
-        val maxHeight = resizableComponent.maximumSize.height.meters.toDp()
+        val maxWidth = resizableComponent.maximumEntitySize.width.meters.toDp()
+        val maxHeight = resizableComponent.maximumEntitySize.height.meters.toDp()
 
         assertEquals(Dp.Infinity, maxWidth)
         assertEquals(Dp.Infinity, maxHeight)
@@ -654,8 +650,8 @@ class ResizableModifierTest {
                 .fetchSemanticsNode()
                 .getLastComponent<ResizableComponent>()
 
-        val minWidth = resizableComponent.minimumSize.width.meters.toDp()
-        val minHeight = resizableComponent.minimumSize.height.meters.toDp()
+        val minWidth = resizableComponent.minimumEntitySize.width.meters.toDp()
+        val minHeight = resizableComponent.minimumEntitySize.height.meters.toDp()
 
         assertEquals(size.width, minWidth)
         assertEquals(size.height, minHeight)
@@ -668,8 +664,8 @@ class ResizableModifierTest {
                 .fetchSemanticsNode()
                 .getLastComponent<ResizableComponent>()
 
-        val minWidth = resizableComponent.minimumSize.width.meters.toDp()
-        val minHeight = resizableComponent.minimumSize.height.meters.toDp()
+        val minWidth = resizableComponent.minimumEntitySize.width.meters.toDp()
+        val minHeight = resizableComponent.minimumEntitySize.height.meters.toDp()
 
         assertEquals(DpVolumeSize.Zero.width, minWidth)
         assertEquals(DpVolumeSize.Zero.height, minHeight)

@@ -120,6 +120,7 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -1349,6 +1350,11 @@ object SearchBarDefaults {
                         val expandOnDownKey = !isInTouchMode && !searchBarState.isExpanded
                         if (expandOnDownKey && it.key == Key.DirectionDown) {
                             coroutineScope.launch { searchBarState.animateToExpanded() }
+                            return@onPreviewKeyEvent true
+                        }
+                        // Make sure arrow key down moves to list of suggestions.
+                        if (searchBarState.isExpanded && it.key == Key.DirectionDown) {
+                            focusManager.moveFocus(FocusDirection.Down)
                             return@onPreviewKeyEvent true
                         }
                         false

@@ -75,9 +75,9 @@ public class Matrix4(dataToCopy: FloatArray) {
      * matrix.
      */
     public operator fun times(other: Matrix4): Matrix4 {
-        val result = Matrix4.Zero
+        val resultData = FloatArray(16)
         android.opengl.Matrix.multiplyMM(
-            /* result= */ result.data,
+            /* result= */ resultData,
             /* resultOffset= */ 0,
             /* lhs= */ this.data,
             /* lhsOffset= */ 0,
@@ -85,31 +85,31 @@ public class Matrix4(dataToCopy: FloatArray) {
             /* rhsOffset= */ 0,
         )
 
-        return Matrix4(result.data)
+        return Matrix4(resultData)
     }
 
     private fun inverse(): Matrix4 {
-        val result = Matrix4.Zero
+        val resultData = FloatArray(16)
         android.opengl.Matrix.invertM(
-            /* mInv= */ result.data,
+            /* mInv= */ resultData,
             /* mInvOffset= */ 0,
             /* m= */ this.data,
             /* mOffset= */ 0,
         )
 
-        return Matrix4(result.data)
+        return Matrix4(resultData)
     }
 
     private fun transpose(): Matrix4 {
-        val result = Matrix4.Zero
+        val resultData = FloatArray(16)
         android.opengl.Matrix.transposeM(
-            /* mTrans= */ result.data,
+            /* mTrans= */ resultData,
             /* mTransOffset= */ 0,
             /* m= */ this.data,
             /* mOffset= */ 0,
         )
 
-        return Matrix4(result.data)
+        return Matrix4(resultData)
     }
 
     private fun rotation(): Quaternion {

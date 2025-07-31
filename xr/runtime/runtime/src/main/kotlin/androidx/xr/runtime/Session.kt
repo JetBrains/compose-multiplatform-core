@@ -30,7 +30,6 @@ import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.Runtime
 import androidx.xr.runtime.internal.RuntimeFactory
 import androidx.xr.runtime.internal.UnsupportedDeviceException
@@ -100,8 +99,10 @@ public constructor(
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
          *   coroutines.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
-         *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
-         *   permissions haven't been granted.
+         *   newly created session, or another [SessionCreateResult] if a certain criteria was not
+         *   met.
+         * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
+         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
          */
         @JvmOverloads
         @JvmStatic
@@ -125,8 +126,10 @@ public constructor(
          *   might result in visual inconsistencies between HOME_SPACE and FULL_SPACE_MANAGED modes.
          *   Defaults to True.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
-         *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
-         *   permissions haven't been granted.
+         *   newly created session, or another [SessionCreateResult] if a certain criteria was not
+         *   met.
+         * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
+         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -159,8 +162,10 @@ public constructor(
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
          *   coroutines.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
-         *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
-         *   permissions haven't been granted.
+         *   newly created session, or another [SessionCreateResult] if a certain criteria was not
+         *   met.
+         * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
+         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
          */
         @JvmOverloads
         @JvmStatic
@@ -200,8 +205,6 @@ public constructor(
             val runtime = runtimeFactory?.createRuntime(activity)
             try {
                 runtime?.lifecycleManager?.create()
-            } catch (e: PermissionNotGrantedException) {
-                return SessionCreatePermissionsNotGranted(e.permissions)
             } catch (e: ApkNotInstalledException) {
                 return SessionCreateApkRequired(e.requiredApk)
             } catch (e: UnsupportedDeviceException) {
@@ -262,6 +265,7 @@ public constructor(
 
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
+                "androidx.xr.arcore.playservices.ArCoreRuntimeFactory",
                 "androidx.xr.runtime.openxr.OpenXrRuntimeFactory",
                 "androidx.xr.runtime.testing.FakeRuntimeFactory",
             )
@@ -329,6 +333,8 @@ public constructor(
      *   configuration was successful, or another [SessionConfigureResult] if a certain
      *   configuration criteria was not met.
      * @throws IllegalStateException if the session has been destroyed.
+     * @throws [SecurityException] if the necessary permissions have not been granted to the calling
+     *   application for the provided configuration.
      */
     public fun configure(config: Config): SessionConfigureResult {
         check(activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
@@ -336,8 +342,6 @@ public constructor(
         }
         try {
             runtime.lifecycleManager.configure(config)
-        } catch (e: PermissionNotGrantedException) {
-            return SessionConfigurePermissionsNotGranted(e.permissions)
         } catch (e: ConfigurationNotSupportedException) {
             return SessionConfigureConfigurationNotSupported()
         } catch (e: FaceTrackingNotCalibratedException) {
@@ -346,22 +350,14 @@ public constructor(
         return SessionConfigureSuccess()
     }
 
-    /**
-     * Starts or resumes the session.
-     *
-     * @return the result of the operation. Can be [SessionResumeSuccess] if the session was
-     *   successfully resumed, or [SessionResumePermissionsNotGranted] if the required permissions
-     *   haven't been granted.
-     */
-    private fun resume(): SessionResumeResult {
+    /** Starts or resumes the session. */
+    private fun resume() {
         _runtime?.let {
             it.lifecycleManager.resume()
             // The update loop is only required when the runtime is present.
             updateJob = coroutineScope.launch { updateLoop() }
         }
         _platformAdapter?.startRenderer()
-
-        return SessionResumeSuccess()
     }
 
     /**

@@ -23,7 +23,7 @@ import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.contextmenu.close
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.internal.ProvideDefaultPlatformTextContextMenuProviders
-import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
+import androidx.compose.foundation.text.contextmenu.modifier.showTextContextMenuOnSecondaryClick
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.contextMenuBuilder
 import androidx.compose.foundation.text.selection.SelectionManager
@@ -77,12 +77,13 @@ internal fun CommonContextMenuArea(
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier =
             if (enabled) {
-                Modifier.textContextMenuGestures(
-                    onPreShowContextMenu = {
+                Modifier.showTextContextMenuOnSecondaryClick(
+                    onPreShowContextMenu = { clickLocation ->
                         selectionState.updateClipboardEntry()
                         selectionState.platformSelectionBehaviors?.onShowContextMenu(
                             text = selectionState.textFieldState.visualText.text,
                             selection = selectionState.textFieldState.visualText.selection,
+                            secondaryClickLocation = clickLocation,
                         )
                     }
                 )

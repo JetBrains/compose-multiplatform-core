@@ -35,7 +35,12 @@ class SceneManagerTest {
         assertThat(SceneManager.getSceneCount()).isEqualTo(0)
 
         val testSession = createFakeSession(composeTestRule.activity)
-        val scene = SpatialComposeScene(composeTestRule.activity, testSession)
+        val scene =
+            SpatialComposeScene(
+                lifecycleOwner = composeTestRule.activity,
+                context = composeTestRule.activity,
+                jxrSession = testSession,
+            )
 
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
 

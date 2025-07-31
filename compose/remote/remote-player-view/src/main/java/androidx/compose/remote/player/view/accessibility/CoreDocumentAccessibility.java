@@ -65,15 +65,15 @@ public class CoreDocumentAccessibility implements RemoteComposeDocumentAccessibi
     }
 
     @Override
-    public @Nullable Component findComponentById(int virtualViewId) {
+    public @Nullable Component findComponentById(int id) {
         RootLayoutComponent root = mDocument.getRootLayoutComponent();
 
-        if (root == null || virtualViewId == -1) {
+        if (root == null || id == -1) {
             return root;
         }
 
         return componentStream(root)
-                .filter(op -> op.getComponentId() == virtualViewId)
+                .filter(op -> op.getComponentId() == id)
                 .findFirst()
                 .orElse(null);
     }

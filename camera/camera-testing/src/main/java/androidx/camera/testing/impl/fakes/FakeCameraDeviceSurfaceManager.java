@@ -61,6 +61,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
             mDefinedStreamSpecs = new HashMap<>();
 
     private Set<List<Integer>> mValidSurfaceCombos = createDefaultValidSurfaceCombos();
+    private int mCameraUpdateCount = 0;
 
     /**
      * Sets the given suggested stream specs for the specified camera Id and use case type.
@@ -225,5 +226,14 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     /** Adds a valid surface combo. */
     public void addValidSurfaceCombo(@NonNull List<Integer> validSurfaceCombo) {
         mValidSurfaceCombos.add(validSurfaceCombo);
+    }
+
+    @Override
+    public void onCamerasUpdated(@NonNull List<String> cameraIds) {
+        mCameraUpdateCount++;
+    }
+
+    public int getCameraUpdateCount() {
+        return mCameraUpdateCount;
     }
 }

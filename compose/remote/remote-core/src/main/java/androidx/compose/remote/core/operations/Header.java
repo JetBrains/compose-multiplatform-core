@@ -337,6 +337,9 @@ public class Header extends Operation implements RemoteComposeOperation {
      * Apply the header to the wire buffer
      *
      * @param buffer
+     * @param apiLevel
+     * @param type
+     * @param value
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -494,7 +497,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         if (majorVersion == 1 && minorVersion == 0) {
             return 6;
         }
-        if (majorVersion == 0 && minorVersion == 1) {
+        if (majorVersion == 0 && (minorVersion <= 3)) {
             // Cts tests
             return 6;
         }

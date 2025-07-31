@@ -78,7 +78,7 @@ class ProviderViewWrapperTest {
 
         val frameTimes = simulateFrameTimes(/* frames */ 3)
 
-        val events = createGestureEvents(/* moveEventNumbers */ 1)
+        val events = createTouchGestureEvents(/* moveEventNumbers */ 1)
         val eventTargetTimesRelativeToFrames =
             listOf<Long>(
                 VSYNC_INTERVAL_MS / 2, // (vsync_interval / 2) after frame1
@@ -99,7 +99,7 @@ class ProviderViewWrapperTest {
     fun removePendingMotionEventDispatchMessagesIfViewIsDetachedTest() {
         val frameTimes = simulateFrameTimes(/* frames */ 3)
 
-        val events = createGestureEvents(/* moveEventNumbers */ 1)
+        val events = createTouchGestureEvents(/* moveEventNumbers */ 1)
         val eventTargetTimesRelativeToFrames =
             listOf<Long>(
                 VSYNC_INTERVAL_MS / 2, // (vsync_interval / 2) after frame1
@@ -124,7 +124,7 @@ class ProviderViewWrapperTest {
 
         // To simulate real scenarios, setting DOWN, UP and last MOVE as unbuffered events, and
         // send them randomly between frames.
-        val events = createGestureEvents(/* moveEventNumbers */ 3)
+        val events = createTouchGestureEvents(/* moveEventNumbers */ 3)
         val eventTargetTimesRelativeToFrames =
             listOf<Long>(
                 VSYNC_INTERVAL_MS / 2, // (vsync_interval / 2) after frame1
@@ -238,6 +238,26 @@ class ProviderViewWrapperTest {
         assertThat(motionEventTransferCallback.numberOfRequestDisallowInterceptCalls).isEqualTo(2)
     }
 
+    @Test
+    fun scheduleHoverEventDispatchingTest() {
+        val events = createHoverGestureEvents(/* moveEventNumbers */ 3)
+        val hoverEventsDispatchedLatch = CountDownLatch(events.size)
+        activityRule.scenario.onActivity { activity ->
+            providerView.setOnHoverListener { _, _ ->
+                hoverEventsDispatchedLatch.countDown()
+                true
+            }
+        }
+
+        for (event in events) {
+            providerViewWrapper.scheduleHoverEventProcessing(event, SystemClock.uptimeMillis())
+        }
+        assertTrue(
+            "Timeout before dispatching all hover events",
+            hoverEventsDispatchedLatch.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
+        )
+    }
+
     private fun setUpOnTouchListener() {
         providerView.setOnTouchListener { _, _ ->
             dispatchedEventsSinceLastFrame++
@@ -250,11 +270,19 @@ class ProviderViewWrapperTest {
         return List(frames) { index -> firstFrameTime + (index * VSYNC_INTERVAL_MS) }
     }
 
-    private fun createGestureEvents(moveEventNumbers: Int): List<MotionEvent> {
+    private fun createTouchGestureEvents(moveEventNumbers: Int): List<MotionEvent> {
         val events: MutableList<MotionEvent> = mutableListOf()
         events.add(createMotionEvent(MotionEvent.ACTION_DOWN))
         repeat(moveEventNumbers) { events.add(createMotionEvent(MotionEvent.ACTION_MOVE)) }
         events.add(createMotionEvent(MotionEvent.ACTION_UP))
+        return events
+    }
+
+    private fun createHoverGestureEvents(moveEventNumbers: Int): List<MotionEvent> {
+        val events: MutableList<MotionEvent> = mutableListOf()
+        events.add(createMotionEvent(MotionEvent.ACTION_HOVER_ENTER))
+        repeat(moveEventNumbers) { events.add(createMotionEvent(MotionEvent.ACTION_HOVER_MOVE)) }
+        events.add(createMotionEvent(MotionEvent.ACTION_HOVER_EXIT))
         return events
     }
 

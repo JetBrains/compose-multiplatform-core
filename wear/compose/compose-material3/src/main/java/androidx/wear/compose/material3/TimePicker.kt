@@ -33,7 +33,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -253,7 +257,7 @@ public fun TimePicker(
                         // Hours Picker
                         PickerGroupItem(
                             pickerState = hourState,
-                            modifier = Modifier.width(styles.optionWidth).fillMaxHeight(),
+                            modifier = Modifier.width(styles.twoDigitsOptionWidth).fillMaxHeight(),
                             selected = selectedIndex == FocusableElements.Hours.index,
                             onSelected = {
                                 onPickerSelected(FocusableElements.Hours, FocusableElements.Minutes)
@@ -266,6 +270,7 @@ public fun TimePicker(
                                     unselectedContentColor = colors.unselectedPickerContentColor,
                                     indexToText = { "%02d".format(if (is12hour) it + 1 else it) },
                                     optionHeight = styles.optionHeight,
+                                    optionBaseline = styles.optionBaseline,
                                 ),
                             verticalSpacing = styles.optionSpacing,
                         )
@@ -275,12 +280,14 @@ public fun TimePicker(
                             color = colors.separatorColor,
                             separatorPadding = styles.separatorPadding,
                             text = ":",
+                            optionHeight = styles.optionHeight,
+                            optionBaseline = styles.optionBaseline,
                         )
 
                         // Minutes Picker
                         PickerGroupItem(
                             pickerState = minuteState,
-                            modifier = Modifier.width(styles.optionWidth).fillMaxHeight(),
+                            modifier = Modifier.width(styles.twoDigitsOptionWidth).fillMaxHeight(),
                             selected = selectedIndex == FocusableElements.Minutes.index,
                             onSelected = {
                                 onPickerSelected(
@@ -300,6 +307,7 @@ public fun TimePicker(
                                     selectedContentColor = colors.selectedPickerContentColor,
                                     unselectedContentColor = colors.unselectedPickerContentColor,
                                     optionHeight = styles.optionHeight,
+                                    optionBaseline = styles.optionBaseline,
                                 ),
                             verticalSpacing = styles.optionSpacing,
                         )
@@ -311,11 +319,14 @@ public fun TimePicker(
                                 textStyle = styles.optionTextStyle,
                                 color = colors.separatorColor,
                                 separatorPadding = styles.separatorPadding,
+                                optionHeight = styles.optionHeight,
+                                optionBaseline = styles.optionBaseline,
                             )
 
                             PickerGroupItem(
                                 pickerState = thirdPicker.state,
-                                modifier = Modifier.width(styles.optionWidth).fillMaxHeight(),
+                                modifier =
+                                    Modifier.width(styles.thirdPickerOptionWidth).fillMaxHeight(),
                                 selected = selectedIndex == FocusableElements.SecondsOrPeriod.index,
                                 onSelected = {
                                     onPickerSelected(
@@ -332,6 +343,7 @@ public fun TimePicker(
                                         unselectedContentColor =
                                             colors.unselectedPickerContentColor,
                                         optionHeight = styles.optionHeight,
+                                        optionBaseline = styles.optionBaseline,
                                     ),
                                 verticalSpacing = styles.optionSpacing,
                             )
@@ -576,11 +588,11 @@ private fun getTimePickerStyles(
             .value
             .copy(textAlign = TextAlign.Center, fontFeatureSettings = "tnum")
 
-    val optionHeight =
+    val minimumOptionHeight =
         if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
-            40.dp
+            46.dp
         } else {
-            30.dp
+            36.dp
         }
     val optionSpacing = if (isLargeScreen) 6.dp else 4.dp
     val separatorPadding =
@@ -596,32 +608,65 @@ private fun getTimePickerStyles(
     val density = LocalDensity.current
     val indexToText = optionalThirdPicker?.indexToText ?: { "" }
 
-    val (twoDigitsWidth, textLabelWidth) =
+    val measuredMetrics =
         remember(density.density, LocalConfiguration.current.screenWidthDp, optionTextStyle) {
-            val mm =
+            val widthMeasureResult =
                 measurer.measure(
                     "0123456789\n${indexToText(0)}\n${indexToText(1)}",
                     style = optionTextStyle,
                     density = density,
                 )
 
-            (0..9).maxOf { mm.getBoundingBox(it).width } * 2 to
-                (1..2).maxOf { mm.getLineRight(it) - mm.getLineLeft(it) }
+            val singleLineHeightMeasureResult =
+                measurer.measure(
+                    "0123456789${indexToText(0)}${indexToText(1)}",
+                    style = optionTextStyle,
+                    density = density,
+                )
+
+            TimePickerMeasuredMetrics(
+                twoDigitsWidthPx = (0..9).maxOf { widthMeasureResult.getBoundingBox(it).width } * 2,
+                textLabelWidthPx =
+                    (1..2).maxOf {
+                        widthMeasureResult.getLineRight(it) - widthMeasureResult.getLineLeft(it)
+                    },
+                optionHeightPx =
+                    singleLineHeightMeasureResult.getLineBottom(0) -
+                        singleLineHeightMeasureResult.getLineTop(0),
+                optionBaselinePx = singleLineHeightMeasureResult.getLineBaseline(0),
+            )
         }
-    val measuredOptionWidth =
+    val twoDigitsOptionWidth =
+        with(LocalDensity.current) {
+            measuredMetrics.twoDigitsWidthPx.toDp() +
+                1.dp // Add 1dp buffer to compensate for potential conversion loss
+        }
+    val thirdPickerOptionWidth =
         with(LocalDensity.current) {
             if (timePickerType == TimePickerType.HoursMinutesAmPm12H) {
-                max(twoDigitsWidth.toDp(), textLabelWidth.toDp())
+                max(
+                    measuredMetrics.twoDigitsWidthPx.toDp(),
+                    measuredMetrics.textLabelWidthPx.toDp(),
+                )
             } else {
-                twoDigitsWidth.toDp()
-            } + 1.dp // Add 1dp buffer to compensate for potential conversion loss
+                measuredMetrics.twoDigitsWidthPx.toDp()
+            } + 1.dp // Add 1dp buffer
         }
+    val measuredOptionHeight = with(LocalDensity.current) { measuredMetrics.optionHeightPx.toDp() }
+    val optionBaseline =
+        (measuredMetrics.optionBaselinePx +
+                with(LocalDensity.current) {
+                    max(0.dp, (minimumOptionHeight - measuredOptionHeight) / 2).toPx()
+                })
+            .toInt()
 
     return TimePickerStyles(
         labelTextStyle = labelTextStyle,
         optionTextStyle = optionTextStyle,
-        optionWidth = max(measuredOptionWidth, minimumInteractiveComponentSize),
-        optionHeight = optionHeight,
+        twoDigitsOptionWidth = max(twoDigitsOptionWidth, minimumInteractiveComponentSize),
+        thirdPickerOptionWidth = max(thirdPickerOptionWidth, minimumInteractiveComponentSize),
+        optionHeight = max(measuredOptionHeight, minimumOptionHeight),
+        optionBaseline = optionBaseline,
         optionSpacing = optionSpacing,
         separatorPadding = separatorPadding,
         sectionVerticalPadding = if (isLargeScreen) 6.dp else 4.dp,
@@ -707,8 +752,10 @@ private class PickerData(
 private class TimePickerStyles(
     val labelTextStyle: TextStyle,
     val optionTextStyle: TextStyle,
-    val optionWidth: Dp,
+    val twoDigitsOptionWidth: Dp,
+    val thirdPickerOptionWidth: Dp,
     val optionHeight: Dp,
+    val optionBaseline: Int,
     val optionSpacing: Dp,
     val separatorPadding: Dp,
     val sectionVerticalPadding: Dp,
@@ -721,13 +768,33 @@ private fun Separator(
     modifier: Modifier = Modifier,
     separatorPadding: Dp,
     text: String = ":",
+    optionHeight: Dp,
+    optionBaseline: Int,
 ) {
-    Box(modifier = Modifier.padding(horizontal = separatorPadding)) {
+    Box(
+        modifier =
+            Modifier.wrapContentWidth().height(optionHeight).padding(horizontal = separatorPadding)
+    ) {
         Text(
             text = text,
             style = textStyle,
             color = color,
-            modifier = modifier.width(12.dp).clearAndSetSemantics {},
+            modifier =
+                modifier
+                    .wrapContentHeight()
+                    .width(12.dp)
+                    .align(Alignment.Center)
+                    .clearAndSetSemantics {}
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val baseline = placeable[FirstBaseline]
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.placeRelative(
+                                x = (constraints.maxWidth - placeable.width) / 2,
+                                y = optionBaseline - baseline,
+                            )
+                        }
+                    },
         )
     }
 }
@@ -766,3 +833,11 @@ private value class FocusableElements(val index: Int?) {
             else -> "Unknown"
         }
 }
+
+/** A private data class to hold the measured raw pixel metrics for picker options. */
+private data class TimePickerMeasuredMetrics(
+    val twoDigitsWidthPx: Float,
+    val textLabelWidthPx: Float,
+    val optionHeightPx: Float,
+    val optionBaselinePx: Float,
+)

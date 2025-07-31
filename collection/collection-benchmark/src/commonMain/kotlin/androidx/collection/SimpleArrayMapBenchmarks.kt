@@ -18,8 +18,7 @@ package androidx.collection
 
 import kotlin.random.Random
 
-internal class SimpleArrayMapCreateBenchmark(private val sourceMap: Map<Int, String>) :
-    CollectionBenchmark {
+class SimpleArrayMapCreateBenchmark(private val sourceMap: Map<Int, String>) : CollectionBenchmark {
     override fun measuredBlock() {
         val map = SimpleArrayMap<Int, String>()
         for ((key, value) in sourceMap) {
@@ -28,8 +27,7 @@ internal class SimpleArrayMapCreateBenchmark(private val sourceMap: Map<Int, Str
     }
 }
 
-internal class SimpleArrayMapContainsKeyBenchmark(sourceMap: Map<Int, String>) :
-    CollectionBenchmark {
+class SimpleArrayMapContainsKeyBenchmark(sourceMap: Map<Int, String>) : CollectionBenchmark {
     // Split the source map into two lists, one with elements in the created map, one not.
     val src = sourceMap.toList()
     val inList = src.slice(0 until src.size / 2)
@@ -59,9 +57,8 @@ internal class SimpleArrayMapContainsKeyBenchmark(sourceMap: Map<Int, String>) :
     }
 }
 
-internal class SimpleArrayMapAddAllThenRemoveIndividuallyBenchmark(
-    private val sourceMap: Map<Int, String>
-) : CollectionBenchmark {
+class SimpleArrayMapAddAllThenRemoveIndividuallyBenchmark(private val sourceMap: Map<Int, String>) :
+    CollectionBenchmark {
     val sourceSimpleArrayMap = SimpleArrayMap<Int, String>(sourceMap.size)
 
     init {
@@ -80,7 +77,7 @@ internal class SimpleArrayMapAddAllThenRemoveIndividuallyBenchmark(
     }
 }
 
-internal fun createSourceMap(size: Int, sparse: Boolean): Map<Int, String> {
+fun createSourceMap(size: Int, sparse: Boolean): Map<Int, String> {
     return mutableMapOf<Int, String>().apply {
         val keyFactory: () -> Int =
             if (sparse) {

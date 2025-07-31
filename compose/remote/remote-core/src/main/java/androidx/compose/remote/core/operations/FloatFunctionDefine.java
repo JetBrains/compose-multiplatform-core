@@ -40,6 +40,7 @@ import java.util.List;
 public class FloatFunctionDefine extends Operation implements VariableSupport, Container {
     private static final int OP_CODE = Operations.FUNCTION_DEFINE;
     private static final String CLASS_NAME = "FunctionDefine";
+    private static final int MAX_ARGUMENTS = 32;
     private final int mId;
     private final int @NonNull [] mFloatVarId;
     @NonNull private ArrayList<Operation> mList = new ArrayList<>();
@@ -113,6 +114,9 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int id = buffer.readInt();
         int varLen = buffer.readInt();
+        if (varLen > MAX_ARGUMENTS) {
+            throw new IllegalArgumentException("Too many arguments");
+        }
         int[] varId = new int[varLen];
         for (int i = 0; i < varId.length; i++) {
             varId[i] = buffer.readInt();

@@ -262,8 +262,10 @@ class MovableComponentImpl implements MovableComponent {
                                         reformEvent.getProposedPosition(),
                                         reformEvent.getProposedOrientation());
                     }
-                    Vector3 newScale = mScaleInZ
-                            ? RuntimeUtils.getVector3(reformEvent.getProposedScale()) : mLastScale;
+                    Vector3 newScale =
+                            mScaleInZ
+                                    ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
+                                    : mLastScale;
                     Entity disposeEntity = null;
 
                     Entity parent = updatedParent;
@@ -374,6 +376,16 @@ class MovableComponentImpl implements MovableComponent {
 
             PlaneData planeData = plane.getData(dataTimeNs);
             if (planeData == null) {
+                continue;
+            }
+            // Ignore the plane if the Pose is invalid.
+            if (planeData.centerPose.tx() == 0
+                    && planeData.centerPose.ty() == 0
+                    && planeData.centerPose.tz() == 0
+                    && planeData.centerPose.qx() == 0
+                    && planeData.centerPose.qy() == 0
+                    && planeData.centerPose.qz() == 0
+                    && planeData.centerPose.qw() == 0) {
                 continue;
             }
             Pose planePoseUpdate = updatePoseForPlane(planeData, updatedPoseInOpenXr);

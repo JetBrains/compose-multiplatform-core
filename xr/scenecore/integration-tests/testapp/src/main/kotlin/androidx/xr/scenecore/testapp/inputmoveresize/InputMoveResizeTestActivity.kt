@@ -29,7 +29,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -41,13 +40,14 @@ import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.ResizeListener
+import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.concurrent.Executors
+import java.util.function.Consumer
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class InputMoveResizeTestActivity : AppCompatActivity() {
@@ -94,18 +94,13 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         }
 
     private val resizeListener =
-        object : ResizeListener {
-            override fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {
-                Log.i(TAG, "$entity $originalSize")
-            }
-
-            override fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {
-                Log.i(TAG, "$entity $newSize")
-            }
-
-            override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
-                Log.i(TAG, "$entity $finalSize")
-                (entity as PanelEntity).size = finalSize.to2d()
+        Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+            Log.i(
+                TAG,
+                "ResizeEvent(entity: ${resizeEvent.entity}, resizeState: ${resizeEvent.resizeState}, newSize: ${resizeEvent.newSize}",
+            )
+            if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
+                (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
             }
         }
 
@@ -199,9 +194,13 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             }
         }
 
-        val mainPanelResizableComponent = ResizableComponent.create(session!!)
-        mainPanelResizableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
-        mainPanelResizableComponent.addResizeListener(mainExecutor, resizeListener)
+        val mainPanelResizableComponent =
+            ResizableComponent.create(
+                session!!,
+                executor = mainExecutor,
+                resizeEventListener = resizeListener,
+            )
+        mainPanelResizableComponent.affordanceSize = session!!.scene.mainPanelEntity.size.to3d()
 
         val mainPanelAnyAspectRatioButton = findViewById<RadioButton>(R.id.radioButton1)
         mainPanelAnyAspectRatioButton.text = getString(R.string.any_aspect_ratio_label)
@@ -223,7 +222,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         val mainPanelResizableSwitch = findViewById<MaterialSwitch>(R.id.resizableSwitch)
         mainPanelResizableSwitch.setOnCheckedChangeListener { _, isChecked ->
-            mainPanelResizableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
+            mainPanelResizableComponent.affordanceSize = session!!.scene.mainPanelEntity.size.to3d()
             when (isChecked) {
                 true ->
                     mainPanelResizableActive =
@@ -345,12 +344,16 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             }
         val everythingPanelMovableComponent = MovableComponent.createSystemMovable(session!!)
         everythingPanelMovableComponent.size = everythingPanelEntity.size.to3d()
-        val everythingPanelResizeComponent = ResizableComponent.create(session!!)
-        everythingPanelResizeComponent.size = everythingPanelEntity.size.to3d()
-        everythingPanelResizeComponent.addResizeListener(mainExecutor, resizeListener)
+        val everythingPanelResizeComponent =
+            ResizableComponent.create(
+                session!!,
+                executor = mainExecutor,
+                resizeEventListener = resizeListener,
+            )
+        everythingPanelResizeComponent.affordanceSize = everythingPanelEntity.size.to3d()
         everythingPanelSwitch.setOnCheckedChangeListener { _, isChecked ->
             everythingPanelMovableComponent.size = everythingPanelEntity.size.to3d()
-            everythingPanelResizeComponent.size = everythingPanelEntity.size.to3d()
+            everythingPanelResizeComponent.affordanceSize = everythingPanelEntity.size.to3d()
             when (isChecked) {
                 true -> {
                     checkNotNull(
@@ -383,9 +386,13 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         // Set the resizable panel corner radius to 0.
         resizablePanelEntity.cornerRadius = 0.0f
 
-        val resizablePanelComponent = ResizableComponent.create(session!!)
-        resizablePanelComponent.size = resizablePanelEntity.size.to3d()
-        resizablePanelComponent.addResizeListener(mainExecutor, resizeListener)
+        val resizablePanelComponent =
+            ResizableComponent.create(
+                session!!,
+                executor = mainExecutor,
+                resizeEventListener = resizeListener,
+            )
+        resizablePanelComponent.affordanceSize = resizablePanelEntity.size.to3d()
 
         val anyAspectRatioButton = resizablePanelView.findViewById<RadioButton>(R.id.radioButton1)
         anyAspectRatioButton.text = getString(R.string.any_aspect_ratio_label)
@@ -409,7 +416,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         val resizablePanelSwitch = resizablePanelView.findViewById<MaterialSwitch>(R.id.switch1)
         resizablePanelSwitch.setOnCheckedChangeListener { _, isChecked ->
-            resizablePanelComponent.size = resizablePanelEntity.size.to3d()
+            resizablePanelComponent.affordanceSize = resizablePanelEntity.size.to3d()
             when (isChecked) {
                 true ->
                     resizablePanelActive =

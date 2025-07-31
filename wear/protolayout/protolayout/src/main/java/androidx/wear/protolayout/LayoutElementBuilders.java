@@ -57,6 +57,7 @@ import androidx.wear.protolayout.ModifiersBuilders.ArcModifiers;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 import androidx.wear.protolayout.ModifiersBuilders.Shadow;
 import androidx.wear.protolayout.ModifiersBuilders.SpanModifiers;
+import androidx.wear.protolayout.ResourceBuilders.ImageResource;
 import androidx.wear.protolayout.TypeBuilders.BoolProp;
 import androidx.wear.protolayout.TypeBuilders.Int32Prop;
 import androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint;
@@ -2241,36 +2242,6 @@ public final class LayoutElementBuilders {
                     LayoutElementProto.Image.newBuilder();
             private final Fingerprint mFingerprint = new Fingerprint(-48009959);
 
-            /** Creates an instance of {@link Builder}. */
-            public Builder() {}
-
-            /**
-             * Sets the resource_id of the image to render. This must exist in the supplied resource
-             * bundle.
-             *
-             * <p>Note that this field only supports static values.
-             */
-            @RequiresSchemaVersion(major = 1, minor = 0)
-            public @NonNull Builder setResourceId(@NonNull StringProp resourceId) {
-                if (resourceId.getDynamicValue() != null) {
-                    throw new IllegalArgumentException(
-                            "Image.Builder.setResourceId doesn't support dynamic values.");
-                }
-                mImpl.setResourceId(resourceId.toProto());
-                mFingerprint.recordPropertyUpdate(
-                        1, checkNotNull(resourceId.getFingerprint()).aggregateValueAsInt());
-                return this;
-            }
-
-            /**
-             * Sets the resource_id of the image to render. This must exist in the supplied resource
-             * bundle.
-             */
-            @RequiresSchemaVersion(major = 1, minor = 0)
-            public @NonNull Builder setResourceId(@NonNull String resourceId) {
-                return setResourceId(new StringProp.Builder(resourceId).build());
-            }
-
             /** Sets the width of this image. If not defined, the image will not be rendered. */
             @RequiresSchemaVersion(major = 1, minor = 0)
             public @NonNull Builder setWidth(@NonNull ImageDimension width) {
@@ -2331,6 +2302,139 @@ public final class LayoutElementBuilders {
                 mImpl.setColorFilter(colorFilter.toProto());
                 mFingerprint.recordPropertyUpdate(
                         6, checkNotNull(colorFilter.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            private @Nullable ProtoLayoutScope mScope;
+            private boolean mIsResourceIdApiUsed = false;
+            private boolean mIsImageResourceApiUsed = false;
+
+            /**
+             * Creates an instance of {@link Builder}.
+             *
+             * <p>It is highly recommended to use {@link #Builder(ProtoLayoutScope)} constructor
+             * which supports automatic resource registration, paired with {@link
+             * #setImageResource}.
+             *
+             * <p>Note that, when using this constructor, it should be paired with {@link
+             * #setResourceId}, and resource used for it needs to be manually registered in {@code
+             * TileService#onTileResourcesRequest} for Tiles. This constructor can't be mixed with
+             * {@link #setImageResource}, otherwise an exception will be thrown.
+             */
+            public Builder() {}
+
+            /**
+             * Creates an instance of {@link Builder} with automatic resource registration used.
+             *
+             * <p>Note that, when using this constructor, it should be paired with {@link
+             * #setImageResource}. Additionally, {@code Resources} object shouldn't be provided in
+             * {@code TileService#onTileResourcesRequest} method for your Tile as resources would be
+             * automatically registered. This constructor can't be mixed with {@link
+             * #setResourceId}, otherwise an exception will be thrown.
+             *
+             * <p>When using this constructor and automatic resource registration, there's no need
+             * to provide resources version in {@code Tile.Builder.setResourcesVersion}, as {@link
+             * ProtoLayoutScope} will handle versioning and changes of the resources automatically.
+             * However, setting custom version in {@code Tile.Builder.setResourcesVersion} is still
+             * supported.
+             */
+            public Builder(@NonNull ProtoLayoutScope scope) {
+                this.mScope = scope;
+            }
+
+            /**
+             * Sets the specific resource of the image to render. This method will automatically
+             * assign the ID and add the given resource in the resources bundle.
+             *
+             * @param resource An Image resource, used in the layout in the place of this {@link
+             *     Image} element.
+             * @throws IllegalStateException if this method is called without {@link
+             *     #Builder(ProtoLayoutScope)} or after {@link #setResourceId} was already called.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            @SuppressWarnings("MissingGetterMatchingBuilder")
+            public @NonNull Builder setImageResource(@NonNull ImageResource resource) {
+                return setImageResource(resource, String.valueOf(resource.hashCode()));
+            }
+
+            /**
+             * Sets the specific resource of the image to render. This method will automatically add
+             * the given resource in the resources bundle.
+             *
+             * @param resource An Image resource, used in the layout in the place of this {@link
+             *     Image} element.
+             * @param resourceId The ID of the resource
+             * @throws IllegalStateException if this method is called without {@link
+             *     #Builder(ProtoLayoutScope)} or after {@link #setResourceId} was already called.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            @SuppressWarnings("MissingGetterMatchingBuilder")
+            public @NonNull Builder setImageResource(
+                    @NonNull ImageResource resource, @NonNull String resourceId) {
+                if (mIsResourceIdApiUsed) {
+                    throw new IllegalStateException(
+                            "Image.Builder.setImageResource can't be mixed with setResourceId"
+                                    + " method.");
+                }
+                if (mScope == null) {
+                    throw new IllegalStateException(
+                            "Image.Builder.setImageResource needs to be called with constructor"
+                                    + " that accepts ProtoLayoutScope.");
+                }
+                mIsImageResourceApiUsed = true;
+                setResourceIdInternal(new StringProp.Builder(resourceId).build());
+                mScope.registerResource(resourceId, resource);
+                return this;
+            }
+
+            /**
+             * Sets the resource_id of the image to render. This must exist in the supplied resource
+             * bundle.
+             *
+             * @throws IllegalStateException if this method is called with {@link
+             *     #Builder(ProtoLayoutScope)} or after {@link #setImageResource(ImageResource)} was
+             *     already called.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            public @NonNull Builder setResourceId(@NonNull String resourceId) {
+                return setResourceId(new StringProp.Builder(resourceId).build());
+            }
+
+            /**
+             * Sets the resource_id of the image to render. This must exist in the supplied resource
+             * bundle.
+             *
+             * <p>Note that this field only supports static values.
+             *
+             * @throws IllegalStateException if this method is called with {@link
+             *     #Builder(ProtoLayoutScope)} or after {@link #setImageResource(ImageResource)} was
+             *     already called.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            public @NonNull Builder setResourceId(@NonNull StringProp resourceId) {
+                if (mScope != null || mIsImageResourceApiUsed) {
+                    throw new IllegalStateException(
+                            "Image.Builder.setResourceId can't be mixed with constructor that"
+                                    + " accepts ProtoLayoutScope or with setImageResource.");
+                }
+                mIsResourceIdApiUsed = true;
+                return setResourceIdInternal(resourceId);
+            }
+
+            /**
+             * Sets the resource_id of the image to the proto.
+             *
+             * <p>Note that this field only supports static values.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            private @NonNull Builder setResourceIdInternal(@NonNull StringProp resourceId) {
+                if (resourceId.getDynamicValue() != null) {
+                    throw new IllegalArgumentException(
+                            "Image.Builder.setResourceId doesn't support dynamic values.");
+                }
+                mImpl.setResourceId(resourceId.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        1, checkNotNull(resourceId.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 

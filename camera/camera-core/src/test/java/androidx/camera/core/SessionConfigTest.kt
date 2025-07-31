@@ -30,6 +30,7 @@ import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
+import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
 import androidx.testutils.assertThrows
@@ -100,6 +101,27 @@ class SessionConfigTest {
         assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
         assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
+    }
+
+    @Test
+    fun sessionConfig_frameRateRangeSetOnSessionConfigAndUseCase_IllegalArgumentExceptionThrown() {
+        val useCase = Preview.Builder().setTargetFrameRate(frameRateRange).build()
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(useCase), frameRateRange = frameRateRange)
+        }
+    }
+
+    @Test
+    fun sessionConfig_useCaseHasFrameRateAfterBinding_noExceptionThrown() {
+        val useCase = Preview.Builder().build()
+
+        // Binding UseCase with an arbitrary frame rate.
+        val configWithFrameRate = Preview.Builder().setTargetFrameRate(Range(15, 15)).useCaseConfig
+        useCase.bindToCamera(FakeCamera(), null, null, configWithFrameRate)
+        assertThat(useCase.currentConfig.hasTargetFrameRate()).isTrue()
+
+        // No exception is thrown.
+        SessionConfig(useCases = listOf(useCase), frameRateRange = frameRateRange)
     }
 
     @Test
@@ -367,6 +389,127 @@ class SessionConfigTest {
     fun sessionConfig_effectAddedWithoutFeatureParam_noExceptionThrown() {
         // Act & assert
         SessionConfig(useCases = useCases, effects = effects)
+    }
+
+    @Test
+    fun sessionConfig_dynamicRangeSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val sdrPreview = Preview.Builder().setDynamicRange(DynamicRange.SDR).build()
+        val hdrPreview = Preview.Builder().setDynamicRange(DynamicRange.HLG_10_BIT).build()
+
+        // SDR set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdrPreview), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // HDR set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdrPreview), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // SDR set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdrPreview), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // HDR set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdrPreview), requiredFeatureGroup = setOf(FPS_60))
+        }
+    }
+
+    @Test
+    fun sessionConfig_fpsRangeSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val preview30Fps = Preview.Builder().setTargetFrameRate(Range(30, 30)).build()
+        val preview60Fps = Preview.Builder().setTargetFrameRate(Range(60, 60)).build()
+
+        // 30 FPS set to use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(preview30Fps),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // 60 FPS set to use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(preview60Fps),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // 30 FPS set to use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(preview30Fps), requiredFeatureGroup = setOf(HDR_HLG10))
+        }
+
+        // 60 FPS set to use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(preview60Fps), requiredFeatureGroup = setOf(HDR_HLG10))
+        }
+    }
+
+    @Test
+    fun sessionConfig_stabilizationSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val noStabilizationPreview = Preview.Builder().setPreviewStabilizationEnabled(false).build()
+        val stabilizationEnabledPreview =
+            Preview.Builder().setPreviewStabilizationEnabled(true).build()
+
+        // stabilization disabled in use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(noStabilizationPreview),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization enabled in use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(stabilizationEnabledPreview),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization disabled in use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(noStabilizationPreview),
+                requiredFeatureGroup = setOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization enabled in use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(stabilizationEnabledPreview),
+                requiredFeatureGroup = setOf(HDR_HLG10),
+            )
+        }
+    }
+
+    @Test
+    fun sessionConfig_jpegRSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val jpegRImageCapture =
+            ImageCapture.Builder()
+                .setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+                .build()
+
+        // JPEG_R set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(jpegRImageCapture),
+                preferredFeatureGroup = listOf(FPS_60),
+            )
+        }
+
+        // JPEG_R set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(jpegRImageCapture),
+                requiredFeatureGroup = setOf(FPS_60),
+            )
+        }
     }
 
     @Test

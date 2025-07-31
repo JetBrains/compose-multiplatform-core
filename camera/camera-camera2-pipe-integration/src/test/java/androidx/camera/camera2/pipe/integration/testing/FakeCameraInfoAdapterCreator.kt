@@ -91,6 +91,17 @@ object FakeCameraInfoAdapterCreator {
 
     private val zoomControl = ZoomControl(FakeZoomCompat())
 
+    fun createCameraQuirks(
+        metadata: androidx.camera.camera2.pipe.CameraMetadata = FakeCameraMetadata(),
+        streamConfigurationMapCompat: StreamConfigurationMapCompat =
+            StreamConfigurationMapCompat(
+                streamConfigurationMap,
+                OutputSizesCorrector(metadata, streamConfigurationMap),
+            ),
+    ): CameraQuirks {
+        return CameraQuirks(metadata, streamConfigurationMapCompat)
+    }
+
     fun createCameraInfoAdapter(
         cameraId: CameraId = CAMERA_ID_0,
         cameraProperties: CameraProperties =
@@ -121,7 +132,8 @@ object FakeCameraInfoAdapterCreator {
                 streamConfigurationMap,
                 OutputSizesCorrector(cameraProperties.metadata, streamConfigurationMap),
             )
-        val fakeCameraQuirks = CameraQuirks(cameraProperties.metadata, fakeStreamConfigurationMap)
+        val fakeCameraQuirks =
+            createCameraQuirks(cameraProperties.metadata, fakeStreamConfigurationMap)
         val fakeEncoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build()
         val state3AControl =
             State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler).apply {

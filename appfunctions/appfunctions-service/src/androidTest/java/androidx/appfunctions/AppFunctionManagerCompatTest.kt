@@ -24,9 +24,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageInstaller
+import android.content.res.Configuration
 import android.os.Build
 import androidx.appfunctions.core.AppFunctionMetadataTestHelper
 import androidx.appfunctions.core.AppFunctionMetadataTestHelper.Companion.TEST_APP_METADATA
+import androidx.appfunctions.core.AppFunctionMetadataTestHelper.Companion.TEST_APP_METADATA_IN_FRENCH
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
@@ -37,6 +39,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.io.InputStream
+import java.util.Locale
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -440,7 +443,37 @@ class AppFunctionManagerCompatTest {
                 )
         }
 
-    // TODO: b/421388047 - Add more test cases, checking missing fields and translations.
+    // TODO: b/421388047 - Add more test cases, checking missing fields.
+
+    @Test
+    fun observeAppFunctions_resolveAppMetadataAccordingToCurrentLocale_success() =
+        runBlocking<Unit> {
+            val searchFunctionSpec =
+                AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+            val appFunctionPackages: List<AppFunctionPackageMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+
+            val testAppPackage = appFunctionPackages.single()
+            val frenchContext = getContextWithLocale(context, Locale.FRENCH)
+            assertThat(testAppPackage.resolveAppFunctionAppMetadata(frenchContext))
+                .isEqualTo(TEST_APP_METADATA_IN_FRENCH)
+        }
+
+    @Test
+    fun observeAppFunctions_resolveAppMetadataAccordingToCurrentLocale_missingLocaleInTargetApp_defaultsToEnglish() =
+        runBlocking<Unit> {
+            val searchFunctionSpec =
+                AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+            val appFunctionPackages: List<AppFunctionPackageMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+
+            val testAppPackage = appFunctionPackages.single()
+            val frenchContext = getContextWithLocale(context, Locale.KOREAN)
+            assertThat(testAppPackage.resolveAppFunctionAppMetadata(frenchContext))
+                .isEqualTo(TEST_APP_METADATA)
+        }
 
     @Test
     fun observeAppFunctions_multiplePackagesSetInSpec_returnsSchemaAppFunctionsFromBoth_withLegacyIndexer() =
@@ -905,5 +938,12 @@ class AppFunctionManagerCompatTest {
     private companion object {
         const val ADDITIONAL_APK_FILE = "notes.apk"
         const val ADDITIONAL_APP_PACKAGE = "com.google.android.app.notes"
+
+        fun getContextWithLocale(context: Context, locale: Locale): Context {
+            Locale.setDefault(locale)
+            val config: Configuration = Configuration(context.resources.configuration)
+            config.setLocale(locale)
+            return context.createConfigurationContext(config)
+        }
     }
 }

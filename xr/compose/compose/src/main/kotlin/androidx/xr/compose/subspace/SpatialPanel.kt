@@ -35,7 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,9 +45,12 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMaxOfOrNull
+import androidx.compose.ui.util.fastMap
 import androidx.core.graphics.drawable.toDrawable
 import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
@@ -67,8 +70,6 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompos
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
-import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.millimeters
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
@@ -76,7 +77,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.PanelEntity
-import kotlin.math.roundToInt
+import kotlin.math.max
 
 private const val DEFAULT_SIZE_PX = 400
 
@@ -88,7 +89,7 @@ private const val DEFAULT_SCRIM_ALPHA = 0x52000000
 
 private object SpatialPanelDimensions {
     /** Default minimum dimensions for a Spatial Panel in Meters. */
-    public val minimumPanelDimension: FloatSize2d = FloatSize2d(0.1f, 0.1f)
+    val minimumPanelDimension: FloatSize2d = FloatSize2d(0.1f, 0.1f)
 }
 
 /** Contains default values used by spatial panels. */
@@ -204,8 +205,6 @@ private fun <T : View> AndroidViewPanel(
             set(compositionLocalMap, SetCompositionLocalMap)
             set(measurePolicy, SetMeasurePolicy)
             set(corePanelEntity, SetCoreEntity)
-            // TODO(b/390674036) Remove call-order dependency between SetCoreEntity and SetModifier
-            // Execute SetModifier after SetCoreEntity, it depends on CoreEntity.
             set(modifier, SetModifier)
             update(view)
         },
@@ -228,7 +227,6 @@ public fun SpatialPanel(
     content: @Composable @UiComposable () -> Unit,
 ) {
     val view = rememberComposeView()
-    val dialogManager = LocalDialogManager.current
     val corePanelEntity =
         rememberCorePanelEntity(shape = shape) {
             PanelEntity.create(
@@ -239,46 +237,13 @@ public fun SpatialPanel(
                 pose = Pose.Identity,
             )
         }
-    var intrinsicWidth by remember { mutableIntStateOf(DEFAULT_SIZE_PX) }
-    var intrinsicHeight by remember { mutableIntStateOf(DEFAULT_SIZE_PX) }
-    val scrimDrawable = remember { DEFAULT_SCRIM_ALPHA.toDrawable() }
-    val transparentDrawable = remember { Color.TRANSPARENT.toDrawable() }
+    var measuredSize by remember { mutableStateOf(IntSize(DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)) }
 
-    SubspaceLayout(modifier = modifier, coreEntity = corePanelEntity) { _, volumeConstraints ->
+    SubspaceLayout(modifier = modifier, coreEntity = corePanelEntity) { _, constraints ->
         view.setContent {
-            CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity) {
-                Layout(content = content, modifier = Modifier) { measurables, constraints ->
-                    intrinsicWidth =
-                        measurables.fastMaxOfOrNull {
-                            try {
-                                it.maxIntrinsicWidth(volumeConstraints.maxHeight)
-                            } catch (_: IllegalStateException) {
-                                0
-                            }
-                        } ?: DEFAULT_SIZE_PX
-                    intrinsicHeight =
-                        measurables.fastMaxOfOrNull {
-                            try {
-                                it.maxIntrinsicHeight(volumeConstraints.maxWidth)
-                            } catch (_: IllegalStateException) {
-                                0
-                            }
-                        } ?: DEFAULT_SIZE_PX
-                    val placeables = measurables.map { it.measure(constraints) }
-                    layout(
-                        placeables.fastMaxOfOrNull { it.measuredWidth } ?: DEFAULT_SIZE_PX,
-                        placeables.fastMaxOfOrNull { it.measuredHeight } ?: DEFAULT_SIZE_PX,
-                    ) {
-                        placeables.fastForEach { placeable -> placeable.place(0, 0) }
-                    }
-                }
-            }
-            SideEffect {
-                view.foreground =
-                    if (dialogManager.isSpatialDialogActive.value) scrimDrawable
-                    else transparentDrawable
-            }
-            if (dialogManager.isSpatialDialogActive.value) {
+            val dialogManager = LocalDialogManager.current
+            val isDialogActive = dialogManager.isSpatialDialogActive.value
+            if (isDialogActive) {
                 Box(
                     modifier =
                         Modifier.fillMaxSize().pointerInput(Unit) {
@@ -286,12 +251,46 @@ public fun SpatialPanel(
                         }
                 ) {}
             }
+            SideEffect {
+                view.foreground =
+                    if (isDialogActive) {
+                        DEFAULT_SCRIM_ALPHA.toDrawable()
+                    } else {
+                        Color.TRANSPARENT.toDrawable()
+                    }
+            }
+
+            CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity) {
+                Layout(content = content) { measurables, _ ->
+                    val placeables =
+                        measurables.fastMap {
+                            it.measure(
+                                Constraints(
+                                    minWidth = constraints.minWidth,
+                                    maxWidth = constraints.maxWidth,
+                                    minHeight = constraints.minHeight,
+                                    maxHeight = constraints.maxHeight,
+                                )
+                            )
+                        }
+                    val size =
+                        placeables.fastFold(IntSize(0, 0)) { maxSize, placeable ->
+                            IntSize(
+                                max(maxSize.width, placeable.width),
+                                max(maxSize.height, placeable.height),
+                            )
+                        }
+                    measuredSize = size
+                    layout(size.width, size.height) { placeables.fastForEach { it.place(0, 0) } }
+                }
+            }
         }
-        val width = intrinsicWidth.coerceIn(volumeConstraints.minWidth, volumeConstraints.maxWidth)
-        val height =
-            intrinsicHeight.coerceIn(volumeConstraints.minHeight, volumeConstraints.maxHeight)
-        val depth = volumeConstraints.minDepth.coerceAtLeast(0)
-        layout(width, height, depth) {}
+
+        layout(
+            measuredSize.width.coerceIn(constraints.minWidth, constraints.maxWidth),
+            measuredSize.height.coerceIn(constraints.minHeight, constraints.maxHeight),
+            constraints.minDepth.coerceAtLeast(0),
+        ) {}
     }
 }
 
@@ -330,7 +329,7 @@ public fun SpatialMainPanel(
     // [SubspaceLayoutNode.MeasureLayout.placeAt] and [CoreEntity.size].
     // This means hidden will be set after layout completes, on the first frame when the mainPanel
     // enters the Compose hierarchy.
-    DisposableEffect(mainPanel) { onDispose { mainPanel.hidden = true } }
+    DisposableEffect(mainPanel) { onDispose { mainPanel.enabled = false } }
 
     SubspaceLayout(modifier = modifier, coreEntity = mainPanel) { _, constraints ->
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
@@ -405,29 +404,28 @@ public fun SpatialActivityPanel(
                     }
                 }
 
-            val scrimWidth = Meter.fromPixel(activityPanelEntity.size.width, density)
-            val scrimHeight = Meter.fromPixel(activityPanelEntity.size.height, density)
-            val scrimPanelEntity =
-                rememberCorePanelEntity(shape = shape) {
-                    PanelEntity.create(
-                            session = session,
-                            view = scrimView,
-                            dimensions = FloatSize2d(scrimWidth.toM(), scrimHeight.toM()),
-                            name = entityName("ScrimPanel"),
-                            pose = Pose.Identity,
-                        )
-                        .apply {
-                            parent = corePanelEntity.entity
-                            setPose(Pose(translation = Vector3(0f, 0f, 3.millimeters.toM())))
-                        }
+            val scrimPanelEntity by
+                remember(session, corePanelEntity.entity, scrimView) {
+                    disposableValueOf(
+                        PanelEntity.create(
+                                session = session,
+                                view = scrimView,
+                                dimensions = activityPanelEntity.size,
+                                name = entityName("ScrimPanel"),
+                                pose = Pose.Identity,
+                            )
+                            .apply {
+                                parent = corePanelEntity.entity
+                                setPose(Pose(translation = Vector3(0f, 0f, 3.millimeters.toM())))
+                            }
+                    ) {
+                        it.dispose()
+                    }
                 }
+
             SideEffect {
-                scrimPanelEntity.size =
-                    IntVolumeSize(
-                        activityPanelEntity.size.width.roundToInt(),
-                        activityPanelEntity.size.height.roundToInt(),
-                        0,
-                    )
+                scrimPanelEntity.size = activityPanelEntity.size
+                scrimPanelEntity.cornerRadius = activityPanelEntity.cornerRadius
             }
         }
     }

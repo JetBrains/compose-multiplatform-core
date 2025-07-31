@@ -398,15 +398,17 @@ class SplitEngine : ComponentActivity() {
                     ) {
                         val modifier = Modifier.weight(1F)
                         ApiButton("Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(false, "Animation")
+                            dragonEntity.value!!.startAnimation(false, "Fast_Flying")
                         }
                         ApiButton("Loop Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(true, "Animation")
+                            dragonEntity.value!!.startAnimation(true, "Fast_Flying")
+                            dragonAnimationState.intValue = dragonEntity.value?.animationState ?: 1
                         }
                         ApiButton("Stop Animate Dragon Entity", modifier) {
                             if (dragonEntity.value!!.animationState == AnimationState.PLAYING) {
                                 dragonEntity.value!!.stopAnimation()
                             }
+                            dragonAnimationState.intValue = dragonEntity.value?.animationState ?: 1
                         }
                     }
                 }

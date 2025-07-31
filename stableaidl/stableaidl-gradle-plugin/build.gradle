@@ -30,8 +30,6 @@ plugins {
     id("java-gradle-plugin")
 }
 
-apply from: "../../buildSrc/kotlin-dsl-dependency.gradle"
-
 configurations {
     // Config for plugin classpath to be used during tests
     testPlugin {

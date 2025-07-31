@@ -18,8 +18,8 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.AugmentedObjectCategory as Category
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 
 /** Describes an object that's being tracked in the real world. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -36,5 +36,5 @@ public interface AugmentedObject : Trackable {
      * A set of extents to used to determine the size of the object. These are assumed to originate
      * from the [centerPose].
      */
-    public val extents: Vector3
+    public val extents: FloatSize3d
 }

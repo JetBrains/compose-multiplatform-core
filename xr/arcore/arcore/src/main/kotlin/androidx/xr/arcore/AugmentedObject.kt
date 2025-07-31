@@ -24,8 +24,8 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -95,7 +95,7 @@ internal constructor(
          * The dimensions of the object, axis aligned relative to the center pose. These values
          * represent the full length of the specific axis.
          */
-        public val extents: Vector3,
+        public val extents: FloatSize3d,
     ) : Trackable.State {}
 
     private val _state =

@@ -207,7 +207,7 @@ internal class TextFieldCoreModifierNode(
                 requester = toolbarRequester,
                 onShow = {
                     textFieldSelectionState.updateClipboardEntry()
-                    platformSelectionBehaviors?.onShowContextMenu(
+                    platformSelectionBehaviors?.onShowSelectionToolbar(
                         text = textFieldSelectionState.textFieldState.visualText.text,
                         selection = textFieldSelectionState.textFieldState.visualText.selection,
                     )

@@ -18,7 +18,6 @@ package androidx.compose.remote.player.view;
 import static androidx.compose.remote.core.CoreDocument.MAJOR_VERSION;
 import static androidx.compose.remote.core.CoreDocument.MINOR_VERSION;
 
-import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -38,13 +37,15 @@ import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.ScrollableComponent;
-import androidx.compose.remote.player.view.accessibility.RemoteComposeTouchHelper;
+import androidx.compose.remote.player.view.accessibility.platform.RemoteComposeTouchHelper;
 import androidx.compose.remote.player.view.platform.AndroidRemoteContext;
 import androidx.compose.remote.player.view.platform.HapticSupport;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.compose.remote.player.view.platform.SensorSupport;
 import androidx.compose.remote.player.view.platform.ThemeSupport;
 import androidx.compose.remote.player.view.player.platform.SettingsRetriever;
+import androidx.compose.remote.player.view.state.StateUpdater;
+import androidx.compose.remote.player.view.state.StateUpdaterImpl;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -70,6 +71,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     public static final int THEME_DARK = Theme.DARK;
 
     private RemoteComposeView mInner;
+    private StateUpdater mStateUpdater;
 
     private final ThemeSupport mThemeSupport = new ThemeSupport();
     private final SensorSupport mSensorsSupport = new SensorSupport();
@@ -97,6 +99,10 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
 
     private RemoteContext getRemoteContext() {
         return mInner.getRemoteContext();
+    }
+
+    public StateUpdater getStateUpdater() {
+        return mStateUpdater;
     }
 
     @Override
@@ -128,11 +134,11 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     @Override
-    public int scrollByOffset(@NonNull Component component, int pixels) {
+    public int scrollByOffset(@NonNull Component component, int offset) {
         ScrollableComponent scrollable = component.selfOrModifier(ScrollableComponent.class);
 
         if (scrollable != null) {
-            return scrollable.scrollByOffset(getRemoteContext(), pixels);
+            return scrollable.scrollByOffset(getRemoteContext(), offset);
         }
 
         return 0;
@@ -293,7 +299,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         }
 
         mThemeSupport.mapColors(getContext(), mInner);
-        mSensorsSupport.setupSensors((Application) getContext().getApplicationContext(), mInner);
+        mSensorsSupport.setupSensors(getContext().getApplicationContext(), mInner);
         mHapticSupport.setupHaptics(mInner);
         mInner.checkShaders(mShaderControl);
     }
@@ -360,6 +366,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         }
         mInner.setBackgroundColor(Color.TRANSPARENT);
         addView(mInner, layoutParams);
+        mStateUpdater = new StateUpdaterImpl(getRemoteContext());
     }
 
     /**

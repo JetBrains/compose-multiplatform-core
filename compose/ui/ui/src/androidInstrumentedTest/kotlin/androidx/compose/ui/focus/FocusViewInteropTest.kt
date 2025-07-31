@@ -24,6 +24,7 @@ import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.META_SHIFT_ON as Shift
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -63,6 +64,7 @@ import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
@@ -108,7 +110,6 @@ class FocusViewInteropTest {
     @Test
     fun getFocusedRect_reportsFocusBounds_whenFocused() {
         val focusRequester = FocusRequester()
-        var hasFocus = false
         lateinit var view: View
         rule.setContent {
             view = LocalView.current
@@ -118,11 +119,6 @@ class FocusViewInteropTest {
                         .wrapContentSize(align = Alignment.TopStart)
                         .size(10.dp, 20.dp)
                         .offset(30.dp, 40.dp)
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                hasFocus = true
-                            }
-                        }
                         .focusRequester(focusRequester)
                         .focusable()
                 )
@@ -130,9 +126,71 @@ class FocusViewInteropTest {
         }
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        rule.waitUntil { hasFocus }
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(30, 40, 40, 60))
+    }
+
+    @Test
+    fun getFocusedRect_reportsFocusArea_whenFocused_andCustomFocusAreaDefined() {
+        val focusRequester = FocusRequester()
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                Box(
+                    Modifier.size(90.dp, 100.dp)
+                        .wrapContentSize(align = Alignment.TopStart)
+                        .focusProperties { focusRect = Rect(30f, 40f, 40f, 60f) }
+                        .focusRequester(focusRequester)
+                        .focusable()
+                )
+            }
+        }
+        rule.runOnIdle { focusRequester.requestFocus() }
 
         assertThat(view.getFocusedRect()).isEqualTo(IntRect(30, 40, 40, 60))
+    }
+
+    @Test
+    fun getFocusedRect_reportsAndroidViewDynamicFocusedRect() {
+        lateinit var embeddedView: View
+        var hasFocus = false
+        var focusedRectOfView = AndroidRect(0, 10, 20, 30)
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+                AndroidView(
+                    factory = {
+                        object : View(it) {
+                                init {
+                                    layoutParams =
+                                        ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                        )
+                                    isFocusable = true
+                                    isFocusableInTouchMode = true
+                                }
+
+                                override fun getFocusedRect(r: AndroidRect?) {
+                                    r?.set(focusedRectOfView)
+                                }
+                            }
+                            .also { embeddedView = it }
+                    },
+                    Modifier.size(100.dp, 100.dp).onFocusChanged { hasFocus = it.hasFocus },
+                )
+            }
+        }
+        rule.runOnIdle { embeddedView.requestFocus() }
+
+        rule.waitUntil { hasFocus }
+
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(0, 10, 20, 30))
+
+        focusedRectOfView = AndroidRect(30, 40, 50, 60)
+
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(30, 40, 50, 60))
     }
 
     @Test
@@ -339,23 +397,30 @@ class FocusViewInteropTest {
         rule.setContent {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    LinearLayout(context).also { linearLayout ->
-                        linearLayout.orientation = VERTICAL
-                        EditText(context).also {
-                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
-                            topEditText = it
-                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
-                        }
-                        ComposeView(context).also {
-                            it.setContent { Box(Modifier.size(10.dp)) }
-                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
-                            composeView = it
-                        }
-                        EditText(context).also {
-                            linearLayout.addView(it, LinearLayout.LayoutParams(100, 100))
-                            bottomEditText = it
-                        }
+                factory = {
+                    LinearLayout(it).apply {
+                        orientation = VERTICAL
+                        addView(
+                            EditText(context).apply {
+                                imeOptions = EditorInfo.IME_ACTION_NEXT
+                                topEditText = this
+                            },
+                            LinearLayout.LayoutParams(100, 100),
+                        )
+                        addView(
+                            ComposeView(context).apply {
+                                setContent { Box(Modifier.size(10.dp)) }
+                                composeView = this
+                            },
+                            LinearLayout.LayoutParams(100, 100),
+                        )
+                        addView(
+                            EditText(context).apply {
+                                imeOptions = EditorInfo.IME_ACTION_NEXT
+                                bottomEditText = this
+                            },
+                            LinearLayout.LayoutParams(100, 100),
+                        )
                     }
                 },
             )
@@ -383,29 +448,28 @@ class FocusViewInteropTest {
         rule.setContent {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    LinearLayout(context).also { linearLayout ->
-                        linearLayout.orientation = VERTICAL
-                        EditText(context).also {
-                            linearLayout.addView(it)
-                            topEditText = it
-                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
-                        }
-                        ComposeView(context).also {
-                            it.setContent {
-                                Box(
-                                    Modifier.size(10.dp)
-                                        .focusProperties { canFocus = false }
-                                        .focusable()
-                                )
+                factory = {
+                    LinearLayout(it).apply {
+                        orientation = VERTICAL
+                        addView(
+                            EditText(context).apply {
+                                imeOptions = EditorInfo.IME_ACTION_NEXT
+                                topEditText = this
                             }
-                            linearLayout.addView(it)
-                            composeView = it
-                        }
-                        EditText(context).also {
-                            linearLayout.addView(it)
-                            bottomEditText = it
-                        }
+                        )
+                        addView(
+                            ComposeView(context).apply {
+                                setContent {
+                                    Box(
+                                        Modifier.size(10.dp)
+                                            .focusProperties { canFocus = false }
+                                            .focusable()
+                                    )
+                                }
+                                composeView = this
+                            }
+                        )
+                        addView(EditText(context).apply { bottomEditText = this })
                     }
                 },
             )
@@ -433,30 +497,31 @@ class FocusViewInteropTest {
         rule.setContent {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    LinearLayout(context).also { linearLayout ->
-                        linearLayout.orientation = VERTICAL
-                        EditText(context).also {
-                            linearLayout.addView(it)
-                            topEditText = it
-                            it.imeOptions = EditorInfo.IME_ACTION_NEXT
-                        }
-                        ComposeView(context).also {
-                            it.setContent {
-                                Box(
-                                    Modifier.focusProperties { onEnter = { cancelFocusChange() } }
-                                        .focusGroup()
-                                ) {
-                                    Box(Modifier.size(10.dp).focusable())
-                                }
+                factory = {
+                    LinearLayout(it).apply {
+                        orientation = VERTICAL
+                        addView(
+                            EditText(context).apply {
+                                imeOptions = EditorInfo.IME_ACTION_NEXT
+                                topEditText = this
                             }
-                            linearLayout.addView(it)
-                            composeView = it
-                        }
-                        EditText(context).also {
-                            linearLayout.addView(it)
-                            bottomEditText = it
-                        }
+                        )
+                        addView(
+                            ComposeView(context).apply {
+                                setContent {
+                                    Box(
+                                        Modifier.focusProperties {
+                                                onEnter = { cancelFocusChange() }
+                                            }
+                                            .focusGroup()
+                                    ) {
+                                        Box(Modifier.size(10.dp).focusable())
+                                    }
+                                }
+                                composeView = this
+                            }
+                        )
+                        addView(EditText(context).apply { bottomEditText = this })
                     }
                 },
             )
@@ -696,8 +761,8 @@ class FocusViewInteropTest {
         rule.setContent {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    LinearLayout(context).apply {
+                factory = {
+                    LinearLayout(it).apply {
                         orientation = VERTICAL
                         addView(
                             ComposeView(context).apply {
@@ -760,42 +825,45 @@ class FocusViewInteropTest {
         rule.setContent {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    LinearLayout(context).also { linearLayout ->
-                        linearLayout.orientation = VERTICAL
-                        ComposeView(context).also {
-                            it.setContent {
-                                Box(
-                                    Modifier.size(10.dp)
-                                        .focusProperties { canFocus = true }
-                                        .focusable()
-                                        .testTag("button1")
-                                )
+                factory = {
+                    LinearLayout(it).apply {
+                        orientation = VERTICAL
+                        addView(
+                            ComposeView(context).apply {
+                                setContent {
+                                    Box(
+                                        Modifier.size(10.dp)
+                                            .focusProperties { canFocus = true }
+                                            .focusable()
+                                            .testTag("button1")
+                                    )
+                                }
                             }
-                            linearLayout.addView(it)
-                        }
-                        ComposeView(context).also {
-                            it.setContent {
-                                Box(
-                                    Modifier.size(10.dp)
-                                        .focusProperties { canFocus = true }
-                                        .focusable()
-                                        .testTag("button2")
-                                )
+                        )
+                        addView(
+                            ComposeView(context).apply {
+                                setContent {
+                                    Box(
+                                        Modifier.size(10.dp)
+                                            .focusProperties { canFocus = true }
+                                            .focusable()
+                                            .testTag("button2")
+                                    )
+                                }
                             }
-                            linearLayout.addView(it)
-                        }
-                        ComposeView(context).also {
-                            it.setContent {
-                                Box(
-                                    Modifier.size(10.dp)
-                                        .focusProperties { canFocus = true }
-                                        .focusable()
-                                        .testTag("button3")
-                                )
+                        )
+                        addView(
+                            ComposeView(context).apply {
+                                setContent {
+                                    Box(
+                                        Modifier.size(10.dp)
+                                            .focusProperties { canFocus = true }
+                                            .focusable()
+                                            .testTag("button3")
+                                    )
+                                }
                             }
-                            linearLayout.addView(it)
-                        }
+                        )
                     }
                 },
             )
@@ -926,10 +994,10 @@ class FocusViewInteropTest {
                 LinearLayout(it).apply {
                     orientation = VERTICAL
                     addView(
-                        ComposeView(it).also { composeView ->
-                            composeView.setContent {
+                        ComposeView(context).apply {
+                            setContent {
                                 AndroidView({
-                                    LinearLayout(it).apply {
+                                    LinearLayout(context).apply {
                                         orientation = VERTICAL
                                         addView(Button(context).apply { text = "Button 1" })
                                         addView(
@@ -945,10 +1013,10 @@ class FocusViewInteropTest {
                         }
                     )
                     addView(
-                        ComposeView(it).also { composeView ->
-                            composeView.setContent {
+                        ComposeView(context).apply {
+                            setContent {
                                 AndroidView({
-                                    LinearLayout(it).apply {
+                                    LinearLayout(context).apply {
                                         orientation = VERTICAL
                                         addView(
                                             Button(context).apply {

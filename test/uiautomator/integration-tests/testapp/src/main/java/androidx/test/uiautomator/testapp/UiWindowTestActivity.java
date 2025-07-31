@@ -24,7 +24,7 @@ import android.widget.Button;
 import org.jspecify.annotations.Nullable;
 
 /** {@link Activity} for testing UiWindow in multi-window environment. */
-public class UiWindowTestActivity extends Activity {
+public class UiWindowTestActivity extends TestActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

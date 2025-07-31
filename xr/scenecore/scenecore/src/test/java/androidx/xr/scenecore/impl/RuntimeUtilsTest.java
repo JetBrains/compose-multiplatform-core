@@ -83,8 +83,10 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
+// TODO: b/431305622 - Add unit tests for getInputEvent.
 @RunWith(RobolectricTestRunner.class)
 public final class RuntimeUtilsTest {
 
@@ -356,16 +358,14 @@ public final class RuntimeUtilsTest {
                 .isFalse();
 
         extensionCapabilities =
-                extensionCapabilities =
-                        ShadowSpatialCapabilities.create(
-                                com.android.extensions.xr.space.SpatialCapabilities
-                                        .SPATIAL_UI_CAPABLE,
-                                com.android.extensions.xr.space.SpatialCapabilities
-                                        .PASSTHROUGH_CONTROL_CAPABLE,
-                                com.android.extensions.xr.space.SpatialCapabilities
-                                        .APP_ENVIRONMENTS_CAPABLE,
-                                com.android.extensions.xr.space.SpatialCapabilities
-                                        .SPATIAL_ACTIVITY_EMBEDDING_CAPABLE);
+                ShadowSpatialCapabilities.create(
+                        com.android.extensions.xr.space.SpatialCapabilities.SPATIAL_UI_CAPABLE,
+                        com.android.extensions.xr.space.SpatialCapabilities
+                                .PASSTHROUGH_CONTROL_CAPABLE,
+                        com.android.extensions.xr.space.SpatialCapabilities
+                                .APP_ENVIRONMENTS_CAPABLE,
+                        com.android.extensions.xr.space.SpatialCapabilities
+                                .SPATIAL_ACTIVITY_EMBEDDING_CAPABLE);
         caps = RuntimeUtils.convertSpatialCapabilities(extensionCapabilities);
         assertThat(caps.hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_UI)).isTrue();
         assertThat(caps.hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_3D_CONTENT)).isFalse();
@@ -461,14 +461,12 @@ public final class RuntimeUtilsTest {
 
     @Test
     public void getHitInfo_convertsFromHitInfo() {
-
         EntityManager entityManager = new EntityManager();
         JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
         Entity testEntity =
                 platformAdapter.createGroupEntity(
                         new Pose(), "testGroup", platformAdapter.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] expectedTransform =
                 new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -480,7 +478,10 @@ public final class RuntimeUtilsTest {
                 new com.android.extensions.xr.node.InputEvent.HitInfo(
                         1, testNode, transform, hitPosition);
         InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+
+        assertThat(hitInfo).isNotNull();
         assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
+        assertThat(hitInfo.getHitPosition()).isNotNull();
         assertVector3(hitInfo.getHitPosition(), expectedHitPosition);
         assertThat(hitInfo.getTransform().getData())
                 .usingExactEquality()
@@ -496,14 +497,12 @@ public final class RuntimeUtilsTest {
 
     @Test
     public void getHitInfo_nullInputNode_returnsNull() {
-
         EntityManager entityManager = new EntityManager();
         JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
         Entity testEntity =
                 platformAdapter.createGroupEntity(
                         new Pose(), "testGroup", platformAdapter.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         Mat4f transform = new Mat4f(transformData);
@@ -524,7 +523,6 @@ public final class RuntimeUtilsTest {
                 platformAdapter.createGroupEntity(
                         new Pose(), "testGroup", platformAdapter.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         Vec3 hitPosition = new Vec3(1, 2, 3);
 
@@ -540,10 +538,6 @@ public final class RuntimeUtilsTest {
         // Create the entity manager but do not set the hit entity.
         EntityManager entityManager = new EntityManager();
         JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
-        Entity testEntity =
-                platformAdapter.createGroupEntity(
-                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
-        Node testNode = ((AndroidXrEntity) testEntity).getNode();
 
         float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         Mat4f transform = new Mat4f(transformData);
@@ -557,15 +551,33 @@ public final class RuntimeUtilsTest {
     }
 
     @Test
-    public void getHitInfo_nullHitPosition_convertsFromHitInfo() {
+    public void getHitInfo_unKnownNode_returnsNull() {
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()).createNode();
 
+        float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(transformData);
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, testNode, transform, hitPosition);
+        InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullHitPosition_convertsFromHitInfo() {
         EntityManager entityManager = new EntityManager();
         JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
         Entity testEntity =
                 platformAdapter.createGroupEntity(
                         new Pose(), "testGroup", platformAdapter.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] expectedTransform =
                 new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -576,6 +588,9 @@ public final class RuntimeUtilsTest {
                 new com.android.extensions.xr.node.InputEvent.HitInfo(
                         1, testNode, transform, hitPosition);
         InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+
+        assertThat(hitInfo).isNotNull();
+        assertThat(hitInfo.getInputEntity()).isNotNull();
         assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
         assertThat(hitInfo.getHitPosition()).isNull();
         assertThat(hitInfo.getTransform().getData())
@@ -709,7 +724,9 @@ public final class RuntimeUtilsTest {
         HitTestResult hitTestResult = RuntimeUtils.getHitTestResult(extensionsHitTestResult);
 
         assertThat(hitTestResult.getDistance()).isEqualTo(distance);
+        assertThat(hitTestResult.getHitPosition()).isNotNull();
         assertVector3(hitTestResult.getHitPosition(), new Vector3(1, 2, 3));
+        assertThat(hitTestResult.getSurfaceNormal()).isNotNull();
         assertVector3(hitTestResult.getSurfaceNormal(), new Vector3(4, 5, 6));
         assertThat(hitTestResult.getSurfaceType())
                 .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE);

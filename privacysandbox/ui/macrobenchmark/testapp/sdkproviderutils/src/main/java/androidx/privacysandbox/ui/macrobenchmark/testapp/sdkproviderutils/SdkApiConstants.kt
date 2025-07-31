@@ -32,6 +32,7 @@ class SdkApiConstants {
                 const val BASIC_WEBVIEW = 1
                 const val WEBVIEW_FROM_LOCAL_ASSETS = 2
                 const val NON_WEBVIEW_VIDEO = 3
+                const val SCROLLABLE_AD_WITH_ANIMATION = 4
             }
         }
 
@@ -82,6 +83,7 @@ class SdkApiConstants {
                 const val POOLING_CONTAINER = 2
                 const val RESIZE_HIDDEN = 3
                 const val OCCLUSIONS_HIDDEN = 4
+                const val USER_INTERACTIONS = 5
             }
         }
 

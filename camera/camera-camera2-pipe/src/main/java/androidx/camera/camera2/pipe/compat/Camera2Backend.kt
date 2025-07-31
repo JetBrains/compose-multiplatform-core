@@ -17,11 +17,11 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.content.Context
-import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.OutputConfiguration
 import android.os.Build
 import androidx.annotation.GuardedBy
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraContext
@@ -41,16 +41,11 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
-import androidx.camera.camera2.pipe.internal.CameraErrorListener
-import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
-import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 /** This is the default [CameraBackend] implementation for CameraPipe based on Camera2. */
 internal class Camera2Backend
@@ -61,17 +56,10 @@ constructor(
     private val camera2MetadataCache: Camera2MetadataCache,
     private val camera2DeviceManager: Camera2DeviceManager,
     private val camera2CameraControllerComponent: Camera2ControllerComponent.Builder,
-    private val cameraManager: CameraManager,
-    private val cameraErrorListener: CameraErrorListener,
     @CameraPipeContext private val cameraPipeContext: Context,
 ) : CameraBackend, Camera2CameraController.ShutdownListener {
     private val lock = Any()
-    // Concurrency primitive to ensure initialization happens only once.
-    private val initMutex = Mutex()
     @GuardedBy("lock") private val activeCameraControllers = mutableSetOf<CameraController>()
-    // Cache for the expensive CameraDeviceSetupCompat object, keyed by camera ID string.
-    @GuardedBy("initMutex")
-    private val cameraDeviceSetupCompatCache = mutableMapOf<String, CameraDeviceSetupCompat>()
     override val id: CameraBackendId
         get() = CameraBackendId("CXCP-Camera2")
 
@@ -103,22 +91,13 @@ constructor(
         camera2DeviceManager.closeAll()
     }
 
-    override suspend fun prewarmGraphConfigQuery(cameraId: CameraId): CameraDeviceSetupCompat? {
+    override fun prewarmIsConfigSupported(cameraId: CameraId) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            // No-op on older APIs where the check isn't supported.
-            return null
+            return
         }
-        return withContext(threads.backgroundDispatcher) {
-            initMutex.withLock {
-                if (!cameraDeviceSetupCompatCache.containsKey(cameraId.value)) {
-                    Log.debug { "Initializing CameraDeviceSetupCompat for $cameraId" }
-                    val compat =
-                        CameraDeviceSetupCompatFactory(cameraPipeContext)
-                            .getCameraDeviceSetupCompat(cameraId.value)
-                    cameraDeviceSetupCompatCache[cameraId.value] = compat
-                    compat
-                } else cameraDeviceSetupCompatCache[cameraId.value]
-            }
+        threads.cameraPipeScope.launch {
+            camera2DeviceCache.getOrInitializeDeviceSetupCompat(cameraId)
+            camera2DeviceCache.getOrInitializeDeviceSetupWrapper(cameraId)
         }
     }
 
@@ -128,15 +107,16 @@ constructor(
         }
         // Lazily initialize and fetch the CameraDeviceSetupCompat for the camera. Can be slow if
         // not already prewarmed.
-        val cameraDeviceSetupCompat = prewarmGraphConfigQuery(graphConfig.camera)
+        val cameraDeviceSetupCompat =
+            camera2DeviceCache.getOrInitializeDeviceSetupCompat(graphConfig.camera)
         val operatingMode =
             when (graphConfig.sessionMode) {
                 CameraGraph.OperatingMode.NORMAL -> Camera2SessionTypes.SESSION_TYPE_REGULAR
                 CameraGraph.OperatingMode.HIGH_SPEED -> Camera2SessionTypes.SESSION_TYPE_HIGH_SPEED
-                CameraGraph.OperatingMode.EXTENSION ->
-                    throw IllegalArgumentException(
-                        "Unsupported session mode: ${graphConfig.sessionMode}"
-                    )
+                CameraGraph.OperatingMode.EXTENSION -> {
+                    Log.info { "Unsupported session mode: ${graphConfig.sessionMode}" }
+                    return ConfigQueryResult.UNKNOWN
+                }
                 else -> graphConfig.sessionMode.mode
             }
         val sessionConfig =
@@ -145,10 +125,10 @@ constructor(
                 buildOutputConfiguration(graphConfig),
             )
 
-        val cameraDeviceSetup =
-            Api35Compat.getCameraDeviceSetup(cameraManager, graphConfig.camera, cameraErrorListener)
+        val cameraDeviceSetup: Camera2DeviceSetupWrapper? =
+            camera2DeviceCache.getOrInitializeDeviceSetupWrapper(graphConfig.camera)
         val requestBuilder =
-            cameraDeviceSetup.createCaptureRequest(graphConfig.sessionTemplate.value)
+            cameraDeviceSetup?.createCaptureRequest(graphConfig.sessionTemplate.value)
 
         requestBuilder?.let {
             for ((key, value) in graphConfig.sessionParameters) {
@@ -159,39 +139,41 @@ constructor(
         }
         val configQueryResultValue =
             cameraDeviceSetupCompat?.isSessionConfigurationSupported(sessionConfig)?.supported
-        return ConfigQueryResult(configQueryResultValue ?: ConfigQueryResult.UNKNOWN.value)
+        if (configQueryResultValue != null) {
+            return ConfigQueryResult(configQueryResultValue)
+        }
+        return ConfigQueryResult.UNKNOWN
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun buildOutputConfiguration(
         graphConfig: CameraGraph.Config
     ): List<OutputConfiguration> {
-        val outputConfigList = mutableListOf<OutputConfiguration>()
+        val outputConfigSet = mutableSetOf<OutputConfiguration>()
         for (outputConfigs in graphConfig.streams) {
             for (outputConfig in outputConfigs.outputs) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    AndroidOutputConfiguration.create(
-                            null,
-                            format = outputConfig.format.value,
-                            outputType = OutputStream.OutputType.SURFACE_DEFERRED_FOR_QUERY_ONLY,
-                            mirrorMode = outputConfig.mirrorMode,
-                            timestampBase = outputConfig.timestampBase,
-                            dynamicRangeProfile = outputConfig.dynamicRangeProfile,
-                            streamUseCase = outputConfig.streamUseCase,
-                            sensorPixelModes = outputConfig.sensorPixelModes,
-                            size = outputConfig.size,
-                            physicalCameraId =
-                                if (outputConfig.camera != graphConfig.camera) {
-                                    outputConfig.camera
-                                } else {
-                                    null
-                                },
-                        )
-                        ?.outputConfiguration
-                        ?.let { outputConfigList.add(it) }
-                }
+                AndroidOutputConfiguration.create(
+                        null,
+                        format = outputConfig.format.value,
+                        outputType = OutputStream.OutputType.SURFACE_DEFERRED_FOR_QUERY_ONLY,
+                        mirrorMode = outputConfig.mirrorMode,
+                        timestampBase = outputConfig.timestampBase,
+                        dynamicRangeProfile = outputConfig.dynamicRangeProfile,
+                        streamUseCase = outputConfig.streamUseCase,
+                        sensorPixelModes = outputConfig.sensorPixelModes,
+                        size = outputConfig.size,
+                        physicalCameraId =
+                            if (outputConfig.camera != graphConfig.camera) {
+                                outputConfig.camera
+                            } else {
+                                null
+                            },
+                    )
+                    ?.unwrapAs(OutputConfiguration::class)
+                    ?.let { outputConfigSet.add(it) }
             }
         }
-        return outputConfigList
+        return outputConfigSet.toList()
     }
 
     override fun disconnectAllAsync(): Deferred<Unit> {

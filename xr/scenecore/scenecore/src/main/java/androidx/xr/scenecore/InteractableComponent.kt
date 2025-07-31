@@ -22,6 +22,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /**
  * Provides access to raw [InputEvent]s for given [Entity], so a client can implement their own
@@ -32,10 +33,10 @@ private constructor(
     private val runtime: JxrPlatformAdapter,
     private val entityManager: EntityManager,
     private val executor: Executor,
-    private val inputEventListener: InputEventListener,
+    private val inputEventListener: Consumer<InputEvent>,
 ) : Component {
     private val rtInputEventListener = RtInputEventListener { rtEvent ->
-        inputEventListener.onInputEvent(rtEvent.toInputEvent(entityManager))
+        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
     }
     private val rtInteractableComponent by lazy {
         runtime.createInteractableComponent(executor, rtInputEventListener)
@@ -73,7 +74,7 @@ private constructor(
             runtime: JxrPlatformAdapter,
             entityManager: EntityManager,
             executor: Executor,
-            inputEventListener: InputEventListener,
+            inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent {
             return InteractableComponent(runtime, entityManager, executor, inputEventListener)
         }
@@ -83,14 +84,14 @@ private constructor(
          * events.
          *
          * @param session [Session] to create the InteractableComponent in.
-         * @param executor Executor for invoking [InputEventListener].
-         * @param inputEventListener [InputEventListener] that accepts [InputEvent]s.
+         * @param executor Executor for invoking the inputEventListener.
+         * @param inputEventListener [Consumer] that accepts [InputEvent]s.
          */
         @JvmStatic
         public fun create(
             session: Session,
             executor: Executor,
-            inputEventListener: InputEventListener,
+            inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
             create(
                 session.platformAdapter,
@@ -104,13 +105,13 @@ private constructor(
          * events.
          *
          * @param session [Session] to create the InteractableComponent in.
-         * @param inputEventListener [InputEventListener] that accepts [InputEvent]s. The listener
-         *   callbacks will be invoked on the main thread.
+         * @param inputEventListener [Consumer] that accepts [InputEvent]s. The listener callbacks
+         *   will be invoked on the main thread.
          */
         @JvmStatic
         public fun create(
             session: Session,
-            inputEventListener: InputEventListener,
+            inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
             create(session, ContextCompat.getMainExecutor(session.activity), inputEventListener)
     }

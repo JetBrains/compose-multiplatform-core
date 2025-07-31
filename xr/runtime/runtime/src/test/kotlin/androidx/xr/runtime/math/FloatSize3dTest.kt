@@ -79,4 +79,20 @@ class FloatSize3dTest {
         assertThat(size1.width).isEqualTo(size2.width)
         assertThat(size1.height).isEqualTo(size2.height)
     }
+
+    @Test
+    fun divOperator_returnsCorrectValues() {
+        val size1 = FloatSize3d(width = 2.0f, height = 2.0f, depth = 2.0f)
+        val size2 = FloatSize3d(width = 1.0f, height = 1.0f, depth = 1.0f)
+
+        assertThat(size1 / 2.0f).isEqualTo(size2)
+    }
+
+    @Test
+    fun timesOperator_returnsCorrectValues() {
+        val size1 = FloatSize3d(width = 1.0f, height = 1.0f, depth = 1.0f)
+        val size2 = FloatSize3d(width = 2.0f, height = 2.0f, depth = 2.0f)
+
+        assertThat(size1 * 2.0f).isEqualTo(size2)
+    }
 }

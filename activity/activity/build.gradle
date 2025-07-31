@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.kotlinCoroutinesCore)
     api(libs.kotlinStdlib)
 
+    androidTestImplementation(project(":navigationevent:navigationevent-testing"))
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1")
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.espressoCore)

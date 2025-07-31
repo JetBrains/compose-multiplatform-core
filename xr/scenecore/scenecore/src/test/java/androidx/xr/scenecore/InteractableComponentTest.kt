@@ -37,6 +37,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
+import java.util.function.Consumer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,7 +80,7 @@ class InteractableComponentTest {
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
-        val mockListener = mock<InputEventListener>()
+        val mockListener = mock<Consumer<InputEvent>>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
 
@@ -94,7 +95,7 @@ class InteractableComponentTest {
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
-        val mockListener = mock<InputEventListener>()
+        val mockListener = mock<Consumer<InputEvent>>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
 
@@ -111,7 +112,7 @@ class InteractableComponentTest {
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
-        val mockListener = mock<InputEventListener>()
+        val mockListener = mock<Consumer<InputEvent>>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
 
@@ -125,7 +126,7 @@ class InteractableComponentTest {
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
-        val mockListener = mock<InputEventListener>()
+        val mockListener = mock<Consumer<InputEvent>>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
 
@@ -140,7 +141,7 @@ class InteractableComponentTest {
         whenever(mockRuntime.createInteractableComponent(any(), any()))
             .thenReturn(mockRtInteractableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
-        val mockListener = mock<InputEventListener>()
+        val mockListener = mock<Consumer<InputEvent>>()
         val interactableComponent =
             InteractableComponent.create(session, directExecutor(), mockListener)
         assertThat(entity.addComponent(interactableComponent)).isTrue()
@@ -159,7 +160,7 @@ class InteractableComponentTest {
             )
         rtInputEventListener.onInputEvent(rtInputEvent)
         val inputEventCaptor = argumentCaptor<InputEvent>()
-        verify(mockListener).onInputEvent(inputEventCaptor.capture())
+        verify(mockListener).accept(inputEventCaptor.capture())
         val inputEvent = inputEventCaptor.lastValue
         assertThat(inputEvent.source).isEqualTo(InputEvent.Source.SOURCE_HANDS)
         assertThat(inputEvent.pointerType).isEqualTo(InputEvent.Pointer.POINTER_TYPE_RIGHT)

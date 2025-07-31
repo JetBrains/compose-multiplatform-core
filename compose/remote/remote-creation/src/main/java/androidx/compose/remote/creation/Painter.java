@@ -588,4 +588,24 @@ public class Painter {
         mPaint.setTextAxis(tagIds, values);
         return this;
     }
+
+    /**
+     * Set the texture shader tileMode are: <br>
+     * 0=CLAMP Replicate the edge color<br>
+     * 1=REPEAT Repeat the shader's image, <br>
+     * 2=MIRROR Repeat the shader's image mirror alternative sections <br>
+     * 3=DECAL Clamp to transparent outside image<br>
+     *
+     * @param texture id of bitmap to use as texture
+     * @param tileModeX tile mode for x
+     * @param tileModeY tile mode for y
+     * @param filterMode filter mode, 0 = no filter, 1 = linear, 2 = nearest
+     * @param maxAnisotropy max anisotropy, 0 = no anisotropy
+     * @return the painter object
+     */
+    public Painter setTextureShader(
+            int texture, short tileModeX, short tileModeY, short filterMode, short maxAnisotropy) {
+        mPaint.setTextureShader(texture, tileModeX, tileModeY, filterMode, maxAnisotropy);
+        return this;
+    }
 }

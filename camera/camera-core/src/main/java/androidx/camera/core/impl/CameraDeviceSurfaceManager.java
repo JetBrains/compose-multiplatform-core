@@ -33,7 +33,7 @@ import java.util.Set;
  * Camera device manager to provide the guaranteed supported stream capabilities related info for
  * all camera devices
  */
-public interface CameraDeviceSurfaceManager {
+public interface CameraDeviceSurfaceManager extends InternalCameraPresenceListener {
 
     /**
      * Interface for deferring creation of a CameraDeviceSurfaceManager.

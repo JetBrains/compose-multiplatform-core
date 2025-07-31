@@ -27,6 +27,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.annotation.VisibleForTesting
+import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -718,6 +719,46 @@ internal constructor(
             genericDocument,
             extras,
         )
+    }
+
+    /** Visits all [AppFunctionUriGrant] under the [AppFunctionData]. */
+    @WorkerThread
+    @RestrictTo(LIBRARY_GROUP)
+    public fun visitAppFunctionUriGrants(visitor: (AppFunctionUriGrant) -> Unit) {
+        if (qualifiedName == AppFunctionUriGrant::class.java.canonicalName) {
+            val uriGrant =
+                try {
+                    deserialize(AppFunctionUriGrant::class.java)
+                } catch (e: Exception) {
+                    Log.d(
+                        APP_FUNCTIONS_TAG,
+                        "Unexpected error while visiting AppFunctionUriGrant",
+                        e,
+                    )
+                    null
+                }
+
+            if (uriGrant != null) {
+                visitor.invoke(uriGrant)
+            }
+        }
+
+        for (key in genericDocument.propertyNames) {
+            // AppFunctionUriGrant would only be stored as either singular AppFunctionData or list
+            // of AppFunctionData.
+            try {
+                getAppFunctionData(key)?.visitAppFunctionUriGrants(visitor)
+            } catch (_: Exception) {
+                // Swallow the exception as it is an unsafe read in the first place
+            }
+            try {
+                for (data in getAppFunctionDataList(key) ?: emptyList()) {
+                    data.visitAppFunctionUriGrants(visitor)
+                }
+            } catch (_: Exception) {
+                // Swallow the exception as it is an unsafe read in the first place
+            }
+        }
     }
 
     /**

@@ -114,8 +114,20 @@ public abstract class DrawBase6 extends PaintOperation implements VariableSuppor
                 + Utils.floatToString(mV4);
     }
 
-    interface Maker {
-        DrawBase6 create(float v1, float v2, float v3, float v4, float v5, float v6);
+    /** interface for the operation builder with 6 float parameters */
+    public interface Maker {
+        /**
+         * creation function for operation with 6 float parameters
+         *
+         * @param v1 param 1
+         * @param v2 param 2
+         * @param v3 param 3
+         * @param v4 param 4
+         * @param v5 param 5
+         * @param v6 param 6
+         * @return operation
+         */
+        @NonNull DrawBase6 create(float v1, float v2, float v3, float v4, float v5, float v6);
     }
 
     /**

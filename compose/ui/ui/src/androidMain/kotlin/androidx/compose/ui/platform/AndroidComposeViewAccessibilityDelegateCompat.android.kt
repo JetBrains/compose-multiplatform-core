@@ -554,10 +554,23 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun boundsInScreen(node: SemanticsNodeWithAdjustedBounds): AndroidRect {
         val boundsInRoot = node.adjustedBounds
-        val topLeftInScreen =
-            view.localToScreen(Offset(boundsInRoot.left.toFloat(), boundsInRoot.top.toFloat()))
-        val bottomRightInScreen =
-            view.localToScreen(Offset(boundsInRoot.right.toFloat(), boundsInRoot.bottom.toFloat()))
+        return toBoundsInScreen(
+            left = boundsInRoot.left.toFloat(),
+            top = boundsInRoot.top.toFloat(),
+            right = boundsInRoot.right.toFloat(),
+            bottom = boundsInRoot.bottom.toFloat(),
+        )
+    }
+
+    private fun toBoundsInScreen(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+    ): AndroidRect {
+        val topLeftInScreen: Offset = view.localToScreen(Offset(left, top))
+        val bottomRightInScreen = view.localToScreen(Offset(right, bottom))
+
         // Due to rotation, the top left corner of the local bounds may not be the top left corner
         // of the screen bounds.
         return android.graphics.Rect(
@@ -1897,20 +1910,25 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (shapeSemanticsModifierNode?.node?.isAttached != true) {
             return layoutNode.outerCoordinator.boundsInWindow(clipBounds = false)
         }
-        return shapeSemanticsModifierNode
-            .requireLayoutCoordinates()
-            .boundsInRoot()
-            .toBoundsRelativeToNodeBounds(nodeBoundsInScreen)
+        val shapeBoundsInRoot = shapeSemanticsModifierNode.requireLayoutCoordinates().boundsInRoot()
+        val shapeBoundsInScreen =
+            toBoundsInScreen(
+                left = shapeBoundsInRoot.left,
+                top = shapeBoundsInRoot.top,
+                right = shapeBoundsInRoot.right,
+                bottom = shapeBoundsInRoot.bottom,
+            )
+        return shapeBoundsInScreen.toBoundsRelativeToNodeBounds(nodeBoundsInScreen)
     }
 
-    private fun Rect.toBoundsRelativeToNodeBounds(nodeBoundsInScreen: AndroidRect): Rect {
-        val leftOffset = this.left - nodeBoundsInScreen.left
-        val topOffset = this.top - nodeBoundsInScreen.top
+    private fun AndroidRect.toBoundsRelativeToNodeBounds(nodeBoundsInScreen: AndroidRect): Rect {
+        val leftOffset = (this.left - nodeBoundsInScreen.left).toFloat()
+        val topOffset = (this.top - nodeBoundsInScreen.top).toFloat()
         return Rect(
             left = leftOffset,
             top = topOffset,
-            right = leftOffset + this.width,
-            bottom = topOffset + this.height,
+            right = leftOffset + this.width(),
+            bottom = topOffset + this.height(),
         )
     }
 

@@ -27,7 +27,7 @@ import androidx.core.util.Preconditions
  * This identifier is designed to be unique and stable for a specific camera device across
  * application sessions and device connect/disconnect events, provided the underlying system can
  * consistently identify the camera. It serves as a reliable key for uniquely identifying cameras
- * within CameraX APIs.
+ * within CameraX APIs, such as in [CameraPresenceListener] callbacks.
  *
  * Applications should not attempt to parse the string representation of this identifier or assume
  * any particular format for its internal value, as it may change across CameraX versions or device
@@ -80,6 +80,7 @@ import androidx.core.util.Preconditions
  *
  * @see CameraInfo.getCameraIdentifier
  * @see CameraSelector.of
+ * @see CameraPresenceListener
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class CameraIdentifier

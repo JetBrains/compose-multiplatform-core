@@ -805,9 +805,7 @@ class BinaryCompatibilityCheckerTest {
         final fun <#A: my.lib/B & my.lib/A> my.lib/foo(#A) // my.lib/foo|foo(0:0){0§<my.lib.B&my.lib.A>}[0]
         """
         val expectedErrorMessages =
-            listOf(
-                "upper bounds changed from my.lib/A,my.lib/B to my.lib/B,my.lib/A for type param A on my.lib/foo"
-            )
+            listOf("Removed declaration <A : my.lib/A,my.lib/B>my.lib/foo(#A) from androidx:librar")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -822,9 +820,7 @@ class BinaryCompatibilityCheckerTest {
         final fun <#A: kotlin/Any> my.lib/foo(): kotlin/Int // my.lib/foo|foo(){0§<kotlin.Any>}[0]
         """
         val expectedErrorMessages =
-            listOf(
-                "upper bounds changed from kotlin/Any? to kotlin/Any for type param A on my.lib/foo"
-            )
+            listOf("Removed declaration <A : kotlin/Any?>my.lib/foo() from androidx:library")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
 
@@ -1464,10 +1460,7 @@ class BinaryCompatibilityCheckerTest {
         """
                 .trimIndent()
         val expectedErrors =
-            listOf(
-                "upper bounds changed from kotlin/Int to kotlin/String for type param A on my.lib/foo",
-                "upper bounds changed from kotlin/String to kotlin/Int for type param B on my.lib/foo",
-            )
+            listOf("Removed declaration <A : kotlin/Int, B : kotlin/String>my.lib/foo()")
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
     }
 
@@ -1576,6 +1569,20 @@ class BinaryCompatibilityCheckerTest {
         open class my.lib/B : my.lib/A { // my.lib/B|null[0]
             constructor <init>() // my.lib/B.<init>|<init>(){}[0]
         }
+        """
+        testBeforeAndAfterIsCompatible(beforeText, afterText)
+    }
+
+    @Test
+    fun addingOverrideWithNullableUpperBoundsIsAllowed() {
+        val beforeText =
+            """
+        final inline fun <#A: reified kotlin/Any> my.lib/myFun(#A): #A // my.lib/myFun|myFun(0:0){0§<kotlin.Any>}[0]
+        """
+        val afterText =
+            """
+        final inline fun <#A: reified kotlin/Any> my.lib/myFun(#A): #A // my.lib/myFun|myFun(0:0){0§<kotlin.Any>}[0]
+        final inline fun <#A: reified kotlin/Any?> my.lib/myFun(#A): #A // my.lib/myFun|myFun(0:0){0§<kotlin.Any?>}[0]
         """
         testBeforeAndAfterIsCompatible(beforeText, afterText)
     }

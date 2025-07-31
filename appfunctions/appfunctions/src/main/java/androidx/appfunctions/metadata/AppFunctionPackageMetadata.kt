@@ -95,7 +95,9 @@ public class AppFunctionPackageMetadata(
                 return null
             }
 
-            val targetAppResources = pm.getResourcesForApplication(packageName)
+            val targetAppInfo = pm.getApplicationInfo(packageName, /* flags= */ 0)
+            val targetAppResources =
+                pm.getResourcesForApplication(targetAppInfo, context.resources.configuration)
             // TODO: b/429150483 - Index resId(s) and constant values from XML in AppSearch already.
             val xmlParser = targetAppResources.getXml(appMetadataXmlRes)
 

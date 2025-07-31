@@ -59,7 +59,11 @@ class SpatialComposeSceneTest {
         composeTestRule.setContent {
             session = createFakeSession(composeTestRule.activity)
             scene =
-                SpatialComposeScene(ownerActivity = composeTestRule.activity, jxrSession = session)
+                SpatialComposeScene(
+                    lifecycleOwner = composeTestRule.activity,
+                    context = composeTestRule.activity,
+                    jxrSession = session,
+                )
 
             owner = AndroidComposeSpatialElement()
             owner.spatialComposeScene = scene
@@ -67,7 +71,7 @@ class SpatialComposeSceneTest {
             ProvideCompositionLocals(owner = owner) { currentSession = LocalSession.current }
         }
 
-        assertThat(scene.ownerActivity).isEqualTo(composeTestRule.activity)
+        assertThat(scene.lifecycleOwner).isEqualTo(composeTestRule.activity)
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
@@ -100,7 +104,8 @@ class SpatialComposeSceneTest {
 
             scene =
                 SpatialComposeScene(
-                    ownerActivity = composeTestRule.activity,
+                    lifecycleOwner = composeTestRule.activity,
+                    context = composeTestRule.activity,
                     jxrSession = session,
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
@@ -113,7 +118,7 @@ class SpatialComposeSceneTest {
             ProvideCompositionLocals(owner = owner) { currentSession = LocalSession.current }
         }
 
-        assertThat(scene.ownerActivity).isEqualTo(composeTestRule.activity)
+        assertThat(scene.lifecycleOwner).isEqualTo(composeTestRule.activity)
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.compositionContext).isEqualTo(composition)
         assertThat(scene.rootElement.rootCoreEntity).isEqualTo(coreEntity)

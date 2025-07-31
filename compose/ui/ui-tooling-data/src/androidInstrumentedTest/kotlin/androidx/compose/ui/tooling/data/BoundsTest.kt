@@ -36,7 +36,6 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.test.Ignore
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,7 +86,6 @@ class BoundsTest : ToolingTest() {
         }
     }
 
-    @Ignore // b/422764248
     @Test
     fun testBoundsWithoutParsingParameters() {
         val lefts = mutableMapOf<String, Dp>()
@@ -154,7 +152,6 @@ class BoundsTest : ToolingTest() {
         }
     }
 
-    @Ignore // b/422764248
     @Test
     @LargeTest
     fun testDisposeWithComposeTables() {
@@ -185,6 +182,6 @@ class BoundsTest : ToolingTest() {
         }
         latch.await(1, TimeUnit.SECONDS)
 
-        Assert.assertTrue(slotTableRecord.store.size < 3)
+        assertThat(slotTableRecord.store.size).isLessThan(3)
     }
 }

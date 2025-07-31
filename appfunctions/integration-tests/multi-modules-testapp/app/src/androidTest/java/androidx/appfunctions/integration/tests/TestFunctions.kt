@@ -18,11 +18,13 @@ package androidx.appfunctions.integration.tests
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.AppFunctionUriGrant
 import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
 
@@ -229,6 +231,13 @@ data class ClassWithOptionalValues(
     }
 }
 
+@AppFunctionSerializable
+data class FilesData(
+    val readOnlyUri: AppFunctionUriGrant,
+    val writeOnlyUri: AppFunctionUriGrant,
+    val readWriteUri: AppFunctionUriGrant,
+)
+
 @Suppress("UNUSED_PARAMETER")
 class TestFunctions {
     @AppFunction
@@ -395,6 +404,38 @@ class TestFunctions {
             optionalNullableSerializableList = optionalNullableSerializableList,
             optionalNonNullProxySerializableList = optionalNonNullProxySerializableList,
             optionalNullableProxySerializableList = optionalNullableProxySerializableList,
+        )
+    }
+
+    @AppFunction
+    fun getFilesData(appFunctionContext: AppFunctionContext): FilesData {
+        return FilesData(
+            readOnlyUri =
+                AppFunctionUriGrant(
+                    uri =
+                        Uri.parse(
+                            "content://androidx.appfunctions.integration.tests.provider/read_only_test_file.txt"
+                        ),
+                    modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                ),
+            writeOnlyUri =
+                AppFunctionUriGrant(
+                    uri =
+                        Uri.parse(
+                            "content://androidx.appfunctions.integration.tests.provider/write_only_test_file.txt"
+                        ),
+                    modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+            readWriteUri =
+                AppFunctionUriGrant(
+                    uri =
+                        Uri.parse(
+                            "content://androidx.appfunctions.integration.tests.provider/read_write_test_file.txt"
+                        ),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
         )
     }
 }

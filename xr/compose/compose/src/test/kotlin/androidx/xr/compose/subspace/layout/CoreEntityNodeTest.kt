@@ -25,7 +25,6 @@ import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.scenecore.PanelEntity
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
@@ -77,16 +76,13 @@ class CoreEntityNodeTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
-    fun testRenderedSize_shouldBeApplied() {
+    fun coreEntityNode_alpha_shouldBeApplied() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
                     SpatialAndroidViewPanel(
                         factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity {
-                                setRenderedSize(IntVolumeSize(100, 100, 0))
-                            }
-                            .modifyCoreEntity { setOrAppendScale(4f) }
+                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
                             .testTag("panel"),
                     )
                 }
@@ -96,7 +92,111 @@ class CoreEntityNodeTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.sizeInPixels.width).isEqualTo(100)
-        assertThat(panelSceneCoreEntity.sizeInPixels.height).isEqualTo(100)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun coreEntityNode_alpha_shouldAppendExisting() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialAndroidViewPanel(
+                        factory = { View(it) },
+                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                            .modifyCoreEntity { setOrAppendAlpha(4f) }
+                            .testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(2f)
+    }
+
+    @Test
+    fun coreEntityNode_alpha_shouldAppendExistingWithGap() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialAndroidViewPanel(
+                        factory = { View(it) },
+                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                            .testTag("panel")
+                            .modifyCoreEntity { setOrAppendScale(4f) }
+                            .modifyCoreEntity { setOrAppendAlpha(4f) },
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(2f)
+    }
+
+    @Test
+    fun coreEntityNode_scale_shouldBeApplied() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialAndroidViewPanel(
+                        factory = { View(it) },
+                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }.testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getScale()).isEqualTo(4f)
+    }
+
+    @Test
+    fun coreEntityNode_scale_shouldAppendExisting() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialAndroidViewPanel(
+                        factory = { View(it) },
+                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
+                            .modifyCoreEntity { setOrAppendScale(0.5f) }
+                            .testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getScale()).isEqualTo(2f)
+    }
+
+    @Test
+    fun coreEntityNode_scale_shouldAppendExistingWithGap() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialAndroidViewPanel(
+                        factory = { View(it) },
+                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
+                            .testTag("panel")
+                            .modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                            .modifyCoreEntity { setOrAppendScale(0.5f) },
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getScale()).isEqualTo(2f)
     }
 }

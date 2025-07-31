@@ -19,9 +19,14 @@ package androidx.xr.compose.subspace
 import android.content.Intent
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,8 +50,11 @@ import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
+import androidx.xr.compose.testing.assertHeightIsEqualTo
+import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
@@ -108,7 +116,53 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun spatialPanel_AndroidViewBasedPanelComposes() {
+    fun spatialPanel_composePanel_sizesItself() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Box(Modifier.width(100.dp).height(100.dp).testTag("contentBox")) {
+                            Text("Content")
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
+        composeTestRule.onNodeWithTag("contentBox").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onNodeWithTag("contentBox").assertWidthIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialPanel_composePanel_sizesItselfWithLazyContent() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 2000,
+                            minHeight = 0,
+                            maxHeight = 2000,
+                        )
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        LazyColumn { items(50) { Box(Modifier.size(100.dp)) } }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(2000.dp)
+    }
+
+    @Test
+    fun spatialPanel_androidViewBasedPanel_composes() {
         lateinit var view: TextView
         composeTestRule.setContent {
             TestSetup {
@@ -127,6 +181,30 @@ class SpatialPanelTest {
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertTrue(view.isAttachedToWindow)
+    }
+
+    @Test
+    fun spatialPanel_androidViewBasedPanel_sizesItself() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialAndroidViewPanel(
+                        factory = { context ->
+                            TextView(context).apply {
+                                width = 100
+                                height = 100
+                            }
+                        },
+                        SubspaceModifier.testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
     }
 
     @Test

@@ -23,6 +23,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -195,14 +196,14 @@ class AugmentedObjectTest {
     @Test
     fun update_extentsMatchesRuntime() = runBlocking {
         val runtimeObject = FakeRuntimeObject()
-        val extents = Vector3(1.0f, 2.0f, 3.0f)
+        val extents = FloatSize3d(1.0f, 2.0f, 3.0f)
         runtimeObject.extents = extents
         xrResourcesManager.syncTrackables(listOf(runtimeObject))
         val underTest = xrResourcesManager.trackablesMap[runtimeObject] as AugmentedObject
         underTest.update()
         check(underTest.state.value.extents == extents)
 
-        val newExtents = Vector3(3.0f, 4.0f, 5.0f)
+        val newExtents = FloatSize3d(3.0f, 4.0f, 5.0f)
         runtimeObject.extents = newExtents
         underTest.update()
 

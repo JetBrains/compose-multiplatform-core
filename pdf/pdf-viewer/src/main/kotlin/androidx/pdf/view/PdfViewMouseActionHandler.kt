@@ -23,11 +23,11 @@ package androidx.pdf.view
  */
 internal class PdfViewMouseActionHandler(pdfView: PdfView) : PdfViewExternalInputHandler(pdfView) {
 
-    override val verticalScrollFactor = VERTICAL_SCROLL_FACTOR
     override val horizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR
+    override val verticalScrollFactor = VERTICAL_SCROLL_FACTOR
 
     private companion object {
-        const val VERTICAL_SCROLL_FACTOR = 14
         const val HORIZONTAL_SCROLL_FACTOR = 14
+        const val VERTICAL_SCROLL_FACTOR = 14
     }
 }

@@ -94,6 +94,7 @@ public class BitmapTextMeasure extends PaintOperation {
      * @param buffer write command to this buffer
      * @param id the id
      * @param textId the id
+     * @param bitmapFontId the id of the bitmap font
      * @param type the value of the float
      */
     public static void apply(

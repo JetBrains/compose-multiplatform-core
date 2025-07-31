@@ -39,7 +39,6 @@ import androidx.xr.scenecore.scene
 
 /** Creates a [CoreGroupEntity] that is automatically disposed of when it leaves the composition. */
 @Composable
-@PublishedApi
 internal fun rememberCoreGroupEntity(
     entityFactory: @DisallowComposableCalls Session.() -> Entity
 ): CoreGroupEntity {

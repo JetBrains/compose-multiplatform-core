@@ -81,10 +81,16 @@ package androidx.xr.runtime.testing {
     ctor public FakeAudioTrackExtensionsWrapper();
     method public androidx.xr.runtime.internal.PointSourceParams? getPointSourceParams(android.media.AudioTrack track);
     method public androidx.xr.runtime.internal.SoundFieldAttributes? getSoundFieldAttributes(android.media.AudioTrack track);
+    method public java.util.Map<android.media.AudioTrack,androidx.xr.runtime.internal.SoundFieldAttributes?> getSoundFieldAttributesMap();
     method @androidx.xr.runtime.internal.SpatializerConstants.SourceType public int getSpatialSourceType(android.media.AudioTrack track);
+    method public java.util.Map<android.media.AudioTrack,java.lang.Integer> getSpatialSourceTypeMap();
     method public void setPointSourceParams(android.media.AudioTrack track, androidx.xr.runtime.internal.PointSourceParams params);
     method public android.media.AudioTrack.Builder setPointSourceParams(android.media.AudioTrack.Builder builder, androidx.xr.runtime.internal.PointSourceParams params);
     method public android.media.AudioTrack.Builder setSoundFieldAttributes(android.media.AudioTrack.Builder builder, androidx.xr.runtime.internal.SoundFieldAttributes attributes);
+    method public void setSoundFieldAttributesMap(java.util.Map<android.media.AudioTrack,androidx.xr.runtime.internal.SoundFieldAttributes?>);
+    method public void setSpatialSourceTypeMap(java.util.Map<android.media.AudioTrack,java.lang.Integer>);
+    property public java.util.Map<android.media.AudioTrack,androidx.xr.runtime.internal.SoundFieldAttributes?> soundFieldAttributesMap;
+    property public java.util.Map<android.media.AudioTrack,java.lang.Integer> spatialSourceTypeMap;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewActivityPose extends androidx.xr.runtime.testing.FakeActivityPose implements androidx.xr.runtime.internal.CameraViewActivityPose {
@@ -120,7 +126,7 @@ package androidx.xr.runtime.testing {
     method public java.util.List<androidx.xr.runtime.internal.Entity> getChildren();
     method public java.util.List<androidx.xr.runtime.internal.Component> getComponents();
     method public <T extends androidx.xr.runtime.internal.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
-    method public String getContentDescription();
+    method public CharSequence getContentDescription();
     method public final java.util.Map<androidx.xr.runtime.internal.InputEventListener,java.util.concurrent.Executor> getInputEventListenerMap();
     method public androidx.xr.runtime.internal.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.runtime.internal.SpaceValue int relativeTo);
@@ -130,13 +136,13 @@ package androidx.xr.runtime.testing {
     method public void removeComponent(androidx.xr.runtime.internal.Component component);
     method public void removeInputEventListener(androidx.xr.runtime.internal.InputEventListener listener);
     method public void setAlpha(float alpha, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
-    method public void setContentDescription(String);
+    method public void setContentDescription(CharSequence);
     method public void setHidden(boolean hidden);
     method public void setParent(androidx.xr.runtime.internal.Entity?);
     method public void setPose(androidx.xr.runtime.math.Pose pose, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
     method public void setScale(androidx.xr.runtime.math.Vector3 scale, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
     property public java.util.List<androidx.xr.runtime.internal.Entity> children;
-    property public String contentDescription;
+    property public CharSequence contentDescription;
     property public final java.util.Map<androidx.xr.runtime.internal.InputEventListener,java.util.concurrent.Executor> inputEventListenerMap;
     property public androidx.xr.runtime.internal.Entity? parent;
   }
@@ -450,9 +456,9 @@ package androidx.xr.runtime.testing {
     method public void setConfig(androidx.xr.runtime.Config);
     method public void setHasCreatePermission(boolean);
     method public void setHasMissingPermission(boolean);
-    method public void setShouldSupportFaceTracking(boolean);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setShouldSupportFaceTracking(boolean);
     method public void setShouldSupportPlaneTracking(boolean);
-    method public boolean shouldSupportFaceTracking();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean shouldSupportFaceTracking();
     method public boolean shouldSupportPlaneTracking();
     method public void stop();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark>);
@@ -522,6 +528,7 @@ package androidx.xr.runtime.testing {
     ctor public FakePerceptionManager();
     method public void addHitResult(androidx.xr.runtime.internal.HitResult hitResult);
     method public void addTrackable(androidx.xr.runtime.internal.Trackable trackable);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public void clearHitResults();
     method public void clearTrackables();
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
@@ -529,7 +536,7 @@ package androidx.xr.runtime.testing {
     method public java.util.List<androidx.xr.runtime.internal.Anchor> getAnchors();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.testing.FakeRuntimeArDevice getArDevice();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();
-    method public androidx.xr.runtime.internal.Earth getEarth();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.Earth getEarth();
     method public androidx.xr.runtime.internal.Hand? getLeftHand();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand? getRightHand();
@@ -545,7 +552,7 @@ package androidx.xr.runtime.testing {
     property public java.util.List<androidx.xr.runtime.internal.Anchor> anchors;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.testing.FakeRuntimeArDevice arDevice;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.internal.DepthMap> depthMaps;
-    property public androidx.xr.runtime.internal.Earth earth;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.Earth earth;
     property public boolean isTrackingAvailable;
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;
@@ -654,22 +661,22 @@ package androidx.xr.runtime.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeAugmentedObject implements androidx.xr.runtime.internal.AugmentedObject {
     ctor public FakeRuntimeAugmentedObject();
-    ctor public FakeRuntimeAugmentedObject(optional androidx.xr.runtime.math.Pose centerPose, optional androidx.xr.runtime.math.Vector3 extents, optional androidx.xr.runtime.AugmentedObjectCategory category, optional androidx.xr.runtime.TrackingState trackingState, optional java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors);
+    ctor public FakeRuntimeAugmentedObject(optional androidx.xr.runtime.math.Pose centerPose, optional androidx.xr.runtime.math.FloatSize3d extents, optional androidx.xr.runtime.AugmentedObjectCategory category, optional androidx.xr.runtime.TrackingState trackingState, optional java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors);
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public void detachAnchor(androidx.xr.runtime.internal.Anchor anchor);
     method public java.util.Collection<androidx.xr.runtime.internal.Anchor> getAnchors();
     method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector3 getExtents();
+    method public androidx.xr.runtime.math.FloatSize3d getExtents();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     method public void setCategory(androidx.xr.runtime.AugmentedObjectCategory);
     method public void setCenterPose(androidx.xr.runtime.math.Pose);
-    method public void setExtents(androidx.xr.runtime.math.Vector3);
+    method public void setExtents(androidx.xr.runtime.math.FloatSize3d);
     method public void setTrackingState(androidx.xr.runtime.TrackingState);
     property public java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors;
     property public androidx.xr.runtime.AugmentedObjectCategory category;
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector3 extents;
+    property public androidx.xr.runtime.math.FloatSize3d extents;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -872,6 +879,7 @@ package androidx.xr.runtime.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceEntity extends androidx.xr.runtime.testing.FakeEntity implements androidx.xr.runtime.internal.SurfaceEntity {
     ctor public FakeSurfaceEntity();
+    method public androidx.xr.runtime.internal.TextureResource? getAuxiliaryAlphaMask();
     method public androidx.xr.runtime.internal.SurfaceEntity.CanvasShape getCanvasShape();
     method public int getColorRange();
     method public int getColorSpace();
@@ -879,21 +887,24 @@ package androidx.xr.runtime.testing {
     method public boolean getContentColorMetadataSet();
     method public androidx.xr.runtime.internal.Dimensions getDimensions();
     method public androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather getEdgeFeather();
+    method public boolean getMContentColorMetadataSet();
     method public int getMaxCLL();
     method public androidx.xr.runtime.internal.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.runtime.internal.PerceivedResolutionResult getPerceivedResolutionResult();
+    method public androidx.xr.runtime.internal.TextureResource? getPrimaryAlphaMask();
     method public int getStereoMode();
     method public android.view.Surface getSurface();
     method public void resetContentColorMetadata();
     method public void setAuxiliaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
     method public void setCanvasShape(androidx.xr.runtime.internal.SurfaceEntity.CanvasShape);
-    method public void setColorRange(int);
-    method public void setColorSpace(int);
-    method public void setColorTransfer(int);
     method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
     method public void setEdgeFeather(androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather);
-    method public void setMaxCLL(int);
+    method public void setMContentColorMetadataSet(boolean);
+    method public void setPerceivedResolutionResult(androidx.xr.runtime.internal.PerceivedResolutionResult);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
     method public void setStereoMode(int);
+    method public void setSurface(android.view.Surface surface);
+    property public androidx.xr.runtime.internal.TextureResource? auxiliaryAlphaMask;
     property public androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape;
     property public int colorRange;
     property public int colorSpace;
@@ -901,7 +912,10 @@ package androidx.xr.runtime.testing {
     property public boolean contentColorMetadataSet;
     property public androidx.xr.runtime.internal.Dimensions dimensions;
     property public androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather edgeFeather;
+    property public boolean mContentColorMetadataSet;
     property public int maxCLL;
+    property public androidx.xr.runtime.internal.PerceivedResolutionResult perceivedResolutionResult;
+    property public androidx.xr.runtime.internal.TextureResource? primaryAlphaMask;
     property public int stereoMode;
     property public android.view.Surface surface;
   }

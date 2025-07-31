@@ -692,7 +692,7 @@ public abstract class UseCase {
      * Retrieves the configuration set by applications.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected @NonNull UseCaseConfig<?> getAppConfig() {
+    public @NonNull UseCaseConfig<?> getAppConfig() {
         return mUseCaseConfig;
     }
 

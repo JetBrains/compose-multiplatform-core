@@ -377,11 +377,15 @@ class TestAdapters(private val sdkContext: Context) {
 
         init {
             setOnClickListener {
-                Log.i(TAG, "Click on ad detected")
-                val visitUrl = Intent(Intent.ACTION_VIEW)
-                visitUrl.data = Uri.parse(GOOGLE_URL)
-                visitUrl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(visitUrl)
+                if (automatedTestCallback != null) {
+                    automatedTestCallback.onClick()
+                } else {
+                    Log.i(TAG, "Click on ad detected")
+                    val visitUrl = Intent(Intent.ACTION_VIEW)
+                    visitUrl.data = Uri.parse(GOOGLE_URL)
+                    visitUrl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(visitUrl)
+                }
             }
         }
 

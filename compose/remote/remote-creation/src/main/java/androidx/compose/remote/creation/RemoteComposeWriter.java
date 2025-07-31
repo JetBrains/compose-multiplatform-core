@@ -214,6 +214,34 @@ public class RemoteComposeWriter {
         this(platform, CoreDocument.DOCUMENT_API_LEVEL, tags);
     }
 
+    /**
+     * create a new RemoteComposeWriter
+     *
+     * @param profile the profile to use
+     * @param tags properties of the document
+     */
+    protected RemoteComposeWriter(
+            @NonNull Profile profile, @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
+        this.mPlatform = profile.getPlatform();
+        mBuffer = buffer;
+
+        Object w = HTag.getValue(tags, Header.DOC_WIDTH);
+        Object h = HTag.getValue(tags, Header.DOC_HEIGHT);
+        Object d = HTag.getValue(tags, Header.DOC_CONTENT_DESCRIPTION);
+
+        if (w instanceof Integer) {
+            mOriginalWidth = (int) w;
+        }
+        if (h instanceof Integer) {
+            mOriginalHeight = (int) h;
+        }
+        if (d instanceof String) {
+            mContentDescription = (String) d;
+        }
+
+        mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
+    }
+
     protected int mMaxValidFloatExpressionOperation =
             AnimatedFloatExpression.getMaxOpForLevel(CoreDocument.DOCUMENT_API_LEVEL);
 
@@ -255,6 +283,7 @@ public class RemoteComposeWriter {
      * @param width the width of the document in pixels
      * @param height the height of the document in pixels
      * @param contentDescription content description of the document
+     * @param density the density of the document in pixels per device pixel
      * @param capabilities bitmask indicating needed capabilities (unused for now)
      */
     public void header(
@@ -424,6 +453,15 @@ public class RemoteComposeWriter {
         boolean result = mHasForceSendingNewPaint;
         mHasForceSendingNewPaint = false;
         return result;
+    }
+
+    /**
+     * Tell the system to wake up in a given number of seconds or sooner
+     *
+     * @param seconds number of seconds to wake up
+     */
+    public void wakeIn(float seconds) {
+        mBuffer.wakeIn(seconds);
     }
 
     /** Used to create the tag values in the header */
@@ -750,7 +788,7 @@ public class RemoteComposeWriter {
      * @param dstRight right coordinate of rectangle that the bitmap will be to fit into
      * @param dstBottom bottom coordinate of rectangle that the bitmap will be to fit into
      * @param scaleType Scale TYPE IMAGE_SCALE_NONE, IMAGE_SCALE_INSIDE etc.
-     * @param scaleFactor scale image when ScaleType is MAGE_SCALE_FIXED_SCALE
+     * @param scaleFactor scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
      * @param contentDescription content description of the image
      */
     public void drawScaledBitmap(
@@ -797,6 +835,7 @@ public class RemoteComposeWriter {
      * @param dstRight right coordinate of rectangle that the bitmap will be to fit into
      * @param dstBottom bottom coordinate of rectangle that the bitmap will be to fit into
      * @param scaleType Scale TYPE
+     * @param scaleFactor scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
      * @param contentDescription content description of the image
      */
     public void drawScaledBitmap(
@@ -3251,6 +3290,7 @@ public class RemoteComposeWriter {
      *
      * @param variables
      * @param initialExpressions
+     * @param particleCount
      * @return
      */
     public float createParticles(

@@ -147,8 +147,70 @@ public final class UiWindow implements Searchable {
         if (mCachedWindow == null) {
             throw new IllegalStateException("This window has already been recycled.");
         }
-        // TODO(b/405371739): Implement the window staleness check when refresh() is accessible.
+
+        getDevice().waitForIdle();
+        if (!refresh()) {
+            getDevice().runWatchers();
+            if (!refresh()) {
+                throw new StaleObjectException();
+            }
+        }
         return mCachedWindow;
+    }
+
+    /**
+     * Refreshes this window's state if it is stale.
+     *
+     * <p>Ideally, this would call the hidden {@code AccessibilityWindowInfo.refresh()} method
+     * for an in-place update. Since it is unavailable, for older API levels, it uses a fallback
+     * ({@link #refreshFromPool()}) that finds the window info from the refreshed root node.
+     *
+     * @return {@code true} if the refresh succeeded, {@code false} if this window is stale and
+     * no longer exists.
+     */
+    private boolean refresh() {
+        // TODO(b/405371739): Extend this to handle different API level behaviors when the
+        //  refresh API is available in the future SDK.
+        return refreshFromPool();
+    }
+
+    /**
+     * Refreshes this window by replacing it with an updated instance from the pool.
+     *
+     * <p>This is a fallback for SDKs where the refresh system API is unavailable. To refresh the
+     * info, it returns the old cached window to the pool, then obtains a new one (which may or
+     * may not be the one just recycled) from the pool based on the refreshed root node.
+     * <p>Note: This will effectively update the window but not in-place, so the underlying cached
+     * window may reference a new object each time this method is called.
+     */
+    private boolean refreshFromPool() {
+        AccessibilityNodeInfo rootNode = mCachedWindow.getRoot();
+        if (rootNode == null) {
+            return false;
+        }
+        AccessibilityWindowInfo refreshedWindow = null;
+        try {
+            if (!rootNode.refresh()) {
+                return false;
+            }
+            refreshedWindow = rootNode.getWindow();
+            if (refreshedWindow == null || refreshedWindow.getId() != mCachedWindow.getId()) {
+                return false;
+            }
+            // This is a best effort to keep the cached window referencing the same object from
+            // the pool by recycling the old info then immediately acquiring it back for the
+            // refreshed info.
+            mCachedWindow.recycle();
+            mCachedWindow = AccessibilityWindowInfo.obtain(refreshedWindow);
+            return true;
+        } finally {
+            if (rootNode != null) {
+                rootNode.recycle();
+            }
+            if (refreshedWindow != null) {
+                refreshedWindow.recycle();
+            }
+        }
     }
 
     /** Recycles this window. */

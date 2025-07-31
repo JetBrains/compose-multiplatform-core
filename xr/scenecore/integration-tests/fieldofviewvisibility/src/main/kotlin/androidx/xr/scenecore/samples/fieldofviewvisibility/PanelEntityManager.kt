@@ -29,15 +29,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.sp
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.ResizeListener
+import androidx.xr.scenecore.ResizeEvent
+import java.util.function.Consumer
 
 /** Manage the UI for the Panel Entity. */
 class PanelEntityManager(private val session: Session) {
@@ -84,19 +83,22 @@ class PanelEntityManager(private val session: Session) {
                             )
 
                         mMovableComponent = MovableComponent.createSystemMovable(mSession)
-                        mResizableComponent = ResizableComponent.create(mSession)
                         val simpleResizeListener =
-                            object : ResizeListener {
-                                override fun onResizeStart(entity: Entity, newSize: FloatSize3d) {}
-
-                                override fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {}
-
-                                override fun onResizeEnd(entity: Entity, newSize: FloatSize3d) {
-                                    panelEntity?.size = newSize.to2d()
-                                    mTextView.text = "This Panel's dimensions are $newSize"
+                            Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+                                if (
+                                    resizeEvent.resizeState ==
+                                        ResizeEvent.ResizeState.RESIZE_STATE_END
+                                ) {
+                                    panelEntity?.size = resizeEvent.newSize.to2d()
+                                    mTextView.text =
+                                        "This Panel's dimensions are ${resizeEvent.newSize.to2d()}"
                                 }
                             }
-                        mResizableComponent?.addResizeListener(simpleResizeListener)
+                        mResizableComponent =
+                            ResizableComponent.create(
+                                mSession,
+                                resizeEventListener = simpleResizeListener,
+                            )
                         val unused = panelEntity!!.addComponent(mMovableComponent!!)
                         val unused2 = panelEntity!!.addComponent(mResizableComponent!!)
                     }

@@ -137,8 +137,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -147,7 +146,7 @@ class PdfViewerFragmentV2TestSuite {
         }
 
         // Swipe actions
-        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
         // Cause Espresso to wait for IdlingResources before performing the assertion below
@@ -167,7 +166,7 @@ class PdfViewerFragmentV2TestSuite {
         }
 
         // Go back up and assert that the scrubber is visible again
-        onView(withId(PdfR.id.pdfView)).perform(swipeDown())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeDown())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
         // Cause Espresso to wait for IdlingResources before performing the assertion below
@@ -251,8 +250,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -329,8 +327,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -339,12 +336,12 @@ class PdfViewerFragmentV2TestSuite {
         }
 
         // Check if the scrubber is initially visible
-        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
         // Espresso will wait on the idling resource on the next action performed hence adding a
         // click which is essentially a no-op
-        onView(withId(PdfR.id.pdfView)).perform(click())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(click())
 
         withPdfView(scenario) { _, _, fastScrollThumb ->
             assertTrue(fastScrollThumb.alpha == FastScrollDrawer.VISIBLE_ALPHA)
@@ -401,8 +398,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             it.setIsAnnotationIntentResolvable(true)
             Preconditions.checkArgument(
@@ -426,13 +422,13 @@ class PdfViewerFragmentV2TestSuite {
         onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
 
         // Swipe down to hide the toolbox and check visibility
-        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
         onView(withId(R.id.edit_fab))
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
 
         // Swipe up to top of pdf show the toolbox and check visibility
-        onView(withId(PdfR.id.pdfView)).perform(swipeDown())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeDown())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
         onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
 
@@ -491,9 +487,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -504,8 +498,7 @@ class PdfViewerFragmentV2TestSuite {
         // The exact View position of any piece of text will vary by device, scroll position, zoom
         // level, etc. Act on an absolute PDF coordinate that's known to contain text instead.
         val pdfPointWithText = PdfPoint(pageNum = 0, pagePoint = PointF(297.22455F, 619.1273F))
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView))
-            .perform(clickOnPdfPoint(pdfPointWithText, Tap.LONG))
+        onView(withId(R.id.pdfView)).perform(clickOnPdfPoint(pdfPointWithText, Tap.LONG))
         onView(ViewMatchers.withText(SELECT_ALL))
             .inRoot(RootMatchers.isPlatformPopup())
             .perform(click())
@@ -535,8 +528,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -548,7 +540,7 @@ class PdfViewerFragmentV2TestSuite {
 
         // PDF Link coordinates for sample link PDF
         val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
-        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
+        onView(withId(R.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
 
         onView(withText("Handled by custom link handler"))
             .inRoot(isDialog())
@@ -569,8 +561,7 @@ class PdfViewerFragmentV2TestSuite {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -585,8 +576,7 @@ class PdfViewerFragmentV2TestSuite {
 
         // PDF Link coordinates for sample link PDF
         val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
-
-        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
+        onView(withId(R.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
 
         val capturedIntent = Intents.getIntents().firstOrNull()
         assertNotNull(
@@ -613,9 +603,7 @@ class PdfViewerFragmentV2TestSuite {
         val rootViewLocation = IntArray(2)
         val startPdfPoint = PdfPoint(0, PointF(120f, 175f))
 
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
@@ -673,9 +661,7 @@ class PdfViewerFragmentV2TestSuite {
         val rootViewLocation = IntArray(2)
         val startPdfPoint = PdfPoint(1, PointF(170f, 220f))
 
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,

@@ -15,6 +15,14 @@
  */
 package androidx.compose.remote.creation;
 
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_ALPHA;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_BLUE;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_BRIGHTNESS;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_GREEN;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_HUE;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_RED;
+import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_SATURATION;
+
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.ConditionalOperations;
 import androidx.compose.remote.core.operations.DrawTextAnchored;
@@ -666,6 +674,29 @@ public class Rc {
         public static final byte GTE = ConditionalOperations.TYPE_GTE;
     }
 
+    public static class ColorAttribute {
+        /** The hue value of the color */
+        public static final short HUE = COLOR_HUE;
+
+        /** The saturation value of the color */
+        public static final short SATURATION = COLOR_SATURATION;
+
+        /** The brightness value of the color */
+        public static final short BRIGHTNESS = COLOR_BRIGHTNESS;
+
+        /** The red value of the color */
+        public static final short RED = COLOR_RED;
+
+        /** The green value of the color */
+        public static final short GREEN = COLOR_GREEN;
+
+        /** The blue value of the color */
+        public static final short BLUE = COLOR_BLUE;
+
+        /** The alpha value of the color */
+        public static final short ALPHA = COLOR_ALPHA;
+    }
+
     /** used in TextLayout operations */
     public static class Text {
         /** align the text to the left */
@@ -700,5 +731,44 @@ public class Rc {
 
         /** middle ellipsis the text on overflow */
         public static final int OVERFLOW_MIDDLE_ELLIPSIS = TextLayout.OVERFLOW_MIDDLE_ELLIPSIS;
+    }
+
+    /** Used in TextFromFloat */
+    public static class TextFromFloat {
+        /** pad past point with space */
+        public static final int PAD_AFTER_SPACE =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_SPACE;
+
+        /** do not pad past last digit */
+        public static final int PAD_AFTER_NONE =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_NONE;
+
+        /** pad with 0 past last digit */
+        public static final int PAD_AFTER_ZERO =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_ZERO;
+
+        /** pad before number with spaces */
+        public static final int PAD_PRE_SPACE =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_SPACE;
+
+        /** pad before number with 0s */
+        public static final int PAD_PRE_NONE =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_NONE;
+
+        /** do not pad before number */
+        public static final int PAD_PRE_ZERO =
+                androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_ZERO;
+    }
+
+    /** Used in Texture */
+    public static class Texture {
+        public static final short TILE_CLAMP = 0;
+        public static final short TILE_MIRROR = 1;
+        public static final short TILE_REPEAT = 2;
+        public static final short TILE_DECAL = 3;
+
+        public static final short FILTER_DEFAULT = 0;
+        public static final short FILTER_NEAREST = 1;
+        public static final short FILTER_LINEAR = 2;
     }
 }

@@ -18,8 +18,11 @@ package androidx.mediarouter.media;
 
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +38,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaRouter.RouteInfo;
+import androidx.mediarouter.media.StubMediaRoute2ProviderService.StubMediaRoute2Provider.StubDynamicGroupRouteController;
 import androidx.mediarouter.testing.MediaRouterTestHelper;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -178,7 +182,7 @@ public class MediaRouter2Test {
         waitForRouteSelected(descriptorId, descriptorId, /* routeSelected= */ false);
 
         // Stop casting the session before casting to the same route again.
-        waitForRouteUnselected(descriptorId, descriptorId);
+        waitForRouteUnselected(descriptorId);
 
         // Wait for a session being released.
         PollingCheck.waitFor(
@@ -203,7 +207,10 @@ public class MediaRouter2Test {
                 StubMediaRoute2ProviderService.ROUTE_ID_GROUP,
                 /* routeSelected= */ true);
 
-        assertEquals(1, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        List<StubDynamicGroupRouteController> createdControllers =
+                mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        int controllerId = createdControllers.get(0).mControllerId;
 
         // Select the route for the second time, which should be no op.
         waitForRouteSelected(
@@ -211,16 +218,18 @@ public class MediaRouter2Test {
                 StubMediaRoute2ProviderService.ROUTE_ID_GROUP,
                 /* routeSelected= */ false);
 
-        // Check that only one dynamic group route controller is created.
-        assertEquals(1, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        // Check that only one route controller is created for the first route selection.
+        createdControllers = mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        assertEquals(controllerId, createdControllers.get(0).mControllerId);
 
         // Stop casting the session before casting to the same route again.
-        waitForRouteUnselected(mr2DescriptorId, StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
+        waitForRouteUnselected(StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
         // Wait for the route controller is removed from the media route provider.
         PollingCheck.waitFor(
-                TIMEOUT_MS, () -> mMr2Provider.getNumberOfCreatedControllers(descriptorId) == 0);
+                TIMEOUT_MS, () -> mMr2Provider.getCreatedControllers(descriptorId).isEmpty());
 
-        assertEquals(0, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        assertThat(mMr2Provider.getCreatedControllers(descriptorId)).isEmpty();
 
         // Select the route for casting again.
         waitForRouteSelected(
@@ -228,13 +237,16 @@ public class MediaRouter2Test {
                 StubMediaRoute2ProviderService.ROUTE_ID_GROUP,
                 /* routeSelected= */ true);
 
-        assertEquals(1, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        createdControllers = mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        // Check that a new route controller is created after the previous one.
+        assertNotEquals(controllerId, createdControllers.get(0).mControllerId);
 
         // Unselect the route to prevent it interrupts other tests.
-        waitForRouteUnselected(mr2DescriptorId, StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
+        waitForRouteUnselected(StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
         // Wait for the route controller is removed from the media route provider.
         PollingCheck.waitFor(
-                TIMEOUT_MS, () -> mMr2Provider.getNumberOfCreatedControllers(descriptorId) == 0);
+                TIMEOUT_MS, () -> mMr2Provider.getCreatedControllers(descriptorId).isEmpty());
     }
 
     @Test
@@ -287,15 +299,18 @@ public class MediaRouter2Test {
         // Check that only one dynamic group route controller is created.
         assertFalse(onRouteSelectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
         assertEquals(1, onRouteSelectedLatch.getCount());
-        assertEquals(1, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        List<StubDynamicGroupRouteController> createdControllers =
+                mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        int controllerId = createdControllers.get(0).mControllerId;
 
         // Stop casting the session before casting to the same route again.
-        waitForRouteUnselected(mr2DescriptorId, StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
+        waitForRouteUnselected(StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
         // Wait for the route controller is removed from the media route provider.
         PollingCheck.waitFor(
-                TIMEOUT_MS, () -> mMr2Provider.getNumberOfCreatedControllers(descriptorId) == 0);
+                TIMEOUT_MS, () -> mMr2Provider.getCreatedControllers(descriptorId).isEmpty());
 
-        assertEquals(0, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        assertThat(mMr2Provider.getCreatedControllers(descriptorId)).isEmpty();
 
         // Select the route for casting again.
         waitForRouteSelected(
@@ -303,13 +318,104 @@ public class MediaRouter2Test {
                 StubMediaRoute2ProviderService.ROUTE_ID_GROUP,
                 /* routeSelected= */ true);
 
-        assertEquals(1, mMr2Provider.getNumberOfCreatedControllers(descriptorId));
+        createdControllers = mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        // Check that a new route controller is created after the previous one.
+        assertNotEquals(controllerId, createdControllers.get(0).mControllerId);
 
         // Unselect the route to prevent it interrupts other tests.
-        waitForRouteUnselected(mr2DescriptorId, StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
+        waitForRouteUnselected(StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
         // Wait for the route controller is removed from the media route provider.
         PollingCheck.waitFor(
-                TIMEOUT_MS, () -> mMr2Provider.getNumberOfCreatedControllers(descriptorId) == 0);
+                TIMEOUT_MS, () -> mMr2Provider.getCreatedControllers(descriptorId).isEmpty());
+    }
+
+    @Test
+    @MediumTest
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    public void selectRoute_withDeselectingMr2Route_shouldCreateNewController() throws Exception {
+        String descriptorId = StubMediaRoute2ProviderService.MR2_ROUTE_ID1;
+        String mr2DescriptorId = getMediaRoute2DescriptorId(descriptorId);
+        waitForRoutesAdded(mr2DescriptorId);
+        assertNotNull(mRoutes);
+
+        // Select the route.
+        waitForRouteSelected(
+                mr2DescriptorId,
+                StubMediaRoute2ProviderService.ROUTE_ID_GROUP,
+                /* routeSelected= */ true);
+
+        List<StubDynamicGroupRouteController> createdControllers =
+                mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        int controllerId = createdControllers.get(0).mControllerId;
+
+        CountDownLatch onRouteSelectedLatch = new CountDownLatch(1);
+        CountDownLatch onRouteUnselectedLatch = new CountDownLatch(1);
+        MediaRouter.Callback callback =
+                new MediaRouter.Callback() {
+                    @Override
+                    public void onRouteSelected(
+                            @NonNull MediaRouter router,
+                            @NonNull RouteInfo selectedRoute,
+                            int reason,
+                            @NonNull RouteInfo requestedRoute) {
+                        Log.i(
+                                TAG,
+                                "onRouteSelected with selectedRoute = "
+                                        + selectedRoute
+                                        + ", requestedRoute = "
+                                        + requestedRoute
+                                        + ", reason = "
+                                        + reason);
+                        if (TextUtils.equals(
+                                        selectedRoute.getDescriptorId(),
+                                        StubMediaRoute2ProviderService.ROUTE_ID_GROUP)
+                                && reason == MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
+                            onRouteSelectedLatch.countDown();
+                        }
+                    }
+
+                    @Override
+                    public void onRouteUnselected(
+                            @NonNull MediaRouter router, @NonNull RouteInfo route, int reason) {
+                        Log.i(
+                                TAG,
+                                "onRouteUnselected with route = " + route + ", reason = " + reason);
+                        if (TextUtils.equals(
+                                        route.getDescriptorId(),
+                                        StubMediaRoute2ProviderService.ROUTE_ID_GROUP)
+                                && reason == MediaRouter.UNSELECT_REASON_STOPPED) {
+                            onRouteUnselectedLatch.countDown();
+                        }
+                    }
+                };
+        addCallback(callback);
+
+        // Deselect the route and select the same route again.
+        getInstrumentation()
+                .runOnMainSync(
+                        () -> {
+                            RouteInfo routeToSelect = mRoutes.get(mr2DescriptorId);
+                            assertNotNull(routeToSelect);
+                            mRouter.unselect(MediaRouter.UNSELECT_REASON_STOPPED);
+                            mRouter.selectRoute(routeToSelect);
+                        });
+
+        // Check that the route is deselected.
+        assertTrue(onRouteUnselectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
+        assertTrue(onRouteSelectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
+
+        createdControllers = mMr2Provider.getCreatedControllers(descriptorId);
+        assertEquals(1, createdControllers.size());
+        // Check that a new route controller is created after the previous one.
+        assertNotEquals(controllerId, createdControllers.get(0).mControllerId);
+
+        // Unselect the route to prevent it interrupts other tests.
+        waitForRouteUnselected(StubMediaRoute2ProviderService.ROUTE_ID_GROUP);
+        // Wait for the route controller is removed from the media route provider.
+        PollingCheck.waitFor(
+                TIMEOUT_MS, () -> mMr2Provider.getCreatedControllers(descriptorId).isEmpty());
     }
 
     @Test
@@ -592,8 +698,7 @@ public class MediaRouter2Test {
         assertEquals(routeSelected, onRouteSelectedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
     }
 
-    void waitForRouteUnselected(String descriptorIdToUnselect, String deselectedDescriptorId)
-            throws Exception {
+    void waitForRouteUnselected(String deselectedDescriptorId) throws Exception {
         CountDownLatch onRouteUnselectedLatch = new CountDownLatch(1);
         MediaRouter.Callback callback =
                 new MediaRouter.Callback() {
@@ -610,9 +715,6 @@ public class MediaRouter2Test {
                     }
                 };
         addCallback(callback);
-
-        RouteInfo routeToUnselect = mRoutes.get(descriptorIdToUnselect);
-        assertNotNull(routeToUnselect);
 
         getInstrumentation()
                 .runOnMainSync(() -> mRouter.unselect(MediaRouter.UNSELECT_REASON_STOPPED));

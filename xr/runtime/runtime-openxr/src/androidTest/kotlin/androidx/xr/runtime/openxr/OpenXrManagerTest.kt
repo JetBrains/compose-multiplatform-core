@@ -25,11 +25,10 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.check
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -125,7 +124,7 @@ class OpenXrManagerTest {
         initOpenXrManagerAndRunTest {
             underTest.create()
 
-            assertThrows(FaceTrackingNotCalibratedException::class.java) {
+            assertFailsWith<FaceTrackingNotCalibratedException> {
                 underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
             }
         }
@@ -177,31 +176,30 @@ class OpenXrManagerTest {
     @Ignore("b/346615429 This test is currently broken")
     // TODO - b/346615429: Control the values returned by the OpenXR stub instead of relying on the
     // stub's current implementation.
-    fun configure_insufficientPermissions_throwsPermissionNotGrantedException() =
-        initOpenXrManagerAndRunTest {
-            underTest.create()
+    fun configure_insufficientPermissions_throwsSecurityException() = initOpenXrManagerAndRunTest {
+        underTest.create()
 
-            // The OpenXR stub returns `XR_ERROR_PERMISSION_INSUFFICIENT` when calling
-            // `xrEnumerateDepthResolutionsANDROID` which is triggered by attempting to enable the
-            // DepthEstimation feature.
-            assertThrows(PermissionNotGrantedException::class.java) {
-                underTest.configure(
-                    Config(
-                        Config.PlaneTrackingMode.DISABLED,
-                        Config.HandTrackingMode.DISABLED,
-                        Config.HeadTrackingMode.DISABLED,
-                        Config.DepthEstimationMode.SMOOTH_AND_RAW,
-                        Config.AnchorPersistenceMode.DISABLED,
-                    )
+        // The OpenXR stub returns `XR_ERROR_PERMISSION_INSUFFICIENT` when calling
+        // `xrEnumerateDepthResolutionsANDROID` which is triggered by attempting to enable the
+        // DepthEstimation feature.
+        assertFailsWith<SecurityException> {
+            underTest.configure(
+                Config(
+                    Config.PlaneTrackingMode.DISABLED,
+                    Config.HandTrackingMode.DISABLED,
+                    Config.HeadTrackingMode.DISABLED,
+                    Config.DepthEstimationMode.SMOOTH_AND_RAW,
+                    Config.AnchorPersistenceMode.DISABLED,
                 )
-            }
+            )
         }
+    }
 
     @Test
     fun configure_withoutCreate_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
         // The OpenXR stub returns `XR_ERROR_HANDLE_INVALID` if the `xrSession` has not been
         // initialized by `OpenXrManager.create()`.
-        assertThrows(IllegalStateException::class.java) {
+        assertFailsWith<IllegalStateException> {
             underTest.configure(
                 Config(
                     Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
@@ -219,7 +217,7 @@ class OpenXrManagerTest {
         initOpenXrManagerAndRunTest {
             underTest.create()
 
-            assertThrows(ConfigurationNotSupportedException::class.java) {
+            assertFailsWith<ConfigurationNotSupportedException> {
                 underTest.configure(
                     Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
                 )

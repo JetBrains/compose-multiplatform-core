@@ -37,6 +37,8 @@ import android.graphics.Color;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.LayoutElementBuilders.DashedArcLine;
 import androidx.wear.protolayout.LayoutElementBuilders.DashedLinePattern;
+import androidx.wear.protolayout.LayoutElementBuilders.Image;
+import androidx.wear.protolayout.ResourceBuilders.ImageResource;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.proto.ColorProto;
@@ -50,6 +52,7 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(AndroidJUnit4.class)
@@ -89,6 +92,7 @@ public class LayoutElementBuildersTest {
             new TypeBuilders.StringLayoutConstraint.Builder("pattern")
                     .setAlignment(LayoutElementBuilders.TEXT_ALIGN_END)
                     .build();
+    private static final ImageResource IMAGE_RESOURCE = new ImageResource.Builder().build();
 
     @Test
     public void testArcLineSetLength() {
@@ -746,8 +750,7 @@ public class LayoutElementBuildersTest {
 
     @Test
     public void dashedArcLine_withoutLayoutConstraint_setsLength() {
-        DashedArcLine dashedArcLine =
-                new DashedArcLine.Builder().setLength(DEGREES_PROP).build();
+        DashedArcLine dashedArcLine = new DashedArcLine.Builder().setLength(DEGREES_PROP).build();
 
         DimensionProto.DegreesProp lengthProto = dashedArcLine.toProto().getLength();
 
@@ -830,5 +833,49 @@ public class LayoutElementBuildersTest {
         assertThat(gapLocations.get(1).getValue()).isEqualTo(111F);
         assertThat(gapLocations.get(2).getValue()).isEqualTo(321F);
         assertThat(gapLocations.get(3).getValue()).isEqualTo(212F);
+    }
+
+    @Test
+    public void image_withImageRes_withoutScope_throws() {
+        Image.Builder builder = new Image.Builder();
+        assertThrows(IllegalStateException.class, () -> builder.setImageResource(IMAGE_RESOURCE));
+    }
+
+    @Test
+    public void image_withImageRes_withResId_throws() {
+        Image.Builder builder =
+                new Image.Builder(new ProtoLayoutScope()).setImageResource(IMAGE_RESOURCE);
+        assertThrows(IllegalStateException.class, () -> builder.setResourceId("id"));
+    }
+
+    @Test
+    public void image_withResId_andScope_throws() {
+        Image.Builder builder = new Image.Builder(new ProtoLayoutScope());
+        assertThrows(IllegalStateException.class, () -> builder.setResourceId("id"));
+    }
+
+    @Test
+    public void image_withResId_andImageRes_throws() {
+        Image.Builder builder = new Image.Builder().setResourceId("id");
+        assertThrows(IllegalStateException.class, () -> builder.setImageResource(IMAGE_RESOURCE));
+    }
+
+    @Test
+    public void image_withImageRes_withoutId_registersRes_withDefault() {
+        ProtoLayoutScope scope = new ProtoLayoutScope();
+        Image unused = new Image.Builder(scope).setImageResource(IMAGE_RESOURCE).build();
+
+        Map<String, ImageResource> resources = scope.collectResources().getIdToImageMapping();
+        assertThat(resources).containsExactly("" + IMAGE_RESOURCE.hashCode(), IMAGE_RESOURCE);
+    }
+
+    @Test
+    public void image_withImageRes_withId_registersRes() {
+        ProtoLayoutScope scope = new ProtoLayoutScope();
+        String id = "id";
+        Image unused = new Image.Builder(scope).setImageResource(IMAGE_RESOURCE, id).build();
+
+        Map<String, ImageResource> resources = scope.collectResources().getIdToImageMapping();
+        assertThat(resources).containsExactly(id, IMAGE_RESOURCE);
     }
 }

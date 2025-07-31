@@ -17,11 +17,16 @@
 package androidx.privacysandbox.databridge.sdkprovider
 
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.core.aidl.ResultInternal
 import androidx.privacysandbox.databridge.core.aidl.ValueInternal
 import androidx.privacysandbox.databridge.sdkprovider.util.FakeDataBridgeProxy
 import com.google.common.truth.Expect
 import java.lang.ClassCastException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -34,21 +39,29 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class DataBridgeSdkProviderTest {
 
-    private val dataBridgeSdkProviderWithSuccessResult =
-        DataBridgeSdkProvider.getInstance(
-            FakeDataBridgeProxy(
-                resultInternals =
-                    listOf(
-                        ResultInternal(
-                            keyName = "intKey",
-                            valueInternal =
-                                ValueInternal(value = 1, type = "INT", isValueNull = false),
-                            exceptionName = null,
-                            exceptionMessage = null,
-                        )
+    private val intKey = Key.createIntKey("intKey")
+    private val stringKey = Key.createStringKey("stringKey")
+    private val currentThreadExecutor = Executor { command -> command.run() }
+
+    private val dataBridgeProxy =
+        FakeDataBridgeProxy(
+            resultInternals =
+                listOf(
+                    ResultInternal(
+                        keyName = intKey.name,
+                        valueInternal =
+                            ValueInternal(
+                                value = 1,
+                                type = intKey.type.toString(),
+                                isValueNull = false,
+                            ),
+                        exceptionName = null,
+                        exceptionMessage = null,
                     )
-            )
+                )
         )
+    private val dataBridgeSdkProviderWithSuccessResult =
+        DataBridgeSdkProvider.getInstance(dataBridgeProxy)
 
     private val dataBridgeSdkProviderWithFailureResult =
         DataBridgeSdkProvider.getInstance(
@@ -57,7 +70,7 @@ class DataBridgeSdkProviderTest {
                 resultInternals =
                     listOf(
                         ResultInternal(
-                            keyName = "intKey",
+                            keyName = intKey.name,
                             valueInternal = null,
                             exceptionName = ClassCastException::class.java.canonicalName,
                             exceptionMessage = "Cannot convert String to Int",
@@ -72,7 +85,6 @@ class DataBridgeSdkProviderTest {
 
     @Test
     fun testGetValues_success() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         val result = dataBridgeSdkProviderWithSuccessResult.getValues(setOf(intKey))
 
         expect.that(result.size).isEqualTo(1)
@@ -82,7 +94,6 @@ class DataBridgeSdkProviderTest {
 
     @Test
     fun testGetValues_failure() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         val result = dataBridgeSdkProviderWithFailureResult.getValues(setOf(intKey))
 
         expect.that(result.size).isEqualTo(1)
@@ -96,13 +107,11 @@ class DataBridgeSdkProviderTest {
 
     @Test
     fun testSetValues_success() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         dataBridgeSdkProviderWithSuccessResult.setValues(mapOf(intKey to 1))
     }
 
     @Test
     fun testSetValues_failure() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         val thrown =
             assertThrows(ClassCastException::class.java) {
                 runBlocking { dataBridgeSdkProviderWithFailureResult.setValues(mapOf(intKey to 1)) }
@@ -112,17 +121,67 @@ class DataBridgeSdkProviderTest {
 
     @Test
     fun testRemoveValues_success() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         dataBridgeSdkProviderWithSuccessResult.removeValues(setOf(intKey))
     }
 
     @Test
     fun testRemoveValues_failure() = runBlocking {
-        val intKey = Key.createIntKey("intKey")
         val thrown =
             assertThrows(ClassCastException::class.java) {
                 runBlocking { dataBridgeSdkProviderWithFailureResult.removeValues(setOf(intKey)) }
             }
         expect.that(thrown.message).contains("Cannot convert String to Int")
+    }
+
+    @Test
+    fun testRegisterKeyUpdateCallback() {
+        val callback = KeyUpdateCallbackImpl()
+        dataBridgeSdkProviderWithSuccessResult.registerKeyUpdateCallback(
+            setOf(intKey, stringKey),
+            currentThreadExecutor,
+            callback,
+        )
+        expect.that(callback.getValue(intKey)).isNull()
+        val keysForUpdate = dataBridgeProxy.getKeysRegisteredForUpdate()
+
+        expect.that(keysForUpdate.size).isEqualTo(2)
+    }
+
+    @Test
+    fun testUnregisterKeyUpdates() {
+        val callback = KeyUpdateCallbackImpl()
+        dataBridgeSdkProviderWithSuccessResult.registerKeyUpdateCallback(
+            setOf(intKey, stringKey),
+            currentThreadExecutor,
+            callback,
+        )
+
+        var keysForUpdate = dataBridgeProxy.getKeysRegisteredForUpdate()
+        expect.that(keysForUpdate.size).isEqualTo(2)
+
+        dataBridgeSdkProviderWithSuccessResult.unregisterKeyUpdateCallback(callback)
+        keysForUpdate = dataBridgeProxy.getKeysRegisteredForUpdate()
+        expect.that(keysForUpdate.size).isEqualTo(0)
+    }
+
+    class KeyUpdateCallbackImpl : KeyUpdateCallback {
+        private val latch = CountDownLatch(1)
+        private val keyValuePair = mutableMapOf<Key, Any?>()
+
+        override fun onKeyUpdated(key: Key, value: Any?) {
+            keyValuePair[key] = value
+            latch.countDown()
+        }
+
+        fun getValue(key: Key): Any? {
+            val res = latch.await(5, TimeUnit.SECONDS)
+            if (!res) {
+                throw TimeoutException()
+            }
+            if (!keyValuePair.containsKey(key)) {
+                throw IllegalArgumentException()
+            }
+            return keyValuePair[key]
+        }
     }
 }

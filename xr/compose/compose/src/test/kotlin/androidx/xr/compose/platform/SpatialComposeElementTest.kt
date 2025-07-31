@@ -55,7 +55,11 @@ class SpatialComposeElementTest {
         composeTestRule.setContent {
             val session = createFakeSession(composeTestRule.activity)
             scene =
-                SpatialComposeScene(ownerActivity = composeTestRule.activity, jxrSession = session)
+                SpatialComposeScene(
+                    lifecycleOwner = composeTestRule.activity,
+                    context = composeTestRule.activity,
+                    jxrSession = session,
+                )
         }
 
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
@@ -85,7 +89,8 @@ class SpatialComposeElementTest {
 
             scene =
                 SpatialComposeScene(
-                    ownerActivity = composeTestRule.activity,
+                    lifecycleOwner = composeTestRule.activity,
+                    context = composeTestRule.activity,
                     jxrSession = session,
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,

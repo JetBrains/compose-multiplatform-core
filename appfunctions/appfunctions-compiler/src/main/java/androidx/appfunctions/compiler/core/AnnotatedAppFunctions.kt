@@ -223,6 +223,12 @@ data class AnnotatedAppFunctions(
                     resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
                     sharedDataTypeMap = sharedDataTypeMap,
                     seenDataTypeQualifiers = seenDataTypeQualifiers,
+                    parameterDescriptionMap =
+                        if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
+                            functionDeclaration.getParamDescriptionsFromKDoc()
+                        } else {
+                            mapOf()
+                        },
                 )
             val responseTypeMetadata =
                 metadataCreatorHelper.buildResponseTypeMetadata(
@@ -242,7 +248,7 @@ data class AnnotatedAppFunctions(
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
                 description =
                     if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
-                        functionDeclaration.docString.orEmpty()
+                        functionDeclaration.sanitizeKDoc()
                     } else {
                         ""
                     },

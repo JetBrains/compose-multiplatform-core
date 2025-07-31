@@ -430,23 +430,25 @@ public sealed class ScatterMap<K, V> {
         transform: ((key: K, value: V) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ScatterMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ScatterMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(key)
+                    append('=')
+                    append(value)
+                } else {
+                    append(transform(key, value))
+                }
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(key)
-                append('=')
-                append(value)
-            } else {
-                append(transform(key, value))
-            }
-            index++
         }
         append(postfix)
     }

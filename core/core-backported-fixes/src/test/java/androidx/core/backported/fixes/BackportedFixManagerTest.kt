@@ -16,8 +16,8 @@
 
 package androidx.core.backported.fixes
 
-import androidx.core.backported.fixes.KnownIssue.Companion.KI_350037023
-import androidx.core.backported.fixes.KnownIssue.Companion.KI_372917199
+import androidx.core.backported.fixes.KnownIssues.Companion.KI_350037023
+import androidx.core.backported.fixes.KnownIssues.Companion.KI_372917199
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith

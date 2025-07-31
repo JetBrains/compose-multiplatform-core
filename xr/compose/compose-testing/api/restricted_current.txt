@@ -122,7 +122,7 @@ package androidx.xr.compose.testing {
     method @BytecodeOnly public java.util.List<androidx.xr.runtime.internal.Entity!> getChildren();
     method @BytecodeOnly public java.util.List<androidx.xr.runtime.internal.Component!> getComponents();
     method @BytecodeOnly public <T extends androidx.xr.runtime.internal.Component> java.util.List<T!> getComponentsOfType(Class<? extends T!>);
-    method @BytecodeOnly public String getContentDescription();
+    method @BytecodeOnly public CharSequence getContentDescription();
     method @BytecodeOnly public androidx.xr.runtime.internal.Entity? getParent();
     method @BytecodeOnly public androidx.xr.runtime.math.Pose getPose(int);
     method @BytecodeOnly public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
@@ -138,7 +138,7 @@ package androidx.xr.compose.testing {
     method public void setActivitySpacePose(androidx.xr.runtime.math.Pose);
     method public void setActivitySpaceScale(androidx.xr.runtime.math.Vector3);
     method @BytecodeOnly public void setAlpha(float, int);
-    method @BytecodeOnly public void setContentDescription(String);
+    method @BytecodeOnly public void setContentDescription(CharSequence);
     method @BytecodeOnly public void setHidden(boolean);
     method public void setOnSpaceUpdatedListener(Runnable? listener, java.util.concurrent.Executor? executor);
     method @BytecodeOnly public void setParent(androidx.xr.runtime.internal.Entity?);
@@ -150,7 +150,7 @@ package androidx.xr.compose.testing {
     property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
     property public androidx.xr.runtime.internal.Dimensions bounds;
     property public java.util.List<androidx.xr.runtime.internal.Entity> children;
-    property public String contentDescription;
+    property public CharSequence contentDescription;
     property public androidx.xr.runtime.internal.Entity? parent;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
     property public androidx.xr.runtime.math.Vector3 worldSpaceScale;

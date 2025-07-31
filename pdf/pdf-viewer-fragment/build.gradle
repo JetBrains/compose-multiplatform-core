@@ -60,6 +60,7 @@ android {
     defaultConfig {
         minSdk = 31
         compileSdk = 36
+        compileSdkExtension = 18
     }
 }
 

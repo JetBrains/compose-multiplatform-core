@@ -23,7 +23,7 @@ import androidx.compose.animation.SharedTransitionScope.PlaceHolderSize.Companio
 import androidx.compose.animation.SharedTransitionScope.PlaceHolderSize.Companion.contentSize
 import androidx.compose.animation.SharedTransitionScope.ResizeMode
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds
-import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.ScaleToBounds
+import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.SharedTransitionScope.SharedContentState
 import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -71,10 +71,12 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.layout.approachLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -233,9 +235,9 @@ public interface SharedTransitionScope : LookaheadScope {
 
     /**
      * There are two different modes to resize child layout of [sharedBounds] during bounds
-     * transform: 1) [ScaleToBounds] and 2) [RemeasureToBounds].
+     * transform: 1) [scaleToBounds] and 2) [RemeasureToBounds].
      *
-     * [ScaleToBounds] first measures the child layout with the lookahead constraints, similar to
+     * [scaleToBounds] first measures the child layout with the lookahead constraints, similar to
      * [skipToLookaheadSize]. Then the child's stable layout will be scaled to fit in the shared
      * bounds.
      *
@@ -244,7 +246,7 @@ public interface SharedTransitionScope : LookaheadScope {
      * re-measurement is triggered by the bounds size change, which could potentially be every
      * frame.
      *
-     * [ScaleToBounds] works best for Texts and bespoke layouts that don't respond well to
+     * [scaleToBounds] works best for Texts and bespoke layouts that don't respond well to
      * constraints change. [RemeasureToBounds] works best for background, shared images of different
      * aspect ratios, and other layouts that adjust themselves visually nicely and efficiently to
      * size changes.
@@ -252,7 +254,7 @@ public interface SharedTransitionScope : LookaheadScope {
     public sealed interface ResizeMode {
         public companion object {
             /**
-             * In contrast to [ScaleToBounds], [RemeasureToBounds] is a [ResizeMode] that remeasures
+             * In contrast to [scaleToBounds], [RemeasureToBounds] is a [ResizeMode] that remeasures
              * and relayouts its child whenever bounds change during the bounds transform. More
              * specifically, when the [sharedBounds] size changes, it creates fixed constraints
              * based on the animated size, and uses the fixed constraints to remeasure the child.
@@ -263,12 +265,12 @@ public interface SharedTransitionScope : LookaheadScope {
              * change, such as background and Images. It does not work well for layouts with
              * specific size requirements. Such layouts include Text, and bespoke layouts that could
              * result in overlapping children when constrained to too small of a size. In these
-             * cases, it's recommended to use [ScaleToBounds] instead.
+             * cases, it's recommended to use [scaleToBounds] instead.
              */
             public val RemeasureToBounds: ResizeMode = RemeasureImpl
 
             /**
-             * [ScaleToBounds] as a type of [ResizeMode] will measure the child layout with
+             * [scaleToBounds] as a type of [ResizeMode] will measure the child layout with
              * lookahead constraints to obtain the size of the stable layout. This stable layout is
              * the post-animation layout of the child. Then based on the stable size of the child
              * and the animated size of the [sharedBounds], the provided [contentScale] will be used
@@ -277,16 +279,29 @@ public interface SharedTransitionScope : LookaheadScope {
              * [RemeasureToBounds] mode. Instead, it will scale the stable layout based on the
              * animated size of the [sharedBounds].
              *
-             * [ScaleToBounds] works best for [sharedBounds] when used to animate shared Text.
+             * [scaleToBounds] works best for [sharedBounds] when used to animate shared Text.
              *
              * [ContentScale.FillWidth] is the default value for [contentScale]. [alignment] will be
              * used to calculate the placement of the scaled content. It is [Alignment.Center] by
              * default.
              */
-            public fun ScaleToBounds(
+            public fun scaleToBounds(
                 contentScale: ContentScale = ContentScale.FillWidth,
                 alignment: Alignment = Alignment.Center,
             ): ResizeMode = ScaleToBoundsCached(contentScale, alignment)
+
+            @Deprecated(
+                "ScaleToBounds has been renamed to scaleToBounds",
+                ReplaceWith(
+                    "scaleToBounds(contentScale, alignment)",
+                    "androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds",
+                    "androidx.compose.animation.SharedTransitionScope.ResizeMode",
+                ),
+            )
+            public fun ScaleToBounds(
+                contentScale: ContentScale = ContentScale.FillWidth,
+                alignment: Alignment = Alignment.Center,
+            ): ResizeMode = scaleToBounds()
         }
     }
 
@@ -295,26 +310,6 @@ public interface SharedTransitionScope : LookaheadScope {
      * [sharedBounds].
      */
     public val isTransitionActive: Boolean
-
-    @Deprecated(
-        "This EnterTransition has been deprecated. Please replace the usage with " +
-            "resizeMode = ScaleToBounds(...) in sharedBounds to achieve the scale-to-bounds effect."
-    )
-    public fun scaleInSharedContentToBounds(
-        contentScale: ContentScale = ContentScale.Fit,
-        alignment: Alignment = Alignment.Center,
-    ): EnterTransition =
-        EnterTransition.None withEffect ContentScaleTransitionEffect(contentScale, alignment)
-
-    @Deprecated(
-        "This ExitTransition has been deprecated.  Please replace the usage with " +
-            "resizeMode = ScaleToBounds(...) in sharedBounds to achieve the scale-to-bounds effect."
-    )
-    public fun scaleOutSharedContentToBounds(
-        contentScale: ContentScale = ContentScale.Fit,
-        alignment: Alignment = Alignment.Center,
-    ): ExitTransition =
-        ExitTransition.None withEffect ContentScaleTransitionEffect(contentScale, alignment)
 
     /**
      * [skipToLookaheadSize] enables a layout to measure its child with the lookahead constraints,
@@ -328,6 +323,64 @@ public interface SharedTransitionScope : LookaheadScope {
      * @sample androidx.compose.animation.samples.NestedSharedBoundsSample
      */
     public fun Modifier.skipToLookaheadSize(): Modifier
+
+    /**
+     * A modifier that anchors a layout at the target position obtained from the lookahead pass
+     * during shared element transitions.
+     *
+     * This modifier ensures that a layout maintains its target position determined by the lookahead
+     * layout pass, preventing it from being influenced by layout changes in the tree during shared
+     * element transitions. This is particularly useful for preventing unwanted movement or
+     * repositioning of elements during animated transitions.
+     *
+     * **Important**: [skipToLookaheadPosition] anchors the layout at the lookahead position
+     * **relative to** the [SharedTransitionLayout]. It does NOT necessarily anchor the layout
+     * within the window. More specifically, if a [SharedTransitionLayout] re-positions itself, any
+     * child layout using `skipToLookaheadPosition` will move along with it. If it is desirable to
+     * anchor a layout relative to a window, it's recommended to set up [SharedTransitionLayout] in
+     * a way that it does not change position in the window.
+     *
+     * Note: [skipToLookaheadPosition] by default is only enabled via [isEnabled] lambda during a
+     * shared transition. It is recommended to enable it only when necessary. When active, it
+     * counteracts its ancestor layout's movement, which can incur extra placement pass costs if the
+     * parent layout frequently moves (e.g., during scrolling or animation).
+     *
+     * @sample androidx.compose.animation.samples.SharedElementClipRevealSample
+     * @param isEnabled A lambda that determines when the modifier should be active. Defaults to `{
+     *   isTransitionActive }`, which enables the modifier only during active shared element
+     *   transitions
+     * @see SharedTransitionLayout
+     * @see sharedBounds
+     * @see sharedElement
+     * @see skipToLookaheadSize
+     */
+    public fun Modifier.skipToLookaheadPosition(
+        isEnabled: () -> Boolean = { isTransitionActive }
+    ): Modifier =
+        this.approachLayout(
+            isMeasurementApproachInProgress = { false },
+            isPlacementApproachInProgress = { isEnabled() },
+        ) { m, c ->
+            m.measure(c).run {
+                layout(width, height) {
+                    if (isEnabled()) {
+                        coordinates?.let {
+                            val target = lookaheadScopeCoordinates.localLookaheadPositionOf(it)
+                            val actual = lookaheadScopeCoordinates.localPositionOf(it)
+                            val delta = target - actual
+
+                            val offset =
+                                it.localPositionOf(lookaheadScopeCoordinates, delta) -
+                                    it.localPositionOf(lookaheadScopeCoordinates)
+
+                            place(offset.round())
+                        } ?: place(0, 0)
+                    } else {
+                        place(0, 0)
+                    }
+                }
+            }
+        }
 
     /**
      * Renders the content in the [SharedTransitionScope]'s overlay, where shared content (i.e.
@@ -469,7 +522,7 @@ public interface SharedTransitionScope : LookaheadScope {
      * content in or out.
      *
      * [resizeMode] defines how the child layout of [sharedBounds] should be resized during
-     * [boundsTransform]. By default, [ScaleToBounds] will be used to measure the child content with
+     * [boundsTransform]. By default, [scaleToBounds] will be used to measure the child content with
      * lookahead constraints to arrive at the stable layout. Then the stable layout will be scaled
      * to fit or fill (depending on the content scale used) the transforming bounds of
      * [sharedBounds]. If there's a need to relayout content (rather than scaling) based on the
@@ -528,7 +581,7 @@ public interface SharedTransitionScope : LookaheadScope {
         enter: EnterTransition = fadeIn(),
         exit: ExitTransition = fadeOut(),
         boundsTransform: BoundsTransform = DefaultBoundsTransform,
-        resizeMode: ResizeMode = ScaleToBounds(ContentScale.FillWidth, Center),
+        resizeMode: ResizeMode = scaleToBounds(ContentScale.FillWidth, Center),
         placeHolderSize: PlaceHolderSize = contentSize,
         renderInOverlayDuringTransition: Boolean = true,
         zIndexInOverlay: Float = 0f,
@@ -929,7 +982,24 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                 @Suppress("UNCHECKED_CAST")
                                 val targetState = (visible as (Unit) -> Boolean).invoke(Unit)
                                 val transitionState =
-                                    remember { MutableTransitionState(initialState = targetState) }
+                                    remember {
+                                            val initialState =
+                                                if (sharedElement.states.isEmpty()) {
+                                                    targetState
+                                                } else {
+                                                    // If there's already shared elements of the
+                                                    // same key
+                                                    // already declared, we likely will need to
+                                                    // animate.
+                                                    // Hence, set the initial state to be different
+                                                    // than
+                                                    // target. If no animation is needed, this will
+                                                    // finish
+                                                    // right away.
+                                                    !targetState
+                                                }
+                                            MutableTransitionState(initialState = initialState)
+                                        }
                                         .also { it.targetState = targetState }
                                 rememberTransition(transitionState)
                             }

@@ -122,7 +122,7 @@ class PdfFastScrollerTest {
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
 
         // Swipe actions
-        onView(withId(R.id.pdfView)).perform(swipeUp())
+        onView(withId(R.id.pdfContentLayout)).perform(swipeUp())
         assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_SHOWN_IN_IMMERSIVE_MODE)
     }
 
@@ -151,8 +151,8 @@ class PdfFastScrollerTest {
         }
 
         // Swipe actions
-        onView(withId(R.id.pdfView)).perform(swipeUp())
-        onView(withId(R.id.pdfView)).perform(swipeDown())
+        onView(withId(R.id.pdfContentLayout)).perform(swipeUp())
+        onView(withId(R.id.pdfContentLayout)).perform(swipeDown())
 
         assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_AND_FAB_SHOWN_ON_SCROLL_TO_TOP)
     }

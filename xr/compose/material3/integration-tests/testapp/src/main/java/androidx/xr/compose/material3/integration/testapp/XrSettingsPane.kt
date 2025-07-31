@@ -51,8 +51,10 @@ import androidx.xr.scenecore.scene
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 internal fun XrSettingsPane(
+    selectedNavSuiteType: NavigationSuiteType?,
+    selectedOrbiterEdgeOffset: OrbiterOffsetType,
     onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit,
+    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType) -> Unit,
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -60,9 +62,18 @@ internal fun XrSettingsPane(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             ListItem(headlineContent = { XrModeButton() })
-            ListItem(headlineContent = { NavigationSuiteTypeButton(onNavSuiteTypeChanged) })
             ListItem(
-                headlineContent = { XrNavigationOrbiterEdgeOffset(onOrbiterEdgeOffsetChanged) }
+                headlineContent = {
+                    NavigationSuiteTypeButton(selectedNavSuiteType, onNavSuiteTypeChanged)
+                }
+            )
+            ListItem(
+                headlineContent = {
+                    XrNavigationOrbiterEdgeOffset(
+                        selectedOrbiterEdgeOffset,
+                        onOrbiterEdgeOffsetChanged,
+                    )
+                }
             )
         }
     }
@@ -93,8 +104,10 @@ private fun XrModeButton() {
 }
 
 @Composable
-private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit) {
-    val navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
+private fun NavigationSuiteTypeButton(
+    navSuiteType: NavigationSuiteType?,
+    onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
+) {
     val expanded = remember { mutableStateOf(false) }
     SimpleDropdown(
         dropdownLabel = "NavigationSuiteType",
@@ -122,37 +135,33 @@ private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteTyp
     )
 }
 
-private enum class OrbiterEdgeOffsetTypeChoices {
-    /** The default Orbiter EdgeOffset, as defined in the implementation. */
-    Default,
-    /** An inner Orbiter EdgeOffset. */
-    Inner,
-    /** An overlapping inner Orbiter EdgeOffset. */
-    Overlap,
-}
-
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 private fun XrNavigationOrbiterEdgeOffset(
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit
+    selectedItem: OrbiterOffsetType,
+    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType) -> Unit,
 ) {
-    val selectedItem = remember { mutableStateOf(OrbiterEdgeOffsetTypeChoices.Default) }
     val expanded = remember { mutableStateOf(false) }
-
-    val selectedEdgeOffsetType =
-        when (selectedItem.value) {
-            OrbiterEdgeOffsetTypeChoices.Default -> OrbiterOffsetType.OuterEdge
-            OrbiterEdgeOffsetTypeChoices.Inner -> OrbiterOffsetType.InnerEdge
-            OrbiterEdgeOffsetTypeChoices.Overlap -> OrbiterOffsetType.Overlap
-        }
 
     SimpleDropdown(
         dropdownLabel = "NavigationRail Orbiter EdgeOffset",
-        items = OrbiterEdgeOffsetTypeChoices.values().asList(),
+        items =
+            listOf(
+                OrbiterOffsetType.InnerEdge,
+                OrbiterOffsetType.OuterEdge,
+                OrbiterOffsetType.Overlap,
+            ),
         selectedItem = selectedItem,
         expanded = expanded,
-        itemLabel = { it.name },
-        onSelectedChange = { onOrbiterEdgeOffsetChanged(selectedEdgeOffsetType) },
+        itemLabel = {
+            when (it) {
+                OrbiterOffsetType.InnerEdge -> "Default (InnerEdge)"
+                OrbiterOffsetType.OuterEdge -> "OuterEdge"
+                OrbiterOffsetType.Overlap -> "Overlap"
+                else -> error("Unexpected OrbiterOffsetType: $it")
+            }
+        },
+        onSelectedChange = onOrbiterEdgeOffsetChanged,
     )
 }
 
@@ -161,12 +170,12 @@ private fun XrNavigationOrbiterEdgeOffset(
 private fun <T> SimpleDropdown(
     dropdownLabel: String,
     items: List<T>,
-    selectedItem: MutableState<T>,
+    selectedItem: T,
     expanded: MutableState<Boolean>,
     itemLabel: (T) -> String,
     onSelectedChange: (T) -> Unit,
 ) {
-    var state = rememberTextFieldState(itemLabel(selectedItem.value))
+    var state = rememberTextFieldState(itemLabel(selectedItem))
     Column {
         Text(text = dropdownLabel, style = MaterialTheme.typography.labelMedium)
         ExposedDropdownMenuBox(
@@ -178,7 +187,7 @@ private fun <T> SimpleDropdown(
                 state = state,
                 readOnly = true,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                label = { itemLabel(selectedItem.value) },
+                label = { itemLabel(selectedItem) },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
                 },
@@ -193,7 +202,6 @@ private fun <T> SimpleDropdown(
                     DropdownMenuItem(
                         text = { Text(itemLabel(item)) },
                         onClick = {
-                            selectedItem.value = item
                             state.setTextAndPlaceCursorAtEnd(itemLabel(item))
                             onSelectedChange(item)
                             expanded.value = false

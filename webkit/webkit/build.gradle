@@ -32,7 +32,7 @@ plugins {
 dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
-    api("androidx.core:core:1.1.0")
+    api("androidx.core:core:1.16.0")
     api("androidx.annotation:annotation-experimental:1.4.1")
 }
 
@@ -42,6 +42,7 @@ ext {
 }
 
 android {
+    compileSdk = 35
     sourceSets {
         // Allow compiling the WebView support library boundary interfaces from this project.
         main.java.srcDirs += new File(webviewBoundaryInterfacesDir, "src").getCanonicalPath()

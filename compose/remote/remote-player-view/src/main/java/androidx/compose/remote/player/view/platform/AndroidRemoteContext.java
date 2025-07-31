@@ -135,9 +135,9 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     @Override
-    public void setNamedIntegerOverride(@NonNull String stringName, int value) {
-        if (mVarNameHashMap.get(stringName) != null) {
-            int id = mVarNameHashMap.get(stringName).mId;
+    public void setNamedIntegerOverride(@NonNull String integerName, int value) {
+        if (mVarNameHashMap.get(integerName) != null) {
+            int id = mVarNameHashMap.get(integerName).mId;
             overrideInt(id, value);
         }
     }
@@ -229,7 +229,7 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     @Override
-    public void runNamedAction(int id, @NonNull Object value) {
+    public void runNamedAction(int id, @Nullable Object value) {
         String text = getText(id);
         if (text != null) {
             mDocument.runNamedAction(text, value);
@@ -239,12 +239,12 @@ public class AndroidRemoteContext extends RemoteContext {
     /**
      * Decode a byte array into an image and cache it using the given imageId
      *
+     * @param imageId the id of the image
      * @param encoding how the data is encoded 0 = png, 1 = raw, 2 = url
      * @param type the type of the data 0 = RGBA 8888, 1 = 888, 2 = 8 gray
      * @param width with of image to be loaded largest dimension is 32767
      * @param height height of image to be loaded
      * @param data a byte array containing the image information
-     * @oaram imageId the id of the image
      */
     @Override
     public void loadBitmap(

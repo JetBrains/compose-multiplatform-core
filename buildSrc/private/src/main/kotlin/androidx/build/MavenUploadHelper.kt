@@ -26,7 +26,6 @@ import com.android.utils.forEach
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.stream.JsonWriter
-import java.io.File
 import java.io.StringWriter
 import org.dom4j.Element
 import org.dom4j.io.XMLWriter
@@ -78,25 +77,19 @@ fun Project.configureMavenArtifactUpload(
             }
         }
     }
-    // validate that all libraries that should be published actually get registered.
-    gradle.taskGraph.whenReady {
+    // validate that all libraries that should be published actually get tasks registered.
+    // named() will throw UnknownTaskException if the task is not registered.
+    gradle.taskGraph.whenReady { graph ->
         if (releaseTaskShouldBeRegistered(androidXExtension)) {
-            validateTaskIsRegistered(Release.PROJECT_ARCHIVE_ZIP_TASK_NAME)
+            tasks.named(Release.PROJECT_ARCHIVE_ZIP_TASK_NAME)
         }
         if (buildInfoTaskShouldBeRegistered(androidXExtension)) {
             if (!androidXExtension.isIsolatedProjectsEnabled()) {
-                validateTaskIsRegistered(CreateLibraryBuildInfoFileTask.TASK_NAME)
+                tasks.named(CreateLibraryBuildInfoFileTask.TASK_NAME)
             }
         }
     }
 }
-
-private fun Project.validateTaskIsRegistered(taskName: String) =
-    tasks.findByName(taskName)
-        ?: throw GradleException(
-            "Project $name is configured for publishing, but a '$taskName' task was never " +
-                "registered. This is likely a bug in AndroidX plugin configuration."
-        )
 
 private fun Project.releaseTaskShouldBeRegistered(extension: AndroidXExtension): Boolean {
     if (plugins.hasPlugin(AppPlugin::class.java)) {
@@ -123,8 +116,6 @@ private fun Project.configureComponentPublishing(
     afterConfigure: () -> Unit,
 ) {
     val androidxGroup = validateCoordinatesAndGetGroup(extension)
-    val projectArchiveDir =
-        File(getRepositoryDirectory(), "${androidxGroup.group.replace('.', '/')}/$name")
     group = androidxGroup.group
 
     /*
@@ -138,12 +129,7 @@ private fun Project.configureComponentPublishing(
         for ((mavenCoordinates, projectPath) in projectModules) {
             project.findProject(projectPath)?.let { project ->
                 if (project.plugins.hasPlugin(LibraryPlugin::class.java)) {
-                    if (project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
-                        // For KMP projects, android AAR is published under -android
-                        androidxAndroidProjects.add("$mavenCoordinates-android")
-                    } else {
-                        androidxAndroidProjects.add(mavenCoordinates)
-                    }
+                    androidxAndroidProjects.add(mavenCoordinates)
                 }
                 if (project.hasAndroidMultiplatformPlugin()) {
                     androidxAndroidProjects.add("$mavenCoordinates-android")
@@ -162,18 +148,12 @@ private fun Project.configureComponentPublishing(
             if (appliesJavaGradlePluginPlugin()) {
                 // The 'java-gradle-plugin' will also add to the 'pluginMaven' publication
                 it.create<MavenPublication>("pluginMaven")
-                tasks.getByName("publishPluginMavenPublicationToMavenRepository").doFirst {
-                    removePreviouslyUploadedArchives(projectArchiveDir)
-                }
                 afterConfigure()
             } else {
                 if (project.isMultiplatformPublicationEnabled()) {
                     afterConfigure()
                 } else {
                     it.create<MavenPublication>("maven") { from(component) }
-                    tasks.getByName("publishMavenPublicationToMavenRepository").doFirst {
-                        removePreviouslyUploadedArchives(projectArchiveDir)
-                    }
                     afterConfigure()
                 }
             }
@@ -377,15 +357,6 @@ private fun Project.validateCoordinatesAndGetGroup(extension: AndroidXExtension)
         throw Exception("Your artifactId must start with '$strippedGroupId'. (currently is $name)")
     }
     return mavenGroup
-}
-
-/**
- * Delete any existing archives, so that developers don't get confused/surprised by the presence of
- * old versions. Additionally, deleting old versions makes it more convenient to iterate over all
- * existing archives without visiting archives having old versions too
- */
-private fun removePreviouslyUploadedArchives(projectArchiveDir: File) {
-    projectArchiveDir.deleteRecursively()
 }
 
 private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: MavenPom) {

@@ -280,6 +280,9 @@ abstract interface androidx.compose.ui.focus/FocusProperties { // androidx.compo
     open var end // androidx.compose.ui.focus/FocusProperties.end|{}end[0]
         open fun <get-end>(): androidx.compose.ui.focus/FocusRequester // androidx.compose.ui.focus/FocusProperties.end.<get-end>|<get-end>(){}[0]
         open fun <set-end>(androidx.compose.ui.focus/FocusRequester) // androidx.compose.ui.focus/FocusProperties.end.<set-end>|<set-end>(androidx.compose.ui.focus.FocusRequester){}[0]
+    open var focusRect // androidx.compose.ui.focus/FocusProperties.focusRect|{}focusRect[0]
+        open fun <get-focusRect>(): androidx.compose.ui.geometry/Rect // androidx.compose.ui.focus/FocusProperties.focusRect.<get-focusRect>|<get-focusRect>(){}[0]
+        open fun <set-focusRect>(androidx.compose.ui.geometry/Rect) // androidx.compose.ui.focus/FocusProperties.focusRect.<set-focusRect>|<set-focusRect>(androidx.compose.ui.geometry.Rect){}[0]
     open var left // androidx.compose.ui.focus/FocusProperties.left|{}left[0]
         open fun <get-left>(): androidx.compose.ui.focus/FocusRequester // androidx.compose.ui.focus/FocusProperties.left.<get-left>|<get-left>(){}[0]
         open fun <set-left>(androidx.compose.ui.focus/FocusRequester) // androidx.compose.ui.focus/FocusProperties.left.<set-left>|<set-left>(androidx.compose.ui.focus.FocusRequester){}[0]
@@ -304,6 +307,11 @@ abstract interface androidx.compose.ui.focus/FocusProperties { // androidx.compo
     open var up // androidx.compose.ui.focus/FocusProperties.up|{}up[0]
         open fun <get-up>(): androidx.compose.ui.focus/FocusRequester // androidx.compose.ui.focus/FocusProperties.up.<get-up>|<get-up>(){}[0]
         open fun <set-up>(androidx.compose.ui.focus/FocusRequester) // androidx.compose.ui.focus/FocusProperties.up.<set-up>|<set-up>(androidx.compose.ui.focus.FocusRequester){}[0]
+
+    final object Companion { // androidx.compose.ui.focus/FocusProperties.Companion|null[0]
+        final val UnsetFocusRect // androidx.compose.ui.focus/FocusProperties.Companion.UnsetFocusRect|{}UnsetFocusRect[0]
+            final fun <get-UnsetFocusRect>(): androidx.compose.ui.geometry/Rect // androidx.compose.ui.focus/FocusProperties.Companion.UnsetFocusRect.<get-UnsetFocusRect>|<get-UnsetFocusRect>(){}[0]
+    }
 }
 
 abstract interface androidx.compose.ui.focus/FocusPropertiesModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.focus/FocusPropertiesModifierNode|null[0]

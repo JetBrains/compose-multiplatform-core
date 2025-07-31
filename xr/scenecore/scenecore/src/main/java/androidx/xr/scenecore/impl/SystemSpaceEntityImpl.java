@@ -31,7 +31,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
-import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -101,9 +100,7 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      *     XrExtensions#getOpenXrActivitySpaceType()} method.
      */
     protected void setOpenXrReferenceSpacePose(Matrix4 openXrReferenceSpaceTransform) {
-        // TODO: b/420718824 - Remove this check once we have a better way to handle zero matrices.
-        float[] zero = new float[16];
-        if (Arrays.equals(openXrReferenceSpaceTransform.getData(), zero)) {
+        if (openXrReferenceSpaceTransform.equals(Matrix4.Zero)) {
             return;
         }
         mOpenXrReferenceSpaceTransform.set(openXrReferenceSpaceTransform);

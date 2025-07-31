@@ -30,6 +30,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
+import java.util.function.Consumer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,19 +53,19 @@ class PointerCaptureComponentTest {
     private val mockRtComponent = mock<RtPointerCaptureComponent>()
 
     private val stateListener =
-        object : PointerCaptureComponent.StateListener {
+        object : Consumer<Int> {
             var lastState: Int = -1
 
-            override fun onStateChanged(newState: Int) {
+            override fun accept(newState: Int) {
                 lastState = newState
             }
         }
 
     private val inputListener =
-        object : InputEventListener {
+        object : Consumer<InputEvent> {
             lateinit var lastEvent: InputEvent
 
-            override fun onInputEvent(inputEvent: InputEvent) {
+            override fun accept(inputEvent: InputEvent) {
                 lastEvent = inputEvent
             }
         }
@@ -128,19 +129,19 @@ class PointerCaptureComponentTest {
             RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_ACTIVE
         )
         assertThat(stateListener.lastState)
-            .isEqualTo(PointerCaptureComponent.Companion.POINTER_CAPTURE_STATE_ACTIVE)
+            .isEqualTo(PointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_ACTIVE)
 
         stateListenerCaptured.onStateChanged(
             RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_PAUSED
         )
         assertThat(stateListener.lastState)
-            .isEqualTo(PointerCaptureComponent.Companion.POINTER_CAPTURE_STATE_PAUSED)
+            .isEqualTo(PointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_PAUSED)
 
         stateListenerCaptured.onStateChanged(
             RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_STOPPED
         )
         assertThat(stateListener.lastState)
-            .isEqualTo(PointerCaptureComponent.Companion.POINTER_CAPTURE_STATE_STOPPED)
+            .isEqualTo(PointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STOPPED)
     }
 
     @Test

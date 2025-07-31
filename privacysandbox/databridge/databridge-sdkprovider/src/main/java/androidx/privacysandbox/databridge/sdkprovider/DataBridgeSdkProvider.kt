@@ -17,10 +17,14 @@
 package androidx.privacysandbox.databridge.sdkprovider
 
 import android.content.Context
+import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
+import androidx.privacysandbox.databridge.core.KeyUpdateCallbackWithExecutor
 import androidx.privacysandbox.databridge.core.aidl.IDataBridgeProxy
 import androidx.privacysandbox.databridge.core.aidl.IGetValuesResultCallback
+import androidx.privacysandbox.databridge.core.aidl.IKeyUpdateInternalCallback
 import androidx.privacysandbox.databridge.core.aidl.IRemoveValuesResultCallback
 import androidx.privacysandbox.databridge.core.aidl.ISetValuesResultCallback
 import androidx.privacysandbox.databridge.core.aidl.ResultInternal
@@ -28,7 +32,9 @@ import androidx.privacysandbox.databridge.core.aidl.ValueInternal
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
 import java.io.IOException
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
 
 /**
  * This class provides the SDK Runtime enabled SDKs APIs to access and modify the data which is
@@ -65,6 +71,29 @@ public abstract class DataBridgeSdkProvider private constructor() {
      *   key in the disk
      */
     public abstract suspend fun removeValues(keys: Set<Key>)
+
+    /**
+     * Registers a callback that will be triggered whenever the value of any key in the provided set
+     * is updated.
+     *
+     * @param keys: Set of keys for which updates are required
+     * @param executor: The executor from which the callback is executed.
+     * @param callback: The callback which will be called when there is update in any of the keys in
+     *   the provided set
+     */
+    public abstract fun registerKeyUpdateCallback(
+        keys: Set<Key>,
+        executor: Executor,
+        callback: KeyUpdateCallback,
+    )
+
+    /**
+     * Unregisters the callback. This will ensure that the keys registered to the callback will not
+     * receive any further updates
+     *
+     * @param callback: The callback which should be unregistered
+     */
+    public abstract fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback)
 
     public companion object {
         private var instance: DataBridgeSdkProvider? = null
@@ -118,6 +147,33 @@ public abstract class DataBridgeSdkProvider private constructor() {
 
     private class DataBridgeSdkProviderImpl(val dataBridgeProxy: IDataBridgeProxy) :
         DataBridgeSdkProvider() {
+
+        private val lock = Any()
+        private val uuid = UUID.randomUUID().toString()
+
+        @GuardedBy("lock")
+        private val keyToKeyUpdateCallbackWithExecutorMap =
+            mutableMapOf<Key, MutableList<KeyUpdateCallbackWithExecutor>>()
+
+        private val keyUpdateInternalCallback =
+            object : IKeyUpdateInternalCallback.Stub() {
+                override fun onKeyUpdated(keyName: String, data: ValueInternal) {
+                    val key =
+                        when (data.type) {
+                            "INT" -> Key.createIntKey(keyName)
+                            "LONG" -> Key.createLongKey(keyName)
+                            "FLOAT" -> Key.createFloatKey(keyName)
+                            "DOUBLE" -> Key.createDoubleKey(keyName)
+                            "BOOLEAN" -> Key.createBooleanKey(keyName)
+                            "STRING" -> Key.createStringKey(keyName)
+                            "STRING_SET" -> Key.createStringSetKey(keyName)
+                            "BYTE_ARRAY" -> Key.createByteArrayKey(keyName)
+                            else ->
+                                throw IllegalStateException("$data.type is not a valid key type")
+                        }
+                    sendKeyUpdates(key, data.value)
+                }
+            }
 
         override suspend fun getValues(keys: Set<Key>): Map<Key, Result<Any?>> {
             val keyNameToKeyMap: Map<String, Key> = keys.associateBy { it.name }
@@ -221,6 +277,56 @@ public abstract class DataBridgeSdkProvider private constructor() {
             callback.throwExceptionIfPresent()
         }
 
+        override fun registerKeyUpdateCallback(
+            keys: Set<Key>,
+            executor: Executor,
+            callback: KeyUpdateCallback,
+        ) {
+            keys.forEach { key ->
+                synchronized(lock) {
+                    val keyUpdateCallbackWithExecutor =
+                        KeyUpdateCallbackWithExecutor(callback, executor)
+                    keyToKeyUpdateCallbackWithExecutorMap
+                        .getOrPut(key) { mutableListOf() }
+                        .add(keyUpdateCallbackWithExecutor)
+                }
+            }
+
+            val (keyNames, keyTypes) = keys.map { it.name to it.type.toString() }.unzip()
+            dataBridgeProxy.addKeysForUpdates(uuid, keyNames, keyTypes, keyUpdateInternalCallback)
+        }
+
+        override fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback) {
+            val keysToRemoveFromMap = mutableListOf<Key>()
+            synchronized(lock) {
+                keyToKeyUpdateCallbackWithExecutorMap.forEach {
+                    (key, keyUpdateCallbackWithExecutorList) ->
+                    keyUpdateCallbackWithExecutorList.removeAll { it.keyUpdateCallback == callback }
+
+                    if (keyUpdateCallbackWithExecutorList.isEmpty()) {
+                        keysToRemoveFromMap.add(key)
+                    }
+                }
+                keysToRemoveFromMap.forEach { key ->
+                    keyToKeyUpdateCallbackWithExecutorMap.remove(key)
+                }
+
+                val (keyNames, keyTypes) =
+                    keysToRemoveFromMap.map { it.name to it.type.toString() }.unzip()
+
+                // If keyToKeyUpdateCallbackWithExecutorMap is empty, it means there is no callback
+                // registered Therefore, we can safely unregister from DataBridgeProxy to prevent
+                // unnecessary IPC
+                // calls.
+                dataBridgeProxy.removeKeysFromUpdates(
+                    uuid,
+                    keyNames,
+                    keyTypes,
+                    keyToKeyUpdateCallbackWithExecutorMap.isEmpty(),
+                )
+            }
+        }
+
         private fun getResultFailureFromThrowable(
             exceptionName: String,
             exceptionMessage: String,
@@ -239,6 +345,21 @@ public abstract class DataBridgeSdkProvider private constructor() {
                 return IOException(exceptionMessage)
             }
             return IllegalStateException(exceptionMessage)
+        }
+
+        private fun sendKeyUpdates(key: Key, value: Any?) {
+            synchronized(lock) {
+                if (!keyToKeyUpdateCallbackWithExecutorMap.containsKey(key)) {
+                    return
+                }
+
+                keyToKeyUpdateCallbackWithExecutorMap[key]?.forEach { keyUpdateCallbackWithExecutor
+                    ->
+                    keyUpdateCallbackWithExecutor.executor.execute {
+                        keyUpdateCallbackWithExecutor.keyUpdateCallback.onKeyUpdated(key, value)
+                    }
+                }
+            }
         }
     }
 }

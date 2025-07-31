@@ -1,6 +1,5 @@
 // This file applies configuration common to projects in buildSrc
 
-
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -30,6 +29,10 @@ java {
 project.tasks.withType(Jar).configureEach { task ->
     task.reproducibleFileOrder = true
     task.preserveFileTimestamps = false
+}
+
+tasks.withType(ValidatePlugins).configureEach {
+    it.enableStricterValidation = true
 }
 
 project.repos.addMavenRepositories(project.repositories)

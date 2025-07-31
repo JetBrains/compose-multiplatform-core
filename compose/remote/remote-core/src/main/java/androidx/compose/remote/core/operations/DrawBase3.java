@@ -78,8 +78,17 @@ public abstract class DrawBase3 extends PaintOperation implements VariableSuppor
 
     protected abstract void write(@NonNull WireBuffer buffer, float v1, float v2, float v3);
 
-    interface Maker {
-        DrawBase3 create(float v1, float v2, float v3);
+    /** interface for the operation builder with 3 float parameters */
+    public interface Maker {
+        /**
+         * creation function for operation with 3 float parameters
+         *
+         * @param v1 param 1
+         * @param v2 param 2
+         * @param v3 param 3
+         * @return operation
+         */
+        @NonNull DrawBase3 create(float v1, float v2, float v3);
     }
 
     @NonNull

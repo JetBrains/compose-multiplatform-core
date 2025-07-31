@@ -46,7 +46,7 @@ import androidx.compose.foundation.text.UndoManager
 import androidx.compose.foundation.text.ValidatingEmptyOffsetMappingIdentity
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
-import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
+import androidx.compose.foundation.text.contextmenu.modifier.showTextContextMenuOnSecondaryClick
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuToolbarHandler
 import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
@@ -224,17 +224,25 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
         get() =
             if (!enabled) Modifier
             else
-                Modifier.textContextMenuGestures(
-                        onPreShowContextMenu = {
+                Modifier.showTextContextMenuOnSecondaryClick(
+                        onPreShowContextMenu = { clickLocation ->
                             updateClipboardEntry()
-                            notifyPlatformSelectionBehaviorsOnShowContextMenu()
+                            getContextTextAndSelection()?.let { (text, selection) ->
+                                platformSelectionBehaviors?.onShowContextMenu(
+                                    text = text,
+                                    selection = selection,
+                                    secondaryClickLocation = clickLocation,
+                                )
+                            }
                         }
                     )
                     .textContextMenuToolbarHandler(
                         requester = toolbarRequester,
                         onShow = {
                             updateClipboardEntry()
-                            notifyPlatformSelectionBehaviorsOnShowContextMenu()
+                            getContextTextAndSelection()?.let { (text, selection) ->
+                                platformSelectionBehaviors?.onShowSelectionToolbar(text, selection)
+                            }
                             textToolbarShownViaProvider = true
                         },
                         onHide = { textToolbarShownViaProvider = false },
@@ -794,18 +802,17 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
         clipEntry = clipboard?.getClipEntry()
     }
 
-    private suspend fun notifyPlatformSelectionBehaviorsOnShowContextMenu() {
-        transformedText?.text?.let { text ->
+    private fun getContextTextAndSelection(): Pair<String, TextRange>? {
+        val text = transformedText?.text ?: return null
+        val selection =
             latestSelection?.let { selection ->
-                platformSelectionBehaviors?.onShowContextMenu(
-                    text,
-                    TextRange(
-                        offsetMapping.originalToTransformed(selection.start),
-                        offsetMapping.originalToTransformed(selection.end),
-                    ),
+                TextRange(
+                    offsetMapping.originalToTransformed(selection.start),
+                    offsetMapping.originalToTransformed(selection.end),
                 )
-            }
-        }
+            } ?: return null
+
+        return Pair(text, selection)
     }
 
     /** Only fully accurate if [updateClipboardEntry] has been called. */

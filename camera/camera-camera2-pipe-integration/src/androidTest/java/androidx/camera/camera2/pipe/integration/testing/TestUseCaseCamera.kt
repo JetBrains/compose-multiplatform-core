@@ -105,15 +105,17 @@ class TestUseCaseCamera(
                         else -> OperatingMode.custom(sessionConfig.sessionType)
                     }
                 } ?: OperatingMode.NORMAL,
-                sessionConfigAdapter,
+                sessionConfigAdapter.getValidSessionConfigOrNull(),
                 streamConfigMap,
                 callbackMap,
                 requestListener,
-                cameraConfig,
+                cameraConfig.cameraId,
                 cameraQuirks,
                 ZslControlNoOpImpl(),
                 NoOpTemplateParamsOverride,
                 cameraMetadata,
+                surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
+                surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             )
         val cameraGraph = cameraPipe.createCameraGraph(cameraGraphConfig)
 

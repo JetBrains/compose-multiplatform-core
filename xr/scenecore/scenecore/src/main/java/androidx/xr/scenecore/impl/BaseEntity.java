@@ -150,11 +150,11 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
 
     @Override
     @NonNull
-    public String getContentDescription() {
+    public CharSequence getContentDescription() {
         if (mAccessibilityLayout != null) {
             View view = getAccessibilityView();
             if (view != null) {
-                return view.getContentDescription().toString();
+                return view.getContentDescription();
             }
         }
         Log.w("SceneCore", "getContentDescription content description not provided");
@@ -162,9 +162,9 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    public void setContentDescription(@NonNull String text) {
+    public void setContentDescription(@NonNull CharSequence text) {
         Log.d("SceneCore", "setContentDescription: " + text);
-        if (text.isEmpty()) {
+        if (text.length() == 0) {
             Log.d("SceneCore", "setContentDescription ignoring empty/null string.");
             if (mAccessibilityLayout != null) {
                 destroyAccessibilityView();

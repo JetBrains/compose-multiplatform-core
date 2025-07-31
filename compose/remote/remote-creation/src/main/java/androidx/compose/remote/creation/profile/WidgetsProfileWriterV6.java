@@ -15,8 +15,14 @@
  */
 package androidx.compose.remote.creation.profile;
 
-import androidx.compose.remote.core.Platform;
+import static androidx.compose.remote.creation.Rc.FloatExpression.ADD;
+import static androidx.compose.remote.creation.Rc.FloatExpression.MUL;
+
+import android.graphics.Color;
+
+import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
+import androidx.compose.remote.creation.Rc;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
 import org.jspecify.annotations.NonNull;
@@ -26,14 +32,16 @@ import org.jspecify.annotations.Nullable;
 public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
 
     public WidgetsProfileWriterV6(
-            int width,
-            int height,
-            @NonNull String contentDescription,
-            int apiLevel,
-            int profiles,
-            @NonNull Platform platform) {
-        super(width, height, contentDescription, apiLevel, profiles, platform);
-        mMaxValidFloatExpressionOperation = AnimatedFloatExpression.getMaxOpForLevel(apiLevel);
+            int width, int height, @NonNull String contentDescription, @NonNull Profile profile) {
+        super(
+                width,
+                height,
+                contentDescription,
+                profile.getApiLevel(),
+                profile.getOperationsProfiles(),
+                profile.getPlatform());
+        mMaxValidFloatExpressionOperation =
+                AnimatedFloatExpression.getMaxOpForLevel(profile.getApiLevel());
     }
 
     /**
@@ -82,4 +90,39 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
     public void matrixFromPath(int pathId, float fraction, float vOffset, int flags) {
         throw new RuntimeException("matrixFromPath is not available in V6");
     }
+
+    @Override
+    public int addNamedColor(String name, int color) {
+        Utils.log("addNamedColor " + name);
+
+        if (name.equals("android.textColorPrimary")) {
+            int cpId = super.addNamedColor("android.colorPrimaryDark", Color.CYAN);
+
+            int colorA = super.addNamedColor("android.colorControlActivated", Color.WHITE);
+
+            float val = floatExpression(Rc.Time.TIME_IN_SEC, 0, MUL, 0.2f, ADD);
+            short tweenColor = addColorExpression((short) cpId, (short) colorA, val);
+            //  comment line below to observe on working systems
+            super.setColorName(tweenColor, "android.textColorPrimary");
+
+            return tweenColor;
+        }
+
+        if (name.equals("android.textColorSecondary")) {
+            // TODO calibrate to a better color
+            int cpId = super.addNamedColor("android.colorPrimaryDark", Color.CYAN);
+
+            int colorA = super.addNamedColor("android.colorControlActivated", Color.WHITE);
+
+            float val = floatExpression(Rc.Time.TIME_IN_SEC, 0, MUL, 0.5f, ADD);
+            short tweenColor = addColorExpression((short) cpId, (short) colorA, val);
+            //  comment line below to observe on working systems
+            super.setColorName(tweenColor, "android.textColorSecondary");
+            return tweenColor;
+        }
+
+        return super.addNamedColor(name, color);
+    }
+    // todo DAY of Month. etc.
+
 }

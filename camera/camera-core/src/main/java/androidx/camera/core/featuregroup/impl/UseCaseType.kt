@@ -22,6 +22,12 @@ import android.view.SurfaceHolder
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.DYNAMIC_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
+import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
@@ -127,5 +133,31 @@ public enum class UseCaseType(
                 else -> UNDEFINED
             }
         }
+
+        /**
+         * Gets the [FeatureTypeInternal] that app has configured to a [UseCase] directly, null if
+         * none found.
+         */
+        internal fun UseCase.getAppConfiguredGroupableFeatureType(): FeatureTypeInternal? =
+            FeatureTypeInternal.entries.find { it.isConfiguredToUseCaseByApp(this) }
+
+        private fun FeatureTypeInternal.isConfiguredToUseCaseByApp(useCase: UseCase): Boolean =
+            when (this) {
+                DYNAMIC_RANGE -> useCase.isDynamicRangeConfiguredByApp()
+                FPS_RANGE -> useCase.isFpsRangeConfiguredByApp()
+                VIDEO_STABILIZATION -> useCase.isStabilizationModeConfiguredByApp()
+                IMAGE_FORMAT -> useCase.isImageFormatConfiguredByApp()
+            }
+
+        private fun UseCase.isDynamicRangeConfiguredByApp() = appConfig.hasDynamicRange()
+
+        private fun UseCase.isFpsRangeConfiguredByApp() = appConfig.hasTargetFrameRate()
+
+        private fun UseCase.isStabilizationModeConfiguredByApp() =
+            appConfig.containsOption(UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE) ||
+                appConfig.containsOption(UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE)
+
+        private fun UseCase.isImageFormatConfiguredByApp() =
+            appConfig.containsOption(ImageCaptureConfig.OPTION_OUTPUT_FORMAT)
     }
 }

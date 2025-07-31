@@ -36,7 +36,7 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
             doc.createElementWithTextNode("enabledByDefault", isEnabledByDefault.toString())
         )
 
-        if (!description.isEmpty()) {
+        if (description.isNotEmpty()) {
             appendChild(doc.createElementWithTextNode("description", description))
         }
 
@@ -90,7 +90,7 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
             appendChild(doc.createElementWithTextNode("objectQualifiedName", it))
         }
 
-        if (!description.isEmpty()) {
+        if (description.isNotEmpty()) {
             appendChild(doc.createElementWithTextNode("description", description))
         }
 
@@ -133,4 +133,7 @@ private fun AppFunctionParameterMetadataDocument.toXmlElement(
         appendChild(doc.createElementWithTextNode("id", id))
         appendChild(doc.createElementWithTextNode("isRequired", isRequired.toString()))
         appendChild(doc.createElementWithTextNode("name", name))
+        if (description.isNotEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
     }

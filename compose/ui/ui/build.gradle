@@ -32,12 +32,23 @@ import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        withJava()
+        compileSdk = 35
+        androidResources.enable = true
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        namespace = "androidx.compose.ui"
+        // namespace has to be unique, but default androidx.compose.ui.test package is taken by
+        // the androidx.compose.ui:ui-test library
+        testNamespace = "androidx.compose.ui.tests"
+    }
     desktop()
     mac()
     ios()
@@ -387,8 +398,6 @@ dependencies {
     }
 }
 
-packageInspector(project, ":compose:ui:ui-inspection")
-
 dependencies {
     lintChecks(project(":compose:ui:ui-lint"))
     lintPublish(project(":compose:ui:ui-lint"))
@@ -405,20 +414,9 @@ androidx {
     enableRobolectric()
 }
 
-android {
-    compileSdk = 35
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
-    namespace = "androidx.compose.ui"
-    // namespace has to be unique, but default androidx.compose.ui.test package is taken by
-    // the androidx.compose.ui:ui-test library
-    testNamespace = "androidx.compose.ui.tests"
-}
-
 androidComponents {
     onVariants(selector().all(), { variant ->
-        variant.sources.java?.addStaticSourceDirectory("src/androidMain/java")
+        packageInspector(variant, project, project(":compose:ui:ui-inspection"))
     })
 }
 

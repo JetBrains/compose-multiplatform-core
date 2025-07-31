@@ -37,7 +37,7 @@ public interface Entity : ActivityPose {
     public var parent: Entity?
 
     /** Sets context-text for this entity to be consumed by Accessibility systems. */
-    public var contentDescription: String
+    public var contentDescription: CharSequence
 
     /**
      * Sets the local hidden state of this Entity. When true, this Entity and all descendants will

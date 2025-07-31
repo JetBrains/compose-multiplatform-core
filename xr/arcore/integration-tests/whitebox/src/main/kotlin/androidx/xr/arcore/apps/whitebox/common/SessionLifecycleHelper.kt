@@ -25,13 +25,10 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestMultiple
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureCalibrationRequired
 import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
-import androidx.xr.runtime.SessionConfigurePermissionsNotGranted
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
-import androidx.xr.runtime.SessionCreatePermissionsNotGranted
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
@@ -94,43 +91,49 @@ class SessionLifecycleHelper(
     }
 
     internal fun tryCreateSession() {
-        when (val result = Session.create(activity)) {
-            is SessionCreateSuccess -> {
-                session = result.session
-                when (val configResult = session.configure(config)) {
-                    is SessionConfigurePermissionsNotGranted -> {
+        try {
+            when (val result = Session.create(activity)) {
+                is SessionCreateSuccess -> {
+                    session = result.session
+                    try {
+                        when (val configResult = session.configure(config)) {
+                            is SessionConfigureConfigurationNotSupported -> {
+                                showErrorMessage("Session configuration not supported.")
+                                activity.finish()
+                            }
+
+                            is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                                Log.e(
+                                    TAG,
+                                    "Google Play Services Location Library is not linked, this should not happen.",
+                                )
+                            }
+
+                            is SessionConfigureSuccess -> {
+                                onSessionAvailable(session)
+                            }
+
+                            else -> {
+                                showErrorMessage("Unexpected ${configResult::class.simpleName}")
+                            }
+                        }
+                    } catch (e: SecurityException) {
                         requestPermissionLauncher.launch(
                             getRequiredPermissions(config).toTypedArray()
                         )
                     }
-                    is SessionConfigureConfigurationNotSupported -> {
-                        showErrorMessage("Session configuration not supported.")
-                        activity.finish()
-                    }
-                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                        Log.e(
-                            TAG,
-                            "Google Play Services Location Library is not linked, this should not happen.",
-                        )
-                    }
-                    is SessionConfigureCalibrationRequired -> {
-                        onSessionCalibrationRequired(configResult.calibrationType)
-                    }
-                    is SessionConfigureSuccess -> {
-                        onSessionAvailable(session)
-                    }
+                }
+                is SessionCreateApkRequired -> {
+                    onSessionCreateActionRequired(result)
+                }
+
+                is SessionCreateUnsupportedDevice -> {
+                    showErrorMessage("Session could not be created, device is Unsupported.")
+                    activity.finish()
                 }
             }
-            is SessionCreatePermissionsNotGranted -> {
-                requestPermissionLauncher.launch(result.permissions.toTypedArray())
-            }
-            is SessionCreateApkRequired -> {
-                onSessionCreateActionRequired(result)
-            }
-            is SessionCreateUnsupportedDevice -> {
-                showErrorMessage("Session could not be created, device is Unsupported.")
-                activity.finish()
-            }
+        } catch (e: SecurityException) {
+            requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
         }
     }
 

@@ -590,10 +590,29 @@ private fun AbiDeclaration.asTypeString() =
     }
 
 private fun AbiFunction.asTypeString(name: String = qualifiedName.toString()): String {
-    return (contextReceiverParametersString() +
+    return (typeParametersString() +
+        contextReceiverParametersString() +
         extensionReceiverParameterString() +
         name +
         regularValueParametersString())
+}
+
+private fun AbiFunction.typeParametersString(): String {
+    if (typeParameters.isEmpty()) {
+        return ""
+    }
+    return typeParameters.joinToString(", ", "<", ">") { it.asString() }
+}
+
+fun AbiTypeParameter.asString(): String {
+    val builder = StringBuilder()
+    builder.append(tag)
+    builder.append(" : ")
+    if (upperBounds.isEmpty()) {
+        builder.append("kotlin/Any?")
+    }
+    builder.append(upperBounds.asString())
+    return builder.toString()
 }
 
 private fun AbiProperty.asTypeString(name: String = qualifiedName.toString()): String {

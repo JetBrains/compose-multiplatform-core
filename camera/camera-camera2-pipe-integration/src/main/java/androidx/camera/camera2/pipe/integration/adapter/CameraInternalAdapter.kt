@@ -33,8 +33,6 @@ import androidx.camera.core.impl.SessionProcessor
 import com.google.common.util.concurrent.ListenableFuture
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -93,9 +91,11 @@ constructor(
 
     override fun release(): ListenableFuture<Void> {
         return threads.scope
-            .launch { useCaseManager.close() }
+            .launch {
+                useCaseManager.close()
+                threads.scope.cancel()
+            }
             .asListenableFuture()
-            .apply { addListener({ threads.scope.cancel() }, Dispatchers.Default.asExecutor()) }
     }
 
     override fun getCameraInfoInternal(): CameraInfoInternal = cameraInfo
@@ -139,6 +139,25 @@ constructor(
         coreCameraConfig = cameraConfig ?: CameraConfigs.defaultConfig()
         sessionProcessor = cameraConfig?.getSessionProcessor(null)
         useCaseManager.sessionProcessor = sessionProcessor
+    }
+
+    /**
+     * Handles the camera being physically removed.
+     *
+     * This method immediately updates the public camera state to CLOSED with a ERROR_CAMERA_REMOVED
+     * error, and then asynchronously triggers the cleanup of all internal resources, such as the
+     * CameraGraph.
+     */
+    override fun onRemoved() {
+        debug { "$this received removed signal. Cleaning up." }
+        threads.scope.launch {
+            // 1. Immediately update the public state via the state adapter.
+            cameraStateAdapter.onRemoved()
+
+            // 2. Asynchronously clean up all resources by closing the UseCaseManager,
+            // which in turn closes the CameraGraph.
+            useCaseManager.close()
+        }
     }
 
     override fun toString(): String = "CameraInternalAdapter<$cameraId($debugId)>"

@@ -65,7 +65,7 @@ public open class FakeEntity() : FakeActivityPose(), Entity {
         }
 
     /** Sets context-text for this entity to be consumed by Accessibility systems. */
-    override var contentDescription: String = ""
+    override var contentDescription: CharSequence = ""
 
     private var hidden = false
 

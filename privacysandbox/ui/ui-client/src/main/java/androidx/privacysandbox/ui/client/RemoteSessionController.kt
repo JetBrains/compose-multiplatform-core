@@ -63,11 +63,17 @@ internal class RemoteSessionController(
 
     override fun notifyMotionEvent(
         motionEvent: MotionEvent,
-        eventTargetFrameTime: Long,
+        eventTargetTime: Long,
         eventTransferCallback: IMotionEventTransferCallback?,
     ) {
         tryToCallRemoteObject(remoteSessionController) {
-            notifyMotionEvent(motionEvent, eventTargetFrameTime, eventTransferCallback)
+            notifyMotionEvent(motionEvent, eventTargetTime, eventTransferCallback)
+        }
+    }
+
+    override fun notifyHoverEvent(hoverEvent: MotionEvent, eventTargetTime: Long) {
+        tryToCallRemoteObject(remoteSessionController) {
+            notifyHoverEvent(hoverEvent, eventTargetTime)
         }
     }
 }

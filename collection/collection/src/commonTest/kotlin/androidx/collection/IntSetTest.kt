@@ -352,7 +352,7 @@ class IntSetTest {
             set.joinToString(),
         )
         assertEquals(
-            "x${order[0].toInt()}, ${order[1].toInt()}, ${order[2].toInt()}...",
+            "x${order[0].toInt()}, ${order[1].toInt()}, ${order[2].toInt()}, ...y",
             set.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -362,7 +362,7 @@ class IntSetTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             set.joinToString(limit = 3) { names[it.toInt()] },
         )
     }

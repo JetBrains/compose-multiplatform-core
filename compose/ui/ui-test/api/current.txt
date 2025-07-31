@@ -171,14 +171,12 @@ package androidx.compose.ui.test {
     method @RequiresApi(31) public static androidx.compose.ui.test.DeviceConfigurationOverride FontWeightAdjustment(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int fontWeightAdjustment);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride ForcedSize(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, long size);
     method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride ForcedSize-6HolHcs(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, long);
-    method public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int keyboardType);
-    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard-XH3IKJc(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int);
-    method public static androidx.compose.ui.test.DeviceConfigurationOverride KeyboardHidden(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isHidden);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int keyboardType, optional boolean isHardKeyboardHidden, optional boolean isHidden);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard-iZaG8cg(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int, boolean, boolean);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride LayoutDirection(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride Locales(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.compose.ui.text.intl.LocaleList locales);
-    method public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int navigationType);
-    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation-kMx_WSA(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int);
-    method public static androidx.compose.ui.test.DeviceConfigurationOverride NavigationHidden(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isHidden);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int navigationType, optional boolean isHidden);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation--CrgJtc(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int, boolean);
     method @RequiresApi(23) public static androidx.compose.ui.test.DeviceConfigurationOverride RoundScreen(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isScreenRound);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride Touchscreen(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isTouchScreen);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride UiMode(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int uiModeType);
@@ -235,13 +233,13 @@ package androidx.compose.ui.test {
   }
 
   public final class FindersKt {
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithContentDescription(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String label, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithTag(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String testTag, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithText(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String text, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithContentDescription(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String label, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithTag(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String testTag, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithText(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String text, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onRoot(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithContentDescription(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String label, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithTag(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String testTag, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodesWithText(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String text, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithContentDescription(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String label, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithTag(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String testTag, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onNodeWithText(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, String text, optional boolean substring, optional boolean ignoreCase, optional boolean useUnmergedTree);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onRoot(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, optional boolean useUnmergedTree);
   }
 
   @Deprecated public final class GestureScope {
@@ -437,9 +435,7 @@ package androidx.compose.ui.test {
 
   @kotlin.jvm.JvmInline public final value class KeyboardType {
     method @BytecodeOnly public static androidx.compose.ui.test.KeyboardType! box-impl(int);
-    method public int getConfigValue();
     method @BytecodeOnly public int unbox-impl();
-    property public int configValue;
     field public static final androidx.compose.ui.test.KeyboardType.Companion Companion;
   }
 
@@ -537,9 +533,7 @@ package androidx.compose.ui.test {
 
   @kotlin.jvm.JvmInline public final value class NavigationType {
     method @BytecodeOnly public static androidx.compose.ui.test.NavigationType! box-impl(int);
-    method public int getConfigValue();
     method @BytecodeOnly public int unbox-impl();
-    property public int configValue;
     field public static final androidx.compose.ui.test.NavigationType.Companion Companion;
   }
 
@@ -595,17 +589,17 @@ package androidx.compose.ui.test {
   }
 
   public final class SelectorsKt {
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection filter(androidx.compose.ui.test.SemanticsNodeInteractionCollection, androidx.compose.ui.test.SemanticsMatcher matcher);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction filterToOne(androidx.compose.ui.test.SemanticsNodeInteractionCollection, androidx.compose.ui.test.SemanticsMatcher matcher);
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAncestors(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onChild(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onChildAt(androidx.compose.ui.test.SemanticsNodeInteraction, int index);
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onChildren(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onFirst(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onLast(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onParent(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction onSibling(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onSiblings(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection filter(androidx.compose.ui.test.SemanticsNodeInteractionCollection, androidx.compose.ui.test.SemanticsMatcher matcher);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction filterToOne(androidx.compose.ui.test.SemanticsNodeInteractionCollection, androidx.compose.ui.test.SemanticsMatcher matcher);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onAncestors(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onChild(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onChildAt(androidx.compose.ui.test.SemanticsNodeInteraction, int index);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onChildren(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onFirst(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onLast(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onParent(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onSibling(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onSiblings(androidx.compose.ui.test.SemanticsNodeInteraction);
   }
 
   public final class SemanticsMatcher {
@@ -643,8 +637,8 @@ package androidx.compose.ui.test {
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface SemanticsNodeInteractionsProvider {
-    method public androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodes(androidx.compose.ui.test.SemanticsMatcher matcher, optional boolean useUnmergedTree);
-    method public androidx.compose.ui.test.SemanticsNodeInteraction onNode(androidx.compose.ui.test.SemanticsMatcher matcher, optional boolean useUnmergedTree);
+    method @CheckResult public androidx.compose.ui.test.SemanticsNodeInteractionCollection onAllNodes(androidx.compose.ui.test.SemanticsMatcher matcher, optional boolean useUnmergedTree);
+    method @CheckResult public androidx.compose.ui.test.SemanticsNodeInteraction onNode(androidx.compose.ui.test.SemanticsMatcher matcher, optional boolean useUnmergedTree);
   }
 
   public final class SemanticsSelector {
@@ -744,9 +738,7 @@ package androidx.compose.ui.test {
 
   @kotlin.jvm.JvmInline public final value class UiModeType {
     method @BytecodeOnly public static androidx.compose.ui.test.UiModeType! box-impl(int);
-    method public int getConfigValue();
     method @BytecodeOnly public int unbox-impl();
-    property public int configValue;
     field public static final androidx.compose.ui.test.UiModeType.Companion Companion;
   }
 
@@ -756,7 +748,7 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public int getDesk-ZjwGzpQ();
     method @BytecodeOnly public int getNormal-ZjwGzpQ();
     method @BytecodeOnly public int getTelevision-ZjwGzpQ();
-    method @BytecodeOnly public int getVrHeadset-ZjwGzpQ();
+    method @BytecodeOnly @RequiresApi(26) public int getVrHeadset-ZjwGzpQ();
     method @BytecodeOnly public int getWatch-ZjwGzpQ();
     property public androidx.compose.ui.test.UiModeType Appliance;
     property public androidx.compose.ui.test.UiModeType Car;

@@ -53,6 +53,9 @@ public interface PdfDocument : Closeable {
     /** The type of form present in the document. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val formType: Int
 
+    /** The list of [FormEditRecord]s applied to the document. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val formEditRecords: List<FormEditRecord>
+
     /**
      * Asynchronously retrieves information about the specified page.
      *

@@ -323,7 +323,7 @@ public class DefaultTileClientTest {
     private class FakeTileService : TileProvider.Stub() {
         var shouldReturnTile = true
         var returnTile = ByteArray(0)
-        var returnTileVersion = TileData.VERSION_PROTOBUF
+        var returnTileVersion = TileData.VERSION_PROTOBUF_1
 
         var shouldReturnResources = true
         var returnResources = ByteArray(0)

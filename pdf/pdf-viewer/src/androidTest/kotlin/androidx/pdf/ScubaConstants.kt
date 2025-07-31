@@ -27,3 +27,15 @@ internal const val SCREENSHOT_GOLDEN_DIRECTORY = "pdf/pdf-viewer"
  */
 internal const val SEARCH_VIEW_IN_LTR_MODE = "search_view_in_ltr_mode"
 internal const val SEARCH_VIEW_IN_RTL_MODE = "search_view_in_rtl_mode"
+internal const val ANNOTATION_VIEW_SINGLE_SQUARE_NO_TRANSFORM =
+    "annotation_view_single_square_no_transform"
+internal const val ANNOTATION_VIEW_SQUARE_TRANSLATED = "annotation_view_square_translated"
+internal const val ANNOTATION_VIEW_SQUARE_SCALED = "annotation_view_square_scaled"
+internal const val ANNOTATION_VIEW_SQUARE_COMBINED_TRANSFORM =
+    "annotation_view_square_combined_transform"
+internal const val ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_NO_TRANSFORM =
+    "annotation_view_multiple_shapes_same_page_no_transform"
+internal const val ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_SHARED_TRANSFORM =
+    "annotation_view_multiple_shapes_same_page_shared_transform"
+internal const val ANNOTATION_VIEW_MULTI_PAGE_DIFFERENT_TRANSFORMS =
+    "annotation_view_multi_page_different_transforms"

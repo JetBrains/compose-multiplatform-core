@@ -28,6 +28,10 @@ interface IAutomatedTestCallback {
     */
     void onGestureFinished(in float totalChangeInX, in float totalChangeInY);
     /**
+    * This callback reports a click applied on the remote content.
+    */
+    void onClick();
+    /**
     * This callback notifies the client that the session is built remotely in SDK Sandbox Process.
     * This is needed as some tests have different expectations in case that SDK is loadded locally.
     */

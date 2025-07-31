@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Contains the tracking information of the HMD tracking. */
+/** Contains the information of the device that locates it with respect to the real world. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArDevice internal constructor(internal val runtimeArDevice: RuntimeArDevice) :
     Updatable {

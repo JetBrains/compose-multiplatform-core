@@ -33,12 +33,15 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
+import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialCapabilities
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.function.Consumer
 
 class ActivityPanelActivity : AppCompatActivity() {
     private lateinit var activityPanelEntity: ActivityPanelEntity
@@ -99,7 +102,12 @@ class ActivityPanelActivity : AppCompatActivity() {
                     activityPanelEntity.addComponent(movableComponent)
                     movableComponent.size = getSizeInLocalSpace(activityPanelEntity)
                     // Add resizeable component
-                    val resizeableComponent = ResizableComponent.create(session!!)
+                    val resizeListener =
+                        Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+                            (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
+                        }
+                    val resizeableComponent =
+                        ResizableComponent.create(session!!, resizeEventListener = resizeListener)
                     activityPanelEntity.addComponent(resizeableComponent)
 
                     secondaryPanelLaunched = true

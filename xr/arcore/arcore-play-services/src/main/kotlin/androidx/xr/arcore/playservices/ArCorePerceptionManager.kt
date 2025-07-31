@@ -164,7 +164,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
 
     /** Gets the VPS availability at the given location. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public suspend fun checkVpsAvailability(
+    override suspend fun checkVpsAvailability(
         latitude: Double,
         longitude: Double,
     ): VpsAvailabilityResult {

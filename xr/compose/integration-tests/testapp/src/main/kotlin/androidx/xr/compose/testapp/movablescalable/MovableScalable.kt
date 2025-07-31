@@ -73,9 +73,8 @@ class MovableScalable : ComponentActivity() {
     @SubspaceComposable
     private fun SpatialContent() {
         var zOffset by remember { mutableStateOf(0.dp) }
-        var heightOfScalablePanel by remember { mutableStateOf(200.dp) }
+        var changedScale by remember { mutableFloatStateOf(1.0F) }
         var scaleForPanel by remember { mutableFloatStateOf(1.0F) }
-        var heightOfNonScalablePanel by remember { mutableStateOf(200.dp) }
         SpatialColumn {
             CommonTestPanel(
                 size = DpVolumeSize(680.dp, 320.dp, 0.dp),
@@ -99,7 +98,7 @@ class MovableScalable : ComponentActivity() {
                             onMove = { moveEvent ->
                                 with(density) {
                                     zOffset = moveEvent.pose.translation.z.toDp()
-                                    heightOfScalablePanel = moveEvent.size.height.toDp()
+                                    changedScale = moveEvent.scale
                                 }
                                 false
                             },
@@ -117,16 +116,22 @@ class MovableScalable : ComponentActivity() {
                             Button(
                                 onClick = { scaleForPanel = if (scaleForPanel == 1.0F) 2F else 1F }
                             ) {
-                                Column { Text(text = "Add scale modifier") }
+                                Column {
+                                    Text(
+                                        text =
+                                            if (scaleForPanel == 1.0F) {
+                                                "Add scale modifier"
+                                            } else {
+                                                "Remove scale modifier"
+                                            }
+                                    )
+                                }
                             }
                         }
                     }
                 }
                 SpatialPanel(
-                    SubspaceModifier.offset(z = zOffset)
-                        .height(heightOfNonScalablePanel)
-                        .width(200.dp)
-                        .movable()
+                    SubspaceModifier.offset(z = zOffset).height(200.dp).width(200.dp).movable()
                 ) {
                     Box(
                         modifier = Modifier.background(Purple80).fillMaxSize(),
@@ -151,10 +156,7 @@ class MovableScalable : ComponentActivity() {
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Text("Panel to show scale factor", textAlign = TextAlign.Center)
-                            Text(
-                                text =
-                                    "Scale factor ${heightOfScalablePanel/heightOfNonScalablePanel}"
-                            )
+                            Text(text = "Scale factor $changedScale", textAlign = TextAlign.Center)
                         }
                     }
                 }

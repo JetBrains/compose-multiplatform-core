@@ -22,8 +22,8 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrAugmentedObject
@@ -38,7 +38,7 @@ internal constructor(
     override var centerPose: Pose = Pose()
         private set
 
-    override var extents: Vector3 = Vector3.Zero
+    override var extents: FloatSize3d = FloatSize3d()
         private set
 
     override var trackingState: TrackingState = TrackingState.PAUSED

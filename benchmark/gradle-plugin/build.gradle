@@ -29,8 +29,6 @@ plugins {
     id("java-gradle-plugin")
 }
 
-apply from: "../../buildSrc/kotlin-dsl-dependency.gradle"
-
 dependencies {
     compileOnly("com.android.tools.build:gradle:8.1.1")
     implementation(gradleApi())

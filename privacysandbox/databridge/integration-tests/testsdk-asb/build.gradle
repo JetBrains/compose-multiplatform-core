@@ -24,21 +24,13 @@ plugins {
 android {
     namespace = "androidx.privacysandbox.databridge.integration.testsdk-asb"
     compileSdk = 36
-    // Remove when b/411666019 is fixed
-    targetSdk = 35
-    compileSdkExtension = 14
-    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
     bundle {
         packageName = "androidx.privacysandbox.databridge.integration.sdk"
-
         // This is the entry point class to our SDK in the SDK Runtime. It enables backward
         // compatibility support.
         sdkProviderClassName = "androidx.privacysandbox.sdkruntime.provider.SandboxedSdkProviderAdapter"
-
         // This is the class path of our implementation of the SandboxedSdkProviderCompat class.
         compatSdkProviderClassName = "androidx.privacysandbox.databridge.integration.testsdk.SdkProviderImpl"
-
-        setVersion(1, 0, 0)
     }
 }
 

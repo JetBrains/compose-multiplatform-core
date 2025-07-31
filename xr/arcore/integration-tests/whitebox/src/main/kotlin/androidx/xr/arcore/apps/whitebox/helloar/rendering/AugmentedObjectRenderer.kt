@@ -28,6 +28,7 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -166,7 +167,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
     internal class CubeEntity(
         private val session: Session,
         public var centerPose: Pose,
-        public var extents: Vector3,
+        public var extents: FloatSize3d,
     ) {
         enum class Face {
             PosX,
@@ -200,7 +201,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
             }
         }
 
-        public fun resize(newExtents: Vector3) {
+        public fun resize(newExtents: FloatSize3d) {
             extents = newExtents
             for (face in enumEntries<Face>()) {
                 _faces[face.ordinal].size = dimensionsForFace(face)
@@ -264,15 +265,15 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
             return when (face) {
                 Face.PosX,
                 Face.NegX -> {
-                    FloatSize2d(scaledExtents.z, scaledExtents.y)
+                    FloatSize2d(scaledExtents.depth, scaledExtents.height)
                 }
                 Face.PosY,
                 Face.NegY -> {
-                    FloatSize2d(scaledExtents.x, scaledExtents.z)
+                    FloatSize2d(scaledExtents.width, scaledExtents.depth)
                 }
                 Face.PosZ,
                 Face.NegZ -> {
-                    FloatSize2d(scaledExtents.x, scaledExtents.y)
+                    FloatSize2d(scaledExtents.width, scaledExtents.height)
                 }
             }
         }
@@ -283,7 +284,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 Face.PosX -> {
                     centerPose.compose(
                         Pose(
-                            Vector3(scaledExtents.x, 0f, 0f),
+                            Vector3(scaledExtents.width, 0f, 0f),
                             Quaternion.fromEulerAngles(0f, 90f, 0f),
                         )
                     )
@@ -291,18 +292,20 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 Face.PosY -> {
                     centerPose.compose(
                         Pose(
-                            Vector3(0f, scaledExtents.y, 0f),
+                            Vector3(0f, scaledExtents.height, 0f),
                             Quaternion.fromEulerAngles(-90f, 0f, 0f),
                         )
                     )
                 }
                 Face.PosZ -> {
-                    centerPose.compose(Pose(Vector3(0f, 0f, scaledExtents.z), Quaternion.Identity))
+                    centerPose.compose(
+                        Pose(Vector3(0f, 0f, scaledExtents.depth), Quaternion.Identity)
+                    )
                 }
                 Face.NegX -> {
                     centerPose.compose(
                         Pose(
-                            Vector3(-scaledExtents.x, 0f, 0f),
+                            Vector3(-scaledExtents.width, 0f, 0f),
                             Quaternion.fromEulerAngles(0f, -90f, 0f),
                         )
                     )
@@ -310,7 +313,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 Face.NegY -> {
                     centerPose.compose(
                         Pose(
-                            Vector3(0f, -scaledExtents.y, 0f),
+                            Vector3(0f, -scaledExtents.height, 0f),
                             Quaternion.fromEulerAngles(90f, 0f, 0f),
                         )
                     )
@@ -318,7 +321,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 Face.NegZ -> {
                     centerPose.compose(
                         Pose(
-                            Vector3(0f, 0f, -scaledExtents.z),
+                            Vector3(0f, 0f, -scaledExtents.depth),
                             Quaternion.fromEulerAngles(0f, 180f, 0f),
                         )
                     )

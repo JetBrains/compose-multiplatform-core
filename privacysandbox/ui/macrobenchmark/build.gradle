@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.ui.macrobenchmark"
-
+    compileSdk = 35
+    compileSdkExtension = 14
     defaultConfig {
         minSdk = 23
     }
@@ -27,6 +28,7 @@ dependencies {
     implementation(project(":benchmark:benchmark-macro"))
     implementation(project(":benchmark:benchmark-macro-junit4"))
     implementation(project(":internal-testutils-benchmark-macro"))
+    implementation(project(":privacysandbox:ui:macrobenchmark:testapp:sdkproviderutils"))
     implementation(libs.testRules)
     implementation(libs.testExtJunit)
     implementation(libs.testCore)

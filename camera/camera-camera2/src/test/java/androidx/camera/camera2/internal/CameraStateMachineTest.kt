@@ -18,7 +18,9 @@ package androidx.camera.camera2.internal
 import android.os.Build
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.camera.core.CameraState
+import androidx.camera.core.CameraState.ERROR_CAMERA_FATAL_ERROR
 import androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE
+import androidx.camera.core.CameraState.ERROR_CAMERA_REMOVED
 import androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE
 import androidx.camera.core.CameraState.StateError
 import androidx.camera.core.CameraState.Type
@@ -165,6 +167,58 @@ internal class CameraStateMachineTest {
         val newState = stateMachine.stateLiveData.value
         assertThat(newState).isEqualTo(CameraState.create(Type.OPENING))
     }
+
+    @Test
+    fun shouldEmitClosedError_whenRemovedWhileReleasing() = runTest { stateMachine, stateObserver ->
+        // Arrange
+        val error = StateError.create(ERROR_CAMERA_REMOVED)
+        val expectedState = CameraState.create(Type.CLOSED, error)
+
+        // Act: Update with RELEASING internal state and REMOVED error.
+        stateMachine.updateState(CameraInternal.State.RELEASING, error)
+
+        // Assert: The public state should be forced to CLOSED with the specific error,
+        // overriding the normal RELEASING -> CLOSING transition.
+        stateObserver
+            .assertHasState(CameraState.create(Type.CLOSED)) // Initial state
+            .assertHasState(expectedState)
+            .assertHasNoMoreStates()
+    }
+
+    @Test
+    fun shouldEmitClosedError_whenRemovedWhileOpening() = runTest { stateMachine, stateObserver ->
+        // Arrange
+        stateMachine.updateState(CameraInternal.State.OPENING, null)
+        val error = StateError.create(ERROR_CAMERA_REMOVED)
+        val expectedState = CameraState.create(Type.CLOSED, error)
+
+        // Act: Update with OPENING internal state but a REMOVED error.
+        stateMachine.updateState(CameraInternal.State.OPENING, error)
+
+        // Assert: The public state should be forced to CLOSED, not staying in OPENING.
+        stateObserver
+            .assertHasState(CameraState.create(Type.CLOSED)) // Initial
+            .assertHasState(CameraState.create(Type.OPENING)) // Opening
+            .assertHasState(expectedState)
+            .assertHasNoMoreStates()
+    }
+
+    @Test
+    fun shouldEmitClosingError_whenFatalErrorWhileReleasing() =
+        runTest { stateMachine, stateObserver ->
+            // Arrange: Use a different critical error to ensure it follows the old path.
+            val fatalError = StateError.create(ERROR_CAMERA_FATAL_ERROR)
+            val expectedState = CameraState.create(Type.CLOSING, fatalError)
+
+            // Act
+            stateMachine.updateState(CameraInternal.State.RELEASING, fatalError)
+
+            // Assert: The public state should be CLOSING, not the special-cased CLOSED.
+            stateObserver
+                .assertHasState(CameraState.create(Type.CLOSED)) // Initial
+                .assertHasState(expectedState)
+                .assertHasNoMoreStates()
+        }
 
     class StateObserver : Observer<CameraState> {
 

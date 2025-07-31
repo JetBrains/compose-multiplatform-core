@@ -21,7 +21,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateApkRequired
-import androidx.xr.runtime.SessionCreatePermissionsNotGranted
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
 
@@ -32,25 +31,25 @@ const val READ_MEDIA_AUDIO_PERMISSION = "android.permission.READ_MEDIA_AUDIO"
 
 fun createSession(activity: AppCompatActivity): Session? {
     var session: Session? = null
-    when (val sessionCreateResult = Session.create(activity)) {
-        is SessionCreateSuccess -> {
-            session = sessionCreateResult.session
-            obtainUserPermissions(activity)
-        }
+    try {
+        when (val sessionCreateResult = Session.create(activity)) {
+            is SessionCreateSuccess -> {
+                session = sessionCreateResult.session
+                obtainUserPermissions(activity)
+            }
+            is SessionCreateApkRequired -> {
+                Toast.makeText(activity, "Please update to the latest APK.", Toast.LENGTH_LONG)
+                    .show()
+                activity.finish()
+            }
 
-        is SessionCreatePermissionsNotGranted -> {
-            obtainUserPermissions(activity)
+            is SessionCreateUnsupportedDevice -> {
+                Toast.makeText(activity, "Unsupported device.", Toast.LENGTH_LONG).show()
+                activity.finish()
+            }
         }
-
-        is SessionCreateApkRequired -> {
-            Toast.makeText(activity, "Please update to the latest APK.", Toast.LENGTH_LONG).show()
-            activity.finish()
-        }
-
-        is SessionCreateUnsupportedDevice -> {
-            Toast.makeText(activity, "Unsupported device.", Toast.LENGTH_LONG).show()
-            activity.finish()
-        }
+    } catch (e: SecurityException) {
+        obtainUserPermissions(activity)
     }
 
     return session

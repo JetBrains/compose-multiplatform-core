@@ -18,7 +18,7 @@ package androidx.activity
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
-import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.testing.TestNavigationEventCallback
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -511,7 +511,7 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testBothCallbacksAdded() {
-        val callback1 = CountingNavigationEventCallback()
+        val callback1 = TestNavigationEventCallback()
         dispatcher.eventDispatcher.addCallback(callback1)
 
         val callback2 = CountingOnBackPressedCallback()
@@ -521,7 +521,7 @@ class OnBackPressedHandlerTest {
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should not be incremented as the callback is not at the top")
-            .that(callback1.count)
+            .that(callback1.completedInvocations)
             .isEqualTo(0)
         assertWithMessage("Count should be incremented after each onBackPressed")
             .that(callback2.count)
@@ -582,13 +582,13 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testOnBackPressedDispatchesToNavigationEventCallback() {
-        val callback = CountingNavigationEventCallback()
+        val callback = TestNavigationEventCallback()
         dispatcher.eventDispatcher.addCallback(callback)
 
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should be incremented after onBackPressed")
-            .that(callback.count)
+            .that(callback.completedInvocations)
             .isEqualTo(1)
     }
 
@@ -668,14 +668,5 @@ private class CountingOnBackPressedCallback(
     override fun handleOnBackPressed() {
         count++
         onBackPressed()
-    }
-}
-
-private class CountingNavigationEventCallback : NavigationEventCallback(isEnabled = true) {
-    var count = 0
-        private set
-
-    override fun onEventCompleted() {
-        count++
     }
 }

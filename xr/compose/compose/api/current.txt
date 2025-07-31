@@ -280,31 +280,7 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class MovableKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier movable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional boolean stickyPose, optional boolean scaleWithDistance, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.MoveStartEvent,kotlin.Unit>? onMoveStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.MoveEndEvent,kotlin.Unit>? onMoveEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.MoveEvent,java.lang.Boolean>? onMove);
-  }
-
-  public final class MoveEndEvent extends androidx.xr.compose.subspace.layout.MoveEvent {
-    ctor public MoveEndEvent();
-    ctor public MoveEndEvent(optional androidx.xr.runtime.math.Pose pose, optional float scale, optional androidx.xr.compose.unit.IntVolumeSize size);
-  }
-
-  public class MoveEvent {
-    ctor public MoveEvent();
-    ctor public MoveEvent(optional androidx.xr.runtime.math.Pose pose, optional float scale, optional androidx.xr.compose.unit.IntVolumeSize size);
-    method public final androidx.xr.runtime.math.Pose getPose();
-    method public final float getScale();
-    method public final androidx.xr.compose.unit.IntVolumeSize getSize();
-    method public final void setPose(androidx.xr.runtime.math.Pose);
-    method public final void setScale(float);
-    method public final void setSize(androidx.xr.compose.unit.IntVolumeSize);
-    property public final androidx.xr.runtime.math.Pose pose;
-    property public final float scale;
-    property public final androidx.xr.compose.unit.IntVolumeSize size;
-  }
-
-  public final class MoveStartEvent extends androidx.xr.compose.subspace.layout.MoveEvent {
-    ctor public MoveStartEvent();
-    ctor public MoveStartEvent(optional androidx.xr.runtime.math.Pose pose, optional float scale, optional androidx.xr.compose.unit.IntVolumeSize size);
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier movable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional boolean stickyPose, optional boolean scaleWithDistance, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? onMoveStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? onMoveEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? onMove);
   }
 
   public final class OffsetKt {
@@ -509,6 +485,40 @@ package androidx.xr.compose.subspace.layout {
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect-YgX7TsA(float, float);
     method public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect getZeroFeatheringEffect();
     property public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect ZeroFeatheringEffect;
+  }
+
+  public final class SpatialMoveEndEvent {
+    ctor public SpatialMoveEndEvent(androidx.xr.runtime.math.Pose pose, float scale, androidx.xr.compose.unit.IntVolumeSize size);
+    method public androidx.xr.runtime.math.Pose getPose();
+    method public float getScale();
+    method public androidx.xr.compose.unit.IntVolumeSize getSize();
+    property public androidx.xr.runtime.math.Pose pose;
+    property public float scale;
+    property public androidx.xr.compose.unit.IntVolumeSize size;
+  }
+
+  public final class SpatialMoveEvent {
+    ctor public SpatialMoveEvent();
+    ctor public SpatialMoveEvent(optional androidx.xr.runtime.math.Pose pose, optional float scale, optional androidx.xr.compose.unit.IntVolumeSize size);
+    method public androidx.xr.runtime.math.Pose getPose();
+    method public float getScale();
+    method public androidx.xr.compose.unit.IntVolumeSize getSize();
+    method public void setPose(androidx.xr.runtime.math.Pose);
+    method public void setScale(float);
+    method public void setSize(androidx.xr.compose.unit.IntVolumeSize);
+    property public androidx.xr.runtime.math.Pose pose;
+    property public float scale;
+    property public androidx.xr.compose.unit.IntVolumeSize size;
+  }
+
+  public final class SpatialMoveStartEvent {
+    ctor public SpatialMoveStartEvent(androidx.xr.runtime.math.Pose pose, float scale, androidx.xr.compose.unit.IntVolumeSize size);
+    method public androidx.xr.runtime.math.Pose getPose();
+    method public float getScale();
+    method public androidx.xr.compose.unit.IntVolumeSize getSize();
+    property public androidx.xr.runtime.math.Pose pose;
+    property public float scale;
+    property public androidx.xr.compose.unit.IntVolumeSize size;
   }
 
   public final class SpatialRoundedCornerShape extends androidx.xr.compose.subspace.layout.SpatialShape {

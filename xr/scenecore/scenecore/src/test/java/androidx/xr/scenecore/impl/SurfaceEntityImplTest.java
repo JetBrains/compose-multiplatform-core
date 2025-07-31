@@ -208,15 +208,14 @@ public final class SurfaceEntityImplTest {
         float kFeatherRadiusX = 0.14f;
         float kFeatherRadiusY = 0.28f;
         SurfaceEntity.EdgeFeather expectedFeather =
-            new SurfaceEntity.EdgeFeather.SmoothFeather(kFeatherRadiusX, kFeatherRadiusY);
+                new SurfaceEntity.EdgeFeather.SmoothFeather(kFeatherRadiusX, kFeatherRadiusY);
         mSurfaceEntity.setEdgeFeather(expectedFeather);
         SurfaceEntity.EdgeFeather returnedFeather = mSurfaceEntity.getEdgeFeather();
         assertThat(returnedFeather).isEqualTo(expectedFeather);
 
         // Apply Fake Impress checks
         FakeImpressApiImpl.StereoSurfaceEntityData surfaceEntityData =
-            mImpressApi
-                .getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
+                mImpressApi.getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
         assertThat(surfaceEntityData.getFeatherRadiusX()).isEqualTo(kFeatherRadiusX);
         assertThat(surfaceEntityData.getFeatherRadiusY()).isEqualTo(kFeatherRadiusY);
 

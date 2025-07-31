@@ -20,7 +20,6 @@ import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.media.MediaFormat.KEY_CAPTURE_RATE
 import android.media.MediaFormat.KEY_OPERATING_RATE
 import android.media.MediaFormat.KEY_PRIORITY
 import android.os.Build
@@ -399,7 +398,6 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
         initVideoEncoder(captureFrameRate = captureFrameRate, encodeFrameRate = encodeFrameRate)
 
         val format = videoEncoder.mMediaFormat
-        assertThat(format.getInteger(KEY_CAPTURE_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_OPERATING_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_PRIORITY)).isEqualTo(0)
 

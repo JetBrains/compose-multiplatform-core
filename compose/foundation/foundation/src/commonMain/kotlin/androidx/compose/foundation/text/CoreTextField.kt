@@ -510,14 +510,19 @@ internal fun CoreTextField(
             }
         }
 
-    val autofillHighlightColor = LocalAutofillHighlightColor.current
+    val autofillHighlightBrush =
+        resolveAutofillHighlight(
+            brush = LocalAutofillHighlightBrush.current,
+            color = LocalAutofillHighlightColor.current,
+            defaultColor = autofillHighlightColor(),
+        )
     val drawDecorationModifier =
         Modifier.drawWithContent {
             drawContent()
             // Autofill highlight is drawn on top of the content — this way the coloring appears
             // over any Material background applied.
             if (state.autofillHighlightOn || state.justAutofilled) {
-                drawRect(color = autofillHighlightColor)
+                drawRect(brush = autofillHighlightBrush)
             }
         }
 

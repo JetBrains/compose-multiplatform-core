@@ -41,6 +41,7 @@ import androidx.camera.camera2.pipe.internal.CameraDevicesImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.media.ImageReaderImageSources
 import androidx.camera.camera2.pipe.media.ImageSources
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import dagger.Binds
 import dagger.Component
 import dagger.Module
@@ -188,5 +189,11 @@ internal abstract class CameraPipeModule {
         }
 
         @Singleton @Provides fun provideCameraSurfaceManager() = CameraSurfaceManager()
+
+        @Singleton
+        @Provides
+        fun provideCameraDeviceSetupCompatFactory(
+            @CameraPipeContext cameraPipeContext: Context
+        ): CameraDeviceSetupCompatFactory = CameraDeviceSetupCompatFactory(cameraPipeContext)
     }
 }

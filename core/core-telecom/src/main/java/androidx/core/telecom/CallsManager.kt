@@ -50,6 +50,7 @@ import androidx.core.telecom.internal.CallSessionLegacy
 import androidx.core.telecom.internal.CallStateEvent
 import androidx.core.telecom.internal.JetpackConnectionService
 import androidx.core.telecom.internal.PreCallEndpointsUpdater
+import androidx.core.telecom.internal.ProductionBluetoothDeviceChecker
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.internal.utils.Utils.Companion.hasBluetoothPermissions
 import androidx.core.telecom.internal.utils.Utils.Companion.remapJetpackCapsToPlatformCaps
@@ -443,6 +444,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             // and propagates CallControlCallbacks that originate in the Platform out to the client.
             val callSession =
                 CallSession(
+                    ProductionBluetoothDeviceChecker(mContext),
                     coroutineContext,
                     callAttributes,
                     onAnswer,

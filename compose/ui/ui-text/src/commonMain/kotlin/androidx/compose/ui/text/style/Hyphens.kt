@@ -39,7 +39,7 @@ import kotlin.jvm.JvmInline
  * The default configuration for [Hyphens] = [Hyphens.None]
  */
 @JvmInline
-value class Hyphens private constructor(val value: Int) {
+value class Hyphens internal constructor(val value: Int) {
     companion object {
         /**
          * Lines will break with no hyphenation.

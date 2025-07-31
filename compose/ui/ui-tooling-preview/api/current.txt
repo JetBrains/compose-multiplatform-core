@@ -154,6 +154,7 @@ package androidx.compose.ui.tooling.preview {
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface PreviewParameterProvider<T> {
     method public default int getCount();
+    method public default String? getDisplayName(int index);
     method public kotlin.sequences.Sequence<T> getValues();
     property public default int count;
     property public abstract kotlin.sequences.Sequence<T> values;

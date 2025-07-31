@@ -28,5 +28,6 @@ oneway interface IRemoteSessionController {
     void notifyFetchUiForSession();
     void notifyUiChanged(in Bundle uiContainerInfo);
     void notifySessionRendered(in List<String> supportedSignalOptions);
-    void notifyMotionEvent(in MotionEvent motionEvent, in long eventTargetFrameTime, in @nullable IMotionEventTransferCallback eventTransferCallback);
+    void notifyMotionEvent(in MotionEvent motionEvent, in long eventTargetTime, in @nullable IMotionEventTransferCallback eventTransferCallback);
+    void notifyHoverEvent(in MotionEvent hoverEvent, in long eventTargetTime);
 }

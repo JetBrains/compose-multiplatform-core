@@ -203,12 +203,3 @@ package androidx.glance.wear.tiles.state {
 
 }
 
-package androidx.glance.wear.tiles.template {
-
-  public final class SingleEntityTemplateLayoutsKt {
-    method @androidx.compose.runtime.Composable public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData data);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SingleEntityTemplate(androidx.glance.template.SingleEntityTemplateData, androidx.compose.runtime.Composer?, int);
-  }
-
-}
-

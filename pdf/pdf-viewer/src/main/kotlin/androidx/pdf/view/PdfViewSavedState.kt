@@ -22,6 +22,7 @@ import android.os.Parcelable
 import android.os.Parcelable.ClassLoaderCreator
 import androidx.core.os.ParcelCompat
 import androidx.customview.view.AbsSavedState
+import androidx.pdf.models.FormEditRecord
 
 /** [AbsSavedState] implementation for [PdfView] */
 internal class PdfViewSavedState : AbsSavedState {
@@ -32,6 +33,7 @@ internal class PdfViewSavedState : AbsSavedState {
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
     var pdfFormFillingState: PdfFormFillingState? = null
+    var pdfFormEditRecords: List<FormEditRecord>? = null
 
     /**
      * The width of the PdfView before the last layout change (e.g., before rotation). Used to
@@ -68,6 +70,7 @@ internal class PdfViewSavedState : AbsSavedState {
         pdfFormFillingState =
             ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
+        pdfFormEditRecords = parcel.createTypedArrayList(FormEditRecord.CREATOR)
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -81,6 +84,7 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeParcelable(paginationModel, flags)
         dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
+        dest.writeTypedList(pdfFormEditRecords)
     }
 
     companion object {

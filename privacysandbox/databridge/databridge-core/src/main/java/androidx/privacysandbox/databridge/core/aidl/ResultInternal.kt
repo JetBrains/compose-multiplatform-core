@@ -43,21 +43,32 @@ public data class ResultInternal(
     }
 
     public companion object CREATOR : Parcelable.Creator<ResultInternal> {
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        @Suppress("deprecation")
         override fun createFromParcel(parcel: Parcel): ResultInternal {
             val keyName = parcel.readString()!!
             val exceptionName = parcel.readString()
             val exceptionString = parcel.readString()
-            val valueInternal =
-                parcel.readParcelable(
-                    ValueInternal::class.java.classLoader,
-                    ValueInternal::class.java,
-                )
+            val valueInternal: ValueInternal? =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Api33.getValueInternal(parcel)
+                } else {
+                    parcel.readParcelable(ValueInternal::class.java.classLoader)
+                }
             return ResultInternal(keyName, exceptionName, exceptionString, valueInternal)
         }
 
         override fun newArray(size: Int): Array<ResultInternal?> {
             return arrayOfNulls(size)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private object Api33 {
+        fun getValueInternal(parcel: Parcel): ValueInternal? {
+            return parcel.readParcelable(
+                ValueInternal::class.java.classLoader,
+                ValueInternal::class.java,
+            )
         }
     }
 }

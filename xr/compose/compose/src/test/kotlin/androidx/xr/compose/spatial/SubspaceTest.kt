@@ -750,4 +750,449 @@ class SubspaceTest {
 
         assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
     }
+
+    @Test
+    fun gravityAlignedSubspace_alreadyInGravityAlignedSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    GravityAlignedSubspace {
+                        GravityAlignedSubspace {
+                            SpatialPanel(
+                                SubspaceModifier.fillMaxWidth()
+                                    .fillMaxHeight()
+                                    .testTag("innerPanel")
+                            ) {}
+                        }
+                    }
+                }
+            }
+            composeTestRule.waitForIdle()
+
+            // Width dp = 1151.856 dp / meter * 1.73 meter
+            // Width px = 1992.7108799999999 * 1 (density)
+            composeTestRule
+                .onSubspaceNodeWithTag("innerPanel")
+                .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+                .assertWidthIsEqualTo(1993.toDp())
+                .assertHeightIsEqualTo(1854.toDp())
+        }
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.parent
+        val session = assertNotNull(composeTestRule.activity.session)
+        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.parent
+        val subspaceLayoutEntity = subspaceBoxEntity?.parent
+        val subspaceRootEntity = subspaceLayoutEntity?.parent
+        val subspaceRootContainerEntity = subspaceRootEntity?.parent
+        val parentPanel = subspaceRootContainerEntity?.parent
+        assertNotNull(parentPanel)
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
+                    GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        showSubspace = false
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_recommendedBoxed_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = fakeRuntime) {
+                GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestHomeSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+
+        fakeRuntime.requestFullSpaceMode()
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_unbounded_asNestedInSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    Subspace {
+                        SpatialPanel {
+                            GravityAlignedSubspace(constraints = VolumeConstraints()) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun gravityAlignedSubspace_customBounded_asNestedInSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    Subspace {
+                        SpatialPanel {
+                            GravityAlignedSubspace(
+                                constraints =
+                                    VolumeConstraints(
+                                        minWidth = 0,
+                                        maxWidth = 100,
+                                        minHeight = 0,
+                                        maxHeight = 100,
+                                    )
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun gravityAlignedSubspace_unbounded_asNestedInUnboundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    GravityAlignedSubspace(constraints = VolumeConstraints()) {
+                        SpatialPanel() {
+                            GravityAlignedSubspace(constraints = VolumeConstraints()) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun gravityAlignedSubspace_customBounded_asNestedinCustomBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    GravityAlignedSubspace(
+                        constraints =
+                            VolumeConstraints(
+                                minWidth = 0,
+                                maxWidth = 50,
+                                minHeight = 0,
+                                maxHeight = 50,
+                            )
+                    ) {
+                        SpatialPanel {
+                            GravityAlignedSubspace(
+                                constraints =
+                                    VolumeConstraints(
+                                        minWidth = 0,
+                                        maxWidth = 100,
+                                        minHeight = 0,
+                                        maxHeight = 100,
+                                    )
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun gravityAlignedSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace(constraints = VolumeConstraints()) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
+            .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
+    }
+
+    @Test
+    fun gravityAlignedSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
+        val customConstraints = VolumeConstraints(0, 100, 0, 100)
+
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace(constraints = customConstraints) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun gravityAlignedSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
+        val initialConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 100,
+                minHeight = 0,
+                maxHeight = 100,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val updatedConstraints =
+            VolumeConstraints(
+                minWidth = 50,
+                maxWidth = 150,
+                minHeight = 50,
+                maxHeight = 150,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+
+        composeTestRule.setContent {
+            TestSetup {
+                GravityAlignedSubspace(constraints = constraintsState.value) {
+                    SpatialBox(
+                        modifier =
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+
+        constraintsState.value = updatedConstraints
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(150.toDp())
+            .assertHeightIsEqualTo(150.toDp())
+    }
+
+    @Test
+    fun privateGravityAlignedSubspace_mainPanelEntityDisabled_whenSubspaceLeavesComposition() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
+                    GravityAlignedSubspace {}
+                }
+            }
+        }
+
+        val session = composeTestRule.activity.session
+        assertNotNull(session)
+        val mainPanelEntity = session.scene.mainPanelEntity
+        assertThat(mainPanelEntity.isEnabled()).isEqualTo(false)
+
+        showSubspace = false
+        composeTestRule.waitForIdle()
+
+        assertThat(mainPanelEntity.isEnabled()).isEqualTo(true)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_retainsState_whenSwitchingModes() {
+        val testJxrPlatformAdapter = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                GravityAlignedSubspace {
+                    SpatialPanel {
+                        var state by remember { mutableStateOf(0) }
+                        Button(onClick = { state++ }) { Text("Increment") }
+                        Text("$state", modifier = Modifier.testTag("state"))
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        testJxrPlatformAdapter.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        testJxrPlatformAdapter.requestFullSpaceMode()
+        composeTestRule.onNodeWithText("Increment").performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+    }
+
+    @Test
+    fun gravityAlignedSubspace_retainsState_whenSwitchingModesStartingFromHomeSpace() {
+        val runtime = createFakeRuntime(composeTestRule.activity)
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider {
+                TestSetup(runtime = runtime) {
+                    GravityAlignedSubspace {
+                        SpatialPanel {
+                            var state by remember { mutableStateOf(0) }
+                            Button(onClick = { state++ }) { Text("Increment") }
+                            Text("$state", modifier = Modifier.testTag("state"))
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        runtime.requestFullSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+
+        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("3")
+
+        runtime.requestFullSpaceMode()
+        composeTestRule.onNodeWithText("Increment").performClick().performClick()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+
+        runtime.requestHomeSpaceMode()
+
+        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+    }
+
+    @Test
+    fun gravityAlignedSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
+        composeTestRule.setContent {
+            TestSetup {
+                assertThat(LocalSession.current!!.scene.keyEntity).isNull()
+                GravityAlignedSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
+                GravityAlignedSubspace {
+                    SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {}
+                }
+            }
+        }
+
+        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
+        val boxEntity = assertNotNull(boxNode.semanticsEntity)
+        val layoutRootEntity = assertNotNull(boxEntity.parent)
+        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
+        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
+        val boxNode2 = composeTestRule.onSubspaceNodeWithTag("Box2").fetchSemanticsNode()
+        val boxEntity2 = assertNotNull(boxNode2.semanticsEntity)
+        val layoutRootEntity2 = assertNotNull(boxEntity2.parent)
+        val subspaceRootEntity2 = assertNotNull(layoutRootEntity2.parent)
+        val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
+
+        assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
+    }
 }

@@ -39,7 +39,7 @@ import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
-import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
+import androidx.compose.foundation.text.contextmenu.modifier.showTextContextMenuOnSecondaryClick
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuToolbarHandler
 import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
 import androidx.compose.foundation.text.input.internal.coerceIn
@@ -182,7 +182,15 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
 
     val contextMenuAreaModifier
         get() =
-            Modifier.textContextMenuGestures { notifyPlatformSelectionBehaviorsOnShowContextMenu() }
+            Modifier.showTextContextMenuOnSecondaryClick { clickLocation ->
+                    getContextTextAndSelection()?.let { (text, selection) ->
+                        platformSelectionBehaviors?.onShowContextMenu(
+                            text = text,
+                            selection = selection,
+                            secondaryClickLocation = clickLocation,
+                        )
+                    }
+                }
                 .textContextMenuToolbarHandler(
                     requester = toolbarRequester,
                     computeContentBounds = { destinationCoordinates ->
@@ -195,7 +203,11 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                             destinationCoordinates = destinationCoordinates,
                         )
                     },
-                    onShow = { notifyPlatformSelectionBehaviorsOnShowContextMenu() },
+                    onShow = {
+                        getContextTextAndSelection()?.let { (text, selection) ->
+                            platformSelectionBehaviors?.onShowSelectionToolbar(text, selection)
+                        }
+                    },
                 )
 
     private var previousPosition: Offset? = null
@@ -405,11 +417,6 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 updateSelectionToolbar()
             }
         }
-    }
-
-    private suspend fun notifyPlatformSelectionBehaviorsOnShowContextMenu() {
-        val (text, selection) = getContextTextAndSelection() ?: return
-        platformSelectionBehaviors?.onShowContextMenu(text = text, selection = selection)
     }
 
     private fun suggestSelectionForLongPressOrDoubleClick() {

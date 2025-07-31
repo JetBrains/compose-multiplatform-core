@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.DeviceParametersBuilders;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue;
@@ -41,6 +42,23 @@ import java.time.Instant;
 @RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public final class RequestBuildersTest {
+
+    @Test
+    public void buildTileRequest_withScope_scopeIsReturned() {
+        ProtoLayoutScope scope = new ProtoLayoutScope();
+        TileRequest tileRequest =
+                TileRequest.fromProto(RequestProto.TileRequest.getDefaultInstance(), scope);
+
+        assertThat(tileRequest.getScope()).isEqualTo(scope);
+    }
+
+    @Test
+    public void buildTileRequest_withoutScope_defaultScopeReturned() {
+        TileRequest tileRequest =
+                TileRequest.fromProto(RequestProto.TileRequest.getDefaultInstance());
+
+        assertThat(tileRequest.getScope()).isNotNull();
+    }
 
     @Test
     public void buildTileRequest_ifSetLastVisibleInstant_setsLastVisibleMillis() {

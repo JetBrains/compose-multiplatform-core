@@ -25,6 +25,10 @@ import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.integration.tests.AppSearchMetadataHelper.isDynamicIndexerAvailable
+import androidx.appfunctions.integration.tests.TestUtil.assertReadAccessible
+import androidx.appfunctions.integration.tests.TestUtil.assertReadInaccessible
+import androidx.appfunctions.integration.tests.TestUtil.assertWriteAccessible
+import androidx.appfunctions.integration.tests.TestUtil.assertWriteInaccessible
 import androidx.appfunctions.integration.tests.TestUtil.doBlocking
 import androidx.appfunctions.integration.tests.TestUtil.retryAssert
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -108,7 +112,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(15)
+        assertThat(appFunctions).hasSize(16)
     }
 
     @Test
@@ -1064,6 +1068,32 @@ class IntegrationTest {
                     )
                 )
         }
+
+    @Test
+    fun executeAppFunction_getFilesData_validUriAccess() = doBlocking {
+        val request =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier =
+                    "androidx.appfunctions.integration.tests.TestFunctions#getFilesData",
+                functionParameters = AppFunctionData.EMPTY,
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+
+        val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val filesData =
+            successResponse.returnValue
+                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                ?.deserialize(FilesData::class.java)
+        assertThat(filesData).isNotNull()
+        targetContext.assertReadAccessible(checkNotNull(filesData).readOnlyUri.uri)
+        targetContext.assertWriteInaccessible(filesData.readOnlyUri.uri)
+        targetContext.assertReadInaccessible(filesData.writeOnlyUri.uri)
+        targetContext.assertWriteAccessible(filesData.writeOnlyUri.uri)
+        targetContext.assertReadAccessible(filesData.readWriteUri.uri)
+        targetContext.assertWriteAccessible(filesData.readWriteUri.uri)
+    }
 
     /**
      * Requires that [parameters] contains the [AppFunctionObjectTypeMetadata] under

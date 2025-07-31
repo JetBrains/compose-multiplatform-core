@@ -21,8 +21,8 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 
 /**
  * Fake implementation of [RuntimeObject] for testing purposes.
@@ -36,7 +36,7 @@ import androidx.xr.runtime.math.Vector3
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeAugmentedObject(
     override var centerPose: Pose = Pose(),
-    override var extents: Vector3 = Vector3.Zero,
+    override var extents: FloatSize3d = FloatSize3d(),
     override var category: AugmentedObjectCategory = AugmentedObjectCategory.KEYBOARD,
     override var trackingState: TrackingState = TrackingState.TRACKING,
     public val anchors: MutableCollection<RuntimeAnchor> = mutableListOf(),

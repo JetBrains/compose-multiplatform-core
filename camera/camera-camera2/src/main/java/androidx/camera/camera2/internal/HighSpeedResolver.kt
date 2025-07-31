@@ -186,6 +186,8 @@ public class HighSpeedResolver(private val characteristics: CameraCharacteristic
     public companion object {
         private const val TAG = "HighSpeedResolver"
 
+        @JvmField public val DEFAULT_FPS: Range<Int> = Range(120, 120)
+
         /**
          * Checks if a high-speed session is enabled based on the provided attached surfaces and new
          * use case configurations.

@@ -21,16 +21,46 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.FloatSize3d
 
 /**
- * A high-level resize event which is sent in response to the User interacting with the Entity.
+ * A resize event which is sent in response to the User interacting with the [ResizableComponent].
  *
+ * @param entity The [Entity] being resized.
  * @param resizeState The state of the resize event.
- * @param newSize The new proposed size of the Entity in meters.
+ * @param newSize The new proposed size of the Entity in local space.
  */
-internal data class ResizeEvent(
-    @ResizeState public val resizeState: Int,
+public class ResizeEvent(
+    public val entity: Entity,
+    @ResizeStateValue public val resizeState: Int,
     public val newSize: FloatSize3d,
 ) {
-    public companion object {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ResizeEvent) return false
+
+        if (entity != other.entity) return false
+        if (resizeState != other.resizeState) return false
+        if (newSize != other.newSize) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = entity.hashCode()
+        result = 31 * result + resizeState.hashCode()
+        result = 31 * result + newSize.hashCode()
+        return result
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(
+        ResizeState.RESIZE_STATE_UNKNOWN,
+        ResizeState.RESIZE_STATE_START,
+        ResizeState.RESIZE_STATE_ONGOING,
+        ResizeState.RESIZE_STATE_END,
+    )
+    internal annotation class ResizeStateValue
+
+    public object ResizeState {
         /** Constant for {@link resizeState}: The resize state is unknown. */
         public const val RESIZE_STATE_UNKNOWN: Int = 0
         /** Constant for {@link resizeState}: The user has started dragging the resize handles. */
@@ -40,42 +70,4 @@ internal data class ResizeEvent(
         /** Constant for {@link resizeState}: The user has stopped dragging the resize handles. */
         public const val RESIZE_STATE_END: Int = 3
     }
-
-    @IntDef(
-        value = [RESIZE_STATE_UNKNOWN, RESIZE_STATE_START, RESIZE_STATE_ONGOING, RESIZE_STATE_END]
-    )
-    public annotation class ResizeState
-}
-
-/**
- * Listener for resize actions. Callbacks are invoked as the user interacts with the resize
- * affordance.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface ResizeListener {
-    /**
-     * Called when the user starts resizing the entity.
-     *
-     * @param entity The entity being resized.
-     * @param originalSize The original size of the entity in meters at the start of the resize
-     *   operation.
-     */
-    public fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {}
-
-    /**
-     * Called continuously while the user is resizing the entity.
-     *
-     * @param entity The entity being resized.
-     * @param newSize The new proposed size of the entity in meters.
-     */
-    public fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {}
-
-    /**
-     * Called when the user has finished resizing the entity, for example when the user concludes
-     * the resize gesture.
-     *
-     * @param entity The entity being resized.
-     * @param finalSize The final proposed size of the entity in meters.
-     */
-    public fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {}
 }

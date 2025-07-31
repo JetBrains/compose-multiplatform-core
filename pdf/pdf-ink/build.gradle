@@ -29,13 +29,40 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-dependencies {
-    api(libs.kotlinStdlib)
-    // Add dependencies here
-}
-
 android {
     namespace = "androidx.pdf.ink"
+    defaultConfig {
+        minSdk = 31
+        compileSdk = 36
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+}
+
+dependencies {
+    def ink_version = "1.0.0-alpha05"
+
+    api(libs.kotlinStdlib)
+    implementation(project(":pdf:pdf-viewer-fragment"))
+
+    implementation("androidx.core:core:1.13.0")
+    implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.ink:ink-brush:${ink_version}")
+    implementation("androidx.ink:ink-rendering:${ink_version}")
+    implementation("androidx.ink:ink-strokes:${ink_version}")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.testCoreKtx)
+    testImplementation(libs.testExtJunitKtx)
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testRules)
 }
 
 androidx {

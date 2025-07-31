@@ -47,8 +47,32 @@ public class CameraStateAdapter @Inject constructor() {
 
     @GuardedBy("lock") private var currentCameraStateError: CameraState.StateError? = null
 
+    @GuardedBy("lock") private var isRemoved = false
+
     init {
         postCameraState(CameraInternal.State.CLOSED)
+    }
+
+    /**
+     * Forces the state to CLOSED with a ERROR_CAMERA_REMOVED error.
+     *
+     * This is called when the camera is physically removed or becomes permanently unavailable,
+     * providing an immediate state update to clients.
+     */
+    public fun onRemoved() {
+        val error = CameraState.StateError.create(CameraState.ERROR_CAMERA_REMOVED)
+        synchronized(lock) {
+            if (isRemoved) return
+
+            Log.debug { "Camera is removed, forcing state to CLOSED." }
+            isRemoved = true
+            currentCameraInternalState = CameraInternal.State.CLOSED
+            currentCameraStateError = error
+            postCameraState(currentCameraInternalState, currentCameraStateError)
+
+            // Clear the graph reference as it's no longer valid.
+            currentGraph = null
+        }
     }
 
     public fun onGraphUpdated(cameraGraph: CameraGraph): Unit =
@@ -64,6 +88,12 @@ public class CameraStateAdapter @Inject constructor() {
 
     public fun onGraphStateUpdated(cameraGraph: CameraGraph, graphState: GraphState): Unit =
         synchronized(lock) {
+            // Ignore any events if the camera has been marked as removed.
+            if (isRemoved) {
+                Log.warn { "Ignoring graph state update $graphState on removed camera." }
+                return
+            }
+
             Log.debug { "$cameraGraph state updated to $graphState" }
             handleStateTransition(cameraGraph, graphState)
         }

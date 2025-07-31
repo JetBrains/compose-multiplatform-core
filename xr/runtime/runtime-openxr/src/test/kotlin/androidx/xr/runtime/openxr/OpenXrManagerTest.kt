@@ -19,7 +19,6 @@ package androidx.xr.runtime.openxr
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.manifest.HAND_TRACKING
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -51,10 +50,10 @@ public class OpenXrManagerTest {
     }
 
     @Test
-    fun configure_handTrackingEnabledWithoutPermission_throwsPermissionNotGrantedException() {
+    fun configure_handTrackingEnabledWithoutPermission_throwsSecurityException() {
         check(underTest.config.handTracking == Config.HandTrackingMode.DISABLED)
 
-        assertFailsWith<PermissionNotGrantedException> {
+        assertFailsWith<SecurityException> {
             underTest.configure(Config(handTracking = Config.HandTrackingMode.BOTH))
         }
     }

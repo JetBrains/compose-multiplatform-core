@@ -155,7 +155,9 @@ internal constructor(
          * @param session XR [Session] in which to create the PanelEntity.
          * @param view [View] to embed in this panel entity.
          * @param dimensions Spatialized dimensions for the underlying surface for the given view,
-         *   in meters.
+         *   in meters. **Dimensions (width and height) must be greater than zero, otherwise an
+         *     * [IllegalArgumentException] will be thrown.**
+         *
          * @param name Name of this PanelEntity.
          * @param pose [Pose] of this entity relative to its parent, default value is Identity.
          * @return a PanelEntity instance.
@@ -186,7 +188,9 @@ internal constructor(
          * @param session XR [Session] in which to create the PanelEntity.
          * @param view [View] to embed in this panel entity.
          * @param pixelDimensions Dimensions for the underlying surface for the given view, in
-         *   pixels.
+         *   pixels. **Pixel dimensions (width and height) must be greater than zero, otherwise an
+         *     * [IllegalArgumentException] will be thrown.**
+         *
          * @param name Name of the panel.
          * @param pose [Pose] of this PanelEntity relative to its parent, default value is Identity.
          * @return a PanelEntity instance.

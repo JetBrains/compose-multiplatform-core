@@ -2469,6 +2469,31 @@ class PagingDataPresenterTest {
         }
 
     @Test
+    fun cachedData_withPlaceholders_thenRealData() =
+        testScope.runTest {
+            val data = List(2) { it }
+            val cachedPagingData =
+                createCachedPagingData(
+                    data = data,
+                    placeholdersBefore = 1,
+                    placeholdersAfter = 2,
+                    sourceLoadStates = loadStates(refresh = Loading),
+                    mediatorLoadStates = null,
+                )
+            val presenter = SimplePresenter(cachedPagingData)
+            assertThat(presenter.snapshot()).containsExactly(null, 0, 1, null, null).inOrder()
+
+            val data2 = List(10) { it }
+            val flow = flowOf(localRefresh(pages = listOf(TransformablePage(data2))))
+            val job1 = launch {
+                presenter.collectFrom(PagingData(flow, dummyUiReceiver, dummyHintReceiver))
+            }
+
+            assertThat(presenter.snapshot()).isEqualTo(data2)
+            job1.cancel()
+        }
+
+    @Test
     fun cachedData_thenLoadError() =
         testScope.runTest {
             val data = List(3) { it }
@@ -2501,6 +2526,88 @@ class PagingDataPresenterTest {
             presenter[2]
             assertThat(hintReceiver.hints).hasSize(0)
             job1.cancel()
+        }
+
+    @Test
+    fun staticList_placeholders() =
+        testScope.runTest {
+            val data = List(10) { it }
+            val presenter = SimplePresenter()
+            launch {
+                presenter.collectFrom(
+                    PagingData.from(data, placeholdersBefore = 10, placeholdersAfter = 20)
+                )
+            }
+            advanceUntilIdle()
+            val collected = presenter.snapshot()
+            assertThat(collected.placeholdersBefore).isEqualTo(10)
+            assertThat(collected.placeholdersAfter).isEqualTo(20)
+
+            launch {
+                presenter.collectFrom(
+                    PagingData.from(data, placeholdersBefore = 5, placeholdersAfter = 30)
+                )
+            }
+            advanceUntilIdle()
+            val collected2 = presenter.snapshot()
+            assertThat(collected2.placeholdersBefore).isEqualTo(5)
+            assertThat(collected2.placeholdersAfter).isEqualTo(30)
+        }
+
+    @Test
+    fun staticList_thenRealData() =
+        testScope.runTest {
+            val data = List(10) { it }
+            val presenter = SimplePresenter()
+            launch {
+                presenter.collectFrom(
+                    PagingData.from(data, placeholdersBefore = 10, placeholdersAfter = 20)
+                )
+            }
+            advanceUntilIdle()
+            val collected = presenter.snapshot()
+            assertThat(collected.placeholdersBefore).isEqualTo(10)
+            assertThat(collected.placeholdersAfter).isEqualTo(20)
+
+            val pager =
+                Pager(PagingConfig(pageSize = 1, enablePlaceholders = true)) { TestPagingSource() }
+            val job = launch { pager.flow.collectLatest { presenter.collectFrom(it) } }
+
+            advanceUntilIdle()
+            val collected2 = presenter.snapshot()
+            assertThat(collected2.items).isEqualTo(listOf(0, 1, 2))
+            assertThat(collected2.placeholdersBefore).isEqualTo(0)
+            assertThat(collected2.placeholdersAfter).isEqualTo(97)
+            job.cancel()
+        }
+
+    @Test
+    fun staticList_thenRealDataInitialKey() =
+        testScope.runTest {
+            val data = List(10) { it }
+            val presenter = SimplePresenter()
+            launch {
+                presenter.collectFrom(
+                    PagingData.from(data, placeholdersBefore = 200, placeholdersAfter = 300)
+                )
+            }
+            advanceUntilIdle()
+            val collected = presenter.snapshot()
+            assertThat(collected.placeholdersBefore).isEqualTo(200)
+            assertThat(collected.placeholdersAfter).isEqualTo(300)
+
+            val pager =
+                Pager(PagingConfig(pageSize = 1, enablePlaceholders = true), initialKey = 50) {
+                    TestPagingSource()
+                }
+            val job = launch { pager.flow.collectLatest { presenter.collectFrom(it) } }
+
+            advanceUntilIdle()
+            val collected2 = presenter.snapshot()
+            assertThat(collected2.items).isEqualTo(listOf(50, 51, 52))
+            assertThat(collected2.placeholdersBefore).isEqualTo(50)
+            assertThat(collected2.placeholdersAfter).isEqualTo(47)
+            job.cancel()
         }
 
     private fun runTest(

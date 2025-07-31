@@ -182,6 +182,7 @@ abstract class AutomatedEndToEndTest(
         val resizeLatch = CountDownLatch(1)
         val configLatch = CountDownLatch(1)
         val dragLatch = CountDownLatch(1)
+        val clickLatch = CountDownLatch(1)
         var isRemoteSession = false
 
         override fun onResizeOccurred(width: Int, height: Int) {
@@ -199,6 +200,10 @@ abstract class AutomatedEndToEndTest(
             dragX = totalChangeInX
             dragY = totalChangeInY
             dragLatch.countDown()
+        }
+
+        override fun onClick() {
+            clickLatch.countDown()
         }
 
         override fun onRemoteSession() {

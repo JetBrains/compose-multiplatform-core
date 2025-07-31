@@ -190,7 +190,11 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             alphaMaskTexture =
-                Texture.create(session, Paths.get("alpha_mask.png"), TextureSampler.create())
+                Texture.create(
+                    session,
+                    Paths.get("textures", "alpha_mask.png"),
+                    TextureSampler.create(),
+                )
         }
         setContent { HelloWorld(session, activity) }
     }

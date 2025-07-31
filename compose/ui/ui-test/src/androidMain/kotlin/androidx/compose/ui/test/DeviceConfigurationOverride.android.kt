@@ -113,6 +113,8 @@ actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
  * This will change resource resolution for the content under test, and also override the layout
  * direction as specified by the locales.
  *
+ * @param locales the [LocaleList] to use for the content under test.
+ * @return a [DeviceConfigurationOverride] that specifies the locales for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideLocalesSample
  */
 fun DeviceConfigurationOverride.Companion.Locales(
@@ -141,6 +143,8 @@ fun DeviceConfigurationOverride.Companion.Locales(
  * contained content. Inside the content under test, `isSystemInDarkTheme()` will return
  * [isDarkMode].
  *
+ * @param isDarkMode if `true`, render content under test in dark mode.
+ * @return a [DeviceConfigurationOverride] that specifies the dark mode for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideDarkModeSample
  */
 fun DeviceConfigurationOverride.Companion.DarkMode(
@@ -170,6 +174,9 @@ fun DeviceConfigurationOverride.Companion.DarkMode(
  * A [DeviceConfigurationOverride] that overrides the font weight adjustment for the contained
  * content.
  *
+ * @param fontWeightAdjustment the font weight adjustment to use to render the content under test.
+ * @return a [DeviceConfigurationOverride] that specifies the font weight adjustment for the content
+ *   under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideFontWeightAdjustmentSample
  */
 @RequiresApi(31)
@@ -193,6 +200,9 @@ fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
  * A [DeviceConfigurationOverride] that overrides whether the screen is round for the contained
  * content.
  *
+ * @param isScreenRound if `true`, render content under test in a round screen.
+ * @return a [DeviceConfigurationOverride] that specifies whether the screen is round for the
+ *   content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideRoundScreenSample
  */
 @RequiresApi(23)
@@ -222,10 +232,27 @@ fun DeviceConfigurationOverride.Companion.RoundScreen(
 
 /** Values corresponding to keyboard type constants in [Configuration]. */
 @JvmInline
-value class KeyboardType private constructor(val configValue: Int) {
+value class KeyboardType private constructor(internal val configValue: Int) {
     companion object {
+        /**
+         * No hardware keyboard for [Configuration.keyboard]
+         *
+         * @see Configuration.KEYBOARD_NOKEYS
+         */
         val NoKeys = KeyboardType(Configuration.KEYBOARD_NOKEYS)
+
+        /**
+         * A keyboard type of `qwerty` for [Configuration.keyboard]
+         *
+         * @see Configuration.KEYBOARD_QWERTY
+         */
         val Qwerty = KeyboardType(Configuration.KEYBOARD_QWERTY)
+
+        /**
+         * A keyboard type of `12key` for [Configuration.keyboard]
+         *
+         * @see Configuration.KEYBOARD_12KEY
+         */
         val TwelveKey = KeyboardType(Configuration.KEYBOARD_12KEY)
     }
 }
@@ -233,10 +260,20 @@ value class KeyboardType private constructor(val configValue: Int) {
 /**
  * A [DeviceConfigurationOverride] that overrides the current keyboard type.
  *
+ * @param keyboardType the keyboard type to render content under test in.
+ * @param isHidden if `true`, render the content under test with a hidden keyboard.
+ * @param isHardKeyboardHidden if `true`, render the content under test with a hidden hard keyboard.
+ * @return a [DeviceConfigurationOverride] that specifies the keyboard status for the content under
+ *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideKeyboard
+ * @see [Configuration.keyboard]
+ * @see [Configuration.keyboardHidden]
+ * @see [Configuration.hardKeyboardHidden]
  */
 fun DeviceConfigurationOverride.Companion.Keyboard(
-    keyboardType: KeyboardType
+    keyboardType: KeyboardType,
+    isHardKeyboardHidden: Boolean = false,
+    isHidden: Boolean = false,
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -245,25 +282,12 @@ fun DeviceConfigurationOverride.Companion.Keyboard(
                 updateFrom(LocalConfiguration.current)
 
                 keyboard = keyboardType.configValue
-            },
-        content = contentUnderTest,
-    )
-}
-
-/**
- * A [DeviceConfigurationOverride] that overrides the current keyboard hidden state.
- *
- * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideKeyboardHidden
- */
-fun DeviceConfigurationOverride.Companion.KeyboardHidden(
-    isHidden: Boolean
-): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
-    OverriddenConfiguration(
-        configuration =
-            Configuration().apply {
-                // Initialize from the current configuration
-                updateFrom(LocalConfiguration.current)
-
+                hardKeyboardHidden =
+                    if (isHardKeyboardHidden) {
+                        Configuration.HARDKEYBOARDHIDDEN_YES
+                    } else {
+                        Configuration.HARDKEYBOARDHIDDEN_NO
+                    }
                 keyboardHidden =
                     if (isHidden) {
                         Configuration.KEYBOARDHIDDEN_YES
@@ -277,22 +301,53 @@ fun DeviceConfigurationOverride.Companion.KeyboardHidden(
 
 /** Values corresponding to navigation type constants in [Configuration]. */
 @JvmInline
-value class NavigationType private constructor(val configValue: Int) {
+value class NavigationType private constructor(internal val configValue: Int) {
     companion object {
+        /**
+         * A navigation type of `dpad` for [Configuration.navigation]
+         *
+         * @see Configuration.NAVIGATION_DPAD
+         */
         val Dpad = NavigationType(Configuration.NAVIGATION_DPAD)
+
+        /**
+         * A navigation type of `wheel` for [Configuration.navigation]
+         *
+         * @see Configuration.NAVIGATION_WHEEL
+         */
         val Wheel = NavigationType(Configuration.NAVIGATION_WHEEL)
+
+        /**
+         * No navigation type for [Configuration.navigation]
+         *
+         * @see Configuration.NAVIGATION_NONAV
+         */
         val NoNav = NavigationType(Configuration.NAVIGATION_NONAV)
+
+        /**
+         * A navigation type of `trackball` for [Configuration.navigation]
+         *
+         * @see Configuration.NAVIGATION_TRACKBALL
+         */
         val Trackball = NavigationType(Configuration.NAVIGATION_TRACKBALL)
     }
 }
 
 /**
- * A [DeviceConfigurationOverride] that overrides the current navigation type.
+ * A [DeviceConfigurationOverride] that overrides the current navigation type and whether it is
+ * hidden.
  *
+ * @param navigationType the navigation type to render the content under test in.
+ * @param isHidden if `true`, render the content under test with hidden navigation.
+ * @return a [DeviceConfigurationOverride] that specifies the navigation type for the content under
+ *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideNavigation
+ * @see [Configuration.navigation]
+ * @see [Configuration.navigationHidden]
  */
 fun DeviceConfigurationOverride.Companion.Navigation(
-    navigationType: NavigationType
+    navigationType: NavigationType,
+    isHidden: Boolean = false,
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -301,25 +356,6 @@ fun DeviceConfigurationOverride.Companion.Navigation(
                 updateFrom(LocalConfiguration.current)
 
                 navigation = navigationType.configValue
-            },
-        content = contentUnderTest,
-    )
-}
-
-/**
- * A [DeviceConfigurationOverride] that overrides the current navigation hidden state.
- *
- * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideNavigationHidden
- */
-fun DeviceConfigurationOverride.Companion.NavigationHidden(
-    isHidden: Boolean
-): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
-    OverriddenConfiguration(
-        configuration =
-            Configuration().apply {
-                // Initialize from the current configuration
-                updateFrom(LocalConfiguration.current)
-
                 navigationHidden =
                     if (isHidden) {
                         Configuration.NAVIGATIONHIDDEN_YES
@@ -358,14 +394,63 @@ fun DeviceConfigurationOverride.Companion.Touchscreen(
 
 /** Values corresponding to UI mode type constants in [Configuration]. */
 @JvmInline
-value class UiModeType private constructor(val configValue: Int) {
+value class UiModeType private constructor(internal val configValue: Int) {
     companion object {
+        /**
+         * A uiMode type of `appliance` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_APPLIANCE
+         */
         val Appliance = UiModeType(Configuration.UI_MODE_TYPE_APPLIANCE)
+
+        /**
+         * A uiMode type of `car` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_CAR
+         */
         val Car = UiModeType(Configuration.UI_MODE_TYPE_CAR)
+
+        /**
+         * A uiMode type of `desk` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_DESK
+         */
         val Desk = UiModeType(Configuration.UI_MODE_TYPE_DESK)
+
+        /**
+         * No uiMode type for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_NORMAL
+         */
         val Normal = UiModeType(Configuration.UI_MODE_TYPE_NORMAL)
+
+        /**
+         * A uiMode type of `television` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_TELEVISION
+         */
         val Television = UiModeType(Configuration.UI_MODE_TYPE_TELEVISION)
-        val VrHeadset = UiModeType(Configuration.UI_MODE_TYPE_VR_HEADSET)
+
+        /**
+         * A uiMode type of `vrheadset` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_VR_HEADSET
+         */
+        val VrHeadset
+            @RequiresApi(26) get() = UiModeType(Configuration.UI_MODE_TYPE_VR_HEADSET)
+
+        /**
+         * A uiMode type of `watch` for the [Configuration.UI_MODE_TYPE_MASK] portion of
+         * [Configuration.uiMode].
+         *
+         * @see Configuration.UI_MODE_TYPE_WATCH
+         */
         val Watch = UiModeType(Configuration.UI_MODE_TYPE_WATCH)
     }
 }
@@ -373,6 +458,9 @@ value class UiModeType private constructor(val configValue: Int) {
 /**
  * A [DeviceConfigurationOverride] that overrides the current navigation type.
  *
+ * @param uiModeType the uiMode type to render the content under test in.
+ * @return a [DeviceConfigurationOverride] that specifies the uiMode type for the content under
+ *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideUiMode
  */
 fun DeviceConfigurationOverride.Companion.UiMode(
@@ -394,6 +482,9 @@ fun DeviceConfigurationOverride.Companion.UiMode(
 /**
  * A [DeviceConfigurationOverride] that overrides the window insets for the contained content.
  *
+ * @param windowInsets the [WindowInsetsCompat] to render the content under test in.
+ * @return a [DeviceConfigurationOverride] that specifies the window insets for the content under
+ *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideWindowInsetsSample
  */
 fun DeviceConfigurationOverride.Companion.WindowInsets(

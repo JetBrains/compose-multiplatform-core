@@ -823,8 +823,7 @@ public final class ActionBuilders {
         private final @Nullable Fingerprint mFingerprint;
 
         PendingIntentAction(
-                ActionProto.PendingIntentAction impl,
-                @Nullable Fingerprint fingerprint) {
+                ActionProto.PendingIntentAction impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
             this.mFingerprint = fingerprint;
         }

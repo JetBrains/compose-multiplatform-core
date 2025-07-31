@@ -110,6 +110,9 @@ public abstract class PasswordDialog extends DialogFragment {
                     @Override
                     public void onShow(DialogInterface useless) {
                         passwordField.requestFocus();
+                        // getActivity() could be null here, hence added a safety null check
+                        // in showSoftKeyboard. If null, we'll try showing the keyboard from
+                        // onStart() instead.
                         showSoftKeyboard(passwordField);
 
                         // TODO: Track password prompt displayed.
@@ -206,9 +209,10 @@ public abstract class PasswordDialog extends DialogFragment {
     }
 
     private void showSoftKeyboard(View view) {
-        if (view.requestFocus()) {
+        Activity activity = getActivity();
+        if (activity != null && view.requestFocus()) {
             InputMethodManager imm = (InputMethodManager)
-                    getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
         }
     }

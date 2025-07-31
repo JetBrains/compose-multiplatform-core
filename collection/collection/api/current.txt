@@ -1921,7 +1921,7 @@ package androidx.collection {
     method public boolean retainAll(androidx.collection.OrderedScatterSet<E> elements);
     method public boolean retainAll(androidx.collection.ScatterSet<E> elements);
     method public boolean retainAll(java.util.Collection<? extends E> elements);
-    method public boolean retainAll(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
+    method public inline boolean retainAll(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
     method @IntRange(from=0L) public int trim();
   }
 

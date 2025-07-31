@@ -560,6 +560,142 @@ public class TileServiceTest {
     }
 
     @Test
+    public void tileService_ifNotResourcesWithTileEnabled_sendsTileDataV1() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(524)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        expect.that(tileCaptor.getValue().getVersion()).isEqualTo(TileData.VERSION_PROTOBUF_1);
+    }
+
+    @Test
+    public void tileService_ifResourcesWithTileEnabled_sendsTileDataV2() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        expect.that(tileCaptor.getValue().getVersion()).isEqualTo(TileData.VERSION_PROTOBUF_2);
+    }
+
+    @Test
+    public void tileService_ifResourcesIsEmpty_fetchesResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isTrue();
+        expect.that(tile.getResources().getVersion()).isEqualTo("5");
+    }
+
+    @Test
+    public void tileService_ifResourcesVersionsAreDiff_fetchesResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .setLastResourcesVersion("4")
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isTrue();
+        expect.that(tile.getResources().getVersion()).isEqualTo("5");
+    }
+
+    @Test
+    public void tileService_ifSameResourcesVersions_doesNotFetchResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .setLastResourcesVersion("5")
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isFalse();
+    }
+
+    @Test
     public void tileService_resourcesRequest() throws Exception {
         final String resourcesVersion = "HELLO WORLD";
         ResourcesRequestData resourcesRequestData =

@@ -56,7 +56,8 @@ dependencies {
     implementation(libs.testExtJunit)
     implementation(libs.testCore)
     implementation(libs.testRunner)
-    implementation(libs.testUiautomator)
+    implementation(project(":test:uiautomator:uiautomator"))
+    implementation(project(":test:uiautomator:uiautomator-shell"))
     implementation(libs.testExtTruth)
 }
 

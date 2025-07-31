@@ -28,6 +28,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
@@ -58,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -452,4 +455,71 @@ fun SharedElementInAnimatedContentSample() {
             }
         }
     }
+}
+
+@Sampled
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun SharedElementClipRevealSample() {
+    // In this sample, we are creating an animating clip bounds using shared element transition.
+    // In the meantime, we need to anchor the content that is being clipped at its target position
+    // using skipToLookaheadPosition while the clip bounds moves and resizes via animations.
+    var target by remember { mutableStateOf(true) }
+    BackHandler { target = !target }
+    // Creates a SharedTransitionLayout to provide its child content with a SharedTransitionScope.
+    // The child content can therefore set up shared element transitions, and access
+    // skipToLookaheadPosition modifier, as well as other functionalities available in
+    // SharedTransitionScope.
+    SharedTransitionLayout {
+        AnimatedContent(targetState = target) {
+            if (it) {
+                Box(Modifier.fillMaxSize()) {
+                    Button(
+                        modifier =
+                            Modifier.align(Alignment.BottomCenter)
+                                .sharedBounds(
+                                    rememberSharedContentState("clip"),
+                                    this@AnimatedContent,
+                                ),
+                        onClick = { target = false },
+                    ) {
+                        Text("Toggle State")
+                    }
+                }
+            } else {
+                Column(
+                    // Use sharedBounds chained with clipToBounds to animate the clip bounds
+                    // from the previous size and position derived from the shared bounds above
+                    // (when target == true).
+                    Modifier.sharedBounds(
+                            rememberSharedContentState("clip"),
+                            this@AnimatedContent,
+                            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                        )
+                        .clipToBounds()
+                        // The sharedBounds above would resize its child layout and move it as
+                        // needed. Here we use `skipToLookaheadSize` chained with
+                        // `skipToLookaheadPosition` to keep the child content from being resized
+                        // or moved. As such, only the clip bounds is being animated, creating
+                        // a reveal animation.
+                        .skipToLookaheadSize()
+                        .skipToLookaheadPosition()
+                        .fillMaxSize()
+                        .background(Color.Black),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("Hello", fontSize = 80.sp, color = Color.White)
+                    Text("Shared", fontSize = 80.sp, color = Color.White)
+                    Text("Clip", fontSize = 80.sp, color = Color.White)
+                    Text("Bounds", fontSize = 80.sp, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BackHandler(content: @Composable () -> Unit) {
+    TODO("Not yet implemented")
 }

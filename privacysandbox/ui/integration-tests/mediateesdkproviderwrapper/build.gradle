@@ -24,23 +24,13 @@ plugins {
 android {
     namespace = "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
     compileSdk = 36
-    // Remove when b/411666019 is fixed
-    targetSdk = 35
-    compileSdkExtension = 14
-    minSdk = 21
-    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).buildToolsVersion
-
     bundle {
         packageName = "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
-
         // This is the entry point class to our SDK in the SDK Runtime. It enables backward
         // compatibility support.
         sdkProviderClassName = "androidx.privacysandbox.sdkruntime.provider.SandboxedSdkProviderAdapter"
-
         // This is the class path of our implementation of the SandboxedSdkProviderCompat class.
         compatSdkProviderClassName = "androidx.privacysandbox.ui.integration.mediateesdkprovider.SdkProviderImpl"
-
-        setVersion(1, 0, 0)
     }
 }
 

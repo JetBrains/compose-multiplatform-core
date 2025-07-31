@@ -302,21 +302,23 @@ public sealed class ScatterSet<E> {
         transform: ((E) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ScatterSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ScatterSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(element)
+                } else {
+                    append(transform(element))
+                }
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(element)
-            } else {
-                append(transform(element))
-            }
-            index++
         }
         append(postfix)
     }
@@ -327,14 +329,9 @@ public sealed class ScatterSet<E> {
      * zero.
      */
     public override fun hashCode(): Int {
-        var hash = _capacity
-        hash = 31 * hash + _size
+        var hash = 0
 
-        forEach { element ->
-            if (element != this) {
-                hash += element.hashCode()
-            }
-        }
+        forEach { element -> hash += element.hashCode() }
 
         return hash
     }
@@ -876,16 +873,16 @@ public class MutableScatterSet<E>(initialCapacity: Int = DefaultScatterCapacity)
      *   `true`, the element is kept in the set, otherwise it is removed.
      * @return `true` if this set was modified, `false` otherwise.
      */
-    public fun retainAll(predicate: (E) -> Boolean): Boolean {
+    public inline fun retainAll(predicate: (E) -> Boolean): Boolean {
         val elements = elements
-        val startSize = _size
+        val startSize = size
         forEachIndex { index ->
             @Suppress("UNCHECKED_CAST")
             if (!predicate(elements[index] as E)) {
                 removeElementAt(index)
             }
         }
-        return startSize != _size
+        return startSize != size
     }
 
     @PublishedApi

@@ -35,6 +35,8 @@ dependencies {
     implementation(project(":benchmark:benchmark-traceprocessor"))
     implementation(project(":tracing:tracing-perfetto-binary"))
     implementation(libs.kotlinStdlib)
+    implementation(project(":test:uiautomator:uiautomator"))
+    implementation(project(":test:uiautomator:uiautomator-shell"))
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.kotlinTest)

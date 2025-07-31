@@ -468,13 +468,13 @@ private val DefaultSurfaceBorderWidth = 2.dp
 private val FocusedSurfaceBorderWidth = 5.dp
 
 private val FocusedHighlightEnterAnimationSpec: AnimationSpec<Float> =
-    tween(650, easing = FastOutSlowInEasing)
+    tween(50, easing = FastOutSlowInEasing)
 
 private val FocusedHighlightExitAnimationSpec: AnimationSpec<Float> =
-    tween(300, easing = FastOutSlowInEasing)
+    tween(200, easing = FastOutSlowInEasing)
 
 private val FocusedHighlightRotationAnimationSpec: AnimationSpec<Float> =
-    tween(durationMillis = 7000, easing = LinearOutSlowInEasing)
+    tween(durationMillis = 7000, easing = LinearOutSlowInEasing, delayMillis = 300)
 
 private val PressedOverlayColor = Color.White
 

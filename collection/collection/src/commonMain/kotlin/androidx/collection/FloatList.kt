@@ -461,15 +461,17 @@ public sealed class FloatList(initialCapacity: Int) {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        this@FloatList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@FloatList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
         }
         append(postfix)
     }
@@ -492,15 +494,17 @@ public sealed class FloatList(initialCapacity: Int) {
         crossinline transform: (Float) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        this@FloatList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@FloatList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
         }
         append(postfix)
     }

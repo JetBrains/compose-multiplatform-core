@@ -38,7 +38,6 @@ import kotlinx.coroutines.launch
 
 /** Manages the UI for the GLTF entity. */
 @Suppress("Deprecation")
-// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
 class GltfManager(private val session: Session, private val coroutineScope: CoroutineScope) {
     private val mSession: Session
     private var mGltfModel: GltfModel? by mutableStateOf(null)
@@ -50,7 +49,7 @@ class GltfManager(private val session: Session, private val coroutineScope: Coro
 
     @Composable
     fun GltfEntitySettings() {
-        var modelIsHidden by remember { mutableStateOf(false) }
+        var modelIsDisabled by remember { mutableStateOf(false) }
 
         Column() {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -59,14 +58,14 @@ class GltfManager(private val session: Session, private val coroutineScope: Coro
                     enabled = (mGltfModelEntity != null),
                     onClick = {
                         if (mGltfModelEntity != null) {
-                            modelIsHidden = mGltfModelEntity!!.isHidden(true)
-                            mGltfModelEntity?.setHidden(!modelIsHidden)
-                            modelIsHidden = !modelIsHidden
+                            modelIsDisabled = !(mGltfModelEntity!!.isEnabled(true))
+                            modelIsDisabled = !modelIsDisabled
+                            mGltfModelEntity?.setEnabled(!modelIsDisabled)
                         }
                     },
                 ) {
                     Text(
-                        text = (if (modelIsHidden) "Show Model" else "Hide Model"),
+                        text = (if (modelIsDisabled) "Show Model" else "Hide Model"),
                         fontSize = 20.sp,
                     )
                 }

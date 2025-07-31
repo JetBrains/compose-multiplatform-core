@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import android.widget.Button;
 import android.widget.Switch;
 
-import androidx.test.filters.SdkSuppress;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiSelector;
 
@@ -207,7 +206,6 @@ public class UiSelectorTest extends BaseTest {
         assertEquals("UiSelector[INSTANCE=2]", new UiSelector().instance(2).toString());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testEnabled() {
         launchTestActivity(IsEnabledTestActivity.class);
@@ -252,7 +250,6 @@ public class UiSelectorTest extends BaseTest {
         assertEquals("UiSelector[FOCUSABLE=true]", new UiSelector().focusable(true).toString());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScrollable() {
         launchTestActivity(VerticalScrollTestActivity.class);

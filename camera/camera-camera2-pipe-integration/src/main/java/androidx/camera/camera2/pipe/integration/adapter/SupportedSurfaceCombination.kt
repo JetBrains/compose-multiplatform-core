@@ -1418,6 +1418,20 @@ public class SupportedSurfaceCombination(
                         " ${availableFpsRanges.contentToString()}."
                 }
             }
+        } else {
+            if (featureSettings.isHighSpeedOn) {
+                // When fps is not specified, the template fps will be used. However, the fps
+                // is for regular session. For high-speed session, we must provide a high-speed
+                // supported fps, otherwise the session will fail.
+                val availableFpsRanges =
+                    highSpeedResolver.getFrameRateRangesFor(bestSizesAndMaxFps.bestSizes)
+                targetFrameRateForDevice =
+                    getClosestSupportedDeviceFrameRate(
+                        HighSpeedResolver.DEFAULT_FPS,
+                        bestSizesAndMaxFps.maxFpsForBestSizes,
+                        availableFpsRanges,
+                    )
+            }
         }
         for ((index, useCaseConfig) in newUseCaseConfigs.withIndex()) {
             val resolutionForUseCase =

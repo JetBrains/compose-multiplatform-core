@@ -460,15 +460,17 @@ public sealed class LongList(initialCapacity: Int) {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        this@LongList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@LongList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
         }
         append(postfix)
     }
@@ -491,15 +493,17 @@ public sealed class LongList(initialCapacity: Int) {
         crossinline transform: (Long) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        this@LongList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@LongList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
         }
         append(postfix)
     }

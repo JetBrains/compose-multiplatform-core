@@ -1,11 +1,6 @@
 apply from: "../../shared.gradle"
 apply plugin: "java-gradle-plugin"
 
-dependencies {
-    // Remove once b/407094849 is fixed
-    implementation(libs.androidGradlePlugin)
-}
-
 sourceSets {
     main.java.srcDirs += "${supportRootFolder}/inspection/inspection-gradle-plugin/src/main/kotlin"
     main.resources.srcDirs += "${supportRootFolder}/inspection/inspection-gradle-plugin/src/main" +
@@ -19,8 +14,4 @@ gradlePlugin {
             implementationClass = "androidx.inspection.gradle.InspectionPlugin"
         }
     }
-}
-
-validatePlugins {
-    enableStricterValidation = true
 }

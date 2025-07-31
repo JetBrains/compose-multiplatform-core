@@ -23,13 +23,11 @@ import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.C
 import androidx.privacysandbox.ui.integration.testapp.fragments.FragmentOptions
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
-import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import org.junit.Assume.assumeTrue
@@ -69,9 +67,10 @@ class UserInteractionTests() {
         fun clickOnRemoteViewTest() {
             clickOnContentView()
 
-            ensureThatChromeStarted()
-
-            pressBack()
+            assertThat(
+                    sdkToClientCallback.clickLatch.await(CALLBACK_WAIT_MS, TimeUnit.MILLISECONDS)
+                )
+                .isTrue()
         }
     }
 
@@ -239,7 +238,6 @@ open class AbstractUserInteractionInScrollTest(
     ) {
     companion object {
         const val MAX_ITEM_IN_LIST = 20
-        const val CHROME_PACKAGE_NAME = "com.android.chrome"
     }
 
     private lateinit var device: UiDevice
@@ -292,19 +290,5 @@ open class AbstractUserInteractionInScrollTest(
 
     fun clickOnContentView() {
         device.click(contentViewUiObject.bounds.centerX(), contentViewUiObject.bounds.centerY())
-    }
-
-    fun ensureThatChromeStarted() {
-        assertThat(
-                device.wait(
-                    Until.hasObject(By.pkg(CHROME_PACKAGE_NAME).depth(0)),
-                    UI_CHANGE_WAIT_MS,
-                )
-            )
-            .isTrue()
-    }
-
-    fun pressBack() {
-        device.pressBack()
     }
 }

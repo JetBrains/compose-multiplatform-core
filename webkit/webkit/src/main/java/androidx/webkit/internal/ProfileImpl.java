@@ -22,7 +22,7 @@ import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
 import android.webkit.WebStorage;
 
-import androidx.webkit.OutcomeReceiverCompat;
+import androidx.core.os.OutcomeReceiverCompat;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.Profile;
 import androidx.webkit.SpeculativeLoadingConfig;

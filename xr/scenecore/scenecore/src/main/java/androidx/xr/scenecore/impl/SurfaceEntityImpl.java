@@ -179,16 +179,16 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         } else if (mCanvasShape instanceof CanvasShape.Vr360Sphere) {
             CanvasShape.Vr360Sphere s = (CanvasShape.Vr360Sphere) mCanvasShape;
             try {
-                mImpressApi.setStereoSurfaceEntityCanvasShapeSphere(mEntityImpressNode,
-                                                                    s.getRadius());
+                mImpressApi.setStereoSurfaceEntityCanvasShapeSphere(
+                        mEntityImpressNode, s.getRadius());
             } catch (IllegalArgumentException e) {
                 throw new IllegalStateException(e);
             }
         } else if (mCanvasShape instanceof CanvasShape.Vr180Hemisphere) {
             CanvasShape.Vr180Hemisphere h = (CanvasShape.Vr180Hemisphere) mCanvasShape;
             try {
-                mImpressApi.setStereoSurfaceEntityCanvasShapeHemisphere(mEntityImpressNode,
-                                                                        h.getRadius());
+                mImpressApi.setStereoSurfaceEntityCanvasShapeHemisphere(
+                        mEntityImpressNode, h.getRadius());
             } catch (IllegalArgumentException e) {
                 throw new IllegalStateException(e);
             }
@@ -290,9 +290,9 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         // TODO Either cache the surface in the constructor, or change this interface to
         // return a Future.
         try {
-          return mImpressApi.getSurfaceFromStereoSurface(mEntityImpressNode);
+            return mImpressApi.getSurfaceFromStereoSurface(mEntityImpressNode);
         } catch (IllegalArgumentException e) {
-          throw new IllegalStateException(e);
+            throw new IllegalStateException(e);
         }
     }
 

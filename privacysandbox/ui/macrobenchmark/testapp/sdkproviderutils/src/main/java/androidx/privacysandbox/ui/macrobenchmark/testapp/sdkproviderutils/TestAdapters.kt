@@ -30,6 +30,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.AttributeSet
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
@@ -41,6 +42,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
@@ -192,6 +195,30 @@ class TestAdapters(private val sdkContext: Context) {
         BannerAd() {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
             return TestView(sessionContext, withSlowDraw, text)
+        }
+    }
+
+    /** Loads a view with scrollable ad with a moving ball animation. */
+    inner class ScrollableAdWithAnimation() : BannerAd() {
+        override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
+            val adView = ScrollView(sessionContext)
+            val animationView = ScrollableAnimationAd(sessionContext)
+            adView.addView(animationView)
+            return adView
+        }
+    }
+
+    private class ScrollableAnimationAd
+    @JvmOverloads
+    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
+        RelativeLayout(context, attrs, defStyleAttr) {
+        init {
+            contentDescription = "scrollable_animation_ad"
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            AnimationUtils.startAnimations(animationContainer = this, height = 3000)
         }
     }
 

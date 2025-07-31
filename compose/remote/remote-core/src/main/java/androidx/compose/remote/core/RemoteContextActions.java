@@ -59,7 +59,9 @@ public interface RemoteContextActions {
     /**
      * Perform a click on the given component
      *
+     * @param document the document to perform the click on
      * @param component the component to click on
+     * @param metadata the metadata of the click event
      * @return whether the event was handled
      */
     boolean performClick(

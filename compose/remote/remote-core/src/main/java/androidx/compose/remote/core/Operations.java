@@ -91,6 +91,7 @@ import androidx.compose.remote.core.operations.TextSubtext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
+import androidx.compose.remote.core.operations.WakeIn;
 import androidx.compose.remote.core.operations.layout.CanvasContent;
 import androidx.compose.remote.core.operations.layout.CanvasOperations;
 import androidx.compose.remote.core.operations.layout.ClickModifierOperation;
@@ -268,6 +269,7 @@ public class Operations {
     public static final int MATRIX_VECTOR_MATH = 188;
     public static final int DATA_FONT = 189;
     public static final int DRAW_TO_BITMAP = 190;
+    public static final int WAKE_IN = 191;
 
     ///////////////////////////////////////// ======================
 
@@ -359,10 +361,12 @@ public class Operations {
     public static final int PROFILE_EXPERIMENTAL = 0x1;
     public static final int PROFILE_DEPRECATED = 0x2;
     public static final int PROFILE_OEM = 0x4;
+    public static final int PROFILE_LOW_POWER = 0x8;
 
     // Intersected profiles
     public static final int PROFILE_WIDGETS = 0x100;
     public static final int PROFILE_ANDROIDX = 0x200;
+    public static final int PROFILE_ANDROID_NATIVE = 0x400;
 
     /**
      * Returns true if the operation exists for the given api level
@@ -435,6 +439,7 @@ public class Operations {
             sMapV7AndroidX.put(DATA_SHADER, ShaderData::read);
             sMapV7AndroidX.put(DATA_FONT, FontData::read);
             sMapV7AndroidX.put(DRAW_TO_BITMAP, DrawToBitmap::read);
+            sMapV7AndroidX.put(WAKE_IN, WakeIn::read);
         }
         return sMapV7AndroidX;
     }
@@ -523,6 +528,11 @@ public class Operations {
                 if ((profiles & Operations.PROFILE_DEPRECATED) != 0) {
                     widgets.putAll(createMapV7_Widgets_Deprecated());
                 }
+                listProfiles.add(widgets);
+            }
+            if ((profiles & PROFILE_ANDROID_NATIVE) != 0) {
+                throw new UnsupportedOperationException(
+                        "Android native profiles are defined externally");
             }
 
             if (listProfiles.size() == 1) {
@@ -577,7 +587,7 @@ public class Operations {
         return result;
     }
 
-    static class UniqueIntMap<T> extends IntMap<T> {
+    public static class UniqueIntMap<T> extends IntMap<T> {
         @Override
         public T put(int key, @NonNull T value) {
             assert null == get(key) : "Opcode " + key + " already used in Operations !";

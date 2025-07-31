@@ -61,13 +61,19 @@ final class androidx.navigationevent/NavigationEvent { // androidx.navigationeve
 }
 
 final class androidx.navigationevent/NavigationEventDispatcher { // androidx.navigationevent/NavigationEventDispatcher|null[0]
+    constructor <init>(androidx.navigationevent/NavigationEventDispatcher) // androidx.navigationevent/NavigationEventDispatcher.<init>|<init>(androidx.navigationevent.NavigationEventDispatcher){}[0]
     constructor <init>(kotlin/Function0<kotlin/Unit>? = ..., kotlin/Function1<kotlin/Boolean, kotlin/Unit>? = ...) // androidx.navigationevent/NavigationEventDispatcher.<init>|<init>(kotlin.Function0<kotlin.Unit>?;kotlin.Function1<kotlin.Boolean,kotlin.Unit>?){}[0]
+
+    final var isEnabled // androidx.navigationevent/NavigationEventDispatcher.isEnabled|{}isEnabled[0]
+        final fun <get-isEnabled>(): kotlin/Boolean // androidx.navigationevent/NavigationEventDispatcher.isEnabled.<get-isEnabled>|<get-isEnabled>(){}[0]
+        final fun <set-isEnabled>(kotlin/Boolean) // androidx.navigationevent/NavigationEventDispatcher.isEnabled.<set-isEnabled>|<set-isEnabled>(kotlin.Boolean){}[0]
 
     final fun addCallback(androidx.navigationevent/NavigationEventCallback, androidx.navigationevent/NavigationEventPriority = ...) // androidx.navigationevent/NavigationEventDispatcher.addCallback|addCallback(androidx.navigationevent.NavigationEventCallback;androidx.navigationevent.NavigationEventPriority){}[0]
     final fun dispatchOnCancelled() // androidx.navigationevent/NavigationEventDispatcher.dispatchOnCancelled|dispatchOnCancelled(){}[0]
     final fun dispatchOnCompleted() // androidx.navigationevent/NavigationEventDispatcher.dispatchOnCompleted|dispatchOnCompleted(){}[0]
     final fun dispatchOnProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventDispatcher.dispatchOnProgressed|dispatchOnProgressed(androidx.navigationevent.NavigationEvent){}[0]
     final fun dispatchOnStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventDispatcher.dispatchOnStarted|dispatchOnStarted(androidx.navigationevent.NavigationEvent){}[0]
+    final fun dispose() // androidx.navigationevent/NavigationEventDispatcher.dispose|dispose(){}[0]
     final fun hasEnabledCallbacks(): kotlin/Boolean // androidx.navigationevent/NavigationEventDispatcher.hasEnabledCallbacks|hasEnabledCallbacks(){}[0]
 }
 

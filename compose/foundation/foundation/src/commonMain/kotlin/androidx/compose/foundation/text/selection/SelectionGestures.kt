@@ -33,7 +33,6 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
@@ -97,7 +96,7 @@ internal fun Modifier.updateSelectionTouchMode(updateTouchMode: (Boolean) -> Uni
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
-                updateTouchMode(!event.isPrecisePointer)
+                updateTouchMode(!event.isMouseOrTouchPad())
             }
         }
     }
@@ -115,7 +114,7 @@ internal suspend fun PointerInputScope.awaitSelectionGestures(
     awaitEachGesture {
         val downEvent = awaitDown()
         clicksCounter.update(downEvent.changes[0])
-        val isPrecise = downEvent.isPrecisePointer
+        val isPrecise = downEvent.isMouseOrTouchPad()
         if (
             isPrecise &&
                 downEvent.buttons.isPrimaryPressed &&
@@ -350,8 +349,4 @@ private fun distanceIsTolerable(
     return (change1.position - change2.position).getDistance() < slop
 }
 
-// TODO(b/281585410) this does not support touch pads as they have a pointer type of Touch
-//             Supporting that will require public api changes
-//             since the necessary info is in the ui module.
-internal val PointerEvent.isPrecisePointer
-    get() = this.changes.fastAll { it.type == PointerType.Mouse }
+internal expect fun PointerEvent.isMouseOrTouchPad(): Boolean

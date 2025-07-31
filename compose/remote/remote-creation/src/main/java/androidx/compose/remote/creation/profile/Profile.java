@@ -22,6 +22,10 @@ import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Represent a RemoteCompose profile
@@ -46,6 +50,8 @@ public class Profile {
     @NonNull Platform mPlatform;
     @NonNull ProfileFactory mFactory;
 
+    @Nullable Supplier<Set<Integer>> mSupportedOperations;
+
     // Platform profile
     public static @NonNull Profile WIDGETS_V6 =
             new Profile(6, 0, new AndroidxPlatformServices(), WidgetsProfileWriterV6::new);
@@ -56,7 +62,14 @@ public class Profile {
                     CoreDocument.DOCUMENT_API_LEVEL,
                     Operations.PROFILE_ANDROIDX,
                     new AndroidxPlatformServices(),
-                    RemoteComposeWriter::new);
+                    (width, height, contentDescription, profile) ->
+                            new RemoteComposeWriter(
+                                    width,
+                                    height,
+                                    contentDescription,
+                                    CoreDocument.DOCUMENT_API_LEVEL,
+                                    Operations.PROFILE_ANDROIDX,
+                                    profile.getPlatform()));
 
     /**
      * Profile constructor
@@ -78,6 +91,27 @@ public class Profile {
     }
 
     /**
+     * Profile constructor
+     *
+     * @param apiLevel the api level used by this profile
+     * @param operationProfiles the operation profiles bitmask (specifying valid set of operations)
+     * @param platform a platform services implementation
+     * @param factory a valid factory returning a RemoteComposeWriter
+     */
+    public Profile(
+            int apiLevel,
+            int operationProfiles,
+            @NonNull Platform platform,
+            @NonNull Supplier<Set<Integer>> supportedOperations,
+            @NonNull ProfileFactory factory) {
+        mApiLevel = apiLevel;
+        mOperationsProfiles = operationProfiles;
+        mPlatform = platform;
+        mFactory = factory;
+        mSupportedOperations = supportedOperations;
+    }
+
+    /**
      * Returns a valid RemoteComposeWriter that can be used to create a document
      *
      * @param width original width of the document
@@ -86,7 +120,54 @@ public class Profile {
      * @return a valid RemoteComposeWriter
      */
     public @NonNull RemoteComposeWriter create(int width, int height, @NonNull String description) {
-        return mFactory.create(
-                width, height, description, mApiLevel, mOperationsProfiles, mPlatform);
+        return mFactory.create(width, height, description, this);
+    }
+
+    /**
+     * Returns the API level for the operations associated with this profile
+     *
+     * @return the current API level used
+     */
+    public int getApiLevel() {
+        return mApiLevel;
+    }
+
+    /**
+     * Returns the bitmask of profiles bit masks that this Profile supports
+     *
+     * @return a bitmask of operation profiles
+     */
+    public int getOperationsProfiles() {
+        return mOperationsProfiles;
+    }
+
+    /**
+     * Returns the Platform Services implementation associated with this Profile
+     *
+     * @return the platform
+     */
+    public @NonNull Platform getPlatform() {
+        return mPlatform;
+    }
+
+    /**
+     * Returns a ProfileFactory, that is used to create a RemoteComposeWriter instance
+     *
+     * @return a ProfileFactory
+     */
+    public @NonNull ProfileFactory getProfileFactory() {
+        return mFactory;
+    }
+
+    /**
+     * Returns the set of valid operations for this Profile. Null if this profile doesn't do any
+     * validation of operations.
+     *
+     * @return a set of operations
+     */
+    public @Nullable Set<Integer> getSupportedOperations() {
+        if (mSupportedOperations == null) return null;
+
+        return mSupportedOperations.get();
     }
 }

@@ -191,6 +191,14 @@ package androidx.appfunctions {
     property public int errorCode;
   }
 
+  @androidx.appfunctions.AppFunctionSerializable public final class AppFunctionUriGrant {
+    ctor public AppFunctionUriGrant(android.net.Uri uri, int modeFlags);
+    method public int getModeFlags();
+    method public android.net.Uri getUri();
+    property public int modeFlags;
+    property public android.net.Uri uri;
+  }
+
   public final class ExecuteAppFunctionRequest {
     ctor public ExecuteAppFunctionRequest(String targetPackageName, String functionIdentifier, androidx.appfunctions.AppFunctionData functionParameters);
     method public String getFunctionIdentifier();

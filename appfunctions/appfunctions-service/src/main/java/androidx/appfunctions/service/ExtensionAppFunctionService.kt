@@ -61,6 +61,7 @@ public class ExtensionAppFunctionService : AppFunctionService() {
         val executionJob =
             delegate.onExecuteFunction(
                 ExecuteAppFunctionRequest.fromPlatformExtensionClass(request),
+                callingPackage,
                 object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
                     override fun onResult(result: ExecuteAppFunctionResponse) {
                         when (result) {

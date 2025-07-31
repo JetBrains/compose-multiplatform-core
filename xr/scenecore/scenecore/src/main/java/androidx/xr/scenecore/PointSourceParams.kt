@@ -16,17 +16,18 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
 
 /**
- * PointSourceParams is used to configure a sound be spatialized as a 3D point.
+ * Configures a sound source to be spatialized at a 3D location.
  *
- * If the audio being played is stereo or multichannel AND the AudioAttributes USAGE_TYPE is
- * USAGE_MEDIA then the point provided will serve as the focal point of the media sound bed.
+ * Positional sound sources are defined by PointSourceParams with an associated [Entity]. The
+ * position and orientation of the Entity dictates where the PointSourceParams is rendered in 3D
+ * space. For more information, see
+ * [Add positional audio to your app][https://developer.android.com/develop/xr/jetpack-xr-sdk/add-spatial-audio#add-positional].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+// TODO: b/430650745 - reevaluate the usefulness of this class prior to the beta release
 public class PointSourceParams(internal val entity: Entity) {
 
     internal val rtPointSourceParams: RtPointSourceParams =

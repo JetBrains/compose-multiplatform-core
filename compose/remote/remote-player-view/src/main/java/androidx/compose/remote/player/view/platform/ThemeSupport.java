@@ -215,6 +215,12 @@ public class ThemeSupport {
                 case "colorSwitchThumbNormal":
                     setRColor(s, android.R.attr.colorControlNormal);
                     break;
+                case "textColorPrimary": // 1.1
+                    setRColor(s, android.R.attr.textColorPrimary);
+                    break;
+                case "textColorSecondary": // 1.1
+                    setRColor(s, android.R.attr.textColorSecondary);
+                    break;
             }
         }
     }

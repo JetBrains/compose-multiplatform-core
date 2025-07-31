@@ -32,9 +32,6 @@ internal class PdfFormFillingState(val numPages: Int) : Parcelable {
     /** Stores the list of form widgets present in each page */
     private val pageFormWidgetInfos = Array<List<FormWidgetInfo>?>(numPages) { null }
 
-    /** Stores the list of edits applied to each page */
-    private val pageEditHistory = Array(numPages) {}
-
     init {
         require(numPages >= 0) { "Empty PDF" }
     }

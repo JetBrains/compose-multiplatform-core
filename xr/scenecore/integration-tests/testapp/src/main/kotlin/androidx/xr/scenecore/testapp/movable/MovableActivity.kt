@@ -25,6 +25,7 @@ import android.widget.CheckBox
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -77,6 +78,7 @@ class MovableActivity : AppCompatActivity() {
         // Create session
         session = createSession(this)
         if (session == null) this.finish()
+        session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
 
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {

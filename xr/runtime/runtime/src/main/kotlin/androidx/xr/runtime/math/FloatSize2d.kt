@@ -45,4 +45,14 @@ public class FloatSize2d(public val width: Float = 0f, public val height: Float 
         result = 31 * result + height.hashCode()
         return result
     }
+
+    /** Returns a new [FloatSize2d] that's uniformly divided by the `divisor`. */
+    public operator fun div(divisor: Float): FloatSize2d {
+        return FloatSize2d(this.width / divisor, this.height / divisor)
+    }
+
+    /** Returns a new [FloatSize2d] that's uniformly multiplied by the `scalar`. */
+    public operator fun times(scalar: Float): FloatSize2d {
+        return FloatSize2d(this.width * scalar, this.height * scalar)
+    }
 }

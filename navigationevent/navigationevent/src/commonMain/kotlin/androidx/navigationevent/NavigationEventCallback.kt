@@ -35,8 +35,33 @@ public abstract class NavigationEventCallback(
     public val isPassThrough: Boolean = false,
 ) {
 
+    /**
+     * Controls whether this callback is active and should be considered for event dispatching.
+     *
+     * A callback's effective enabled state is hierarchical; it is directly influenced by the
+     * [NavigationEventDispatcher] it is registered with.
+     *
+     * **Getting the value**:
+     * - This will return `false` if the associated `dispatcher` exists and its `isEnabled` state is
+     *   `false`, regardless of the callback's own local setting. This provides a powerful mechanism
+     *   to disable a whole group of callbacks at once by simply disabling their dispatcher.
+     * - Otherwise, it returns the callback's own locally stored state.
+     *
+     * **Setting the value**:
+     * - This updates the local enabled state of the callback itself.
+     * - More importantly, it immediately notifies the `dispatcher` (if one is attached) that its
+     *   list of enabled callbacks might have changed, prompting a re-evaluation. This ensures the
+     *   system's state remains consistent and responsive to changes.
+     *
+     * For a callback to be truly active, both its local `isEnabled` property and its dispatcher's
+     * `isEnabled` property must evaluate to `true`.
+     */
     public var isEnabled: Boolean = isEnabled
+        get() = if (dispatcher?.isEnabled == false) false else field
         set(value) {
+            // Only proceed if the enabled state is actually changing to avoid redundant work.
+            if (field == value) return
+
             field = value
             dispatcher?.updateEnabledCallbacks()
         }

@@ -22,6 +22,7 @@ import android.view.MotionEvent
 import android.view.SurfaceView
 import android.view.animation.AnimationUtils
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
+import androidx.tracing.trace
 
 /**
  * Custom implementation of the [android.view.SurfaceView] that holds the
@@ -50,6 +51,9 @@ internal class ContentView(
     }
 
     override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
+        // Don't add anything above this trace to allow us to catch regression
+        trace("ContentView#onTouchEvent", {})
+
         if (motionEvent.action == MotionEvent.ACTION_DOWN) {
             currentGestureMotionEventTransferCallback = MotionEventTransferCallbackProxy()
         }
@@ -61,13 +65,24 @@ internal class ContentView(
             currentGestureMotionEventTransferCallback = null
         }
 
-        val eventTargetFrameTime = AnimationUtils.currentAnimationTimeMillis()
         remoteSessionController.notifyMotionEvent(
             motionEvent,
-            eventTargetFrameTime,
+            getFrameTimeForBatchedInputOrCurrentTimeForUnBatchedInput(),
             currentGestureMotionEventTransferCallback,
         )
         return true
+    }
+
+    override fun onHoverEvent(hoverEvent: MotionEvent): Boolean {
+        remoteSessionController.notifyHoverEvent(
+            hoverEvent,
+            getFrameTimeForBatchedInputOrCurrentTimeForUnBatchedInput(),
+        )
+        return true
+    }
+
+    private fun getFrameTimeForBatchedInputOrCurrentTimeForUnBatchedInput(): Long {
+        return AnimationUtils.currentAnimationTimeMillis()
     }
 
     inner class MotionEventTransferCallbackProxy() : IMotionEventTransferCallback.Stub() {

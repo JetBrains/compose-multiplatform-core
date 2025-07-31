@@ -162,7 +162,7 @@ import kotlinx.coroutines.launch
 fun WideNavigationRail(
     modifier: Modifier = Modifier,
     state: WideNavigationRailState = rememberWideNavigationRailState(),
-    shape: Shape = WideNavigationRailDefaults.containerShape,
+    shape: Shape = WideNavigationRailDefaults.shape,
     colors: WideNavigationRailColors = WideNavigationRailDefaults.colors(),
     header: @Composable (() -> Unit)? = null,
     windowInsets: WindowInsets = WideNavigationRailDefaults.windowInsets,
@@ -468,15 +468,15 @@ fun ModalWideNavigationRail(
     modifier: Modifier = Modifier,
     state: WideNavigationRailState = rememberWideNavigationRailState(),
     hideOnCollapse: Boolean = false,
-    collapsedShape: Shape = WideNavigationRailDefaults.containerShape,
-    expandedShape: Shape = ModalWideNavigationRailDefaults.containerShape,
+    collapsedShape: Shape = WideNavigationRailDefaults.modalCollapsedShape,
+    expandedShape: Shape = WideNavigationRailDefaults.modalExpandedShape,
     colors: WideNavigationRailColors = WideNavigationRailDefaults.colors(),
     header: @Composable (() -> Unit)? = null,
     expandedHeaderTopPadding: Dp = 0.dp,
     windowInsets: WindowInsets = WideNavigationRailDefaults.windowInsets,
     arrangement: Arrangement.Vertical = WideNavigationRailDefaults.arrangement,
     expandedProperties: ModalWideNavigationRailProperties =
-        ModalWideNavigationRailDefaults.Properties,
+        WideNavigationRailDefaults.ModalExpandedProperties,
     content: @Composable () -> Unit,
 ) {
     val scope =
@@ -889,17 +889,8 @@ constructor(
 /** Defaults used in [WideNavigationRail]. */
 object WideNavigationRailDefaults {
     /** Default container shape of a wide navigation rail. */
-    val containerShape: Shape
+    val shape: Shape
         @Composable get() = NavigationRailCollapsedTokens.ContainerShape.value
-
-    @Deprecated(
-        message = "Deprecated in favor of ModalWideNavigationRailDefaults.modalContainerShape.",
-        replaceWith = ReplaceWith("ModalWideNavigationRailDefaults.containerShape"),
-        level = DeprecationLevel.HIDDEN,
-    )
-    /** Default container shape of a modal wide navigation rail. */
-    val modalContainerShape: Shape
-        @Composable get() = NavigationRailExpandedTokens.ModalContainerShape.value
 
     /** Default arrangement for a wide navigation rail. */
     val arrangement: Arrangement.Vertical
@@ -912,6 +903,18 @@ object WideNavigationRailDefaults {
             WindowInsets.systemBarsForVisualComponents.only(
                 WindowInsetsSides.Vertical + WindowInsetsSides.Start
             )
+
+    /** Default container shape of a collapsed [ModalWideNavigationRail]. */
+    val modalCollapsedShape: Shape
+        @Composable get() = shape
+
+    /** Default container shape of a expanded [ModalWideNavigationRail]. */
+    val modalExpandedShape: Shape
+        @Composable get() = NavigationRailExpandedTokens.ModalContainerShape.value
+
+    /** Properties used to customize the window behavior of a [ModalWideNavigationRail]. */
+    val ModalExpandedProperties: ModalWideNavigationRailProperties =
+        createDefaultModalWideNavigationRailProperties()
 
     /**
      * Creates a [WideNavigationRailColors] with the provided colors according to the Material
@@ -981,6 +984,24 @@ object WideNavigationRailDefaults {
             modalScrimColor = modalScrimColor,
             modalContentColor = contentColorFor(modalContainerColor),
         )
+
+    /** Default container shape of a wide navigation rail. */
+    @Deprecated(
+        message = "Deprecated in favor of shape.",
+        replaceWith = ReplaceWith("WideNavigationRailDefaults.shape"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    val containerShape: Shape
+        @Composable get() = NavigationRailCollapsedTokens.ContainerShape.value
+
+    @Deprecated(
+        message = "Deprecated in favor of modalExpandedShape.",
+        replaceWith = ReplaceWith("WideNavigationRailDefaults.modalExpandedShape"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    /** Default container shape of a modal wide navigation rail. */
+    val modalContainerShape: Shape
+        @Composable get() = NavigationRailExpandedTokens.ModalContainerShape.value
 
     private val containerColor: Color
         @Composable get() = NavigationRailCollapsedTokens.ContainerColor.value
@@ -1076,14 +1097,19 @@ object WideNavigationRailItemDefaults {
 }
 
 /** Default values for [ModalWideNavigationRail]. */
+@Deprecated(
+    message = "Deprecated in favor of default values in WideNavigationRailDefaults",
+    level = DeprecationLevel.HIDDEN,
+)
 @Immutable
 object ModalWideNavigationRailDefaults {
-
-    /** Default container shape of a [ModalWideNavigationRail]. */
-    val containerShape: Shape
-        @Composable get() = NavigationRailExpandedTokens.ModalContainerShape.value
-
     /** Properties used to customize the window behavior of a [ModalWideNavigationRail]. */
+    @Deprecated(
+        message =
+            "Deprecated in favor of function with WideNavigationRailDefaults.ModalExpandedProperties",
+        replaceWith = ReplaceWith("WideNavigationRailDefaults.ModalExpandedProperties"),
+        level = DeprecationLevel.HIDDEN,
+    )
     val Properties: ModalWideNavigationRailProperties =
         createDefaultModalWideNavigationRailProperties()
 }

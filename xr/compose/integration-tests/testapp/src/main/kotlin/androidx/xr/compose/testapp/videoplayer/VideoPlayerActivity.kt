@@ -118,6 +118,7 @@ class VideoPlayerActivity : ComponentActivity() {
     private var alphaMaskTexture: Texture? = null
 
     private val currentExoPlayer = mutableStateOf(exoPlayer)
+    private var currentPixelAspectRatio: Float = 1.0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -224,17 +225,25 @@ class VideoPlayerActivity : ComponentActivity() {
         surfaceEntity = null
     }
 
-    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): Dimensions {
+    fun getCanvasAspectRatio(
+        stereoMode: Int,
+        videoWidth: Int,
+        videoHeight: Int,
+        pixelAspectRatio: Float,
+    ): FloatSize3d {
+        check(videoWidth >= 0 && videoHeight >= 0) { "Video dimensions must be positive." }
+        check(pixelAspectRatio > 0f) { "Pixel aspect ratio must be positive." }
+        val effectiveDisplayWidth = videoWidth.toFloat() * pixelAspectRatio
+
         return when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO ->
-                Dimensions(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
-
+            SurfaceEntity.StereoMode.MONO,
+            SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
+                FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
-                Dimensions(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
-
+                FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
-                Dimensions(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
-
+                FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -714,13 +723,11 @@ class VideoPlayerActivity : ComponentActivity() {
                 override fun onVideoSizeChanged(videoSize: VideoSize) {
                     val width = videoSize.width
                     val height = videoSize.height
-                    check(width >= 0 && height >= 0) {
-                        "Condition (width >= 0 && height >= 0) failed: width=$width, height=$height"
-                    }
 
                     // Resize the canvas to match the video aspect ratio - accounting for the stereo
                     // mode.
-                    val dimensions = getCanvasAspectRatio(stereoMode, width, height)
+                    val dimensions =
+                        getCanvasAspectRatio(stereoMode, width, height, currentPixelAspectRatio)
                     // Set the dimensions of the Quad canvas to the video dimensions and attach the
                     // a MovableComponent.
                     if (canvasShape is SurfaceEntity.CanvasShape.Quad) {

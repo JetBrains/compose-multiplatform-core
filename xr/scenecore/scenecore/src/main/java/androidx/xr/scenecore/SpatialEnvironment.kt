@@ -48,7 +48,7 @@ import java.util.function.Consumer
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
-public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
+public class SpatialEnvironment internal constructor(private val runtime: JxrPlatformAdapter) {
 
     private val rtEnvironment: RtSpatialEnvironment = runtime.spatialEnvironment
 

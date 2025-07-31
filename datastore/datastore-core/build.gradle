@@ -25,33 +25,68 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-}
-
-android {
-    externalNativeBuild {
-        cmake {
-            path "src/androidMain/cpp/CMakeLists.txt"
-            version = libs.versions.cmake.get()
-        }
-    }
-    namespace = "androidx.datastore.core"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
 }
 
 androidXMultiplatform {
+    def supportedKonanTargets = [
+            KonanTarget.ANDROID_ARM32,
+            KonanTarget.ANDROID_ARM64,
+            KonanTarget.ANDROID_X64,
+            KonanTarget.ANDROID_X86,
+    ]
+
+    // Define C++ compilation of shared_counter
+    def sharedCounterCompilation = createNativeCompilation("sharedCounter") {
+        configureEachTarget { nativeCompilation ->
+            // add C++ sources
+            nativeCompilation.sources.from(fileTree("src/androidMain/cpp/shared"))
+            nativeCompilation.freeArgs.addAll("-Wall", "-Werror", "-std=c++17")
+            // Konan target android_arm32's clang compiler triple is: arm-unknown-linux-androideabi
+            // This maps to an ARM architecture that lacks instructions for lock-free atomics causing
+            // compilation failure:
+            // error: static assertion failed due to requirement 'std::atomic<unsigned int>::is_always_lock_free': atomic<uint32_t> is not always lock-free
+            //     static_assert(std::atomic<uint32_t>::is_always_lock_free,
+            // Adding to the compiler that Android's architecture for arm_32 is armv7a fixes the compilation
+            if (nativeCompilation.konanTarget == KonanTarget.ANDROID_ARM32.INSTANCE) {
+                nativeCompilation.freeArgs.add("-march=armv7-a")
+            }
+        }
+        configureTargets(supportedKonanTargets.collect { it.INSTANCE })
+    }
+
+
+    // Define C++ compilation of JNI
+    def jniImplementation = createNativeCompilation("datastore_shared_counter") {
+        configureEachTarget { nativeCompilation ->
+            // add JNI headers as sources
+            nativeCompilation.addJniHeaders()
+            // statically include the output of sharedCounter compilation
+            nativeCompilation.include(sharedCounterCompilation)
+            // add our JNI sources
+            nativeCompilation.sources.from(fileTree("src/androidMain/cpp/jni"))
+            nativeCompilation.freeArgs.addAll("-Wall", "-Werror", "-std=c++17")
+        }
+        configureTargets(supportedKonanTargets.collect { it.INSTANCE })
+    }
+
+    androidLibrary {
+        namespace = "androidx.datastore.core"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        addNativeLibrariesToJniLibs(it, jniImplementation)
+    }
     jvm()
     mac()
     linux()
     ios()
     watchos()
     tvos()
-    androidTarget()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 

@@ -63,9 +63,9 @@ public final class ContentActionSelectedData {
      * Gets the URL of the current web page in the Custom Tab when the action was triggered.
      * This is retrieved from {@link Intent#getData()}.
      *
-     * @return The current URL as a {@link Uri}.
+     * @return The current URL as a {@link Uri}, or {@code null} if not present or not applicable.
      */
-    public @NonNull Uri getPageUrl() {
+    public @Nullable Uri getPageUrl() {
         return mIntent.getData();
     }
 

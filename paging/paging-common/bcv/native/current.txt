@@ -223,8 +223,8 @@ final class <#A: kotlin/Any> androidx.paging/PagingData { // androidx.paging/Pag
     final object Companion { // androidx.paging/PagingData.Companion|null[0]
         final fun <#A2: kotlin/Any> empty(): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.empty|empty(){0§<kotlin.Any>}[0]
         final fun <#A2: kotlin/Any> empty(androidx.paging/LoadStates, androidx.paging/LoadStates? = ...): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.empty|empty(androidx.paging.LoadStates;androidx.paging.LoadStates?){0§<kotlin.Any>}[0]
-        final fun <#A2: kotlin/Any> from(kotlin.collections/List<#A2>): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.from|from(kotlin.collections.List<0:0>){0§<kotlin.Any>}[0]
-        final fun <#A2: kotlin/Any> from(kotlin.collections/List<#A2>, androidx.paging/LoadStates, androidx.paging/LoadStates? = ...): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.from|from(kotlin.collections.List<0:0>;androidx.paging.LoadStates;androidx.paging.LoadStates?){0§<kotlin.Any>}[0]
+        final fun <#A2: kotlin/Any> from(kotlin.collections/List<#A2>, androidx.paging/LoadStates, androidx.paging/LoadStates? = ..., kotlin/Int = ..., kotlin/Int = ...): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.from|from(kotlin.collections.List<0:0>;androidx.paging.LoadStates;androidx.paging.LoadStates?;kotlin.Int;kotlin.Int){0§<kotlin.Any>}[0]
+        final fun <#A2: kotlin/Any> from(kotlin.collections/List<#A2>, kotlin/Int = ..., kotlin/Int = ...): androidx.paging/PagingData<#A2> // androidx.paging/PagingData.Companion.from|from(kotlin.collections.List<0:0>;kotlin.Int;kotlin.Int){0§<kotlin.Any>}[0]
     }
 }
 

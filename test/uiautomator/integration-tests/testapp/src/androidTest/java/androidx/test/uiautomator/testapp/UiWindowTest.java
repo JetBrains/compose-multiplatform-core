@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import android.app.Activity;
@@ -32,6 +33,7 @@ import android.content.Intent;
 
 import androidx.test.filters.LargeTest;
 import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.UiWindow;
 
@@ -127,6 +129,7 @@ public class UiWindowTest extends BaseTest {
         UiWindow nonActiveWindow = appWindows.get(1);
         assertNotNull(nonActiveWindow);
         assertFalse(nonActiveWindow.isActive());
+        int nonActiveWindowId = nonActiveWindow.getId();
 
         List<UiWindow> windows =
                 mDevice.findWindows(
@@ -147,7 +150,7 @@ public class UiWindowTest extends BaseTest {
         // Wait for the app window to no longer be present, identified by its unique window ID.
         assertTrue(
                 "Window should no longer be present if the close button is clicked.",
-                mDevice.wait(d -> !d.hasWindow(By.Window.id(nonActiveWindow.getId())), TIMEOUT_MS));
+                mDevice.wait(d -> !d.hasWindow(By.Window.id(nonActiveWindowId)), TIMEOUT_MS));
     }
 
     @Test
@@ -243,5 +246,23 @@ public class UiWindowTest extends BaseTest {
             assertNotNull(root);
             assertEquals("com.android.systemui", root.getApplicationPackage());
         }
+    }
+
+    @Test(expected = StaleObjectException.class)
+    public void testUiWindow_staleWindowException() {
+        // Get a window reference.
+        UiWindow window = mDevice.findWindow(By.Window.pkg(TEST_APP).active(true));
+        assertNotNull(window);
+
+        // Close the activity to make the window stale
+        UiObject2 button = mDevice.findObject(By.res(TEST_APP, "close_task_window_button"));
+        assertNotNull(button);
+        button.click();
+        mDevice.wait(d -> !d.hasWindow(By.Window.pkg(TEST_APP)), TIMEOUT_MS);
+
+        // If the window is gone and stale, accessing it will throw a StaleObjectException.
+        window.getRootObject();
+        fail("Should not reach here. Expected exception was not caught when accessing stale "
+                + "window");
     }
 }

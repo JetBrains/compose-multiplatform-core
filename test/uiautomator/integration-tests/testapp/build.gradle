@@ -28,6 +28,7 @@ dependencies {
     implementation("androidx.core:core:1.6.0")
 
     implementation("androidx.activity:activity-compose:1.10.1")
+    implementation(project(":core:core"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material:material"))
@@ -52,7 +53,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.test.uiautomator.testapp"
     defaultConfig {
         minSdk = 23

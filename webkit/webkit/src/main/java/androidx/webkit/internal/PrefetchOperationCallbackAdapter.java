@@ -16,7 +16,7 @@
 
 package androidx.webkit.internal;
 
-import androidx.webkit.OutcomeReceiverCompat;
+import androidx.core.os.OutcomeReceiverCompat;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.PrefetchNetworkException;
 import androidx.webkit.Profile;

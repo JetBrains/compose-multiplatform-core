@@ -17,9 +17,7 @@ package androidx.xr.runtime.testing {
     method public void setConfig(androidx.xr.runtime.Config);
     method public void setHasCreatePermission(boolean);
     method public void setHasMissingPermission(boolean);
-    method public void setShouldSupportFaceTracking(boolean);
     method public void setShouldSupportPlaneTracking(boolean);
-    method public boolean shouldSupportFaceTracking();
     method public boolean shouldSupportPlaneTracking();
     method public void stop();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark>);
@@ -54,7 +52,6 @@ package androidx.xr.runtime.testing {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public void detachAnchor(androidx.xr.runtime.internal.Anchor anchor);
     method public java.util.List<androidx.xr.runtime.internal.Anchor> getAnchors();
-    method public androidx.xr.runtime.internal.Earth getEarth();
     method public androidx.xr.runtime.internal.Hand? getLeftHand();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand? getRightHand();
@@ -66,7 +63,6 @@ package androidx.xr.runtime.testing {
     method public void setTrackingAvailable(boolean);
     method public void unpersistAnchor(java.util.UUID uuid);
     property public java.util.List<androidx.xr.runtime.internal.Anchor> anchors;
-    property public androidx.xr.runtime.internal.Earth earth;
     property public boolean isTrackingAvailable;
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;

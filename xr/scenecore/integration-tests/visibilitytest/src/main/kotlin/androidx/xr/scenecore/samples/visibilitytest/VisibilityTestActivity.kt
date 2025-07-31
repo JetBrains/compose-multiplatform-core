@@ -42,8 +42,6 @@ import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
 @Suppress("Deprecation")
-// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
-// is/setEnabled.
 class VisibilityTestActivity : AppCompatActivity() {
 
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -92,40 +90,39 @@ class VisibilityTestActivity : AppCompatActivity() {
         }
 
         // Hiding the activitySpace hides everything, so we automatically unhide after 3 seconds
-        // because
-        // the user cannot see the Switch to unhide.
+        // because the user cannot see the Switch to unhide.
         findViewById<Button>(R.id.hide_space).setOnClickListener { _ ->
-            session.scene.activitySpace.setHidden(true)
+            session.scene.activitySpace.setEnabled(false)
             Handler(Looper.getMainLooper())
-                .postDelayed({ session.scene.activitySpace.setHidden(false) }, 3000)
+                .postDelayed({ session.scene.activitySpace.setEnabled(true) }, 3000)
         }
 
         findViewById<Button>(R.id.hide_main_panel).setOnClickListener { _ ->
-            session.scene.mainPanelEntity.setHidden(true)
+            session.scene.mainPanelEntity.setEnabled(false)
             Handler(Looper.getMainLooper())
-                .postDelayed({ session.scene.mainPanelEntity.setHidden(false) }, 3000)
+                .postDelayed({ session.scene.mainPanelEntity.setEnabled(true) }, 3000)
         }
 
         findViewById<Switch>(R.id.hide_all).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            setHiddenForAllEntities(isChecked)
+            setDisabledForAllEntities(isChecked)
             updateToggles()
         }
 
         findViewById<Switch>(R.id.hide_gltf0).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            parentGltfEntity?.setHidden(isChecked)
+            parentGltfEntity?.setEnabled(!isChecked)
         }
         findViewById<Switch>(R.id.hide_gltf1).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            childGltfEntity1?.setHidden(isChecked)
+            childGltfEntity1?.setEnabled(!isChecked)
         }
         findViewById<Switch>(R.id.hide_gltf2).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            childGltfEntity2?.setHidden(isChecked)
+            childGltfEntity2?.setEnabled(!isChecked)
         }
 
         findViewById<Switch>(R.id.hide_panel0).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            parentPanelEntity?.setHidden(isChecked)
+            parentPanelEntity?.setEnabled(!isChecked)
         }
         findViewById<Switch>(R.id.hide_panel1).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            childPanelEntity1?.setHidden(isChecked)
+            childPanelEntity1?.setEnabled(!isChecked)
         }
         findViewById<Switch>(R.id.hide_panel1_pointer).setOnCheckedChangeListener {
             _,
@@ -134,7 +131,7 @@ class VisibilityTestActivity : AppCompatActivity() {
                 if (isChecked) SpatialPointerIcon.NONE else SpatialPointerIcon.DEFAULT
         }
         findViewById<Switch>(R.id.hide_panel2).setOnCheckedChangeListener { _, isChecked: Boolean ->
-            childPanelEntity2?.setHidden(isChecked)
+            childPanelEntity2?.setEnabled(!isChecked)
         }
         findViewById<Button>(R.id.move_gltf0).setOnClickListener { _ ->
             val original = parentGltfEntity!!.getPose().translation
@@ -147,23 +144,23 @@ class VisibilityTestActivity : AppCompatActivity() {
     }
 
     private fun updateToggles() {
-        findViewById<Switch>(R.id.hide_gltf0).isChecked = parentGltfEntity!!.isHidden(false)
-        findViewById<Switch>(R.id.hide_gltf1).isChecked = childGltfEntity1!!.isHidden(false)
-        findViewById<Switch>(R.id.hide_gltf2).isChecked = childGltfEntity2!!.isHidden(false)
+        findViewById<Switch>(R.id.hide_gltf0).isChecked = !parentGltfEntity!!.isEnabled(false)
+        findViewById<Switch>(R.id.hide_gltf1).isChecked = !childGltfEntity1!!.isEnabled(false)
+        findViewById<Switch>(R.id.hide_gltf2).isChecked = !childGltfEntity2!!.isEnabled(false)
 
-        findViewById<Switch>(R.id.hide_panel0).isChecked = parentPanelEntity!!.isHidden(false)
-        findViewById<Switch>(R.id.hide_panel1).isChecked = childPanelEntity1!!.isHidden(false)
-        findViewById<Switch>(R.id.hide_panel2).isChecked = childPanelEntity2!!.isHidden(false)
+        findViewById<Switch>(R.id.hide_panel0).isChecked = !parentPanelEntity!!.isEnabled(false)
+        findViewById<Switch>(R.id.hide_panel1).isChecked = !childPanelEntity1!!.isEnabled(false)
+        findViewById<Switch>(R.id.hide_panel2).isChecked = !childPanelEntity2!!.isEnabled(false)
     }
 
-    private fun setHiddenForAllEntities(hidden: Boolean) {
-        parentGltfEntity?.setHidden(hidden)
-        childGltfEntity1?.setHidden(hidden)
-        childGltfEntity2?.setHidden(hidden)
+    private fun setDisabledForAllEntities(disabled: Boolean) {
+        parentGltfEntity?.setEnabled(!disabled)
+        childGltfEntity1?.setEnabled(!disabled)
+        childGltfEntity2?.setEnabled(!disabled)
 
-        parentPanelEntity?.setHidden(hidden)
-        childPanelEntity1?.setHidden(hidden)
-        childPanelEntity2?.setHidden(hidden)
+        parentPanelEntity?.setEnabled(!disabled)
+        childPanelEntity1?.setEnabled(!disabled)
+        childPanelEntity2?.setEnabled(!disabled)
     }
 
     private fun createPanelEntity(session: Session, name: String, parent: Entity?): PanelEntity {

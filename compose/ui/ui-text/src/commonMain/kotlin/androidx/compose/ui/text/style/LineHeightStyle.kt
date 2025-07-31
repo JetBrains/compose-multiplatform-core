@@ -107,7 +107,7 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim, val mode: Mode) 
      * production.
      */
     @kotlin.jvm.JvmInline
-    value class Trim private constructor(private val value: Int) {
+    value class Trim internal constructor(internal val value: Int) {
 
         override fun toString(): String {
             return when (value) {
@@ -327,7 +327,7 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim, val mode: Mode) 
      * etc.
      */
     @JvmInline
-    value class Mode private constructor(private val value: Int) {
+    value class Mode internal constructor(internal val value: Int) {
 
         override fun toString(): String {
             return when (this) {

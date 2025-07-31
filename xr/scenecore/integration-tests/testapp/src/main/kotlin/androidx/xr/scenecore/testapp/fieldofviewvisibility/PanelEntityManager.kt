@@ -21,16 +21,15 @@ import android.view.Gravity
 import android.widget.Button
 import android.widget.TextView
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.ResizeListener
+import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.testapp.R
+import java.util.function.Consumer
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Manage the UI for the Panel Entity. */
@@ -86,19 +85,15 @@ class PanelEntityManager(private val session: Session, activity: FieldOfViewVisi
                 )
 
             mMovableComponent = MovableComponent.createSystemMovable(mSession)
-            mResizableComponent = ResizableComponent.create(mSession)
             val simpleResizeListener =
-                object : ResizeListener {
-                    override fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {}
-
-                    override fun onResizeUpdate(entity: Entity, newSize: FloatSize3d) {}
-
-                    override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
-                        panelEntity?.size = finalSize.to2d()
-                        mTextView.text = "This Panel's dimensions are $finalSize"
+                Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+                    if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
+                        panelEntity?.size = resizeEvent.newSize.to2d()
+                        mTextView.text = "This Panel's dimensions are ${resizeEvent.newSize.to2d()}"
                     }
                 }
-            mResizableComponent?.addResizeListener(simpleResizeListener)
+            mResizableComponent =
+                ResizableComponent.create(session, resizeEventListener = simpleResizeListener)
             panelEntity!!.addComponent(mMovableComponent!!)
             panelEntity!!.addComponent(mResizableComponent!!)
         }

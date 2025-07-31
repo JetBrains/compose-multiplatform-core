@@ -18,7 +18,6 @@ package androidx.xr.runtime.testing
 
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
@@ -78,10 +77,10 @@ class FakeLifecycleManagerTest {
     }
 
     @Test
-    fun create_hasMissingPermission_throwsPermissionNotGrantedException() {
+    fun create_hasMissingPermission_throwsSecurityException() {
         underTest.hasCreatePermission = false
 
-        assertFailsWith<PermissionNotGrantedException> { underTest.create() }
+        assertFailsWith<SecurityException> { underTest.create() }
     }
 
     @Test
@@ -98,11 +97,11 @@ class FakeLifecycleManagerTest {
     }
 
     @Test
-    fun configure_hasMissingPermission_throwsPermissionNotGrantedException() {
+    fun configure_hasMissingPermission_throwsSecurityException() {
         underTest.create()
         underTest.hasMissingPermission = true
 
-        assertFailsWith<PermissionNotGrantedException> { underTest.configure(Config()) }
+        assertFailsWith<SecurityException> { underTest.configure(Config()) }
     }
 
     @Test

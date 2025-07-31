@@ -41,7 +41,7 @@ public interface Entity : ScenePose {
     public var parent: Entity?
 
     /** Alternate text for this Entity to be consumed by Accessibility systems. */
-    public var contentDescription: String
+    public var contentDescription: CharSequence
 
     /**
      * Sets an Entity to be a child of this Entity in the scene graph. The child Entity will inherit
@@ -168,7 +168,7 @@ public interface Entity : ScenePose {
      *
      * @param enabled The new local enabled state of this Entity.
      */
-    @Suppress("Deprecation") public fun setEnabled(enabled: Boolean): Unit = setHidden(!enabled)
+    public fun setEnabled(enabled: Boolean): Unit
 
     /**
      * Returns the enabled status of this Entity.
@@ -179,32 +179,7 @@ public interface Entity : ScenePose {
      *   returned. Regardless of the local enabled state, an Entity will be considered disabled if
      *   any of its ancestors are disabled.
      */
-    @Suppress("Deprecation")
-    public fun isEnabled(includeParents: Boolean = true): Boolean = !isHidden(includeParents)
-
-    /**
-     * Sets the local hidden state of this Entity. When `true`, this Entity and all descendants will
-     * not be rendered in the scene. When the hidden state is `false`, an entity will be rendered if
-     * its ancestors are not hidden.
-     *
-     * @param hidden The new local hidden state of this Entity.
-     */
-    @Deprecated("Use setEnabled(Boolean)")
-    // TODO - b/421386891: remove this deprecated method
-    public fun setHidden(hidden: Boolean)
-
-    /**
-     * Returns the hidden status of this Entity.
-     *
-     * @param includeParents Whether to include the hidden status of parents in the returned value.
-     * @return If includeParents is `true`, the returned value will be `true` if this Entity or any
-     *   of its ancestors is hidden. If includeParents is `false`, the local hidden state is
-     *   returned. Regardless of the local hidden state, an Entity will not be rendered if any of
-     *   its ancestors are hidden.
-     */
-    @Deprecated("Use isEnabled(Boolean)")
-    // TODO - b/421386891: remove this method
-    public fun isHidden(includeParents: Boolean = true): Boolean
+    public fun isEnabled(includeParents: Boolean = true): Boolean
 
     /**
      * Disposes of any system resources held by this Entity, and transitively calls dispose() on all
@@ -266,7 +241,7 @@ internal constructor(
 
     private val componentList = mutableListOf<Component>()
 
-    override var contentDescription: String
+    override var contentDescription: CharSequence
         get() = rtEntity.contentDescription
         set(value) {
             rtEntity.contentDescription = value
@@ -318,11 +293,9 @@ internal constructor(
     override fun getAlpha(@SpaceValue relativeTo: Int): Float =
         rtEntity.getAlpha(relativeTo.toRtSpace())
 
-    @Deprecated("Use setEnabled(Boolean)")
-    override fun setHidden(hidden: Boolean): Unit = rtEntity.setHidden(hidden)
+    override fun setEnabled(enabled: Boolean): Unit = rtEntity.setHidden(!enabled)
 
-    @Deprecated("Use isEnabled(Boolean)")
-    override fun isHidden(includeParents: Boolean): Boolean = rtEntity.isHidden(includeParents)
+    override fun isEnabled(includeParents: Boolean): Boolean = !(rtEntity.isHidden(includeParents))
 
     override fun dispose() {
         removeAllComponents()

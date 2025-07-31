@@ -525,18 +525,20 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         transform: ((E) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        this@ObjectList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
-            }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(element)
-            } else {
-                append(transform(element))
+        run {
+            this@ObjectList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(element)
+                } else {
+                    append(transform(element))
+                }
             }
         }
         append(postfix)

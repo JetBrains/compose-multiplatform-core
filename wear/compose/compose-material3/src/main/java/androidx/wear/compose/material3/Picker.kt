@@ -32,7 +32,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -60,6 +60,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -580,6 +582,7 @@ internal fun pickerTextOption(
     textStyle: TextStyle,
     indexToText: (Int) -> String,
     optionHeight: Dp,
+    optionBaseline: Int,
     selectedContentColor: Color,
     unselectedContentColor: Color,
     invalidContentColor: Color = unselectedContentColor,
@@ -587,8 +590,17 @@ internal fun pickerTextOption(
 ): (@Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit) =
     { value: Int, pickerSelected: Boolean ->
         Box(
-            modifier = Modifier.fillMaxSize().height(optionHeight),
-            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier.fillMaxWidth().height(optionHeight).layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    val baseline = placeable[FirstBaseline]
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeable.placeRelative(
+                            x = (constraints.maxWidth - placeable.width) / 2,
+                            y = optionBaseline - baseline,
+                        )
+                    }
+                }
         ) {
             Text(
                 text = indexToText(value),

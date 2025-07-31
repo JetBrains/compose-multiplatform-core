@@ -189,8 +189,8 @@ internal fun RtSpatialVisibility.toSpatialVisibility(): Int {
 }
 
 /** Extension function that converts a [RtResizeEvent] to a [ResizeEvent]. */
-internal fun RtResizeEvent.toResizeEvent(): ResizeEvent {
-    return ResizeEvent(resizeState.toResizeState(), newSize.toFloatSize3d())
+internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
+    return ResizeEvent(entity, resizeState.toResizeState(), newSize.toFloatSize3d())
 }
 
 /**
@@ -226,13 +226,13 @@ internal fun Int.toMoveState(): Int {
 }
 
 /** Extension function that converts a [Int] to [ResizeEvent.ResizeState]. */
-@ResizeEvent.ResizeState
+@ResizeEvent.ResizeStateValue
 internal fun Int.toResizeState(): Int {
     return when (this) {
-        RtResizeEvent.RESIZE_STATE_UNKNOWN -> ResizeEvent.RESIZE_STATE_UNKNOWN
-        RtResizeEvent.RESIZE_STATE_START -> ResizeEvent.RESIZE_STATE_START
-        RtResizeEvent.RESIZE_STATE_ONGOING -> ResizeEvent.RESIZE_STATE_ONGOING
-        RtResizeEvent.RESIZE_STATE_END -> ResizeEvent.RESIZE_STATE_END
+        RtResizeEvent.RESIZE_STATE_UNKNOWN -> ResizeEvent.ResizeState.RESIZE_STATE_UNKNOWN
+        RtResizeEvent.RESIZE_STATE_START -> ResizeEvent.ResizeState.RESIZE_STATE_START
+        RtResizeEvent.RESIZE_STATE_ONGOING -> ResizeEvent.ResizeState.RESIZE_STATE_ONGOING
+        RtResizeEvent.RESIZE_STATE_END -> ResizeEvent.ResizeState.RESIZE_STATE_END
         else -> error("Unknown Resize State: $this")
     }
 }

@@ -27,6 +27,7 @@ androidx {
     type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
     inceptionYear = "2024"
     description = "Under Development"
+    addGoldenImageAssets()
 }
 
 android {
@@ -39,6 +40,16 @@ dependencies {
     implementation(project(":compose:remote:remote-core"))
     implementation(project(":customview:customview"))
     implementation(libs.androidx.core)
-    androidTestImplementation(libs.testRunner)
     testImplementation(libs.junit)
+
+    androidTestImplementation(project(":compose:remote:remote-creation"))
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation("androidx.activity:activity:1.7.2")
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.truth)
 }

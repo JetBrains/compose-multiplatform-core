@@ -1045,6 +1045,16 @@ public final class SupportedSurfaceCombination {
                                     + ". Device supported FPS ranges: "
                                     + Arrays.toString(availableFpsRanges));
                 }
+            } else {
+                if (featureSettings.isHighSpeedOn()) {
+                    // When fps is not specified, the template fps will be used. However, the fps
+                    // is for regular session. For high-speed session, we must provide a high-speed
+                    // supported fps, otherwise the session will fail.
+                    Range<Integer>[] availableFpsRanges = mHighSpeedResolver.getFrameRateRangesFor(
+                            savedSizes);
+                    targetFrameRateForDevice = getClosestSupportedDeviceFrameRate(
+                            HighSpeedResolver.DEFAULT_FPS, savedConfigMaxFps, availableFpsRanges);
+                }
             }
             for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
                 Size resolutionForUseCase = savedSizes.get(

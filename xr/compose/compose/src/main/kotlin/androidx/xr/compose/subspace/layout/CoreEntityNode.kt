@@ -16,8 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.xr.compose.unit.IntVolumeSize
-
 /**
  * Interface for nodes that can modify a CoreEntity.
  *
@@ -31,7 +29,7 @@ internal interface CoreEntityNode {
      * Called during the placement of the [CoreEntity] prior to when the size and position is
      * finally set on the node.
      */
-    public fun CoreEntityScope.modifyCoreEntity()
+    fun CoreEntityScope.modifyCoreEntity()
 }
 
 /**
@@ -39,7 +37,8 @@ internal interface CoreEntityNode {
  *
  * This is used to request a relayout in stateful layout modifiers that are impacted by events that
  * don't trigger a recomposition. *Do not* call this from [CoreEntityNode.modifyCoreEntity] as
- * [modifyCoreEntity] is called during layout and [requestRelayout] will cause a relayout loop.
+ * [CoreEntityNode.modifyCoreEntity] is called during layout and [requestRelayout] will cause a
+ * relayout loop.
  */
 internal fun CoreEntityNode.requestRelayout() {
     (this as SubspaceModifier.Node).layoutNode?.requestRelayout()
@@ -61,7 +60,7 @@ internal interface CoreEntityScope {
      *
      * @param scale The scale of the CoreEntity.
      */
-    public fun setOrAppendScale(scale: Float)
+    fun setOrAppendScale(scale: Float)
 
     /**
      * Sets the alpha of the [CoreEntity].
@@ -74,24 +73,12 @@ internal interface CoreEntityScope {
      *
      * @param alpha The alpha of the CoreEntity.
      */
-    public fun setOrAppendAlpha(alpha: Float)
-
-    /**
-     * Sets the rendered size of the [CoreEntity] in pixels.
-     *
-     * Only the last [CoreEntityNode] in the chain that sets the size of the [CoreEntity] will take
-     * effect. This does not change the measured size of the composable content during layout, only
-     * the rendered size of the [CoreEntity]. This is similar to how [SubspaceModifier.scale] works.
-     *
-     * @param size The rendered size of the CoreEntity.
-     */
-    public fun setRenderedSize(size: IntVolumeSize)
+    fun setOrAppendAlpha(alpha: Float)
 }
 
 private class CoreEntityAccumulator : CoreEntityScope {
     var alpha: Float = 1f
     var scale: Float = 1f
-    var size: IntVolumeSize? = null
 
     override fun setOrAppendScale(scale: Float) {
         this.scale = scale
@@ -101,24 +88,16 @@ private class CoreEntityAccumulator : CoreEntityScope {
         this.alpha = alpha
     }
 
-    override fun setRenderedSize(size: IntVolumeSize) {
-        this.size = size
-    }
-
     fun merge(next: CoreEntityAccumulator): CoreEntityAccumulator {
         val result = CoreEntityAccumulator()
         result.alpha = alpha * next.alpha
         result.scale = scale * next.scale
-        result.size = next.size ?: size
         return result
     }
 
     fun applyChanges(coreEntity: CoreEntity) {
         coreEntity.scale = scale
         coreEntity.alpha = alpha
-        if (coreEntity is ResizableCoreEntity) {
-            coreEntity.overrideSize = size
-        }
     }
 }
 

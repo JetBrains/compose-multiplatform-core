@@ -45,9 +45,6 @@ import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
 
 /** Manage the Head Locked UI. */
-@Suppress("Deprecation")
-// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
-// is/setEnabled.
 class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
     private val TAG = "HeadLockedUIManager"
     private val mSession: Session
@@ -90,7 +87,7 @@ class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
     @Composable
     fun HeadLockedUISettings() {
         var sliderPositionAlpha by remember { mutableFloatStateOf(0.0f) }
-        var modelIsHidden by remember { mutableStateOf(false) }
+        var modelIsDisabled by remember { mutableStateOf(false) }
 
         Column(verticalArrangement = Arrangement.Top) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -113,13 +110,13 @@ class HeadLockedUIManager(session: Session, headLockedPanelView: View) {
                 // Button to toggle the visibility of the headlocked UI
                 Button(
                     onClick = {
-                        modelIsHidden = mHeadLockedPanel.isHidden(true)
-                        mHeadLockedPanel.setHidden(!modelIsHidden)
-                        modelIsHidden = !modelIsHidden
+                        modelIsDisabled = !(mHeadLockedPanel.isEnabled(true))
+                        modelIsDisabled = !modelIsDisabled
+                        mHeadLockedPanel.setEnabled(!modelIsDisabled)
                     }
                 ) {
                     Text(
-                        text = (if (modelIsHidden) "Show Panel" else "Hide Panel"),
+                        text = (if (modelIsDisabled) "Show Panel" else "Hide Panel"),
                         fontSize = 20.sp,
                     )
                 }

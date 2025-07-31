@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -60,6 +62,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -68,7 +71,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -151,30 +153,16 @@ class ScrollFocusableInteractionTest(
     }
 
     @Test
-    fun scrollsFocusedAndroidViewIntoView_whenFullyInViewAndBecomesFullyHidden() {
+    fun scrollsFocusedFocusableIntoView_whenFullyInViewAndBecomesFullyHidden_usingFocusRect() {
         var viewportSize by mutableStateOf(100.toDp())
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
                 // Put a focusable at the end of the viewport.
-                WithSpacerBefore(size = 90.toDp()) {
-                    AndroidView(
-                        factory = {
-                            View(it).apply {
-                                isFocusable = true
-                                isFocusableInTouchMode = true
-                                layoutParams =
-                                    ViewGroup.LayoutParams(
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                    )
-                            }
-                        },
-                        modifier =
-                            Modifier.testTag(focusableTag)
-                                .size(10.toDp())
-                                .border(1.dp, Color.White)
-                                .focusable(),
+                WithSpacerBefore(size = 50.toDp()) {
+                    TestFocusableWithFocusRect(
+                        size = 50.toDp(),
+                        focusRect = DpRect(20.toDp(), 20.toDp(), 40.toDp(), 40.toDp()),
                     )
                 }
             }
@@ -182,9 +170,54 @@ class ScrollFocusableInteractionTest(
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 50.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
+
+        // Act: Shrink the viewport.
+        viewportSize = 50.toDp()
+
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) (-20).toDp() else 10.toDp())
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun scrollsFocusedAndroidViewIntoView_whenFullyInViewAndBecomesFullyHidden() {
+        var viewportSize by mutableStateOf(100.toDp())
+        lateinit var focusableView: View
+
+        rule.setContent {
+            ScrollableRowOrColumn(size = viewportSize) {
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) {
+                    AndroidView(
+                        factory = {
+                            View(it)
+                                .apply {
+                                    isFocusable = true
+                                    isFocusableInTouchMode = true
+                                    layoutParams =
+                                        ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                        )
+                                }
+                                .also { focusableView = it }
+                        },
+                        modifier =
+                            Modifier.testTag(focusableTag).size(10.toDp()).border(1.dp, Color.White),
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { focusableView.requestFocus() }
+        scrollToTop()
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 90.toDp())
+            .assertIsDisplayed()
 
         // Act: Shrink the viewport.
         viewportSize = 50.toDp()
@@ -195,72 +228,74 @@ class ScrollFocusableInteractionTest(
             .assertIsDisplayed()
     }
 
-    @Ignore // Enable when focus area calculation is fixed for AndroidViews.
     @Test
     fun scrollsFocusedSubAndroidViewIntoView_whenFullyInViewAndBecomesFullyHidden() {
         var viewportSize by mutableStateOf(100.toDp())
+        lateinit var focusableView: View
 
-        rule.setContent {
+        rule.setContentForTest {
             ScrollableRowOrColumn(size = viewportSize) {
                 // Put a focusable at the end of the viewport.
-                WithSpacerBefore(size = 90.toDp()) {
+                WithSpacerBefore(size = 80.toDp()) {
                     AndroidView(
                         factory = { context ->
                             LinearLayout(context).apply {
-                                orientation = LinearLayout.VERTICAL
+                                orientation =
+                                    if (orientationLayoutDirection.orientation == Vertical) {
+                                        LinearLayout.VERTICAL
+                                    } else {
+                                        LinearLayout.HORIZONTAL
+                                    }
                                 layoutParams =
                                     ViewGroup.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                     )
-                                // 10.toDp() height
-                                addView(
-                                    View(context).apply {
-                                        layoutParams =
-                                            LinearLayout.LayoutParams(
-                                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                                0,
-                                                1f,
-                                            )
-                                    }
-                                )
-                                // 10.toDp() height
-                                addView(
+                                // 10.toDp() size
+                                focusableView =
                                     View(context).apply {
                                         isFocusable = true
                                         isFocusableInTouchMode = true
                                         layoutParams =
                                             LinearLayout.LayoutParams(
                                                 ViewGroup.LayoutParams.MATCH_PARENT,
-                                                0,
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
                                                 1f,
                                             )
                                     }
-                                )
+                                val otherView =
+                                    View(context).apply {
+                                        layoutParams =
+                                            LinearLayout.LayoutParams(
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                1f,
+                                            )
+                                    }
+                                addView(focusableView)
+                                addView(otherView)
                             }
                         },
                         modifier =
-                            Modifier.testTag(focusableTag)
-                                .size(20.toDp())
-                                .border(1.dp, Color.White)
-                                .focusable(),
+                            Modifier.testTag(focusableTag).size(20.toDp()).border(1.dp, Color.White),
                     )
                 }
             }
         }
-        // AndroidView itself will have 20.toDp() height but the focusable part is still 10.toDp()
-        requestFocusAndScrollToTop()
+        rule.runOnIdle { focusableView.requestFocus() }
+        scrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 80.toDp())
             .assertIsDisplayed()
-            .assertIsFocused()
 
         // Act: Shrink the viewport.
         viewportSize = 50.toDp()
 
         rule
             .onNodeWithTag(focusableTag)
+            // if the entire AndroidView was considered as a focus rect, this assertion value
+            // would have been 30. Because only the top half is considered focused, we get 40.
             .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 40.toDp())
             .assertIsDisplayed()
     }
@@ -288,6 +323,37 @@ class ScrollFocusableInteractionTest(
         rule
             .onNodeWithTag(focusableTag)
             .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 85.toDp())
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun scrollsFocusedFocusableIntoView_whenFullyInViewAndBecomesPartiallyHidden_usingFocusRect() {
+        var viewportSize by mutableStateOf(100.toDp())
+
+        rule.setContent {
+            ScrollableRowOrColumn(size = viewportSize) {
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 50.toDp()) {
+                    TestFocusableWithFocusRect(
+                        size = 50.toDp(),
+                        focusRect = DpRect(10.toDp(), 10.toDp(), 30.toDp(), 30.toDp()),
+                    )
+                }
+            }
+        }
+        requestFocusAndScrollToTop()
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) 0.toDp() else 50.toDp())
+            .assertIsDisplayed()
+            .assertIsFocused()
+
+        // Act: Shrink the viewport.
+        viewportSize = 70.toDp()
+
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseLayout) (-10).toDp() else 40.toDp())
             .assertIsDisplayed()
     }
 
@@ -780,6 +846,35 @@ class ScrollFocusableInteractionTest(
                 .size(size)
                 .border(1.dp, Color.White)
                 .background(if (isFocused) Color.Blue else Color.Black)
+                .focusable(interactionSource = interactionSource)
+        )
+    }
+
+    @Composable
+    private fun TestFocusableWithFocusRect(
+        size: Dp,
+        focusRect: DpRect,
+        tag: String = focusableTag,
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused by interactionSource.collectIsFocusedAsState()
+
+        Box(
+            Modifier.testTag(tag)
+                .size(size)
+                .border(1.dp, Color.White)
+                .background(if (isFocused) Color.Blue else Color.Black)
+                .focusProperties {
+                    this.focusRect =
+                        with(rule.density) {
+                            Rect(
+                                left = focusRect.left.toPx(),
+                                top = focusRect.top.toPx(),
+                                right = focusRect.right.toPx(),
+                                bottom = focusRect.bottom.toPx(),
+                            )
+                        }
+                }
                 .focusable(interactionSource = interactionSource)
         )
     }

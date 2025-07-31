@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -37,11 +38,10 @@ configurations {
         canBeConsumed = false
         transitive = false
         attributes {
-            attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
-            attribute(
-                    Attribute.of("artifactType", String), "android-classes-jar"
-            )
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
+            attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, objects.named(TargetJvmEnvironment, TargetJvmEnvironment.ANDROID))
+            attribute(KotlinPlatformType.attribute, KotlinPlatformType.jvm)
+            attribute(Attribute.of("artifactType", String), "android-classes-jar")
         }
     }
     implementation.extendsFrom(friends)

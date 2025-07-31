@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.util.Log
 import android.view.View
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Transition
@@ -112,6 +113,10 @@ internal fun ElevatedPanel(
     pose: Pose? = null,
     content: @Composable () -> Unit,
 ) {
+    if (contentSize.width <= 0 || contentSize.height <= 0) {
+        Log.w("ElevatedPanel", "Setting the panel size to 0 or less. The panel will be hidden.")
+    }
+    val nextSize = IntSize(contentSize.width.coerceAtLeast(1), contentSize.height.coerceAtLeast(1))
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
     val view = rememberComposeView()
@@ -120,7 +125,7 @@ internal fun ElevatedPanel(
             PanelEntity.create(
                 session = session,
                 view = view,
-                pixelDimensions = contentSize.run { IntSize2d(width, height) },
+                pixelDimensions = nextSize.run { IntSize2d(width, height) },
                 name = "ElevatedPanel:${view.id}",
             )
         }
@@ -136,12 +141,9 @@ internal fun ElevatedPanel(
             panelEntity.entity.setPose(pose)
         }
     }
-
-    LaunchedEffect(contentSize) {
-        val width = contentSize.width
-        val height = contentSize.height
-
-        panelEntity.size = IntVolumeSize(width = width, height = height, depth = 0)
+    LaunchedEffect(nextSize) {
+        panelEntity.size =
+            IntVolumeSize(width = nextSize.width, height = nextSize.height, depth = 0)
     }
 
     LaunchedEffect(parentEntity) { panelEntity.entity.parent = parentEntity.entity }

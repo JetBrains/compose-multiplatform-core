@@ -17,6 +17,7 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.UUID
@@ -47,6 +48,13 @@ public interface PerceptionManager {
 
     /** Deletes a persisted [Anchor] from local storage. */
     public fun unpersistAnchor(uuid: UUID)
+
+    /** Checks the VPS availability at the given location. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult
 
     /** Returns the list of all known trackables. */
     public val trackables: Collection<Trackable>

@@ -86,6 +86,7 @@ public fun createDynamicCircle(
 /**
  * Creates a Squircle path based on center coordinates, radius, and corner radius.
  *
+ * @param rc The RemoteComposeWriter to use.
  * @param cx The x-coordinate of the squaricle's center.
  * @param cy The y-coordinate of the squaricle's center.
  * @param radius The radius of the squaricle (distance from center to side).
@@ -104,6 +105,7 @@ public fun createSquirclePath(
 /**
  * Creates a Squircle path based on center coordinates, radius, and corner radius.
  *
+ * @param rc The RemoteComposeWriter to use.
  * @param cx The x-coordinate of the squaricle's center.
  * @param cy The y-coordinate of the squaricle's center.
  * @param radius The radius of the squaricle (distance from center to side).

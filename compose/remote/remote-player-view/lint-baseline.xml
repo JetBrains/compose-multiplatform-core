@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha04)" variant="all" version="8.12.0-alpha04">
+<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
 
     <issue
         id="NewApi"
@@ -859,7 +859,7 @@
     <issue
         id="NewApi"
         message="Call requires API level 24, or core library desugaring (current min is 21): `java.util.stream.Stream#filter`"
-        errorLine1="                .filter(op -> op.getComponentId() == virtualViewId)"
+        errorLine1="                .filter(op -> op.getComponentId() == id)"
         errorLine2="                 ~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/player/view/accessibility/CoreDocumentAccessibility.java"/>
@@ -1339,7 +1339,7 @@
         errorLine1="    public AndroidxRemoteComposeTouchHelper&lt;"
         errorLine2="           ^">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
     </issue>
 
     <issue
@@ -1348,7 +1348,7 @@
         errorLine1="            forRemoteComposePlayer(View player, @NonNull CoreDocument coreDocument) {"
         errorLine2="                                   ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
     </issue>
 
     <issue
@@ -1357,7 +1357,7 @@
         errorLine1="    public void setAccessibilityDelegate(View remoteComposePlayer, CoreDocument document) {"
         errorLine2="                                         ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
     </issue>
 
     <issue
@@ -1366,7 +1366,7 @@
         errorLine1="    public void setAccessibilityDelegate(View remoteComposePlayer, CoreDocument document) {"
         errorLine2="                                                                   ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
     </issue>
 
     <issue
@@ -1375,7 +1375,7 @@
         errorLine1="    public void clearAccessibilityDelegate(View remoteComposePlayer) {"
         errorLine2="                                           ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeAccessibilityRegistrar.java"/>
     </issue>
 
     <issue
@@ -1384,7 +1384,7 @@
         errorLine1="            View host,"
         errorLine2="            ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeTouchHelper.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeTouchHelper.java"/>
     </issue>
 
     <issue
@@ -1393,7 +1393,7 @@
         errorLine1="            RemoteComposeDocumentAccessibility remoteDocA11y,"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeTouchHelper.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeTouchHelper.java"/>
     </issue>
 
     <issue
@@ -1402,7 +1402,7 @@
         errorLine1="            SemanticNodeApplier&lt;AccessibilityNodeInfoCompat> applier) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeTouchHelper.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeTouchHelper.java"/>
     </issue>
 
     <issue
@@ -1411,7 +1411,7 @@
         errorLine1="    public void getVisibleVirtualViews(List&lt;Integer> virtualViewIds) {"
         errorLine2="                                       ~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeTouchHelper.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeTouchHelper.java"/>
     </issue>
 
     <issue
@@ -1420,7 +1420,7 @@
         errorLine1="    public List&lt;Integer> getVisibleChildVirtualViews() {"
         errorLine2="           ~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxRemoteComposeTouchHelper.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxRemoteComposeTouchHelper.java"/>
     </issue>
 
     <issue
@@ -1429,7 +1429,7 @@
         errorLine1="    public AndroidxSemanticNodeApplier(View player) {"
         errorLine2="                                       ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1438,7 +1438,7 @@
         errorLine1="    protected void setClickable(AccessibilityNodeInfoCompat nodeInfo, boolean clickable) {"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1447,7 +1447,7 @@
         errorLine1="    protected void setEnabled(AccessibilityNodeInfoCompat nodeInfo, boolean enabled) {"
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1456,7 +1456,7 @@
         errorLine1="    protected CharSequence getStateDescription(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="              ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1465,7 +1465,7 @@
         errorLine1="    protected CharSequence getStateDescription(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1474,7 +1474,7 @@
         errorLine1="            AccessibilityNodeInfoCompat nodeInfo, CharSequence description) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1483,7 +1483,7 @@
         errorLine1="            AccessibilityNodeInfoCompat nodeInfo, CharSequence description) {"
         errorLine2="                                                  ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1492,7 +1492,7 @@
         errorLine1="    protected void setRoleDescription(AccessibilityNodeInfoCompat nodeInfo, String description) {"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1501,7 +1501,7 @@
         errorLine1="    protected void setRoleDescription(AccessibilityNodeInfoCompat nodeInfo, String description) {"
         errorLine2="                                                                            ~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1510,7 +1510,7 @@
         errorLine1="    protected CharSequence getText(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="              ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1519,7 +1519,7 @@
         errorLine1="    protected CharSequence getText(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1528,7 +1528,7 @@
         errorLine1="    protected void setText(AccessibilityNodeInfoCompat nodeInfo, CharSequence text) {"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1537,7 +1537,7 @@
         errorLine1="    protected void setText(AccessibilityNodeInfoCompat nodeInfo, CharSequence text) {"
         errorLine2="                                                                 ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1546,7 +1546,7 @@
         errorLine1="    protected CharSequence getContentDescription(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="              ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1555,7 +1555,7 @@
         errorLine1="    protected CharSequence getContentDescription(AccessibilityNodeInfoCompat nodeInfo) {"
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1564,7 +1564,7 @@
         errorLine1="            AccessibilityNodeInfoCompat nodeInfo, CharSequence description) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1573,7 +1573,7 @@
         errorLine1="            AccessibilityNodeInfoCompat nodeInfo, CharSequence description) {"
         errorLine2="                                                  ~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1582,7 +1582,7 @@
         errorLine1="    protected void setBoundsInScreen(AccessibilityNodeInfoCompat nodeInfo, Rect bounds) {"
         errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1591,7 +1591,7 @@
         errorLine1="    protected void setBoundsInScreen(AccessibilityNodeInfoCompat nodeInfo, Rect bounds) {"
         errorLine2="                                                                           ~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1600,7 +1600,7 @@
         errorLine1="    protected void setUniqueId(AccessibilityNodeInfoCompat nodeInfo, String id) {"
         errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1609,7 +1609,7 @@
         errorLine1="    protected void setUniqueId(AccessibilityNodeInfoCompat nodeInfo, String id) {"
         errorLine2="                                                                     ~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1618,7 +1618,7 @@
         errorLine1="            AccessibilityNodeInfoCompat nodeInfo,"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1627,7 +1627,7 @@
         errorLine1="            ScrollableComponent.ScrollAxisRange scrollAxis,"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1636,7 +1636,7 @@
         errorLine1="    protected void applyListItem(AccessibilityNodeInfoCompat nodeInfo, int parentId) {"
         errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1645,7 +1645,7 @@
         errorLine1="    public void addChildren(AccessibilityNodeInfoCompat nodeInfo, List&lt;Integer> childIds) {"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -1654,7 +1654,7 @@
         errorLine1="    public void addChildren(AccessibilityNodeInfoCompat nodeInfo, List&lt;Integer> childIds) {"
         errorLine2="                                                                  ~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/remote/player/view/accessibility/AndroidxSemanticNodeApplier.java"/>
+            file="src/main/java/androidx/compose/remote/player/view/accessibility/platform/AndroidxSemanticNodeApplier.java"/>
     </issue>
 
     <issue
@@ -2011,6 +2011,15 @@
     <issue
         id="UnknownNullness"
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void execute(@NonNull String name, @Nullable Object value, StateUpdater stateUpdater);"
+        errorLine2="                                                               ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/action/NamedActionHandler.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
         errorLine1="    void setAccessibilityDelegate(View remoteComposePlayer, CoreDocument document);"
         errorLine2="                                  ~~~~">
         <location
@@ -2301,6 +2310,15 @@
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
         errorLine1="    public RemoteComposePlayer(Context context, AttributeSet attrs, int defStyleAttr) {"
         errorLine2="                                                ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/RemoteComposePlayer.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public StateUpdater getStateUpdater() {"
+        errorLine2="           ~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/player/view/RemoteComposePlayer.java"/>
     </issue>
@@ -2987,6 +3005,141 @@
         errorLine2="                                            ~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/player/view/platform/SettingsRetriever.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalInt(String integerName, int value);"
+        errorLine2="                         ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalColor(String name, int value);"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalBitmap(String name, Bitmap content);"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalBitmap(String name, Bitmap content);"
+        errorLine2="                                         ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalString(String stringName, String value);"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void setUserLocalString(String stringName, String value);"
+        errorLine2="                                               ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    static String getUserDomainString(String name) {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    static String getUserDomainString(String name) {"
+        errorLine2="                                      ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdater.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public StateUpdaterImpl(RemoteContext remoteContext) {"
+        errorLine2="                            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalInt(String integerName, int value) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalColor(String name, int value) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalBitmap(String name, Bitmap content) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalBitmap(String name, Bitmap content) {"
+        errorLine2="                                                ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalString(String stringName, String value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserLocalString(String stringName, String value) {"
+        errorLine2="                                                      ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/player/view/state/StateUpdaterImpl.java"/>
     </issue>
 
     <issue

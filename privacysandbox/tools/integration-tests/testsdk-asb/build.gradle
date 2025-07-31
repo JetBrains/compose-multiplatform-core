@@ -24,25 +24,14 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.tools.integration.testsdk-asb"
-
-    // TODO(b/357865033): AndroidXPlugin should eventually set compileSdkVersion and
-    //  buildToolsVersion for this plugin. We shouldn't be setting these manually.
     compileSdk = 36
-    // Remove when b/411666019 is fixed
-    targetSdk = 35
-    compileSdkExtension = 14
-    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
-
     bundle {
         packageName = "androidx.privacysandbox.tools.integration.sdk"
         compatSdkProviderClassName = "androidx.privacysandbox.tools.integration.testsdk.MySdkSandboxProvider"
         // This is the entry point class to our SDK in the SDK Runtime. It enables backward
         // compatibility support.
         sdkProviderClassName = "androidx.privacysandbox.sdkruntime.provider.SandboxedSdkProviderAdapter"
-        setVersion(1, 0, 0)
-
     }
-
 }
 
 dependencies {

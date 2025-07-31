@@ -25,7 +25,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.manifest.HAND_TRACKING
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration.Companion.milliseconds
@@ -82,7 +81,7 @@ internal constructor(
                 ContextCompat.checkSelfPermission(activity, HAND_TRACKING) !=
                     PackageManager.PERMISSION_GRANTED
         ) {
-            throw PermissionNotGrantedException()
+            throw SecurityException()
         }
 
         var objectLabels: MutableList<Long> = mutableListOf()
@@ -121,8 +120,7 @@ internal constructor(
                     throw IllegalStateException(
                         "One or more objects are null. Has the OpenXrManager been created?"
                     ) // XR_ERROR_HANDLE_INVALID
-                -1000710000L ->
-                    throw PermissionNotGrantedException() // XR_ERROR_PERMISSION_INSUFFICIENT
+                -1000710000L -> throw SecurityException() // XR_ERROR_PERMISSION_INSUFFICIENT
             }
         }
 

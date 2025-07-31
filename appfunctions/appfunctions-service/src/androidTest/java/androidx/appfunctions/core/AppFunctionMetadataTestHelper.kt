@@ -344,5 +344,11 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         "* Use mediaSchema2_print for testing a schema function disabled by default.",
                 displayDescription = "Test AppFunctionManagerCompat API(s)",
             )
+
+        val TEST_APP_METADATA_IN_FRENCH =
+            AppFunctionAppMetadata(
+                description = TEST_APP_METADATA.description,
+                displayDescription = "Tester l'API AppFunctionManagerCompat",
+            )
     }
 }

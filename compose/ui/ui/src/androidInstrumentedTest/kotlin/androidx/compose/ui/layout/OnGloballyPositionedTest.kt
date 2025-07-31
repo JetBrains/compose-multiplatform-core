@@ -59,6 +59,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.Popup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -1278,6 +1279,36 @@ class OnGloballyPositionedTest {
             assertThat(positionCalled1Count).isEqualTo(1)
             assertThat(positionCalled2Count).isEqualTo(1)
         }
+    }
+
+    @Test
+    fun globalLayoutRecalculatesPosition() {
+        var contentPos = IntOffset.Zero
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.fillMaxSize().onGloballyPositioned {
+                    contentPos = it.positionInWindow().round()
+                }
+            )
+        }
+
+        val latch = CountDownLatch(1)
+        rule.runOnIdle {
+            view.viewTreeObserver.addOnDrawListener {
+                val root = view.rootView
+                root.left = 100
+                root.top = 200
+                view.viewTreeObserver.dispatchOnGlobalLayout()
+                latch.countDown()
+            }
+            view.requestLayout()
+            view.invalidate()
+        }
+
+        assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue()
+        assertThat(contentPos).isEqualTo(IntOffset(100, 200))
     }
 }
 

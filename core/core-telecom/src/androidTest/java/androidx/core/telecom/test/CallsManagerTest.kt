@@ -31,6 +31,7 @@ import androidx.core.telecom.CallsManager
 import androidx.core.telecom.internal.AddCallResult
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
+import androidx.core.telecom.test.utils.TestPermissionUtils.createBluetoothPermissionRule
 import androidx.core.telecom.test.utils.TestUtils
 import androidx.core.telecom.test.utils.TestUtils.ALL_CALL_CAPABILITIES
 import androidx.core.telecom.test.utils.TestUtils.OUTGOING_NAME
@@ -38,6 +39,7 @@ import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.rule.GrantPermissionRule
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +52,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -58,6 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CallsManagerTest : BaseTelecomTest() {
     private val mTestClassName = "androidx.core.telecom.test"
+    @get:Rule val bluetoothPermissionRule: GrantPermissionRule = createBluetoothPermissionRule()
 
     companion object {
         val TAG = CallsManagerTest::class.java.simpleName

@@ -91,6 +91,7 @@ import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.Utils;
+import androidx.compose.remote.core.operations.WakeIn;
 import androidx.compose.remote.core.operations.layout.CanvasContent;
 import androidx.compose.remote.core.operations.layout.CanvasOperations;
 import androidx.compose.remote.core.operations.layout.ComponentStart;
@@ -142,6 +143,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
 
 /** Provides an abstract buffer to encode/decode RemoteCompose operations */
 public class RemoteComposeBuffer {
@@ -209,6 +211,7 @@ public class RemoteComposeBuffer {
      *
      * @param width the width of the document in pixels
      * @param height the height of the document in pixels
+     * @param density the density of the document in pixels per device pixel
      * @param capabilities bitmask indicating needed capabilities (unused for now)
      */
     public void header(int width, int height, float density, long capabilities) {
@@ -240,6 +243,7 @@ public class RemoteComposeBuffer {
      * @param dstTop top coordinate of the destination area
      * @param dstRight right coordinate of the destination area
      * @param dstBottom bottom coordinate of the destination area
+     * @param contentDescriptionId the content description of the image
      */
     public void drawBitmap(
             int imageId,
@@ -271,6 +275,7 @@ public class RemoteComposeBuffer {
     /**
      * look up map and return the id of the object looked up
      *
+     * @param id the id of the data
      * @param mapId the map to access
      * @param strId the string to lookup
      */
@@ -673,6 +678,7 @@ public class RemoteComposeBuffer {
     /**
      * Create a TextFromFloat command which creates text from a Float.
      *
+     * @param id The id of the text to create
      * @param value The value to convert
      * @param digitsBefore the digits before the decimal point
      * @param digitsAfter the digits after the decimal point
@@ -1087,6 +1093,7 @@ public class RemoteComposeBuffer {
     /**
      * Add a float that is a computation based on variables
      *
+     * @param id the id of the float
      * @param value A RPN style float operation i.e. "4, 3, ADD" outputs 7
      */
     public void addAnimatedFloat(int id, float @NonNull ... value) {
@@ -1096,6 +1103,7 @@ public class RemoteComposeBuffer {
     /**
      * Add a float that is a computation based on variables. see packAnimation
      *
+     * @param id the id of the float
      * @param value A RPN style float operation i.e. "4, 3, ADD" outputs 7
      * @param animation Array of floats that represents animation
      */
@@ -1111,6 +1119,7 @@ public class RemoteComposeBuffer {
      * @param min the minimum value
      * @param max the maximum value
      * @param velocityId the id for the velocity TODO support in v2
+     * @param touchEffects the touch effects
      * @param exp The Float Expression
      * @param touchMode the touch up handling behaviour
      * @param touchSpec the touch up handling parameters
@@ -1144,6 +1153,7 @@ public class RemoteComposeBuffer {
     /**
      * measure the text and return a measure as a float
      *
+     * @param id id of the measure
      * @param textId id of the text
      * @param mode the mode 0 is the width
      */
@@ -1154,6 +1164,7 @@ public class RemoteComposeBuffer {
     /**
      * measure the text and return the length of the text as float
      *
+     * @param id id of the length op
      * @param textId id of the text
      */
     public void textLength(int id, int textId) {
@@ -1185,6 +1196,7 @@ public class RemoteComposeBuffer {
      *
      * @param id int map id
      * @param keys
+     * @param types
      * @param listId
      */
     public void addMap(
@@ -1198,6 +1210,7 @@ public class RemoteComposeBuffer {
      * <p>TODO: do we want both a float and an int index version of this method? bbade@ TODO
      * for @hoford - add a unit test for this method
      *
+     * @param id id of the text
      * @param dataSet
      * @param index index as a float variable
      */
@@ -1210,6 +1223,7 @@ public class RemoteComposeBuffer {
      *
      * <p>TODO for hoford - add a unit test for this method
      *
+     * @param id id of the text
      * @param dataSet
      * @param index index as an int variable
      */
@@ -1220,6 +1234,7 @@ public class RemoteComposeBuffer {
     /**
      * Add and integer expression
      *
+     * @param id the id of the expression
      * @param mask defines which elements are operators or variables
      * @param value array of values to calculate maximum 32
      */
@@ -1412,6 +1427,7 @@ public class RemoteComposeBuffer {
      * Add a scroll modifier
      *
      * @param direction HORIZONTAL(0) or VERTICAL(1)
+     * @param max max scroll amount
      */
     public void addModifierScroll(int direction, float max) {
         ScrollModifierOperation.apply(mBuffer, direction, 0f, max, 0f);
@@ -1604,6 +1620,8 @@ public class RemoteComposeBuffer {
      * @param componentId component id
      * @param animationId animation id
      * @param bitmapId bitmap id
+     * @param scaleType scale type
+     * @param alpha alpha value
      */
     public void addImage(
             int componentId, int animationId, int bitmapId, int scaleType, float alpha) {
@@ -1745,6 +1763,7 @@ public class RemoteComposeBuffer {
      * @param fontStyle font style (0 : Normal, 1 : Italic)
      * @param fontWeight font weight (1 to 1000, normal is 400)
      * @param fontFamilyId font family or null
+     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
      * @param overflow
      * @param maxLines
      */
@@ -2065,6 +2084,18 @@ public class RemoteComposeBuffer {
     }
 
     /**
+     * Set current version of the buffer (typically for writing)
+     *
+     * @param documentApiLevel
+     * @param supportedOperations
+     */
+    public void setVersion(int documentApiLevel, @NonNull Set<Integer> supportedOperations) {
+        mApiLevel = documentApiLevel;
+
+        mBuffer.setValidOperations(supportedOperations);
+    }
+
+    /**
      * Add a matrix constant
      *
      * @param id the id of the resulting matrix
@@ -2107,5 +2138,14 @@ public class RemoteComposeBuffer {
      */
     public void addFont(int id, int type, byte @NonNull [] data) {
         FontData.apply(mBuffer, id, type, data);
+    }
+
+    /**
+     * Add a wake in command
+     *
+     * @param seconds time to start the render loop
+     */
+    public void wakeIn(float seconds) {
+        WakeIn.apply(mBuffer, seconds);
     }
 }

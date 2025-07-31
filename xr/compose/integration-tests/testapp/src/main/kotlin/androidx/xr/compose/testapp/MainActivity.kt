@@ -131,13 +131,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         permissionsLauncher.launch(
-            arrayOf(SCENE_UNDERSTANDING_PERMISSION, HAND_TRACKING_PERMISSION)
+            arrayOf(
+                SCENE_UNDERSTANDING_PERMISSION,
+                HAND_TRACKING_PERMISSION,
+                READ_MEDIA_VIDEO_PERMISSION,
+            )
         )
     }
 
     companion object {
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val SCENE_UNDERSTANDING_PERMISSION = "android.permission.SCENE_UNDERSTANDING_COARSE"
+        const val READ_MEDIA_VIDEO_PERMISSION = "android.permission.READ_MEDIA_VIDEO"
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

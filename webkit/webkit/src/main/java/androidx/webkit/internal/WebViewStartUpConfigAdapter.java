@@ -21,7 +21,9 @@ import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.WebViewStartUpConfigBoundaryInterface;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -52,5 +54,14 @@ public class WebViewStartUpConfigAdapter implements WebViewStartUpConfigBoundary
     @Override
     public boolean shouldRunUiThreadStartUpTasks() {
         return mWebViewStartUpConfig.shouldRunUiThreadStartUpTasks();
+    }
+
+    /**
+     * Adapter method for {@link WebViewStartUpConfig#getProfilesToLoadDuringStartup()}.
+     */
+    @Override
+    @Nullable
+    public Set<String> getProfileNamesToLoad() {
+        return mWebViewStartUpConfig.getProfilesToLoadDuringStartup();
     }
 }

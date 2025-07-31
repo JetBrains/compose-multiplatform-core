@@ -154,13 +154,13 @@ class PanelShadowRenderer {
         Vector3 entityScale = panelEntity.getWorldSpaceScale();
         float sizeX =
                 panelEntity.getSizeInPixels().width
-                        * entityScale.getX()
-                        / mActivitySpaceImpl.getWorldSpaceScale().getX()
+                                * entityScale.getX()
+                                / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;
         float sizeZ =
                 panelEntity.getSizeInPixels().height
-                        * entityScale.getZ()
-                        / mActivitySpaceImpl.getWorldSpaceScale().getX()
+                                * entityScale.getZ()
+                                / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;
 
         Pose panelPoseInActivitySpace =

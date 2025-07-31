@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.playservices
 
-import android.Manifest
 import android.app.Activity
 import android.util.Log
 import androidx.annotation.RestrictTo
@@ -27,7 +26,6 @@ import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
@@ -76,12 +74,8 @@ internal constructor(
      * [ArCorePerceptionManager].
      */
     override fun create() {
-        try {
-            checkARCoreSupportedAndUpToDate(activity)
-            _session = Session(activity)
-        } catch (e: SecurityException) {
-            throw PermissionNotGrantedException(listOf(Manifest.permission.CAMERA), e)
-        }
+        checkARCoreSupportedAndUpToDate(activity)
+        _session = Session(activity)
         perceptionManager.session = _session
     }
 
@@ -123,7 +117,7 @@ internal constructor(
         try {
             _session.configure(arConfig)
         } catch (e: FineLocationPermissionNotGrantedException) {
-            throw PermissionNotGrantedException(listOf(Manifest.permission.ACCESS_FINE_LOCATION), e)
+            throw SecurityException(e)
         } catch (e: ARCore1xGooglePlayServicesLocationLibraryNotLinkedException) {
             throw GooglePlayServicesLocationLibraryNotLinkedException(e)
         } catch (e: UnsupportedConfigurationException) {

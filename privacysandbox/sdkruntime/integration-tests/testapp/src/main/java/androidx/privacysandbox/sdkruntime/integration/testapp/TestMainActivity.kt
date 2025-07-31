@@ -17,30 +17,25 @@
 package androidx.privacysandbox.sdkruntime.integration.testapp
 
 import android.os.Bundle
-import android.os.IBinder
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
-import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
-import androidx.privacysandbox.sdkruntime.integration.testaidl.IAppSdk
-import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.AppOwnedInterfacesFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.BaseFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.LoadedSdksFragment
+import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
 
 class TestMainActivity : AppCompatActivity() {
 
     lateinit var api: TestAppApi
     private lateinit var logView: TextView
-
-    private val appOwnedSdk =
-        AppOwnedSdkSandboxInterfaceCompat(
-            name = "AppOwnedSdk",
-            version = 42,
-            binder = AppOwnedSdk(),
-        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +47,12 @@ class TestMainActivity : AppCompatActivity() {
 
         setupLoadSdkButton()
         setupUnloadSdkButton()
-        setupRegisterAppSdkButton()
-        setupUnregisterAppSdkButton()
-        setupGetSandboxedSdksButton()
-        setupGetAppSdksButton()
+        setupCUJList()
+
+        switchContentFragment(LoadedSdksFragment())
     }
 
-    private fun addLogMessage(message: String) {
+    fun addLogMessage(message: String) {
         Log.i(TAG, message)
         logView.append(message + System.lineSeparator())
     }
@@ -87,73 +81,39 @@ class TestMainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupRegisterAppSdkButton() {
-        val registerAppSdkButton = findViewById<Button>(R.id.registerAppSdkButton)
-        registerAppSdkButton.setOnClickListener {
-            try {
-                addLogMessage("Registering AppOwnedSdk...")
-                api.registerAppOwnedSdk(appOwnedSdk)
-                addLogMessage("Successfully registered AppOwnedSdk")
-            } catch (ex: Throwable) {
-                addLogMessage("Failed to register AppOwnedSdk: " + ex.message)
+    private fun setupCUJList() {
+        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer)
+
+        val cujListButton = findViewById<Button>(R.id.cujListButton)
+        cujListButton.setOnClickListener {
+            if (drawerLayout.isOpen) {
+                drawerLayout.closeDrawers()
+            } else {
+                drawerLayout.open()
             }
         }
-    }
 
-    private fun setupUnregisterAppSdkButton() {
-        val unregisterAppSdkButton = findViewById<Button>(R.id.unregisterAppSdkButton)
-        unregisterAppSdkButton.setOnClickListener {
-            api.unregisterAppOwnedSdk(appOwnedSdk.getName())
-            addLogMessage("Unregistered AppOwnedSdk")
+        val cujList = findViewById<NavigationView>(R.id.cujList)
+        cujList.setNavigationItemSelectedListener {
+            drawerLayout.closeDrawers()
+            selectCuj(it)
+            true
         }
     }
 
-    private fun setupGetSandboxedSdksButton() {
-        val getSandboxedSdksButton = findViewById<Button>(R.id.getSandboxedSdksButton)
-        getSandboxedSdksButton.setOnClickListener {
-            val sdks = api.getSandboxedSdks()
-            addLogMessage("GetSandboxedSdks results (${sdks.size}):")
-            sdks.forEach {
-                addLogMessage("   SDK Package: ${it.getSdkInfo()?.name}")
-                addLogMessage("   SDK Version: ${it.getSdkInfo()?.version}")
-                val testSdk = toTestSdk(it.getInterface())
-                if (testSdk != null) {
-                    addLogMessage("   SDK Message: ${testSdk.getMessage()}")
-                }
-            }
+    private fun selectCuj(menuItem: MenuItem) {
+        when (menuItem.itemId) {
+            R.id.itemLoadedSdksCuj -> switchContentFragment(LoadedSdksFragment())
+            R.id.itemAppSdksCuj -> switchContentFragment(AppOwnedInterfacesFragment())
+            else -> addLogMessage("Invalid CUJ option")
         }
     }
 
-    private fun setupGetAppSdksButton() {
-        val getAppSdksButton = findViewById<Button>(R.id.getAppSdksButton)
-        getAppSdksButton.setOnClickListener {
-            val sdks = api.getAppOwnedSdks()
-            addLogMessage("GetAppSdks results (${sdks.size}):")
-            sdks.forEach {
-                addLogMessage("   AppOwned SDK Package: ${it.getName()}")
-                addLogMessage("   AppOwned SDK Version: ${it.getVersion()}")
-                val appOwnedSdk = toAppOwnedSdk(it.getInterface())
-                if (appOwnedSdk != null) {
-                    addLogMessage("   AppOwned SDK Message: ${appOwnedSdk.getMessage(42)}")
-                }
-            }
-        }
-    }
-
-    private fun toTestSdk(sdkInterface: IBinder?): ISdkApi? {
-        return if (ISdkApi.DESCRIPTOR == sdkInterface?.interfaceDescriptor) {
-            ISdkApi.Stub.asInterface(sdkInterface)
-        } else {
-            null
-        }
-    }
-
-    private fun toAppOwnedSdk(appInterface: IBinder?): IAppSdk? {
-        return if (IAppSdk.DESCRIPTOR == appInterface?.interfaceDescriptor) {
-            IAppSdk.Stub.asInterface(appInterface)
-        } else {
-            null
-        }
+    private fun switchContentFragment(fragment: BaseFragment) {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.cujFragmentContent, fragment)
+            .commit()
     }
 
     companion object {

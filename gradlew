@@ -317,7 +317,8 @@ if [ "$raiseMemory" == "true" ]; then
   # Set the initial heap size to match the max heap size,
   # by replacing a string like "-Xmx1g" with one like "-Xms1g -Xmx1g"
   MAX_MEM=38g
-  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEM -Xmx$MAX_MEM/")"
+  # First sed command replaces Gradle daemon -Xmx and second replaces Kotlin compliler deamon -Xmx
+  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEM -Xmx$MAX_MEM/" | sed "s/,-Xmx\([^ ]*\)/,-Xms$MAX_MEM,-Xmx$MAX_MEM/")"
 
   # Increase the compiler cache size: b/260643754 . Remove when updating to JDK 20 ( https://bugs.openjdk.org/browse/JDK-8295724 )
   ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s|$| -XX:ReservedCodeCacheSize=576M|")"

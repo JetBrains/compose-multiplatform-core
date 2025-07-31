@@ -2006,7 +2006,7 @@ internal class ComposerImpl(
             Composer.Empty
         } else
             reader.next().let {
-                if (reusing && it !is ReusableRememberObserver) Composer.Empty else it
+                if (reusing && it !is ReusableRememberObserverHolder) Composer.Empty else it
             }
 
     @PublishedApi
@@ -2017,7 +2017,7 @@ internal class ComposerImpl(
             Composer.Empty
         } else
             reader.next().let {
-                if (reusing && it !is ReusableRememberObserver) Composer.Empty
+                if (reusing && it !is ReusableRememberObserverHolder) Composer.Empty
                 else if (it is RememberObserverHolder) it.wrapped else it
             }
     }
@@ -2454,19 +2454,23 @@ internal class ComposerImpl(
         startGroup(referenceKey, reference)
         if (inserting) writer.markGroup()
 
-        var holder = nextSlot() as? CompositionContextHolder
-        if (holder == null) {
-            holder =
-                CompositionContextHolder(
-                    CompositionContextImpl(
-                        this@ComposerImpl.compositeKeyHashCode,
-                        forceRecomposeScopes,
-                        sourceMarkersEnabled,
-                        (composition as? CompositionImpl)?.observerHolder,
-                    )
+        var observerHolder = nextSlot() as? RememberObserverHolder
+        if (observerHolder == null) {
+            observerHolder =
+                ReusableRememberObserverHolder(
+                    CompositionContextHolder(
+                        CompositionContextImpl(
+                            this@ComposerImpl.compositeKeyHashCode,
+                            forceRecomposeScopes,
+                            sourceMarkersEnabled,
+                            (composition as? CompositionImpl)?.observerHolder,
+                        )
+                    ),
+                    after = null,
                 )
-            updateValue(holder)
+            updateValue(observerHolder)
         }
+        val holder = observerHolder.wrapped as CompositionContextHolder
         holder.ref.updateCompositionLocalScope(currentCompositionLocalScope())
         endGroup()
 
@@ -4009,7 +4013,8 @@ internal class ComposerImpl(
                     // Group is a composition context reference. As this is being removed assume
                     // all movable groups in the composition that have this context will also be
                     // released when the compositions are disposed.
-                    val contextHolder = reader.groupGet(group, 0) as? CompositionContextHolder
+                    val observerHolder = reader.groupGet(group, 0) as? RememberObserverHolder
+                    val contextHolder = observerHolder?.wrapped as? CompositionContextHolder
                     if (contextHolder != null) {
                         // The contextHolder can be EMPTY in cases where the content has been
                         // deactivated. Content is deactivated if the content is just being
@@ -4120,8 +4125,7 @@ internal class ComposerImpl(
      * A holder that will dispose of its [CompositionContext] when it leaves the composition that
      * will not have its reference made visible to user code.
      */
-    internal class CompositionContextHolder(val ref: CompositionContextImpl) :
-        ReusableRememberObserver {
+    internal class CompositionContextHolder(val ref: CompositionContextImpl) : RememberObserver {
 
         override fun onRemembered() {}
 
@@ -4151,7 +4155,7 @@ internal class ComposerImpl(
             if (composers.isNotEmpty()) {
                 inspectionTables?.let {
                     for (composer in composers) {
-                        for (table in it) table.remove(composer.slotTable)
+                        for (table in it) table.remove(composer.compositionData)
                     }
                 }
                 composers.clear()
@@ -4164,7 +4168,7 @@ internal class ComposerImpl(
         }
 
         override fun unregisterComposer(composer: Composer) {
-            inspectionTables?.forEach { it.remove((composer as ComposerImpl).slotTable) }
+            inspectionTables?.forEach { it.remove((composer as ComposerImpl).compositionData) }
             composers.remove(composer)
         }
 
@@ -4522,14 +4526,12 @@ internal fun SlotWriter.deactivateCurrentGroup(rememberManager: RememberManager)
             is ComposeNodeLifecycleCallback -> {
                 rememberManager.deactivating(data)
             }
+            is ReusableRememberObserverHolder -> {
+                // do nothing, the value should be preserved on reuse
+            }
             is RememberObserverHolder -> {
-                val wrapped = data.wrapped
-                if (wrapped is ReusableRememberObserver) {
-                    // do nothing, the value should be preserved on reuse
-                } else {
-                    removeData(slotIndex, data)
-                    rememberManager.forgetting(data)
-                }
+                removeData(slotIndex, data)
+                rememberManager.forgetting(data)
             }
             is RecomposeScopeImpl -> {
                 removeData(slotIndex, data)
@@ -4739,9 +4741,10 @@ private value class GroupKind private constructor(val value: Int) {
  * Remember observer which is not removed during reuse/deactivate of the group.
  * It is used to preserve composition locals between group deactivation.
  */
-internal interface ReusableRememberObserver : RememberObserver
+internal class ReusableRememberObserverHolder(wrapped: RememberObserver, after: Anchor?) :
+    RememberObserverHolder(wrapped, after)
 
-internal class RememberObserverHolder(var wrapped: RememberObserver, var after: Anchor?)
+internal open class RememberObserverHolder(var wrapped: RememberObserver, var after: Anchor?)
 
 /*
  * Integer keys are arbitrary values in the biload range. The do not need to be unique as if

@@ -51,4 +51,14 @@ public class FloatSize3d(
         result = 31 * result + depth.hashCode()
         return result
     }
+
+    /** Returns a new [FloatSize3d] that's uniformly divided by the `divisor`. */
+    public operator fun div(divisor: Float): FloatSize3d {
+        return FloatSize3d(this.width / divisor, this.height / divisor, this.depth / divisor)
+    }
+
+    /** Returns a new [FloatSize3d] that's uniformly multiplied by the `scalar`. */
+    public operator fun times(scalar: Float): FloatSize3d {
+        return FloatSize3d(this.width * scalar, this.height * scalar, this.depth * scalar)
+    }
 }

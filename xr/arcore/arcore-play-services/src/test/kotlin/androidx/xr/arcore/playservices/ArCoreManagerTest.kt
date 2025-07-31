@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.playservices
 
-import android.Manifest
 import android.app.Activity
 import android.util.Range
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -31,7 +30,6 @@ import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
@@ -181,7 +179,7 @@ class ArCoreManagerTest {
     }
 
     @Test
-    fun configure_throwsPermissionNotGrantedException_whenFineLocationPermissionNotGranted() {
+    fun configure_throwsSecurityException_whenFineLocationPermissionNotGranted() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
@@ -189,10 +187,8 @@ class ArCoreManagerTest {
             .doThrow(FineLocationPermissionNotGrantedException("Test Exception"))
 
         val config = Config()
-        val exception: PermissionNotGrantedException =
-            assertFailsWith<PermissionNotGrantedException> { underTest.configure(config) }
+        assertFailsWith<SecurityException> { underTest.configure(config) }
 
-        assertThat(exception.permissions).containsExactly(Manifest.permission.ACCESS_FINE_LOCATION)
         verify(mockSession).configure(mockArConfig)
     }
 

@@ -18,6 +18,8 @@ package androidx.camera.camera2.pipe.compat
 
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.params.OutputConfiguration
+import android.media.MediaCodec
+import android.media.MediaRecorder
 import android.os.Build
 import android.util.Size
 import android.view.Surface
@@ -97,7 +99,6 @@ internal data class InputConfigData(val width: Int, val height: Int, val format:
  * require the CameraCaptureSession to be finalized or updated.
  */
 internal interface OutputConfigurationWrapper : UnsafeWrapper {
-    val outputConfiguration: OutputConfiguration?
     /**
      * This method will return null if the output configuration was created without a Surface, and
      * until addSurface is called for the first time.
@@ -206,12 +207,7 @@ internal class AndroidOutputConfiguration(
                 check(size != null) {
                     "Size must defined when creating a deferred OutputConfiguration."
                 }
-                val outputKlass =
-                    when (outputType) {
-                        OutputType.SURFACE_TEXTURE -> SurfaceTexture::class.java
-                        OutputType.SURFACE_VIEW -> SurfaceHolder::class.java
-                        else -> throw IllegalStateException("Unsupported OutputType: $outputType")
-                    }
+                val outputKlass = outputType.toKlass()
                 configuration = Api26Compat.newOutputConfiguration(size, outputKlass)
             }
 
@@ -300,6 +296,26 @@ internal class AndroidOutputConfiguration(
             )
         }
 
+        private fun OutputType.toKlass(): Class<out Any> {
+            return when (this) {
+                OutputType.SURFACE_TEXTURE -> SurfaceTexture::class.java
+                OutputType.SURFACE_VIEW -> SurfaceHolder::class.java
+                OutputType.MEDIA_CODEC -> {
+                    check(Build.VERSION.SDK_INT >= 35) {
+                        "OutputType.MEDIA_CODEC requires API 35 or higher."
+                    }
+                    MediaCodec::class.java
+                }
+                OutputType.MEDIA_RECORDER -> {
+                    check(Build.VERSION.SDK_INT >= 35) {
+                        "OutputType.MEDIA_RECORDER requires API 35 or higher."
+                    }
+                    MediaRecorder::class.java
+                }
+                else -> throw IllegalStateException("Unsupported OutputType: $this")
+            }
+        }
+
         private fun OutputConfiguration.enableSurfaceSharingCompat() {
             checkNOrHigher("surfaceSharing")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -315,7 +331,6 @@ internal class AndroidOutputConfiguration(
         }
     }
 
-    override val outputConfiguration: OutputConfiguration = output
     override val surface: Surface? = output.surface
     override val surfaces: List<Surface>
         get() {

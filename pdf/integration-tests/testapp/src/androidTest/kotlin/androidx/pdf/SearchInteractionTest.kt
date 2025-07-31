@@ -101,12 +101,11 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_searchClosed_upon_textSelection() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
 
         var pdfView: PdfView? = null
         scenario.onFragment { fragment ->
-            pdfView =
-                fragment.view?.findViewById<PdfView>(androidx.pdf.viewer.fragment.R.id.pdfView)
+            pdfView = fragment.view?.findViewById<PdfView>(R.id.pdfView)
             fragment.isTextSearchActive = true
         }
 
@@ -128,12 +127,11 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_selection_cleared_upon_search() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
 
         var pdfView: PdfView? = null
         scenario.onFragment { fragment ->
-            pdfView =
-                fragment.view?.findViewById<PdfView>(androidx.pdf.viewer.fragment.R.id.pdfView)
+            pdfView = fragment.view?.findViewById<PdfView>(R.id.pdfView)
         }
 
         // Start selection on PdfView
@@ -156,7 +154,8 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_pdfViewerFragment_searchFocusCleared_onSingleTap() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfContentLayout))
+            .check(matches(isDisplayed()))
         var pdfSearchView: PdfSearchView? = null
 
         scenario.onFragment { fragment ->
@@ -188,7 +187,8 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_pdfViewerFragment_searchFocused_onResume() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfContentLayout))
+            .check(matches(isDisplayed()))
         var pdfSearchView: PdfSearchView? = null
 
         scenario.onFragment { fragment ->

@@ -341,6 +341,10 @@ package androidx.paging {
     method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data);
     method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates);
     method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates);
+    method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates, optional int placeholdersBefore);
+    method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates, optional int placeholdersBefore, optional int placeholdersAfter);
+    method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, optional int placeholdersBefore);
+    method public static <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, optional int placeholdersBefore, optional int placeholdersAfter);
     field public static final androidx.paging.PagingData.Companion Companion;
   }
 
@@ -351,6 +355,10 @@ package androidx.paging {
     method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data);
     method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates);
     method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates);
+    method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates, optional int placeholdersBefore);
+    method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, androidx.paging.LoadStates sourceLoadStates, optional androidx.paging.LoadStates? mediatorLoadStates, optional int placeholdersBefore, optional int placeholdersAfter);
+    method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, optional int placeholdersBefore);
+    method public <T> androidx.paging.PagingData<T> from(java.util.List<? extends T> data, optional int placeholdersBefore, optional int placeholdersAfter);
   }
 
   public abstract sealed class PagingDataEvent<T> {

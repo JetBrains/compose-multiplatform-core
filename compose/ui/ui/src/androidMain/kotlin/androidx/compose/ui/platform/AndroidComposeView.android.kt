@@ -36,6 +36,7 @@ import android.os.SystemClock
 import android.util.LongSparseArray
 import android.util.SparseArray
 import android.view.FocusFinder
+import android.view.GestureDetector
 import android.view.InputDevice
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.MotionEvent
@@ -78,6 +79,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
+import androidx.compose.ui.ComposeUiFlags.isIndirectTouchNavigationGestureDetectorEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -105,7 +107,7 @@ import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusOwnerImpl
 import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.PlatformFocusOwner
-import androidx.compose.ui.focus.calculateBoundingRectRelativeTo
+import androidx.compose.ui.focus.calculateFocusRectRelativeTo
 import androidx.compose.ui.focus.focusRect
 import androidx.compose.ui.focus.is1dFocusSearch
 import androidx.compose.ui.focus.isBetterCandidate
@@ -216,9 +218,9 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
-import java.util.ArrayList
 import java.util.function.Consumer
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.abs
 
 /** Allows tests to inject a custom [PlatformTextInputService]. */
 internal var platformTextInputServiceInterceptor:
@@ -468,7 +470,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (isFocused) {
             focusOwner.getFocusRect()
         } else {
-            findFocus()?.calculateBoundingRectRelativeTo(this)
+            findFocus()?.calculateFocusRectRelativeTo(this)
         }
 
     // TODO(b/177931787) : Consider creating a KeyInputManager like we have for FocusManager so
@@ -797,7 +799,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     // on a different position, but also in the position of each of the grandparents as all these
     // positions add up to final global position)
     private val globalLayoutListener =
-        ViewTreeObserver.OnGlobalLayoutListener { updatePositionCacheAndDispatch() }
+        ViewTreeObserver.OnGlobalLayoutListener {
+            // make sure that we use an updated window position and matrix
+            lastMatrixRecalculationAnimationTime = 0
+            updatePositionCacheAndDispatch()
+        }
 
     // executed when a scrolling container like ScrollView of RecyclerView performed the scroll,
     // this could affect our global position
@@ -983,6 +989,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     /** Set to `true` when [sendHoverExitEvent] has been posted. */
     private var hoverExitReceived = false
 
+    // Enables event stream tracking for indirect touch navigation gestures.
+    private var indirectTouchNavigationGestureDetectorActiveForEventStream = false
+    // Determines scroll/swipe to next or previous focusable element for indirect touch events.
+    private val indirectTouchNavigationGestureDetector =
+        IndirectTouchNavigationGestureDetector(context) { direction ->
+            focusOwner.moveFocus(direction)
+        }
+
     /** Callback for [measureAndLayout] to update the pointer position 150ms after layout. */
     private val resendMotionEventOnLayout: () -> Unit = {
         val lastEvent = previousMotionEvent
@@ -1148,9 +1162,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         // Find the next composable using FocusOwner.
         val focusedBounds =
             if (focused === this) {
-                focusOwner.getFocusRect() ?: focused.calculateBoundingRectRelativeTo(this)
+                focusOwner.getFocusRect() ?: focused.calculateFocusRectRelativeTo(this)
             } else {
-                focused.calculateBoundingRectRelativeTo(this)
+                focused.calculateFocusRectRelativeTo(this)
             }
         val focusDirection = toFocusDirection(direction) ?: Down
         var focusTarget: FocusTargetNode? = null
@@ -1182,7 +1196,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             }
             isBetterCandidate(
                 focusTarget.focusRect(),
-                nextView.calculateBoundingRectRelativeTo(this),
+                nextView.calculateFocusRectRelativeTo(this),
                 focusedBounds,
                 focusDirection,
             ) -> this // Compose focus is better than View focus.
@@ -1752,6 +1766,24 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             parent?.hasFixedInnerContentConstraints == false
     }
 
+    internal var isSendPendingContentCaptureEventsScheduled = false
+    private val cachedLambdaForSendPendingContentCaptureEvents = {
+        contentCaptureManager.sendPendingContentCaptureEvents()
+        isSendPendingContentCaptureEventsScheduled = false
+    }
+
+    private fun scheduleSendPendingContentCaptureEvents(): Unit {
+        if (
+            isAttachedToWindow &&
+                contentCaptureManager.isEnabled &&
+                contentCaptureManager.hasPendingEvents &&
+                !isSendPendingContentCaptureEventsScheduled
+        ) {
+            schedule(cachedLambdaForSendPendingContentCaptureEvents)
+            isSendPendingContentCaptureEventsScheduled = true
+        }
+    }
+
     override fun measureAndLayout(sendPointerUpdate: Boolean) {
         // only run the logic when we have something pending
         if (
@@ -1768,6 +1800,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 dispatchPendingInteropLayoutCallbacks()
             }
         }
+        scheduleSendPendingContentCaptureEvents()
     }
 
     override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
@@ -1784,6 +1817,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             if (ComposeUiFlags.isRectTrackingEnabled) {
                 rectManager.dispatchCallbacks()
             }
+            scheduleSendPendingContentCaptureEvents()
         }
     }
 
@@ -2304,6 +2338,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             focusOwner.listeners += it
             semanticsOwner.listeners += it
         }
+
+        if (ComposeUiFlags.isContentCaptureOptimizationEnabled) {
+            contentCaptureManager.let { semanticsOwner.listeners += it }
+        }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -2422,7 +2460,28 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                             super.dispatchGenericMotionEvent(motionEvent)
                         }
 
-                    if (handled) return true
+                    if (handled) {
+                        // Turns off all navigation gestures for this event stream since an app is
+                        // handling the event stream.
+                        indirectTouchNavigationGestureDetectorActiveForEventStream = false
+                        return true
+                    } else {
+                        @OptIn(ExperimentalComposeUiApi::class)
+                        if (isIndirectTouchNavigationGestureDetectorEnabled) { // Flag for feature
+                            if (motionEvent.action == ACTION_DOWN) {
+                                // Starts tracking only with ACTION_DOWN (start of event stream).
+                                indirectTouchNavigationGestureDetectorActiveForEventStream = true
+                            }
+
+                            if (indirectTouchNavigationGestureDetectorActiveForEventStream) {
+                                indirectTouchNavigationGestureDetector.onTouchEvent(motionEvent)
+                            }
+                            // If the isIndirectTouchNavigationGestureDetectorEnabled flag is
+                            // enabled, it means that we don't want to pass the event up to the
+                            // platform's handler for SOURCE_TOUCH_NAVIGATION, so we return true.
+                            return true
+                        }
+                    }
                 }
 
                 // If focus owner did not handle, rely on ViewGroup to handle.
@@ -3523,5 +3582,50 @@ private object Api35Impl {
     @DoNotInline
     fun setRequestedFrameRate(view: View, frameRate: Float) {
         view.requestedFrameRate = frameRate
+    }
+}
+
+internal class IndirectTouchNavigationGestureDetector(
+    context: Context,
+    private val onMoveFocus: (FocusDirection) -> Unit,
+) {
+    private val gestureDetector: GestureDetector =
+        GestureDetector(
+            context,
+            object : GestureDetector.OnGestureListener {
+                override fun onDown(e: MotionEvent) = true
+
+                override fun onShowPress(e: MotionEvent) {}
+
+                override fun onSingleTapUp(e: MotionEvent): Boolean = true
+
+                override fun onScroll(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    distanceX: Float,
+                    distanceY: Float,
+                ) = true
+
+                override fun onLongPress(e: MotionEvent) {}
+
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float,
+                ): Boolean {
+                    // TODO: Take axis into account: aosp/3668952
+                    if (abs(velocityX) > abs(velocityY)) {
+                        val direction =
+                            if (velocityX > 0f) FocusDirection.Next else FocusDirection.Previous
+                        onMoveFocus(direction)
+                    }
+                    return true
+                }
+            },
+        )
+
+    fun onTouchEvent(event: MotionEvent): Boolean {
+        return gestureDetector.onTouchEvent(event)
     }
 }

@@ -17,10 +17,8 @@
 package androidx.privacysandbox.databridge.core.aidl
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 @SuppressLint("BanParcelableUsage")
@@ -30,11 +28,10 @@ public data class ValueInternal(
     val isValueNull: Boolean = false,
     val value: Any?,
 ) : Parcelable {
-    @RequiresApi(Build.VERSION_CODES.Q)
     @Suppress("UNCHECKED_CAST")
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(type)
-        parcel.writeBoolean(isValueNull)
+        parcel.writeInt(if (isValueNull) 1 else 0)
         if (isValueNull) {
             parcel.writeString(null)
             return
@@ -44,7 +41,7 @@ public data class ValueInternal(
             "LONG" -> parcel.writeLong(value as Long)
             "FLOAT" -> parcel.writeFloat(value as Float)
             "DOUBLE" -> parcel.writeDouble(value as Double)
-            "BOOLEAN" -> parcel.writeBoolean(value as Boolean)
+            "BOOLEAN" -> parcel.writeInt(if (value as Boolean) 1 else 0)
             "STRING" -> parcel.writeString(value as String)
             "STRING_SET" -> {
                 val valueSet = value as Set<*>
@@ -60,11 +57,10 @@ public data class ValueInternal(
     }
 
     public companion object CREATOR : Parcelable.Creator<ValueInternal> {
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Suppress("UNCHECKED_CAST")
         override fun createFromParcel(parcel: Parcel): ValueInternal {
             val type = parcel.readString()!!
-            val isValueNull = parcel.readBoolean()
+            val isValueNull = parcel.readInt() != 0
             val value =
                 if (!isValueNull) {
                     when (type) {
@@ -72,7 +68,7 @@ public data class ValueInternal(
                         "LONG" -> parcel.readLong()
                         "FLOAT" -> parcel.readFloat()
                         "DOUBLE" -> parcel.readDouble()
-                        "BOOLEAN" -> parcel.readBoolean()
+                        "BOOLEAN" -> parcel.readInt() == 1
                         "STRING" -> parcel.readString()
                         "STRING_SET" -> parcel.createStringArrayList()?.toSet()
                         "BYTE_ARRAY" -> parcel.createByteArray()

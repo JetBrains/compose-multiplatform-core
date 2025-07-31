@@ -29,7 +29,7 @@ import androidx.camera.core.impl.Quirk
  * the camera device.
  *
  * QuirkSummary
- * - Bug Id: 282871038, 369300443, 425588561, 426104225
+ * - Bug Id: 282871038, 369300443, 425588561, 426104225, 369291594
  * - Description: Instructs CameraPipe to close the camera device before creating a new capture
  *   session to avoid undesirable behaviors
  *
@@ -40,7 +40,10 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
 
     public fun shouldCloseCameraDevice(isExtensions: Boolean): Boolean =
         if (
-            isXiaomiProblematicDevice || (isSamsungProblematicDevice && !isSamsungExynos7870Device)
+            isXiaomiProblematicDevice ||
+                (isSamsungProblematicDevice &&
+                    !isSamsungExynos7570Device &&
+                    !isSamsungExynos7870Device)
         ) {
             // Xiaomi 14 Ultra and Samsung API 31 ~ 34 devices need to apply the quirk only when
             // Extensions is enabled.
@@ -52,10 +55,10 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
     public companion object {
         @JvmStatic
         public fun isEnabled(): Boolean {
-            if (isSamsungExynos7870Device) {
-                // On Exynos7870 platforms, when their 3A pipeline times out, recreating a capture
-                // session has a high chance of triggering use-after-free crashes. Closing the
-                // camera device helps reduce the likelihood of this happening.
+            if (isSamsungExynos7570Device || isSamsungExynos7870Device) {
+                // On Exynos7570, Exynos7870 platforms, when their 3A pipeline times out, recreating
+                // a capture session has a high chance of triggering use-after-free crashes. Closing
+                // the camera device helps reduce the likelihood of this happening.
                 return true
             } else if (
                 Build.VERSION.SDK_INT in Build.VERSION_CODES.R..Build.VERSION_CODES.TIRAMISU &&
@@ -77,6 +80,7 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
             return false
         }
 
+        private val isSamsungExynos7570Device: Boolean = Build.HARDWARE == "samsungexynos7570"
         private val isSamsungExynos7870Device: Boolean = Build.HARDWARE == "samsungexynos7870"
 
         // Xiaomi 14 Ultra and Xiaomi 14 to apply the quirk when Extensions is enabled.

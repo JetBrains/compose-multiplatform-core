@@ -224,7 +224,8 @@ public class DefaultTileClient : TileClient {
                         IllegalArgumentException("Returned Tile Data was null")
                     )
                 }
-                tileData.version != TileData.VERSION_PROTOBUF -> {
+                tileData.version != TileData.VERSION_PROTOBUF_1 &&
+                    tileData.version != TileData.VERSION_PROTOBUF_2 -> {
                     continuation.resumeWithException(
                         IllegalArgumentException(
                             "Returned Tile Data " +

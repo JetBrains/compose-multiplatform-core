@@ -24,6 +24,7 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -129,14 +130,14 @@ class OpenXrAugmentedObjectTest {
     @Test
     fun update_updatesExtents() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
-        check(underTest.extents == Vector3())
+        check(underTest.extents == FloatSize3d())
 
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        assertThat(underTest.extents).isEqualTo(Vector3(1.0f, 2.0f, 3.0f))
+        assertThat(underTest.extents).isEqualTo(FloatSize3d(1.0f, 2.0f, 3.0f))
     }
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {

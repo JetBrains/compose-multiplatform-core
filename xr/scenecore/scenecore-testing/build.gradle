@@ -33,15 +33,10 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api(project(":xr:scenecore:scenecore"))
 
     implementation(libs.testExtTruth)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("com.google.ar:impress:0.0.4")
-
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
-    implementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
 
 android {

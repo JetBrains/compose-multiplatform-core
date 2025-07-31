@@ -115,19 +115,15 @@ public interface CameraPipe {
      * [CameraDeviceSetupCompat]. It queries the AndroidX API which may either query the Camera2
      * framework API or Google Play Services. The Play Services implementation, in particular, can
      * be a potentially expensive, blocking operation. To avoid blocking the main thread, the work
-     * is safely dispatched to a background thread. It should be called and successfully completed
-     * from a coroutine before calling [isConfigSupported] for that [CameraId] to avoid potential
-     * delay.
+     * is safely dispatched to a background thread. It should be called before calling
+     * [isConfigSupported] for that [CameraId] to avoid potential delay.
      *
      * This is safe to call multiple times; it will only perform the expensive work on the first
      * invocation for each camera.
      *
      * @param graphConfig The camera graph configuration to prepare for a query.
-     * @return A [CameraDeviceSetupCompat] if the prewarm was successful, otherwise null.
      */
-    public suspend fun prewarmGraphConfigQuery(
-        graphConfig: CameraGraph.Config
-    ): CameraDeviceSetupCompat?
+    public fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config)
 
     /**
      * This gets and sets the global [AudioRestrictionMode] tracked by [AudioRestrictionController].
@@ -367,12 +363,10 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
      * @param graphConfig The camera graph configuration to prepare for a query.
      * @return A [CameraDeviceSetupCompat] if the prewarm was successful, otherwise null.
      */
-    override suspend fun prewarmGraphConfigQuery(
-        graphConfig: CameraGraph.Config
-    ): CameraDeviceSetupCompat? {
+    override fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config) {
         val backend = getBackend(graphConfig)
         checkNotNull(backend)
-        return backend.prewarmGraphConfigQuery(graphConfig.camera)
+        backend.prewarmIsConfigSupported(graphConfig.camera)
     }
 
     /**

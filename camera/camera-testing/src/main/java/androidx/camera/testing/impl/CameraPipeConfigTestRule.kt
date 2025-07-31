@@ -133,12 +133,14 @@ public class CameraPipeConfigTestRule(public val active: Boolean) : TestRule {
 
         private val allowPresubmitTests =
             listOf(
-                // CoreTestApps
-                "androidx.camera.integration.core.",
                 // Camera-View
                 "androidx.camera.view.",
                 // Camera-Video
                 "androidx.camera.video.",
+                // Benchmark
+                "androidx.camera.integration.benchmark.",
+                // CoreTestApps
+                "androidx.camera.integration.core.",
                 // UIWidgets
                 "androidx.camera.integration.uiwidgets.",
             )

@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
@@ -144,6 +145,13 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         }
 
         lastUpdateXrTime = xrTime
+    }
+
+    override suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult {
+        throw NotImplementedError("Not implemented on OpenXR runtime.")
     }
 
     internal fun updateAugmentedObjects(xrTime: Long) {

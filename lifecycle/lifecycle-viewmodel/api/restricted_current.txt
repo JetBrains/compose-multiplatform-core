@@ -145,6 +145,9 @@ package androidx.lifecycle.viewmodel {
   }
 
   public final class CreationExtrasKt {
+    method public static androidx.lifecycle.viewmodel.CreationExtras CreationExtras();
+    method public static androidx.lifecycle.viewmodel.CreationExtras CreationExtras(optional androidx.lifecycle.viewmodel.CreationExtras initialExtras);
+    method public static androidx.lifecycle.viewmodel.CreationExtras CreationExtras(optional androidx.lifecycle.viewmodel.CreationExtras initialExtras, optional kotlin.jvm.functions.Function1<? super androidx.lifecycle.viewmodel.MutableCreationExtras,kotlin.Unit> builderAction);
     method public static operator boolean contains(androidx.lifecycle.viewmodel.CreationExtras, androidx.lifecycle.viewmodel.CreationExtras.Key<? extends java.lang.Object?> key);
     method public static operator androidx.lifecycle.viewmodel.MutableCreationExtras plus(androidx.lifecycle.viewmodel.CreationExtras, androidx.lifecycle.viewmodel.CreationExtras creationExtras);
     method public static operator void plusAssign(androidx.lifecycle.viewmodel.MutableCreationExtras, androidx.lifecycle.viewmodel.CreationExtras creationExtras);

@@ -60,6 +60,7 @@ android {
         //   minSdk requirements
         minSdk = 31
         compileSdk = 36
+        compileSdkExtension = 18
     }
 }
 

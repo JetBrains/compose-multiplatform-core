@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -81,6 +82,11 @@ class FrameCaptureTests {
         cameraGraphSimulator.initializeSurfaces()
         cameraGraphSimulator.simulateCameraStarted() // Simulate the camera starting successfully
         assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStarted)
+    }
+
+    @After
+    fun tearDown() {
+        cameraPipeSimulator.close()
     }
 
     @Test

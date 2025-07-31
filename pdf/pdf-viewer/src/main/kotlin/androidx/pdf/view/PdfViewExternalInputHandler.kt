@@ -16,6 +16,8 @@
 
 package androidx.pdf.view
 
+import androidx.pdf.util.MathUtils
+
 /**
  * This abstract class provides common functionality for handling external input shortcuts.
  *
@@ -24,14 +26,8 @@ package androidx.pdf.view
  * @param pdfView The view on which the actions are performed.
  */
 internal abstract class PdfViewExternalInputHandler(val pdfView: PdfView) {
-    abstract val verticalScrollFactor: Int
     abstract val horizontalScrollFactor: Int
-
-    fun scrollUp() {
-        val scrollAmount =
-            ExternalInputUtils.calculateScroll(pdfView.viewportHeight, verticalScrollFactor)
-        pdfView.scrollBy(0, -scrollAmount)
-    }
+    abstract val verticalScrollFactor: Int
 
     fun scrollDown() {
         val scrollAmount =
@@ -49,5 +45,69 @@ internal abstract class PdfViewExternalInputHandler(val pdfView: PdfView) {
         val scrollAmount =
             ExternalInputUtils.calculateScroll(pdfView.viewportWidth, horizontalScrollFactor)
         pdfView.scrollBy(scrollAmount, 0)
+    }
+
+    fun scrollUp() {
+        val scrollAmount =
+            ExternalInputUtils.calculateScroll(pdfView.viewportHeight, verticalScrollFactor)
+        pdfView.scrollBy(0, -scrollAmount)
+    }
+
+    fun zoomIn(x: Float, y: Float) {
+        val newZoom =
+            ExternalInputUtils.calculateGreaterZoom(
+                pdfView.zoom,
+                pdfView.getDefaultZoom(),
+                ZOOM_LEVELS,
+                pdfView.maxZoom,
+            )
+        applyZoom(newZoom, x, y)
+    }
+
+    fun zoomOut(x: Float, y: Float) {
+        val newZoom =
+            ExternalInputUtils.calculateSmallerZoom(
+                pdfView.zoom,
+                pdfView.getDefaultZoom(),
+                ZOOM_LEVELS,
+                pdfView.minZoom,
+            )
+        applyZoom(newZoom, x, y)
+    }
+
+    protected fun applyZoom(newZoom: Float, x: Float, y: Float) {
+        val effectiveNewZoom = MathUtils.clamp(newZoom, pdfView.minZoom, pdfView.maxZoom)
+        pdfView.zoomTo(effectiveNewZoom, x, y)
+    }
+
+    private companion object {
+        val ZOOM_LEVELS =
+            listOf(
+                0.25f,
+                0.33f,
+                0.50f,
+                0.67f,
+                0.75f,
+                0.80f,
+                0.90f,
+                1.0f,
+                1.10f,
+                1.25f,
+                1.50f,
+                1.75f,
+                2.0f,
+                2.50f,
+                3.0f,
+                4.0f,
+                5.0f,
+                6.0f,
+                7.0f,
+                8.0f,
+                10.0f,
+                12.0f,
+                16.0f,
+                20.0f,
+                25.0f,
+            )
     }
 }

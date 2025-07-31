@@ -37,13 +37,11 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import kotlin.math.PI
-import kotlin.math.max
 
 /**
  * Wrapper class for Entities from SceneCore to provide convenience methods for working with
  * Entities from SceneCore.
  */
-@PublishedApi
 internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
 
     // This parameter is null for Composables without a layout, such as Orbiters and Spatial
@@ -91,6 +89,20 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
             }
             field = value
             mutableSize = value
+        }
+
+    /**
+     * Whether this entity and all of its ancestors are enabled. An entity will not render if it is
+     * not enabled.
+     *
+     * Note that an enabled entity may still be invisible if its alpha value is 0.
+     */
+    open var enabled: Boolean
+        get() = entity.isEnabled(includeParents = true)
+        set(value) {
+            if (entity.isEnabled(includeParents = false) != value) {
+                entity.setEnabled(value)
+            }
         }
 
     /**
@@ -161,7 +173,6 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
 }
 
 /** Wrapper class for group entities from SceneCore. */
-@PublishedApi
 internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
     init {
         require(entity is GroupEntity) {
@@ -176,8 +187,6 @@ internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
  */
 internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) :
     CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
-    override var overrideSize: IntVolumeSize? = null
-
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
@@ -193,39 +202,32 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
     override var size: IntVolumeSize
         get() = super.size
         set(value) {
-            var nextSize = overrideSize ?: value
-
-            val shouldHide = nextSize.width <= 0 || nextSize.height <= 0
-
-            if (shouldHide) {
-                Log.w(
-                    "CoreBasePanelEntity",
-                    "Setting the panel size to 0 or less. The panel will be hidden.",
-                )
-            }
-            hidden = shouldHide
-
-            nextSize =
-                IntVolumeSize(max(nextSize.width, 1), max(nextSize.height, 1), nextSize.depth)
-
-            if (super.size != nextSize) {
-                super.size = nextSize
-                panelEntity.sizeInPixels = IntSize2d(size.width, size.height)
+            if (super.size != value) {
+                super.size = value
+                panelEntity.sizeInPixels =
+                    IntSize2d(value.width.coerceAtLeast(1), value.height.coerceAtLeast(1))
                 shapeDensity?.let { updateShape(it) }
             }
+            updateEntityEnabledState()
         }
 
-    /**
-     * Whether this entity or any of its ancestors is marked as hidden.
-     *
-     * Note that a non-hidden entity may still not be visible if its alpha is 0.
-     */
-    var hidden: Boolean
-        // TODO - b/421386891: Consider renaming this field to align with Entity.is/setEnabled
-        get() = !entity.isEnabled(includeParents = true)
+    // Store the intended enabled state so we can refer to it in updateEntityEnabledState.
+    override var enabled: Boolean = true
         set(value) {
-            entity.setEnabled(!value)
+            field = value
+            updateEntityEnabledState()
         }
+
+    /** Update the entity enabled state based on the intended enabled state and the panel size. */
+    private fun updateEntityEnabledState() {
+        if (enabled && (size.width <= 0 || size.height <= 0)) {
+            Log.w(
+                "CoreBasePanelEntity",
+                "Setting the panel size to 0 or less. The panel will be hidden.",
+            )
+        }
+        super.enabled = enabled && size.width > 0 && size.height > 0
+    }
 
     /** The [SpatialShape] of this [CoreBasePanelEntity]. */
     private var shape: SpatialShape = SpatialPanelDefaults.shape
@@ -295,9 +297,8 @@ internal class CoreSurfaceEntity(
     override var size: IntVolumeSize
         get() = super.size
         set(value) {
-            val nextSize = overrideSize ?: value
-            if (super.size != nextSize) {
-                super.size = nextSize
+            if (super.size != value) {
+                super.size = value
                 surfaceEntity.canvasShape =
                     SurfaceEntity.CanvasShape.Quad(
                         Meter.fromPixel(size.width.toFloat(), localDensity).value,
@@ -306,8 +307,6 @@ internal class CoreSurfaceEntity(
                 updateFeathering()
             }
         }
-
-    override var overrideSize: IntVolumeSize? = null
 
     internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
         currentFeatheringEffect = featheringEffect
@@ -426,15 +425,7 @@ internal class CoreSphereSurfaceEntity(
 }
 
 /** [CoreEntity] types that implement this interface may have the ResizableComponent attached. */
-internal interface ResizableCoreEntity {
-    /**
-     * The size of the [CoreEntity] in pixels.
-     *
-     * This value is used to override the layout size of the [CoreEntity] when it is resizable. When
-     * this value is null, the layout size of the [CoreEntity] is used.
-     */
-    var overrideSize: IntVolumeSize?
-}
+internal interface ResizableCoreEntity
 
 /** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
 internal interface MovableCoreEntity

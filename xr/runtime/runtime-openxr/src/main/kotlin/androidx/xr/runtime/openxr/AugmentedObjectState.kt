@@ -17,12 +17,12 @@
 package androidx.xr.runtime.openxr
 
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 
 internal data class AugmentedObjectState(
     val trackingState: TrackingState = TrackingState.PAUSED,
     val category: Long = 0,
     val centerPose: Pose = Pose(),
-    val extents: Vector3 = Vector3.Zero,
+    val extents: FloatSize3d = FloatSize3d(),
 ) {}

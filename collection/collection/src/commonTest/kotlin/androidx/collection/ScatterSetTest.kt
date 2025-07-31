@@ -534,7 +534,7 @@ class ScatterSetTest {
             set.joinToString(),
         )
         assertEquals(
-            "x${order[0]}, ${order[1]}, ${order[2]}...",
+            "x${order[0]}, ${order[1]}, ${order[2]}, ...y",
             set.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -543,7 +543,7 @@ class ScatterSetTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             set.joinToString(limit = 3) { names[it] },
         )
     }
@@ -551,13 +551,22 @@ class ScatterSetTest {
     @Test
     fun hashCodeAddValues() {
         val set = mutableScatterSetOf<String?>()
-        assertEquals(217, set.hashCode())
+        assertEquals(0, set.hashCode())
         set += null
-        assertEquals(218, set.hashCode())
+        assertEquals(0, set.hashCode())
         set += "Hello"
         val h1 = set.hashCode()
         set += "World"
         assertNotEquals(h1, set.hashCode())
+    }
+
+    @Test
+    fun hashCodeDoesNotUseCapacity() {
+        val set1 = MutableScatterSet<String>(initialCapacity = 10)
+        set1 += "Hello"
+        val set2 = MutableScatterSet<String>(initialCapacity = 100)
+        set2 += "Hello"
+        assertEquals(set1.hashCode(), set2.hashCode())
     }
 
     @Test
@@ -779,11 +788,11 @@ class ScatterSetTest {
     @Test
     fun asSetHashCodeAddValues() {
         val set = mutableScatterSetOf<String?>()
-        assertEquals(217, set.asSet().hashCode())
-        assertEquals(217, set.asMutableSet().hashCode())
+        assertEquals(0, set.asSet().hashCode())
+        assertEquals(0, set.asMutableSet().hashCode())
         set += null
-        assertEquals(218, set.asSet().hashCode())
-        assertEquals(218, set.asMutableSet().hashCode())
+        assertEquals(0, set.asSet().hashCode())
+        assertEquals(0, set.asMutableSet().hashCode())
 
         set += "Hello"
         val h1 = set.hashCode()

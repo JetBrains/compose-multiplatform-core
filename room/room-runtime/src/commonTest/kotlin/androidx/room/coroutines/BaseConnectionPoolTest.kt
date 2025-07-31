@@ -631,7 +631,7 @@ abstract class BaseConnectionPoolTest {
                 maxNumOfWriters = 1,
             )
         check(pool is ConnectionPoolImpl)
-        pool.throwOnTimeout = true
+        pool.onTimeout = THROW_TIMEOUT_EXCEPTION
         val coroutineStartedMutex = Mutex(locked = true)
         var acquiredSecondConnection = false
         val testContext = coroutineContext
@@ -672,7 +672,7 @@ abstract class BaseConnectionPoolTest {
                 maxNumOfWriters = 1,
             )
         check(pool is ConnectionPoolImpl)
-        pool.throwOnTimeout = true
+        pool.onTimeout = THROW_TIMEOUT_EXCEPTION
         pool.timeout = 100.milliseconds
 
         val firstBarrier = CompletableDeferred<Unit>()
@@ -721,7 +721,7 @@ abstract class BaseConnectionPoolTest {
                 maxNumOfWriters = 1,
             )
         check(pool is ConnectionPoolImpl)
-        pool.throwOnTimeout = false
+        pool.onTimeout = 0 // do nothing
         pool.timeout = 100.milliseconds
 
         val items = mutableListOf<String>()
@@ -796,7 +796,7 @@ abstract class BaseConnectionPoolTest {
         // with resources correctly as recommended in
         // https://kotlinlang.org/docs/cancellation-and-timeouts.html#asynchronous-timeout-and-resources
         check(pool is ConnectionPoolImpl)
-        pool.throwOnTimeout = true
+        pool.onTimeout = THROW_TIMEOUT_EXCEPTION
         pool.timeout = 20.milliseconds
         coroutineScope {
             repeat(10_000) {

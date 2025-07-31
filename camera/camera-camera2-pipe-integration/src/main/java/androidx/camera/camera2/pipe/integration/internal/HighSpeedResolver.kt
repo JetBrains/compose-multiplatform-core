@@ -193,6 +193,8 @@ public class HighSpeedResolver(private val cameraMetadata: CameraMetadata) {
     public companion object {
         private const val TAG = "HighSpeedResolver"
 
+        public val DEFAULT_FPS: Range<Int> = Range(120, 120)
+
         /**
          * Checks if a high-speed session is enabled based on the provided attached surfaces and new
          * use case configurations.

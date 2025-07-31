@@ -36,10 +36,11 @@ androidXMultiplatform {
     }
     desktop()
     linux()
-    mac()
     ios()
-    tvos()
     watchos()
+    tvos()
+    mac()
+    mingwX64()
     js()
     wasmJs()
 
@@ -57,6 +58,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
@@ -77,14 +79,11 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(libs.dexmakerMockitoInlineExtended)
-                implementation(libs.mockitoKotlin)
             }
         }
 
@@ -104,13 +103,46 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+        }
+
+        jsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        jsTest {
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+                implementation(libs.kotlinTestJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        wasmJsTest {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+                implementation(libs.kotlinTestWasm)
+            }
+        }
+
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
             }
         }
     }

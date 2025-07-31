@@ -20,10 +20,13 @@ import android.util.Range
 import androidx.annotation.RestrictTo
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.featuregroup.impl.UseCaseType
+import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getAppConfiguredGroupableFeatureType
 import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getFeatureGroupUseCaseType
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
 import androidx.core.util.Consumer
 import java.util.concurrent.Executor
 
@@ -64,14 +67,16 @@ import java.util.concurrent.Executor
  *   `SessionConfig` binding (i.e. when calling
  *   `androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle` or
  *   `androidx.camera.lifecycle.LifecycleCameraProvider.bindToLifecycle`). When this value is set,
- *   any target frame rate set on individual [UseCase] will be ignored during `SessionConfig`
- *   binding. If this value is not set, the default is [FRAME_RATE_RANGE_UNSPECIFIED], which means
- *   no specific frame rate. The range defines the acceptable minimum and maximum frame rate for the
- *   camera session. A **dynamic range** (e.g., `[15, 30]`) allows the camera to adjust its frame
- *   rate within the bounds, which will benefit **previewing in low light** by enabling longer
- *   exposures for brighter, less noisy images; conversely, a **fixed range** (e.g., `[30, 30]`)
- *   ensures a stable frame rate crucial for **video recording**, though it can lead to darker,
- *   noisier video in low light due to shorter exposure times.
+ *   no individual [UseCase] can have a target frame rate set (e.g., via
+ *   [Preview.Builder.setTargetFrameRate] or `VideoCapture.Builder.setTargetFrameRate`); doing so
+ *   will result in an [IllegalArgumentException]. If this value is not set, the default is
+ *   [FRAME_RATE_RANGE_UNSPECIFIED], which means no specific frame rate. The range defines the
+ *   acceptable minimum and maximum frame rate for the camera session. A **dynamic range** (e.g.,
+ *   `[15, 30]`) allows the camera to adjust its frame rate within the bounds, which will benefit
+ *   **previewing in low light** by enabling longer exposures for brighter, less noisy images;
+ *   conversely, a **fixed range** (e.g., `[30, 30]`) ensures a stable frame rate crucial for
+ *   **video recording**, though it can lead to darker, noisier video in low light due to shorter
+ *   exposure times.
  * @throws IllegalArgumentException If the combination of config options are conflicting or
  *   unsupported.
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
@@ -111,13 +116,28 @@ constructor(
         private set
 
     init {
-        validateFeatureCombination()
+        validateFrameRate()
+        validateFeatureGroups()
     }
 
     /** Creates the SessionConfig from use cases only. */
     public constructor(vararg useCases: UseCase) : this(useCases.toList())
 
-    private fun validateFeatureCombination() {
+    private fun validateFrameRate() {
+        if (frameRateRange == FRAME_RATE_RANGE_UNSPECIFIED) {
+            return
+        }
+        for (useCase in useCases) {
+            require(!useCase.appConfig.hasTargetFrameRate()) {
+                "Can't set target frame rate on a UseCase (by " +
+                    "Preview.Builder.setTargetFrameRate() or " +
+                    "VideoCapture.Builder.setTargetFrameRate()) if the frame rate range has " +
+                    "already been set in the SessionConfig."
+            }
+        }
+    }
+
+    private fun validateFeatureGroups() {
         if (requiredFeatureGroup.isEmpty() && preferredFeatureGroup.isEmpty()) {
             return
         }
@@ -135,10 +155,12 @@ constructor(
             "requiredFeatures and preferredFeatures have duplicate values: $duplicateFeatures"
         }
 
-        useCases.forEach {
-            require(it.getFeatureGroupUseCaseType() != UseCaseType.UNDEFINED) {
-                "$it is not supported with feature group"
+        useCases.forEach { useCase ->
+            require(useCase.getFeatureGroupUseCaseType() != UseCaseType.UNDEFINED) {
+                "$useCase is not supported with feature group"
             }
+
+            useCase.validateDefaultGroupableFeatureValues()
         }
 
         require(effects.isEmpty()) { "Effects aren't supported with feature group yet" }
@@ -159,6 +181,58 @@ constructor(
             require(distinctFeaturesPerType.size <= 1) {
                 "requiredFeatures has conflicting feature values: $distinctFeaturesPerType"
             }
+        }
+    }
+
+    private fun UseCase.validateDefaultGroupableFeatureValues() {
+        val useCaseName = getUseCaseName()
+        val conflictingFeatureType = getAppConfiguredGroupableFeatureType()
+
+        require(conflictingFeatureType == null) {
+            "A ${conflictingFeatureType!!.name} value is set to $useCaseName" +
+                " despite using feature groups. Do not use APIs like ${useCaseName}.Builder." +
+                when (conflictingFeatureType) {
+                    FeatureTypeInternal.DYNAMIC_RANGE -> "setDynamicRange"
+                    FeatureTypeInternal.FPS_RANGE -> "setTargetFrameRateRange"
+                    FeatureTypeInternal.VIDEO_STABILIZATION ->
+                        if (isVideoCapture(this)) {
+                            "setVideoStabilizationEnabled"
+                        } else {
+                            "setPreviewStabilizationEnabled"
+                        }
+                    FeatureTypeInternal.IMAGE_FORMAT -> "setOutputFormat"
+                } +
+                " while using feature groups." +
+                " If " +
+                when (conflictingFeatureType) {
+                    FeatureTypeInternal.DYNAMIC_RANGE -> "HDR"
+                    FeatureTypeInternal.FPS_RANGE -> "60 FPS"
+                    FeatureTypeInternal.VIDEO_STABILIZATION -> "stabilization"
+                    FeatureTypeInternal.IMAGE_FORMAT -> "JPEG_R output format"
+                } +
+                " is required, instead set " +
+                when (conflictingFeatureType) {
+                    FeatureTypeInternal.DYNAMIC_RANGE -> "GroupableFeature.HDR_HLG10"
+                    FeatureTypeInternal.FPS_RANGE -> "GroupableFeature.FPS_60"
+                    FeatureTypeInternal.VIDEO_STABILIZATION ->
+                        "GroupableFeature.PREVIEW_STABILIZATION"
+                    FeatureTypeInternal.IMAGE_FORMAT -> "GroupableFeature.IMAGE_ULTRA_HDR"
+                } +
+                " as either a required or preferred feature."
+        }
+    }
+
+    private fun UseCase.getUseCaseName(): String {
+        return if (this is Preview) {
+            "Preview"
+        } else if (this is ImageCapture) {
+            "ImageCapture"
+        } else if (this is ImageAnalysis) {
+            "ImageAnalysis"
+        } else if (isVideoCapture(this)) {
+            "VideoCapture"
+        } else {
+            "UseCase"
         }
     }
 

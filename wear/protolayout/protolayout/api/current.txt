@@ -735,11 +735,14 @@ package androidx.wear.protolayout {
 
   public static final class LayoutElementBuilders.Image.Builder {
     ctor public LayoutElementBuilders.Image.Builder();
+    ctor public LayoutElementBuilders.Image.Builder(androidx.wear.protolayout.ProtoLayoutScope);
     method public androidx.wear.protolayout.LayoutElementBuilders.Image build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setColorFilter(androidx.wear.protolayout.LayoutElementBuilders.ColorFilter);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setContentScaleMode(androidx.wear.protolayout.LayoutElementBuilders.ContentScaleModeProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setContentScaleMode(int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setHeight(androidx.wear.protolayout.DimensionBuilders.ImageDimension);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setImageResource(androidx.wear.protolayout.ResourceBuilders.ImageResource);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setImageResource(androidx.wear.protolayout.ResourceBuilders.ImageResource, String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setModifiers(androidx.wear.protolayout.ModifiersBuilders.Modifiers);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(androidx.wear.protolayout.TypeBuilders.StringProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(String);
@@ -1278,6 +1281,11 @@ package androidx.wear.protolayout {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) public androidx.wear.protolayout.ModifiersBuilders.Transformation.Builder setScaleY(androidx.wear.protolayout.TypeBuilders.FloatProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) public androidx.wear.protolayout.ModifiersBuilders.Transformation.Builder setTranslationX(androidx.wear.protolayout.DimensionBuilders.DpProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) public androidx.wear.protolayout.ModifiersBuilders.Transformation.Builder setTranslationY(androidx.wear.protolayout.DimensionBuilders.DpProp);
+  }
+
+  @MainThread public final class ProtoLayoutScope {
+    method public android.os.Bundle collectPendingIntents();
+    method public androidx.wear.protolayout.ResourceBuilders.Resources collectResources();
   }
 
   public final class ResourceBuilders {

@@ -114,6 +114,8 @@ class AppFunctionMetadataCreatorHelper {
      * @param allowSerializableInterfaceTypes Whether to allow the serializable to use serializable
      *   interface types. The @AppFunctionSerializableInterface should only be considered as a
      *   supported type when processing schema definitions.
+     * @param parameterDescriptionMap a mapping of the function's parameter names to their
+     *   descriptions.
      * @return A list of [AppFunctionParameterMetadata].
      */
     fun buildParameterTypeMetadataList(
@@ -122,6 +124,7 @@ class AppFunctionMetadataCreatorHelper {
         sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
         seenDataTypeQualifiers: MutableSet<String>,
         allowSerializableInterfaceTypes: Boolean = false,
+        parameterDescriptionMap: Map<String, String> = mapOf(),
     ): List<AppFunctionParameterMetadata> = buildList {
         for (parameter in parameters) {
             if (parameter.type.isOfType(AppFunctionContextClass.CLASS_NAME)) {
@@ -147,7 +150,7 @@ class AppFunctionMetadataCreatorHelper {
                     name = checkNotNull(parameter.name).asString(),
                     isRequired = !parameter.hasDefault,
                     dataType = dataTypeMetadata,
-                    // TODO(b/428155914): Add parameter description.
+                    description = parameterDescriptionMap[parameter.name?.asString()].orEmpty(),
                 )
             )
         }

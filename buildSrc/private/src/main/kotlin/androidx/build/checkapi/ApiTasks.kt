@@ -44,7 +44,6 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 sealed class ApiTaskConfig
 
@@ -214,34 +213,17 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                 )
                 // If this is a KMP project targeting android, make sure to select the android
                 // compilation and not a different jvm target compilation
-                multiplatformExtension?.let { extension ->
-                    // Captures when com.android.library plugin is applied in KMP project
-                    if (
-                        extension.targets.any { target ->
-                            target.platformType == KotlinPlatformType.androidJvm
-                        }
-                    ) {
-                        it.attributes.attribute(
-                            Attribute.of(
-                                "org.jetbrains.kotlin.platform.type",
-                                KotlinPlatformType::class.java,
-                            ),
-                            KotlinPlatformType.androidJvm,
-                        )
-                    }
-                    // Captures when AGP KMP plugin is applied in KMP project
-                    if (project.hasAndroidMultiplatformPlugin()) {
-                        it.attributes.attribute(
-                            Attribute.of(
-                                "org.gradle.jvm.environment",
-                                TargetJvmEnvironment::class.java,
-                            ),
-                            objects.named(
-                                TargetJvmEnvironment::class.java,
-                                TargetJvmEnvironment.ANDROID,
-                            ),
-                        )
-                    }
+                if (project.hasAndroidMultiplatformPlugin()) {
+                    it.attributes.attribute(
+                        Attribute.of(
+                            "org.gradle.jvm.environment",
+                            TargetJvmEnvironment::class.java,
+                        ),
+                        objects.named(
+                            TargetJvmEnvironment::class.java,
+                            TargetJvmEnvironment.ANDROID,
+                        ),
+                    )
                 }
             }
             .apply { project.dependencies.add(name, project.project(path)) }

@@ -309,26 +309,26 @@ public abstract class RemoteContext {
     /**
      * Run an action with a named parameter
      *
-     * @param textId the text id of the action
+     * @param id the text id of the action
      * @param value the value of the parameter
      */
-    public abstract void runNamedAction(int textId, @NonNull Object value);
+    public abstract void runNamedAction(int id, @Nullable Object value);
 
     /**
      * Put an object under an id
      *
-     * @param mId the id of the object
-     * @param command the object
+     * @param id the id of the object
+     * @param value the object
      */
-    public abstract void putObject(int mId, @NonNull Object command);
+    public abstract void putObject(int id, @NonNull Object value);
 
     /**
      * Get an object given an id
      *
-     * @param mId the id of the object
+     * @param id the id of the object
      * @return the object
      */
-    public abstract @Nullable Object getObject(int mId);
+    public abstract @Nullable Object getObject(int id);
 
     /**
      * Add a touch listener to the context
@@ -914,7 +914,7 @@ public abstract class RemoteContext {
      * Add a click area to the doc
      *
      * @param id the id of the click area
-     * @param contentDescription the content description of the click area
+     * @param contentDescriptionId the content description of the click area
      * @param left the left bounds of the click area
      * @param top the top bounds of the click area
      * @param right the right bounds of the click area
@@ -923,7 +923,7 @@ public abstract class RemoteContext {
      */
     public abstract void addClickArea(
             int id,
-            int contentDescription,
+            int contentDescriptionId,
             float left,
             float top,
             float right,

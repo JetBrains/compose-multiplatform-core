@@ -1986,8 +1986,10 @@ package androidx.compose.foundation.shape {
 package androidx.compose.foundation.text {
 
   public final class AutofillHighlightKt {
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> getLocalAutofillHighlightColor();
-    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> LocalAutofillHighlightColor;
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Brush> getLocalAutofillHighlightBrush();
+    method @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> getLocalAutofillHighlightColor();
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Brush> LocalAutofillHighlightBrush;
+    property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> LocalAutofillHighlightColor;
   }
 
   public final class BasicSecureTextFieldKt {

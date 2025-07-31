@@ -47,6 +47,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowApplication
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -54,6 +55,7 @@ import org.robolectric.annotation.Config
 class AppFunctionServiceDelegateTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var context: Context
+    private lateinit var shadowContext: ShadowApplication
     private lateinit var fakeAggregatedInvoker: FakeAggregatedInvoker
     private lateinit var fakeAggregatedInventory: FakeAggregatedInventory
     private lateinit var fakeTranslatorSelector: FakeTranslatorSelector
@@ -288,6 +290,7 @@ class AppFunctionServiceDelegateTest {
     ): ExecuteAppFunctionResponse = suspendCancellableCoroutine { cont ->
         delegate.onExecuteFunction(
             request,
+            context.packageName,
             object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
                 override fun onResult(result: ExecuteAppFunctionResponse) {
                     cont.resume(result)

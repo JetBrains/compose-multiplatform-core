@@ -74,7 +74,6 @@ android {
     namespace = "androidx.privacysandbox.tools.integration.testsdk"
 
     compileSdk = 36
-    compileSdkExtension = 14
 
     defaultConfig {
         ksp {

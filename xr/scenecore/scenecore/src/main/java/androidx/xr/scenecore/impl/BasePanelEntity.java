@@ -102,6 +102,11 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
     @Override
     public void setSize(@NonNull Dimensions dimensions) {
+        if (dimensions.width <= 0 || dimensions.height <= 0) {
+            throw new IllegalArgumentException(
+                    "Dimensions width and height must be greater than zero.");
+        }
+
         float pixelDensity = getDefaultPixelDensity();
         setSizeInPixels(
                 new PixelDimensions(
@@ -116,6 +121,11 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
     @Override
     public void setSizeInPixels(@NonNull PixelDimensions dimensions) {
+        if (dimensions.width <= 0 || dimensions.height <= 0) {
+            throw new IllegalArgumentException(
+                    "Dimensions width and height must be greater than zero.");
+        }
+
         mPixelDimensions = dimensions;
     }
 

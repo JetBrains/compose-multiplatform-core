@@ -61,21 +61,6 @@ internal sealed interface CompilationInputs {
                         .bootClasspath
                 )
 
-            // If this is a multiplatform project, set up inputs for the androidJvm compilation
-            val multiplatformExtension = project.multiplatformExtension
-            if (multiplatformExtension != null) {
-                val androidJvmTarget =
-                    multiplatformExtension.targets
-                        .requirePlatform(KotlinPlatformType.androidJvm)
-                        .findCompilation(compilationName = variant.name)
-
-                return MultiplatformCompilationInputs.fromCompilation(
-                    project = project,
-                    compilationProvider = androidJvmTarget,
-                    bootClasspath = bootClasspath,
-                )
-            }
-
             // Not a multiplatform project, set up standard inputs
             @Suppress("UnstableApiUsage") // Usage of .kotlin
             val kotlinCollection = project.files(variant.sources.kotlin?.all)

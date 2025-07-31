@@ -16,8 +16,11 @@
 
 package androidx.core.telecom.internal.utils
 
+import android.Manifest
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioDeviceInfo
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
@@ -26,6 +29,8 @@ import android.telecom.CallAudioState
 import android.util.Log
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
+import androidx.core.content.ContextCompat
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallEndpointCompat.Companion.EndpointType
 import androidx.core.telecom.R
@@ -329,6 +334,71 @@ internal class EndpointUtils {
                 ""
             } else {
                 "[**:**:**:**:" + address.takeLast(4) + "]"
+            }
+        }
+
+        /**
+         * Checks if a given Bluetooth device is a wearable.
+         *
+         * @return `true` if the device is a wearable, `false` otherwise. Returns `false` if
+         *   permissions are missing, assuming it's a valid audio device to be safe.
+         */
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+        private fun isWearableDevice(context: Context, device: BluetoothDevice?): Boolean {
+            if (!hasSufficientBluetoothPermission(context)) {
+                Log.w(TAG, "Permission denied. Assuming a BT device could be present.")
+                return false
+            }
+            return try {
+                device?.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.WEARABLE
+            } catch (e: SecurityException) {
+                Log.w(TAG, "isWearableDevice: Permission denied", e)
+                false
+            }
+        }
+
+        /**
+         * The centralized logic to check for an available, non-wearable Bluetooth device.
+         *
+         * @param endpoints The list of available call endpoints.
+         * @param deviceLookup A lambda function that resolves a CallEndpointCompat to a
+         *   BluetoothDevice.
+         * @return `true` if a non-wearable Bluetooth device is found.
+         */
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+        fun hasAvailableNonWearableDevice(
+            context: Context,
+            endpoints: List<CallEndpointCompat>,
+            deviceLookup: (endpoint: CallEndpointCompat) -> BluetoothDevice?,
+        ): Boolean {
+            if (!hasSufficientBluetoothPermission(context)) {
+                Log.w(TAG, "Permission denied. Assuming a BT device could be present.")
+                return true
+            }
+            return try {
+                endpoints.any { endpoint ->
+                    if (endpoint.isBluetoothType()) {
+                        val device = deviceLookup(endpoint)
+                        !isWearableDevice(context, device)
+                    } else {
+                        false
+                    }
+                }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Security Exception hit. Assuming a BT device could be present.", e)
+                return true
+            }
+        }
+
+        fun hasSufficientBluetoothPermission(context: Context): Boolean {
+            // For Android 12 (S) and above, check for BLUETOOTH_CONNECT
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) ==
+                    PackageManager.PERMISSION_GRANTED
+            } else {
+                // For older versions, check for BLUETOOTH
+                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH) ==
+                    PackageManager.PERMISSION_GRANTED
             }
         }
     }

@@ -259,10 +259,14 @@ class UtilsTest {
 
     @Test
     fun verifyRuntimeResizeEventToResizeEvent() {
+        val entity = mock<Entity>()
+
         val resizeEvent: ResizeEvent =
             RuntimeResizeEvent(RuntimeResizeEvent.RESIZE_STATE_START, RuntimeDimensions(1f, 3f, 5f))
-                .toResizeEvent()
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START)
+                .toResizeEvent(entity)
+
+        assertThat(resizeEvent.entity).isEqualTo(entity)
+        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.ResizeState.RESIZE_STATE_START)
         assertThat(resizeEvent.newSize.width).isEqualTo(1f)
         assertThat(resizeEvent.newSize.height).isEqualTo(3f)
         assertThat(resizeEvent.newSize.depth).isEqualTo(5f)
@@ -524,10 +528,10 @@ class UtilsTest {
                     .map { it.toResizeState() }
             )
             .containsExactly(
-                ResizeEvent.RESIZE_STATE_UNKNOWN,
-                ResizeEvent.RESIZE_STATE_START,
-                ResizeEvent.RESIZE_STATE_ONGOING,
-                ResizeEvent.RESIZE_STATE_END,
+                ResizeEvent.ResizeState.RESIZE_STATE_UNKNOWN,
+                ResizeEvent.ResizeState.RESIZE_STATE_START,
+                ResizeEvent.ResizeState.RESIZE_STATE_ONGOING,
+                ResizeEvent.ResizeState.RESIZE_STATE_END,
             )
             .inOrder()
     }

@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 import androidx.build.KotlinTarget
+import androidx.build.ProjectLayoutType
 import androidx.build.SoftwareType
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
@@ -97,7 +98,13 @@ dependencies {
     lintPublish(project(":work:work-runtime-lint"))
 }
 
-packageInspector(project, ":work:work-inspection")
+if (!ProjectLayoutType.isPlayground(project)) {
+    androidComponents {
+        onVariants(selector().withBuildType("release"), { variant ->
+            packageInspector(variant, project, project(":work:work-inspection"))
+        })
+    }
+}
 
 // KSP does not support argument per flavor so we set it to global instead.
 ksp {

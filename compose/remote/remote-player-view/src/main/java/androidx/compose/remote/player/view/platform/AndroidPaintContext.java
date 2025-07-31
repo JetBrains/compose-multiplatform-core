@@ -15,6 +15,8 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.compose.remote.core.RemoteComposeState.BITMAP_TEXTURE_ID_OFFSET;
+
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
@@ -125,6 +127,7 @@ public class AndroidPaintContext extends PaintContext {
      * @param dstTop top coordinate of the destination area
      * @param dstRight right coordinate of the destination area
      * @param dstBottom bottom coordinate of the destination area
+     * @param cdId the id of the content description
      */
     @Override
     public void drawBitmap(
@@ -475,7 +478,7 @@ public class AndroidPaintContext extends PaintContext {
 
     @Override
     public void drawTextRun(
-            int textID,
+            int textId,
             int start,
             int end,
             int contextStart,
@@ -484,7 +487,7 @@ public class AndroidPaintContext extends PaintContext {
             float y,
             boolean rtl) {
 
-        String textToPaint = getText(textID);
+        String textToPaint = getText(textId);
         if (textToPaint == null) {
             return;
         }
@@ -789,6 +792,58 @@ public class AndroidPaintContext extends PaintContext {
                         axes[i] = new FontVariationAxis(tags[i], values[i]);
                     }
                     setAxis(axes);
+                }
+
+                /**
+                 * Set the texture shader
+                 *
+                 * @param bitmapId the id of the bitmap to use
+                 * @param tileX The tiling mode for x to draw the bitmap in.
+                 * @param tileY The tiling mode for y to draw the bitmap in.
+                 * @param filterMode the filter mode to be used when sampling from this shader.
+                 * @param maxAnisotropy The Anisotropy value to use for filtering. Must be greater
+                 *     than 0.
+                 */
+                @Override
+                public void setTextureShader(
+                        int bitmapId,
+                        short tileX,
+                        short tileY,
+                        short filterMode,
+                        short maxAnisotropy) {
+                    BitmapShader shader =
+                            (BitmapShader)
+                                    mContext.mRemoteComposeState.getFromId(
+                                            bitmapId + BITMAP_TEXTURE_ID_OFFSET);
+                    if (shader != null) {
+                        mPaint.setShader(shader);
+                        return;
+                    }
+                    Bitmap bitmap = (Bitmap) mContext.mRemoteComposeState.getFromId(bitmapId);
+                    if (bitmap == null) {
+                        return;
+                    }
+                    shader =
+                            new BitmapShader(
+                                    bitmap,
+                                    Shader.TileMode.values()[tileX],
+                                    Shader.TileMode.values()[tileY]);
+
+                    if (Build.VERSION.SDK_INT // REMOVE IN PLATFORM
+                            >= Build.VERSION_CODES.TIRAMISU) { // REMOVE IN PLATFORM
+                        if (filterMode > 0) {
+                            shader.setFilterMode(filterMode);
+                        }
+
+                        if (Build.VERSION.SDK_INT // REMOVE IN PLATFORM
+                                >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // REMOVE IN PLATFORM
+                            if (maxAnisotropy > 0) {
+                                shader.setMaxAnisotropy(maxAnisotropy);
+                            }
+                        } // REMOVE IN PLATFORM
+                    } // REMOVE IN PLATFORM
+
+                    mPaint.setShader(shader);
                 }
 
                 @Override

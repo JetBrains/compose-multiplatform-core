@@ -51,6 +51,7 @@ import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverContext
 import androidx.privacysandbox.ui.provider.impl.DeferredSessionClient
+import androidx.tracing.trace
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -367,14 +368,19 @@ private class BinderAdapterDelegate(
 
             override fun notifyMotionEvent(
                 motionEvent: MotionEvent,
-                eventTargetFrameTime: Long,
+                eventTargetTime: Long,
                 eventTransferCallback: IMotionEventTransferCallback?,
             ) {
                 providerViewWrapper.scheduleMotionEventProcessing(
                     motionEvent,
-                    eventTargetFrameTime,
+                    eventTargetTime,
                     eventTransferCallback,
                 )
+                trace("BinderAdapterDelegate#notifyMotionEvent", {})
+            }
+
+            override fun notifyHoverEvent(hoverEvent: MotionEvent, eventTargetTime: Long) {
+                providerViewWrapper.scheduleHoverEventProcessing(hoverEvent, eventTargetTime)
             }
 
             override fun close() {

@@ -149,12 +149,6 @@ package androidx.xr.runtime {
     ctor public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
   }
 
-  public final class SessionConfigurePermissionsNotGranted extends androidx.xr.runtime.SessionConfigureResult {
-    ctor public SessionConfigurePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
-  }
-
   public abstract sealed class SessionConfigureResult {
   }
 
@@ -168,12 +162,6 @@ package androidx.xr.runtime {
     property public String requiredApk;
   }
 
-  public final class SessionCreatePermissionsNotGranted extends androidx.xr.runtime.SessionCreateResult {
-    ctor public SessionCreatePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
-  }
-
   public abstract sealed class SessionCreateResult {
   }
 
@@ -185,12 +173,6 @@ package androidx.xr.runtime {
 
   public final class SessionCreateUnsupportedDevice extends androidx.xr.runtime.SessionCreateResult {
     ctor public SessionCreateUnsupportedDevice();
-  }
-
-  public final class SessionResumePermissionsNotGranted extends androidx.xr.runtime.SessionResumeResult {
-    ctor public SessionResumePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
   }
 
   public abstract sealed class SessionResumeResult {
@@ -228,8 +210,10 @@ package androidx.xr.runtime.math {
   public final class FloatSize2d {
     ctor public FloatSize2d();
     ctor public FloatSize2d(optional float width, optional float height);
+    method public operator androidx.xr.runtime.math.FloatSize2d div(float divisor);
     method public float getHeight();
     method public float getWidth();
+    method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
     property public float height;
     property public float width;
@@ -238,9 +222,11 @@ package androidx.xr.runtime.math {
   public final class FloatSize3d {
     ctor public FloatSize3d();
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
+    method public operator androidx.xr.runtime.math.FloatSize3d div(float divisor);
     method public float getDepth();
     method public float getHeight();
     method public float getWidth();
+    method public operator androidx.xr.runtime.math.FloatSize3d times(float scalar);
     method public androidx.xr.runtime.math.FloatSize2d to2d();
     property public float depth;
     property public float height;

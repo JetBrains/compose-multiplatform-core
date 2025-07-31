@@ -56,4 +56,15 @@ public object Device {
             Build.BRAND.equalsCaseInsensitive(vendor)
 
     private fun String.equalsCaseInsensitive(other: String?) = equals(other, ignoreCase = true)
+
+    /**
+     * There is no clear way to determine whether a device is UniSoc or not. Check the possible
+     * properties to turn the results.
+     */
+    public fun isUniSocChipsetDevice(): Boolean {
+        return (Build.VERSION.SDK_INT >= 31 &&
+            "Spreadtrum".equals(Build.SOC_MANUFACTURER, ignoreCase = true)) ||
+            Build.HARDWARE.lowercase().startsWith("ums") ||
+            (isItelDevice() && Build.HARDWARE.lowercase().startsWith("sp"))
+    }
 }

@@ -31,7 +31,8 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    // Add dependencies here
+    implementation(project(":core:core-backported-fixes"))
+    compileOnly(project(":annotation:annotation-sampled"))
 }
 
 android {

@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.media.MediaCodec
-import android.util.Range
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.core.Log
@@ -32,7 +31,6 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.SessionConfig
-import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.streamsharing.StreamSharing
 import java.util.Collections
@@ -118,15 +116,6 @@ public class SessionConfigAdapter(
                 onError(sessionConfig, SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET)
             }
         }
-    }
-
-    public fun getExpectedFrameRateRange(): Range<Int>? {
-        return if (
-            isSessionConfigValid() &&
-                sessionConfig.expectedFrameRateRange != StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
-        )
-            sessionConfig.expectedFrameRateRange
-        else null
     }
 
     /**

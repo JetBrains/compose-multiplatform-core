@@ -56,6 +56,7 @@ internal class FakeAppFunctionManagerApi(
             )
             .onExecuteFunction(
                 request,
+                context.packageName,
                 object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
                     override fun onResult(response: ExecuteAppFunctionResponse?) {
                         if (response != null) {

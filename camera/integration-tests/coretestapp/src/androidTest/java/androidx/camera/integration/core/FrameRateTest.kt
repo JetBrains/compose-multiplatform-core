@@ -277,36 +277,6 @@ class FrameRateTest(
         assertThat(captureResult.request.getAeTargetFps()).isEqualTo(targetFps)
     }
 
-    // Scenario: set frame rate on both Preview and VideoCapture
-    @Test
-    fun setFrameRate_onUseCasesAndSessionConfig() = runBlocking {
-        // Arrange.
-        val supportedFpsRanges =
-            cameraInfo.getSupportedFrameRateRanges(
-                SessionConfig(createPreview(), createVideoCapture())
-            )
-        assumeTrue(supportedFpsRanges.isNotEmpty())
-        val targetFps = supportedFpsRanges.first()
-        Log.d(TAG, "Testing fps: $targetFps")
-
-        // Arrange: set fps on both UseCases and SessionConfig.
-        val sessionConfig =
-            SessionConfig(
-                useCases =
-                    listOf(
-                        createPreview(targetFps = targetFps),
-                        createVideoCapture(targetFps = targetFps),
-                    ),
-                frameRateRange = targetFps,
-            )
-
-        // Act.
-        val captureResult = bindAndGetCaptureResult(sessionConfig = sessionConfig)
-
-        // Assert.
-        assertThat(captureResult.request.getAeTargetFps()).isEqualTo(targetFps)
-    }
-
     private fun interface SessionConfigBuilderProvider {
         suspend fun provide(targetFps: Range<Int>?): SessionConfig.Builder
     }

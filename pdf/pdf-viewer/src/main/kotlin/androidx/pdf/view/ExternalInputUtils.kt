@@ -19,7 +19,36 @@ package androidx.pdf.view
 import kotlin.math.roundToInt
 
 internal object ExternalInputUtils {
+    fun calculateGreaterZoom(
+        currentZoom: Float,
+        defaultZoom: Float,
+        zoomLevels: List<Float>,
+        maxAbsoluteZoom: Float,
+    ): Float {
+        val currentZoomLevel = (currentZoom / defaultZoom)
+        // Jump to the next to next zoom level if the next zoom level is too close.
+        // If no higher level is found, return the absolute max
+        val zoomFactor =
+            zoomLevels.firstOrNull { it > currentZoomLevel + 0.01f } ?: return maxAbsoluteZoom
+        return zoomFactor * defaultZoom
+    }
+
     fun calculateScroll(viewportDimension: Int, scrollFactor: Int): Int {
         return (viewportDimension.toFloat() / scrollFactor).roundToInt()
+    }
+
+    fun calculateSmallerZoom(
+        currentZoom: Float,
+        defaultZoom: Float,
+        zoomLevels: List<Float>,
+        minAbsoluteZoom: Float,
+    ): Float {
+        val currentZoomLevel = (currentZoom / defaultZoom)
+        // Jump to the last to last zoom level if the last zoom level is too close.
+        // If no smaller level is found, return the absolute min
+        val zoomFactor =
+            zoomLevels.reversed().firstOrNull { it < currentZoomLevel - 0.01f }
+                ?: return minAbsoluteZoom
+        return zoomFactor * defaultZoom
     }
 }

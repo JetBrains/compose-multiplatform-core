@@ -25,6 +25,7 @@ import static androidx.camera.camera2.internal.Camera2CameraImplTest.TestUseCase
 import static androidx.camera.camera2.internal.Camera2CameraImplTest.TestUseCase.SurfaceOption.REPEATING;
 import static androidx.camera.camera2.internal.compat.quirk.CaptureIntentPreviewQuirk.workaroundByCaptureIntentPreview;
 import static androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA;
+import static androidx.camera.core.CameraState.ERROR_CAMERA_REMOVED;
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE;
 import static androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE;
@@ -35,6 +36,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static junit.framework.TestCase.assertTrue;
 
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -47,6 +49,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -71,6 +74,7 @@ import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraState;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.CameraXConfig;
 import androidx.camera.core.CompositionSettings;
@@ -100,6 +104,7 @@ import androidx.camera.core.streamsharing.StreamSharing;
 import androidx.camera.testing.impl.CameraUtil;
 import androidx.camera.testing.impl.HandlerUtil;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
+import androidx.camera.testing.impl.fakes.FakeLifecycleOwner;
 import androidx.camera.testing.impl.fakes.FakeUseCase;
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig;
 import androidx.camera.testing.impl.mocks.MockObserver;
@@ -108,6 +113,7 @@ import androidx.camera.testing.impl.mocks.helpers.CallTimesAtLeast;
 import androidx.camera.video.Recorder;
 import androidx.camera.video.VideoCapture;
 import androidx.core.os.HandlerCompat;
+import androidx.lifecycle.Observer;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -1060,7 +1066,7 @@ public final class Camera2CameraImplTest {
         StreamSpec.Builder builder = StreamSpec.builder(
                 new Size(640, 480)).setImplementationOptions(
                 StreamUseCaseUtil.getStreamSpecImplementationOptions(config));
-        if (config.getTargetFrameRate(null) != null) {
+        if (config.hasTargetFrameRate()) {
             builder.setExpectedFrameRateRange(config.getTargetFrameRate());
         }
         if (config.hasDynamicRange()) {
@@ -1552,6 +1558,99 @@ public final class Camera2CameraImplTest {
         mCamera2CameraImpl.attachUseCases(singletonList(useCase));
         HandlerUtil.waitForLooperToIdle(sCameraHandler);
         assertThat(lowLightBoostControl.isLowLightBoostDisabledByUseCaseSessionConfig()).isTrue();
+    }
+
+    @Test
+    public void onRemoved_whenOpen_transitionsToClosedWithErrorAndReleases() throws Exception {
+        // Arrange
+        FakeLifecycleOwner lifecycleOwner = new FakeLifecycleOwner();
+        lifecycleOwner.startAndResume();
+
+        mCamera2CameraImpl.open();
+        mCamera2CameraImpl.attachUseCases(singletonList(createUseCase()));
+
+        // Use a FakeObserver to track public CameraState changes.
+        TestObserver<CameraState> publicStateObserver = new TestObserver<>();
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+                () -> mCamera2CameraImpl.getCameraInfoInternal().getCameraState().observe(
+                        lifecycleOwner, publicStateObserver));
+
+        // Wait for the camera to reach the OPEN state.
+        publicStateObserver.awaitState(CameraState.create(CameraState.Type.OPEN), 5, SECONDS);
+
+        // Act
+        mCamera2CameraImpl.onRemoved();
+
+        // Assert
+        // 1. Wait specifically for the public state to become CLOSED with the correct error.
+        CameraState expectedState = CameraState.create(CameraState.Type.CLOSED,
+                CameraState.StateError.create(ERROR_CAMERA_REMOVED));
+        publicStateObserver.awaitState(expectedState, 5, SECONDS);
+
+        // 2. The internal state eventually transitions to RELEASED.
+        MockObserver<CameraInternal.State> internalStateObserver = new MockObserver<>();
+        mCamera2CameraImpl.getCameraState().addObserver(
+                CameraXExecutors.directExecutor(), internalStateObserver);
+
+        internalStateObserver.verifyOnNewDataCall(CameraInternal.State.RELEASED, 5000,
+                new CallTimes(1));
+    }
+
+    /**
+     * A fake LiveData observer for testing that stores received values and allows awaiting them.
+     */
+    private static class TestObserver<T> implements Observer<T> {
+        private final List<T> mReceivedValues = new ArrayList<>();
+
+        @Override
+        public void onChanged(@Nullable T value) {
+            synchronized (this) {
+                mReceivedValues.add(value);
+                // Wake up any threads that are waiting for a new value.
+                notifyAll();
+            }
+        }
+
+        /**
+         * Awaits until the specified state is received or the timeout is reached.
+         *
+         * <p>If the state is not received by the timeout, the test will fail.
+         *
+         * @param expectedState The exact state value to wait for.
+         * @param timeout       The maximum time to wait.
+         * @param timeUnit      The unit for the timeout.
+         * @throws InterruptedException if the thread is interrupted while waiting.
+         */
+        public void awaitState(@NonNull T expectedState, long timeout, TimeUnit timeUnit)
+                throws InterruptedException {
+            long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+            synchronized (this) {
+                // Check if the value has already been received.
+                if (mReceivedValues.contains(expectedState)) {
+                    return;
+                }
+
+                // Wait for the value to be received.
+                while (System.currentTimeMillis() < deadline) {
+                    // Spurious wakeup-safe loop
+                    wait(deadline - System.currentTimeMillis());
+                    if (mReceivedValues.contains(expectedState)) {
+                        return;
+                    }
+                }
+            }
+            // If we reach here, the timeout was exceeded.
+            fail("Observer timed out after " + timeout + " " + timeUnit
+                    + " waiting for state: " + expectedState + ". Received values: "
+                    + getReceivedValues());
+        }
+
+        @NonNull
+        public List<T> getReceivedValues() {
+            synchronized (this) {
+                return new ArrayList<>(mReceivedValues);
+            }
+        }
     }
 
     private void changeUseCaseSurface(UseCase useCase) {

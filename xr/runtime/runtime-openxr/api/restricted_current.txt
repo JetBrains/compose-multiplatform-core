@@ -58,12 +58,12 @@ package androidx.xr.runtime.openxr {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector3 getExtents();
+    method public androidx.xr.runtime.math.FloatSize3d getExtents();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     method public void update(long xrTime);
     property public androidx.xr.runtime.AugmentedObjectCategory category;
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector3 extents;
+    property public androidx.xr.runtime.math.FloatSize3d extents;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -137,6 +137,7 @@ package androidx.xr.runtime.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPerceptionManager implements androidx.xr.runtime.internal.PerceptionManager {
+    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.openxr.OpenXrDevice getArDevice();
     method public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();

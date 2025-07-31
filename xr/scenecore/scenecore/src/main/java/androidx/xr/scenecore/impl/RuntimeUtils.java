@@ -157,15 +157,14 @@ final class RuntimeUtils {
             @NonNull EntityManager entityManager) {
         Vector3 origin = getVector3(xrInputEvent.getOrigin());
         Vector3 direction = getVector3(xrInputEvent.getDirection());
-        HitInfo hitInfo = null;
-        HitInfo secondaryHitInfo = null;
+        // TODO: b/431250469 - Handle unregistered hitInfo nodes.
+        HitInfo hitInfo = getHitInfo(xrInputEvent.getHitInfo(), entityManager);
+        HitInfo secondaryHitInfo = getHitInfo(xrInputEvent.getSecondaryHitInfo(), entityManager);
         List<HitInfo> hitInfos = new ArrayList<>();
-        if (xrInputEvent.getHitInfo() != null) {
-            hitInfo = getHitInfo(xrInputEvent.getHitInfo(), entityManager);
+        if (hitInfo != null) {
             hitInfos.add(hitInfo);
         }
-        if (xrInputEvent.getSecondaryHitInfo() != null) {
-            secondaryHitInfo = getHitInfo(xrInputEvent.getSecondaryHitInfo(), entityManager);
+        if (secondaryHitInfo != null) {
             hitInfos.add(secondaryHitInfo);
         }
 

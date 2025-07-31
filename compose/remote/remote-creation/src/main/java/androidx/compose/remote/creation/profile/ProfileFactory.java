@@ -15,7 +15,6 @@
  */
 package androidx.compose.remote.creation.profile;
 
-import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
 import org.jspecify.annotations.NonNull;
@@ -28,16 +27,9 @@ public interface ProfileFactory {
      * @param width original width of the document
      * @param height original height of the document
      * @param contentDescription content description
-     * @param apiLevel api level used by this document
-     * @param profiles operation profiles used by this document
-     * @param platform a valid platform services implementation
+     * @param profile operation profiles used by this document
      * @return a valid RemoteComposeWriter
      */
     @NonNull RemoteComposeWriter create(
-            int width,
-            int height,
-            @NonNull String contentDescription,
-            int apiLevel,
-            int profiles,
-            @NonNull Platform platform);
+            int width, int height, @NonNull String contentDescription, @NonNull Profile profile);
 }

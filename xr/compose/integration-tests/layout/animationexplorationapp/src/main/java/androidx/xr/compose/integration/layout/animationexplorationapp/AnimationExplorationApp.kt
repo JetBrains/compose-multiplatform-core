@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.integration.layout.animationexplorationapp
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +24,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,9 +55,11 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
-import kotlinx.coroutines.launch
 
 class AnimationExplorationApp : ComponentActivity() {
+    private inline fun <reified T : ComponentActivity> startActivity() {
+        startActivity(Intent(this, T::class.java))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +69,7 @@ class AnimationExplorationApp : ComponentActivity() {
             val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp
             val desiredHeight = 150.dp
-            val zOffset = -30.dp
+            val zOffset = (-30).dp
 
             // Main Panel content.
             Box(
@@ -75,7 +79,17 @@ class AnimationExplorationApp : ComponentActivity() {
                         .border(width = 3.dp, color = Color.Black),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = "Main Panel content")
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement =
+                        Arrangement.spacedBy(20.dp, alignment = Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(text = "Main Panel content")
+                    Button(onClick = { startActivity<SampleAnimationsActivity>() }) {
+                        Text("Show sample animations")
+                    }
+                }
             }
 
             // 3D content.
@@ -85,7 +99,16 @@ class AnimationExplorationApp : ComponentActivity() {
                     val mainPanelAnimatedScale = remember { Animatable(1.0f) }
 
                     LaunchedEffect(Unit) {
-                        launch { animatedAlpha.animateTo(1.0f, animationSpec = tween(2000)) }
+                        animatedAlpha.animateTo(1.0f, animationSpec = tween(2000))
+                    }
+                    LaunchedEffect(showSidePanel) {
+                        if (showSidePanel) {
+                            mainPanelAnimatedScale.animateTo(0.01f, animationSpec = tween(10))
+                            mainPanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
+                            mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
+                        } else {
+                            mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(500))
+                        }
                     }
 
                     SpatialMainPanel(
@@ -115,14 +138,7 @@ class AnimationExplorationApp : ComponentActivity() {
 
                     if (showSidePanel) {
                         val sidePanelAnimatedScale = remember { Animatable(0.01f) }
-
-                        LaunchedEffect(Unit) {
-                            mainPanelAnimatedScale.animateTo(0.01f, animationSpec = tween(10))
-                            mainPanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
-                            mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
-                        }
-
-                        LaunchedEffect(Unit) {
+                        LaunchedEffect(true) {
                             sidePanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
                             sidePanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
                         }

@@ -101,8 +101,8 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
          * @param path The Path of the preprocessed `.zip` skybox file to be loaded, relative to the
          *   application's `assets/` folder.
          * @return a [ExrImage] upon completion.
-         *     @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method
-         *       requires a relative path, or if the path does not specify a `.zip` file.
+         * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
+         *   relative path, or if the path does not specify a `.zip` file.
          */
         @MainThread
         @JvmStatic
@@ -126,7 +126,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
          * @param session The [Session] to use for loading the asset.
          * @param uri The Uri of the preprocessed `.zip` skybox file to be loaded.
          * @return a [ExrImage] upon completion.
-         *     @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
+         * @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
          */
         @MainThread
         @JvmStatic

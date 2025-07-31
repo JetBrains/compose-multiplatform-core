@@ -93,6 +93,7 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
      * add a matrix restore operation to the buffer
      *
      * @param buffer the buffer to add to
+     * @param bitmapId the id of the bitmap to draw to
      * @param mode
      * @param color
      */

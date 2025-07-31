@@ -405,7 +405,7 @@ constructor(
              *   [SessionResultGooglePlayServicesLocationLibraryNotLinked]
              * - Request and be granted the
              *   [ACCESS_FINE_LOCATION permission](https://developer.android.com/training/location/permissions);
-             *   otherwise, [Session.configure] returns [SessionConfigurePermissionNotGranted]
+             *   otherwise, [Session.configure] throws [SecurityException].
              *
              * Location is tracked only while the [Session] is resumed.
              *

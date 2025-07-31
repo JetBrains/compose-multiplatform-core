@@ -15,6 +15,7 @@ plugins {
 
 android {
     namespace = "androidx.webkit.instrumentation"
+    compileSdk = 35
 
     flavorDimensions = ["targetSdk"]
 

@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.platform
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
@@ -35,13 +36,14 @@ import androidx.xr.runtime.Session
  *
  * @param parentCompositionContext the optional composition context when this is a sub-composition
  * @param rootEntity the optional [CoreEntity] to associate with the root of this composition
- * @property ownerActivity the [ComponentActivity] that owns this scene.
+ * @property lifecycleOwner the [ComponentActivity] that owns this scene.
  * @property jxrSession the [Session] used to interact with SceneCore.
  */
 internal class SpatialComposeScene(
     /** Context of the activity that this scene is rooted on. */
-    public val ownerActivity: ComponentActivity,
-    @InternalSubspaceApi public val jxrSession: Session,
+    val lifecycleOwner: LifecycleOwner,
+    val context: Context,
+    @InternalSubspaceApi val jxrSession: Session,
     parentCompositionContext: CompositionContext? = null,
     rootEntity: CoreEntity? = null,
 ) : DefaultLifecycleObserver, LifecycleOwner {
@@ -53,21 +55,21 @@ internal class SpatialComposeScene(
     internal val rootElement: SpatialComposeElement =
         SpatialComposeElement(this, parentCompositionContext, rootEntity)
 
-    public var rootVolumeConstraints: VolumeConstraints
+    var rootVolumeConstraints: VolumeConstraints
         get() = rootElement.rootVolumeConstraints
         set(value) {
             rootElement.rootVolumeConstraints = value
         }
 
-    public fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
+    fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         rootElement.setContent(content)
     }
 
-    public fun dispose() {
+    fun dispose() {
         rootElement.disposeComposition()
         SceneManager.onSceneDisposed(this)
     }
 
     override val lifecycle: Lifecycle
-        get() = ownerActivity.lifecycle
+        get() = lifecycleOwner.lifecycle
 }

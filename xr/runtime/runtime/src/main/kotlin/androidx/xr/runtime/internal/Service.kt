@@ -41,6 +41,9 @@ public class Feature private constructor(private val value: Int) {
 
         /** The device supports Android XR Spatial APIs. */
         @JvmField public val SPATIAL: Feature = Feature(2)
+
+        /** The device supports Android XR Projected APIs. */
+        @JvmField public val PROJECTED: Feature = Feature(3)
     }
 
     override fun toString(): String =
@@ -48,6 +51,7 @@ public class Feature private constructor(private val value: Int) {
             FULLSTACK -> "FULLSTACK"
             OPEN_XR -> "OPEN_XR"
             SPATIAL -> "SPATIAL"
+            PROJECTED -> "PROJECTED"
             else -> "UNKNOWN"
         }
 }

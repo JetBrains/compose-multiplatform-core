@@ -9,6 +9,7 @@
     <string name="media_player_panel_test">CUJ: Media Player Panel Test</string>
     <string name="enable_permission_dialog_test">Dialog Permissions test case</string>
     <string name="value_based_animation_test">Animation Exploration test case</string>
+    <string name="sample_animations_test">Sample Animations test case</string>
     <string name="curve_panel_row_test">Curved Row test case</string>
     <string name="movable_panels_test">Movable Modifier test case</string>
     <string name="movable_scalable_panel_test">Movable Scaling With Depth test case</string>

@@ -43,6 +43,7 @@ import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.material3.PagerScaffoldDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.VerticalPageIndicator
 import androidx.wear.compose.material3.VerticalPagerScaffold
 import androidx.wear.compose.material3.samples.HorizontalPageIndicatorWithPagerSample
 import androidx.wear.compose.material3.samples.VerticalPageIndicatorWithPagerSample
@@ -59,6 +60,9 @@ val PageIndicatorDemos =
             HorizontalPageIndicatorWhiteBackgroundDemo(it.navigateBack)
         },
         ComposableDemo("Vertical Page Indicator") { VerticalPageIndicatorWithPagerSample() },
+        ComposableDemo("Vertical Page without Scaffold") {
+            VerticalPageIndicatorWithoutPagerScaffoldDemo()
+        },
         ComposableDemo("Vertical pager on left") { VerticalPageIndicatorWithPagerOnLeftDemo() },
     )
 
@@ -94,7 +98,10 @@ fun HorizontalPageIndicatorWhiteBackgroundDemo(navigateBack: () -> Unit) {
         HorizontalPager(state = pagerState) { page ->
             DemoPageContent(page, Color.Black, navigateBack)
         }
-        HorizontalPageIndicator(pagerState = pagerState)
+        HorizontalPageIndicator(
+            pagerState = pagerState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
@@ -116,6 +123,32 @@ fun VerticalPageIndicatorWithPagerOnLeftDemo() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun VerticalPageIndicatorWithoutPagerScaffoldDemo() {
+    val pageCount = 9
+    val pagerState = rememberPagerState { pageCount }
+
+    Box {
+        VerticalPager(
+            state = pagerState,
+            flingBehavior = PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+        ) { page ->
+            AnimatedPage(pageIndex = page, pagerState = pagerState) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(text = "Page #$page")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Swipe up and down")
+                }
+            }
+        }
+        VerticalPageIndicator(pagerState = pagerState, Modifier.align(Alignment.CenterEnd))
     }
 }
 

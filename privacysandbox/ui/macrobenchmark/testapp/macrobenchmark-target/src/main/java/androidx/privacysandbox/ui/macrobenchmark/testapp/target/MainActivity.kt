@@ -40,10 +40,12 @@ import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxProcessDeathCallbackCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.ui.macrobenchmark.testapp.inappmediateeadaptersdk.InAppMediateeAdapter
+import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.FragmentOptions
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.MediationOption
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.util.DisabledItemsArrayAdapter
+import androidx.privacysandbox.ui.macrobenchmark.testapp.target.util.FragmentFactory
 import androidx.privacysandbox.ui.macrobenchmark.testapp.testsdkprovider.ISdkApi
 import androidx.privacysandbox.ui.macrobenchmark.testapp.testsdkprovider.ISdkApiFactory
 import com.google.android.material.navigation.NavigationView
@@ -143,7 +145,11 @@ class MainActivity : AppCompatActivity() {
                 val extras = intent.extras
                 if (extras != null) {
                     val fragmentOptions = FragmentOptions.createFromIntentExtras(extras)
-                    val fragment = fragmentOptions.getFragment()
+                    val fragment =
+                        FragmentFactory.createFragment(
+                            uiFramework = fragmentOptions.uiFramework,
+                            cujType = fragmentOptions.cujType,
+                        )
                     fragment.handleOptionsFromIntent(fragmentOptions)
                     switchContentFragment(fragment, "Automated CUJ")
                 } else {

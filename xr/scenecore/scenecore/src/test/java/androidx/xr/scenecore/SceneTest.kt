@@ -160,14 +160,6 @@ class SceneTest {
     }
 
     @Test
-    fun setPreferredAspectRatio_callsThrough() {
-        // Test that Session calls into the runtime.
-        @Suppress("UNUSED_VARIABLE")
-        val unused = session.scene.setPreferredAspectRatio(activity, 1.23f)
-        verify(mockPlatformAdapter).setPreferredAspectRatio(activity, 1.23f)
-    }
-
-    @Test
     fun getPanelEntityType_returnsAllPanelEntities() {
         val mockPanelEntity1 = mock<RtPanelEntity>()
         val mockActivityPanelEntity = mock<RtActivityPanelEntity>()

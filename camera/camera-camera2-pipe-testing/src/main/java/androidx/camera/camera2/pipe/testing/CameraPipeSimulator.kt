@@ -26,7 +26,6 @@ import androidx.camera.camera2.pipe.CameraPipe.CameraBackendConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.FrameGraph
-import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -50,12 +49,16 @@ private constructor(
     private val closed = atomic(false)
     private val _cameraGraphs = mutableListOf<CameraGraphSimulator>()
     private val _frameGraphs = mutableListOf<FrameGraphSimulator>()
+    private val _isConfigSupportedHistory = mutableListOf<CameraGraph.Config>()
 
     public val cameraGraphs: List<CameraGraphSimulator>
         get() = _cameraGraphs
 
     public val frameGraphs: List<FrameGraphSimulator>
         get() = _frameGraphs
+
+    public val isConfigSupportedHistory: List<CameraGraph.Config>
+        get() = _isConfigSupportedHistory
 
     @Deprecated(
         "Use createCameraGraph instead.",
@@ -107,13 +110,13 @@ private constructor(
     override fun cameraSurfaceManager(): CameraSurfaceManager =
         cameraPipeInternal.cameraSurfaceManager()
 
-    override suspend fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult =
-        cameraPipeInternal.isConfigSupported(graphConfig)
+    override suspend fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult {
+        _isConfigSupportedHistory.add(graphConfig)
+        return cameraPipeInternal.isConfigSupported(graphConfig)
+    }
 
-    override suspend fun prewarmGraphConfigQuery(
-        graphConfig: CameraGraph.Config
-    ): CameraDeviceSetupCompat? {
-        return cameraPipeInternal.prewarmGraphConfigQuery(graphConfig)
+    override fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config) {
+        cameraPipeInternal.prewarmIsConfigSupported(graphConfig)
     }
 
     override var globalAudioRestrictionMode: AudioRestrictionMode

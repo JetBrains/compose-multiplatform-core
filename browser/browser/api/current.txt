@@ -139,7 +139,7 @@ package androidx.browser.customtabs {
     method public android.content.Intent getIntent();
     method public String? getLinkText();
     method public String? getLinkUrl();
-    method public android.net.Uri getPageUrl();
+    method public android.net.Uri? getPageUrl();
     method public int getTriggeredActionId();
   }
 

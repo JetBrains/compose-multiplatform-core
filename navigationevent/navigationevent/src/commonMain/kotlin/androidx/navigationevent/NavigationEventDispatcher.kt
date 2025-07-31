@@ -21,66 +21,185 @@ import androidx.navigationevent.NavigationEventPriority.Companion.Default
 import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
 
 /**
- * Dispatcher that can be used to register [NavigationEventCallback] instances for handling the
- * in-app callbacks via composition.
+ * A dispatcher for navigation events that can be organized hierarchically.
+ *
+ * This class acts as a localized entry point for registering [NavigationEventCallback] instances
+ * and dispatching navigation events within a specific UI scope, such as a composable or a fragment.
+ *
+ * Dispatchers can be linked in a parent-child hierarchy. This structure allows for a sophisticated
+ * system where nested UI components can handle navigation events independently while still
+ * respecting the state of their parent. The core logic is delegated to a single, shared
+ * [NavigationEventProcessor] instance across the entire hierarchy, ensuring consistent event
+ * handling.
+ *
+ * It is important to call [dispose] when the owner of this dispatcher is destroyed (e.g., in a
+ * `DisposableEffect`) to unregister callbacks and prevent memory leaks.
  */
-public class NavigationEventDispatcher(
-    private val fallbackOnBackPressed: (() -> Unit)? = null,
-    private val onHasEnabledCallbacksChanged: ((Boolean) -> Unit)? = null,
+public class NavigationEventDispatcher
+/**
+ * The primary, internal constructor for `NavigationEventDispatcher`.
+ *
+ * All public constructors delegate to this one to perform the actual initialization.
+ *
+ * @param parentDispatcher An optional reference to a parent [NavigationEventDispatcher]. Providing
+ *   a parent allows this dispatcher to participate in a hierarchical event system, sharing the same
+ *   underlying [NavigationEventProcessor] as its parent. If `null`, this dispatcher acts as the
+ *   root of its own event handling hierarchy.
+ * @param fallbackOnBackPressed An optional lambda to be invoked if a navigation event completes and
+ *   no registered [NavigationEventCallback] handles it. This provides a default "back" action.
+ * @param onHasEnabledCallbacksChanged An optional lambda that will be called whenever the global
+ *   state of whether there are any enabled callback changes.
+ */
+private constructor(
+    private var parentDispatcher: NavigationEventDispatcher?,
+    private val fallbackOnBackPressed: (() -> Unit)?,
+    private val onHasEnabledCallbacksChanged: ((Boolean) -> Unit)?,
 ) {
 
     /**
-     * A list of callbacks for a navigation event that is currently in progress.
+     * Creates a **root** `NavigationEventDispatcher`.
      *
-     * Callbacks in this list have the highest dispatch priority, ensuring that terminal events
-     * (like [dispatchOnCompleted] or [dispatchOnCancelled]) are delivered only to the participants
-     * of the active navigation. The list is cleared after the event is terminated.
+     * This constructor is used to establish the top-level dispatcher for a new navigation
+     * hierarchy, typically within a scope like an `Activity` or a top-level composable. It creates
+     * its own internal [NavigationEventProcessor].
      *
-     * Notably, if a callback is removed while in this list, it is implicitly treated as a terminal
-     * event and receives an [dispatchOnCancelled] call before being removed.
+     * @param fallbackOnBackPressed An optional lambda to be invoked if a navigation event completes
+     *   and no registered [NavigationEventCallback] handles it. This provides a default "back"
+     *   action for the entire hierarchy.
+     * @param onHasEnabledCallbacksChanged An optional lambda that will be called whenever the
+     *   global state of whether there are any enabled callbacks changes.
      */
-    private val inProgressCallbacks: MutableList<NavigationEventCallback> = mutableListOf()
-
-    /** Callbacks that should be processed with higher priority, before [normalCallbacks]. */
-    private val overlayCallbacks = ArrayDeque<NavigationEventCallback>()
-
-    /** Standard or default callbacks for navigation events. */
-    private val normalCallbacks = ArrayDeque<NavigationEventCallback>()
+    public constructor(
+        fallbackOnBackPressed: (() -> Unit)? = null,
+        onHasEnabledCallbacksChanged: ((Boolean) -> Unit)? = null,
+    ) : this(
+        parentDispatcher = null,
+        fallbackOnBackPressed = fallbackOnBackPressed,
+        onHasEnabledCallbacksChanged = onHasEnabledCallbacksChanged,
+    )
 
     /**
-     * Returns `true` if there is at least one enabled callback registered with this dispatcher. The
-     * dispatcher itself is excluded.
+     * Creates a **child** `NavigationEventDispatcher` linked to a parent.
+     *
+     * This constructor is used to create nested dispatchers within an existing hierarchy. The new
+     * dispatcher will share the same underlying [NavigationEventProcessor] as its parent, allowing
+     * it to participate in the same event stream.
+     *
+     * @param parentDispatcher The parent `NavigationEventDispatcher` to which this new dispatcher
+     *   will be attached.
      */
-    private var hasEnabledCallbacks: Boolean = false
+    public constructor(
+        parentDispatcher: NavigationEventDispatcher
+    ) : this(
+        parentDispatcher = parentDispatcher,
+        fallbackOnBackPressed = null,
+        onHasEnabledCallbacksChanged = null,
+    )
+
+    /**
+     * Returns `true` if this dispatcher is in a terminal state and can no longer be used.
+     *
+     * A dispatcher is considered disposed if it has been explicitly disposed or if its
+     * [parentDispatcher] has been disposed. This state is checked by [checkInvariants] to prevent
+     * use-after-dispose errors.
+     */
+    internal var isDisposed: Boolean = false
+        get() = if (parentDispatcher?.isDisposed == true) true else field
+        private set // The setter is private and should only be modified by the dispose() method.
+
+    /**
+     * Controls whether this dispatcher is active and will process navigation events.
+     *
+     * A dispatcher's effective enabled state is hierarchical. It depends on both its own local
+     * `isEnabled` state and the state of its parent.
+     *
+     * **Getting the value**:
+     * - This will return `false` if the `parentDispatcher` exists and its `isEnabled` state is
+     *   `false`, regardless of this dispatcher's own setting. This provides a simple way to disable
+     *   an entire branch of a navigation hierarchy by disabling its root.
+     * - If there is no parent or the parent is enabled, it will return the local value of this
+     *   property (`true` by default).
+     *
+     * **Setting the value**:
+     * - This only updates the local enabled state for this specific dispatcher. The getter will
+     *   always re-evaluate the effective state based on the parent.
+     *
+     * For this dispatcher to be truly active, its local `isEnabled` property must be `true`, and
+     * the `isEnabled` properties of all its ancestors must also be `true`.
+     */
+    public var isEnabled: Boolean = true
+        get() = if (parentDispatcher?.isEnabled == false) false else field
         set(value) {
-            val oldValue = field
+            checkInvariants()
+
+            // Only proceed if the enabled state is actually changing to avoid redundant work.
+            if (field == value) return
+
             field = value
-            if (oldValue != value) {
-                for (callback in onHasEnabledCallbacksChangedCallbacks) {
-                    callback.invoke(value)
-                }
-            }
+            updateEnabledCallbacks()
         }
 
-    private val onHasEnabledCallbacksChangedCallbacks: MutableList<((Boolean) -> Unit)> =
+    /**
+     * The internal, shared [NavigationEventProcessor] responsible for managing all registered
+     * [NavigationEventCallback]s and orchestrating event dispatching.
+     *
+     * This processor ensures consistent ordering and state for all navigation events across the
+     * application's hierarchy. It is initialized in one of two ways:
+     * - If a [parentDispatcher] is provided, this dispatcher will share its parent's processor,
+     *   allowing for a hierarchical event handling structure where child dispatchers defer to their
+     *   parents for core event management.
+     * - If no [parentDispatcher] is provided (i.e., this is a root dispatcher), a new
+     *   [NavigationEventProcessor] instance is created, becoming the root of its own event handling
+     *   tree.
+     */
+    internal val sharedProcessor: NavigationEventProcessor =
+        parentDispatcher?.sharedProcessor ?: NavigationEventProcessor()
+
+    /**
+     * A collection of child [NavigationEventDispatcher] instances that have registered with this
+     * dispatcher.
+     *
+     * This set helps establish and maintain the hierarchical structure of dispatchers, allowing
+     * parent dispatchers to be aware of their direct children.
+     *
+     * **This is primarily for cleanup when this dispatcher is no longer needed.**
+     */
+    internal val childDispatchers = mutableSetOf<NavigationEventDispatcher>()
+
+    /**
+     * A set of [NavigationEventCallback] instances directly registered with *this specific*
+     * [NavigationEventDispatcher] instance.
+     *
+     * While the actual event processing and global callback management happen in the
+     * [sharedProcessor], this set provides a localized record of callbacks owned by this particular
+     * dispatcher.
+     *
+     * **This is primarily for cleanup when this dispatcher is no longer needed.**
+     */
+    private val callbacks = mutableSetOf<NavigationEventCallback>()
+
+    init {
+        // If a parent dispatcher is provided, register this dispatcher as its child.
+        // This establishes the hierarchical relationship and ensures the parent is aware
+        // of its direct descendants for proper event propagation and cleanup.
+        parentDispatcher?.childDispatchers += this
+
+        // If a lambda for changes in enabled callbacks is provided, register it with the
+        // shared processor. This allows this specific dispatcher instance (or its consumers)
+        // to be notified of global changes in the callback enablement state.
         if (onHasEnabledCallbacksChanged != null) {
-            mutableListOf(onHasEnabledCallbacksChanged)
-        } else {
-            mutableListOf()
+            sharedProcessor.addOnHasEnabledCallbacksChangedCallback(onHasEnabledCallbacksChanged)
         }
-
-    internal fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
-        onHasEnabledCallbacksChangedCallbacks += callback
     }
 
     /**
-     * Recomputes and updates the current [hasEnabledCallbacks] state based on the enabled status of
-     * all registered callbacks.
+     * Adds a callback that will be notified when the overall enabled state of registered callbacks
+     * changes.
+     *
+     * @param callback The callback to invoke when the enabled state changes.
      */
-    internal fun updateEnabledCallbacks() {
-        // `any` and `||` are both efficient as they short-circuit on the first `true` result.
-        this.hasEnabledCallbacks =
-            overlayCallbacks.any { it.isEnabled } || normalCallbacks.any { it.isEnabled }
+    internal fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
+        sharedProcessor.addOnHasEnabledCallbacksChangedCallback(callback)
     }
 
     /**
@@ -89,7 +208,16 @@ public class NavigationEventDispatcher(
      *
      * @return True if there is at least one enabled callback.
      */
-    public fun hasEnabledCallbacks(): Boolean = hasEnabledCallbacks
+    public fun hasEnabledCallbacks(): Boolean = sharedProcessor.hasEnabledCallbacks()
+
+    /**
+     * Recomputes and updates the current [hasEnabledCallbacks] state based on the enabled status of
+     * all registered callbacks. This method should be called whenever a callback's enabled state or
+     * its registration status (added/removed) changes.
+     */
+    internal fun updateEnabledCallbacks() {
+        sharedProcessor.updateEnabledCallbacks()
+    }
 
     /**
      * Adds a new [NavigationEventCallback] to receive navigation events.
@@ -106,6 +234,7 @@ public class NavigationEventDispatcher(
      *   others. See [NavigationEventPriority].
      * @throws IllegalArgumentException if the given callback is already registered with a different
      *   dispatcher.
+     * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @Suppress("PairedRegistration") // Callback is removed via `NavigationEventCallback.remove()`
     @MainThread
@@ -113,151 +242,147 @@ public class NavigationEventDispatcher(
         callback: NavigationEventCallback,
         priority: NavigationEventPriority = Default,
     ) {
-        require(callback.dispatcher == null) {
-            "Callback '$callback' is already registered with a dispatcher"
-        }
-        when (priority) {
-            Overlay -> overlayCallbacks.addFirst(callback)
-            Default -> normalCallbacks.addFirst(callback)
-        }
+        checkInvariants()
 
-        callback.dispatcher = this
-
-        updateEnabledCallbacks()
+        sharedProcessor.addCallback(dispatcher = this, callback, priority)
+        callbacks += callback
     }
 
     internal fun removeCallback(callback: NavigationEventCallback) {
-        // If the callback is currently being processed (i.e., it's in `inProgressCallbacks`),
-        // it needs to be notified of cancellation and then removed from the in-progress tracking.
-        if (callback in inProgressCallbacks) {
-            callback.onEventCancelled()
-            inProgressCallbacks -= callback
-        }
-
-        // Attempt to remove the callback from both overlay and normal callback lists.
-        // It's okay if the callback is not present.
-        overlayCallbacks.remove(callback)
-        normalCallbacks.remove(callback)
-
-        callback.dispatcher = null
-
-        updateEnabledCallbacks()
+        sharedProcessor.removeCallback(callback)
+        callbacks -= callback
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventStarted] event with the given event to the proper
-     * callbacks
+     * Dispatch an [NavigationEventCallback.onEventStarted] event with the given event. This call is
+     * delegated to the shared [NavigationEventProcessor].
      *
      * @param event [NavigationEvent] to dispatch to the callbacks.
+     * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
     public fun dispatchOnStarted(event: NavigationEvent) {
-        if (inProgressCallbacks.isNotEmpty()) {
-            // It's important to ensure that any ongoing operations from previous events are
-            // properly cancelled before starting new ones to maintain a consistent state.
-            dispatchOnCancelled()
-        }
+        checkInvariants()
 
-        for (callback in getEnabledCallbacksForDispatching()) {
-            // Add callback to `inProgressCallbacks` *before* execution. This ensures `onCancelled`
-            // can be called even if the callback removes itself during `onEventStarted`.
-            inProgressCallbacks += callback
-            callback.onEventStarted(event)
-        }
+        if (!isEnabled) return
+        sharedProcessor.dispatchOnStarted(event)
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventProgressed] event with the given event to the
-     * proper callbacks
+     * Dispatch an [NavigationEventCallback.onEventProgressed] event with the given event. This call
+     * is delegated to the shared [NavigationEventProcessor].
      *
      * @param event [NavigationEvent] to dispatch to the callbacks.
+     * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
     public fun dispatchOnProgressed(event: NavigationEvent) {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
-        // Do not clear in-progress, as `progressed` is not a terminal event.
+        checkInvariants()
 
-        for (callback in callbacks) {
-            callback.onEventProgressed(event)
-        }
+        if (!isEnabled) return
+        sharedProcessor.dispatchOnProgressed(event)
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventCompleted] event with the given event to the
-     * proper callbacks
+     * Dispatch an [NavigationEventCallback.onEventCompleted] event. This call is delegated to the
+     * shared [NavigationEventProcessor], passing the fallback action.
+     *
+     * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
     public fun dispatchOnCompleted() {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
-        inProgressCallbacks.clear() // Clear in-progress, as 'completed' is a terminal event.
+        checkInvariants()
 
-        if (callbacks.isEmpty()) {
-            fallbackOnBackPressed?.invoke()
-        } else {
-            for (callback in callbacks) {
-                callback.onEventCompleted()
-            }
-        }
+        if (!isEnabled) return
+        sharedProcessor.dispatchOnCompleted(fallbackOnBackPressed)
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventCancelled] event with the given event to the
-     * proper callbacks
+     * Dispatch an [NavigationEventCallback.onEventCancelled] event. This call is delegated to the
+     * shared [NavigationEventProcessor].
+     *
+     * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
     public fun dispatchOnCancelled() {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
-        inProgressCallbacks.clear() // Clear in-progress, as 'cancelled' is a terminal event.
+        checkInvariants()
 
-        for (callback in callbacks) {
-            callback.onEventCancelled()
+        if (!isEnabled) return
+        sharedProcessor.dispatchOnCancelled()
+    }
+
+    /**
+     * Removes this dispatcher and its entire chain of descendants from the hierarchy.
+     *
+     * This is the primary cleanup method and should be called when the component owning this
+     * dispatcher is destroyed (e.g., in `DisposableEffect` in Compose).
+     *
+     * This is a **terminal** operation; once a dispatcher is disposed, it cannot be reused.
+     *
+     * Calling this method triggers a comprehensive, iterative cleanup:
+     * 1. It unregisters this dispatcher's [onHasEnabledCallbacksChanged] listener from the shared
+     *    processor.
+     * 2. It iteratively processes and disposes of all child dispatchers and their descendants,
+     *    ensuring a complete top-down cleanup of the entire sub-hierarchy without recursion.
+     * 3. It removes all [NavigationEventCallback] instances directly registered with *this
+     *    specific* dispatcher from the shared [NavigationEventProcessor], preventing memory leaks
+     *    and ensuring callbacks are no longer active.
+     * 4. Finally, it removes itself from its parent's list of children, if a parent exists.
+     *
+     * @throws IllegalStateException if the dispatcher has already been disposed.
+     */
+    @MainThread
+    public fun dispose() {
+        checkInvariants()
+        isDisposed = true // Set immediately to block potential re-entrant calls.
+
+        if (onHasEnabledCallbacksChanged != null) {
+            sharedProcessor.removeOnHasEnabledCallbacksChangedCallback(onHasEnabledCallbacksChanged)
+        }
+
+        // Iteratively dispose of all child dispatchers and their sub-hierarchies. We use a mutable
+        // list as a work queue to process dispatchers.
+        val dispatchersToDispose = ArrayDeque<NavigationEventDispatcher>()
+        dispatchersToDispose += this // Start the queue with 'this' dispatcher itself.
+
+        while (dispatchersToDispose.isNotEmpty()) {
+            val currentDispatcher = dispatchersToDispose.removeFirst()
+
+            // Set immediately to prevent changes (like adding new children) while we tear it down.
+            currentDispatcher.isDisposed = true
+
+            // Add 'currentDispatcher's children to the queue before processing 'currentDispatcher's
+            // own cleanup. This ensures a complete traversal of the sub-hierarchy.
+            dispatchersToDispose += currentDispatcher.childDispatchers
+
+            // Remove callbacks directly owned by the currentDispatcher from the shared processor.
+            for (callback in currentDispatcher.callbacks.toList()) {
+                // Always use the public API for removal. This ensures the component's internal
+                // state is handled correctly and prevents unexpected behavior.
+                callback.remove()
+            }
+            currentDispatcher.callbacks.clear() // Clear local tracking for currentDispatcher
+
+            // Clear the currentDispatcher's local tracking of its children, as they are either
+            // added to the queue or have been processed.
+            currentDispatcher.childDispatchers.clear()
+
+            // Remove the currentDispatcher from its parent's list of children.
+            // This step breaks upward references in the hierarchy.
+            currentDispatcher.parentDispatcher?.childDispatchers?.remove(currentDispatcher)
+            currentDispatcher.parentDispatcher = null // Clear local parent reference
         }
     }
 
     /**
-     * Builds the prioritized list of callbacks for event dispatch.
+     * Checks that the dispatcher has not already been disposed, guarding against use-after-dispose
+     * errors or double-disposal.
      *
-     * Callbacks are added in a strict priority order: [overlayCallbacks] first, then
-     * [normalCallbacks]. The process stops if a callback has
-     * [NavigationEventCallback.isPassThrough] is `false`, allowing it to "consume" the event and
-     * prevent further propagation.
-     *
-     * **Performance Considerations:** This method avoids unnecessary allocations by iterating
-     * directly over the source collections. The early exit on a non-pass-through callback ensures
-     * that only the relevant callbacks are included in the final result.
-     *
-     * @return The list of callbacks to dispatch to, truncated at the first consuming callback.
+     * @throws IllegalStateException if [isDisposed] is true.
      */
-    private fun getEnabledCallbacksForDispatching(): List<NavigationEventCallback> {
-        val callbacksForDispatching = mutableListOf<NavigationEventCallback>()
-
-        // Process higher-priority overlay callbacks first.
-        for (callback in overlayCallbacks) {
-            if (callback.isEnabled) {
-                callbacksForDispatching += callback
-                // This callback consumes the event, so we stop here.
-                if (!callback.isPassThrough) {
-                    return callbacksForDispatching
-                }
-            }
+    private fun checkInvariants() {
+        check(!isDisposed) {
+            "This NavigationEventDispatcher has already been disposed and cannot be used."
         }
-
-        // Then, process normal priority callbacks.
-        for (callback in normalCallbacks) {
-            if (callback.isEnabled) {
-                callbacksForDispatching += callback
-                if (!callback.isPassThrough) {
-                    return callbacksForDispatching
-                }
-            }
-        }
-
-        return callbacksForDispatching
     }
 }

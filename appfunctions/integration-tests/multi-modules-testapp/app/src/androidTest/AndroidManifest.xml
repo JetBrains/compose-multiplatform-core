@@ -14,11 +14,13 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <application
         android:name="androidx.appfunctions.integration.tests.TestApplication"
         android:supportsRtl="true">
-
+        <provider
+            android:name="androidx.appfunctions.integration.tests.TestContentProvider"
+            android:authorities="androidx.appfunctions.integration.tests.provider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
-
 </manifest>

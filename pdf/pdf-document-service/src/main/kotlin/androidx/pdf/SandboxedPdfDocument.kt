@@ -42,6 +42,7 @@ import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
+import java.util.Collections
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -86,6 +87,12 @@ public class SandboxedPdfDocument(
     override val isLinearized: Boolean,
     override val formType: Int,
 ) : PdfDocument {
+
+    public override val formEditRecords: List<FormEditRecord>
+        get() = _formEditRecords.toList()
+
+    private val _formEditRecords: MutableList<FormEditRecord> =
+        Collections.synchronizedList(mutableListOf<FormEditRecord>())
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
@@ -220,7 +227,11 @@ public class SandboxedPdfDocument(
     }
 
     override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        return withDocument { document -> document.applyEdit(pageNum, record.toAndroidClass()) }
+        val invalidatedAreas = withDocument { document ->
+            document.applyEdit(pageNum, record.toAndroidClass())
+        }
+        _formEditRecords.add(record)
+        return invalidatedAreas
     }
 
     override suspend fun write(destination: ParcelFileDescriptor) {

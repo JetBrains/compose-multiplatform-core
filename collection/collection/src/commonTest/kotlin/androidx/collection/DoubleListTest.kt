@@ -96,7 +96,7 @@ class DoubleListTest {
     fun joinToString() {
         assertEquals("${1.0}, ${2.0}, ${3.0}, ${4.0}, ${5.0}", list.joinToString())
         assertEquals(
-            "x${1.0}, ${2.0}, ${3.0}...",
+            "x${1.0}, ${2.0}, ${3.0}, ...y",
             list.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -104,7 +104,7 @@ class DoubleListTest {
             list.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it.toInt()) {
                     1 -> "one"

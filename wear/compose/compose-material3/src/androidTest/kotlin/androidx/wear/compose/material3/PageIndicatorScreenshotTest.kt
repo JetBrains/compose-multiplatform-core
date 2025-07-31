@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -224,7 +225,10 @@ class PageIndicatorScreenshotTest {
         selectedPageIndex: Int,
     ) {
         ScreenConfiguration(screenSize.size, isRound = true) {
-            Box(modifier = Modifier.testTag(TEST_TAG).fillMaxSize().background(Color.White)) {
+            Box(
+                modifier = Modifier.testTag(TEST_TAG).fillMaxSize().background(Color.White),
+                contentAlignment = if (isHorizontal) Alignment.BottomCenter else Alignment.CenterEnd,
+            ) {
                 val pagerState =
                     PagerState(
                         currentPage = selectedPageIndex,

@@ -422,21 +422,23 @@ public sealed class OrderedScatterSet<E> {
         transform: ((E) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@OrderedScatterSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@OrderedScatterSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(element)
+                } else {
+                    append(transform(element))
+                }
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(element)
-            } else {
-                append(transform(element))
-            }
-            index++
         }
         append(postfix)
     }

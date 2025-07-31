@@ -21,26 +21,27 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifierNode
-import androidx.xr.compose.subspace.node.LayoutCoordinatesAwareModifierNode
+import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.currentValueOf
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.scenecore.Entity
+import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.ResizeListener
+import androidx.xr.scenecore.ResizeEvent
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 
 /**
  * When the resizable modifier is present and enabled, draggable UI controls will be shown that
- * allow the user to resize the element in 3D space. This feature is only available for
- * [SpatialPanels] at the moment.
+ * allow the user to resize the element in 3D space. This feature is only available for instances of
+ * [SpatialPanel][androidx.xr.compose.subspace.SpatialPanel] at the moment.
  *
  * @param enabled true if this composable should be resizable.
  * @param minimumSize the smallest allowed dimensions for this composable.
@@ -128,8 +129,7 @@ internal class ResizableNode(
     SubspaceModifier.Node(),
     CompositionLocalConsumerSubspaceModifierNode,
     CoreEntityNode,
-    LayoutCoordinatesAwareModifierNode,
-    ResizeListener {
+    SubspaceLayoutModifierNode {
     private inline val density: Density
         get() = currentValueOf(LocalDensity)
 
@@ -139,11 +139,17 @@ internal class ResizableNode(
     /** Size based on user adjustments from ResizeEvents from SceneCore. */
     private var userSize: IntVolumeSize? = null
 
+    /** Size based on measurement of the content without user adjustments. */
+    private var originalSize: IntVolumeSize = IntVolumeSize.Zero
+
     /** Whether the resizableComponent is attached to the entity. */
     private var isComponentAttached: Boolean = false
 
     private val component: ResizableComponent by lazy {
-        ResizableComponent.create(session).also { it.addResizeListener(MainExecutor, this) }
+        ResizableComponent.create(session = session, executor = MainExecutor) {
+            resizeEvent: ResizeEvent ->
+            handleResizeEvent(resizeEvent)
+        }
     }
 
     /** Updates the resizable state of this CoreEntity. */
@@ -169,13 +175,13 @@ internal class ResizableNode(
         }
 
         minimumSize.toDimensionsInMeters().let {
-            if (component.minimumSize != it) {
-                component.minimumSize = it
+            if (component.minimumEntitySize != it) {
+                component.minimumEntitySize = it
             }
         }
         maximumSize.toDimensionsInMeters().let {
-            if (component.maximumSize != it) {
-                component.maximumSize = it
+            if (component.maximumEntitySize != it) {
+                component.maximumEntitySize = it
             }
         }
     }
@@ -198,17 +204,17 @@ internal class ResizableNode(
         }
     }
 
-    override fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {
-        component.fixedAspectRatio =
-            if (maintainAspectRatio) getAspectRatioY(originalSize) else 0.0f
-    }
-
     /**
      * During a resize, the size of the entity does not change, only its reform window. We do not
-     * need to respond to every event, e.g., onResizeUpdate, like we do for Movable.
+     * need to respond to every event, e.g., RESIZE_STATE_ONGOING, like we do for Movable.
      */
-    override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
-        resizeListener(finalSize)
+    fun handleResizeEvent(resizeEvent: ResizeEvent) {
+        if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_START) {
+            component.fixedAspectRatio =
+                if (maintainAspectRatio) getAspectRatioY(resizeEvent.newSize) else 0.0f
+        } else if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
+            resizeListener(resizeEvent.newSize)
+        }
     }
 
     /**
@@ -216,26 +222,60 @@ internal class ResizableNode(
      * resizable.
      */
     private fun resizeListener(newSize: FloatSize3d) {
-        if (onSizeChange?.invoke(newSize.toIntVolumeSize(density)) == true) {
+        val size = newSize.toIntVolumeSize(density)
+        if (onSizeChange?.invoke(size) == true) {
             // We're done, the user app will handle the event.
             return
         }
-        userSize = newSize.toIntVolumeSize(density)
+        userSize = size
         requestRelayout()
     }
 
-    override fun CoreEntityScope.modifyCoreEntity() {
-        updateState()
-        userSize?.let { setRenderedSize(it) }
-    }
-
-    override fun onLayoutCoordinates(coordinates: SubspaceLayoutCoordinates) {
-        // Update the size of the component to match the final size of the layout.
-        component.size = coordinates.size.toDimensionsInMeters(density)
-    }
+    override fun CoreEntityScope.modifyCoreEntity() {}
 
     override fun onDetach() {
         disableComponent()
+    }
+
+    override fun SubspaceMeasureScope.measure(
+        measurable: SubspaceMeasurable,
+        constraints: VolumeConstraints,
+    ): SubspaceMeasureResult {
+        updateState()
+        val userSize = userSize
+        val placeable =
+            if (userSize == null) {
+                measurable.measure(constraints).also {
+                    originalSize =
+                        IntVolumeSize(it.measuredWidth, it.measuredHeight, it.measuredDepth)
+                }
+            } else {
+                // Measuring this node using userSize as the constraints to force the rendered size.
+                measurable.measure(
+                    VolumeConstraints(
+                        minWidth = userSize.width,
+                        maxWidth = userSize.width,
+                        minHeight = userSize.height,
+                        maxHeight = userSize.height,
+                        minDepth = userSize.depth,
+                        maxDepth = userSize.depth,
+                    )
+                )
+            }
+
+        component.affordanceSize =
+            IntVolumeSize(
+                    placeable.measuredWidth,
+                    placeable.measuredHeight,
+                    placeable.measuredDepth,
+                )
+                .toDimensionsInMeters(Density(density))
+
+        // We use the original size of the component here, before any user changes were made. This
+        // allows us to maintain the same size in the parent layout.
+        return layout(originalSize.width, originalSize.height, originalSize.depth) {
+            placeable.place(Pose.Identity)
+        }
     }
 
     private companion object {

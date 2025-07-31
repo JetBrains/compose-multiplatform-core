@@ -57,23 +57,23 @@ import kotlinx.coroutines.asExecutor
  *   this scaleWithDistance is enabled, the subspace element moved will grow or shrink. It will also
  *   maintain any explicit scale that it had before movement.
  * @param onMoveStart a callback to process the start of a move event. This will only be called if
- *   [enabled] is true. The callback will be called with the [MoveStartEvent] type
+ *   [enabled] is true. The callback will be called with the [SpatialMoveStartEvent] type
  * @param onMoveEnd a callback to process the end of a move event. This will only be called if
- *   [enabled] is true. The callback will be called with the [MoveEndEvent] type
+ *   [enabled] is true. The callback will be called with the [SpatialMoveEndEvent] type
  * @param onMove a callback to process the pose change during movement, with translation in pixels.
  *   This will only be called if [enabled] is true. If the callback returns false the default
  *   behavior of moving this composable's subspace hierarchy will be executed. If it returns true,
  *   it is the responsibility of the callback to process the event. The callback will be called with
- *   the [MoveEvent] type.
- * @see [MoveEvent].
+ *   the [SpatialMoveEvent] type.
+ * @see [SpatialMoveEvent].
  */
 public fun SubspaceModifier.movable(
     enabled: Boolean = true,
     stickyPose: Boolean = false,
     scaleWithDistance: Boolean = true,
-    onMoveStart: ((MoveStartEvent) -> Unit)? = null,
-    onMoveEnd: ((MoveEndEvent) -> Unit)? = null,
-    onMove: ((MoveEvent) -> Boolean)? = null,
+    onMoveStart: ((SpatialMoveStartEvent) -> Unit)? = null,
+    onMoveEnd: ((SpatialMoveEndEvent) -> Unit)? = null,
+    onMove: ((SpatialMoveEvent) -> Boolean)? = null,
 ): SubspaceModifier =
     this.then(
         MovableElement(
@@ -131,14 +131,14 @@ public fun SubspaceModifier.anchorable(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
-public open class MoveEvent(
+public class SpatialMoveEvent(
     public var pose: Pose = Pose.Identity,
     public var scale: Float = 1.0F,
     public var size: IntVolumeSize = IntVolumeSize.Zero,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MoveEvent) return false
+        if (other !is SpatialMoveEvent) return false
         if (pose != other.pose) return false
         if (scale != other.scale) return false
         if (size != other.size) return false
@@ -168,25 +168,32 @@ public open class MoveEvent(
  * @property scale The initial scale of the composable as a result of its motion. This value will
  *   change with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
+ *
  *   composable, factoring in shrinking or stretching due to [scale].
  */
-public class MoveStartEvent(
-    pose: Pose = Pose.Identity,
-    scale: Float = 1.0F,
-    size: IntVolumeSize = IntVolumeSize.Zero,
-) : MoveEvent(pose, scale, size) {
+public class SpatialMoveStartEvent(
+    public val pose: Pose,
+    public val scale: Float,
+    public val size: IntVolumeSize,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MoveStartEvent) return false
-        return super.equals(other)
+        if (other !is SpatialMoveStartEvent) return false
+        if (pose != other.pose) return false
+        if (scale != other.scale) return false
+        if (size != other.size) return false
+        return true
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        var result = pose.hashCode()
+        result = 31 * result + scale.hashCode()
+        result = 31 * result + size.hashCode()
+        return result
     }
 
     override fun toString(): String {
-        return "OnMoveStart(pose=$pose, scale=$scale, size=$size)"
+        return "MoveStartEvent(pose=$pose, scale=$scale, size=$size)"
     }
 }
 
@@ -203,32 +210,38 @@ public class MoveStartEvent(
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
  */
-public class MoveEndEvent(
-    pose: Pose = Pose.Identity,
-    scale: Float = 1.0F,
-    size: IntVolumeSize = IntVolumeSize.Zero,
-) : MoveEvent(pose, scale, size) {
+public class SpatialMoveEndEvent(
+    public val pose: Pose,
+    public val scale: Float,
+    public val size: IntVolumeSize,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MoveEndEvent) return false
-        return super.equals(other)
+        if (other !is SpatialMoveEndEvent) return false
+        if (pose != other.pose) return false
+        if (scale != other.scale) return false
+        if (size != other.size) return false
+        return true
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        var result = pose.hashCode()
+        result = 31 * result + scale.hashCode()
+        result = 31 * result + size.hashCode()
+        return result
     }
 
     override fun toString(): String {
-        return "OnMoveEnd(pose=$pose, scale=$scale, size=$size)"
+        return "MoveEndEvent(pose=$pose, scale=$scale, size=$size)"
     }
 }
 
 @Suppress("PrimitiveInCollection")
 private class MovableElement(
     private val enabled: Boolean,
-    private val onMoveStart: ((MoveStartEvent) -> Unit)?,
-    private val onMoveEnd: ((MoveEndEvent) -> Unit)?,
-    private val onMove: ((MoveEvent) -> Boolean)?,
+    private val onMoveStart: ((SpatialMoveStartEvent) -> Unit)?,
+    private val onMoveEnd: ((SpatialMoveEndEvent) -> Unit)?,
+    private val onMove: ((SpatialMoveEvent) -> Boolean)?,
     private val stickyPose: Boolean,
     private val scaleWithDistance: Boolean,
     private val anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
@@ -289,9 +302,9 @@ internal class MovableNode(
     public var enabled: Boolean,
     public var stickyPose: Boolean,
     public var scaleWithDistance: Boolean,
-    public var onMoveStart: ((MoveStartEvent) -> Unit)?,
-    public var onMoveEnd: ((MoveEndEvent) -> Unit)?,
-    public var onMove: ((MoveEvent) -> Boolean)?,
+    public var onMoveStart: ((SpatialMoveStartEvent) -> Unit)?,
+    public var onMoveEnd: ((SpatialMoveEndEvent) -> Unit)?,
+    public var onMove: ((SpatialMoveEvent) -> Boolean)?,
     public var anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
     public var anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
 ) :
@@ -379,7 +392,6 @@ internal class MovableNode(
                 )
         } else {
             component = MovableComponent.createAnchorable(session, anchorPlacement)
-            component?.addMoveListener(MainExecutor, this)
         }
         check(component?.let { coreEntity.addComponent(it) } == true) {
             "Could not add MovableComponent to Core Entity."
@@ -430,12 +442,18 @@ internal class MovableNode(
         initialParent: Entity,
     ) {
         previousPose = initialPose
-        updatePoseOnMove(previousPose, initialPose, initialScale, IntVolumeSize.Zero) {
-            pose,
-            scale,
-            size ->
-            MoveStartEvent(pose, scale, size).also { onMoveStart?.invoke(it) }
-        }
+        val initialSize: IntVolumeSize =
+            when (entity) {
+                is PanelEntity -> entity.size.to3d().toIntVolumeSize(density)
+                else -> IntVolumeSize.Zero
+            }
+        val event =
+            SpatialMoveStartEvent(
+                initialPose.convertMetersToPixels(density),
+                initialScale,
+                initialSize,
+            )
+        onMoveStart?.invoke(event)
     }
 
     override fun onMoveUpdate(
@@ -452,7 +470,6 @@ internal class MovableNode(
                 is PanelEntity -> entity.size.to3d().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
             },
-            ::MoveEvent,
         )
         previousPose = currentPose
     }
@@ -469,9 +486,9 @@ internal class MovableNode(
                 is PanelEntity -> entity.size.to3d().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
             }
-        updatePoseOnMove(previousPose, finalPose, finalScale, finalSize) { pose, scale, size ->
-            MoveEndEvent(pose, scale, size).also { onMoveEnd?.invoke(it) }
-        }
+        val event =
+            SpatialMoveEndEvent(finalPose.convertMetersToPixels(density), finalScale, finalSize)
+        onMoveEnd?.invoke(event)
         previousPose = Pose.Identity
     }
 
@@ -481,7 +498,6 @@ internal class MovableNode(
         nextPose: Pose,
         scale: Float,
         size: IntVolumeSize,
-        eventCreator: (pose: Pose, scale: Float, size: IntVolumeSize) -> MoveEvent,
     ) {
         if (!enabled) {
             return
@@ -489,8 +505,8 @@ internal class MovableNode(
         // SceneCore uses meters, Compose XR uses pixels.
         val previousCorePose = previousPose.convertMetersToPixels(density)
         val corePose = nextPose.convertMetersToPixels(density)
-        val moveEvent = eventCreator(corePose, scale, size)
-        if (onMove?.invoke(moveEvent) == true) {
+        val spatialMoveEvent = SpatialMoveEvent(corePose, scale, size)
+        if (onMove?.invoke(spatialMoveEvent) == true) {
             // We're done, the user app will handle the event.
             return
         }

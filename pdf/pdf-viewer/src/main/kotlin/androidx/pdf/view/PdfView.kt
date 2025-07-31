@@ -54,6 +54,7 @@ import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.SelectionActionModeCallback
@@ -817,14 +818,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * [pdfViewAccessibilityManager] are capable of handling certain key events.
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        if (event == null) return super.dispatchKeyEvent(event)
+
         // Accessibility services can register to filter key events and handle their own shortcuts
         // before the event reaches the application. If a key event is received here, it means the
         // accessibility service has chosen to not handle it. Therefore, we can safely let the
         // ExternalInputManager handle the key event.
-        return event?.let {
-            externalInputManager.handleKeyEvent(it) ||
-                pdfViewAccessibilityManager?.dispatchKeyEvent(it) ?: false
-        } ?: false || super.dispatchKeyEvent(event)
+        return (PdfFeatureFlags.isExternalHardwareInteractionEnabled &&
+            externalInputManager.handleKeyEvent(event)) ||
+            pdfViewAccessibilityManager?.dispatchKeyEvent(event) ?: false ||
+            super.dispatchKeyEvent(event)
     }
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
@@ -1106,6 +1109,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageMetadataLoader?.paginationModel
         state.pdfFormFillingState = pageMetadataLoader?.pdfFormFillingState
+        state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
         return state
     }
@@ -1182,7 +1186,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
     }
 
-    @VisibleForTesting
     internal fun getDefaultZoom(): Float {
         if (contentWidth == 0f || viewportWidth <= 0) {
             if (awaitingFirstLayout) pendingZoomRecalculation = true
@@ -1377,7 +1380,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 ) {
                     startActionMode(selectionActionModeCallback, ActionMode.TYPE_FLOATING)
                 } else if (!signal.show) {
-                    selectionActionModeCallback.finish()
+                    selectionActionModeCallback.close()
                 }
             }
         }

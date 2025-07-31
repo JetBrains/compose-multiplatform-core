@@ -47,6 +47,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
+internal const val THROW_TIMEOUT_EXCEPTION = 1
+internal const val LOG_TIMEOUT_EXCEPTION = 2
+
 internal class ConnectionPoolImpl : ConnectionPool {
     private val driver: SQLiteDriver
     private val readers: Pool
@@ -63,7 +66,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
     // to the busy handler.
     // TODO(b/404380974): Allow public configuration
     internal var timeout = 30.seconds
-    internal var throwOnTimeout = false
+    internal var onTimeout = LOG_TIMEOUT_EXCEPTION
 
     constructor(driver: SQLiteDriver, fileName: String) {
         this.driver = driver
@@ -174,10 +177,9 @@ internal class ConnectionPoolImpl : ConnectionPool {
         try {
             throwSQLiteException(SQLITE_BUSY, message)
         } catch (ex: SQLiteException) {
-            if (throwOnTimeout) {
-                throw ex
-            } else {
-                ex.printStackTrace()
+            when (onTimeout) {
+                THROW_TIMEOUT_EXCEPTION -> throw ex
+                LOG_TIMEOUT_EXCEPTION -> ex.printStackTrace()
             }
         }
     }
@@ -278,9 +280,7 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
             builder.append("\t" + super.toString() + " (")
             builder.append("capacity=$capacity, ")
             builder.append("permits=${connectionPermits.availablePermits}, ")
-            builder.append(
-                "queue=(size=${availableQueue.size})[${availableQueue.joinToString()}], "
-            )
+            builder.append("queue=(size=${availableQueue.size})[${availableQueue.joinToString()}]")
             builder.appendLine(")")
             connections.forEachIndexed { index, connection ->
                 builder.appendLine("\t\t[${index + 1}] - ${connection?.toString()}")

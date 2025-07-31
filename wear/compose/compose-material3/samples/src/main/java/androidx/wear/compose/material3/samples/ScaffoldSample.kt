@@ -107,6 +107,7 @@ fun ScaffoldWithSLCEdgeButtonSample() {
                 modifier = Modifier.fillMaxSize(),
                 // Bottom spacing is derived from [ScreenScaffold.edgeButtonSpacing].
                 contentPadding = contentPadding,
+                autoCentering = null,
             ) {
                 items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             }

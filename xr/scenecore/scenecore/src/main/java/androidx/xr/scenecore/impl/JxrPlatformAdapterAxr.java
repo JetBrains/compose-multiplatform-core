@@ -74,8 +74,8 @@ import androidx.xr.runtime.math.Matrix3;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.math.Vector4;
-import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
 import androidx.xr.scenecore.impl.impress.Texture;
@@ -2055,8 +2055,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         mExtensions,
                         mEntityManager,
                         mExecutor,
-                        SubspaceNodeHolder.assertGetValue(
-                            subspaceNodeHolder, SubspaceNode.class).getSubspaceNode(),
+                        SubspaceNodeHolder.assertGetValue(subspaceNodeHolder, SubspaceNode.class)
+                                .getSubspaceNode(),
                         size);
         subspaceNodeEntity.setParent(mActivitySpace);
         return subspaceNodeEntity;

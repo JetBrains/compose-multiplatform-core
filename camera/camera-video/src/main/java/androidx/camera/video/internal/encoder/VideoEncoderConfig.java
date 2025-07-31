@@ -90,9 +90,9 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
         format.setInteger(MediaFormat.KEY_BIT_RATE, getBitrate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, getEncodeFrameRate());
         if (getEncodeFrameRate() != getCaptureFrameRate()) {
-            // MediaCodec will adjust the frame timestamp when KEY_CAPTURE_RATE is different from
-            // KEY_FRAME_RATE.
-            format.setInteger(MediaFormat.KEY_CAPTURE_RATE, getCaptureFrameRate());
+            // Codec could adjust the frame timestamp when KEY_CAPTURE_RATE is different from
+            // KEY_FRAME_RATE. However, this is not reliable across Android devices so don't set
+            // KEY_CAPTURE_RATE here. See b/431917941.
             format.setInteger(MediaFormat.KEY_OPERATING_RATE, getCaptureFrameRate());
             format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Smaller value, higher priority.
         }

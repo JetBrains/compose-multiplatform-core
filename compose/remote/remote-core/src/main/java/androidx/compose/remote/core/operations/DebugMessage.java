@@ -38,8 +38,8 @@ public class DebugMessage extends Operation implements VariableSupport {
     float mOutFloatValue;
     int mFlags = 0;
 
-    public DebugMessage(int textID, float value, int flags) {
-        mTextID = textID;
+    public DebugMessage(int textId, float value, int flags) {
+        mTextID = textId;
         mFloatValue = value;
         mFlags = flags;
     }
@@ -112,13 +112,13 @@ public class DebugMessage extends Operation implements VariableSupport {
      * Writes out the operation to the buffer
      *
      * @param buffer write the command to the buffer
-     * @param textID id of the text
+     * @param textId id of the text
      * @param value value to print
      * @param flags flags to print
      */
-    public static void apply(@NonNull WireBuffer buffer, int textID, float value, int flags) {
+    public static void apply(@NonNull WireBuffer buffer, int textId, float value, int flags) {
         buffer.start(OP_CODE);
-        buffer.writeInt(textID);
+        buffer.writeInt(textId);
         buffer.writeFloat(value);
         buffer.writeInt(flags);
     }

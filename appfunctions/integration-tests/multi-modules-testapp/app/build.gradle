@@ -39,6 +39,10 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
+    // Prevent assets file from being compressed. This is for Uri access test.
+    aaptOptions {
+        noCompress  += "txt"
+    }
 }
 
 dependencies {

@@ -93,6 +93,7 @@ public class FloatAnimation extends Easing implements Serializable {
      * @param type
      * @param spec
      * @param initialValue
+     * @param wrap
      * @return
      */
     public static float @NonNull [] packToFloatArray(

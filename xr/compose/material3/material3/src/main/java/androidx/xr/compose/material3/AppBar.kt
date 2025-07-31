@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.material3
 
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.DefaultSingleRowTopAppBarOverride
 import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,9 +31,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrSingleRowTopAppBarOverride.SingleRowTopAppBar
+import androidx.xr.compose.material3.tokens.XrTokens
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.OrbiterOffsetType
-import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /** [SingleRowTopAppBarOverride] that uses the XR-specific [SingleRowTopAppBar]. */
 @ExperimentalMaterial3XrApi
@@ -62,7 +61,7 @@ public val DefaultSingleRowTopAppBarOrbiterProperties: HorizontalOrbiterProperti
         offset = XrSingleRowTopAppBarTokens.OrbiterOffset,
         offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+        shape = XrTokens.ContainerShape,
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
@@ -99,7 +98,7 @@ public val DefaultTwoRowsTopAppBarOrbiterProperties: HorizontalOrbiterProperties
         offset = XrTwoRowsTopAppBarTokens.OrbiterOffset,
         offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+        shape = XrTokens.ContainerShape,
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */

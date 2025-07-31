@@ -31,12 +31,122 @@ import org.junit.runners.model.Statement
  * A JUnit TestRule for setting up an environment to exercise AppFunction APIs in unit or
  * Robolectric tests.
  *
- * Prefer using the real system setup whenever possible. This rule should only be used for local
- * tests that simulate cross-app interactions via AppFunctions.
+ * Prefer real system-level testing where possible. This rule is intended only for local tests that
+ * simulate cross-app interactions via AppFunctions.
  *
  * Any functions annotated with [androidx.appfunctions.service.AppFunction] in test code will be
  * automatically registered in this environment during initialization, provided the
- * `appfunctions-compiler` is applied to the test configuration.
+ * `appfunctions-compiler` is applied to the test configuration with the
+ * `appfunctions:aggregateAppFunctions` compiler option set to true.
+ *
+ * ### Example Gradle Setup
+ *
+ * ```
+ * dependencies {
+ *     ...
+ *     kspTest("androidx.appfunctions:appfunctions-compiler:xx.xx.xx")
+ * }
+ *
+ * ksp {
+ *     arg("appfunctions:aggregateAppFunctions", "true")
+ * }
+ * ```
+ *
+ * ### Example: Testing App Functions in the Same App
+ *
+ * ```
+ * package com.example.appfunctions
+ *
+ * // Sample functions under test.
+ * class ExampleFunctions {
+ *     @AppFunction
+ *     suspend fun add(a: Int, b: Int): Int = a + b
+ * }
+ *
+ * // Test file.
+ * class ExampleFunctionsTest {
+ *     @get:Rule val appFunctionTestRule = AppFunctionTestRule(context)
+ *     private val appFunctionManagerCompat = appFunctionTestRule.getAppFunctionManagerCompat()
+ *
+ *     @Test
+ *     fun addFunction_returnsCorrectSum() = runBlocking {
+ *         val appFunctionPackageMetadata = appFunctionManagerCompat.observeAppFunctions(
+ *                 AppFunctionSearchSpec(
+ *                     packageNames = listOf(packageName),
+ *                     schemaName = schemaName
+ *                 )
+ *             )
+ *             .first()
+ *             .single()
+ *         val addFunctionMetadata = appFunctionPackageMetadata.appFunctions.single()
+ *
+ *         val response = appFunctionManagerCompat.executeAppFunction(
+ *             ExecuteAppFunctionRequest(...)
+ *         )
+ *
+ *         // assert on returned response.
+ *     }
+ * }
+ * ```
+ *
+ * ### Example: Testing App Function Execution in an Agent
+ *
+ * ```
+ * package com.example.agent.appfunctions
+ *
+ * class AppFunctionsAgent(
+ *     private val appFunctionManagerCompat: AppFunctionManagerCompat
+ * ) {
+ *     suspend fun executeAppFunction(
+ *         packageName: String,
+ *         schemaName: String,
+ *         params: Any
+ *     ): AppFunctionData {
+ *         val appFunctionPackageMetadata = appFunctionManagerCompat
+ *             .observeAppFunctions(
+ *                 AppFunctionSearchSpec(
+ *                     packageNames = listOf(packageName),
+ *                     schemaName = schemaName
+ *                 )
+ *             )
+ *             .first()
+ *             .single()
+ *
+ *         val appFunctionMetadata = appFunctionPackageMetadata.appFunctions.single()
+ *
+ *         val request = ExecuteAppFunctionRequest(...)
+ *
+ *         val response = appFunctionManagerCompat.executeAppFunction(request)
+ *
+ *
+ *        // return response.
+ *     }
+ * }
+ *
+ * // Test file.
+ * class TestFunctions {
+ *     @AppFunction
+ *     fun testFun(parameters: TestParam): TestReturn { ... }
+ * }
+ *
+ * class AppFunctionsAgentTest {
+ *     @get:Rule val appFunctionTestRule = AppFunctionTestRule(context)
+ *     private val appFunctionsAgent = AppFunctionsAgent(
+ *         appFunctionTestRule.getAppFunctionManagerCompat()
+ *     )
+ *
+ *     @Test
+ *     fun testFun_returnsExpectedResult() = runBlocking {
+ *         val response = appFunctionsAgent.executeAppFunction(
+ *             context.packageName,
+ *             TestFunctionsIds.TEST_FUN_ID,
+ *             TestParam()
+ *         )
+ *
+ *         // assert on response.
+ *     }
+ * }
+ * ```
  */
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class AppFunctionTestRule(private val context: Context) : TestRule {

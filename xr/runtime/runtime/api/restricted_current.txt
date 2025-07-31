@@ -358,12 +358,6 @@ package androidx.xr.runtime {
     ctor public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
   }
 
-  public final class SessionConfigurePermissionsNotGranted extends androidx.xr.runtime.SessionConfigureResult {
-    ctor public SessionConfigurePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
-  }
-
   public abstract sealed class SessionConfigureResult {
   }
 
@@ -382,12 +376,6 @@ package androidx.xr.runtime {
     property public String requiredApk;
   }
 
-  public final class SessionCreatePermissionsNotGranted extends androidx.xr.runtime.SessionCreateResult {
-    ctor public SessionCreatePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
-  }
-
   public abstract sealed class SessionCreateResult {
   }
 
@@ -399,12 +387,6 @@ package androidx.xr.runtime {
 
   public final class SessionCreateUnsupportedDevice extends androidx.xr.runtime.SessionCreateResult {
     ctor public SessionCreateUnsupportedDevice();
-  }
-
-  public final class SessionResumePermissionsNotGranted extends androidx.xr.runtime.SessionResumeResult {
-    ctor public SessionResumePermissionsNotGranted(java.util.List<java.lang.String> permissions);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
   }
 
   public abstract sealed class SessionResumeResult {
@@ -653,10 +635,10 @@ package androidx.xr.runtime.internal {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface AugmentedObject extends androidx.xr.runtime.internal.Trackable {
     method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector3 getExtents();
+    method public androidx.xr.runtime.math.FloatSize3d getExtents();
     property public abstract androidx.xr.runtime.AugmentedObjectCategory category;
     property public abstract androidx.xr.runtime.math.Pose centerPose;
-    property public abstract androidx.xr.runtime.math.Vector3 extents;
+    property public abstract androidx.xr.runtime.math.FloatSize3d extents;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface CameraViewActivityPose extends androidx.xr.runtime.internal.ActivityPose {
@@ -796,7 +778,7 @@ package androidx.xr.runtime.internal {
     method public java.util.List<androidx.xr.runtime.internal.Entity> getChildren();
     method public java.util.List<androidx.xr.runtime.internal.Component> getComponents();
     method public <T extends androidx.xr.runtime.internal.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
-    method public String getContentDescription();
+    method public CharSequence getContentDescription();
     method public androidx.xr.runtime.internal.Entity? getParent();
     method public default androidx.xr.runtime.math.Pose getPose();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.runtime.internal.SpaceValue int relativeTo);
@@ -808,7 +790,7 @@ package androidx.xr.runtime.internal {
     method public void removeInputEventListener(androidx.xr.runtime.internal.InputEventListener listener);
     method public default void setAlpha(float alpha);
     method public void setAlpha(float alpha, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
-    method public void setContentDescription(String);
+    method public void setContentDescription(CharSequence);
     method public void setHidden(boolean hidden);
     method public void setParent(androidx.xr.runtime.internal.Entity?);
     method public default void setPose(androidx.xr.runtime.math.Pose pose);
@@ -816,7 +798,7 @@ package androidx.xr.runtime.internal {
     method public default void setScale(androidx.xr.runtime.math.Vector3 scale);
     method public void setScale(androidx.xr.runtime.math.Vector3 scale, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
     property public abstract java.util.List<androidx.xr.runtime.internal.Entity> children;
-    property public abstract String contentDescription;
+    property public abstract CharSequence contentDescription;
     property public abstract androidx.xr.runtime.internal.Entity? parent;
   }
 
@@ -842,12 +824,14 @@ package androidx.xr.runtime.internal {
     field public static final androidx.xr.runtime.internal.Feature.Companion Companion;
     field public static final androidx.xr.runtime.internal.Feature FULLSTACK;
     field public static final androidx.xr.runtime.internal.Feature OPEN_XR;
+    field public static final androidx.xr.runtime.internal.Feature PROJECTED;
     field public static final androidx.xr.runtime.internal.Feature SPATIAL;
   }
 
   public static final class Feature.Companion {
     property public androidx.xr.runtime.internal.Feature FULLSTACK;
     property public androidx.xr.runtime.internal.Feature OPEN_XR;
+    property public androidx.xr.runtime.internal.Feature PROJECTED;
     property public androidx.xr.runtime.internal.Feature SPATIAL;
   }
 
@@ -1312,6 +1296,7 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface PerceptionManager {
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.ArDevice getArDevice();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();
@@ -1337,13 +1322,6 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface PerceptionSpaceActivityPose extends androidx.xr.runtime.internal.ActivityPose {
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PermissionNotGrantedException extends androidx.xr.runtime.internal.LifecycleException {
-    ctor public PermissionNotGrantedException();
-    ctor public PermissionNotGrantedException(optional java.util.List<java.lang.String> permissions, optional Throwable? cause);
-    method public java.util.List<java.lang.String> getPermissions();
-    property public java.util.List<java.lang.String> permissions;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PixelDimensions {
@@ -2092,8 +2070,10 @@ package androidx.xr.runtime.math {
   public final class FloatSize2d {
     ctor public FloatSize2d();
     ctor public FloatSize2d(optional float width, optional float height);
+    method public operator androidx.xr.runtime.math.FloatSize2d div(float divisor);
     method public float getHeight();
     method public float getWidth();
+    method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
     property public float height;
     property public float width;
@@ -2102,9 +2082,11 @@ package androidx.xr.runtime.math {
   public final class FloatSize3d {
     ctor public FloatSize3d();
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
+    method public operator androidx.xr.runtime.math.FloatSize3d div(float divisor);
     method public float getDepth();
     method public float getHeight();
     method public float getWidth();
+    method public operator androidx.xr.runtime.math.FloatSize3d times(float scalar);
     method public androidx.xr.runtime.math.FloatSize2d to2d();
     property public float depth;
     property public float height;

@@ -281,7 +281,23 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     final override val parentLayoutCoordinates: LayoutCoordinates?
         get() {
-            checkPrecondition(isAttached) { ExpectAttachedLayoutCoordinates }
+            checkPrecondition(isAttached) {
+                val builder = StringBuilder(ExpectAttachedLayoutCoordinates)
+                var node: LayoutNode? = layoutNode
+                while (node != null) {
+                    builder.appendLine()
+                    builder.append("|")
+                    builder.append(node)
+                    builder.append(" isAttached=")
+                    builder.append(node.isAttached)
+                    builder.append(" modifier=")
+                    builder.append(node.modifier)
+                    builder.append(" tail=")
+                    builder.append(tail)
+                    node = node.parent
+                }
+                builder.toString()
+            }
             onCoordinatesUsed()
             return layoutNode.outerCoordinator.wrappedBy
         }

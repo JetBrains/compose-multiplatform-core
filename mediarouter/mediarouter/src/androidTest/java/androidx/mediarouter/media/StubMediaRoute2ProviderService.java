@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
     private static final Object sLock = new Object();
@@ -96,11 +97,13 @@ public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
         Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
         Map<String, List<StubDynamicGroupRouteController>> mDescriptorIdToControllers =
                 new ArrayMap<>();
+        private final AtomicInteger mNextControllerId;
         private final MediaRouteDescriptor mGroupDescriptor;
         boolean mSupportsDynamicGroup = true;
 
         StubMediaRoute2Provider(@NonNull Context context) {
             super(context);
+            mNextControllerId = new AtomicInteger(0);
             mGroupDescriptor =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_GROUP, ROUTE_NAME_GROUP)
                             .addControlFilters(CONTROL_FILTERS_TEST)
@@ -176,21 +179,23 @@ public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
             }
         }
 
-        public int getNumberOfCreatedControllers(String descriptorId) {
+        public List<StubDynamicGroupRouteController> getCreatedControllers(String descriptorId) {
             List<StubDynamicGroupRouteController> controllers =
                     mDescriptorIdToControllers.get(descriptorId);
-            return (controllers != null) ? controllers.size() : 0;
+            return (controllers != null) ? controllers : List.of();
         }
 
         class StubDynamicGroupRouteController extends DynamicGroupRouteController {
             final String mRouteId;
             final RouteControllerOptions mRouteControllerOptions;
+            final int mControllerId;
             private final Set<String> mCurrentSelectedRouteIds = new HashSet<>();
 
             StubDynamicGroupRouteController(
                     String routeId, RouteControllerOptions routeControllerOptions) {
                 mRouteId = routeId;
                 mRouteControllerOptions = routeControllerOptions;
+                mControllerId = mNextControllerId.getAndIncrement();
                 mCurrentSelectedRouteIds.add(routeId);
             }
 

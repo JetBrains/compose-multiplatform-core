@@ -34,7 +34,7 @@ import java.util.List;
  */
 public interface RemoteComposeDocumentAccessibility {
     // Matches ExploreByTouchHelper.HOST_ID
-    Integer RootId = View.NO_ID;
+    int RootId = View.NO_ID;
 
     // androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_CLICK
     int ACTION_CLICK = 0x00000010;

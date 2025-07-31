@@ -29,15 +29,6 @@ public sealed class SessionCreateResult
 public class SessionCreateSuccess(public val session: Session) : SessionCreateResult()
 
 /**
- * Result of an unsuccessful [Session.create] call. The session was not created due to the required
- * [permissions] not being granted.
- *
- * @property permissions the permissions that were not granted.
- */
-public class SessionCreatePermissionsNotGranted(public val permissions: List<String>) :
-    SessionCreateResult()
-
-/**
  * Result of an unsuccessful [Session.create] call. The device has a [requiredApk] that is outdated,
  * was unable to confirm availability, or is not installed.
  *
@@ -60,18 +51,9 @@ public class SessionConfigureSuccess() : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The session was not configured due to the
- * given [SessionConfig] not being supported.
+ * given [Config] not being supported.
  */
 public class SessionConfigureConfigurationNotSupported() : SessionConfigureResult()
-
-/**
- * Result of an unsuccessful [Session.configure] call. The session was not configured due to
- * insufficient permissions.
- *
- * @property permissions the list of permissions that were not granted.
- */
-public class SessionConfigurePermissionsNotGranted(public val permissions: List<String>) :
-    SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
@@ -95,12 +77,3 @@ public sealed class SessionResumeResult
 
 /** Result of a successful [Session.resume] call. */
 public class SessionResumeSuccess() : SessionResumeResult()
-
-/**
- * Result of an unsuccessful [Session.resume] call. The session was not resumed due to the required
- * [permissions] not being granted.
- *
- * @property permissions the permissions that were not granted.
- */
-public class SessionResumePermissionsNotGranted(public val permissions: List<String>) :
-    SessionResumeResult()

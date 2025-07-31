@@ -22,13 +22,17 @@ import androidx.compose.ui.focus.CustomDestinationResult.None
 import androidx.compose.ui.focus.CustomDestinationResult.RedirectCancelled
 import androidx.compose.ui.focus.CustomDestinationResult.Redirected
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
+import androidx.compose.ui.focus.FocusProperties.Companion.UnsetFocusRect
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.focus.FocusRequester.Companion.Redirect
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
 import androidx.compose.ui.focus.FocusStateImpl.Captured
 import androidx.compose.ui.focus.FocusStateImpl.Inactive
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.BeyondBoundsLayout
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -36,10 +40,12 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitSelfAndAncestors
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.trace
 
 internal class FocusTargetNode(
@@ -204,6 +210,35 @@ internal class FocusTargetNode(
             it.applyFocusProperties(properties)
         }
         return properties
+    }
+
+    /**
+     * The focus rect that is defined on this [FocusTargetNode] by [FocusProperties] in the given
+     * [relativeCoordinates].
+     *
+     * If there is no custom focus rect applied on this node by the ancestor [FocusProperties], this
+     * function returns the bounding box of the node.
+     *
+     * **Note** any caller is responsible for checking if this node and the [relativeCoordinates]
+     * are attached and active.
+     */
+    internal fun fetchFocusRect(relativeCoordinates: LayoutCoordinates? = null): Rect {
+        val customRect = fetchFocusProperties().focusRect
+        // Take the derived value only if it is not the default.
+        if (customRect !== UnsetFocusRect) {
+            if (relativeCoordinates == null) return customRect
+
+            return customRect.translate(
+                relativeCoordinates.localPositionOf(requireLayoutCoordinates())
+            )
+        }
+
+        return relativeCoordinates
+            // compute our bounding box in the relative coordinates.
+            ?.localBoundingBoxOf(requireLayoutCoordinates(), clipBounds = false)
+
+            // Just return the bounding box of the node.
+            ?: Rect(Offset.Zero, requireLayoutCoordinates().size.toSize())
     }
 
     private inline fun fetchCustomEnterOrExit(

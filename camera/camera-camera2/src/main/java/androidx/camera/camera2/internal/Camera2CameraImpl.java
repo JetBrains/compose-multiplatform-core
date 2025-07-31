@@ -1054,6 +1054,43 @@ final class Camera2CameraImpl implements CameraInternal {
     }
 
     @Override
+    public void onRemoved() {
+        mExecutor.execute(() -> {
+            debugLog("Camera is removed. Updating state and cleaning up.");
+
+            // Avoid re-entering if the camera is already in a terminal state.
+            if (mState == InternalState.RELEASING || mState == InternalState.RELEASED) {
+                return;
+            }
+
+            // 1. Immediately update the public-facing state to CLOSED with the specific error.
+            // This provides a fast and clear signal to the application.
+            CameraState.StateError error = CameraState.StateError.create(
+                    CameraState.ERROR_CAMERA_REMOVED);
+            mCameraStateMachine.updateState(State.CLOSED, error);
+
+            // 2. Transition the internal state to RELEASING to begin shutdown and prevent
+            // new operations. We pass the error here as well for internal consistency.
+            setState(InternalState.RELEASING, error);
+
+            // 3. Cancel any pending reopen tasks to ensure the camera doesn't try to
+            // restart itself.
+            mStateCallback.cancelScheduledReopen();
+            mErrorTimeoutReopenScheduler.cancel();
+
+            // 4. Asynchronously clean up resources.
+            if (mCameraDevice != null) {
+                // If the camera device exists, trigger the graceful close sequence which will
+                // close the session and then the device.
+                closeCamera(false);
+            } else {
+                // If the camera was never opened, we can complete the release process immediately.
+                finishClose();
+            }
+        });
+    }
+
+    @Override
     public @NonNull CameraConfig getExtendedConfig() {
         return mCameraConfig;
     }

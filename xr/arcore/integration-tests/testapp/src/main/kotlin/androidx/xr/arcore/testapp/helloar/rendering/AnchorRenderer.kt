@@ -95,7 +95,7 @@ internal class AnchorRenderer(
                                     session.scene.perceptionSpace,
                                 )
                             val perceptionRay =
-                                Ray(perceptionRayPose.translation, perceptionRayPose.forward)
+                                Ray(perceptionRayPose.translation, perceptionRayPose.backward)
                             hitTest(session, perceptionRay)
                                 .firstOrNull {
                                     // TODO(b/372054517): Re-enable creating anchors on Unknown

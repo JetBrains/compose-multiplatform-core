@@ -47,7 +47,6 @@ import androidx.wear.protolayout.renderer.inflater.ProtoLayoutInflater.ViewGroup
 import androidx.wear.protolayout.renderer.inflater.RenderedMetadata.ViewProperties
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -57,6 +56,8 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(AndroidJUnit4::class)
 class ProtoLayoutInflaterKtTest {
     val context = getApplicationContext<Context>()
+    val screenWidthPx = context.resources.displayMetrics.widthPixels
+    val screenHeightPx = context.resources.displayMetrics.heightPixels
     val stateStore = StateStore(emptyMap())
     val dataPipeline: ProtoLayoutDynamicDataPipeline =
         ProtoLayoutDynamicDataPipeline(
@@ -92,7 +93,6 @@ class ProtoLayoutInflaterKtTest {
         }
     }
 
-    @Ignore // b/427234180
     @Test
     fun inflate_boxWithLinearGradientBackground_withBoundingBoxRatioPoints() {
         val boxElement = expandedBox {
@@ -118,10 +118,10 @@ class ProtoLayoutInflaterKtTest {
         assertThat(boxView.background).isInstanceOf(BackgroundDrawable::class.java)
         val backgroundDrawable = boxView.background as BackgroundDrawable
         with(backgroundDrawable.linearGradientHelper!!) {
-            assertThat(startX).isEqualTo(0.1f * SCREEN_WIDTH)
-            assertThat(startY).isEqualTo(0.2f * SCREEN_HEIGHT)
-            assertThat(endX).isEqualTo(0.3f * SCREEN_WIDTH)
-            assertThat(endY).isEqualTo(0.4f * SCREEN_HEIGHT)
+            assertThat(startX).isEqualTo(0.1f * screenWidthPx)
+            assertThat(startY).isEqualTo(0.2f * screenHeightPx)
+            assertThat(endX).isEqualTo(0.3f * screenWidthPx)
+            assertThat(endY).isEqualTo(0.4f * screenHeightPx)
         }
     }
 
@@ -226,16 +226,22 @@ class ProtoLayoutInflaterKtTest {
          * assertions about width/height, or relative placement.
          */
         fun doLayout(rootLayout: View) {
-            val screenWidth = MeasureSpec.makeMeasureSpec(SCREEN_WIDTH, MeasureSpec.EXACTLY)
-            val screenHeight = MeasureSpec.makeMeasureSpec(SCREEN_HEIGHT, MeasureSpec.EXACTLY)
-            rootLayout.measure(screenWidth, screenHeight)
-            rootLayout.layout(/* l= */ 0, /* t= */ 0, /* r= */ SCREEN_WIDTH, /* b= */ SCREEN_HEIGHT)
+            val screenWidthPx = context.resources.displayMetrics.widthPixels
+            val screenHeightPx = context.resources.displayMetrics.heightPixels
+            rootLayout.measure(
+                MeasureSpec.makeMeasureSpec(screenWidthPx, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(screenHeightPx, MeasureSpec.EXACTLY),
+            )
+            rootLayout.layout(
+                /* l= */ 0,
+                /* t= */ 0,
+                /* r= */ screenWidthPx,
+                /* b= */ screenHeightPx,
+            )
         }
     }
 
     private companion object {
-        const val SCREEN_WIDTH = 320
-        const val SCREEN_HEIGHT = 414
         const val CLICKABLE_ID_EXTRA = "clickable_id_extra"
 
         fun dpToPx(context: Context, dp: Float) = (dp * context.resources.displayMetrics.density)

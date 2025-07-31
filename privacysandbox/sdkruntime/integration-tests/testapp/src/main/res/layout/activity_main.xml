@@ -15,18 +15,19 @@
   limitations under the License.
   -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_gravity="center_horizontal"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <LinearLayout
+            android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -42,57 +43,40 @@
                 android:layout_height="wrap_content"
                 android:text="@string/unload_sdk"
                 android:textAllCaps="false"/>
+            <Button
+                android:id="@+id/cujListButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cuj_list"
+                android:textAllCaps="false"/>
         </LinearLayout>
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/cujFragmentContent"
+            android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/registerAppSdkButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/register_app_sdk"
-                android:textAllCaps="false"/>
-            <Button
-                android:id="@+id/unregisterAppSdkButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/unregister_app_sdk"
-                android:textAllCaps="false"/>
-        </LinearLayout>
+            android:layout_height="wrap_content"/>
 
-        <LinearLayout
+        <TextView
+            android:layout_gravity="center_horizontal"
+            android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/getSandboxedSdksButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/get_sandboxed_sdks"
-                android:textAllCaps="false"/>
-            <Button
-                android:id="@+id/getAppSdksButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/get_app_sdks"
-                android:textAllCaps="false"/>
-        </LinearLayout>
-
+            android:text="@string/log"/>
+        <TextView
+            android:id="@+id/logView"
+            android:gravity="bottom"
+            android:scrollbars="vertical"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:background="#FFFFFF"
+            android:textColor="#000000"/>
     </LinearLayout>
 
-    <TextView
-        android:layout_gravity="center_horizontal"
-        android:layout_height="wrap_content"
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/cujList"
         android:layout_width="wrap_content"
-        android:text="@string/log"/>
-    <TextView
-        android:id="@+id/logView"
-        android:gravity="bottom"
-        android:scrollbars="vertical"
         android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        android:background="#FFFFFF"
-        android:textColor="#000000"/>
-</LinearLayout>
+        android:layout_gravity="start"
+        app:menu="@layout/cuj_list">
+    </com.google.android.material.navigation.NavigationView>
+</androidx.drawerlayout.widget.DrawerLayout>

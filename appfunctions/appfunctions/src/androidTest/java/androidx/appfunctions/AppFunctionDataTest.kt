@@ -20,6 +20,7 @@ import android.app.PendingIntent
 import android.app.appsearch.GenericDocument
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.ext.SdkExtensions
@@ -960,6 +961,95 @@ class AppFunctionDataTest {
             .isEqualTo(100L)
     }
 
+    @Test
+    fun visitAppFunctionUriGrant_visitAllGrants() {
+        val data =
+            AppFunctionData.Builder(
+                    TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
+                    AppFunctionComponentsMetadata(),
+                )
+                .setAppFunctionData(
+                    "firstGrant",
+                    AppFunctionData.serialize(
+                        AppFunctionUriGrant(
+                            uri = Uri.parse("content://com.example/1"),
+                            modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        ),
+                        AppFunctionUriGrant::class.java,
+                    ),
+                )
+                .setAppFunctionData(
+                    "nest",
+                    AppFunctionData.Builder(
+                            TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA,
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setAppFunctionData(
+                            "secondGrant",
+                            AppFunctionData.serialize(
+                                AppFunctionUriGrant(
+                                    uri = Uri.parse("content://com.example/2"),
+                                    modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                                ),
+                                AppFunctionUriGrant::class.java,
+                            ),
+                        )
+                        .build(),
+                )
+                .setAppFunctionDataList(
+                    "thirdGrants",
+                    listOf(
+                        AppFunctionData.serialize(
+                            AppFunctionUriGrant(
+                                uri = Uri.parse("content://com.example/3-1"),
+                                modeFlags =
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                            ),
+                            AppFunctionUriGrant::class.java,
+                        ),
+                        AppFunctionData.serialize(
+                            AppFunctionUriGrant(
+                                uri = Uri.parse("content://com.example/3-2"),
+                                modeFlags =
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+                            ),
+                            AppFunctionUriGrant::class.java,
+                        ),
+                    ),
+                )
+                .build()
+
+        val visited = buildList { data.visitAppFunctionUriGrants { uriGrant -> add(uriGrant) } }
+
+        assertThat(visited)
+            .containsExactly(
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/1"),
+                    modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/2"),
+                    modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/3-1"),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/3-2"),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+                ),
+            )
+    }
+
     companion object {
         val TEST_OBJECT_METADATA =
             AppFunctionObjectTypeMetadata(
@@ -1188,6 +1278,57 @@ class AppFunctionDataTest {
                             isNullable = false,
                         ),
                 ),
+            )
+
+        val TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "uri" to
+                            AppFunctionObjectTypeMetadata(
+                                properties =
+                                    mapOf(
+                                        "uri" to
+                                            AppFunctionPrimitiveTypeMetadata(
+                                                type = TYPE_STRING,
+                                                isNullable = false,
+                                            )
+                                    ),
+                                required = listOf("uri"),
+                                qualifiedName = "android.net.Uri",
+                                isNullable = false,
+                            ),
+                        "modeFlags" to
+                            AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                    ),
+                required = listOf(),
+                qualifiedName = "androidx.appfunctions.AppFunctionUriGrant",
+                isNullable = false,
+            )
+
+        val TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("secondGrant" to TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA),
+                required = listOf("secondGrant"),
+                qualifiedName = "nest",
+                isNullable = false,
+            )
+
+        val TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "firstGrant" to TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
+                        "nest" to TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA,
+                        "thirdGrants" to
+                            AppFunctionArrayTypeMetadata(
+                                itemType = TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
+                                isNullable = false,
+                            ),
+                    ),
+                required = listOf("firstGrant", "nest"),
+                qualifiedName = "testObject",
+                isNullable = false,
             )
     }
 }

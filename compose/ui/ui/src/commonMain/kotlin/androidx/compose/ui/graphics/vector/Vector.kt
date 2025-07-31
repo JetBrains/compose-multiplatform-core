@@ -298,6 +298,15 @@ internal class PathComponent : VNode() {
     private val path = Path()
     private var renderPath = path
 
+    private var _tmpPath: Path? = null
+    private val tmpPath: Path
+        get() {
+            val localTmp = _tmpPath
+            if (localTmp != null) return localTmp
+
+            return Path().also { _tmpPath = it }
+        }
+
     private val pathMeasure: PathMeasure by lazy(LazyThreadSafetyMode.NONE) { PathMeasure() }
 
     private fun updatePath() {
@@ -324,8 +333,13 @@ internal class PathComponent : VNode() {
             val start = ((trimPathStart + trimPathOffset) % 1f) * length
             val end = ((trimPathEnd + trimPathOffset) % 1f) * length
             if (start > end) {
-                pathMeasure.getSegment(start, length, renderPath, true)
-                pathMeasure.getSegment(0f, end, renderPath, true)
+                val dstPath = tmpPath
+                dstPath.reset()
+                pathMeasure.getSegment(start, length, dstPath, true)
+                renderPath.addPath(dstPath)
+                dstPath.reset()
+                pathMeasure.getSegment(0f, end, dstPath, true)
+                renderPath.addPath(dstPath)
             } else {
                 pathMeasure.getSegment(start, end, renderPath, true)
             }

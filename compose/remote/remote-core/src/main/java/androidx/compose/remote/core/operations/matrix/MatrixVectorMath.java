@@ -121,6 +121,7 @@ public class MatrixVectorMath extends Operation implements VariableSupport, Seri
      * Writes out the operation to the buffer
      *
      * @param buffer write command to this buffer
+     * @param type the type of the operation
      * @param outputs the ids to write the output vector
      * @param matrixId the id
      * @param inputs input vector

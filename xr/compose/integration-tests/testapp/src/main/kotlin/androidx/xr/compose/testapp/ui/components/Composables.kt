@@ -199,7 +199,7 @@ fun FpsCounterScreen() {
         Text(
             text = "FPS: ${fps.intValue}",
             color = Color.White,
-            fontSize = 12.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier =

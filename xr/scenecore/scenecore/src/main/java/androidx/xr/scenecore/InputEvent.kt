@@ -23,20 +23,6 @@ import androidx.xr.runtime.math.Vector3
 import kotlin.annotation.Retention
 
 /**
- * Listener for [InputEvent]s. This listener can be registered with an [Entity] via
- * [InteractableComponent] to receive raw input events when the user interacts with subgraph of that
- * entity.
- */
-public fun interface InputEventListener {
-    /**
-     * Called when an input event is received.
-     *
-     * @param inputEvent The input event that was received.
-     */
-    public fun onInputEvent(inputEvent: InputEvent)
-}
-
-/**
  * Defines input events for SceneCore.
  *
  * @param source Type of source (e.g. hands, controller, head) that generated this event.

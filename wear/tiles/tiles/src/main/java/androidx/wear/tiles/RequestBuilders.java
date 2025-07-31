@@ -19,6 +19,7 @@ package androidx.wear.tiles;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.DeviceParametersProto;
@@ -42,10 +43,6 @@ public final class RequestBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class TileRequest {
         private final RequestProto.TileRequest mImpl;
-
-        TileRequest(RequestProto.TileRequest impl) {
-            this.mImpl = impl;
-        }
 
         /**
          * Gets the {@link androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters}
@@ -80,6 +77,17 @@ public final class RequestBuilders {
          */
         public int getTileId() {
             return mImpl.getTileId();
+        }
+
+        private final ProtoLayoutScope mScope;
+
+        TileRequest(RequestProto.TileRequest impl) {
+            this(impl, /* scope= */ null);
+        }
+
+        TileRequest(RequestProto.TileRequest impl, @Nullable ProtoLayoutScope scope) {
+            this.mImpl = impl;
+            this.mScope = scope != null ? scope : new ProtoLayoutScope();
         }
 
         /**
@@ -126,6 +134,25 @@ public final class RequestBuilders {
         @RequiresSchemaVersion(major = 1, minor = 600)
         public @NonNull Instant getLastVisibleTime() {
             return Instant.ofEpochMilli(mImpl.getLastVisibleMillis());
+        }
+
+        /**
+         * Returns {@link ProtoLayoutScope} object that is required for methods to create resources
+         * or pending intents, and it will automatically register them for a tile.
+         *
+         * <p>{@link ProtoLayoutScope} shouldn't be manually created, and when object is needed as
+         * parameters, this method should be used, to get the correct scope for the tile with
+         * corresponding {@link #getTileId()}.
+         */
+        public @NonNull ProtoLayoutScope getScope() {
+            return mScope;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull TileRequest fromProto(
+                RequestProto.@NonNull TileRequest proto, @NonNull ProtoLayoutScope scope) {
+            return new TileRequest(proto, scope);
         }
 
         /** Creates a new wrapper instance from the proto. */

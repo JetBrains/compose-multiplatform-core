@@ -17,6 +17,8 @@
 package androidx.xr.runtime.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.VpsAvailabilityAvailable
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.DepthMap
@@ -49,6 +51,7 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val userFace: Face? = FakeRuntimeFace()
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: Earth = FakeRuntimeEarth()
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -97,6 +100,14 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     override fun detachAnchor(anchor: Anchor) {
         anchors.remove(anchor)
         anchor.uuid?.let { anchorUuids.remove(it) }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult {
+        return VpsAvailabilityAvailable()
     }
 
     /** Adds a [HitResult] to the list that is returned when calling [hitTest] with any pose. */

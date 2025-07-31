@@ -77,6 +77,7 @@ abstract class BaseTelecomTest {
     val mSpeakerEndpoint = CallEndpointCompat("SPEAKER", TYPE_SPEAKER, mBaseSessionId)
     val mBluetoothEndpoint = CallEndpointCompat("BLUETOOTH", TYPE_BLUETOOTH, mBaseSessionId)
     val mWiredEndpoint = CallEndpointCompat("WIRED", TYPE_WIRED_HEADSET, mBaseSessionId)
+    val mWatchEndpoint = CallEndpointCompat("Watch", TYPE_BLUETOOTH, mBaseSessionId)
 
     @Before
     fun setUpBase() {

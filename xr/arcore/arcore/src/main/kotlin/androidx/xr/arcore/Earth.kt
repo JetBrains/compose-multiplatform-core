@@ -18,6 +18,7 @@ package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.internal.AnchorNotAuthorizedException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
@@ -63,6 +64,30 @@ internal constructor(
             val perceptionStateExtender =
                 session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
             return perceptionStateExtender.xrResourcesManager.earth
+        }
+
+        /**
+         * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
+         * position. The availability of VPS in a given location helps to improve the quality of
+         * Geospatial localization and tracking accuracy.
+         *
+         * This launches an asynchronous operation used to query the Google Cloud ARCore API. It may
+         * be called without calling [Session.configure].
+         *
+         * Your app must be properly set up to communicate with the Google Cloud ARCore API in order
+         * to obtain a result from this call.
+         *
+         * @param latitude The latitude in degrees.
+         * @param longitude The longitude in degrees.
+         * @return the result of the VPS availability check.
+         */
+        @JvmStatic
+        public suspend fun checkVpsAvailability(
+            session: Session,
+            latitude: Double,
+            longitude: Double,
+        ): VpsAvailabilityResult {
+            return session.runtime.perceptionManager.checkVpsAvailability(latitude, longitude)
         }
     }
 

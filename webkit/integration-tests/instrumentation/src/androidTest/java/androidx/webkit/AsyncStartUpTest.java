@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 /**
@@ -289,6 +290,35 @@ public class AsyncStartUpTest {
         Assert.assertTrue(webViewCurrentlyLoaded());
         Assert.assertNull(result.getTotalTimeInUiThreadMillis());
         Assert.assertNull(result.getMaxTimePerTaskInUiThreadMillis());
+    }
+
+    /**
+     * Verifies that when {@link WebViewCompat#startUpWebView} is called with a configuration
+     * specifying a custom profile, only that profile is created and the default profile is not.
+     * TODO(b/300281790): Write tests for the other scenarios when we get the ability to unload
+     * profiles from memory.
+     */
+    @Test
+    @MediumTest
+    @Ignore("b/376656739")
+    public void testAsyncStartUp_withCreatingCustomProfile_createsRequestedProfiles() {
+        Assume.assumeFalse(webViewCurrentlyLoaded());
+        WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
+                Executors.newSingleThreadExecutor())
+                .setShouldRunUiThreadStartUpTasks(true).setProfilesToLoadDuringStartup(
+                        Set.of("TestX", "TestY")).build();
+        final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
+                ResolvableFuture.create();
+
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
+                startUpFinishedFuture::set);
+        // Wait until the callback has triggered.
+        WebkitUtils.waitForFuture(startUpFinishedFuture);
+        WebkitUtils.onMainThreadSync(() -> {
+            Assert.assertTrue(webViewCurrentlyLoaded());
+            Assert.assertTrue(ProfileStore.getInstance().getAllProfileNames().contains("TestX"));
+            Assert.assertTrue(ProfileStore.getInstance().getAllProfileNames().contains("TestY"));
+        });
     }
 
     /**

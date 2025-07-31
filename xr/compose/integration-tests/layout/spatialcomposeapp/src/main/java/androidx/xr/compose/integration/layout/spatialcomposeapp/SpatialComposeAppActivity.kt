@@ -323,7 +323,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
     @Composable
     fun PanelContent(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         Column(
-            modifier = modifier.fillMaxSize().background(Color.LightGray).padding(24.dp),
+            modifier = modifier.background(Color.LightGray).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {

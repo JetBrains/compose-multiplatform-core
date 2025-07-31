@@ -316,9 +316,11 @@ class VectorTest {
         rule.setContent { VectorTrim() }
 
         takeScreenShot(200).apply {
-            assertEquals(Color.Yellow.toArgb(), getPixel(25, 100))
-            assertEquals(Color.Blue.toArgb(), getPixel(100, 100))
-            assertEquals(Color.Yellow.toArgb(), getPixel(175, 100))
+            fun colorToHexString(color: Int): String = String.format("#%08X", color)
+
+            assertEquals("#FFFFFF00", colorToHexString(getPixel(25, 100)))
+            assertEquals("#FF0000FF", colorToHexString(getPixel(100, 100)))
+            assertEquals("#FFFFFF00", colorToHexString(getPixel(175, 100)))
         }
     }
 
@@ -1176,6 +1178,47 @@ class VectorTest {
 
         assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
         assertTrue("Cache was not cleared after trim memory call", cacheCleared)
+    }
+
+    @Test
+    fun testImageVectorCacheMissOnConfigChange() {
+        val tag = "testTag"
+        var vectorCache: ImageVectorCache? = null
+        var vectorInCache = false
+        var theme: Resources.Theme? = null
+        try {
+            rule.setContent {
+                val imageVectorCache = LocalImageVectorCache.current
+                theme = LocalContext.current.theme
+                Image(
+                    painter = painterResource(R.drawable.ic_triangle_config),
+                    contentDescription = null,
+                    modifier = Modifier.testTag(tag),
+                )
+
+                vectorInCache =
+                    imageVectorCache[
+                        ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] != null
+                vectorCache = imageVectorCache
+            }
+
+            if (!rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)) {
+                Log.w(TAG, "device rotation unsuccessful")
+                return
+            }
+
+            val cacheMiss =
+                vectorCache?.let {
+                    it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] == null
+                } ?: false
+
+            assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
+            assertTrue("Vector object was not pruned on configuration change", cacheMiss)
+        } catch (e: InterruptedException) {
+            fail("Unable to verify the image vector cache on configuration (orientation) change")
+        } finally {
+            rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        }
     }
 
     private fun Activity.rotate(rotation: Int): Boolean {

@@ -79,4 +79,20 @@ class FloatSize2dTest {
         assertThat(size2.height).isEqualTo(2.0f)
         assertThat(size2.depth).isEqualTo(3.0f)
     }
+
+    @Test
+    fun divOperator_returnsCorrectValues() {
+        val size1 = FloatSize2d(width = 2.0f, height = 2.0f)
+        val size2 = FloatSize2d(width = 1.0f, height = 1.0f)
+
+        assertThat(size1 / 2.0f).isEqualTo(size2)
+    }
+
+    @Test
+    fun timesOperator_returnsCorrectValues() {
+        val size1 = FloatSize2d(width = 1.0f, height = 1.0f)
+        val size2 = FloatSize2d(width = 2.0f, height = 2.0f)
+
+        assertThat(size1 * 2.0f).isEqualTo(size2)
+    }
 }

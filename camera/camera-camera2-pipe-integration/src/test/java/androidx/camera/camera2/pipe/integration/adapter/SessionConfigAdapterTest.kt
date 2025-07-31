@@ -135,31 +135,6 @@ class SessionConfigAdapterTest {
     }
 
     @Test
-    fun getExpectedFrameRateRange() {
-        // Arrange
-        val testDeferrableSurface = createTestDeferrableSurface()
-
-        // Create an invalid SessionConfig which doesn't set the template
-        val fakeTestUseCase = createFakeTestUseCase {
-            it.setupSessionConfig(
-                SessionConfig.Builder().also { sessionConfigBuilder ->
-                    sessionConfigBuilder.addSurface(testDeferrableSurface)
-                    sessionConfigBuilder.setTemplateType(TEMPLATE_PREVIEW)
-                    sessionConfigBuilder.setExpectedFrameRateRange(Range(15, 24))
-                }
-            )
-        }
-
-        // Act
-        val sessionConfigAdapter = SessionConfigAdapter(useCases = listOf(fakeTestUseCase))
-
-        // Assert
-        assertThat(sessionConfigAdapter.isSessionConfigValid()).isTrue()
-        assertThat(sessionConfigAdapter.getValidSessionConfigOrNull()).isNotNull()
-        assertThat(sessionConfigAdapter.getExpectedFrameRateRange()).isEqualTo(Range(15, 24))
-    }
-
-    @Test
     fun populateSurfaceToStreamUseCaseMappingEmptyUseCase() {
         val mapping = sessionConfigAdapter.getSurfaceToStreamUseCaseMapping(listOf(), listOf())
         TestCase.assertTrue(mapping.isEmpty())

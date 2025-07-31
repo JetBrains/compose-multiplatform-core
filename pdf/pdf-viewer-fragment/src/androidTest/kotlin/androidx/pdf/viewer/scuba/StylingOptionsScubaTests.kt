@@ -119,8 +119,8 @@ class StylingOptionsScubaTests {
             it.isToolboxVisible = true
         }
 
-        onView(withId(R.id.pdfView)).perform(swipeUp())
-        onView(withId(R.id.pdfView)).perform(swipeDown())
+        onView(withId(R.id.pdfContentLayout)).perform(swipeUp())
+        onView(withId(R.id.pdfContentLayout)).perform(swipeDown())
         assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT)
     }
 }

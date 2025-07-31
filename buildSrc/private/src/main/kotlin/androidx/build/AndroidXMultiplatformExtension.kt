@@ -34,15 +34,12 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.findByType
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
@@ -380,24 +377,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     // don't try running common tests for stubs target if disabled
                     it.enabled = runTests
                 }
-            }
-        } else {
-            null
-        }
-    }
-
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    @JvmOverloads
-    fun androidTarget(block: Action<KotlinAndroidTarget>? = null): KotlinAndroidTarget? {
-        supportedPlatforms.add(PlatformIdentifier.ANDROID)
-        return if (project.enableJvm()) {
-            kotlinExtension.androidTarget {
-                publishLibraryVariants(Release.DEFAULT_PUBLISH_CONFIG)
-                // we need to allow instrumented test to depend on commonTest/jvmTest, which is not
-                // default.
-                // see https://youtrack.jetbrains.com/issue/KT-62594
-                instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
-                block?.execute(this)
             }
         } else {
             null

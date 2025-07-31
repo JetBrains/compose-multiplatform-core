@@ -37,12 +37,10 @@ import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.Keyboard
-import androidx.compose.ui.test.KeyboardHidden
 import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.Navigation
-import androidx.compose.ui.test.NavigationHidden
 import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.Touchscreen
@@ -598,23 +596,53 @@ class DeviceConfigurationOverrideTest {
         }
 
         assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_NO)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_NO)
     }
 
     @Test
-    fun keyboardHiddenOverride_false_overridesKeyboardHiddenConfigValue() {
+    fun keyboardOverride_hardKeyboardHidden_overridesKeyboardConfigValue() {
         lateinit var configuration: Configuration
 
         rule.setContent {
-            DeviceConfigurationOverride(DeviceConfigurationOverride.KeyboardHidden(false)) {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Keyboard(
+                    keyboardType = KeyboardType.Qwerty,
+                    isHardKeyboardHidden = true,
+                )
+            ) {
                 configuration = LocalConfiguration.current
             }
         }
 
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
         assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_NO)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_YES)
     }
 
     @Test
-    fun navigationOverride_false_overridesNavigationConfigValue() {
+    fun keyboardOverride_hidden_overridesKeyboardConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Keyboard(
+                    keyboardType = KeyboardType.Qwerty,
+                    isHardKeyboardHidden = true,
+                    isHidden = true,
+                )
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_YES)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_YES)
+    }
+
+    @Test
+    fun navigationOverride_dpad_overridesNavigationConfigValue() {
         lateinit var configuration: Configuration
 
         rule.setContent {
@@ -626,19 +654,23 @@ class DeviceConfigurationOverrideTest {
         }
 
         assertEquals(configuration.navigation, Configuration.NAVIGATION_DPAD)
+        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_NO)
     }
 
     @Test
-    fun navigationHiddenOverride_false_overridesNavigationHiddenConfigValue() {
+    fun navigationOverride_hidden_overridesNavigationConfigValue() {
         lateinit var configuration: Configuration
 
         rule.setContent {
-            DeviceConfigurationOverride(DeviceConfigurationOverride.NavigationHidden(false)) {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Navigation(NavigationType.Dpad, true)
+            ) {
                 configuration = LocalConfiguration.current
             }
         }
 
-        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_NO)
+        assertEquals(configuration.navigation, Configuration.NAVIGATION_DPAD)
+        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_YES)
     }
 
     @Test

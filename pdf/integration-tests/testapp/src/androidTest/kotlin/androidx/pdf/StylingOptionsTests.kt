@@ -28,15 +28,13 @@ import androidx.pdf.testapp.R
 import androidx.pdf.util.Preconditions
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.R as PdfR
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -104,8 +102,7 @@ class StylingOptionsTests {
             onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
         }
 
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
 
         scenario.onFragment {
             Preconditions.checkArgument(
@@ -126,13 +123,11 @@ class StylingOptionsTests {
 
     private fun swipeAndAssertFastScrollerStyle() {
         // Swipe actions
-        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
-        onView(withId(PdfR.id.pdfView)).perform(swipeDown())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeDown())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
-        // Espresso will wait on the idling resource on the next action performed hence adding a
-        // click which is essentially a no-op
-        onView(withId(PdfR.id.pdfView)).perform(click())
+        Espresso.onIdle()
 
         scenario.onFragment { fragment ->
             val fastScrollDrawer = fragment.getPdfViewInstance().fastScroller?.fastScrollDrawer

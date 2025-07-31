@@ -599,7 +599,8 @@ private constructor(
         }
 
     /**
-     * Returns a surface into which the application can render stereo image content.
+     * Returns a surface into which the application can render stereo image content. Note that
+     * android.graphics.Canvas Apis are not currently supported on this Canvas.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads

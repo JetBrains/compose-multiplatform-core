@@ -24,6 +24,7 @@ package androidx.work {
     method public androidx.work.InputMergerFactory getInputMergerFactory();
     method public int getMaxJobSchedulerId();
     method public int getMinJobSchedulerId();
+    method public long getRemoteSessionTimeoutMillis();
     method public androidx.work.RunnableScheduler getRunnableScheduler();
     method public androidx.core.util.Consumer<java.lang.Throwable>? getSchedulingExceptionHandler();
     method public java.util.concurrent.Executor getTaskExecutor();
@@ -40,6 +41,7 @@ package androidx.work {
     property public androidx.work.InputMergerFactory inputMergerFactory;
     property public int maxJobSchedulerId;
     property public int minJobSchedulerId;
+    property @IntRange(from=0L, to=1200000L) public long remoteSessionTimeoutMillis;
     property public androidx.work.RunnableScheduler runnableScheduler;
     property public androidx.core.util.Consumer<java.lang.Throwable>? schedulingExceptionHandler;
     property public java.util.concurrent.Executor taskExecutor;
@@ -64,6 +66,7 @@ package androidx.work {
     method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.Configuration.Builder setMarkingJobsAsImportantWhileForeground(boolean markAsImportant);
     method public androidx.work.Configuration.Builder setMaxSchedulerLimit(int maxSchedulerLimit);
     method public androidx.work.Configuration.Builder setMinimumLoggingLevel(int loggingLevel);
+    method public androidx.work.Configuration.Builder setRemoteSessionTimeoutMillis(@IntRange(from=0L, to=1200000L) long timeoutMillis);
     method public androidx.work.Configuration.Builder setRunnableScheduler(androidx.work.RunnableScheduler runnableScheduler);
     method public androidx.work.Configuration.Builder setSchedulingExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> schedulingExceptionHandler);
     method public androidx.work.Configuration.Builder setTaskExecutor(java.util.concurrent.Executor taskExecutor);

@@ -30,7 +30,6 @@ import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.graph.GraphListener
-import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
@@ -99,9 +98,7 @@ public class FakeCameraBackend(private val fakeCameras: Map<CameraId, CameraMeta
         _cameraControllers.forEach { it.simulateCameraStopped() }
     }
 
-    override suspend fun prewarmGraphConfigQuery(cameraId: CameraId): CameraDeviceSetupCompat? {
-        return null
-    }
+    override fun prewarmIsConfigSupported(cameraId: CameraId) {}
 
     override suspend fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM)

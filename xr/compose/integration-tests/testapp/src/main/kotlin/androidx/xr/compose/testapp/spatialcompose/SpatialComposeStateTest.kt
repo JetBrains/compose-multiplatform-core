@@ -79,7 +79,7 @@ class SpatialComposeStateTest : ComponentActivity() {
                     if (useMainPanel) {
                         SpatialMainPanel(modifier = SubspaceModifier.size(600.dp).movable())
                     } else {
-                        SpatialPanel(modifier = SubspaceModifier.movable()) {
+                        SpatialPanel(modifier = SubspaceModifier.size(600.dp).movable()) {
                             MainPanelContent("Spatial Panel")
                         }
                     }

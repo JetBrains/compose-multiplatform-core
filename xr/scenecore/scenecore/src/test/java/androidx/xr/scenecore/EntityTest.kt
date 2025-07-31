@@ -81,8 +81,6 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
-@Suppress("Deprecation")
-// TODO - b/421386891: is/setHidden is deprecated; tests need to be updated with is/setEnabled
 // TODO: b/329902726 - Add a fake runtime and verify CPM integration.
 // TODO: b/369199417 - Update EntityTest once createGltfResourceAsync is default.
 @RunWith(RobolectricTestRunner::class)
@@ -214,7 +212,7 @@ class EntityTest {
 
         override val children: List<RtEntity> = emptyList()
 
-        override var contentDescription: String = ""
+        override var contentDescription: CharSequence = ""
 
         override fun dispose() {}
 
@@ -553,13 +551,13 @@ class EntityTest {
     }
 
     @Test
-    fun allEntitySetHiddened_callsRuntimeEntityImplSetHidden() {
-        panelEntity.setHidden(true)
-        gltfModelEntity.setHidden(true)
-        anchorEntity.setHidden(true)
-        activityPanelEntity.setHidden(false)
-        groupEntity.setHidden(false)
-        activitySpace.setHidden(false)
+    fun allEntitySetEnabled_callsRuntimeEntityImplSetHidden() {
+        panelEntity.setEnabled(false)
+        gltfModelEntity.setEnabled(false)
+        anchorEntity.setEnabled(false)
+        activityPanelEntity.setEnabled(true)
+        groupEntity.setEnabled(true)
+        activitySpace.setEnabled(true)
 
         verify(mockPanelEntityImpl).setHidden(true)
         verify(mockGltfModelEntityImpl).setHidden(true)

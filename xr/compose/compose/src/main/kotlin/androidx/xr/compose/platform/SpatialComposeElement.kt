@@ -131,7 +131,7 @@ internal abstract class AbstractComposeElement(
 
         GlobalSnapshotManager.ensureStarted()
         addChild(compositionOwner)
-        compositionOwner.root.coreEntity = rootCoreEntity
+        compositionOwner.root.entity = rootCoreEntity
         composition =
             WrappedComposition(
                     compositionOwner,
@@ -156,7 +156,7 @@ internal abstract class AbstractComposeElement(
      *
      * This method has no effect if the composition has already been disposed.
      */
-    public fun disposeComposition() {
+    fun disposeComposition() {
         composition?.dispose()
         composition = null
     }
@@ -186,7 +186,7 @@ internal class SpatialComposeElement(
         spatialComposeScene = scene
     }
 
-    public var rootVolumeConstraints
+    var rootVolumeConstraints
         get() = compositionOwner.rootVolumeConstraints
         set(value) {
             compositionOwner.rootVolumeConstraints = value
@@ -212,7 +212,7 @@ internal class SpatialComposeElement(
      *
      * @param content the composable content to display in this element.
      */
-    public fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
+    fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         shouldCreateCompositionOnAttachedToSpatialComposeScene = true
 
         this.content.value = content

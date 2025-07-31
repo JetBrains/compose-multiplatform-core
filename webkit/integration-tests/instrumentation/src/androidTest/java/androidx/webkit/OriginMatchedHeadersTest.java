@@ -210,6 +210,7 @@ public class OriginMatchedHeadersTest {
 
     @Test
     public void headerPresentOnPrefetchRequests() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.PROFILE_URL_PREFETCH);
         try (MockWebServer server = new MockWebServer()) {
             MockWebServerHttpsUtil.enableHttps(server);
             server.start();

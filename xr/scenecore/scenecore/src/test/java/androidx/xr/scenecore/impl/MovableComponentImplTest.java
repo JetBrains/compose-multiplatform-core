@@ -2312,6 +2312,98 @@ public class MovableComponentImplTest {
     }
 
     @Test
+    public void anchorable_ignoresInvalidPlanes() {
+        // Set the activity space pose to be 1 unit to the left of the origin.
+        setActivitySpacePose(
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+        Session session = Mockito.mock(Session.class);
+        Plane plane = mock(Plane.class);
+        Plane invalidPlane = mock(Plane.class);
+        when(mPerceptionLibrary.getSession()).thenReturn(session);
+        when(session.getAllPlanes()).thenReturn(ImmutableList.of(plane, invalidPlane));
+
+        // Create a perception plane that is 2 units above the origin and another one that is
+        // invalid.
+        androidx.xr.scenecore.impl.perception.Pose perceptionPose =
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+        PlaneData planeData =
+                new PlaneData(
+                        perceptionPose,
+                        1f,
+                        1f,
+                        Plane.Type.HORIZONTAL_UPWARD_FACING.intValue,
+                        Plane.Label.FLOOR.intValue);
+        when(plane.getData(any())).thenReturn(planeData);
+        // Have a second plane return invalid data, it should be ignored.
+        androidx.xr.scenecore.impl.perception.Pose perceptionPoseInvalid =
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 0f, 0f, 0f, 0f, 0f, 0f);
+        PlaneData planeDataInvalid =
+                new PlaneData(
+                        perceptionPoseInvalid,
+                        1f,
+                        1f,
+                        Plane.Type.HORIZONTAL_UPWARD_FACING.intValue,
+                        Plane.Label.FLOOR.intValue);
+        when(invalidPlane.getData(any())).thenReturn(planeDataInvalid);
+
+        Entity entity = createTestEntity();
+        // Set anchorPlacement to any plane.
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        /* systemMovable= */ true,
+                        /* scaleInZ= */ false,
+                        createAnyAnchorPlacement(),
+                        /* shouldDisposeParentAnchor= */ false,
+                        mPerceptionLibrary,
+                        mXrExtensions,
+                        mActivitySpaceImpl,
+                        mActivitySpaceRoot,
+                        mPerceptionSpaceActivityPose,
+                        mEntityManager,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+        assertThat(entity.addComponent(movableComponent)).isTrue();
+        ReformOptions options = mNodeRepository.getReformOptions(getEntityNode(entity));
+        TestMoveEventListener moveEventListener = new TestMoveEventListener();
+        FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
+
+        movableComponent.addMoveEventListener(executorService, moveEventListener);
+        // The reform options for parenting and moving should not be set when it is anchorable.
+        assertThat(options.getFlags()).isEqualTo(0);
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
+
+        ReformEvent reformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_MOVE, /* state= */ REFORM_STATE_START, /* id= */ 0);
+
+        // Put the proposed position at 1  above the origin. so it would need to move up 1 unit to
+        // be on the plane.
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1f, 1f, 1f));
+
+        sendReformEvent(getEntityNode(entity), reformEvent);
+        assertThat(executorService.hasNext()).isTrue();
+        executorService.runAll();
+
+        // The expected position should be 3 unit above the activity in order to rest on the plane.
+        // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
+        // units above it.
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
+        assertThat(moveEventListener.mCallCount).isEqualTo(1);
+        assertThat(moveEventListener.mLastMoveEvent.getUpdatedParent()).isNull();
+
+        // The panel shadow renderer should have no interaction.
+        verify(mPanelShadowRenderer, never()).updatePanelPose(any(), any(), any());
+        verify(mPanelShadowRenderer, never()).destroy();
+        verify(mPanelShadowRenderer, never()).hidePlane();
+
+        // The pose should have moved since the systemMovable is true.
+        assertPose(entity.getPose(), expectedPosition);
+    }
+
+    @Test
     public void anchorablePanelEntity_nearPlane_rendersShadow() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(

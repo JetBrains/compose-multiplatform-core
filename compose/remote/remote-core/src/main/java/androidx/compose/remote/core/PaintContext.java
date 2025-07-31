@@ -216,9 +216,9 @@ public abstract class PaintContext {
     /**
      * Replace the current paint with the PaintBundle
      *
-     * @param paint
+     * @param paintBundle
      */
-    public abstract void replacePaint(@NonNull PaintBundle paint);
+    public abstract void replacePaint(@NonNull PaintBundle paintBundle);
 
     /**
      * draw a round rect
@@ -331,10 +331,10 @@ public abstract class PaintContext {
      * @param path2Id
      * @param tween 0.0 = is path1 1.0 is path2
      * @param start
-     * @param stop
+     * @param end
      */
     public abstract void drawTweenPath(
-            int path1Id, int path2Id, float tween, float start, float stop);
+            int path1Id, int path2Id, float tween, float start, float end);
 
     /**
      * Interpolate between two path and return the resulting path
@@ -478,6 +478,15 @@ public abstract class PaintContext {
     }
 
     /**
+     * Repaint in the given time
+     *
+     * @param seconds the delay in seconds to the next render loop pass
+     */
+    public void wakeIn(float seconds) {
+        mContext.mRemoteComposeState.wakeIn(seconds);
+    }
+
+    /**
      * Starts a graphics layer
      *
      * @param w
@@ -502,10 +511,10 @@ public abstract class PaintContext {
     /**
      * Returns a String from an id
      *
-     * @param textID
+     * @param id
      * @return the string if found
      */
-    public abstract @Nullable String getText(int textID);
+    public abstract @Nullable String getText(int id);
 
     /**
      * Returns true if the document has been encoded for at least the given version MAJOR.MINOR

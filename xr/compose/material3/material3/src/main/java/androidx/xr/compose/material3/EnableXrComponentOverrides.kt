@@ -20,6 +20,8 @@ import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.LocalBasicAlertDialogOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarWithFabOverride
 import androidx.compose.material3.LocalNavigationBarOverride
 import androidx.compose.material3.LocalNavigationRailOverride
 import androidx.compose.material3.LocalShortNavigationBarOverride
@@ -106,6 +108,19 @@ public fun EnableXrComponentOverrides(
                     add(LocalBasicAlertDialogOverride provides XrBasicAlertDialogOverride)
                 }
 
+                if (
+                    context.shouldOverrideComponent(XrComponentOverride.HorizontalFloatingToolbar)
+                ) {
+                    add(
+                        LocalHorizontalFloatingToolbarOverride provides
+                            XrHorizontalFloatingToolbarOverride
+                    )
+                    add(
+                        LocalHorizontalFloatingToolbarWithFabOverride provides
+                            XrHorizontalFloatingToolbarWithFabOverride
+                    )
+                }
+
                 if (context.shouldOverrideComponent(XrComponentOverride.VerticalFloatingToolbar)) {
                     add(LocalVerticalToolbarOverride provides XrVerticalFloatingToolbarOverride)
                     add(
@@ -185,6 +200,11 @@ public value class XrComponentOverride private constructor(private val name: Str
         @ExperimentalMaterial3XrApi
         public val VerticalFloatingToolbar: XrComponentOverride =
             XrComponentOverride("VerticalFloatingToolbar")
+
+        /** Material Expressive VerticalFloatingToolbar. */
+        @ExperimentalMaterial3XrApi
+        public val HorizontalFloatingToolbar: XrComponentOverride =
+            XrComponentOverride("HorizontalFloatingToolbar")
     }
 }
 

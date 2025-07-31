@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Content() {
     var navSuiteType: NavigationSuiteType? by remember { mutableStateOf(null) }
-    var edgeOffType: OrbiterOffsetType? by remember { mutableStateOf(null) }
+    var edgeOffType: OrbiterOffsetType by remember { mutableStateOf(OrbiterOffsetType.InnerEdge) }
 
     var navSuiteSelectedItem by remember { mutableStateOf(NavSuiteItem.HOME) }
 
@@ -80,7 +80,7 @@ private fun Content() {
     ) {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
-                NavSuiteItem.values().forEach { item ->
+                NavSuiteItem.entries.forEach { item ->
                     item(
                         selected = navSuiteSelectedItem == item,
                         onClick = { navSuiteSelectedItem = item },
@@ -101,6 +101,8 @@ private fun Content() {
                 }
                 NavSuiteItem.SETTINGS -> {
                     XrSettingsPane(
+                        selectedNavSuiteType = navSuiteType,
+                        selectedOrbiterEdgeOffset = edgeOffType,
                         onNavSuiteTypeChanged = { navSuiteType = it },
                         onOrbiterEdgeOffsetChanged = { edgeOffType = it },
                     )

@@ -2279,7 +2279,8 @@ private fun IconButtonWithTooltip(
     enabled: Boolean = true,
 ) {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
         tooltip = { PlainTooltip { Text(contentDescription) } },
         state = rememberTooltipState(),
     ) {

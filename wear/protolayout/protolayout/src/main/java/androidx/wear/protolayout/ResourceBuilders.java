@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 /** Builders for the resources for a layout. */
 public final class ResourceBuilders {
@@ -119,6 +120,23 @@ public final class ResourceBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public ResourceProto.@NonNull AndroidImageResourceByResId toProto() {
             return mImpl;
+        }
+
+        @Override
+        public int hashCode() {
+            return getResourceId();
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof AndroidImageResourceByResId)) {
+                return false;
+            }
+            AndroidImageResourceByResId that = (AndroidImageResourceByResId) obj;
+            return that.getResourceId() == getResourceId();
         }
 
         @Override
@@ -208,6 +226,27 @@ public final class ResourceBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public ResourceProto.@NonNull InlineImageResource toProto() {
             return mImpl;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(
+                    getFormat(), getWidthPx(), getHeightPx(), Arrays.hashCode(getData()));
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof InlineImageResource)) {
+                return false;
+            }
+            InlineImageResource that = (InlineImageResource) obj;
+            return that.getFormat() == getFormat()
+                    && that.getWidthPx() == getWidthPx()
+                    && that.getHeightPx() == getHeightPx()
+                    && Arrays.equals(that.getData(), getData());
         }
 
         @Override
@@ -327,6 +366,27 @@ public final class ResourceBuilders {
         }
 
         @Override
+        @SuppressWarnings("ResourceType")
+        public int hashCode() {
+            return Objects.hash(
+                    getResourceId(), getAnimatedImageFormat(), Trigger.hash(getStartTrigger()));
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof AndroidAnimatedImageResourceByResId)) {
+                return false;
+            }
+            AndroidAnimatedImageResourceByResId that = (AndroidAnimatedImageResourceByResId) obj;
+            return that.getResourceId() == getResourceId()
+                    && that.getAnimatedImageFormat() == getAnimatedImageFormat()
+                    && Trigger.equal(that.getStartTrigger(), getStartTrigger());
+        }
+
+        @Override
         public @NonNull String toString() {
             return "AndroidAnimatedImageResourceByResId{"
                     + "animatedImageFormat="
@@ -431,6 +491,38 @@ public final class ResourceBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public ResourceProto.@NonNull AndroidSeekableAnimatedImageResourceByResId toProto() {
             return mImpl;
+        }
+
+        @Override
+        @SuppressWarnings("ResourceType")
+        public int hashCode() {
+            DynamicFloat progress = getProgress();
+            return Objects.hash(
+                    getResourceId(),
+                    getAnimatedImageFormat(),
+                    progress != null ? Arrays.hashCode(progress.toDynamicFloatByteArray()) : null);
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof AndroidSeekableAnimatedImageResourceByResId)) {
+                return false;
+            }
+            AndroidSeekableAnimatedImageResourceByResId that =
+                    (AndroidSeekableAnimatedImageResourceByResId) obj;
+            DynamicFloat thatProgress = that.getProgress();
+            DynamicFloat progress = getProgress();
+            return that.getResourceId() == getResourceId()
+                    && that.getAnimatedImageFormat() == getAnimatedImageFormat()
+                    && (thatProgress == progress
+                            || (thatProgress != null
+                                    && progress != null
+                                    && Arrays.equals(
+                                            thatProgress.toDynamicFloatByteArray(),
+                                            progress.toDynamicFloatByteArray())));
         }
 
         @Override
@@ -544,6 +636,36 @@ public final class ResourceBuilders {
         }
 
         @Override
+        public int hashCode() {
+            DynamicFloat progress = getProgress();
+            return Objects.hash(
+                    getRawResourceId(),
+                    Trigger.hash(getStartTrigger()),
+                    progress != null ? Arrays.hashCode(progress.toDynamicFloatByteArray()) : null);
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof AndroidLottieResourceByResId)) {
+                return false;
+            }
+            AndroidLottieResourceByResId that = (AndroidLottieResourceByResId) obj;
+            DynamicFloat thatProgress = that.getProgress();
+            DynamicFloat progress = getProgress();
+            return that.getRawResourceId() == getRawResourceId()
+                    && Trigger.equal(that.getStartTrigger(), getStartTrigger())
+                    && (thatProgress == progress
+                            || (thatProgress != null
+                                    && progress != null
+                                    && Arrays.equals(
+                                            thatProgress.toDynamicFloatByteArray(),
+                                            progress.toDynamicFloatByteArray())));
+        }
+
+        @Override
         public @NonNull String toString() {
             return "AndroidLottieResourceByResId{"
                     + "rawResourceId="
@@ -623,6 +745,7 @@ public final class ResourceBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class ImageResource {
         private final ResourceProto.ImageResource mImpl;
+        @Nullable private Integer mHashCode = null;
 
         ImageResource(ResourceProto.ImageResource impl) {
             this.mImpl = impl;
@@ -695,6 +818,47 @@ public final class ResourceBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public ResourceProto.@NonNull ImageResource toProto() {
             return mImpl;
+        }
+
+        @Override
+        @OptIn(markerClass = ProtoLayoutExperimental.class)
+        public int hashCode() {
+            if (mHashCode != null) {
+                return mHashCode;
+            }
+
+            mHashCode =
+                    Objects.hash(
+                            getAndroidResourceByResId(),
+                            getAndroidAnimatedResourceByResId(),
+                            getAndroidSeekableAnimatedResourceByResId(),
+                            getAndroidLottieResourceByResId(),
+                            getInlineResource());
+
+            return mHashCode;
+        }
+
+        @Override
+        @OptIn(markerClass = ProtoLayoutExperimental.class)
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof ImageResource)) {
+                return false;
+            }
+            ImageResource that = (ImageResource) obj;
+            return Objects.equals(that.getAndroidResourceByResId(), getAndroidResourceByResId())
+                    && Objects.equals(
+                            that.getAndroidAnimatedResourceByResId(),
+                            getAndroidAnimatedResourceByResId())
+                    && Objects.equals(
+                            that.getAndroidSeekableAnimatedResourceByResId(),
+                            getAndroidSeekableAnimatedResourceByResId())
+                    && Objects.equals(
+                            that.getAndroidLottieResourceByResId(),
+                            getAndroidLottieResourceByResId())
+                    && Objects.equals(that.getInlineResource(), getInlineResource());
         }
 
         @Override

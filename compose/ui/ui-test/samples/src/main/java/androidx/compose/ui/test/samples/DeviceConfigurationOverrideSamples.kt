@@ -34,12 +34,10 @@ import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.Keyboard
-import androidx.compose.ui.test.KeyboardHidden
 import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.Navigation
-import androidx.compose.ui.test.NavigationHidden
 import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.Touchscreen
@@ -133,24 +131,14 @@ fun DeviceConfigurationOverrideKeyboard() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideKeyboardHidden() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.KeyboardHidden(false)) {
-        LocalConfiguration.current.keyboardHidden // will be Configuration.KEYBOARDHIDDEN_NO
-    }
-}
-
-@Sampled
-@Composable
 fun DeviceConfigurationOverrideNavigation() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.Navigation(NavigationType.Dpad)) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride.Navigation(
+            navigationType = NavigationType.Dpad,
+            isHidden = false,
+        )
+    ) {
         LocalConfiguration.current.navigation // will be Configuration.NAVIGATION_DPAD
-    }
-}
-
-@Sampled
-@Composable
-fun DeviceConfigurationOverrideNavigationHidden() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.NavigationHidden(false)) {
         LocalConfiguration.current.navigationHidden // will be Configuration.NAVIGATIONHIDDEN_NO
     }
 }

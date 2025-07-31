@@ -138,7 +138,7 @@ class DebugCreationContext : RemoteContext() {
         TODO("Not yet implemented")
     }
 
-    override fun runNamedAction(textId: Int, value: Any) {
+    override fun runNamedAction(textId: Int, value: Any?) {
         TODO("Not yet implemented")
     }
 
@@ -451,9 +451,9 @@ class DebugCreationContext : RemoteContext() {
                     stringBuilder.append("endGraphicsLayer()\n")
                 }
 
-                override fun getText(textID: Int): String? {
-                    stringBuilder.append("getText($textID)\n")
-                    return "<TEST$textID>"
+                override fun getText(textId: Int): String? {
+                    stringBuilder.append("getText($textId)\n")
+                    return "<TEST$textId>"
                 }
 
                 override fun matrixFromPath(

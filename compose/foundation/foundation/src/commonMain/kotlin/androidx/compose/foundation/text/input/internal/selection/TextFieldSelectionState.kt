@@ -36,7 +36,11 @@ import androidx.compose.foundation.text.DefaultCursorThickness
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.MenuItemsAvailability
 import androidx.compose.foundation.text.TextContextMenuItems
-import androidx.compose.foundation.text.TextContextMenuItems.*
+import androidx.compose.foundation.text.TextContextMenuItems.Autofill
+import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.Cut
+import androidx.compose.foundation.text.TextContextMenuItems.Paste
+import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
@@ -55,6 +59,7 @@ import androidx.compose.foundation.text.input.internal.WedgeAffinity
 import androidx.compose.foundation.text.input.internal.coerceIn
 import androidx.compose.foundation.text.input.internal.findClosestRect
 import androidx.compose.foundation.text.input.internal.fromDecorationToTextLayout
+import androidx.compose.foundation.text.input.internal.fromTextLayoutToDecoration
 import androidx.compose.foundation.text.input.internal.getIndexTransformationType
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Cursor
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.None
@@ -69,7 +74,7 @@ import androidx.compose.foundation.text.selection.containsInclusive
 import androidx.compose.foundation.text.selection.getAdjustedCoordinates
 import androidx.compose.foundation.text.selection.getSelectionHandleCoordinates
 import androidx.compose.foundation.text.selection.getTextFieldSelectionLayout
-import androidx.compose.foundation.text.selection.isPrecisePointer
+import androidx.compose.foundation.text.selection.isMouseOrTouchPad
 import androidx.compose.foundation.text.selection.visibleBounds
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -79,6 +84,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusProperties.Companion.UnsetFocusRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isSpecified
@@ -97,10 +103,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.round
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
@@ -339,10 +343,55 @@ internal class TextFieldSelectionState(
     fun getCursorRect(): Rect {
         val layoutResult = textLayoutState.layoutResult ?: return Rect.Zero
         val value = textFieldState.visualText
-        if (!value.selection.collapsed) return Rect.Zero
-        val cursorRect = layoutResult.getCursorRect(value.selection.start)
 
-        val cursorWidth = with(density) { floor(DefaultCursorThickness.toPx()).coerceAtLeast(1f) }
+        return calculateCursorRect(layoutResult, value)
+    }
+
+    /**
+     * Returns where the focus should be in a TextField. This is useful for panning the content in a
+     * dialog or when AdjustPan is used on Android.
+     *
+     * If TextField is not currently focused, this function returns [UnsetFocusRect] which would use
+     * the bounding box of the TextField.
+     *
+     * This is in Decorator coordinates.
+     */
+    fun getFocusRect(): Rect {
+        val layoutResult = textLayoutState.layoutResult ?: return Rect.Zero
+        // if not focused, use the entire bounding box of the TextField.
+        if (!isFocused) return UnsetFocusRect
+        val value = textFieldState.visualText
+
+        val focusRectInTextLayout =
+            if (value.selection.collapsed) {
+                calculateCursorRect(layoutResult, value)
+            } else {
+                calculateSelectionRect(layoutResult, value)
+            }
+
+        return textLayoutState.fromTextLayoutToDecoration(focusRectInTextLayout)
+    }
+
+    /**
+     * Calculates the rectangle area that the cursor occupies. Normally [TextLayoutResult] functions
+     * return a rectangle with zero(0) width for the cursor. This is slightly padded here to make
+     * room for the stroke width while drawing the caret. Furthermore rectangle location is also
+     * readjusted to keep it in the text layout region, otherwise a caret at the start or the end
+     * might get clipped while drawing.
+     *
+     * Returns [Rect.Zero] if [visualText] selection is not collapsed.
+     *
+     * This is in text layout coordinates.
+     */
+    private fun calculateCursorRect(
+        layoutResult: TextLayoutResult,
+        visualText: TextFieldCharSequence,
+    ): Rect {
+        if (!visualText.selection.collapsed) return Rect.Zero
+
+        val cursorRect = layoutResult.getCursorRect(visualText.selection.start)
+
+        val cursorWidth = with(density) { DefaultCursorThickness.toPx() }
         // left and right values in cursorRect should be the same but in any case use the
         // logically correct anchor.
         val cursorCenterX =
@@ -360,13 +409,6 @@ internal class TextFieldSelectionState(
                 // than the maximum value.
                 .coerceAtMost(layoutResult.size.width - cursorWidth / 2)
                 .coerceAtLeast(cursorWidth / 2)
-                .let {
-                    // When cursor width is odd, draw it in the middle of a pixel,
-                    // to avoid blurring due to antialiasing.
-                    if (cursorWidth.toInt() % 2 == 1) {
-                        floor(it) + 0.5f // round to nearest n+0.5
-                    } else round(it)
-                }
 
         return Rect(
             left = coercedCursorCenterX - cursorWidth / 2,
@@ -374,6 +416,37 @@ internal class TextFieldSelectionState(
             top = cursorRect.top,
             bottom = cursorRect.bottom,
         )
+    }
+
+    /**
+     * Returns the minimum bounding rectangle for the current selection range. Returns [Rect.Zero]
+     * if [visualText] selection is collapsed into a cursor,
+     */
+    private fun calculateSelectionRect(
+        layoutResult: TextLayoutResult,
+        visualText: TextFieldCharSequence,
+    ): Rect {
+        if (visualText.selection.collapsed) return Rect.Zero
+
+        val lineStart = layoutResult.getLineForOffset(visualText.selection.start)
+        val lineEnd = layoutResult.getLineForOffset(visualText.selection.end)
+        return if (lineStart == lineEnd) {
+            // selection is confined to a single line, we can get away with a cheap calculation
+            val startHorizontal =
+                layoutResult.getHorizontalPosition(visualText.selection.start, true)
+            val endHorizontal = layoutResult.getHorizontalPosition(visualText.selection.end, true)
+            Rect(
+                left = minOf(startHorizontal, endHorizontal),
+                top = layoutResult.getLineTop(lineStart),
+                right = maxOf(startHorizontal, endHorizontal),
+                bottom = layoutResult.getLineBottom(lineEnd),
+            )
+        } else {
+            // selection is multiline, we have to use a slightly expensive method
+            val path =
+                layoutResult.getPathForRange(visualText.selection.min, visualText.selection.max)
+            path.getBounds()
+        }
     }
 
     fun update(
@@ -481,7 +554,7 @@ internal class TextFieldSelectionState(
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
-                isInTouchMode = !event.isPrecisePointer
+                isInTouchMode = !event.isMouseOrTouchPad()
             }
         }
     }
