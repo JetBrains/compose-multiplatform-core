@@ -21,67 +21,126 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.IntSize
 
-internal class UIKitWindowInsets: PlatformWindowInsets {
+internal class UIKitWindowInsetsManager {
     var layoutMargins = mutableStateOf(PlatformInsets.Zero)
     var safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
     var keyboardOverlapHeight = mutableStateOf(0)
     var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
     var sceneSize = mutableStateOf(IntSize.Zero)
 
-    override val displayCutouts: List<Rect>
-        get() {
-            val orientation = interfaceOrientation.value
-            val safeAreaInsets = safeAreaInsets.value
-            val sceneSize = sceneSize.value
+    val windowInsets: PlatformWindowInsets = UIKitWindowInsets(
+        { layoutMargins.value },
+        { safeAreaInsets.value },
+        { keyboardOverlapHeight.value },
+        { interfaceOrientation.value },
+        { sceneSize.value }
+    )
 
-            val hasCutout = when(orientation) {
-                InterfaceOrientation.Portrait -> safeAreaInsets.top > 0
-                InterfaceOrientation.PortraitUpsideDown -> safeAreaInsets.bottom > 0
-                InterfaceOrientation.LandscapeLeft -> safeAreaInsets.left > 0
-                InterfaceOrientation.LandscapeRight -> safeAreaInsets.right > 0
-            }
+    /**
+     * Cache that stores pre-configured PlatformWindowInsets instances for different exclusion combinations.
+     *
+     * The key is a Pair of Booleans representing:
+     * - Whether to exclude safe insets (status/navigation bars)
+     * - Whether to exclude IME insets (keyboard)
+     */
+    private val windowInsetsExclusionsCache = HashMap<Pair<Boolean, Boolean>, PlatformWindowInsets>()
 
-            if (!hasCutout || sceneSize.width <= 0 || sceneSize.height <= 0) {
-                return emptyList()
-            } else {
-                return when (orientation) {
-                    InterfaceOrientation.Portrait -> listOf(
-                        Rect(0f, 0f, sceneSize.width.toFloat(), safeAreaInsets.top.toFloat())
-                    )
-                    InterfaceOrientation.PortraitUpsideDown -> listOf(
-                        Rect(0f, sceneSize.height - safeAreaInsets.bottom.toFloat(), sceneSize.width.toFloat(), sceneSize.height.toFloat())
-                    )
-                    InterfaceOrientation.LandscapeLeft -> listOf(
-                        Rect(0f, 0f, safeAreaInsets.left.toFloat(), sceneSize.height.toFloat())
-                    )
-                    InterfaceOrientation.LandscapeRight -> listOf(
-                        Rect(sceneSize.width - safeAreaInsets.right.toFloat(), 0f, sceneSize.width.toFloat(), sceneSize.height.toFloat())
-                    )
+    private inner class UIKitWindowInsets(
+        private val layoutMargins: () -> PlatformInsets,
+        private val safeAreaInsets: () -> PlatformInsets,
+        private val keyboardOverlapHeight: () -> Int,
+        private val interfaceOrientation: () -> InterfaceOrientation,
+        private val sceneSize: () -> IntSize
+    ) : PlatformWindowInsets {
+        override val displayCutouts: List<Rect>
+            get() {
+                val orientation = interfaceOrientation()
+                val safeAreaInsets = safeAreaInsets()
+                val sceneSize = sceneSize()
+
+                val hasCutout = when (orientation) {
+                    InterfaceOrientation.Portrait -> safeAreaInsets.top > 0
+                    InterfaceOrientation.PortraitUpsideDown -> safeAreaInsets.bottom > 0
+                    InterfaceOrientation.LandscapeLeft -> safeAreaInsets.left > 0
+                    InterfaceOrientation.LandscapeRight -> safeAreaInsets.right > 0
+                }
+
+                if (!hasCutout || sceneSize.width <= 0 || sceneSize.height <= 0) {
+                    return emptyList()
+                } else {
+                    return when (orientation) {
+                        InterfaceOrientation.Portrait -> listOf(
+                            Rect(0f, 0f, sceneSize.width.toFloat(), safeAreaInsets.top.toFloat())
+                        )
+
+                        InterfaceOrientation.PortraitUpsideDown -> listOf(
+                            Rect(
+                                0f,
+                                sceneSize.height - safeAreaInsets.bottom.toFloat(),
+                                sceneSize.width.toFloat(),
+                                sceneSize.height.toFloat()
+                            )
+                        )
+
+                        InterfaceOrientation.LandscapeLeft -> listOf(
+                            Rect(0f, 0f, safeAreaInsets.left.toFloat(), sceneSize.height.toFloat())
+                        )
+
+                        InterfaceOrientation.LandscapeRight -> listOf(
+                            Rect(
+                                sceneSize.width - safeAreaInsets.right.toFloat(),
+                                0f,
+                                sceneSize.width.toFloat(),
+                                sceneSize.height.toFloat()
+                            )
+                        )
+                    }
                 }
             }
-        }
-    override val captionBar: PlatformInsets get() = PlatformInsets.Zero
-    override val displayCutout: PlatformInsets
-        get() {
-            val orientation = interfaceOrientation.value
-            val safeAreaInsets = safeAreaInsets.value
+        override val captionBar: PlatformInsets get() = PlatformInsets.Zero
+        override val displayCutout: PlatformInsets
+            get() {
+                val orientation = interfaceOrientation()
+                val safeAreaInsets = safeAreaInsets()
 
-            return when(orientation) {
-                InterfaceOrientation.Portrait -> PlatformInsets(top = safeAreaInsets.top)
-                InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(bottom = safeAreaInsets.bottom)
-                InterfaceOrientation.LandscapeLeft -> PlatformInsets(left = safeAreaInsets.left)
-                InterfaceOrientation.LandscapeRight -> PlatformInsets(right = safeAreaInsets.right)
+                return when (orientation) {
+                    InterfaceOrientation.Portrait -> PlatformInsets(top = safeAreaInsets.top)
+                    InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(bottom = safeAreaInsets.bottom)
+                    InterfaceOrientation.LandscapeLeft -> PlatformInsets(left = safeAreaInsets.left)
+                    InterfaceOrientation.LandscapeRight -> PlatformInsets(right = safeAreaInsets.right)
+                }
+            }
+        override val ime: PlatformInsets get() = PlatformInsets(bottom = keyboardOverlapHeight())
+        override val mandatorySystemGestures: PlatformInsets
+            get() {
+                val safeAreaInsets = safeAreaInsets()
+                return PlatformInsets(top = safeAreaInsets.top, bottom = safeAreaInsets.bottom)
+            }
+        override val navigationBars: PlatformInsets get() = PlatformInsets(bottom = safeAreaInsets().bottom)
+        override val statusBars: PlatformInsets get() = PlatformInsets(top = safeAreaInsets().top)
+        override val systemBars: PlatformInsets get() = safeAreaInsets()
+        override val systemGestures: PlatformInsets get() = layoutMargins()
+        override val tappableElement: PlatformInsets get() = PlatformInsets(top = safeAreaInsets().top)
+        override val waterfall: PlatformInsets get() = PlatformInsets.Zero
+
+        override fun excluding(safeInsets: Boolean, ime: Boolean): PlatformWindowInsets {
+            if (!safeInsets && !ime) {
+                return this
+            }
+
+            return windowInsetsExclusionsCache.getOrPut(safeInsets to ime) {
+                val derivedLayoutMargins: () -> PlatformInsets by lazy { { layoutMargins().exclude(safeAreaInsets()) } }
+                val derivedSafeAreaInsets: () -> PlatformInsets by lazy { { PlatformInsets.Zero } }
+                val derivedKeyboardOverlapHeight: () -> Int by lazy { { 0 } }
+
+                UIKitWindowInsets(
+                    if (safeInsets) derivedLayoutMargins else layoutMargins ,
+                    if (safeInsets) derivedSafeAreaInsets else safeAreaInsets,
+                    if (ime) derivedKeyboardOverlapHeight else keyboardOverlapHeight,
+                    interfaceOrientation,
+                    sceneSize
+                )
             }
         }
-    override val ime: PlatformInsets get() = PlatformInsets(bottom = keyboardOverlapHeight.value)
-    override val mandatorySystemGestures: PlatformInsets get() {
-        val safeAreaInsets = safeAreaInsets.value
-        return PlatformInsets(top = safeAreaInsets.top, bottom = safeAreaInsets.bottom)
     }
-    override val navigationBars: PlatformInsets get() = PlatformInsets(bottom = safeAreaInsets.value.bottom)
-    override val statusBars: PlatformInsets get() = PlatformInsets(top = safeAreaInsets.value.top)
-    override val systemBars: PlatformInsets get() = safeAreaInsets.value
-    override val systemGestures: PlatformInsets get() = layoutMargins.value
-    override val tappableElement: PlatformInsets get() = PlatformInsets(top = safeAreaInsets.value.top)
-    override val waterfall: PlatformInsets get() = PlatformInsets.Zero
 }

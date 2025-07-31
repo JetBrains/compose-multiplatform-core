@@ -36,7 +36,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.safeDrawing
+import androidx.compose.ui.platform.exclude
+import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
@@ -208,25 +209,35 @@ private fun DialogLayout(
             containerSize = containerSize,
             platformInsets = platformInsets
         )
-        Layout(
-            content = currentContent,
-            modifier = modifier,
-            measurePolicy = measurePolicy
-        )
+
+        LocalPlatformWindowInsets.current.exclude(
+            safeInsets = properties.usePlatformInsets,
+            ime = properties.useSoftwareKeyboardInset
+        ) {
+            Layout(
+                content = currentContent,
+                modifier = modifier,
+                measurePolicy = measurePolicy
+            )
+        }
     }
 }
 
 private val DialogProperties.platformInsets: PlatformInsets
     @Composable get() {
-        return if (usePlatformInsets && useSoftwareKeyboardInset) {
-            LocalPlatformWindowInsets.current.safeDrawing
-        } else if (usePlatformInsets) {
+        val safeInsets = if (usePlatformInsets) {
             LocalPlatformWindowInsets.current.systemBars
-        } else if (useSoftwareKeyboardInset) {
+        } else {
+            PlatformInsets.Zero
+        }
+
+        val ime = if (useSoftwareKeyboardInset) {
             LocalPlatformWindowInsets.current.ime
         } else {
             PlatformInsets.Zero
         }
+
+        return safeInsets.union(ime)
     }
 
 @Composable

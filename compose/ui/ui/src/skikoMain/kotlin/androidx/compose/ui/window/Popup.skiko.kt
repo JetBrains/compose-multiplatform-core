@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
+import androidx.compose.ui.platform.exclude
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
@@ -465,11 +466,16 @@ private fun PopupLayout(
             layoutDirection = layoutDirection,
             parentBoundsInWindow = parentBoundsInWindow
         )
-        Layout(
-            content = currentContent,
-            modifier = modifier,
-            measurePolicy = measurePolicy
-        )
+        LocalPlatformWindowInsets.current.exclude(
+            properties.usePlatformInsets,
+            false
+        ) {
+            Layout(
+                content = currentContent,
+                modifier = modifier,
+                measurePolicy = measurePolicy
+            )
+        }
     }
 }
 
