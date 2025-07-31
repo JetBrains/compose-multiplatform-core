@@ -218,9 +218,13 @@ internal class ComposeHostingViewController(
 
     private fun updateInterfaceOrientationState() {
         currentInterfaceOrientation?.let {
-            interfaceOrientationState.value = it
-            mediator?.updateInterfaceOrientation(it)
+            updateInterfaceOrientation(it)
         }
+    }
+
+    fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
+        interfaceOrientationState.value = orientation
+        mediator?.updateInterfaceOrientation(orientation)
     }
 
     override fun viewWillTransitionToSize(
