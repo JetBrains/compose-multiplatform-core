@@ -21,11 +21,12 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.compose.ui.backhandler"
+    }
     desktop()
     mac()
     ios()
@@ -123,8 +124,4 @@ androidx {
     inceptionYear = "2025"
     description = "Provides BackHandler in Compose Multiplatform projects"
     legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    namespace = "androidx.compose.ui.backhandler"
 }

@@ -28,12 +28,14 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.navigation.testing"
+        androidResources.enable = true
+    }
     desktop()
     linux()
     mac()
@@ -171,9 +173,4 @@ androidx {
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
     enableRobolectric()
-}
-
-android {
-    namespace = "androidx.navigation.testing"
-    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
 }

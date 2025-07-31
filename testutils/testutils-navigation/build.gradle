@@ -24,15 +24,20 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.testutils.navigation"
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
+    }
     desktop()
     mac()
     linux()
@@ -122,9 +127,4 @@ androidXMultiplatform {
 
 androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY
-}
-
-android {
-    namespace = "androidx.testutils.navigation"
-    testOptions.unitTests.returnDefaultValues = true
 }
