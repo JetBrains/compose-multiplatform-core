@@ -99,7 +99,7 @@ internal class RulerProviderModifierNode(
             displayCutoutRulers.removeRange(displayCutouts.size, displayCutoutRulers.size)
         } else {
             repeat(displayCutouts.size - displayCutoutRulers.size) {
-                displayCutoutRulers += RectRulers("display cutout rest ${displayCutoutRulers.size}")
+                displayCutoutRulers += RectRulers("display cutout rect ${displayCutoutRulers.size}")
             }
         }
 
