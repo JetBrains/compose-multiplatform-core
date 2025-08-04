@@ -225,6 +225,7 @@ internal class ComposeHostingViewController(
 
     fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
         interfaceOrientationState.value = orientation
+        layers?.updateInterfaceOrientation(orientation)
         mediator?.updateInterfaceOrientation(orientation)
     }
 
