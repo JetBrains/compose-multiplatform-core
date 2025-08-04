@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// ***********************************************************************************
+// MAINTAINED AND TESTED IN THE R8 REPO. PLEASE MAKE CHANGES THERE AND REPLICATE.
+// ***********************************************************************************
+
 package androidx.annotation.keep
 
 /**

@@ -255,9 +255,9 @@ public abstract class BaseRoomConnectionManager {
                 }
                 .forEach { (name, isView) ->
                     if (isView) {
-                        connection.execSQL("DROP VIEW IF EXISTS $name")
+                        connection.execSQL("DROP VIEW IF EXISTS `$name`")
                     } else {
-                        connection.execSQL("DROP TABLE IF EXISTS $name")
+                        connection.execSQL("DROP TABLE IF EXISTS `$name`")
                     }
                 }
         } else {

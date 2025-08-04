@@ -3165,8 +3165,8 @@ package androidx.core.view {
 
   public class DragStartHelper {
     ctor public DragStartHelper(android.view.View, androidx.core.view.DragStartHelper.OnDragStartListener);
-    method public void attach();
-    method public void detach();
+    method @UiThread public void attach();
+    method @UiThread public void detach();
     method public void getTouchPosition(android.graphics.Point);
     method public boolean onLongClick(android.view.View);
     method public boolean onTouch(android.view.View, android.view.MotionEvent);

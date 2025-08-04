@@ -40,8 +40,9 @@ import kotlinx.coroutines.launch
 public class PipeCameraPresenceSource(
     private val idFlow: Flow<List<CameraId>>,
     private val coroutineScope: CoroutineScope,
+    initialCameraIds: List<String>,
     context: Context,
-) : AbstractCameraPresenceSource() {
+) : AbstractCameraPresenceSource(initialCameraIds) {
 
     private var flowCollectionJob: Job? = null
     private val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager

@@ -58,6 +58,7 @@ import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
 import androidx.appsearch.localstorage.util.FutureUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
+import androidx.appsearch.stats.BaseStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
 import androidx.appsearch.util.SchemaMigrationUtil;
 import androidx.collection.ArraySet;
@@ -219,7 +220,7 @@ class SearchSessionImpl implements AppSearchSession {
                     internalSetSchemaResponse, activeMigrators.keySet());
 
             try (AppSearchMigrationHelper migrationHelper = new AppSearchMigrationHelper(
-                    mAppSearchImpl, mPackageName, mDatabaseName, request.getSchemas())) {
+                    mAppSearchImpl, mPackageName, mDatabaseName, request.getSchemas(), mLogger)) {
                 // 4. Trigger migration for all activity migrators.
                 migrationHelper.queryAndTransform(activeMigrators, currentVersion, finalVersion,
                         schemaMigrationStatsBuilder);
@@ -600,7 +601,11 @@ class SearchSessionImpl implements AppSearchSession {
                 }
             }
             // Now that the batch has been written. Persist the newly written data.
-            mAppSearchImpl.persistToDisk(mAppSearchImpl.getConfig().getLightweightPersistType());
+            mAppSearchImpl.persistToDisk(
+                    mPackageName,
+                    BaseStats.CALL_TYPE_REMOVE_DOCUMENT_BY_ID,
+                    mAppSearchImpl.getConfig().getLightweightPersistType(),
+                    mLogger);
             mIsMutated = true;
             // Schedule a task to dispatch change notifications. See requirements for where the
             // method is called documented in the method description.
@@ -631,7 +636,11 @@ class SearchSessionImpl implements AppSearchSession {
             mAppSearchImpl.removeByQuery(mPackageName, mDatabaseName, queryExpression,
                     searchSpec, removeStatsBuilder);
             // Now that the batch has been written. Persist the newly written data.
-            mAppSearchImpl.persistToDisk(mAppSearchImpl.getConfig().getLightweightPersistType());
+            mAppSearchImpl.persistToDisk(
+                    mPackageName,
+                    BaseStats.CALL_TYPE_REMOVE_DOCUMENTS_BY_SEARCH,
+                    mAppSearchImpl.getConfig().getLightweightPersistType(),
+                    mLogger);
             mIsMutated = true;
             // Schedule a task to dispatch change notifications. See requirements for where the
             // method is called documented in the method description.
@@ -655,7 +664,8 @@ class SearchSessionImpl implements AppSearchSession {
     @Override
     public @NonNull ListenableFuture<Void> requestFlushAsync() {
         return execute(() -> {
-            mAppSearchImpl.persistToDisk(PersistType.Code.FULL);
+            mAppSearchImpl.persistToDisk(mPackageName, BaseStats.CALL_TYPE_FLUSH,
+                    PersistType.Code.FULL, mLogger);
             return null;
         });
     }
@@ -671,7 +681,8 @@ class SearchSessionImpl implements AppSearchSession {
         if (mIsMutated && !mIsClosed) {
             // No future is needed here since the method is void.
             FutureUtil.execute(mExecutor, () -> {
-                mAppSearchImpl.persistToDisk(PersistType.Code.FULL);
+                mAppSearchImpl.persistToDisk(mPackageName, BaseStats.CALL_TYPE_CLOSE,
+                        PersistType.Code.FULL, mLogger);
                 mIsClosed = true;
                 return null;
             });

@@ -925,7 +925,7 @@ public actual open class NavController(
         navOptions: NavOptions?,
         navigatorExtras: Navigator.Extras?,
     ) {
-        impl.navigate(NavDeepLinkRequest(deepLink, null, null), navOptions)
+        impl.navigate(NavDeepLinkRequest(deepLink, null, null), navOptions, navigatorExtras)
     }
 
     @MainThread

@@ -4,12 +4,14 @@ import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
@@ -43,27 +45,27 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
         AppFunctionParameterMetadata(
             name = "serializable",
             isRequired = true,
-            dataType = PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE
+            dataType = PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       SERIALIZABLE_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGBASENAME:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -104,8 +106,7 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_LONGBASEVALUE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+        AppFunctionLongTypeMetadata = AppFunctionLongTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -215,27 +216,27 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
         AppFunctionParameterMetadata(
             name = "serializable",
             isRequired = true,
-            dataType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       SERIALIZABLE_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGBASENAME:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -276,8 +277,7 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_LONGBASEVALUE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+        AppFunctionLongTypeMetadata = AppFunctionLongTypeMetadata(
             isNullable = false,
             description = ""
         )

@@ -83,6 +83,7 @@ public class UserAgentMetadataActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_agent_metadata);
+        WebkitHelpers.enableEdgeToEdge(this);
 
         setTitle(R.string.user_agent_metadata_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);

@@ -94,6 +94,20 @@ class DocstringUtilsTest {
             .isEqualTo(NON_TAG_AT_USAGE_DOCSTRING.trim())
     }
 
+    @Test
+    fun getResponseDescriptionFromKDoc_multipleTags() {
+        assertThat(getResponseDescriptionFromKDoc(MULTI_TAG_DOCSTRING))
+            .isEqualTo("The response description.")
+    }
+
+    @Test
+    fun getResponseDescriptionFromKDoc_multiLineDescription() {
+        assertThat(getResponseDescriptionFromKDoc(MULTI_LINE_RESPONSE_DESCRIPTION_DOCSTRING))
+            .isEqualTo(
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+            )
+    }
+
     companion object {
 
         private const val MULTI_LINE_PARAM_DESCRIPTION_DOCSTRING =
@@ -152,8 +166,15 @@ Second parameter.
 
         private const val NON_TAG_AT_USAGE_DOCSTRING =
             """Fake SendEmail app function description.
-        
+
 Sends an email to email address in format xx@gmail.com
     """
+
+        private const val MULTI_LINE_RESPONSE_DESCRIPTION_DOCSTRING =
+            """Fake docstring to test response description.
+
+@return Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+ullamco laboris nisi ut aliquip ex ea commodo consequat."""
     }
 }

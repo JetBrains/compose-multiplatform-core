@@ -1699,7 +1699,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun leadingIconColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun leadingIconColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledLeadingIconColor
             isError -> errorLeadingIconColor
@@ -1715,7 +1715,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun trailingIconColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun trailingIconColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledTrailingIconColor
             isError -> errorTrailingIconColor
@@ -1731,7 +1731,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun indicatorColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun indicatorColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledIndicatorColor
             isError -> errorIndicatorColor
@@ -1747,7 +1747,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun containerColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun containerColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledContainerColor
             isError -> errorContainerColor
@@ -1763,7 +1763,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun placeholderColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun placeholderColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledPlaceholderColor
             isError -> errorPlaceholderColor
@@ -1779,7 +1779,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun labelColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun labelColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledLabelColor
             isError -> errorLabelColor
@@ -1795,7 +1795,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun textColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun textColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledTextColor
             isError -> errorTextColor
@@ -1811,7 +1811,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun supportingTextColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun supportingTextColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledSupportingTextColor
             isError -> errorSupportingTextColor
@@ -1827,7 +1827,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun prefixColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun prefixColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledPrefixColor
             isError -> errorPrefixColor
@@ -1843,7 +1843,7 @@ constructor(
      * @param focused whether the text field is in focus
      */
     @Stable
-    internal fun suffixColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+    fun suffixColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
         when {
             !enabled -> disabledSuffixColor
             isError -> errorSuffixColor
@@ -1857,8 +1857,7 @@ constructor(
      * @param isError whether the text field's current value is in error
      */
     @Stable
-    internal fun cursorColor(isError: Boolean): Color =
-        if (isError) errorCursorColor else cursorColor
+    fun cursorColor(isError: Boolean): Color = if (isError) errorCursorColor else cursorColor
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

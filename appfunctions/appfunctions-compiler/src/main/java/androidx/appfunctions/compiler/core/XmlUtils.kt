@@ -122,6 +122,9 @@ private fun AppFunctionResponseMetadataDocument.toXmlElement(
     doc.createElement(elementName).apply {
         appendChild(doc.createElementWithTextNode("id", id))
         appendChild(valueType.toXmlElement(doc, "valueType"))
+        if (description.isNotEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
     }
 
 private fun AppFunctionParameterMetadataDocument.toXmlElement(

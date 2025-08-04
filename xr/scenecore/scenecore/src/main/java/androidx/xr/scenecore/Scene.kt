@@ -190,6 +190,7 @@ public class Scene : SessionConnector {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override fun close(): Unit {
         entityManager.clear()
+        removeSceneFromCache(this)
     }
 
     /**

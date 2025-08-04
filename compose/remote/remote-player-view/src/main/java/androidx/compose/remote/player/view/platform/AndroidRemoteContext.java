@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -498,6 +499,11 @@ public class AndroidRemoteContext extends RemoteContext {
     @Override
     public void listensTo(int id, @NonNull VariableSupport variableSupport) {
         mRemoteComposeState.listenToVar(id, variableSupport);
+    }
+
+    @Override
+    public @Nullable ArrayList<VariableSupport> getListeners(int id) {
+        return mRemoteComposeState.getListeners(id);
     }
 
     @Override

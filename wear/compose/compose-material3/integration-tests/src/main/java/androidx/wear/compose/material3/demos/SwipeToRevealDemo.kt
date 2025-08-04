@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -36,6 +35,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,12 +58,14 @@ import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.material3.RevealValue
 import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.SplitSwitchButton
 import androidx.wear.compose.material3.SwipeToReveal
@@ -78,6 +80,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SwipeToRevealBothDirectionsNoPartialReveal() {
+    // Note that this demo include hasPartiallyRevealedState = false, so does not need to explicitly
+    // reset the RevealState to covered when scrolling.
     ScalingLazyDemo {
         item {
             SwipeToReveal(
@@ -124,9 +128,22 @@ fun SwipeToRevealBothDirectionsNoPartialReveal() {
 
 @Composable
 fun SwipeToRevealBothDirections() {
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (slcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* This block is called when the primary action is executed. */
@@ -196,10 +213,27 @@ fun SwipeToRevealTwoActionsWithUndo() {
             Toast.makeText(context, "Primary action executed.", Toast.LENGTH_SHORT).show()
         }
     }
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item { ListHeader { Text("Two Undo Actions") } }
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = primaryAction,
@@ -293,7 +327,7 @@ fun SwipeToRevealTwoActionsWithUndo() {
 }
 
 @Composable
-fun SwipeToRevealInScalingLazyColumn() {
+fun SwipeToRevealInScalingLazyColumnDemo() {
     data class ListItem(val name: String, var undoButtonClicked: Boolean = false)
     val listState = remember {
         mutableStateListOf(
@@ -304,8 +338,10 @@ fun SwipeToRevealInScalingLazyColumn() {
             ListItem("Eve"),
         )
     }
+    val slcState = rememberScalingLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    ScalingLazyDemo(contentPadding = PaddingValues(0.dp)) {
+
+    ScalingLazyDemo(state = slcState) {
         items(listState.size, key = { listState[it].name }) { index ->
             val item = remember { listState[index] }
             val primaryAction: () -> Unit = {
@@ -319,7 +355,22 @@ fun SwipeToRevealInScalingLazyColumn() {
                     }
                 }
             }
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
+                revealDirection = Bidirectional,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = primaryAction,
@@ -341,7 +392,6 @@ fun SwipeToRevealInScalingLazyColumn() {
                         text = { Text("Undo Delete") },
                     )
                 },
-                revealDirection = Bidirectional,
             ) {
                 Button(
                     {},
@@ -360,7 +410,7 @@ fun SwipeToRevealInScalingLazyColumn() {
                             )
                     },
                 ) {
-                    Text("Name:\n${item.name}\n\nMessage:\nMessage body.")
+                    Text("Name: ${item.name}")
                 }
             }
         }
@@ -369,9 +419,26 @@ fun SwipeToRevealInScalingLazyColumn() {
 
 @Composable
 fun SwipeToRevealSingleButtonWithPartialReveal() {
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* This block is called when the primary action is executed. */
@@ -413,9 +480,26 @@ fun SwipeToRevealSingleButtonWithPartialReveal() {
 
 @Composable
 fun SwipeToRevealWithLongLabels() {
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* This block is called when the primary action is executed. */
@@ -489,9 +573,26 @@ fun SwipeToRevealWithLongLabels() {
 
 @Composable
 fun SwipeToRevealWithCustomIcons() {
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* This block is called when the primary action is executed. */
@@ -597,9 +698,22 @@ fun SwipeToRevealWithCustomIcons() {
  */
 @Composable
 fun SwipeToRevealWithEdgeSwipeToDismiss(swipeToDismissBoxState: SwipeToDismissBoxState) {
-    ScalingLazyDemo {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
         item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (slcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* This block is called when the primary action is executed. */
@@ -641,9 +755,10 @@ fun SwipeToRevealWithEdgeSwipeToDismiss(swipeToDismissBoxState: SwipeToDismissBo
 }
 
 @Composable
-fun SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo() {
+fun SwipeToRevealWithTransformingLazyColumnDemo() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
 
     TransformingLazyColumn(
         state = tlcState,
@@ -653,7 +768,16 @@ fun SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo() {
         items(count = 100) { index ->
             val revealState = rememberRevealState(initialValue = Covered)
 
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
             SwipeToReveal(
+                revealState = revealState,
+                revealDirection = Bidirectional,
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* Called when the primary action is executed. */ },
@@ -670,38 +794,32 @@ fun SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo() {
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                         clip = false
                     },
-                revealState = revealState,
-                revealDirection = Bidirectional,
             ) {
-                TitleCard(
-                    onClick = {},
-                    title = { Text("Message #$index") },
-                    subtitle = {
-                        Text(
-                            "Body of the message that should be long enough to take at least two lines."
-                        )
+                Button(
+                    {},
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics {
+                        // Use custom actions to make the primary and secondary actions accessible
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Delete") {
+                                    /* Add the primary action click handler here */
+                                    true
+                                }
+                            )
                     },
-                    modifier =
-                        Modifier.semantics {
-                            // Use custom actions to make the primary action accessible
-                            customActions =
-                                listOf(
-                                    CustomAccessibilityAction("Delete") {
-                                        /* Add the primary action click handler here */
-                                        true
-                                    }
-                                )
-                        },
-                )
+                ) {
+                    Text("Item number: $index")
+                }
             }
         }
     }
 }
 
 @Composable
-fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
+fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
 
     TransformingLazyColumn(
         state = tlcState,
@@ -711,11 +829,18 @@ fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
         items(count = 100) { index ->
             val revealState = rememberRevealState(initialValue = Covered)
 
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
             SwipeToReveal(
                 primaryAction = {
                     PrimaryActionButton(
                         onClick = { /* Called when the primary action is executed. */ },
-                        modifier = Modifier.heightIn(70.dp),
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = {},
                         containerColor = Color(red = 0.427f, green = 0.835f, blue = 0.549f),
@@ -724,7 +849,7 @@ fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
                 secondaryAction = {
                     SecondaryActionButton(
                         onClick = { /* Called when the primary action is executed. */ },
-                        modifier = Modifier.heightIn(70.dp),
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
                         icon = { Icon(Icons.Outlined.Share, contentDescription = "Share") },
                         containerColor = Color(0.949f, 0.722f, 0.71f),
                         contentColor = Color(0.207f, 0.148f, 0.145f),
@@ -740,7 +865,6 @@ fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
                         clip = false
                     },
                 revealState = revealState,
-                revealDirection = Bidirectional,
             ) {
                 TitleCard(
                     onClick = {},
@@ -783,6 +907,7 @@ fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
 fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
 
     var expandedItemKey by remember { mutableStateOf<String?>(null) }
 
@@ -809,6 +934,14 @@ fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
         items(items = messages, key = { it.title }) { message ->
             val isCurrentlyExpanded = message.title == expandedItemKey
             val revealState = rememberRevealState(initialValue = Covered)
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
             SwipeToReveal(
                 primaryAction = {
                     PrimaryActionButton(
@@ -820,6 +953,7 @@ fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
                         },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = { Text("Delete") },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
                     )
                 },
                 onSwipePrimaryAction = {
@@ -840,7 +974,6 @@ fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
                         }
                         .animateItem(),
                 revealState = revealState,
-                revealDirection = Bidirectional,
             ) {
                 TitleCard(
                     onClick = {

@@ -72,6 +72,8 @@ class BenchmarkPluginTest {
         File("src/test/test-data", "app-project").copyRecursively(projectSetup.rootDir)
 
         gradleRunner = GradleRunner.create().withProjectDir(projectSetup.rootDir)
+        // Run tests using Gradle 8.14 to support AGP version used for the tests, b/431847401
+        projectSetup.setUpGradleVersion(gradleRunner, "8.14")
 
         projectSetup.testProjectDir
             .newFile("settings.gradle")

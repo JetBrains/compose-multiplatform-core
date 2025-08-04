@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -49,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
@@ -81,6 +85,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.anchorable
+import androidx.xr.compose.subspace.layout.aspectRatio
 import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
@@ -169,6 +174,16 @@ class SpatialCompose : ComponentActivity() {
                         }
                     ) {
                         Text("Launch Video Player")
+                    }
+
+                    Button(
+                        onClick = {
+                            val intent =
+                                Intent(this@SpatialCompose, NonCustomizableVideoPlayer::class.java)
+                            startActivity(intent)
+                        }
+                    ) {
+                        Text("Launch Non Customizable Video Player")
                     }
 
                     Button(
@@ -263,6 +278,8 @@ class SpatialCompose : ComponentActivity() {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
                     AppPanel(modifier = sidePanelModifier, text = "Panel Bottom Right")
+                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
+                    AspectRatioPanel()
                 }
             }
         }
@@ -417,6 +434,28 @@ class SpatialCompose : ComponentActivity() {
                 factory = { GltfModelEntity.create(session, gltfModel!!) },
                 modifier = modifier.rotate(rotation),
             )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @SubspaceComposable
+    @Composable
+    fun AspectRatioPanel() {
+        var aspectRatioValue by remember { mutableFloatStateOf(1f) }
+        SpatialPanel(
+            modifier = SubspaceModifier.fillMaxWidth().height(1000.dp).aspectRatio(aspectRatioValue)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().background(Color.LightGray).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Change Aspect Ratio")
+                Button(onClick = { aspectRatioValue = 16f / 11f }) {
+                    Text("16:11", fontSize = 11.sp)
+                }
+                Button(onClick = { aspectRatioValue = 9f / 14f }) { Text("9:14", fontSize = 11.sp) }
+            }
         }
     }
 }

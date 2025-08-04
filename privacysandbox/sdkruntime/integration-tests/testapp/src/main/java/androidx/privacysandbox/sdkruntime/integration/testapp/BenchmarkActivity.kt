@@ -25,8 +25,8 @@ class BenchmarkActivity : Activity() {
         super.onCreate(savedInstanceState)
         val api = TestAppApi(applicationContext)
         val sdkApi = runBlocking { api.loadTestSdk() }
-        val invertResult = sdkApi.invert(false)
-        if (!invertResult) {
+        val result = sdkApi.doSomething("42")
+        if (result != "TestSdk result is 42") {
             throw RuntimeException("Something went wrong")
         }
     }

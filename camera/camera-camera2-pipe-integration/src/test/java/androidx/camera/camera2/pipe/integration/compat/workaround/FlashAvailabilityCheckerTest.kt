@@ -83,6 +83,7 @@ class FlashAvailabilityCheckerTest(
         override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
         override val resultKeys: Set<CaptureResult.Key<*>> = emptySet(),
         override val sessionKeys: Set<CaptureRequest.Key<*>> = emptySet(),
+        override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>> = emptySet(),
         val physicalMetadata: Map<CameraId, CameraMetadata> = emptyMap(),
         override val physicalRequestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     ) : CameraMetadata {

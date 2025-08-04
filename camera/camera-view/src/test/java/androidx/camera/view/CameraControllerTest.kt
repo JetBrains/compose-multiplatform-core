@@ -79,6 +79,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowSystemClock
 
 /** Unit tests for [CameraController]. */
@@ -1074,5 +1075,28 @@ class CameraControllerTest {
         shadowOf(getMainLooper()).idle()
         assertThat(controller.tapToFocusInfoState.value?.focusState)
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun attachPreview_doesNotCrashAndLogsWarning_whenCameraInfoIsUnavailable() {
+        // Arrange: Configure the fake provider to throw an exception when getCameraInfo is called.
+        processCameraProviderWrapper.setShouldThrowOnGetCameraInfo(true)
+        lifecycleCameraProviderCompleter.set(processCameraProviderWrapper)
+        controller.clearPreviewSurface()
+
+        // Act:
+        // This call will trigger the internal getViewportAspectRatioInt method, which should now
+        // catch the exception instead of crashing.
+        controller.attachPreviewSurface({}, fakeViewPort)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert:
+        // 1. Verify that a warning was logged to the "CameraController" tag.
+        val logs = ShadowLog.getLogsForTag("CameraController")
+        assertThat(logs).isNotEmpty()
+
+        // 2. Verify the content of the log.
+        val lastLog = logs.last()
+        assertThat(lastLog.throwable).isInstanceOf(IllegalArgumentException::class.java)
     }
 }

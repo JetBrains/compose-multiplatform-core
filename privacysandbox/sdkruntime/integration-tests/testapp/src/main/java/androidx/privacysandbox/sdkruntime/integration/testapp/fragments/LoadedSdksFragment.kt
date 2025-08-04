@@ -16,39 +16,56 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testapp.fragments
 
-import android.os.IBinder
 import android.widget.Button
-import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
+import androidx.lifecycle.lifecycleScope
+import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.integration.testapp.R
+import kotlinx.coroutines.launch
 
 /** Controls for retrieving currently loaded SDKs. */
 class LoadedSdksFragment : BaseFragment(layoutId = R.layout.fragment_loaded_sdks) {
 
     override fun onCreate() {
-        setupGetSandboxedSdksButton()
+        setupGetSandboxedSdksFromAppButton()
+        setupGetSandboxedSdksFromSdkButton()
     }
 
-    private fun setupGetSandboxedSdksButton() {
-        val getSandboxedSdksButton = findViewById<Button>(R.id.getSandboxedSdksButton)
+    private fun setupGetSandboxedSdksFromAppButton() {
+        val getSandboxedSdksButton = findViewById<Button>(R.id.getSandboxedSdksFromAppButton)
         getSandboxedSdksButton.setOnClickListener {
             val sdks = getTestAppApi().getSandboxedSdks()
-            addLogMessage("GetSandboxedSdks results (${sdks.size}):")
-            sdks.forEach {
-                addLogMessage("   SDK Package: ${it.getSdkInfo()?.name}")
-                addLogMessage("   SDK Version: ${it.getSdkInfo()?.version}")
-                val testSdk = toTestSdk(it.getInterface())
-                if (testSdk != null) {
-                    addLogMessage("   SDK Message: ${testSdk.getMessage()}")
-                }
+            logLoadedSdks("APP: GetSandboxedSdks", sdks)
+
+            val messages = sdks.mapNotNull { callDoSomething(it.sdkInterface, "42") }
+            logSdkMessages("APP: callDoSomethingOnSandboxedSdks()", messages)
+        }
+    }
+
+    private fun setupGetSandboxedSdksFromSdkButton() {
+        val getSandboxedSdksButton = findViewById<Button>(R.id.getSandboxedSdksFromSdkButton)
+        getSandboxedSdksButton.setOnClickListener {
+            lifecycleScope.launch {
+                val testSdk = getTestAppApi().getOrLoadTestSdk()
+                logLoadedSdks("SDK: GetSandboxedSdks", testSdk.getSandboxedSdks())
+                logSdkMessages(
+                    "SDK: callDoSomethingOnSandboxedSdks()",
+                    testSdk.callDoSomethingOnSandboxedSdks("42"),
+                )
             }
         }
     }
 
-    private fun toTestSdk(sdkInterface: IBinder?): ISdkApi? {
-        return if (ISdkApi.DESCRIPTOR == sdkInterface?.interfaceDescriptor) {
-            ISdkApi.Stub.asInterface(sdkInterface)
-        } else {
-            null
+    private fun logLoadedSdks(title: String, sdks: List<LoadedSdkInfo>) {
+        addLogMessage("$title results (${sdks.size}):")
+        sdks.forEach {
+            addLogMessage("   SDK Package: ${it.sdkName}")
+            addLogMessage("   SDK Version: ${it.sdkVersion}")
         }
+    }
+
+    private fun logSdkMessages(title: String, messages: List<String>) {
+        addLogMessage("$title results (${messages.size}):")
+        messages.forEach { addLogMessage("   SDK Message: $it") }
     }
 }

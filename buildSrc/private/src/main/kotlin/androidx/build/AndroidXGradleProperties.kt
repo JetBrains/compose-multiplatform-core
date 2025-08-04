@@ -43,18 +43,6 @@ const val ALTERNATIVE_PROJECT_URL = "androidx.alternativeProjectUrl"
 /** Validate the project structure against Jetpack guidelines */
 const val VALIDATE_PROJECT_STRUCTURE = "androidx.validateProjectStructure"
 
-/**
- * Setting this property enables Compose Compiler metrics - see
- * compose/compiler/design/compiler-metrics.md
- */
-const val ENABLE_COMPOSE_COMPILER_METRICS = "androidx.enableComposeCompilerMetrics"
-
-/**
- * Setting this property enables Compose Compiler reports - see
- * compose/compiler/design/compiler-metrics.md
- */
-const val ENABLE_COMPOSE_COMPILER_REPORTS = "androidx.enableComposeCompilerReports"
-
 /** Returns whether the project should generate documentation. */
 const val ENABLE_DOCUMENTATION = "androidx.enableDocumentation"
 
@@ -137,8 +125,6 @@ val ALL_ANDROIDX_PROPERTIES =
         ADD_GROUP_CONSTRAINTS,
         ALTERNATIVE_PROJECT_URL,
         VALIDATE_PROJECT_STRUCTURE,
-        ENABLE_COMPOSE_COMPILER_METRICS,
-        ENABLE_COMPOSE_COMPILER_REPORTS,
         DISPLAY_TEST_OUTPUT,
         ENABLE_DOCUMENTATION,
         HIGH_MEMORY,
@@ -232,14 +218,6 @@ fun Project.isWriteVersionedApiFilesEnabled(): Boolean =
 fun Project.usingMaxDepVersions(): Provider<Boolean> {
     return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).map { true }.orElse(false)
 }
-
-/** Returns whether we export compose compiler metrics */
-fun Project.enableComposeCompilerMetrics() =
-    findBooleanProperty(ENABLE_COMPOSE_COMPILER_METRICS) ?: false
-
-/** Returns whether we export compose compiler reports */
-fun Project.enableComposeCompilerReports() =
-    findBooleanProperty(ENABLE_COMPOSE_COMPILER_REPORTS) ?: false
 
 /** Returns whether we should use the offline mirror for dependencies */
 fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false

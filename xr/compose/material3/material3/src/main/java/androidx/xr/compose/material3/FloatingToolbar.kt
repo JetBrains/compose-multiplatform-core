@@ -203,7 +203,8 @@ public fun HorizontalFloatingToolbar(
             modifier =
                 Modifier.background(colors.toolbarContainerColor)
                     .padding(contentPadding)
-                    .horizontalScroll(rememberScrollState())
+                    .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                 if (floatingActionButtonPosition == FloatingToolbarHorizontalFabPosition.Start) {
@@ -345,7 +346,8 @@ public fun VerticalFloatingToolbar(
             modifier =
                 Modifier.background(colors.toolbarContainerColor)
                     .padding(contentPadding)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                 if (floatingActionButtonPosition == FloatingToolbarVerticalFabPosition.Top) {

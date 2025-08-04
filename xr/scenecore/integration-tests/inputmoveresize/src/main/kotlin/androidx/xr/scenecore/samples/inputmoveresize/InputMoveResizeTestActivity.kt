@@ -97,10 +97,6 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                 TAG,
                 "ResizeEvent(entity: ${resizeEvent.entity}, resizeState : ${resizeEvent.resizeState}, newSize: ${resizeEvent.newSize}",
             )
-            if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_START) {
-                resizablePanelComponent.fixedAspectRatio =
-                    resizeEvent.newSize.width / resizeEvent.newSize.height
-            }
             if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
                 (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
             }
@@ -393,16 +389,16 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             resizablePanelView.findViewById<RadioButton>(R.id.radioButton3)
         landscapeAspectRadioButton.text = getString(R.string.landscape_label)
         val aspectRatioRadioGroup = resizablePanelView.findViewById<RadioGroup>(R.id.radioGroup1)
-        //        aspectRatioRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-        //            resizablePanelComponent.fixedAspectRatio =
-        //                when (checkedId) {
-        //                    R.id.radioButton2 -> 0.7f
-        //                    R.id.radioButton3 -> 1.4f
-        //                    // A negative ratio means "no preferences."
-        //                    else -> -12.345f
-        //                }
-        //        }
-        //        resizablePanelComponent.fixedAspectRatio = 0.0f // no preferences initially
+        aspectRatioRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            resizablePanelComponent.fixedAspectRatio =
+                when (checkedId) {
+                    R.id.radioButton2 -> 0.7f
+                    R.id.radioButton3 -> 1.4f
+                    // A negative ratio means "no preferences."
+                    else -> -12.345f
+                }
+        }
+        resizablePanelComponent.fixedAspectRatio = 0.0f // no preferences initially
 
         val resizablePanelSwitch = resizablePanelView.findViewById<Switch>(R.id.switch1)
         resizablePanelSwitch.setOnCheckedChangeListener { _, isChecked ->

@@ -33,6 +33,7 @@ import androidx.work.impl.constraints.NetworkRequestConstraintController
 import androidx.work.impl.constraints.WorkConstraintsTracker
 import androidx.work.impl.model.WorkSpec
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -78,6 +79,22 @@ class NetworkRequestConstraintControllerTest {
                 }
             assertThat(state.await())
                 .isEqualTo(ConstraintsState.ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+        }
+
+    @Test
+    fun testMultipleTrackers() =
+        runBlockingWithWifi(enabled = true) {
+            val states =
+                List(5) {
+                    val spec = createWorkSpecWithWifiConstraint("$it")
+                    val workConstraintsTracker = WorkConstraintsTracker(listOf(controller))
+                    async(Dispatchers.IO) { workConstraintsTracker.track(spec).first() }
+                }
+            states.awaitAll().forEachIndexed { index, state ->
+                assertWithMessage("Tracker $index did not have constraints met")
+                    .that(state)
+                    .isEqualTo(ConstraintsState.ConstraintsMet)
+            }
         }
 
     @Test

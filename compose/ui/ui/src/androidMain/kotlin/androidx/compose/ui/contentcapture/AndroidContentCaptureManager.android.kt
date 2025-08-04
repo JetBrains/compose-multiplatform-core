@@ -38,7 +38,6 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.SemanticsNodeCopy
-import androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat
 import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 import androidx.compose.ui.platform.getTextLayoutResult
@@ -72,14 +71,14 @@ import kotlinx.coroutines.delay
 @Suppress("NullAnnotationGroup")
 internal class AndroidContentCaptureManager(
     val view: AndroidComposeView,
-    var onContentCaptureSession: () -> ContentCaptureSessionCompat?,
+    var onContentCaptureSession: () -> ContentCaptureSessionWrapper?,
 ) :
     ContentCaptureManager,
     DefaultLifecycleObserver,
     View.OnAttachStateChangeListener,
     SemanticsListener {
 
-    @VisibleForTesting internal var contentCaptureSession: ContentCaptureSessionCompat? = null
+    @VisibleForTesting internal var contentCaptureSession: ContentCaptureSessionWrapper? = null
 
     /** An ordered list of buffered content capture events. */
     private val bufferedEvents = mutableListOf<ContentCaptureEvent>()

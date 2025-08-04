@@ -24,7 +24,7 @@ plugins {
 
 androidx {
     name = "Remote Compose Creation"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Under Development"
 }
@@ -32,13 +32,14 @@ androidx {
 android {
     namespace = "androidx.compose.remote.creation"
     compileSdk = 35
+    defaultConfig {
+       minSdk = 22
+    }
 }
 
 dependencies {
     api(libs.jspecify)
     implementation(project(":compose:remote:remote-core"))
     implementation(project(":graphics:graphics-path"))
-    androidTestImplementation(libs.testRunner)
     testImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinTest)
 }

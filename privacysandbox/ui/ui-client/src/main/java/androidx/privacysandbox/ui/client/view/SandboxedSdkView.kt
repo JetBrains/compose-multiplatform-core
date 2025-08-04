@@ -90,6 +90,7 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
     private var eventListener: SandboxedSdkViewEventListener? = null
     private val frameCommitCallback = Runnable { sendUiDisplayedEvents() }
     private var closeSessionOnWindowDetachment = true
+    internal var tempSurfaceView: SurfaceView? = null
     private val poolingContainerListenerDelegate = PoolingContainerListenerDelegate(this)
     internal var signalMeasurer: SandboxedSdkViewSignalMeasurer? = null
 
@@ -235,8 +236,9 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
     }
 
     internal fun setContentView(contentView: View) {
-        if (childCount > 0) {
-            throw IllegalStateException("Number of children views must not exceed 1")
+        val isTempSurfaceViewOnlyChild = childCount == 1 && getChildAt(0) === tempSurfaceView
+        if (childCount > 0 && !isTempSurfaceViewOnlyChild) {
+            throw IllegalStateException("Child view is already attached")
         }
 
         this.contentView = contentView
@@ -629,6 +631,7 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
                 sandboxedSdkView: SandboxedSdkView,
             ) {
                 val surfaceView = SurfaceView(context).apply { visibility = GONE }
+                sandboxedSdkView.tempSurfaceView = surfaceView
                 val onSurfaceViewAttachedListener =
                     object : OnAttachStateChangeListener {
                         override fun onViewAttachedToWindow(view: View) {

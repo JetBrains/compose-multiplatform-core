@@ -25,21 +25,19 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata.Companion.TYPE as TYPE_OBJECT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_UNIT
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 
 /**
  * Builds [AppFunctionData] from [result] based on [AppFunctionResponseMetadata].
@@ -63,18 +61,80 @@ internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(result: Any?): A
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
+    val builder = AppFunctionData.Builder("")
     return when (this) {
-        is AppFunctionPrimitiveTypeMetadata -> {
-            unsafeBuildSingleReturnValue(this.type, result)
+        is AppFunctionLongTypeMetadata -> {
+            builder
+                .setLong(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Long)
+                .build()
+        }
+        is AppFunctionIntTypeMetadata -> {
+            builder
+                .setInt(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Int)
+                .build()
+        }
+        is AppFunctionDoubleTypeMetadata -> {
+            builder
+                .setDouble(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as Double,
+                )
+                .build()
+        }
+        is AppFunctionFloatTypeMetadata -> {
+            builder
+                .setFloat(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Float)
+                .build()
+        }
+        is AppFunctionBooleanTypeMetadata -> {
+            builder
+                .setBoolean(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as Boolean,
+                )
+                .build()
+        }
+        is AppFunctionStringTypeMetadata -> {
+            builder
+                .setString(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as String,
+                )
+                .build()
+        }
+        is AppFunctionBytesTypeMetadata -> {
+            throw IllegalStateException("Type of a single byte is not supported")
+        }
+        is AppFunctionPendingIntentTypeMetadata -> {
+            builder
+                .setPendingIntent(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as PendingIntent,
+                )
+                .build()
+        }
+        is AppFunctionUnitTypeMetadata -> {
+            // no-op
+            builder.build()
         }
         is AppFunctionObjectTypeMetadata -> {
-            unsafeBuildSingleReturnValue(TYPE_OBJECT, result, this.qualifiedName)
+            builder
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(result, checkNotNull(this.qualifiedName)),
+                )
+                .build()
+        }
+        is AppFunctionReferenceTypeMetadata -> {
+            builder
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(result, checkNotNull(this.referenceDataType)),
+                )
+                .build()
         }
         is AppFunctionArrayTypeMetadata -> {
             this.unsafeBuildReturnValue(result)
-        }
-        is AppFunctionReferenceTypeMetadata -> {
-            unsafeBuildSingleReturnValue(TYPE_OBJECT, result, this.referenceDataType)
         }
         else -> {
             throw IllegalStateException("Unknown DataTypeMetadata: ${this::class.java}")
@@ -84,15 +144,95 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): App
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
+    val builder = AppFunctionData.Builder("")
     return when (val castItemType = itemType) {
-        is AppFunctionPrimitiveTypeMetadata -> {
-            unsafeBuildCollectionReturnValue(castItemType.type, result)
+        is AppFunctionLongTypeMetadata -> {
+            builder
+                .setLongArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as LongArray,
+                )
+                .build()
+        }
+        is AppFunctionIntTypeMetadata -> {
+            builder
+                .setIntArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as IntArray,
+                )
+                .build()
+        }
+        is AppFunctionDoubleTypeMetadata -> {
+            builder
+                .setDoubleArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as DoubleArray,
+                )
+                .build()
+        }
+        is AppFunctionFloatTypeMetadata -> {
+            builder
+                .setFloatArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as FloatArray,
+                )
+                .build()
+        }
+        is AppFunctionBooleanTypeMetadata -> {
+            builder
+                .setBooleanArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as BooleanArray,
+                )
+                .build()
+        }
+        is AppFunctionStringTypeMetadata -> {
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setStringList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as List<String>,
+                )
+                .build()
+        }
+        is AppFunctionBytesTypeMetadata -> {
+            builder
+                .setByteArray(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as ByteArray,
+                )
+                .build()
+        }
+        is AppFunctionPendingIntentTypeMetadata -> {
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setPendingIntentList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    result as List<PendingIntent>,
+                )
+                .build()
         }
         is AppFunctionObjectTypeMetadata -> {
-            unsafeBuildCollectionReturnValue(TYPE_OBJECT, result, castItemType.qualifiedName)
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    (result as List<Any>).map {
+                        AppFunctionData.serialize(it, checkNotNull(castItemType.qualifiedName))
+                    },
+                )
+                .build()
         }
         is AppFunctionReferenceTypeMetadata -> {
-            unsafeBuildCollectionReturnValue(TYPE_OBJECT, result, castItemType.referenceDataType)
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    (result as List<Any>).map {
+                        AppFunctionData.serialize(it, checkNotNull(castItemType.referenceDataType))
+                    },
+                )
+                .build()
         }
         else -> {
             throw IllegalStateException(
@@ -100,144 +240,4 @@ private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): Ap
             )
         }
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun unsafeBuildSingleReturnValue(
-    type: Int,
-    result: Any,
-    objectQualifiedName: String? = null,
-): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
-    when (type) {
-        TYPE_LONG -> {
-            builder.setLong(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Long,
-            )
-        }
-        TYPE_INT -> {
-            builder.setInt(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Int)
-        }
-        TYPE_DOUBLE -> {
-            builder.setDouble(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Double,
-            )
-        }
-        TYPE_FLOAT -> {
-            builder.setFloat(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Float,
-            )
-        }
-        TYPE_BOOLEAN -> {
-            builder.setBoolean(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as Boolean,
-            )
-        }
-        TYPE_STRING -> {
-            builder.setString(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as String,
-            )
-        }
-        TYPE_BYTES -> {
-            throw IllegalStateException("Type of a single byte is not supported")
-        }
-        TYPE_PENDING_INTENT -> {
-            builder.setPendingIntent(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as PendingIntent,
-            )
-        }
-        TYPE_OBJECT -> {
-            builder.setAppFunctionData(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                AppFunctionData.serialize(result, checkNotNull(objectQualifiedName)),
-            )
-        }
-        TYPE_UNIT -> {
-            // no-op
-        }
-        else -> {
-            throw IllegalStateException("Unknown data type $type")
-        }
-    }
-    return builder.build()
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun unsafeBuildCollectionReturnValue(
-    type: Int,
-    result: Any,
-    objectQualifiedName: String? = null,
-): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
-    when (type) {
-        TYPE_LONG -> {
-            builder.setLongArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as LongArray,
-            )
-        }
-        TYPE_INT -> {
-            builder.setIntArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as IntArray,
-            )
-        }
-        TYPE_DOUBLE -> {
-            builder.setDoubleArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as DoubleArray,
-            )
-        }
-        TYPE_FLOAT -> {
-            builder.setFloatArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as FloatArray,
-            )
-        }
-        TYPE_BOOLEAN -> {
-            builder.setBooleanArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as BooleanArray,
-            )
-        }
-        TYPE_STRING -> {
-            @Suppress("UNCHECKED_CAST")
-            builder.setStringList(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as List<String>,
-            )
-        }
-        TYPE_BYTES -> {
-            builder.setByteArray(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as ByteArray,
-            )
-        }
-        TYPE_PENDING_INTENT -> {
-            @Suppress("UNCHECKED_CAST")
-            builder.setPendingIntentList(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                result as List<PendingIntent>,
-            )
-        }
-        TYPE_OBJECT -> {
-            @Suppress("UNCHECKED_CAST")
-            builder.setAppFunctionDataList(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                (result as List<Any>).map {
-                    AppFunctionData.serialize(it, checkNotNull(objectQualifiedName))
-                },
-            )
-        }
-        else -> {
-            throw IllegalStateException("Unknown data type $type")
-        }
-    }
-    return builder.build()
 }

@@ -35,16 +35,14 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 import androidx.core.test.R;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.ActivityTestRule;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,8 +53,8 @@ import org.mockito.InOrder;
 public class DragStartHelperTest {
 
     @Rule
-    public ActivityTestRule<DragStartHelperTestActivity> mActivityRule =
-            new ActivityTestRule<>(DragStartHelperTestActivity.class);
+    public ActivityScenarioRule<DragStartHelperTestActivity> mActivityRule =
+            new ActivityScenarioRule<>(DragStartHelperTestActivity.class);
 
     private Instrumentation mInstrumentation;
     private View mDragSource;
@@ -73,13 +71,10 @@ public class DragStartHelperTest {
     }
 
     private @NonNull DragStartHelper createDragStartHelper(final DragStartListener listener) {
-        return new DragStartHelper(mDragSource, new DragStartHelper.OnDragStartListener() {
-            @Override
-            public boolean onDragStart(@NonNull View v, @NonNull DragStartHelper helper) {
-                Point touchPosition = new Point();
-                helper.getTouchPosition(touchPosition);
-                return listener.onDragStart(v, helper, touchPosition);
-            }
+        return new DragStartHelper(mDragSource, (v, helper) -> {
+            Point touchPosition = new Point();
+            helper.getTouchPosition(touchPosition);
+            return listener.onDragStart(v, helper, touchPosition);
         });
     }
 
@@ -131,6 +126,7 @@ public class DragStartHelperTest {
                 action, buttonState, anchor, offsetX, offsetY));
     }
 
+    /** @noinspection NewClassNamingConvention*/
     static class TouchPositionMatcher implements ArgumentMatcher<Point> {
 
         private final Point mExpectedPosition;
@@ -148,6 +144,7 @@ public class DragStartHelperTest {
             return mExpectedPosition.equals(actual);
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "TouchPositionMatcher: " + mExpectedPosition;
@@ -155,22 +152,22 @@ public class DragStartHelperTest {
     }
 
     private void waitForLongPress() {
-        SystemClock.sleep(ViewConfiguration.getLongPressTimeout() * 2);
+        SystemClock.sleep(ViewConfiguration.getLongPressTimeout() * 2L);
     }
 
     @Before
     public void setUp() {
         mInstrumentation = InstrumentationRegistry.getInstrumentation();
-        mDragSource = mActivityRule.getActivity().findViewById(R.id.drag_source);
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity activity) ->
+                        mDragSource = activity.findViewById(R.id.drag_source));
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mouseClick() throws Throwable {
+    public void mouseClick() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_UP, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
@@ -179,13 +176,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mousePressWithSecondaryButton() throws Throwable {
+    public void mousePressWithSecondaryButton() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_MOVE,
@@ -196,13 +192,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mouseDrag() throws Throwable {
+    public void mouseDrag() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_MOVE, MotionEvent.BUTTON_PRIMARY, mDragSource, 1, 2);
@@ -215,13 +210,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mouseDragWithNonprimaryButton() throws Throwable {
+    public void mouseDragWithNonprimaryButton() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_SECONDARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_MOVE, MotionEvent.BUTTON_SECONDARY, mDragSource, 1, 2);
@@ -235,19 +229,15 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mouseDragUsingTouchListener() throws Throwable {
+    public void mouseDragUsingTouchListener() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
 
-        mDragSource.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                helper.onTouch(view, motionEvent);
-                return true;
-            }
+        mDragSource.setOnTouchListener((view, motionEvent) -> {
+            helper.onTouch(view, motionEvent);
+            return true;
         });
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
@@ -261,13 +251,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void mouseDragWhenListenerReturnsFalse() throws Throwable {
+    public void mouseDragWhenListenerReturnsFalse() {
         final DragStartListener listener = createListener(false);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_MOVE, MotionEvent.BUTTON_PRIMARY, mDragSource, 1, 2);
@@ -285,13 +274,12 @@ public class DragStartHelperTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @LargeTest
     @Test
-    public void mouseLongPress() throws Throwable {
+    public void mouseLongPress() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 1, 2);
         waitForLongPress();
@@ -302,13 +290,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void touchDrag() throws Throwable {
+    public void touchDrag() {
         final DragStartListener listener = createListener(false);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendTouchEvent(MotionEvent.ACTION_DOWN, mDragSource, 0, 0);
         sendTouchEvent(MotionEvent.ACTION_MOVE, mDragSource, 1, 2);
@@ -319,13 +306,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @SmallTest
     @Test
-    public void touchTap() throws Throwable {
+    public void touchTap() {
         final DragStartListener listener = createListener(false);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendTouchEvent(MotionEvent.ACTION_DOWN, mDragSource, 0, 0);
         sendTouchEvent(MotionEvent.ACTION_UP, mDragSource, 0, 0);
@@ -334,13 +320,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @LargeTest
     @Test
-    public void touchLongPress() throws Throwable {
+    public void touchLongPress() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendTouchEvent(MotionEvent.ACTION_DOWN, mDragSource, 1, 2);
         waitForLongPress();
@@ -351,19 +336,13 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore("Temporarily disabled due to b/110483469")
     @LargeTest
     @Test
-    public void touchLongPressUsingLongClickListener() throws Throwable {
+    public void touchLongPressUsingLongClickListener() {
         final DragStartListener listener = createListener(true);
 
         final DragStartHelper helper = createDragStartHelper(listener);
-        mDragSource.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                return helper.onLongClick(view);
-            }
-        });
+        mDragSource.setOnLongClickListener(helper::onLongClick);
 
         sendTouchEvent(MotionEvent.ACTION_DOWN, mDragSource, 1, 2);
         waitForLongPress();
@@ -375,13 +354,12 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427258999
     @LargeTest
     @Test
-    public void mouseDragThenLongPress() throws Throwable {
+    public void mouseDragThenLongPress() {
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
-        helper.attach();
+        mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
 
         sendMouseEvent(MotionEvent.ACTION_DOWN, MotionEvent.BUTTON_PRIMARY, mDragSource, 0, 0);
         sendMouseEvent(MotionEvent.ACTION_MOVE, MotionEvent.BUTTON_PRIMARY, mDragSource, 1, 2);

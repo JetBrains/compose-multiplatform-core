@@ -158,12 +158,12 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        val subscriber = TestSubscriber<Optional<Book>>()
         val flowable: Flowable<Optional<Book>> =
             booksDao.getBookOptionalFlowable(TestUtil.BOOK_1.bookId)
-        flowable
-            .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
-            .subscribeWith(subscriber)
+        val subscriber =
+            flowable
+                .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
+                .subscribeWith(TestSubscriber())
         drain()
         assertThat(subscriber.values().size, `is`(1))
         assertThat(subscriber.values()[0], `is`(Optional.of(TestUtil.BOOK_1)))
@@ -171,12 +171,12 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
     @Test
     fun bookByIdOptionalFlowableAbsent() {
-        val subscriber = TestSubscriber<Optional<Book>>()
         val flowable: Flowable<Optional<Book>> =
             booksDao.getBookOptionalFlowable(TestUtil.BOOK_1.bookId)
-        flowable
-            .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
-            .subscribeWith(subscriber)
+        val subscriber =
+            flowable
+                .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
+                .subscribeWith(TestSubscriber())
         drain()
         assertThat(subscriber.values().size, `is`(1))
         assertThat(subscriber.values()[0], `is`(Optional.absent()))

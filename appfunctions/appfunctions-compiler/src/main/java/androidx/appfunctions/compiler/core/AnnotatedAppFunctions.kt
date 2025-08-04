@@ -244,7 +244,16 @@ data class AnnotatedAppFunctions(
                     checkNotNull(appFunctionAnnotationProperties.isEnabledByDefault),
                 schema = appFunctionAnnotationProperties.getAppFunctionSchemaMetadata(),
                 parameters = parameterTypeMetadataList,
-                response = AppFunctionResponseMetadata(valueType = responseTypeMetadata),
+                response =
+                    AppFunctionResponseMetadata(
+                        valueType = responseTypeMetadata,
+                        description =
+                            if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
+                                functionDeclaration.getResponseDescriptionFromKDoc()
+                            } else {
+                                ""
+                            },
+                    ),
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
                 description =
                     if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {

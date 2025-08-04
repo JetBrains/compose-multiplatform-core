@@ -72,6 +72,15 @@ abstract class SdkResourceGenerator : DefaultTask() {
             project.getPrebuiltsRoot().toRelativeString(project.projectDir)
         }
 
+    @get:Input
+    @get:Optional
+    val gradlePrebuiltsRelativePath: String? =
+        if (ProjectLayoutType.isPlayground(project)) {
+            null
+        } else {
+            project.getGradlePrebuiltsPath().toRelativeString(project.projectDir)
+        }
+
     private val projectDir: File = project.projectDir
 
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
@@ -101,6 +110,9 @@ abstract class SdkResourceGenerator : DefaultTask() {
             writer.write("kspVersion=${kspVersion.get()}\n")
             if (prebuiltsRelativePath != null) {
                 writer.write("prebuiltsRelativePath=$prebuiltsRelativePath\n")
+            }
+            if (gradlePrebuiltsRelativePath != null) {
+                writer.write("gradlePrebuiltsRelativePath=$gradlePrebuiltsRelativePath\n")
             }
         }
     }

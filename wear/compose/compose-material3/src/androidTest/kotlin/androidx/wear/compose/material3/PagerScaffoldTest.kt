@@ -21,9 +21,13 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.withoutVisualEffect
 import androidx.compose.runtime.Composable
@@ -209,16 +213,18 @@ class PagerScaffoldTest {
         pageIndicatorAnimationSpec: AnimationSpec<Float>?,
     ) {
         rule.setContentWithTheme {
-            if (orientation == Orientation.Horizontal) {
-                TestHorizontalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
-                )
-            } else {
-                TestVerticalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
-                )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                if (orientation == Orientation.Horizontal) {
+                    TestHorizontalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                } else {
+                    TestVerticalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                }
             }
         }
 

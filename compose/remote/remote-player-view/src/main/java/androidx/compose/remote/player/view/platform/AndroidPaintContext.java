@@ -393,6 +393,13 @@ public class AndroidPaintContext extends PaintContext {
     @Override
     public void getTextBounds(int textId, int start, int end, int flags, float @NonNull [] bounds) {
         String str = getText(textId);
+        if (str == null) {
+            bounds[0] = 0f;
+            bounds[1] = 0f;
+            bounds[2] = 0f;
+            bounds[3] = 0f;
+            return;
+        }
         if (end == -1 || end > str.length()) {
             end = str.length();
         }

@@ -147,11 +147,9 @@ public abstract class DataBridgeSdkProvider private constructor() {
 
     private class DataBridgeSdkProviderImpl(val dataBridgeProxy: IDataBridgeProxy) :
         DataBridgeSdkProvider() {
-
-        private val lock = Any()
         private val uuid = UUID.randomUUID().toString()
 
-        @GuardedBy("lock")
+        @GuardedBy("keyToKeyUpdateCallbackWithExecutorMap")
         private val keyToKeyUpdateCallbackWithExecutorMap =
             mutableMapOf<Key, MutableList<KeyUpdateCallbackWithExecutor>>()
 
@@ -282,8 +280,8 @@ public abstract class DataBridgeSdkProvider private constructor() {
             executor: Executor,
             callback: KeyUpdateCallback,
         ) {
-            keys.forEach { key ->
-                synchronized(lock) {
+            synchronized(keyToKeyUpdateCallbackWithExecutorMap) {
+                keys.forEach { key ->
                     val keyUpdateCallbackWithExecutor =
                         KeyUpdateCallbackWithExecutor(callback, executor)
                     keyToKeyUpdateCallbackWithExecutorMap
@@ -298,7 +296,7 @@ public abstract class DataBridgeSdkProvider private constructor() {
 
         override fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback) {
             val keysToRemoveFromMap = mutableListOf<Key>()
-            synchronized(lock) {
+            synchronized(keyToKeyUpdateCallbackWithExecutorMap) {
                 keyToKeyUpdateCallbackWithExecutorMap.forEach {
                     (key, keyUpdateCallbackWithExecutorList) ->
                     keyUpdateCallbackWithExecutorList.removeAll { it.keyUpdateCallback == callback }
@@ -348,7 +346,7 @@ public abstract class DataBridgeSdkProvider private constructor() {
         }
 
         private fun sendKeyUpdates(key: Key, value: Any?) {
-            synchronized(lock) {
+            synchronized(keyToKeyUpdateCallbackWithExecutorMap) {
                 if (!keyToKeyUpdateCallbackWithExecutorMap.containsKey(key)) {
                     return
                 }

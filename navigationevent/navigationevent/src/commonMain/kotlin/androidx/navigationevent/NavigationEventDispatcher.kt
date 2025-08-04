@@ -198,7 +198,8 @@ private constructor(
      *
      * @param callback The callback to invoke when the enabled state changes.
      */
-    internal fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
+    @Suppress("PairedRegistration") // No removal for now.
+    public fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
         sharedProcessor.addOnHasEnabledCallbacksChangedCallback(callback)
     }
 
@@ -261,7 +262,7 @@ private constructor(
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    public fun dispatchOnStarted(event: NavigationEvent) {
+    internal fun dispatchOnStarted(event: NavigationEvent) {
         checkInvariants()
 
         if (!isEnabled) return
@@ -276,7 +277,7 @@ private constructor(
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    public fun dispatchOnProgressed(event: NavigationEvent) {
+    internal fun dispatchOnProgressed(event: NavigationEvent) {
         checkInvariants()
 
         if (!isEnabled) return
@@ -290,7 +291,7 @@ private constructor(
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    public fun dispatchOnCompleted() {
+    internal fun dispatchOnCompleted() {
         checkInvariants()
 
         if (!isEnabled) return
@@ -304,7 +305,7 @@ private constructor(
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    public fun dispatchOnCancelled() {
+    internal fun dispatchOnCancelled() {
         checkInvariants()
 
         if (!isEnabled) return

@@ -119,12 +119,13 @@ fun TabRow(
             SurfaceDefaults.colors(containerColor = containerColor, contentColor = contentColor),
         shape = RectangleShape,
     ) {
+        val tabContent: @Composable () -> Unit = {
+            TabRowScopeImpl(doesTabRowHaveFocus).apply { tabs() }
+        }
+        @Suppress("ComposableLambdaInMeasurePolicy")
         SubcomposeLayout { constraints ->
             // Tab measurables
-            val tabMeasurables =
-                subcompose(TabRowSlots.Tabs) {
-                    TabRowScopeImpl(doesTabRowHaveFocus).apply { tabs() }
-                }
+            val tabMeasurables = subcompose(TabRowSlots.Tabs, tabContent)
 
             // Tab placeables
             val tabPlaceables =

@@ -25,6 +25,7 @@ import androidx.compose.remote.core.documentation.DocumentedOperation;
 
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,6 +38,8 @@ public class DebugMessage extends Operation implements VariableSupport {
     float mFloatValue;
     float mOutFloatValue;
     int mFlags = 0;
+
+    public static final int SHOW_USAGE = 1;
 
     public DebugMessage(int textId, float value, int flags) {
         mTextID = textId;
@@ -139,7 +142,14 @@ public class DebugMessage extends Operation implements VariableSupport {
     @Override
     public void apply(@NonNull RemoteContext context) {
         String str = context.getText(mTextID);
-        System.out.println("Debug message : " + str + " " + mOutFloatValue + " " + mFlags);
+
+        System.out.println("Debug message : " + str + " " + mOutFloatValue);
+        if ((mFlags & SHOW_USAGE) > 0 || Float.isNaN(mFloatValue)) {
+            ArrayList<VariableSupport> list = context.getListeners(Utils.idFromNan(mFloatValue));
+            for (VariableSupport varSupport : list) {
+                System.out.println("Debug message : " + str + " " + varSupport.toString());
+            }
+        }
     }
 
     @NonNull

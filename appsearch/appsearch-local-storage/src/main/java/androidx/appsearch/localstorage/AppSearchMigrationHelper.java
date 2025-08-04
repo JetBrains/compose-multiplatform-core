@@ -18,6 +18,7 @@ package androidx.appsearch.localstorage;
 
 import static androidx.appsearch.app.AppSearchResult.RESULT_INVALID_SCHEMA;
 import static androidx.appsearch.app.AppSearchResult.throwableToFailedResult;
+import static androidx.appsearch.stats.BaseStats.CALL_TYPE_SCHEMA_MIGRATION;
 
 import android.os.Parcel;
 
@@ -61,12 +62,14 @@ class AppSearchMigrationHelper implements Closeable {
     private final String mDatabaseName;
     private final File mFile;
     private final Set<String> mDestinationTypes;
+    private final @Nullable AppSearchLogger mLogger;
     private int mTotalNeedMigratedDocumentCount = 0;
 
     AppSearchMigrationHelper(@NonNull AppSearchImpl appSearchImpl,
             @NonNull String packageName,
             @NonNull String databaseName,
-            @NonNull Set<AppSearchSchema> newSchemas) throws IOException {
+            @NonNull Set<AppSearchSchema> newSchemas,
+            @Nullable AppSearchLogger logger) throws IOException {
         mAppSearchImpl = Preconditions.checkNotNull(appSearchImpl);
         mPackageName = Preconditions.checkNotNull(packageName);
         mDatabaseName = Preconditions.checkNotNull(databaseName);
@@ -76,6 +79,7 @@ class AppSearchMigrationHelper implements Closeable {
         for (AppSearchSchema newSchema : newSchemas) {
             mDestinationTypes.add(newSchema.getSchemaType());
         }
+        mLogger = logger;
     }
 
     /**
@@ -207,7 +211,8 @@ class AppSearchMigrationHelper implements Closeable {
                     migrationFailureCount++;
                 }
             }
-            mAppSearchImpl.persistToDisk(PersistType.Code.FULL);
+            mAppSearchImpl.persistToDisk(mPackageName, CALL_TYPE_SCHEMA_MIGRATION,
+                    PersistType.Code.FULL, mLogger);
             if (schemaMigrationStatsBuilder != null) {
                 schemaMigrationStatsBuilder.setTotalSuccessMigratedDocumentCount(savedDocsCount);
                 schemaMigrationStatsBuilder.setMigrationFailureCount(migrationFailureCount);

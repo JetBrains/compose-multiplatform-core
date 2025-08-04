@@ -21,6 +21,7 @@ import androidx.compose.runtime.mock.Text
 import androidx.compose.runtime.mock.View
 import androidx.compose.runtime.mock.ViewApplier
 import androidx.compose.runtime.mock.compositionTest
+import androidx.compose.runtime.tooling.Linear
 import kotlin.test.Test
 import org.junit.After
 import org.junit.Assert

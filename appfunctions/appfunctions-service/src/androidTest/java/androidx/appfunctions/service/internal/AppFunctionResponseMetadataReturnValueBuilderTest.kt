@@ -20,12 +20,11 @@ import android.os.Build
 import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.junit.testparameterinjector.TestParameter
@@ -44,8 +43,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = 100L
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = isNullable)
+                valueType = AppFunctionLongTypeMetadata(isNullable = isNullable)
             )
 
         val returnValue = responseMetadata.unsafeBuildReturnValue(result)
@@ -58,9 +56,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
     fun testUnsafeBuildExecuteAppFunctionResponse_buildNonNullSingleResponse_wrongResultType() {
         val result: Double = 5.0
         val responseMetadata =
-            AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-            )
+            AppFunctionResponseMetadata(valueType = AppFunctionLongTypeMetadata(isNullable = false))
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
             responseMetadata.unsafeBuildReturnValue(result)
@@ -72,7 +68,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
+                valueType = AppFunctionDoubleTypeMetadata(isNullable = false)
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
@@ -85,7 +81,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
         val returnValue = responseMetadata.unsafeBuildReturnValue(result)
@@ -103,11 +99,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                         isNullable = isNullable,
                     )
             )
@@ -128,11 +120,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionStringTypeMetadata(isNullable = false),
                         isNullable = false,
                     )
             )
@@ -149,11 +137,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_BOOLEAN,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
                         isNullable = false,
                     )
             )
@@ -170,8 +154,7 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                        itemType = AppFunctionLongTypeMetadata(isNullable = false),
                         isNullable = true,
                     )
             )

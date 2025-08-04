@@ -87,13 +87,40 @@ public annotation class AppFunction(
     public val isEnabled: Boolean = true,
 
     /**
-     * Whether to use the function's KDoc as a function's description to the agent. The default
+     * Whether to use the function's KDoc as a function's description for the agent. The default
      * value is `false`.
      *
-     * If set to `true`, the KDoc will be set as the function's
-     * [androidx.appfunctions.metadata.AppFunctionMetadata.description]. The caller will use this
-     * description to interpret when and how to use the function, including allowed parameters,
-     * return type and thrown exceptions.
+     * If set to `true`, the KDoc will be used to populate:
+     * - The function's [androidx.appfunctions.metadata.AppFunctionMetadata.description] as the
+     *   KDoc, excluding Kotlin's supported tags like `@param`, `@throws`.
+     * - The function's parameters'
+     *   [androidx.appfunctions.metadata.AppFunctionParameterMetadata.description] from the KDoc's
+     *   `@param` tags.
+     * - The function's response's
+     *   [androidx.appfunctions.metadata.AppFunctionResponseMetadata.description] from the KDoc's
+     *   `@return` tags.
+     *
+     * Example:
+     * ```kotlin
+     * /**
+     * * Creates a new note with a given title and content.
+     * *
+     * * @param title The title of the note.
+     * * @param content The main body or text of the note.
+     * * @return The created note.
+     * * @throws IllegalArgumentException if the `title` or `content` is empty or too long.
+     * */
+     * @AppFunction(isDescribedByKdoc = true)
+     * fun CreateNote(title: String, content: String): Note { .. }
+     * ```
+     *
+     * In this example:
+     * - `AppFunctionMetadata.description` will be: "Creates a new note with a given title and
+     *   content."
+     * - `title`'s `AppFunctionParameterMetadata.description` will be: "The title of the note."
+     * - `content`'s `AppFunctionParameterMetadata.description` will be: "The main body or text of
+     *   the note."
+     * - `AppFunctionResponseMetadata.description` will be: "The created note."
      */
     public val isDescribedByKdoc: Boolean = false,
 )

@@ -24,6 +24,7 @@ import android.view.contentcapture.ContentCaptureSession;
 import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.compose.ui.contentcapture.ContentCaptureSessionWrapper;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -118,7 +119,7 @@ public class ViewCompatShims {
      * inherited by ancestors, default session or {@code null} if content capture is disabled for
      * this view.
      */
-    public static @Nullable ContentCaptureSessionCompat getContentCaptureSession(@NonNull View v) {
+    public static @Nullable ContentCaptureSessionWrapper getContentCaptureSession(@NonNull View v) {
         if (Build.VERSION.SDK_INT >= 29) {
             ContentCaptureSession session = Api29Impl.getContentCaptureSession(v);
             if (session == null) {

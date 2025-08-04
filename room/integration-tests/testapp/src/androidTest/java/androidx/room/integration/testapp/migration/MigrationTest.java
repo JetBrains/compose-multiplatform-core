@@ -863,6 +863,28 @@ public class MigrationTest {
         assertThat(onDestructiveMigrationInvoked[0], is(true));
     }
 
+    @Test
+    public void dropAllTablesDuringDestructiveMigrations_escapeNames() throws IOException {
+        SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, MigrationDb.MAX_VERSION);
+        database.execSQL("CREATE TABLE `order` (id INTEGER PRIMARY KEY)");
+        database.close();
+
+        Context targetContext = ApplicationProvider.getApplicationContext();
+        MigrationDb db = Room.databaseBuilder(targetContext, MigrationDb.class, TEST_DB)
+                .fallbackToDestructiveMigration(true)
+                .build();
+        Set<String> tableNames = new HashSet<>();
+        Cursor c = db.query("SELECT name FROM sqlite_master", new Object[0]);
+        while (c.moveToNext()) {
+            tableNames.add(c.getString(0));
+        }
+        c.close();
+        db.close();
+
+        // Extra table is no longer present
+        assertThat(tableNames.contains("order"), is(false));
+    }
+
     private void testFailure(int startVersion, int endVersion, String errorMsg) throws IOException {
         final SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, startVersion);
         db.close();

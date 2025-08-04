@@ -19,7 +19,7 @@
 
     <application
         android:label="Privacy Sandbox DataBridge Integration Test"
-        android:theme="@style/Base.Theme.AppCompat">>
+        android:theme="@style/Base.Theme.AppCompat">
         <activity
             android:name=".MainActivity"
             android:exported="true">

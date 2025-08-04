@@ -19,21 +19,20 @@ package androidx.appfunctions
 import android.app.PendingIntent
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 
 /** Specification class defining the properties metadata for [AppFunctionData]. */
 internal abstract class AppFunctionDataSpec {
@@ -177,52 +176,41 @@ internal abstract class AppFunctionDataSpec {
 
     fun AppFunctionDataTypeMetadata.conform(typeClazz: Class<*>, isCollection: Boolean): Boolean {
         return when (this) {
-            is AppFunctionPrimitiveTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+            is AppFunctionIntTypeMetadata -> {
+                !isCollection && typeClazz == Int::class.java
+            }
+            is AppFunctionLongTypeMetadata -> {
+                !isCollection && typeClazz == Long::class.java
+            }
+            is AppFunctionFloatTypeMetadata -> {
+                !isCollection && typeClazz == Float::class.java
+            }
+            is AppFunctionDoubleTypeMetadata -> {
+                !isCollection && typeClazz == Double::class.java
+            }
+            is AppFunctionBooleanTypeMetadata -> {
+                !isCollection && typeClazz == Boolean::class.java
+            }
+            is AppFunctionStringTypeMetadata -> {
+                !isCollection && typeClazz == String::class.java
+            }
+            is AppFunctionBytesTypeMetadata -> {
+                !isCollection && typeClazz == Byte::class.java
+            }
+            is AppFunctionPendingIntentTypeMetadata -> {
+                !isCollection && typeClazz == PendingIntent::class.java
             }
             is AppFunctionArrayTypeMetadata -> {
-                isCollection == true && this.conform(typeClazz)
+                isCollection && this.conform(typeClazz)
             }
             is AppFunctionObjectTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+                !isCollection && this.conform(typeClazz)
             }
             is AppFunctionReferenceTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+                !isCollection && this.conform(typeClazz)
             }
             else -> {
                 throw IllegalStateException("Unexpected data type ${this.javaClass}")
-            }
-        }
-    }
-
-    private fun AppFunctionPrimitiveTypeMetadata.conform(typeClazz: Class<*>): Boolean {
-        return when (typeClazz) {
-            Int::class.java -> {
-                this.type == TYPE_INT
-            }
-            Long::class.java -> {
-                this.type == TYPE_LONG
-            }
-            Float::class.java -> {
-                this.type == TYPE_FLOAT
-            }
-            Double::class.java -> {
-                this.type == TYPE_DOUBLE
-            }
-            Boolean::class.java -> {
-                this.type == TYPE_BOOLEAN
-            }
-            String::class.java -> {
-                this.type == TYPE_STRING
-            }
-            Byte::class.java -> {
-                this.type == TYPE_BYTES
-            }
-            PendingIntent::class.java -> {
-                this.type == TYPE_PENDING_INTENT
-            }
-            else -> {
-                false
             }
         }
     }

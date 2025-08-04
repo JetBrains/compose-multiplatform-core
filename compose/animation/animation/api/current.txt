@@ -170,9 +170,10 @@ package androidx.compose.animation {
 
   @SuppressCompatibility @androidx.compose.animation.ExperimentalSharedTransitionApi @androidx.compose.runtime.Stable public interface SharedTransitionScope extends androidx.compose.ui.layout.LookaheadScope {
     method public androidx.compose.animation.SharedTransitionScope.OverlayClip OverlayClip(androidx.compose.ui.graphics.Shape clipShape);
+    method public default androidx.compose.animation.SharedTransitionScope.SharedContentConfig SharedContentConfig(kotlin.jvm.functions.Function1<? super androidx.compose.animation.SharedTransitionScope.SharedContentState,java.lang.Boolean> isEnabled);
     method public boolean isTransitionActive();
-    method @androidx.compose.runtime.Composable public androidx.compose.animation.SharedTransitionScope.SharedContentState rememberSharedContentState(Object key);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.animation.SharedTransitionScope.SharedContentState rememberSharedContentState(Object, androidx.compose.runtime.Composer?, int);
+    method @androidx.compose.runtime.Composable public androidx.compose.animation.SharedTransitionScope.SharedContentState rememberSharedContentState(Object key, optional androidx.compose.animation.SharedTransitionScope.SharedContentConfig config);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.animation.SharedTransitionScope.SharedContentState rememberSharedContentState(Object, androidx.compose.animation.SharedTransitionScope.SharedContentConfig, androidx.compose.runtime.Composer?, int);
     method public androidx.compose.ui.Modifier renderInSharedTransitionScopeOverlay(androidx.compose.ui.Modifier, optional kotlin.jvm.functions.Function0<java.lang.Boolean> renderInOverlay, optional float zIndexInOverlay, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.LayoutDirection,? super androidx.compose.ui.unit.Density,? extends androidx.compose.ui.graphics.Path?> clipInOverlayDuringTransition);
     method public androidx.compose.ui.Modifier sharedBounds(androidx.compose.ui.Modifier, androidx.compose.animation.SharedTransitionScope.SharedContentState sharedContentState, androidx.compose.animation.AnimatedVisibilityScope animatedVisibilityScope, optional androidx.compose.animation.EnterTransition enter, optional androidx.compose.animation.ExitTransition exit, optional androidx.compose.animation.BoundsTransform boundsTransform, optional androidx.compose.animation.SharedTransitionScope.ResizeMode resizeMode, optional androidx.compose.animation.SharedTransitionScope.PlaceHolderSize placeHolderSize, optional boolean renderInOverlayDuringTransition, optional float zIndexInOverlay, optional androidx.compose.animation.SharedTransitionScope.OverlayClip clipInOverlayDuringTransition);
     method public androidx.compose.ui.Modifier sharedElement(androidx.compose.ui.Modifier, androidx.compose.animation.SharedTransitionScope.SharedContentState sharedContentState, androidx.compose.animation.AnimatedVisibilityScope animatedVisibilityScope, optional androidx.compose.animation.BoundsTransform boundsTransform, optional androidx.compose.animation.SharedTransitionScope.PlaceHolderSize placeHolderSize, optional boolean renderInOverlayDuringTransition, optional float zIndexInOverlay, optional androidx.compose.animation.SharedTransitionScope.OverlayClip clipInOverlayDuringTransition);
@@ -208,6 +209,15 @@ package androidx.compose.animation {
     method public androidx.compose.animation.SharedTransitionScope.ResizeMode getRemeasureToBounds();
     method public androidx.compose.animation.SharedTransitionScope.ResizeMode scaleToBounds(optional androidx.compose.ui.layout.ContentScale contentScale, optional androidx.compose.ui.Alignment alignment);
     property public androidx.compose.animation.SharedTransitionScope.ResizeMode RemeasureToBounds;
+  }
+
+  public static interface SharedTransitionScope.SharedContentConfig {
+    method public default androidx.compose.ui.geometry.Rect? alternativeTargetBoundsInTransitionScopeAfterRemoval(androidx.compose.animation.SharedTransitionScope.SharedContentState, androidx.compose.ui.geometry.Rect targetBoundsBeforeRemoval, long sharedTransitionLayoutSize);
+    method @BytecodeOnly public default androidx.compose.ui.geometry.Rect? alternativeTargetBoundsInTransitionScopeAfterRemoval-cSwnlzA(androidx.compose.animation.SharedTransitionScope.SharedContentState, androidx.compose.ui.geometry.Rect, long);
+    method public default boolean getShouldKeepEnabledForOngoingAnimation();
+    method public default boolean isEnabled(androidx.compose.animation.SharedTransitionScope.SharedContentState);
+    property public default boolean androidx.compose.animation.SharedTransitionScope.SharedContentState.isEnabled;
+    property public default boolean shouldKeepEnabledForOngoingAnimation;
   }
 
   public static final class SharedTransitionScope.SharedContentState {

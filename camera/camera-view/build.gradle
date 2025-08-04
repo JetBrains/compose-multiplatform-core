@@ -59,6 +59,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesCore)
     testImplementation(libs.testMonitor)
+    testImplementation(libs.mockitoCore)
 
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)

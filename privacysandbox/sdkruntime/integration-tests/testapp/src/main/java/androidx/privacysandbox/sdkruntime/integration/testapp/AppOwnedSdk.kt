@@ -19,5 +19,5 @@ package androidx.privacysandbox.sdkruntime.integration.testapp
 import androidx.privacysandbox.sdkruntime.integration.testaidl.IAppSdk
 
 class AppOwnedSdk : IAppSdk.Stub() {
-    override fun getMessage(value: Int): String = "Message from AppOwnedSdk. Value is $value"
+    override fun doSomething(param: String): String = "AppOwnedSdk result is $param"
 }

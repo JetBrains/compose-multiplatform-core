@@ -346,7 +346,7 @@ package androidx.wear.protolayout.expression {
   }
 
   public class DynamicDataMap {
-    method public final inline operator <reified T extends androidx.wear.protolayout.expression.DynamicBuilders.DynamicType> boolean contains(androidx.wear.protolayout.expression.DynamicDataKey<T> key);
+    method @KotlinOnly public final inline operator <reified T extends androidx.wear.protolayout.expression.DynamicBuilders.DynamicType> boolean contains(androidx.wear.protolayout.expression.DynamicDataKey<T> key);
     method public final <T extends androidx.wear.protolayout.expression.DynamicBuilders.DynamicType> boolean contains(androidx.wear.protolayout.expression.DynamicDataKey<T> key, Class<T> type);
     method public final operator Boolean? get(androidx.wear.protolayout.expression.DynamicDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> key);
     method public final operator android.graphics.Color? get(androidx.wear.protolayout.expression.DynamicDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor> key);

@@ -23,13 +23,16 @@ import androidx.appfunctions.internal.readAll
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionAppMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appsearch.app.Features
 import androidx.appsearch.app.GlobalSearchSession
 import androidx.appsearch.app.SearchSpec
@@ -194,11 +197,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_STRING,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionStringTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )
@@ -210,14 +209,19 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 isEnabled = true,
                 description = "Test function without schema, enabled by default.",
                 schema = null,
-                parameters = emptyList(),
+                parameters =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "intParam",
+                            isRequired = true,
+                            dataType = AppFunctionIntTypeMetadata(isNullable = false),
+                            description = "an input integer.",
+                        )
+                    ),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false),
+                        description = "The function's response",
                     ),
                 components = sharedComponents,
             )
@@ -232,11 +236,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )
@@ -250,11 +250,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )
@@ -268,11 +264,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )
@@ -286,11 +278,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )
@@ -305,11 +293,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 parameters = emptyList(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                isNullable = false,
-                            )
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
                 components = sharedComponents,
             )

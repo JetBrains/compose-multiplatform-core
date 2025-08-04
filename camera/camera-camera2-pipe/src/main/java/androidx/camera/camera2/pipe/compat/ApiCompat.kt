@@ -580,4 +580,19 @@ internal object Api35Compat {
     ): SessionConfiguration {
         return SessionConfiguration(sessionType, outputs)
     }
+
+    @JvmStatic
+    fun createCaptureRequest(
+        cameraDeviceSetup: CameraDevice.CameraDeviceSetup,
+        templateType: Int,
+    ): CaptureRequest.Builder {
+        return cameraDeviceSetup.createCaptureRequest(templateType)
+    }
+
+    @JvmStatic
+    fun getAvailableSessionCharacteristicsKeys(
+        cameraCharacteristics: CameraCharacteristics
+    ): List<CameraCharacteristics.Key<*>>? {
+        return cameraCharacteristics.availableSessionCharacteristicsKeys
+    }
 }

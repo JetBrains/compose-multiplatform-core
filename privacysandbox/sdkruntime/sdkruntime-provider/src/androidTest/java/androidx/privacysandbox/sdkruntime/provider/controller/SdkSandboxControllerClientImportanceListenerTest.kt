@@ -34,8 +34,9 @@ import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 
-// TODO(b/249982507) Rewrite test to use real SDK in sandbox instead of mocking controller
-@SdkSuppress(minSdkVersion = 34)
+// TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
+// maxSdkVersion due to b/430688215
+@SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
 class SdkSandboxControllerClientImportanceListenerTest {
 
     @Rule @JvmField val sdkSandboxControllerMockRule = SdkSandboxControllerMockRule()

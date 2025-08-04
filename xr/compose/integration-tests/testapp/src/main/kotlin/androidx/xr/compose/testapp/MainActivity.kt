@@ -231,6 +231,15 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.video_player_test)) {
                         startTest<VideoPlayerActivity>()
                     }
+                    TestCaseColumnRowItem(getString(R.string.video_drm_test)) {
+                        startTest<VideoPlayerActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.video_spatial_test)) {
+                        startTest<SpatialCompose>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.video_spatial_180_360_test)) {
+                        startTest<SpatialCompose>()
+                    }
                     TestCaseColumnRowItem(getString(R.string.cuj_gltf_animation_test_case)) {
                         startTest<SplitEngine>(getString(R.string.cuj_gltf_animation_test_case))
                     }

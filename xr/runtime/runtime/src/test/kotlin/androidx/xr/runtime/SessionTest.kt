@@ -381,8 +381,9 @@ class SessionTest {
         val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
         val secondActivity = activityController2.get()
 
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
+        val underTest = createSession()
+        val secondSession =
+            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
         activityController.create().start().resume()
         activityController2.create().start().resume()
 
@@ -402,8 +403,9 @@ class SessionTest {
     fun destroy_lastDestroyed_setFinalActivityTrue() {
         val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
         val secondActivity = activityController2.get()
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
+        val underTest = createSession()
+        val secondSession =
+            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
         activityController2.create().start().resume()
         activityController2.destroy()
         activityController.create().start().resume()

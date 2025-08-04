@@ -44,8 +44,8 @@ package androidx.xr.scenecore {
     method public void setContentDescription(CharSequence);
     method public void setEnabled(boolean enabled);
     method public void setParent(androidx.xr.scenecore.Entity?);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, int relativeTo);
-    method public void setScale(float scale, int relativeTo);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setPose(androidx.xr.runtime.math.Pose pose, int relativeTo);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setScale(float scale, int relativeTo);
     method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
     property public androidx.xr.runtime.math.FloatSize3d bounds;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
@@ -81,8 +81,8 @@ package androidx.xr.scenecore {
     method public void setOnStateChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Integer>? listener);
     method public void setOnStateChangedListener(java.util.function.Consumer<java.lang.Integer>? listener);
     method public void setParent(androidx.xr.scenecore.Entity?);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, int relativeTo);
-    method public void setScale(float scale, int relativeTo);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setPose(androidx.xr.runtime.math.Pose pose, int relativeTo);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setScale(float scale, int relativeTo);
     method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
     property public int state;
     field public static final androidx.xr.scenecore.AnchorEntity.Companion Companion;

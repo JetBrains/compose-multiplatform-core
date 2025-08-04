@@ -384,7 +384,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         // The emitted endpoints need to be tracked so that when the device list changes,
         // the added or removed endpoints can be re-emitted as a whole list.  Otherwise, only
         // the added or removed endpoints will be emitted.
-        val callEndpointsUpdater = PreCallEndpointsUpdater(mSendChannel = this.channel)
+        val callEndpointsUpdater = PreCallEndpointsUpdater(sendChannel = this.channel)
         // register an audio callback that will listen for updates
         val audioDeviceListener = AudioDeviceListener(mContext, callEndpointsUpdater, id)
         // register a bluetooth listener to surface connected bluetooth devices instead of just

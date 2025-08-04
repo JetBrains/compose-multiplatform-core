@@ -92,8 +92,7 @@ import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.onPointSourceParams
-import androidx.xr.compose.subspace.layout.padding
+import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
@@ -229,7 +228,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     modifier = modifier.rotate(Vector3(z = 1f), 15f)
                 }
                 SpatialExternalSurface180Hemisphere(
-                    modifier = SubspaceModifier.offset(z = animatedOffset.value.dp),
+                    modifier = modifier,
                     stereoMode = stereoMode,
                     radius = animatedRadius.value.dp,
                     featheringEffect = getFeatheringEffect(featheringValue, featheringType),
@@ -621,7 +620,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             modifier =
                 SubspaceModifier.width(600.dp)
                     .height(600.dp)
-                    .onPointSourceParams {
+                    .onPointSourceParamsAvailable {
                         mediaPlayer = MediaPlayer()
                         if (isAudioSpatialized) {
                             SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)

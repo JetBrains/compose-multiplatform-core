@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
 import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
@@ -40,6 +41,9 @@ androidXMultiplatform {
     jvm()
     linux()
     mac()
+    tvos()
+    watchos()
+
     sourceSets {
         commonTest {
             dependencies {
@@ -55,8 +59,14 @@ androidXMultiplatform {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
             }
         }
+        // b/432783733: Test source set dedicating to room-paging since watchOS and tvOS are not
+        // supported targets.
+        pagingCommonTest {
+            dependsOn(commonTest)
+        }
         androidInstrumentedTest {
             dependsOn(commonTest)
+            dependsOn(pagingCommonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.testRunner)
@@ -65,6 +75,7 @@ androidXMultiplatform {
         }
         jvmTest {
             dependsOn(commonTest)
+            dependsOn(pagingCommonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
             }
@@ -72,24 +83,31 @@ androidXMultiplatform {
         nativeTest {
             dependsOn(commonTest)
         }
-        nonIosNativeTest {
+        // Host OSes (Linux and Mac)
+        hostNativeTest {
+            dependsOn(nativeTest)
+            dependsOn(pagingCommonTest)
+        }
+        // iOS, watchOS and tvOS families, but not Mac OS
+        appleOsNativeTest {
             dependsOn(nativeTest)
         }
-        if (KmpPlatformsKt.enableMac(project)) {
-            iosTest {
-                dependsOn(nativeTest)
-            }
+        // iOS family
+        iosTest {
+            dependsOn(appleOsNativeTest)
+            dependsOn(pagingCommonTest)
         }
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                def test = target.compilations["test"]
-                if (target.konanTarget.family == Family.IOS) {
-                    test.defaultSourceSet {
-                        dependsOn(iosTest)
-                    }
-                } else {
-                    test.defaultSourceSet {
-                        dependsOn(nonIosNativeTest)
+                target.compilations["test"].defaultSourceSet {
+                    if (target.konanTarget.family in [Family.IOS, Family.WATCHOS, Family.TVOS]) {
+                        if (target.konanTarget.family == Family.IOS) {
+                            dependsOn(iosTest)
+                        } else {
+                            dependsOn(appleOsNativeTest)
+                        }
+                    } else {
+                        dependsOn(hostNativeTest)
                     }
                 }
             }
@@ -105,18 +123,39 @@ dependencies {
     add("kspJvmTest", roomCompilerDependency)
     add("kspLinuxX64Test", roomCompilerDependency)
     if (KmpPlatformsKt.enableMac(project)) {
-        add("kspIosSimulatorArm64Test", roomCompilerDependency)
+        add("kspIosArm64Test", roomCompilerDependency)
         add("kspIosX64Test", roomCompilerDependency)
+        add("kspIosSimulatorArm64Test", roomCompilerDependency)
         add("kspMacosX64Test", roomCompilerDependency)
         add("kspMacosArm64Test", roomCompilerDependency)
+        add("kspTvosArm64Test", roomCompilerDependency)
+        add("kspTvosX64Test", roomCompilerDependency)
+        add("kspTvosSimulatorArm64Test", roomCompilerDependency)
+        add("kspWatchosArm64Test", roomCompilerDependency)
+        add("kspWatchosX64Test", roomCompilerDependency)
+        add("kspWatchosSimulatorArm64Test", roomCompilerDependency)
     }
 }
 
-// Copy schema files to the iOS binary output test directory that will be part of the bundle's
-// resources and read with NSBundle. This needs to be replaced with a more proper mechanism.
+// Copy schema files to the iOS / watchOS / tvOS binary output test directory that will be part of
+// the bundle's resources and read with NSBundle. This needs to be replaced with a more proper
+// mechanism. See https://youtrack.jetbrains.com/issue/KT-39194
 // TODO(b/317909626): Should be configured by Room Gradle Plugin
 tasks.withType(KotlinNativeLink).configureEach { task ->
-    if (name.contains("linkDebugTestIos")) {
+    def isAppleOsTarget = task.target in [
+            KonanTarget.IOS_ARM64,
+            KonanTarget.IOS_X64,
+            KonanTarget.IOS_SIMULATOR_ARM64,
+            KonanTarget.TVOS_ARM64,
+            KonanTarget.TVOS_X64,
+            KonanTarget.TVOS_SIMULATOR_ARM64,
+            KonanTarget.WATCHOS_ARM32,
+            KonanTarget.WATCHOS_ARM64,
+            KonanTarget.WATCHOS_X64,
+            KonanTarget.WATCHOS_SIMULATOR_ARM64,
+            KonanTarget.WATCHOS_DEVICE_ARM64
+    ].collect { it.INSTANCE.name }
+    if (isAppleOsTarget) {
         def inputSchemaDir = layout.projectDirectory.dir("schemas-ksp").getAsFile()
         def outputSchemaDir = new File(task.destinationDirectory.getAsFile().get(), "/schemas-ksp")
         task.doLast {

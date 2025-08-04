@@ -7378,7 +7378,7 @@ internal class TestIndicationNodeFactory(
         if (this === other) return true
         if (other !is TestIndicationNodeFactory) return false
 
-        if (onAttach != other.onAttach) return false
+        if (onAttach !== other.onAttach) return false
 
         return true
     }

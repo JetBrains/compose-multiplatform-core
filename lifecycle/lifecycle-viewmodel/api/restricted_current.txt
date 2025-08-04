@@ -101,7 +101,7 @@ package androidx.lifecycle {
   }
 
   public final class ViewModelProviderGetKt {
-    method @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> VM get(androidx.lifecycle.ViewModelProvider);
+    method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> VM get(androidx.lifecycle.ViewModelProvider);
   }
 
   public class ViewModelStore {
@@ -133,7 +133,7 @@ package androidx.lifecycle.viewmodel {
   }
 
   public static final class CreationExtras.Companion {
-    method public inline <reified T> androidx.lifecycle.viewmodel.CreationExtras.Key<T> Key();
+    method @KotlinOnly public inline <reified T> androidx.lifecycle.viewmodel.CreationExtras.Key<T> Key();
   }
 
   public static final class CreationExtras.Empty extends androidx.lifecycle.viewmodel.CreationExtras {
@@ -160,7 +160,7 @@ package androidx.lifecycle.viewmodel {
   }
 
   public final class InitializerViewModelFactoryKt {
-    method public static inline <reified VM extends androidx.lifecycle.ViewModel> void initializer(androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder, kotlin.jvm.functions.Function1<? super androidx.lifecycle.viewmodel.CreationExtras,? extends VM> initializer);
+    method @KotlinOnly public static inline <reified VM extends androidx.lifecycle.ViewModel> void initializer(androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder, kotlin.jvm.functions.Function1<androidx.lifecycle.viewmodel.CreationExtras,VM> initializer);
     method public static inline androidx.lifecycle.ViewModelProvider.Factory viewModelFactory(kotlin.jvm.functions.Function1<? super androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder,kotlin.Unit> builder);
   }
 

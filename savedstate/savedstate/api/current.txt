@@ -78,13 +78,11 @@ package androidx.savedstate {
     method @BytecodeOnly public static java.util.List<java.lang.Integer!>? getIntListOrNull-impl(android.os.Bundle!, String);
     method public Integer? getIntOrNull(String key);
     method @BytecodeOnly public static Integer? getIntOrNull-impl(android.os.Bundle!, String);
-    method public inline <reified T extends java.io.Serializable> T getJavaSerializable(String key);
+    method @KotlinOnly public inline <reified T extends java.io.Serializable> T getJavaSerializable(String key);
     method public <T extends java.io.Serializable> T getJavaSerializable(String key, kotlin.reflect.KClass<T> serializableClass);
-    method @BytecodeOnly public static <T extends java.io.Serializable> T! getJavaSerializable-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends java.io.Serializable> T getJavaSerializable-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends java.io.Serializable> T? getJavaSerializableOrNull(String key);
+    method @KotlinOnly public inline <reified T extends java.io.Serializable> T? getJavaSerializableOrNull(String key);
     method public <T extends java.io.Serializable> T? getJavaSerializableOrNull(String key, kotlin.reflect.KClass<T> serializableClass);
-    method @BytecodeOnly public static <T extends java.io.Serializable> T! getJavaSerializableOrNull-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends java.io.Serializable> T? getJavaSerializableOrNull-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
     method public long getLong(String key);
     method @BytecodeOnly public static long getLong-impl(android.os.Bundle!, String);
@@ -94,29 +92,23 @@ package androidx.savedstate {
     method @BytecodeOnly public static long[]? getLongArrayOrNull-impl(android.os.Bundle!, String);
     method public Long? getLongOrNull(String key);
     method @BytecodeOnly public static Long? getLongOrNull-impl(android.os.Bundle!, String);
-    method public inline <reified T extends android.os.Parcelable> T getParcelable(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> T getParcelable(String key);
     method public <T extends android.os.Parcelable> T getParcelable(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> T! getParcelable-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> T getParcelable-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> T[] getParcelableArray(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> T[] getParcelableArray(String key);
     method public <T extends android.os.Parcelable> T[] getParcelableArray(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> T![]! getParcelableArray-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> T![] getParcelableArray-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> T[]? getParcelableArrayOrNull(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> T[]? getParcelableArrayOrNull(String key);
     method public <T extends android.os.Parcelable> T[]? getParcelableArrayOrNull(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> T![]! getParcelableArrayOrNull-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> T![]? getParcelableArrayOrNull-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> java.util.List<T> getParcelableList(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> java.util.List<T> getParcelableList(String key);
     method public <T extends android.os.Parcelable> java.util.List<T> getParcelableList(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> java.util.List<T!>! getParcelableList-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> java.util.List<T!> getParcelableList-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> java.util.List<T>? getParcelableListOrNull(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> java.util.List<T>? getParcelableListOrNull(String key);
     method public <T extends android.os.Parcelable> java.util.List<T>? getParcelableListOrNull(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> java.util.List<T!>! getParcelableListOrNull-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> java.util.List<T!>? getParcelableListOrNull-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> T? getParcelableOrNull(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> T? getParcelableOrNull(String key);
     method public <T extends android.os.Parcelable> T? getParcelableOrNull(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> T! getParcelableOrNull-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> T? getParcelableOrNull-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
     method public android.os.Bundle getSavedState(String key);
     method @BytecodeOnly public static android.os.Bundle getSavedState-impl(android.os.Bundle!, String);
@@ -138,13 +130,11 @@ package androidx.savedstate {
     method @BytecodeOnly public static android.util.SizeF? getSizeFOrNull-impl(android.os.Bundle!, String);
     method public android.util.Size? getSizeOrNull(String key);
     method @BytecodeOnly public static android.util.Size? getSizeOrNull-impl(android.os.Bundle!, String);
-    method public inline <reified T extends android.os.Parcelable> android.util.SparseArray<T> getSparseParcelableArray(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> android.util.SparseArray<T> getSparseParcelableArray(String key);
     method public <T extends android.os.Parcelable> android.util.SparseArray<T> getSparseParcelableArray(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> android.util.SparseArray<T!>! getSparseParcelableArray-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> android.util.SparseArray<T!> getSparseParcelableArray-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
-    method public inline <reified T extends android.os.Parcelable> android.util.SparseArray<T>? getSparseParcelableArrayOrNull(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> android.util.SparseArray<T>? getSparseParcelableArrayOrNull(String key);
     method public <T extends android.os.Parcelable> android.util.SparseArray<T>? getSparseParcelableArrayOrNull(String key, kotlin.reflect.KClass<T> parcelableClass);
-    method @BytecodeOnly public static <T extends android.os.Parcelable> android.util.SparseArray<T!>! getSparseParcelableArrayOrNull-impl(android.os.Bundle!, String!);
     method @BytecodeOnly public static <T extends android.os.Parcelable> android.util.SparseArray<T!>? getSparseParcelableArrayOrNull-impl(android.os.Bundle!, String, kotlin.reflect.KClass<T!>);
     method public String getString(String key);
     method @BytecodeOnly public static String getString-impl(android.os.Bundle!, String);
@@ -333,7 +323,7 @@ package androidx.savedstate.serialization {
   }
 
   public final class SavedStateDecoderKt {
-    method public static inline <reified T> T decodeFromSavedState(android.os.Bundle savedState, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
+    method @KotlinOnly public static inline <reified T> T decodeFromSavedState(android.os.Bundle savedState, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
     method public static <T> T decodeFromSavedState(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer, android.os.Bundle savedState);
     method public static <T> T decodeFromSavedState(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer, android.os.Bundle savedState, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
   }
@@ -341,12 +331,13 @@ package androidx.savedstate.serialization {
   public final class SavedStateEncoderKt {
     method public static <T> android.os.Bundle encodeToSavedState(kotlinx.serialization.SerializationStrategy<? super T> serializer, T value);
     method public static <T> android.os.Bundle encodeToSavedState(kotlinx.serialization.SerializationStrategy<? super T> serializer, T value, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
-    method public static inline <reified T> android.os.Bundle encodeToSavedState(T value, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
+    method @KotlinOnly public static inline <reified T> android.os.Bundle encodeToSavedState(T value, optional androidx.savedstate.serialization.SavedStateConfiguration configuration);
   }
 
   public final class SavedStateRegistryOwnerDelegateKt {
-    method public static inline <reified T> kotlin.properties.ReadWriteProperty<java.lang.Object?,T> saved(androidx.savedstate.SavedStateRegistryOwner, optional String? key, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends T> init);
-    method public static <T> kotlin.properties.ReadWriteProperty<java.lang.Object?,T> saved(androidx.savedstate.SavedStateRegistryOwner, kotlinx.serialization.KSerializer<T> serializer, optional String? key, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends T> init);
+    method @KotlinOnly public static inline <reified T> kotlin.properties.ReadWriteProperty<java.lang.Object?,T> saved(androidx.savedstate.SavedStateRegistryOwner, optional String? key, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<T> init);
+    method @Deprecated public static <T> kotlin.properties.ReadWriteProperty<java.lang.Object?,T> saved(androidx.savedstate.SavedStateRegistryOwner, kotlinx.serialization.KSerializer<T> serializer, optional String? key, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends T> init);
+    method public static <T> kotlin.properties.ReadWriteProperty<java.lang.Object?,T> savedNullable(androidx.savedstate.SavedStateRegistryOwner, kotlinx.serialization.KSerializer<T> serializer, optional String? key, optional androidx.savedstate.serialization.SavedStateConfiguration configuration, kotlin.jvm.functions.Function0<? extends T> init);
   }
 
 }
@@ -370,7 +361,7 @@ package androidx.savedstate.serialization.serializers {
   }
 
   public final class MutableStateFlowSerializerKt {
-    method public static inline <reified T> androidx.savedstate.serialization.serializers.MutableStateFlowSerializer<T> MutableStateFlowSerializer();
+    method @KotlinOnly public static inline <reified T> androidx.savedstate.serialization.serializers.MutableStateFlowSerializer<T> MutableStateFlowSerializer();
   }
 
   public abstract class ParcelableSerializer<T extends android.os.Parcelable> implements kotlinx.serialization.KSerializer<T> {

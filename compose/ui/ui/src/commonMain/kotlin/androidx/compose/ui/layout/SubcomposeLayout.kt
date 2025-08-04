@@ -536,12 +536,21 @@ internal class LayoutNodeSubcompositionsState(
     private val precomposeMap = mutableScatterMapOf<Any?, LayoutNode>()
     private val reusableSlotIdsSet = SubcomposeSlotReusePolicy.SlotIdsSet()
 
-    // SlotHandles precomposed in the post-lookahead pass.
+    // SlotHandles precomposed in the approach pass. These slot handles are owned by the approach
+    // pass, hence the approach pass is responsible for disposing them when they are no longer
+    // needed. Note: if `precompose` is called on a slot owned by the approach pass, the
+    // approach will yield ownership to the new caller. When the new caller disposes a slot
+    // that is still needed by approach, the approach pass will be triggered to create
+    // and own the slot.
     private val approachPrecomposeSlotHandleMap = mutableScatterMapOf<Any?, PrecomposedSlotHandle>()
 
-    // Slot ids _composed_ in post-lookahead. The valid slot ids are stored between 0 and
-    // currentApproachIndex - 1, beyond index currentApproachIndex are obsolete ids.
-    private val approachComposedSlotIds = mutableVectorOf<Any?>()
+    // Slot ids of compositions needed in the approach pass. These compositions are either owned
+    // by the approach pass, or by the caller of [SubcomposeLayoutState#precompose]. For
+    // compositions not created by the approach pass, if they are disposed while the approach pass
+    // still needs it, the approach pass will be triggered to re-create the composition.
+    // The valid slot ids are stored between 0 and currentApproachIndex - 1, beyond index
+    // currentApproachIndex are [UnspecifiedSlotId]s.
+    private val slotIdsOfCompositionsNeededInApproach = mutableVectorOf<Any?>()
 
     /**
      * `root.foldedChildren` list consist of:
@@ -907,6 +916,7 @@ internal class LayoutNodeSubcompositionsState(
                         result.placeChildren()
                         // dispose
                         disposeUnusedSlotsInApproach()
+                        disposeOrReuseStartingFromIndex(currentIndex)
                     }
                 } else {
                     // Lookahead pass, or the main pass if not in a lookahead scope.
@@ -916,7 +926,12 @@ internal class LayoutNodeSubcompositionsState(
                     return createMeasureResult(result) {
                         currentIndex = indexAfterMeasure
                         result.placeChildren()
-                        disposeOrReuseStartingFromIndex(currentIndex)
+                        if (root.lookaheadRoot == null) {
+                            // If this is in lookahead scope, we need to dispose *after*
+                            // approach placement, to give approach pass the opportunity to
+                            // transfer the ownership of subcompositions before disposing.
+                            disposeOrReuseStartingFromIndex(currentIndex)
+                        }
                     }
                 }
             }
@@ -924,11 +939,19 @@ internal class LayoutNodeSubcompositionsState(
     }
 
     private fun disposeUnusedSlotsInApproach() {
+        // Iterate over the slots owned by approach, and dispose slots if neither lookahead
+        // nor approach needs it.
         approachPrecomposeSlotHandleMap.removeIf { slotId, handle ->
-            val id = approachComposedSlotIds.indexOf(slotId)
+            val id = slotIdsOfCompositionsNeededInApproach.indexOf(slotId)
             if (id < 0 || id >= currentApproachIndex) {
-                // Slot was not used in the latest pass of post-lookahead.
-                handle.dispose()
+                if (id >= 0) {
+                    // Remove the slotId from the list before disposing
+                    slotIdsOfCompositionsNeededInApproach[id] = UnspecifiedSlotId
+                }
+                if (precomposeMap.contains(slotId)) {
+                    // Node has not been needed by lookahead, or approach.
+                    handle.dispose()
+                }
                 true
             } else {
                 false
@@ -1040,6 +1063,12 @@ internal class LayoutNodeSubcompositionsState(
             val reusableStart = root.foldedChildren.size - precomposedCount - reusableCount
             move(itemIndex, reusableStart, 1)
             disposeOrReuseStartingFromIndex(reusableStart)
+        }
+        // If the slot is not owned by approach (e.g. created for prefetch) and disposed before
+        // approach finishes using it, the approach pass will be invoked to re-create the
+        // composition if needed.
+        if (slotIdsOfCompositionsNeededInApproach.contains(slotId)) {
+            root.requestRemeasure(true)
         }
     }
 
@@ -1287,25 +1316,48 @@ internal class LayoutNodeSubcompositionsState(
         slotId: Any?,
         content: @Composable () -> Unit,
     ): List<Measurable> {
-        requirePrecondition(approachComposedSlotIds.size >= currentApproachIndex) {
+        requirePrecondition(slotIdsOfCompositionsNeededInApproach.size >= currentApproachIndex) {
             "Error: currentApproachIndex cannot be greater than the size of the" +
                 "approachComposedSlotIds list."
         }
-        if (approachComposedSlotIds.size == currentApproachIndex) {
-            approachComposedSlotIds.add(slotId)
+        val nodeForSlot = slotIdToNode[slotId]
+        if (slotIdsOfCompositionsNeededInApproach.size == currentApproachIndex) {
+            slotIdsOfCompositionsNeededInApproach.add(slotId)
         } else {
-            approachComposedSlotIds[currentApproachIndex] = slotId
+            slotIdsOfCompositionsNeededInApproach[currentApproachIndex] = slotId
         }
         currentApproachIndex++
-        if (!precomposeMap.contains(slotId)) {
-            // Not composed yet
+        val precomposed = precomposeMap.contains(slotId)
+        if (!precomposed && nodeForSlot == null) {
+            // The slot was not composed in the lookahead pass. And it has not been pre-composed in
+            // the approach pass. Hence, we will precompose it for the approach pass, and track it
+            // in approachPrecomposeSlotHandleMap so that it can be disposed when no longer needed
+            // in approach.
             precompose(slotId, content).also { approachPrecomposeSlotHandleMap[slotId] = it }
-            if (root.layoutState == LayoutState.LayingOut) {
-                root.requestLookaheadRelayout(true)
-            } else {
-                root.requestLookaheadRemeasure(true)
-            }
         } else {
+            // A non-null `nodeForSlot` here means that the slot was composed in lookahead
+            // initially, but no longer needed && has not been disposed yet.
+            // Move from lookahead composed to pre-composed, so that it can be disposed when
+            // no longer needed in approach.
+            if (!precomposed && nodeForSlot != null) {
+                // Transfer ownership of the subcomposition from lookahead pass to approach pass.
+                // As a result, the composition can be disposed as soon as approach pass no
+                // longer needs it.
+                // First, move this node to the end where we keep precomposed items
+                val nodeIndex = root.foldedChildren.indexOf(nodeForSlot)
+                move(nodeIndex, root.foldedChildren.size, 1)
+                precomposedCount++
+                // Remove the slotId from slotIdToNode so that if lookahead were to subcompose
+                // this item, it'll need to take the node out of precomposeMap.
+                slotIdToNode.remove(slotId)
+                precomposeMap[slotId] = nodeForSlot
+                approachPrecomposeSlotHandleMap[slotId] = createPrecomposedSlotHandle(slotId)
+
+                if (root.isAttached) {
+                    makeSureStateIsConsistent()
+                }
+            }
+
             // Re-subcompose if needed based on forceRecompose
             val node = precomposeMap[slotId]
             val nodeState = node?.let { nodeToNodeState[it] }
@@ -1348,3 +1400,5 @@ private object NoOpSubcomposeSlotReusePolicy : SubcomposeSlotReusePolicy {
 }
 
 private interface PausedPrecompositionImpl : PausedPrecomposition
+
+private val UnspecifiedSlotId = Any()

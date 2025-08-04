@@ -327,7 +327,12 @@ interface Module {
         get() = rule.rootDir
 
     val gradleRunner: GradleRunner
-        get() = GradleRunner.create().withProjectDir(rule.rootDir)
+        get() {
+            val runner = GradleRunner.create().withProjectDir(rule.rootDir)
+            // Run tests using Gradle 8.14 to support AGP version used for the tests, b/431846917
+            rule.setUpGradleVersion(runner, "8.14")
+            return runner
+        }
 
     fun setBuildGradle(buildGradleContent: String) =
         rule.writeDefaultBuildGradle(

@@ -18,12 +18,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="horizontal">
 
     <Button
-        android:id="@+id/getSandboxedSdksButton"
+        android:id="@+id/getSandboxedSdksFromAppButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/get_sandboxed_sdks"
+        android:text="@string/get_sandboxed_sdks_from_app"
+        android:textAllCaps="false"/>
+    <Button
+        android:id="@+id/getSandboxedSdksFromSdkButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/get_sandboxed_sdks_from_sdk"
         android:textAllCaps="false"/>
 </LinearLayout>

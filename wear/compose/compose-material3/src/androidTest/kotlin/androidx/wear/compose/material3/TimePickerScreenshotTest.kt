@@ -16,25 +16,32 @@
 
 package androidx.wear.compose.material3
 
+import android.content.res.Configuration
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.LocalTime
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TimePickerScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -44,10 +51,11 @@ class TimePickerScreenshotTest {
     @get:Rule val testName = TestName()
 
     @Test
-    fun timePicker24h_withoutSeconds() =
+    fun timePicker24h_withoutSeconds(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
+            screenSize = screenSize,
             content = {
                 TimePicker(
                     onTimePicked = {},
@@ -59,10 +67,11 @@ class TimePickerScreenshotTest {
         )
 
     @Test
-    fun timePicker24h_withSeconds() =
+    fun timePicker24h_withSeconds(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
+            screenSize = screenSize,
             content = {
                 TimePicker(
                     onTimePicked = {},
@@ -74,65 +83,114 @@ class TimePickerScreenshotTest {
         )
 
     @Test
-    fun timePicker12h() =
+    fun timePicker12h_displays12(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
+            screenSize = screenSize,
             content = {
+                // This test case specifically verifies the behavior for locales like English
+                // that use the 'h' pattern for a 1-12 hour format.
+                // For this pattern, 12 AM (LocalTime.of(0, x)) must correctly display as '12'.
                 TimePicker(
                     onTimePicked = {},
                     modifier = Modifier.testTag(TEST_TAG),
                     timePickerType = TimePickerType.HoursMinutesAmPm12H,
-                    initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
+                    initialTime = LocalTime.of(/* hour= */ 0, /* minute= */ 30),
                 )
             },
         )
 
     @Test
-    fun timePicker24h_withoutSeconds_largeScreen() =
+    fun timePicker12h_chinese(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            isLargeScreen = true,
+            screenSize = screenSize,
             content = {
-                TimePicker(
-                    onTimePicked = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                    timePickerType = TimePickerType.HoursMinutes24H,
-                    initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
-                )
+                val chineseConfig =
+                    Configuration(LocalConfiguration.current).apply {
+                        setLocale(Locale.SIMPLIFIED_CHINESE)
+                    }
+                CompositionLocalProvider(LocalConfiguration provides chineseConfig) {
+                    TimePicker(
+                        onTimePicked = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        timePickerType = TimePickerType.HoursMinutesAmPm12H,
+                        initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
+                    )
+                }
             },
         )
 
     @Test
-    fun timePicker24h_withSeconds_largeScreen() =
+    fun timePicker12h_japanese(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            isLargeScreen = true,
+            screenSize = screenSize,
             content = {
-                TimePicker(
-                    onTimePicked = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                    timePickerType = TimePickerType.HoursMinutesSeconds24H,
-                    initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23, /* second= */ 37),
-                )
+                // This test case specifically verifies the behavior for locales like Japanese
+                // that use the 'K' pattern (hours 0-11) for the 12-hour clock.
+                // For this pattern, 12 PM (LocalTime.of(12, x)) is displayed as 0.
+                val japaneseConfig =
+                    Configuration(LocalConfiguration.current).apply { setLocale(Locale.JAPANESE) }
+                CompositionLocalProvider(LocalConfiguration provides japaneseConfig) {
+                    TimePicker(
+                        onTimePicked = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        timePickerType = TimePickerType.HoursMinutesAmPm12H,
+                        initialTime = LocalTime.of(/* hour= */ 12, /* minute= */ 59),
+                    )
+                }
             },
         )
 
     @Test
-    fun timePicker12h_largeScreen() =
+    fun timePicker12h_arabic_rtl(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
-            isLargeScreen = true,
+            screenSize = screenSize,
+            layoutDirection = LayoutDirection.Rtl,
             content = {
-                TimePicker(
-                    onTimePicked = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                    timePickerType = TimePickerType.HoursMinutesAmPm12H,
-                    initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
-                )
+                // Set locale to Arabic for correct pattern and AM/PM strings.
+                val arabicConfig =
+                    Configuration(LocalConfiguration.current).apply { setLocale(Locale("ar")) }
+                CompositionLocalProvider(LocalConfiguration provides arabicConfig) {
+                    TimePicker(
+                        onTimePicked = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        timePickerType = TimePickerType.HoursMinutesAmPm12H,
+                        initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
+                    )
+                }
+            },
+        )
+
+    @Test
+    fun timePicker_finnish_dotSeparator(@TestParameter screenSize: ScreenSize) =
+        rule.verifyTimePickerScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            screenSize = screenSize,
+            content = {
+                // This test case verifies that the separator is correctly parsed from the
+                // locale's pattern. For Finnish, the best pattern for "H:mm:ss" is "H.mm.ss",
+                // so a dot should be displayed instead of a colon.
+                val finnishConfig =
+                    Configuration(LocalConfiguration.current).apply {
+                        setLocale(Locale.forLanguageTag("fi-FI"))
+                    }
+                CompositionLocalProvider(LocalConfiguration provides finnishConfig) {
+                    TimePicker(
+                        onTimePicked = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        timePickerType = TimePickerType.HoursMinutesSeconds24H,
+                        initialTime =
+                            LocalTime.of(/* hour= */ 14, /* minute= */ 23, /* second= */ 59),
+                    )
+                }
             },
         )
 
@@ -141,11 +199,18 @@ class TimePickerScreenshotTest {
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
         testTag: String = TEST_TAG,
-        isLargeScreen: Boolean = false,
+        screenSize: ScreenSize = ScreenSize.SMALL,
+        layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         content: @Composable () -> Unit,
     ) {
-        val screenSizeDp = if (isLargeScreen) SCREEN_SIZE_LARGE else SCREEN_SIZE_SMALL
-        setContentWithTheme { ScreenConfiguration(screenSizeDp) { content() } }
+        setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                    content()
+                }
+            }
+        }
+        rule.waitForIdle()
 
         rule.verifyScreenshot(testName, screenshotRule, testTag = testTag)
     }

@@ -468,6 +468,16 @@ public class RemoteComposeState implements CollectionsAccess {
     }
 
     /**
+     * get Commands that listen to variables.
+     *
+     * @param id id of variable to listen to
+     * @return Commands that listen to variable
+     */
+    public @Nullable ArrayList<VariableSupport> getListeners(int id) {
+        return mVarListeners.get(id);
+    }
+
+    /**
      * Is any command listening to this variable
      *
      * @param id The Variable id

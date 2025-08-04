@@ -19,12 +19,11 @@ package androidx.appfunctions.service.internal
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.core.AppFunctionMetadataTestHelper
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_UNIT
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 
 /** Test implementation for [androidx.appfunctions.AppFunctionManagerCompatTest] */
@@ -47,11 +46,7 @@ class `$AggregatedAppFunctionInventory_Impl` : AggregatedAppFunctionInventory() 
                             parameters = listOf(),
                             response =
                                 AppFunctionResponseMetadata(
-                                    valueType =
-                                        AppFunctionPrimitiveTypeMetadata(
-                                            type = TYPE_STRING,
-                                            isNullable = false,
-                                        )
+                                    valueType = AppFunctionStringTypeMetadata(isNullable = false)
                                 ),
                         ),
                     AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_EXECUTION_FAIL to
@@ -64,20 +59,12 @@ class `$AggregatedAppFunctionInventory_Impl` : AggregatedAppFunctionInventory() 
                                     AppFunctionParameterMetadata(
                                         name = "arg1",
                                         isRequired = true,
-                                        dataType =
-                                            AppFunctionPrimitiveTypeMetadata(
-                                                type = TYPE_LONG,
-                                                isNullable = false,
-                                            ),
+                                        dataType = AppFunctionLongTypeMetadata(isNullable = false),
                                     )
                                 ),
                             response =
                                 AppFunctionResponseMetadata(
-                                    valueType =
-                                        AppFunctionPrimitiveTypeMetadata(
-                                            type = TYPE_UNIT,
-                                            isNullable = false,
-                                        )
+                                    valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                                 ),
                         ),
                 )

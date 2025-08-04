@@ -33,6 +33,7 @@ import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventInputHandler
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
@@ -130,10 +131,12 @@ class NavDisplayPredictiveBackTest {
         lateinit var numberOnScreen1: MutableState<Int>
         lateinit var numberOnScreen2: MutableState<Int>
         lateinit var navEventDispatcher: NavigationEventDispatcher
+        lateinit var inputHandler: NavigationEventInputHandler
         lateinit var backStack: MutableList<Any>
         composeTestRule.setContent {
             navEventDispatcher =
                 LocalNavigationEventDispatcherOwner.current!!.navigationEventDispatcher
+            inputHandler = NavigationEventInputHandler(navEventDispatcher)
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
@@ -184,17 +187,13 @@ class NavDisplayPredictiveBackTest {
         assertThat(composeTestRule.onNodeWithText("numberOnScreen2: 4").isDisplayed()).isTrue()
 
         composeTestRule.runOnIdle {
-            navEventDispatcher.dispatchOnStarted(
-                NavigationEvent(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
-            )
-            navEventDispatcher.dispatchOnProgressed(
-                NavigationEvent(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
-            )
+            inputHandler.sendOnStarted(NavigationEvent(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT))
+            inputHandler.sendOnProgressed(NavigationEvent(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT))
         }
 
         composeTestRule.waitForIdle()
 
-        composeTestRule.runOnIdle { navEventDispatcher.dispatchOnCompleted() }
+        composeTestRule.runOnIdle { inputHandler.sendOnCompleted() }
 
         composeTestRule.runOnIdle {
             assertWithMessage("The number should be restored")

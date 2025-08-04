@@ -112,9 +112,7 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
  */
 @OptIn(ExperimentalLayoutApi::class)
 var AbstractComposeView.consumeWindowInsets: Boolean
-    get() =
-        getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
@@ -132,9 +130,7 @@ var AbstractComposeView.consumeWindowInsets: Boolean
 )
 @OptIn(ExperimentalLayoutApi::class)
 var ComposeView.consumeWindowInsets: Boolean
-    get() =
-        getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
@@ -412,8 +408,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
      */
     @OptIn(ExperimentalLayoutApi::class)
     val consumes =
-        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
 
     /**
      * The number of accesses to [WindowInsetsHolder]. When this reaches zero, the listeners are

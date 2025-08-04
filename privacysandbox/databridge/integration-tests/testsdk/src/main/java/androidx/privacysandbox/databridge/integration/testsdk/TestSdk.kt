@@ -17,6 +17,7 @@
 package androidx.privacysandbox.databridge.integration.testsdk
 
 import android.os.Bundle
+import androidx.privacysandbox.tools.PrivacySandboxCallback
 import androidx.privacysandbox.tools.PrivacySandboxService
 
 @PrivacySandboxService
@@ -36,4 +37,18 @@ interface TestSdk {
     suspend fun setValues(keyNames: List<String>, keyTypes: List<String>, values: List<Bundle>)
 
     suspend fun removeValues(keyNames: List<String>, keyTypes: List<String>)
+
+    fun registerKeyUpdateCallback(
+        uuid: String,
+        keyNames: List<String>,
+        keyTypes: List<String>,
+        callback: SdkKeyUpdateCallback,
+    )
+
+    fun unregisterKeyUpdateCallback(uuid: String, callback: SdkKeyUpdateCallback)
+}
+
+@PrivacySandboxCallback
+public interface SdkKeyUpdateCallback {
+    fun onKeyUpdated(keyName: String, keyType: String, value: Bundle)
 }

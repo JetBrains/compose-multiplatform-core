@@ -20,6 +20,7 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
@@ -64,12 +65,13 @@ internal fun configureRobolectric(project: Project) {
                                 hostTest.isIncludeAndroidResources = true
                             }
                     }
-                // TODO(b/429552116): Use variants API to configure test when bug is fixed
-                project.tasks.withType(Test::class.java).configureEach { task ->
-                    if (task.name == "testAndroidHostTest") {
-                        configureJvmTestTask(project, task)
+                project.extensions
+                    .getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                    .onVariants { variant ->
+                        variant.hostTests.forEach { (_, hostTest) ->
+                            hostTest.configureTestTask { configureJvmTestTask(project, it) }
+                        }
                     }
-                }
                 project.configurations.named("androidUnitTestImplementation").configure {
                     configuration ->
                     configuration.dependencies.add(project.getLibraryByName("robolectric"))

@@ -11,6 +11,12 @@ package androidx.xr.projected {
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedServiceBinding {
+    method public static boolean bind(android.content.Context context, android.content.ServiceConnection serviceConnection);
+    method public static boolean bindPerception(android.content.Context context, android.content.ServiceConnection serviceConnection);
+    field public static final androidx.xr.projected.ProjectedServiceBinding INSTANCE;
+  }
+
 }
 
 package androidx.xr.projected.permissions {

@@ -37,7 +37,7 @@ import androidx.xr.compose.subspace.layout.CoreEntityScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.onPointSourceParams
+import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
@@ -66,7 +66,7 @@ class SubspaceModifierNodeChainTest {
         var executionCounter = 0
         val modifier =
             mutableStateOf(
-                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParamsAvailable {
                     executionCounter += 1
                 }
             )
@@ -81,9 +81,10 @@ class SubspaceModifierNodeChainTest {
         // execute
         // again.
         modifier.value =
-            SubspaceModifier.width(300.dp).height(200.dp).offset(x = 1.dp).onPointSourceParams {
-                executionCounter += 1
-            }
+            SubspaceModifier.width(300.dp)
+                .height(200.dp)
+                .offset(x = 1.dp)
+                .onPointSourceParamsAvailable { executionCounter += 1 }
         composeTestRule.waitForIdle()
         assertThat(executionCounter).isEqualTo(1)
     }
@@ -93,7 +94,7 @@ class SubspaceModifierNodeChainTest {
         var executionCounter = 0
         val modifier =
             mutableStateOf(
-                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParamsAvailable {
                     executionCounter += 1
                 }
             )
@@ -107,7 +108,7 @@ class SubspaceModifierNodeChainTest {
         // Update modifier chain. width and onPointSourceParams should be re-used and not execute
         // again.
         modifier.value =
-            SubspaceModifier.width(300.dp).height(200.dp).onPointSourceParams {
+            SubspaceModifier.width(300.dp).height(200.dp).onPointSourceParamsAvailable {
                 executionCounter += 1
             }
         composeTestRule.waitForIdle()
@@ -119,7 +120,7 @@ class SubspaceModifierNodeChainTest {
         var executionCounter = 0
         val modifier =
             mutableStateOf(
-                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParamsAvailable {
                     executionCounter += 1
                 }
             )
@@ -134,7 +135,7 @@ class SubspaceModifierNodeChainTest {
         // causing
         // the callback to increase count to execute again.
         modifier.value =
-            SubspaceModifier.onPointSourceParams { executionCounter += 1 }
+            SubspaceModifier.onPointSourceParamsAvailable { executionCounter += 1 }
                 .width(300.dp)
                 .size(300.dp)
                 .offset(x = 1.dp)

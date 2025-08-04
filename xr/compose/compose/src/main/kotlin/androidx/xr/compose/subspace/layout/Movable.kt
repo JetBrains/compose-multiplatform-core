@@ -16,9 +16,12 @@
 
 package androidx.xr.compose.subspace.layout
 
+import android.content.pm.PackageManager
 import androidx.annotation.RestrictTo
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.core.content.ContextCompat
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifierNode
 import androidx.xr.compose.subspace.node.LayoutCoordinatesAwareModifierNode
@@ -32,6 +35,7 @@ import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.AnchorPlacement
@@ -93,6 +97,11 @@ public fun SubspaceModifier.movable(
  * the user to move the element in 3D space. This feature is only available for
  * [SpatialPanels][androidx.xr.compose.subspace.SpatialPanel] at the moment. This overload of the
  * modifier allows the element to be anchored to a plane in the real world.
+ *
+ * This modifier requires the
+ * [android.permission.SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
+ * permission. If this permission is not granted, the `anchorable` functionality will be disabled,
+ * and the element will behave as if the anchorable modifier was not applied.
  *
  * @param enabled true if this composable should be movable.
  * @param anchorPlaneOrientations when supplied, this movable entity can be anchored to Horizontal
@@ -369,15 +378,25 @@ internal class MovableNode(
         }
     }
 
-    /** Enables the MovableComponent for this CoreEntity. */
+    /** Enables the MovableComponent and anchorPlacement for this CoreEntity. */
     private fun enableComponent() {
         check(component == null) { "MovableComponent already enabled." }
+
         val anchorPlacement = convertToAnchorPlacement()
 
-        if (!anchorPlacement.isEmpty())
+        if (!anchorPlacement.isEmpty()) {
+            if (
+                ContextCompat.checkSelfPermission(
+                    currentValueOf(LocalContext),
+                    SCENE_UNDERSTANDING_COARSE,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
             session.configure(
                 Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
+        }
 
         // The developer could have used the movable overload which allows them to supply their own
         // onMove logic, or they could have used the overload which provides the anchoring ability

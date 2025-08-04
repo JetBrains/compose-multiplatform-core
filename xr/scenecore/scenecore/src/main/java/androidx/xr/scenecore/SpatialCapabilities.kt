@@ -33,7 +33,12 @@ import androidx.annotation.IntDef
 )
 internal annotation class SpatialCapability
 
-/** Representation of the spatial capabilities of the current [Scene]. */
+/**
+ * Representation of the spatial capabilities of the current [Scene].
+ *
+ * Each capability is represented by a flag. Use [hasCapability] to check if a specific capability
+ * or a combination of capabilities is available.
+ */
 public class SpatialCapabilities
 internal constructor(@SpatialCapability private val capabilities: Int) {
 

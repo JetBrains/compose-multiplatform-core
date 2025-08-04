@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.platform
 
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -30,7 +31,6 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +48,6 @@ class SpatialComposeSceneTest {
         mockJxrPlatformAdapter = mock<JxrPlatformAdapter>()
     }
 
-    @Ignore // b/427806050
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithDefaultValues() {
         lateinit var scene: SpatialComposeScene
@@ -57,7 +56,7 @@ class SpatialComposeSceneTest {
         lateinit var owner: AndroidComposeSpatialElement
 
         composeTestRule.setContent {
-            session = createFakeSession(composeTestRule.activity)
+            session = remember { createFakeSession(composeTestRule.activity) }
             scene =
                 SpatialComposeScene(
                     lifecycleOwner = composeTestRule.activity,
@@ -81,7 +80,6 @@ class SpatialComposeSceneTest {
         assertThat(currentSession).isEqualTo(session)
     }
 
-    @Ignore // b/427806050
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithCustomValues() {
         lateinit var scene: SpatialComposeScene
@@ -94,7 +92,7 @@ class SpatialComposeSceneTest {
 
         composeTestRule.setContent {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            session = createFakeSession(composeTestRule.activity, fakeRuntime)
+            session = remember { createFakeSession(composeTestRule.activity, fakeRuntime) }
 
             val entity = GroupEntity.create(session, "test")
             coreEntity = CoreGroupEntity(entity)

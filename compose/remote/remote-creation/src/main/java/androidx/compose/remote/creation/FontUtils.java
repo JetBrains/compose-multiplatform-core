@@ -29,6 +29,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class FontUtils {
     private FontUtils() {}
@@ -69,14 +70,37 @@ public class FontUtils {
         str = new String(chars, 0, count);
         ArrayList<BitmapFontData.Glyph> glyphs = new ArrayList<>();
         for (int i = 0; i < str.length(); i++) {
-            glyphs.add(createFont(rc, "" + str.charAt(i), paint));
+            glyphs.add(createGlyph(rc, "" + str.charAt(i), paint));
         }
         return glyphs.toArray(new BitmapFontData.Glyph[0]);
     }
 
-    private static BitmapFontData.@NonNull Glyph createFont(
-            @NonNull RemoteComposeWriter rc, @NonNull String str, @NonNull Paint paint) {
+    /**
+     * Extracts the kerning table for the glyphs.
+     *
+     * @param glyphs The array of {@link BitmapFontData.Glyph}s for which the kerning table will be
+     *     extracted.
+     * @param paint The {@link Paint} from which kerning data will be extracted.
+     * @return The kerning table for these glyphs.
+     */
+    public static @NonNull HashMap<String, Short> extractKerningTable(
+            BitmapFontData.Glyph @NonNull [] glyphs, @NonNull Paint paint) {
+        HashMap<String, Short> kerningTable = new HashMap<>();
+        for (BitmapFontData.Glyph a : glyphs) {
+            for (BitmapFontData.Glyph b : glyphs) {
+                String glyphPair = a.mChars + b.mChars;
+                int sizeAB = (int) paint.measureText(glyphPair, 0, glyphPair.length());
+                int kerningAdjustment = sizeAB - a.mBitmapWidth - b.mBitmapWidth;
+                if (kerningAdjustment != 0) {
+                    kerningTable.put(glyphPair, (short) kerningAdjustment);
+                }
+            }
+        }
+        return kerningTable;
+    }
 
+    private static BitmapFontData.@NonNull Glyph createGlyph(
+            @NonNull RemoteComposeWriter rc, @NonNull String str, @NonNull Paint paint) {
         Rect rect = new Rect();
         paint.setStrokeWidth(2);
         Paint.FontMetrics fm = paint.getFontMetrics();

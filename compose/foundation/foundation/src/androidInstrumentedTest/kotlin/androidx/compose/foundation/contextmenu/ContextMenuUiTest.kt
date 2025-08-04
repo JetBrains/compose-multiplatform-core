@@ -115,10 +115,10 @@ class ContextMenuUiTest {
     @Suppress("ComposableLambdaParameterPosition")
     @Composable
     private fun TestItem(
+        modifier: Modifier = Modifier.testTag(tag),
         label: String = "Item",
         enabled: Boolean = true,
         colors: ContextMenuColors = TestColors,
-        modifier: Modifier = Modifier.testTag(tag),
         leadingIcon: @Composable ((iconColor: Color) -> Unit)? = null,
         onClick: () -> Unit = {},
     ) {

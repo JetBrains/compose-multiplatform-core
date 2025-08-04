@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -44,24 +45,38 @@ import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.compose.material3.rememberRevealState
 import kotlinx.coroutines.launch
 
 object SwipeToRevealInListBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
             val transformationSpec = rememberTransformationSpec()
-            BenchmarkingList(15) { index ->
+            val tlcState = rememberTransformingLazyColumnState()
+            val coroutineScope = rememberCoroutineScope()
+
+            BenchmarkingList(15, tlcState) { index ->
+                val revealState = rememberRevealState(initialValue = Covered)
+
+                LaunchedEffect(tlcState.isScrollInProgress) {
+                    if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                        coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                    }
+                }
+
                 val buttonText = remember(index) { "Row #$index" }
                 SwipeToReveal(
                     primaryAction = {
@@ -130,9 +145,9 @@ object SwipeToRevealInListBenchmark : MacrobenchmarkScreen {
     @Composable
     private fun BenchmarkingList(
         count: Int,
+        state: TransformingLazyColumnState,
         testContent: @Composable TransformingLazyColumnItemScope.(Int) -> Unit,
     ) {
-        val state = rememberTransformingLazyColumnState()
         val coroutineScope = rememberCoroutineScope()
         AppScaffold {
             ScreenScaffold(
@@ -165,7 +180,7 @@ object SwipeToRevealInListBenchmark : MacrobenchmarkScreen {
     override val exercise: MacrobenchmarkScope.() -> Unit
         get() = {
             val column = device.findObject(By.scrollable(true))
-            val sleepTime = 500L
+            val sleepTime = 100L
             repeat(4) { iteration ->
                 val desc = CONTENT_DESCRIPTION + iteration
 
@@ -181,7 +196,7 @@ object SwipeToRevealInListBenchmark : MacrobenchmarkScreen {
                 swipeToReveal.setGestureMargin(device.displayWidth / 5)
 
                 // go back and forth on the swipe action
-                swipeToReveal.swipe(Direction.LEFT, 1f, 500)
+                swipeToReveal.swipe(Direction.LEFT, 1f, 750)
 
                 // Scroll down slightly to ensure we trigger any position-related compose code
                 SystemClock.sleep(sleepTime)
@@ -189,13 +204,13 @@ object SwipeToRevealInListBenchmark : MacrobenchmarkScreen {
                 column.scroll(Direction.DOWN, scrollDistanceFraction * 0.25f)
 
                 device.waitForIdle()
-                swipeToReveal.swipe(Direction.RIGHT, 1f, 500)
+                swipeToReveal.swipe(Direction.RIGHT, 1f, 750)
 
                 device.waitForIdle()
-                swipeToReveal.swipe(Direction.LEFT, 1f, 500)
+                swipeToReveal.swipe(Direction.LEFT, 1f, 750)
                 // finish the swipe action
                 device.waitForIdle()
-                swipeToReveal.swipe(Direction.LEFT, 1f, 500)
+                swipeToReveal.swipe(Direction.LEFT, 1f, 750)
 
                 SystemClock.sleep(sleepTime)
                 device.waitForIdle()

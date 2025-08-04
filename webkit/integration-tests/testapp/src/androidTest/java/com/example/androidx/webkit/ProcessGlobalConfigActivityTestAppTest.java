@@ -25,7 +25,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.webkit.WebViewFeature;
 
 import org.junit.Rule;
@@ -44,7 +43,6 @@ public class ProcessGlobalConfigActivityTestAppTest {
     public ActivityScenarioRule<ProcessGlobalConfigActivity> mRule =
             new ActivityScenarioRule<>(ProcessGlobalConfigActivity.class);
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427267254
     @SuppressLint("BanThreadSleep")
     @Test
     public void testSetDataDirectorySuffix() throws Throwable {

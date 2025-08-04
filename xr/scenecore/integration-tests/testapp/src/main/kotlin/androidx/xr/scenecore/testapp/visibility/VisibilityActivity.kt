@@ -38,6 +38,8 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.SpatialPointerComponent
+import androidx.xr.scenecore.SpatialPointerIcon
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.SpatialMode
@@ -61,6 +63,7 @@ class VisibilityActivity : AppCompatActivity() {
     private var childPanelEntity2: PanelEntity? = null
 
     private lateinit var model: GltfModel
+    private lateinit var childPanel1PointerComponent: SpatialPointerComponent
 
     private var spatialMode: SpatialMode = SpatialMode.FSM
 
@@ -155,6 +158,11 @@ class VisibilityActivity : AppCompatActivity() {
             .setOnCheckedChangeListener { _, isChecked: Boolean ->
                 childPanelEntity2?.setEnabled(!isChecked)
             }
+        findViewById<SwitchMaterial>(R.id.visibility_hide_panel1_pointer)
+            .setOnCheckedChangeListener { _, isChecked: Boolean ->
+                childPanel1PointerComponent.spatialPointerIcon =
+                    if (isChecked) SpatialPointerIcon.NONE else SpatialPointerIcon.DEFAULT
+            }
 
         // Move gltf entities by moving the parent entity
         findViewById<Button>(R.id.visibility_move_parent_gltf).setOnClickListener { _ ->
@@ -202,6 +210,11 @@ class VisibilityActivity : AppCompatActivity() {
             createPanel("Child Panel 1", parentPanelEntity, Pose(Vector3(0.5f, 0f, 0f)))
         childPanelEntity2 =
             createPanel("Child Panel 2", childPanelEntity1, Pose(Vector3(0.5f, 0f, 0f)))
+
+        childPanel1PointerComponent = SpatialPointerComponent.create(session!!)
+        if (!childPanelEntity1!!.addComponent(childPanel1PointerComponent)) {
+            throw RuntimeException("Failed to add spatial pointer component to child panel 1")
+        }
     }
 
     private fun createPanel(panelName: String, parent: Entity?, pose: Pose): PanelEntity {

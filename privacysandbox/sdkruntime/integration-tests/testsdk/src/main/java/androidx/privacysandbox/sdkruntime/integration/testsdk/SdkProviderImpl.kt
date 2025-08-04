@@ -22,6 +22,9 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
 
 class SdkProviderImpl() : SandboxedSdkProviderCompat() {
     override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
-        return SandboxedSdkCompat(TestSdk())
+        if (params.getBoolean("needFail", false)) {
+            throw RuntimeException("Expected to fail")
+        }
+        return SandboxedSdkCompat(TestSdk(context!!))
     }
 }

@@ -23,8 +23,10 @@ import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_HUE;
 import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_RED;
 import static androidx.compose.remote.core.operations.ColorAttribute.COLOR_SATURATION;
 
+import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.ConditionalOperations;
+import androidx.compose.remote.core.operations.DebugMessage;
 import androidx.compose.remote.core.operations.DrawTextAnchored;
 import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.TimeAttribute;
@@ -523,6 +525,9 @@ public class Rc {
 
         /** The density of the device */
         public static final float DENSITY = RemoteContext.FLOAT_DENSITY;
+
+        /** Path or Bitmap need to be dereferenced */
+        public static final int ID_DEREF = PaintOperation.PTR_DEREFERENCE;
     }
 
     /** Used for Touch variables */
@@ -770,5 +775,9 @@ public class Rc {
         public static final short FILTER_DEFAULT = 0;
         public static final short FILTER_NEAREST = 1;
         public static final short FILTER_LINEAR = 2;
+    }
+
+    public static class Debug {
+        public static final int SHOW_USAGE = DebugMessage.SHOW_USAGE;
     }
 }

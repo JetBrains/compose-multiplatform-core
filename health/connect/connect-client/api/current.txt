@@ -57,9 +57,9 @@ package androidx.health.connect.client {
   }
 
   public final class HealthConnectClientExt {
-    method public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? deleteRecords(androidx.health.connect.client.HealthConnectClient, androidx.health.connect.client.time.TimeRangeFilter timeRangeFilter, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? deleteRecords(androidx.health.connect.client.HealthConnectClient, java.util.List<java.lang.String> recordIdsList, java.util.List<java.lang.String> clientRecordIdsList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? readRecord(androidx.health.connect.client.HealthConnectClient, String recordId, kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>);
+    method @KotlinOnly public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? deleteRecords(androidx.health.connect.client.HealthConnectClient, androidx.health.connect.client.time.TimeRangeFilter timeRangeFilter, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @KotlinOnly public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? deleteRecords(androidx.health.connect.client.HealthConnectClient, java.util.List<java.lang.String> recordIdsList, java.util.List<java.lang.String> clientRecordIdsList, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @KotlinOnly public static suspend inline <reified T extends androidx.health.connect.client.records.Record> Object? readRecord(androidx.health.connect.client.HealthConnectClient, String recordId, kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>);
   }
 
   public interface HealthConnectFeatures {
@@ -213,9 +213,9 @@ package androidx.health.connect.client.permission {
   }
 
   public static final class HealthPermission.Companion {
-    method public inline <reified T extends androidx.health.connect.client.records.Record> String getReadPermission();
+    method @KotlinOnly public inline <reified T extends androidx.health.connect.client.records.Record> String getReadPermission();
     method public String getReadPermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
-    method public inline <reified T extends androidx.health.connect.client.records.Record> String getWritePermission();
+    method @KotlinOnly public inline <reified T extends androidx.health.connect.client.records.Record> String getWritePermission();
     method public String getWritePermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     property public static String PERMISSION_READ_EXERCISE_ROUTES;
     property public static String PERMISSION_READ_HEALTH_DATA_HISTORY;
@@ -2329,7 +2329,7 @@ package androidx.health.connect.client.request {
   }
 
   public final class ReadRecordsRequestKt {
-    method public static inline <reified T extends androidx.health.connect.client.records.Record> androidx.health.connect.client.request.ReadRecordsRequest<T> ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter timeRangeFilter, optional java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> dataOriginFilter, optional boolean ascendingOrder, optional int pageSize, optional String? pageToken);
+    method @KotlinOnly public static inline <reified T extends androidx.health.connect.client.records.Record> androidx.health.connect.client.request.ReadRecordsRequest<T> ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter timeRangeFilter, optional java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> dataOriginFilter, optional boolean ascendingOrder, optional int pageSize, optional String? pageToken);
   }
 
   @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public final class UpsertMedicalResourceRequest {

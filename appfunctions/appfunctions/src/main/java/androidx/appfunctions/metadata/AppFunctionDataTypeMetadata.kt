@@ -39,20 +39,6 @@ import androidx.appsearch.annotation.Document
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class AppFunctionDataType
 
-@IntDef(
-    AppFunctionDataTypeMetadata.TYPE_UNIT,
-    AppFunctionDataTypeMetadata.TYPE_BOOLEAN,
-    AppFunctionDataTypeMetadata.TYPE_BYTES,
-    AppFunctionDataTypeMetadata.TYPE_DOUBLE,
-    AppFunctionDataTypeMetadata.TYPE_FLOAT,
-    AppFunctionDataTypeMetadata.TYPE_LONG,
-    AppFunctionDataTypeMetadata.TYPE_INT,
-    AppFunctionDataTypeMetadata.TYPE_STRING,
-    AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT,
-)
-@Retention(AnnotationRetention.SOURCE)
-internal annotation class AppFunctionPrimitiveType
-
 /** Base class for defining the schema of an input or output type. */
 public abstract class AppFunctionDataTypeMetadata
 internal constructor(
@@ -99,20 +85,6 @@ internal constructor(
         internal const val TYPE_ALL_OF: Int = 12
         /** Pending Intent type. */
         internal const val TYPE_PENDING_INTENT: Int = 13
-
-        /** All primitive types used in [AppFunctionPrimitiveType] @IntDef annotation. */
-        internal val PRIMITIVE_TYPES =
-            setOf(
-                TYPE_UNIT,
-                TYPE_BOOLEAN,
-                TYPE_BYTES,
-                TYPE_DOUBLE,
-                TYPE_FLOAT,
-                TYPE_LONG,
-                TYPE_INT,
-                TYPE_STRING,
-                TYPE_PENDING_INTENT,
-            )
     }
 
     override fun equals(other: Any?): Boolean {
@@ -220,10 +192,10 @@ constructor(
  *     matchAll = listOf(
  *         AppFunctionObjectTypeMetadata(
  *             properties = mapOf(
- *                 "street" to AppFunctionPrimitiveTypeMetadata(...),
- *                 "city" to AppFunctionPrimitiveTypeMetadata(...),
- *                 "state" to AppFunctionPrimitiveTypeMetadata(...),
- *                 "zipCode" to AppFunctionPrimitiveTypeMetadata(...),
+ *                 "street" to AppFunctionStringTypeMetadata(...),
+ *                 "city" to AppFunctionStringTypeMetadata(...),
+ *                 "state" to AppFunctionStringTypeMetadata(...),
+ *                 "zipCode" to AppFunctionStringTypeMetadata(...),
  *             ),
  *             required = listOf("street", "city", "state", "zipCode"),
  *             qualifiedName = "androidx.appfunctions.metadata.Address",
@@ -231,8 +203,8 @@ constructor(
  *         ),
  *         AppFunctionObjectTypeMetadata(
  *             properties = mapOf(
- *                 "name" to AppFunctionPrimitiveTypeMetadata(...),
- *                 "age" to AppFunctionPrimitiveTypeMetadata(...),
+ *                 "name" to AppFunctionStringTypeMetadata(...),
+ *                 "age" to AppFunctionIntTypeMetadata(...),
  *             ),
  *             required = listOf("name", "age"),
  *             qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
@@ -484,67 +456,365 @@ constructor(
     }
 }
 
-/** Defines the schema of a primitive data type. */
-public class AppFunctionPrimitiveTypeMetadata
+/**
+ * Defines the schema of a int data type.
+ *
+ * Corresponds to a [kotlin.Int].
+ */
+public class AppFunctionIntTypeMetadata
 @JvmOverloads
 constructor(
-    /** The data type. */
-    @AppFunctionPrimitiveType public val type: Int,
     /** Whether the data type is nullable. */
     isNullable: Boolean,
     /** A description of the data type and its intended use. */
     description: String = "",
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
-    override fun equals(other: Any?): Boolean {
-        if (!super.equals(other)) return false
-        if (other !is AppFunctionPrimitiveTypeMetadata) return false
 
-        if (type != other.type) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result * type.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "AppFunctionPrimitiveTypeMetadata(type=$type, isNullable=$isNullable, description=$description)"
-    }
-
-    /**
-     * Converts this [AppFunctionPrimitiveTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
-     */
+    /** Converts this [AppFunctionIntTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
-            type = type,
+            type = TYPE_INT,
             isNullable = isNullable,
             description = description.ifEmpty { null },
         )
     }
 
-    public companion object {
-        /** Void type. */
-        public const val TYPE_UNIT: Int = AppFunctionDataTypeMetadata.TYPE_UNIT
-        /** Boolean type. */
-        public const val TYPE_BOOLEAN: Int = AppFunctionDataTypeMetadata.TYPE_BOOLEAN
-        /** Byte array type. */
-        public const val TYPE_BYTES: Int = AppFunctionDataTypeMetadata.TYPE_BYTES
-        /** Double type. */
-        public const val TYPE_DOUBLE: Int = AppFunctionDataTypeMetadata.TYPE_DOUBLE
-        /** Float type. */
-        public const val TYPE_FLOAT: Int = AppFunctionDataTypeMetadata.TYPE_FLOAT
-        /** Long type. */
-        public const val TYPE_LONG: Int = AppFunctionDataTypeMetadata.TYPE_LONG
-        /** Integer type. */
-        public const val TYPE_INT: Int = AppFunctionDataTypeMetadata.TYPE_INT
-        /** String type. */
-        public const val TYPE_STRING: Int = AppFunctionDataTypeMetadata.TYPE_STRING
-        /** Pending Intent type. */
-        public const val TYPE_PENDING_INTENT: Int = AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionIntTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionIntTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a long data type.
+ *
+ * Corresponds to a [kotlin.Long].
+ */
+public class AppFunctionLongTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /** Converts this [AppFunctionLongTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_LONG,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionLongTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionLongTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a float data type.
+ *
+ * Corresponds to a [kotlin.Float].
+ */
+public class AppFunctionFloatTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /** Converts this [AppFunctionFloatTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_FLOAT,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionFloatTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionFloatTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a unit data type.
+ *
+ * Corresponds to [kotlin.Unit].
+ */
+public class AppFunctionUnitTypeMetadata
+@JvmOverloads
+constructor(
+    // Unit types are inherently not nullable in the same way other types are,
+    // but the `isNullable` property is part of the base class.
+    // Typically, for Unit, this would be false.
+    isNullable: Boolean = false,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /** Converts this [AppFunctionUnitTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_UNIT,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionUnitTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionUnitTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a boolean data type.
+ *
+ * Corresponds to [kotlin.Boolean].
+ */
+public class AppFunctionBooleanTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /**
+     * Converts this [AppFunctionBooleanTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_BOOLEAN,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionBooleanTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionBooleanTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a byte array data type.
+ *
+ * Corresponds to [kotlin.ByteArray].
+ */
+public class AppFunctionBytesTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /** Converts this [AppFunctionBytesTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_BYTES,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionBytesTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionBytesTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a double data type.
+ *
+ * Corresponds to [kotlin.Double] or a 64-bit floating-point number.
+ */
+public class AppFunctionDoubleTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /**
+     * Converts this [AppFunctionDoubleTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_DOUBLE,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionDoubleTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionDoubleTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a string data type.
+ *
+ * Corresponds to [kotlin.String].
+ */
+public class AppFunctionStringTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /**
+     * Converts this [AppFunctionStringTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_STRING,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionStringTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionStringTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+}
+
+/**
+ * Defines the schema of a PendingIntent data type.
+ *
+ * Corresponds to [android.app.PendingIntent].
+ */
+public class AppFunctionPendingIntentTypeMetadata
+@JvmOverloads
+constructor(
+    /** Whether the data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+
+    /**
+     * Converts this [AppFunctionPendingIntentTypeMetadata] to an
+     * [AppFunctionDataTypeMetadataDocument].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE_PENDING_INTENT,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppFunctionPendingIntentTypeMetadata) return false
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
+    override fun toString(): String {
+        return "AppFunctionPendingIntentTypeMetadata(isNullable=$isNullable, description=$description)"
     }
 }
 
@@ -655,9 +925,45 @@ public data class AppFunctionDataTypeMetadataDocument(
                     isNullable = isNullable,
                     description = description ?: "",
                 )
-            in AppFunctionDataTypeMetadata.PRIMITIVE_TYPES ->
-                AppFunctionPrimitiveTypeMetadata(
-                    type = type,
+            AppFunctionDataTypeMetadata.TYPE_INT ->
+                AppFunctionIntTypeMetadata(isNullable = isNullable, description = description ?: "")
+            AppFunctionDataTypeMetadata.TYPE_LONG ->
+                AppFunctionLongTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_FLOAT ->
+                AppFunctionFloatTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_UNIT ->
+                AppFunctionUnitTypeMetadata(
+                    isNullable = isNullable, // Or false if you want to enforce non-null for Unit
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_BOOLEAN ->
+                AppFunctionBooleanTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_BYTES ->
+                AppFunctionBytesTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_DOUBLE ->
+                AppFunctionDoubleTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_STRING ->
+                AppFunctionStringTypeMetadata(
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
+                AppFunctionPendingIntentTypeMetadata(
                     isNullable = isNullable,
                     description = description ?: "",
                 )

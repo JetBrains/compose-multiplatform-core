@@ -17,5 +17,5 @@
 package androidx.privacysandbox.sdkruntime.integration.testaidl;
 
 interface IAppSdk {
-    String getMessage(int value);
+    String doSomething(String param);
 }

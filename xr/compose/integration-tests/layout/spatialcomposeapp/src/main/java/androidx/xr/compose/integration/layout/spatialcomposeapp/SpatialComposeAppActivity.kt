@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.integration.layout.spatialcomposeapp
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,8 +25,12 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,8 +62,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.integration.layout.spatialcomposeapp.components.TestDialog
 import androidx.xr.compose.platform.LocalSession
@@ -116,10 +121,9 @@ import kotlinx.coroutines.delay
  */
 class SpatialComposeAppActivity : ComponentActivity() {
 
-    private val REQUEST_READ_MEDIA_VIDEO: Int = 1
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        obtainUserPermissions()
         setContent {
             // 2D Content rendered to the MainPanel
             MainPanelContent()
@@ -136,7 +140,6 @@ class SpatialComposeAppActivity : ComponentActivity() {
             }
         }
 
-        checkExternalStoragePermission()
         isDebugInspectorInfoEnabled = true
     }
 
@@ -306,15 +309,47 @@ class SpatialComposeAppActivity : ComponentActivity() {
     fun AnchorPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
         // not compatible with each other.
-        SpatialPanel(
-            modifier = modifier.anchorable(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
-        ) {
-            Column(
-                modifier = Modifier.background(Color.LightGray).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+
+        val context = LocalContext.current
+        var hasAnchorPermission by remember {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(context, SCENE_UNDERSTANDING_PERMISSION) ==
+                    PackageManager.PERMISSION_GRANTED
+            )
+        }
+        val permissionLauncher =
+            rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = { isGranted: Boolean -> hasAnchorPermission = isGranted },
+            )
+
+        if (hasAnchorPermission) {
+            SpatialPanel(
+                modifier =
+                    modifier.anchorable(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
             ) {
-                Text(text)
+                Column(
+                    modifier = Modifier.background(Color.LightGray).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(text)
+                }
+            }
+        } else {
+            SpatialPanel(modifier = modifier) {
+                Column(
+                    modifier = Modifier.background(Color.LightGray).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text("Anchor Permission Not Granted")
+                    Button(
+                        onClick = { permissionLauncher.launch(SCENE_UNDERSTANDING_PERMISSION) }
+                    ) {
+                        Text("Request Permission")
+                    }
+                }
             }
         }
     }
@@ -422,15 +457,29 @@ class SpatialComposeAppActivity : ComponentActivity() {
         }
     }
 
-    private fun checkExternalStoragePermission() {
-        if (
-            checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(
-                arrayOf(Manifest.permission.READ_MEDIA_VIDEO),
-                REQUEST_READ_MEDIA_VIDEO,
+    private fun obtainUserPermissions() {
+        val permissionsLauncher =
+            super.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+                permissions ->
+                if (permissions.values.contains(false)) {
+                    Toast.makeText(this, "Missing required permissions", Toast.LENGTH_LONG).show()
+                    this.finish()
+                }
+            }
+        permissionsLauncher.launch(
+            arrayOf(
+                SCENE_UNDERSTANDING_PERMISSION,
+                HAND_TRACKING_PERMISSION,
+                READ_MEDIA_VIDEO_PERMISSION,
+                HEAD_TRACKING_PERMISSION,
             )
-        }
+        )
+    }
+
+    companion object {
+        const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
+        const val SCENE_UNDERSTANDING_PERMISSION = "android.permission.SCENE_UNDERSTANDING_COARSE"
+        const val READ_MEDIA_VIDEO_PERMISSION = "android.permission.READ_MEDIA_VIDEO"
+        const val HEAD_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
     }
 }

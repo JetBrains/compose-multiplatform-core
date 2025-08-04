@@ -26,12 +26,14 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("androidx.stableaidl")
     id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
+    api(libs.kotlinCoroutinesCore)
 
     implementation(project(":xr:glimmer:glimmer"))
     implementation(project(":compose:material3:material3"))
@@ -43,6 +45,7 @@ dependencies {
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation(libs.kotlinTest)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
 }
@@ -51,8 +54,17 @@ android {
     compileSdk = 35
     namespace = "androidx.xr.projected"
 
+    buildFeatures {
+        resValues = true
+        aidl = true
+    }
     defaultConfig {
         minSdk = 35
+    }
+    buildTypes.configureEach {
+        stableAidl {
+            version = 1
+        }
     }
 }
 

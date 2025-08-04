@@ -25,6 +25,7 @@ import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter.Companion.cameraId
 import androidx.camera.camera2.pipe.integration.internal.CameraCompatibilityFilter.isBackwardCompatible
+import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.InitializationException
@@ -34,20 +35,25 @@ import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_S
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
 import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode
 import androidx.camera.core.impl.CameraRepository
+import androidx.camera.core.impl.CameraUpdateException
+import androidx.camera.core.impl.InternalCameraPresenceListener
 
 public class CameraCoordinatorAdapter(
     private var cameraPipe: CameraPipe?,
-    cameraDevices: CameraDevices,
-) : CameraCoordinator {
+    private val cameraDevices: CameraDevices,
+) : CameraCoordinator, InternalCameraPresenceListener {
 
     private val lock = Any()
 
     @GuardedBy("lock") @VisibleForTesting public var cameraRepository: CameraRepository? = null
 
-    @VisibleForTesting public var concurrentCameraIdsSet: MutableSet<Set<CameraId>> = mutableSetOf()
-
+    @GuardedBy("lock")
     @VisibleForTesting
-    public var concurrentCameraIdMap: MutableMap<String, MutableList<String>> = mutableMapOf()
+    public var concurrentCameraIdsSet: Set<Set<CameraId>> = emptySet()
+
+    @GuardedBy("lock")
+    @VisibleForTesting
+    public var concurrentCameraIdMap: Map<String, List<String>> = emptyMap()
 
     @GuardedBy("lock")
     @VisibleForTesting
@@ -62,56 +68,77 @@ public class CameraCoordinatorAdapter(
 
     override fun init(repository: CameraRepository) {
         synchronized(lock) { cameraRepository = repository }
+        val initialIds = cameraDevices.awaitCameraIds()?.map { it.value } ?: emptyList()
+        onCamerasUpdated(initialIds)
     }
 
-    init {
-        val concurrentCameraIds = cameraDevices.awaitConcurrentCameraIds()!!.toMutableSet()
-        for (cameraIdSet in concurrentCameraIds) {
-            val cameraIdsList = cameraIdSet.toList()
-            if (cameraIdsList.size >= 2) {
-                val cameraId1: String = cameraIdsList[0].value
-                val cameraId2: String = cameraIdsList[1].value
-                var isBackwardCompatible = false
-                try {
-                    isBackwardCompatible =
-                        isBackwardCompatible(cameraId1, cameraDevices) &&
-                            isBackwardCompatible(cameraId2, cameraDevices)
-                } catch (e: InitializationException) {
-                    Log.debug {
-                        "Concurrent camera id pair: " +
-                            "($cameraId1, $cameraId2) is not backward compatible"
+    override fun onCamerasUpdated(cameraIds: List<String>) {
+        val tempConcurrentCameraIdsSet = mutableSetOf<Set<CameraId>>()
+        val tempConcurrentCameraIdMap = mutableMapOf<String, MutableList<String>>()
+
+        try {
+            val allConcurrentSets = cameraDevices.awaitConcurrentCameraIds() ?: emptySet()
+            for (concurrentCameraIdSet in allConcurrentSets) {
+                val stringIdSet = concurrentCameraIdSet.map { it.value }.toSet()
+                if (!cameraIds.containsAll(stringIdSet)) {
+                    Log.warn {
+                        "Failed to retrieve concurrent camera: $stringIdSet from $cameraIds"
                     }
-                }
-                if (!isBackwardCompatible) {
                     continue
                 }
-                concurrentCameraIdsSet.add(cameraIdSet)
-                if (!concurrentCameraIdMap.containsKey(cameraId1)) {
-                    concurrentCameraIdMap[cameraId1] = mutableListOf()
+
+                val concurrentCameraIdsList = concurrentCameraIdSet.toList()
+                if (concurrentCameraIdsList.size >= 2) {
+                    val cameraId1 = concurrentCameraIdsList[0]
+                    val cameraId2 = concurrentCameraIdsList[1]
+                    try {
+                        if (
+                            isBackwardCompatible(cameraId1.value, cameraDevices) &&
+                                isBackwardCompatible(cameraId2.value, cameraDevices)
+                        ) {
+                            tempConcurrentCameraIdsSet.add(concurrentCameraIdSet)
+                            if (!tempConcurrentCameraIdMap.containsKey(cameraId1.value)) {
+                                tempConcurrentCameraIdMap[cameraId1.value] = mutableListOf()
+                            }
+                            tempConcurrentCameraIdMap[cameraId1.value]!!.add(cameraId2.value)
+                            if (!tempConcurrentCameraIdMap.containsKey(cameraId2.value)) {
+                                tempConcurrentCameraIdMap[cameraId2.value] = mutableListOf()
+                            }
+                            tempConcurrentCameraIdMap[cameraId2.value]!!.add(cameraId1.value)
+                        }
+                    } catch (e: InitializationException) {
+                        Log.warn {
+                            "Skipping incompatible concurrent" +
+                                " pair: $concurrentCameraIdSet due to ${e.message}"
+                        }
+                    }
                 }
-                if (!concurrentCameraIdMap.containsKey(cameraId2)) {
-                    concurrentCameraIdMap[cameraId2] = mutableListOf()
-                }
-                concurrentCameraIdMap[cameraId1]?.add(cameraId2)
-                concurrentCameraIdMap[cameraId2]?.add(cameraId1)
             }
+        } catch (e: Exception) {
+            throw CameraUpdateException(
+                "Failed to retrieve concurrent camera id info for camera-pipe.",
+                e,
+            )
+        }
+
+        synchronized(lock) {
+            concurrentCameraIdsSet = tempConcurrentCameraIdsSet
+            concurrentCameraIdMap = tempConcurrentCameraIdMap
         }
     }
 
-    override fun getConcurrentCameraSelectors(): MutableList<MutableList<CameraSelector>> {
-        return concurrentCameraIdsSet
-            .map { concurrentCameraIds ->
-                concurrentCameraIds
-                    .map { cameraId ->
-                        CameraSelector.Builder()
-                            .addCameraFilter { cameraInfos ->
-                                cameraInfos.filter { cameraInfo -> cameraId == cameraInfo.cameraId }
-                            }
-                            .build()
-                    }
-                    .toMutableList()
-            }
-            .toMutableList()
+    override fun getConcurrentCameraSelectors(): List<List<CameraSelector>> {
+        return synchronized(lock) {
+            concurrentCameraIdsSet
+                .map { concurrentCameraIds ->
+                    concurrentCameraIds
+                        .map { cameraId ->
+                            CameraSelector.of(CameraIdentifier.create(cameraId.value))
+                        }
+                        .toList()
+                }
+                .toList()
+        }
     }
 
     override fun getActiveConcurrentCameraInfos(): List<CameraInfo> =
@@ -202,11 +229,11 @@ public class CameraCoordinatorAdapter(
 
     override fun shutdown() {
         cameraPipe = null
-        concurrentCameraIdsSet.clear()
-        concurrentCameraIdMap.clear()
         concurrentModeOn = false
         synchronized(lock) {
             cameraRepository = null
+            concurrentCameraIdsSet = emptySet()
+            concurrentCameraIdMap = emptyMap()
             activeConcurrentCameraInfosList = emptyList()
             concurrentMode = CAMERA_OPERATING_MODE_UNSPECIFIED
         }

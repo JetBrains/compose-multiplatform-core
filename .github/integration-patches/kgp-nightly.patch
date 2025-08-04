@@ -34,10 +34,10 @@ index df41397197c..b3e51525fbf 100644
      type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
-diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
+diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 index 64ca70606b5..c948188bbf1 100644
---- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
-+++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
+--- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
++++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 @@ -36,6 +36,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeNullability
  import org.jetbrains.kotlin.library.abi.AbiTypeParameter
  import org.jetbrains.kotlin.library.abi.AbiValueParameter
@@ -45,8 +45,8 @@ index 64ca70606b5..c948188bbf1 100644
 +import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
  import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
  import org.jetbrains.kotlin.library.abi.LibraryAbi
- 
-@@ -759,6 +760,8 @@ private fun File.asBaselineErrors(): Set<String> =
+ import org.jetbrains.kotlin.library.abi.LibraryAbiReader
+@@ -844,6 +845,8 @@ private class DecoratedAbiProperty(abiProperty: AbiProperty, val parentClass: Ab
  private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
      AbiValueParameter by param
  
@@ -57,10 +57,10 @@ index 64ca70606b5..c948188bbf1 100644
 -private fun AbiFunction.hasExtensionReceiverParameter() = hasExtensionReceiverParameter
 +private fun AbiFunction.contextReceiverParametersCount(): Int =
 +    valueParameters.count { it.kind == AbiValueParameterKind.CONTEXT }
-diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
+diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParser.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
 index 55bb041da54..483285ec065 100644
---- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
-+++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
+--- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
++++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
 @@ -31,9 +31,11 @@ import org.jetbrains.kotlin.library.abi.AbiProperty
  import org.jetbrains.kotlin.library.abi.AbiQualifiedName
  import org.jetbrains.kotlin.library.abi.AbiSignatureVersion
@@ -137,10 +137,10 @@ index 55bb041da54..483285ec065 100644
              valueParameters = valueParameters,
          )
      }
-diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
+diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
 index 6ae71e2bc7e..90c120097a9 100644
---- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
-+++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
+--- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
++++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/KlibParsingCursorExtensions.kt
 @@ -31,6 +31,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeArgument
  import org.jetbrains.kotlin.library.abi.AbiTypeNullability
  import org.jetbrains.kotlin.library.abi.AbiTypeParameter
@@ -157,10 +157,10 @@ index 6ae71e2bc7e..90c120097a9 100644
          type = type,
          isVararg = isVararg,
          hasDefaultArg = hasDefaultArg,
-diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/test/java/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/test/java/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
+diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmTest/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmTest/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
 index 5e3d9d1ffef..d4f4b1850fb 100644
---- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/test/java/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
-+++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/test/java/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
+--- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmTest/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
++++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmTest/kotlin/androidx/binarycompatibilityvalidator/KLibDumpParserTest.kt
 @@ -26,6 +26,7 @@ import org.jetbrains.kotlin.library.abi.AbiModality
  import org.jetbrains.kotlin.library.abi.AbiProperty
  import org.jetbrains.kotlin.library.abi.AbiQualifiedName

@@ -329,7 +329,12 @@ public fun SpatialMainPanel(
     // [SubspaceLayoutNode.MeasureLayout.placeAt] and [CoreEntity.size].
     // This means hidden will be set after layout completes, on the first frame when the mainPanel
     // enters the Compose hierarchy.
-    DisposableEffect(mainPanel) { onDispose { mainPanel.enabled = false } }
+    DisposableEffect(mainPanel) {
+        // mainPanel will initially be enabled when an Activity is created, but must be re-enabled
+        // if removed and re-added to the Compose layout.
+        mainPanel.enabled = true
+        onDispose { mainPanel.enabled = false }
+    }
 
     SubspaceLayout(modifier = modifier, coreEntity = mainPanel) { _, constraints ->
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)

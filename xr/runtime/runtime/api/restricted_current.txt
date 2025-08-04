@@ -1420,6 +1420,16 @@ package androidx.xr.runtime.internal {
     method public void onStateChanged(@androidx.xr.runtime.internal.PointerCaptureComponent.PointerCaptureState int newState);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingRuntime {
+    method public void dispose();
+    method public void startRenderer();
+    method public void stopRenderer();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingRuntimeFactory extends androidx.xr.runtime.internal.Service {
+    method public androidx.xr.runtime.internal.RenderingRuntime create(androidx.xr.runtime.internal.SceneRuntime sceneRuntime, android.app.Activity activity);
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ResizableComponent extends androidx.xr.runtime.internal.Component {
     method public void addResizeEventListener(java.util.concurrent.Executor executor, androidx.xr.runtime.internal.ResizeEventListener resizeEventListener);
     method public boolean getAutoHideContent();
@@ -1482,6 +1492,14 @@ package androidx.xr.runtime.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RuntimeFactory extends androidx.xr.runtime.internal.Service {
     method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntime {
+    method public void dispose();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntimeFactory extends androidx.xr.runtime.internal.Service {
+    method public androidx.xr.runtime.internal.SceneRuntime create(android.app.Activity activity);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Service {
@@ -2071,9 +2089,11 @@ package androidx.xr.runtime.math {
     ctor public FloatSize2d();
     ctor public FloatSize2d(optional float width, optional float height);
     method public operator androidx.xr.runtime.math.FloatSize2d div(float divisor);
+    method public operator androidx.xr.runtime.math.FloatSize2d div(int divisor);
     method public float getHeight();
     method public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
+    method public operator androidx.xr.runtime.math.FloatSize2d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
     property public float height;
     property public float width;
@@ -2083,10 +2103,12 @@ package androidx.xr.runtime.math {
     ctor public FloatSize3d();
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
     method public operator androidx.xr.runtime.math.FloatSize3d div(float divisor);
+    method public operator androidx.xr.runtime.math.FloatSize3d div(int divisor);
     method public float getDepth();
     method public float getHeight();
     method public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize3d times(float scalar);
+    method public operator androidx.xr.runtime.math.FloatSize3d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize2d to2d();
     property public float depth;
     property public float height;

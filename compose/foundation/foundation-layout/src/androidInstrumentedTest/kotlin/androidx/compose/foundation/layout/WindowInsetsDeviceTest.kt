@@ -256,8 +256,7 @@ class WindowInsetsDeviceTest {
 
         rule.waitForIdle()
 
-        assertThat(defaultConsume)
-            .isEqualTo(!ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled)
+        assertThat(defaultConsume).isFalse()
 
         // Loop until the value changes.
         rule.waitUntil(timeoutMillis = 3000) {
@@ -269,13 +268,7 @@ class WindowInsetsDeviceTest {
             }
             rule.runOnIdle { imeInset1 > 0 }
         }
-        rule.runOnIdle {
-            if (ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled) {
-                assertThat(imeInset2).isEqualTo(imeInset1)
-            } else {
-                assertThat(imeInset2).isEqualTo(0)
-            }
-        }
+        rule.runOnIdle { assertThat(imeInset2).isEqualTo(imeInset1) }
     }
 
     @Test

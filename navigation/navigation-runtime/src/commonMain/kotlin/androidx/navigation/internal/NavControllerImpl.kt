@@ -693,7 +693,7 @@ internal class NavControllerImpl(
             backStackEntriesToDispatch.clear()
             for (backStackEntry in dispatchList) {
                 // Now call all registered OnDestinationChangedListener instances
-                for (listener in onDestinationChangedListeners) {
+                for (listener in onDestinationChangedListeners.toList()) {
                     listener.onDestinationChanged(
                         navController,
                         backStackEntry.destination,

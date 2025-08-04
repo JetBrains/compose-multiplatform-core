@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("kotlin")
 }
 
 configurations {
@@ -52,15 +51,32 @@ configurations {
 
 }
 
-dependencies {
-    api(libs.kotlinStdlib)
-    friends(libs.kotlinCompiler)
-    implementation(libs.binaryCompatibilityValidator)
-    testImplementation(libs.truth)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinTest)
-    testImplementation(libs.kotlinCompiler)
+androidXMultiplatform {
+    jvm()
+    sourceSets {
+        jvmMain {
+            dependencies {
+                api(libs.kotlinStdlib)
+                implementation(libs.binaryCompatibilityValidator)
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation(libs.truth)
+                implementation(libs.junit)
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCompiler)
+            }
+        }
+    }
+    provideKlibStdLibForTests()
 }
+
+dependencies {
+    friends(libs.kotlinCompiler)
+}
+
+configurations.getByName("jvmMainImplementation").extendsFrom(configurations.getByName("friends"))
 
 androidx {
     name = "AndroidX Binary Compatibility Validator"

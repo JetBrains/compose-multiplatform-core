@@ -172,10 +172,11 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
                 executor = Executors.newSingleThreadExecutor(),
                 resizeEventListener =
                     Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
-                        if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END)
-                            Log.i(TAG, "resize event ${resizeEvent.newSize}")
-                        (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
-                        textMainPanelPixelDimensions.text = mainPanelPixelDimensionsString()
+                        Log.i(TAG, "resize event ${resizeEvent.newSize}")
+                        if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
+                            (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
+                            textMainPanelPixelDimensions.text = mainPanelPixelDimensionsString()
+                        }
                     },
             )
         val movableComponent = MovableComponent.createSystemMovable(session)

@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
@@ -665,8 +666,28 @@ public interface SharedTransitionScope : LookaheadScope {
     /** Creates an [OverlayClip] based on a specific [clipShape]. */
     public fun OverlayClip(clipShape: Shape): OverlayClip
 
-    /** Creates and remembers a [SharedContentState] with a given [key]. */
-    @Composable public fun rememberSharedContentState(key: Any): SharedContentState
+    /**
+     * Creates and remembers a [SharedContentState] with a given [key] and a given
+     * [SharedContentConfig].
+     *
+     * [key] will be used to match a shared element against others in the same
+     * [SharedTransitionScope].
+     *
+     * [config] defines whether the shared element is enabled or disabled, and the alternative
+     * target bounds if the shared element is disposed amid animation (e.g., scrolled out of the
+     * viewport and subsequently disposed). By default, the shared element is enabled and the
+     * alternative target bounds are not defined. Hence the default behavior is to stop the
+     * animation when the target shared element (i.e. shared element in the incoming/target content)
+     * is removed.
+     *
+     * @sample androidx.compose.animation.samples.DynamicallyEnabledSharedElementInPagerSample
+     * @sample androidx.compose.animation.samples.DynamicallyEnableSharedElementsSample
+     */
+    @Composable
+    public fun rememberSharedContentState(
+        key: Any,
+        config: SharedContentConfig = DefaultConfig,
+    ): SharedContentState
 
     /**
      * [SharedContentState] is designed to allow access of the properties of
@@ -674,7 +695,16 @@ public interface SharedTransitionScope : LookaheadScope {
      * the [SharedTransitionScope], its [clipPathInOverlay] and [parentSharedContentState] if there
      * is a parent [sharedBounds] in the layout tree.
      */
-    public class SharedContentState internal constructor(public val key: Any) {
+    public class SharedContentState
+    internal constructor(public val key: Any, config: SharedContentConfig) {
+        internal val isAnimating: Boolean
+            get() = internalState?.boundsAnimation?.animationState != null
+
+        internal var config by mutableStateOf(config)
+        internal val isEnabledByUser: Boolean
+            get() =
+                with(config) { isEnabled || (isAnimating && shouldKeepEnabledForOngoingAnimation) }
+
         /**
          * Indicates whether a match of the same [key] has been found. [sharedElement] or
          * [sharedBounds] will not have any animation unless a match has been found.
@@ -700,13 +730,101 @@ public interface SharedTransitionScope : LookaheadScope {
         public val parentSharedContentState: SharedContentState?
             get() = nonNullInternalState.parentState?.userState
 
-        internal var internalState: SharedElementInternalState? by mutableStateOf(null)
-        private val nonNullInternalState: SharedElementInternalState
+        internal var internalState: SharedElementEntry? by mutableStateOf(null)
+        private val nonNullInternalState: SharedElementEntry
             get() =
                 requireNotNull(internalState) {
                     "Error: SharedContentState has not been added to a sharedElement/sharedBounds" +
                         "modifier yet. Therefore the internal state has not bee initialized."
                 }
+    }
+
+    /**
+     * [SharedContentConfig] allows a shared element to be disabled or enabled dynamically through
+     * [isEnabled] property. By default, [shouldKeepEnabledForOngoingAnimation] is true. This means
+     * if the shared element transition is already running for the layout that this
+     * [SharedContentConfig] is applied to, we will keep the shared element enabled until the
+     * animation is finished. In other words, disabling shared element while the animation is
+     * in-flight will have no effect, unless [shouldKeepEnabledForOngoingAnimation] is overridden.
+     *
+     * [alternativeTargetBoundsInTransitionScopeAfterRemoval] defines an alternative target bounds
+     * for when the target shared element is disposed amid animation (e.g., scrolled out of the
+     * viewport and subsequently disposed). By default, no alternative target bounds is defined - As
+     * soon as the target shared element (i.e. the shared element in the incoming/target content) is
+     * removed, the shared element transition for the shared elements with the same key will be
+     * cancelled.
+     *
+     * @sample androidx.compose.animation.samples.DynamicallyEnabledSharedElementInPagerSample
+     * @sample androidx.compose.animation.samples.SharedContentConfigSample
+     */
+    public interface SharedContentConfig {
+        /**
+         * [isEnabled] returns a boolean indicating whether the shared element is enabled. By
+         * default, it is true.
+         */
+        public val SharedContentState.isEnabled: Boolean
+            get() = true
+
+        /**
+         * [shouldKeepEnabledForOngoingAnimation] returns a boolean indicating whether the shared
+         * element should be enabled for ongoing animation. By default, shared elements will be kept
+         * enabled for ongoing animation until the animation is finished. This means disabling
+         * shared element while the animation is in-flight will have no effect, unless
+         * [shouldKeepEnabledForOngoingAnimation] is overridden to return false. This default is
+         * intended to ensure a continuous experience out-of-the-box by avoiding accidentally
+         * removing in-flight animations.
+         */
+        @get:Suppress("GetterSetterNames")
+        public val shouldKeepEnabledForOngoingAnimation: Boolean
+            get() = true
+
+        /**
+         * [alternativeTargetBoundsInTransitionScopeAfterRemoval] returns an alternative target
+         * bounds for when the target shared element is disposed amid animation (e.g., scrolled out
+         * of the viewport and subsequently disposed).
+         *
+         * By default, no alternative target bounds is defined - As soon as the target shared
+         * element (i.e. the shared element in the incoming/target content) is removed, the shared
+         * element transition for the shared elements with the same key will be cancelled.
+         *
+         * @param targetBoundsBeforeRemoval The target bounds of the shared element **relative to
+         *   the SharedTransitionLayout** before it is removed.
+         * @param sharedTransitionLayoutSize The size of the shared transition layout for convenient
+         *   calculation.
+         * @sample androidx.compose.animation.samples.SharedContentConfigSample
+         */
+        public fun SharedContentState.alternativeTargetBoundsInTransitionScopeAfterRemoval(
+            targetBoundsBeforeRemoval: Rect,
+            sharedTransitionLayoutSize: Size,
+        ): Rect? {
+            return null
+        }
+    }
+
+    /**
+     * [SharedContentConfig] is a factory method that takes a lambda that can dynamically toggle a
+     * shared element between enabled and disabled state, and returns a [SharedContentConfig]
+     * object.
+     *
+     * **Important**: If the shared element is already in-flight for the layout that this
+     * [SharedContentConfig] applies to, the on-going animation will be honored even if [isEnabled]
+     * returns false. This is to ensure a continuous experience out-of-the-box by avoiding
+     * accidentally removing in-flight animations. If, however, it is desired to disable the shared
+     * element while the animation is running, consider implementing interface [SharedContentConfig]
+     * and overriding [SharedContentConfig#shouldKeepEnabledForOngoingAnimation].
+     *
+     * @param isEnabled A lambda that returns a boolean indicating whether the shared element is
+     *   enabled.
+     * @sample androidx.compose.animation.samples.DynamicallyEnabledSharedElementInPagerSample
+     * @sample androidx.compose.animation.samples.DynamicallyEnableSharedElementsSample
+     */
+    public fun SharedContentConfig(
+        isEnabled: SharedContentState.() -> Boolean
+    ): SharedContentConfig {
+        return object : SharedContentConfig {
+            override val SharedContentState.isEnabled: Boolean
+                get() = isEnabled()
+        }
     }
 }
 
@@ -924,8 +1042,12 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     override fun OverlayClip(clipShape: Shape): OverlayClip = ShapeBasedClip(clipShape)
 
     @Composable
-    override fun rememberSharedContentState(key: Any): SharedContentState =
-        remember(key) { SharedContentState(key) }
+    override fun rememberSharedContentState(
+        key: Any,
+        config: SharedTransitionScope.SharedContentConfig,
+    ): SharedContentState {
+        return remember(key) { SharedContentState(key, config) }.also { it.config = config }
+    }
 
     /** ******** Impl details below **************** */
     private val observeAnimatingBlock: () -> Unit = {
@@ -984,7 +1106,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                 val transitionState =
                                     remember {
                                             val initialState =
-                                                if (sharedElement.states.isEmpty()) {
+                                                if (sharedElement.enabledEntries.isEmpty()) {
                                                     targetState
                                                 } else {
                                                     // If there's already shared elements of the
@@ -1015,7 +1137,16 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                     boundsTransform,
                                 )
                             }
-                            .also { it.updateAnimation(animation, boundsTransform) }
+                            .also {
+                                it.updateAnimation(animation, boundsTransform)
+                                if (SharedTransitionDebug) {
+                                    println(
+                                        "SharedTransition, current state:" +
+                                            " ${boundsTransition.currentState}" +
+                                            ", target: ${boundsTransition.targetState}"
+                                    )
+                                }
+                            }
                     }
                 rememberSharedElementState(
                     sharedElement = sharedElement,
@@ -1042,9 +1173,9 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         clipInOverlayDuringTransition: OverlayClip,
         zIndexInOverlay: Float,
         renderInOverlayDuringTransition: Boolean,
-    ): SharedElementInternalState =
+    ): SharedElementEntry =
         remember {
-                SharedElementInternalState(
+                SharedElementEntry(
                     sharedElement,
                     boundsAnimation,
                     placeHolderSize,
@@ -1092,22 +1223,36 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     internal fun drawInOverlay(scope: ContentDrawScope) {
         // TODO: Sort while preserving the parent child order
         renderers.sortBy {
-            if (it.zIndex == 0f && it is SharedElementInternalState && it.parentState == null) {
+            if (it.zIndex == 0f && it is SharedElementEntry && it.parentState == null) {
                 -1f
             } else it.zIndex
         }
+
         renderers.fastForEach { it.drawInOverlay(drawScope = scope) }
     }
 
-    internal fun onStateRemoved(sharedElementState: SharedElementInternalState) {
+    internal fun onEntryRemoved(sharedElementState: SharedElementEntry) {
+        if (SharedTransitionDebug) {
+            println(
+                "SharedTransition, entry removed, key: ${sharedElementState.sharedElement.key}," +
+                    " state: ${sharedElementState.sharedElement.state}"
+            )
+        }
         with(sharedElementState.sharedElement) {
-            removeState(sharedElementState)
+            removeEntry(sharedElementState)
             updateTransitionActiveness.invoke(this@SharedTransitionScopeImpl)
             scope.observeIsAnimating()
             renderers.remove(sharedElementState)
-            if (states.isEmpty()) {
+            if (allEntries.isEmpty()) {
                 scope.coroutineScope.launch {
-                    if (states.isEmpty()) {
+                    if (allEntries.isEmpty()) {
+                        if (SharedTransitionDebug) {
+                            println(
+                                "SharedTransition, key removed. key =" +
+                                    " ${sharedElementState.sharedElement.key}," +
+                                    " state: ${sharedElementState.sharedElement.state}"
+                            )
+                        }
                         scope.sharedElements.remove(key)
                     }
                 }
@@ -1115,15 +1260,14 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         }
     }
 
-    internal fun onStateAdded(sharedElementState: SharedElementInternalState) {
+    internal fun onEntryAdded(sharedElementState: SharedElementEntry) {
         with(sharedElementState.sharedElement) {
-            addState(sharedElementState)
+            addEntry(sharedElementState)
             updateTransitionActiveness.invoke(this@SharedTransitionScopeImpl)
             scope.observeIsAnimating()
             val id =
                 renderers.indexOfFirst {
-                    (it as? SharedElementInternalState)?.sharedElement ==
-                        sharedElementState.sharedElement
+                    (it as? SharedElementEntry)?.sharedElement == sharedElementState.sharedElement
                 }
             if (id == renderers.size - 1 || id == -1) {
                 renderers.add(sharedElementState)
@@ -1192,7 +1336,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
 }
 
 internal interface LayerRenderer {
-    val parentState: SharedElementInternalState?
+    val parentState: SharedElementEntry?
 
     fun drawInOverlay(drawScope: DrawScope)
 
@@ -1272,3 +1416,6 @@ internal class ScaleToBoundsImpl(val contentScale: ContentScale, val alignment: 
     ResizeMode
 
 @ExperimentalSharedTransitionApi private object RemeasureImpl : ResizeMode
+
+@ExperimentalSharedTransitionApi
+private object DefaultConfig : SharedTransitionScope.SharedContentConfig

@@ -93,6 +93,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.NavigationEventInputHandler
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
@@ -242,6 +243,12 @@ open class ComponentActivity() :
     private val onUserLeaveHintListeners = CopyOnWriteArrayList<Runnable>()
     private var dispatchingOnMultiWindowModeChanged = false
     private var dispatchingOnPictureInPictureModeChanged = false
+
+    // Input from `ComponentActivity.onBackPressed()`, which can get called when API < 33 or
+    // when `android:enableOnBackInvokedCallback` is `false`.
+    private val onBackPressedInputHandler: NavigationEventInputHandler by lazy {
+        NavigationEventInputHandler(navigationEventDispatcher)
+    }
 
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
@@ -589,7 +596,7 @@ open class ComponentActivity() :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        navigationEventDispatcher.dispatchOnCompleted()
+        onBackPressedInputHandler.sendOnCompleted()
     }
 
     /**

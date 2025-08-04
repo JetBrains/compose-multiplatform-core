@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
@@ -30,6 +31,7 @@ import com.google.android.icing.proto.DeleteByQueryStatsProto;
 import com.google.android.icing.proto.DeleteStatsProto;
 import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.OptimizeStatsProto;
+import com.google.android.icing.proto.PersistToDiskStatsProto;
 import com.google.android.icing.proto.PutDocumentStatsProto;
 import com.google.android.icing.proto.QueryStatsProto;
 import com.google.android.icing.proto.SetSchemaResultProto;
@@ -269,6 +271,42 @@ public final class AppSearchLoggerHelper {
                 .setIndexIncompatibleTypeChangeCount(
                         fromProto.getIndexIncompatibleChangedSchemaTypesCount())
                 .setBackwardsIncompatibleTypeChangeCount(
-                        fromProto.getIncompatibleSchemaTypesCount());
+                        fromProto.getIncompatibleSchemaTypesCount())
+                .setGetVmLatencyMillis(fromProto.getGetVmLatencyMs());
+    }
+
+    /*
+     * Copy PersistToDiskStatsProto to builder.
+     *
+     * @param fromProto Stats copied from.
+     * @param toStatsBuilder Stats copied to.
+     */
+    static void copyNativeStats(@NonNull PersistToDiskStatsProto fromProto,
+            PersistToDiskStats.@NonNull Builder toStatsBuilder) {
+        Preconditions.checkNotNull(fromProto);
+        Preconditions.checkNotNull(toStatsBuilder);
+        toStatsBuilder
+                .setPersistType(fromProto.getPersistType())
+                .setNativeLatencyMillis(fromProto.getLatencyMs())
+                .setNativeBlobStorePersistLatencyMillis(fromProto.getBlobStorePersistLatencyMs())
+                .setNativeDocumentStoreTotalPersistLatencyMillis(
+                        fromProto.getDocumentStoreTotalPersistLatencyMs())
+                .setNativeDocumentStoreComponentsPersistLatencyMillis(
+                        fromProto.getDocumentStoreComponentsPersistLatencyMs())
+                .setNativeDocumentStoreChecksumUpdateLatencyMillis(
+                        fromProto.getDocumentStoreChecksumUpdateLatencyMs())
+                .setNativeDocumentLogChecksumUpdateLatencyMillis(
+                        fromProto.getDocumentLogChecksumUpdateLatencyMs())
+                .setNativeDocumentLogDataSyncLatencyMillis(
+                        fromProto.getDocumentLogDataSyncLatencyMs())
+                .setNativeSchemaStorePersistLatencyMillis(
+                        fromProto.getSchemaStorePersistLatencyMs())
+                .setNativeIndexPersistLatencyMillis(fromProto.getIndexPersistLatencyMs())
+                .setNativeIntegerIndexPersistLatencyMillis(
+                        fromProto.getIntegerIndexPersistLatencyMs())
+                .setNativeQualifiedIdJoinIndexPersistLatencyMillis(
+                        fromProto.getQualifiedIdJoinIndexPersistLatencyMs())
+                .setNativeEmbeddingIndexPersistLatencyMillis(
+                        fromProto.getEmbeddingIndexPersistLatencyMs());
     }
 }

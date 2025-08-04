@@ -56,6 +56,7 @@ import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageAnalysis;
@@ -75,6 +76,7 @@ import androidx.camera.core.ViewPort;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.LiveDataUtil;
@@ -1968,12 +1970,18 @@ public abstract class CameraController {
         int surfaceRotationDegrees =
                 viewPort == null ? 0 : CameraOrientationUtil.surfaceRotationToDegrees(
                         viewPort.getRotation());
-        int sensorRotationDegrees =
-                mCameraProvider == null ? 0 : mCameraProvider.getCameraInfo(
-                        mCameraSelector).getSensorRotationDegrees();
-        boolean isOppositeFacing =
-                mCameraProvider == null ? true : mCameraProvider.getCameraInfo(
-                        mCameraSelector).getLensFacing() == CameraSelector.LENS_FACING_BACK;
+        int sensorRotationDegrees = 0;
+        boolean isOppositeFacing = true;
+        try {
+            if (mCameraProvider != null) {
+                CameraInfo cameraInfo = mCameraProvider.getCameraInfo(mCameraSelector);
+                sensorRotationDegrees = cameraInfo.getSensorRotationDegrees();
+                isOppositeFacing = cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK;
+            }
+        } catch (IllegalArgumentException e) {
+            String readableSelector = getReadableSelectorString(mCameraSelector);
+            Logger.w(TAG, "Failed to retrieve CameraInfo for selector: " + readableSelector, e);
+        }
         int relativeRotation = CameraOrientationUtil.getRelativeImageRotation(
                 surfaceRotationDegrees, sensorRotationDegrees, isOppositeFacing);
         Rational aspectRatio = viewPort.getAspectRatio();
@@ -1982,13 +1990,47 @@ public abstract class CameraController {
                     /* denominator= */ aspectRatio.getNumerator());
         }
 
-        if (aspectRatio.equals(new Rational(4, 3))) {
+        if (aspectRatio.equals(AspectRatioUtil.ASPECT_RATIO_4_3)) {
             return AspectRatio.RATIO_4_3;
-        } else if (aspectRatio.equals(new Rational(16, 9))) {
+        } else if (aspectRatio.equals(AspectRatioUtil.ASPECT_RATIO_16_9)) {
             return AspectRatio.RATIO_16_9;
         } else {
             return AspectRatio.RATIO_DEFAULT;
         }
+    }
+
+    /**
+     * Creates a human-readable string from a CameraSelector for logging purposes.
+     */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
+    private String getReadableSelectorString(CameraSelector selector) {
+        if (selector == null) {
+            return "null";
+        }
+        StringBuilder description = new StringBuilder("CameraSelector{");
+        // Get the lens facing, as it's the most common and useful identifier.
+        Integer lensFacing = selector.getLensFacing();
+        if (lensFacing != null) {
+            switch (lensFacing) {
+                case CameraSelector.LENS_FACING_BACK:
+                    description.append("lensFacing=BACK");
+                    break;
+                case CameraSelector.LENS_FACING_FRONT:
+                    description.append("lensFacing=FRONT");
+                    break;
+                case CameraSelector.LENS_FACING_EXTERNAL:
+                    description.append("lensFacing=EXTERNAL");
+                    break;
+                default:
+                    description.append("lensFacing=UNKNOWN(").append(lensFacing).append(")");
+                    break;
+            }
+        } else {
+            description.append("lensFacing=NOT_SPECIFIED");
+        }
+        // In the future, you could add other filters here if needed.
+        description.append("}");
+        return description.toString();
     }
 
     /**

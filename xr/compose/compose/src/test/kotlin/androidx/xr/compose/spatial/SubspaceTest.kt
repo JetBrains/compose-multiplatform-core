@@ -16,6 +16,8 @@
 
 package androidx.xr.compose.spatial
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -41,6 +43,7 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
+import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestJxrPlatformAdapter
@@ -217,6 +220,28 @@ class SubspaceTest {
         val parentPanel = subspaceRootContainerEntity?.parent
         assertNotNull(parentPanel)
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
+    @Test
+    fun subspace_nestedSubspace_contentIsEnabledWhenContentSizeMatchesParentSize() {
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.size(100.dp).testTag("panel")) {
+                        Subspace {
+                            SpatialPanel(SubspaceModifier.testTag("innerPanel")) {
+                                Box(Modifier.size(100.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        assertThat(innerPanelEntity?.isEnabled(true)).isTrue()
     }
 
     @Test

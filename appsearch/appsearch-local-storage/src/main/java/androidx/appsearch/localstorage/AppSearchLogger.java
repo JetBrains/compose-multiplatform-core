@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
@@ -117,6 +118,13 @@ public interface AppSearchLogger {
      * respectively.
      */
     default void logStats(@NonNull List<SearchSessionStats> searchSessionsStats) {
+        // no-op
+    }
+
+    /**
+     * Logs {@link PersistToDiskStats}
+     */
+    default void logStats(@NonNull PersistToDiskStats stats) {
         // no-op
     }
 

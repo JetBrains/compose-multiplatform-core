@@ -56,6 +56,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -230,10 +231,8 @@ internal fun PredictiveBackNavHost(
             ) {
                 Box(
                     modifier =
-                        Modifier.background(
-                                scrimColor,
-                                if (isRoundDevice) CircleShape else RectangleShape,
-                            )
+                        Modifier.clip(if (isRoundDevice) CircleShape else RectangleShape)
+                            .background(scrimColor)
                             .fillMaxSize()
                             .hierarchicalFocusGroup(currentEntry == current)
                 ) {

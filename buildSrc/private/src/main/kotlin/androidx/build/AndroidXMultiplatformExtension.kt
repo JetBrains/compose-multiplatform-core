@@ -18,6 +18,7 @@ package androidx.build
 
 import androidx.build.clang.AndroidXClang
 import androidx.build.clang.CombineObjectFilesTask
+import androidx.build.clang.KonanBuildService
 import androidx.build.clang.MultiTargetNativeCompilation
 import androidx.build.clang.NativeLibraryBundler
 import androidx.build.clang.configureCinterop
@@ -33,6 +34,8 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.findByType
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -67,6 +70,33 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @get:Inject abstract val buildFeatures: BuildFeatures
 
     var enableBinaryCompatibilityValidator = true
+
+    /*
+     * Adds a kotlin stdlib klib directory as an input to test tasks.
+     * This is specifically useful for BCV, but it needs to be set up by our buildSrc code to
+     * make sure we use the correct installation and don't accidentally cause something to be
+     * downloaded from the internet.
+     *
+     * Sets the `kotlin.stdlib.klib.dir` property which can be accessed inside the tests
+     */
+    fun provideKlibStdLibForTests() {
+        val konanBuildService = KonanBuildService.obtain(project)
+        // directory format of stdlib klib for use during tests
+        val stdLibKlibDir =
+            konanBuildService.map { it.parameters.konanHome.dir("klib/common/stdlib") }
+        project.tasks.withType(Test::class.java).configureEach { task ->
+            task.inputs
+                .dir(stdLibKlibDir)
+                .withPropertyName("kotlinStdLib")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+            task.doFirst {
+                task.systemProperty(
+                    "kotlin.stdlib.klib.dir",
+                    stdLibKlibDir.get().get().asFile.absolutePath,
+                )
+            }
+        }
+    }
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {

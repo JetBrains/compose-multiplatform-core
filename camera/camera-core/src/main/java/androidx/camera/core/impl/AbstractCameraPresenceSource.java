@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -49,11 +50,23 @@ public abstract class AbstractCameraPresenceSource
     private final List<ObserverWrapper> mObservers = new CopyOnWriteArrayList<>();
 
     @GuardedBy("mLock")
-    private List<CameraIdentifier> mCurrentData = Collections.emptyList();
+    private List<CameraIdentifier> mCurrentData;
     @GuardedBy("mLock")
     private Throwable mCurrentError = null;
     @GuardedBy("mLock")
     private boolean mIsActive = false;
+
+    public AbstractCameraPresenceSource() {
+        this(Collections.emptyList());
+    }
+
+    public AbstractCameraPresenceSource(@NonNull List<String> cameraIds) {
+        ArrayList<CameraIdentifier> identifiers = new ArrayList<>();
+        for (String id: cameraIds) {
+            identifiers.add(CameraIdentifier.create(id));
+        }
+        mCurrentData = identifiers;
+    }
 
     private static class ObserverWrapper {
         final Executor mExecutor;

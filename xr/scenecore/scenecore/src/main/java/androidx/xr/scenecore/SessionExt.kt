@@ -45,3 +45,17 @@ public val Session.scene: Scene
             // This lambda is executed only once per session instance.
             this.sessionConnectors.filterIsInstance<Scene>().single()
         }
+
+internal fun removeSceneFromCache(scene: Scene) {
+    synchronized(sceneCache) {
+        val iterator = sceneCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.value == scene) {
+                iterator.remove()
+                // Assuming a one-to-one mapping, we can stop after finding the match.
+                break
+            }
+        }
+    }
+}

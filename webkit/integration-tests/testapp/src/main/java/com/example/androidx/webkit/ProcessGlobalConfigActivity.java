@@ -36,6 +36,7 @@ public class ProcessGlobalConfigActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.process_global_config_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         final Context activityContext = this;

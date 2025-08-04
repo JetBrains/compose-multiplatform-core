@@ -265,12 +265,12 @@ public class ResizableComponentImplTest {
 
     @Test
     public void addResizableComponentToPanelEntityWithTooSmallSize_addsComponentFailed() {
-        PanelEntity entity = createTestPanelEntity(new Pose(), DEFAULT_SIZE);
+        PanelEntity entity = createTestPanelEntity(new Pose(), MIN_DIMENSIONS);
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
                         mXrExtensions,
-                        new Dimensions(2f, 2f, 2f), // minSize
+                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
                         new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
         assertThat(resizableComponent).isNotNull();
 

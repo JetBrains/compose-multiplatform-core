@@ -21,7 +21,7 @@ package androidx.core.content {
   }
 
   public final class ContextKt {
-    method public static inline <reified T> T? getSystemService(android.content.Context);
+    method @KotlinOnly public static inline <reified T> T? getSystemService(android.content.Context);
     method public static inline void withStyledAttributes(android.content.Context, optional android.util.AttributeSet? set, int[] attrs, optional @AttrRes int defStyleAttr, optional @StyleRes int defStyleRes, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
     method public static inline void withStyledAttributes(android.content.Context, @StyleRes int resourceId, int[] attrs, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
   }
@@ -395,7 +395,7 @@ package androidx.core.text {
   }
 
   public final class SpannedStringKt {
-    method public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
+    method @KotlinOnly public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
     method public static inline android.text.Spanned toSpanned(CharSequence);
   }
 
@@ -643,7 +643,7 @@ package androidx.core.view {
     method public static inline void setPadding(android.view.View, @Px int size);
     method public static inline void setVisible(android.view.View, boolean);
     method public static inline void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<? super android.view.ViewGroup.LayoutParams,kotlin.Unit> block);
-    method public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParamsTyped(android.view.View, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> block);
+    method @KotlinOnly public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<T,kotlin.Unit> block);
     method public static inline void updatePadding(android.view.View, optional @Px int left, optional @Px int top, optional @Px int right, optional @Px int bottom);
     method public static inline void updatePaddingRelative(android.view.View, optional @Px int start, optional @Px int top, optional @Px int end, optional @Px int bottom);
     property public static kotlin.sequences.Sequence<android.view.View> android.view.View.allViews;

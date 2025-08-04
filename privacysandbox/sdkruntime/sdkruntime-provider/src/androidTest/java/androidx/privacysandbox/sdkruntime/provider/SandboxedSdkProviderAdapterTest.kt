@@ -114,6 +114,9 @@ class SandboxedSdkProviderAdapterTest {
     }
 
     @Test
+    // TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     fun getView_shouldThrowException() {
         val adapter = createAdapterFor(TestGetViewSdkProvider::class)
         val windowContext = mock(Context::class.java)

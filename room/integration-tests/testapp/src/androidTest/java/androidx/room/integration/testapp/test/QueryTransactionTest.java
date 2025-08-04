@@ -325,23 +325,20 @@ public class QueryTransactionTest {
 
     private <T> TestSubscriber<T> observe(final Flowable<T> flowable) {
         TestSubscriber<T> subscriber = new TestSubscriber<>();
-        flowable.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
+        return flowable.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
                 .subscribeWith(subscriber);
-        return subscriber;
     }
 
     private <T> TestObserver<T> observe(final Maybe<T> maybe) {
         TestObserver<T> observer = new TestObserver<>();
-        maybe.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
+        return maybe.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
                 .subscribeWith(observer);
-        return observer;
     }
 
     private <T> TestObserver<T> observe(final Single<T> single) {
         TestObserver<T> observer = new TestObserver<>();
-        single.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
+        return single.observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
                 .subscribeWith(observer);
-        return observer;
     }
 
     private <T> void observeForever(final LiveData<T> liveData) {

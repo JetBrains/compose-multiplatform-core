@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,8 @@ import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.PI
 
 /**
@@ -52,7 +55,7 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
             updateEntityPose()
         }
 
-    private val density: Density?
+    protected val density: Density?
         get() = layout?.density
 
     internal open fun updateEntityPose() {
@@ -111,7 +114,7 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
      * Entity. This does not affect layout and other content will be laid out according to the
      * original scale of the entity.
      */
-    internal var scale = 1f
+    internal open var scale = 1f
         set(value) {
             if (field != value) {
                 entity.setScale(value)
@@ -131,25 +134,21 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
             field = value
         }
 
+    // SceneCore parents all newly-created non-Anchor entities under a world
+    // space point of reference for the activity space, which we save for future
+    // use.
+    private val originalParent: Entity? = entity.parent
+
     open var parent: CoreEntity? = null
         set(value) {
             field = value
-
-            // Leave SceneCore's parent as-is if we're trying to clear it out. SceneCore
-            // parents all
-            // newly-created non-Anchor entities under a world space point of reference for the
-            // activity
-            // space, but we don't have access to it. To maintain this parent-is-not-null property,
-            // we use
-            // this hack to keep the original parent, even if it's not technically correct when
-            // we're
-            // trying to reparent a node. The correct parent will be set on the "set" part of the
-            // reparent.
-            //
-            // TODO(b/356952297): Remove this hack once we can save and restore the original parent.
-            if (value == null) return
-
-            entity.parent = value.entity
+            if (value == null) {
+                // When the Compose-level parent is set to null, restore the original parent
+                // (saved during the initial creation)
+                entity.parent = originalParent
+            } else {
+                entity.parent = value.entity
+            }
         }
 
     /**
@@ -190,6 +189,26 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
+    override var scale = 1f
+        set(value) {
+            if (field != value) {
+                CoreExecutor.submit { entity.setScale(value) }
+            }
+            field = value
+        }
+
+    override fun updateEntityPose() {
+        val density = density ?: return
+
+        // Compose XR uses pixels, SceneCore uses meters.
+        val corePose = layoutPoseInPixels.convertPixelsToMeters(density)
+        CoreExecutor.submit {
+            if (entity.getPose() != corePose) {
+                entity.setPose(corePose)
+            }
+        }
+    }
+
     /**
      * The size of the [CoreBasePanelEntity] in pixels.
      *
@@ -204,8 +223,7 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
         set(value) {
             if (super.size != value) {
                 super.size = value
-                panelEntity.sizeInPixels =
-                    IntSize2d(value.width.coerceAtLeast(1), value.height.coerceAtLeast(1))
+                panelEntity.sizeInPixels = IntSize2d(size.width, size.height)
                 shapeDensity?.let { updateShape(it) }
             }
             updateEntityEnabledState()
@@ -248,6 +266,10 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
             panelEntity.cornerRadius = Meter.fromPixel(radius, density).toM()
         }
     }
+
+    private companion object {
+        val CoreExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    }
 }
 
 /**
@@ -264,7 +286,8 @@ internal class CoreMainPanelEntity(session: Session) :
     CoreBasePanelEntity(session.scene.mainPanelEntity) {
 
     override fun dispose() {
-        // Do not call super.dispose() because we don't want to dispose the main panel entity.
+        // Set the parent to null so the main panel is not disposed when its parent is disposed.
+        parent = null
     }
 
     override fun equals(other: Any?): Boolean {
@@ -359,6 +382,21 @@ internal class CoreSphereSurfaceEntity(
             }
         }
 
+    private var isDisposed = false
+
+    override fun dispose() {
+        isDisposed = true
+        super.dispose()
+    }
+
+    internal var isBoundaryAvailable = true
+        set(value) {
+            if (field != value) {
+                field = value
+                updateFeathering()
+            }
+        }
+
     private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
 
     // Layout's density is automatically updated during a configuration change, and may differ from
@@ -407,21 +445,42 @@ internal class CoreSphereSurfaceEntity(
         updateFeathering()
     }
 
+    // When there is no boundary, we need a feathering value higher than 50 on 360 Surfaces to not
+    // obstruct the user's vision, hence we need the lint suppression.
+    @SuppressLint("Range")
     private fun updateFeathering() {
-        val semicircleArcLength = Meter((radius * PI).toFloat()).toPx(localDensity)
-        (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
-            val radiusX =
-                it.size.toWidthPercent(
-                    if (surfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Vr180Hemisphere)
-                        semicircleArcLength / 2
-                    else semicircleArcLength,
-                    localDensity,
-                )
-            val radiusY = it.size.toHeightPercent(semicircleArcLength, localDensity)
-            surfaceEntity.edgeFeather =
-                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(radiusX, radiusY)
+        if (isDisposed) {
+            // At the Compose level, dispose calls happen before we clear passthrough listeners,
+            // and since those passthrough listeners update feathering, this is at risk of being
+            // executed after the Entity is already disposed.
+            return
         }
+
+        surfaceEntity.edgeFeather =
+            if (!isBoundaryAvailable) {
+                val radius = if (isHemisphere) 0.5f else 0.7f
+                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(radius, radius)
+            } else {
+                val semicircleArcLength = Meter((radius * PI).toFloat()).toPx(localDensity)
+                (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
+                    val radiusX =
+                        it.size.toWidthPercent(
+                            if (
+                                surfaceEntity.canvasShape
+                                    is SurfaceEntity.CanvasShape.Vr180Hemisphere
+                            )
+                                semicircleArcLength / 2
+                            else semicircleArcLength,
+                            localDensity,
+                        )
+                    val radiusY = it.size.toHeightPercent(semicircleArcLength, localDensity)
+                    SurfaceEntity.EdgeFeatheringParams.SmoothFeather(radiusX, radiusY)
+                }
+            } ?: surfaceEntity.edgeFeather
     }
+
+    private val isHemisphere
+        get() = surfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Vr180Hemisphere
 }
 
 /** [CoreEntity] types that implement this interface may have the ResizableComponent attached. */

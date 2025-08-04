@@ -233,5 +233,5 @@ public data class AppFunctionMetadataDocument(
     /** The response of the AppFunction. */
     @Document.DocumentProperty public val response: AppFunctionResponseMetadataDocument?,
     /** A description of the AppFunction and its intended use. */
-    @Document.StringProperty public val description: String?,
+    @Document.StringProperty public val description: String? = null,
 )

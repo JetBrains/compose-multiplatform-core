@@ -106,15 +106,17 @@ public final class Camera2CameraFactory implements CameraFactory {
         mStreamSpecsCalculator = streamSpecsCalculator;
         mCameraXConfig = cameraXConfig;
         mAvailableCamerasSelector = availableCamerasSelector;
-        mCameraPresenceObservable = new Camera2PresenceSource(mCameraManager,
-                mThreadConfig.getCameraExecutor());
 
         // Initial population of the camera list.
+        List<String> cameraIds;
         try {
-            onCameraIdsUpdated(Arrays.asList(mCameraManager.getCameraIdList()));
+            cameraIds = Arrays.asList(mCameraManager.getCameraIdList());
         } catch (CameraAccessExceptionCompat e) {
             throw new InitializationException(CameraUnavailableExceptionHelper.createFrom(e));
         }
+        mCameraPresenceObservable = new Camera2PresenceSource(cameraIds, mCameraManager,
+                mThreadConfig.getCameraExecutor());
+        onCameraIdsUpdated(cameraIds);
     }
 
     /**

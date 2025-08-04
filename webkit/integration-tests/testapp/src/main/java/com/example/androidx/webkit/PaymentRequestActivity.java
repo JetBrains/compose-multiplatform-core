@@ -47,6 +47,7 @@ public class PaymentRequestActivity extends AppCompatActivity implements OnCheck
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_payment_request);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.payment_request_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 

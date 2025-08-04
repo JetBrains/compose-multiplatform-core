@@ -80,6 +80,22 @@ final class MotionEvents {
         return isButtonPressed(e, MotionEvent.BUTTON_PRIMARY);
     }
 
+    // alsoInterpretNoButtonsPressedAsPrimary works around imperfect test code. It should be true
+    // only if the caller is certain that e is a mouse (not touch) MotionEvent.
+    static boolean isPrimaryMouseButtonPressed(
+            @NonNull MotionEvent e,
+            boolean alsoInterpretNoButtonsPressedAsPrimary) {
+        return isButtonPressed(e, MotionEvent.BUTTON_PRIMARY)
+            // In real life, for ACTION_DOWN, touch MotionEvent objects can have getButtonState()
+            // return zero but mouse MotionEvent objects should see non-zero. However, some test
+            // code creates synthetic MotionEvents whose getToolType() returns TOOL_TYPE_MOUSE but
+            // the test code forgets to also set which mouse button caused the ACTION_DOWN. For
+            // tests, getButtonState() can unintuitively return zero (despite ACTION_DOWN) for
+            // mouse. If alsoInterpretNoButtonsPressedAsPrimary then we also interpret these events
+            // as implicitly being a "primary mouse button" click.
+            || (alsoInterpretNoButtonsPressedAsPrimary && (e.getButtonState() == 0));
+    }
+
     static boolean isSecondaryMouseButtonPressed(@NonNull MotionEvent e) {
         return isButtonPressed(e, MotionEvent.BUTTON_SECONDARY);
     }

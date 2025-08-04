@@ -306,20 +306,28 @@ public class DrawBitmapTextAnchored extends PaintOperation implements VariableSu
         float yPos = mOutY + getVerticalOffset();
 
         int pos = 0;
+        String prevGlyph = "";
         while (pos < textToPaint.length()) {
             BitmapFontData.Glyph glyph = bitmapFont.lookupGlyph(textToPaint, pos);
             if (glyph == null) {
                 pos++;
+                prevGlyph = "";
                 continue;
             }
 
             pos += glyph.mChars.length();
             if (glyph.mBitmapId == -1) {
                 xPos += glyph.mMarginLeft + glyph.mMarginRight;
+                prevGlyph = glyph.mChars;
                 continue;
             }
 
             xPos += glyph.mMarginLeft;
+            Short kerningAdjustment = bitmapFont.mKerningTable.get(prevGlyph + glyph.mChars);
+            if (kerningAdjustment != null) {
+                xPos += kerningAdjustment;
+            }
+
             float xPos2 = xPos + glyph.mBitmapWidth;
             context.drawBitmap(
                     glyph.mBitmapId,
@@ -328,6 +336,7 @@ public class DrawBitmapTextAnchored extends PaintOperation implements VariableSu
                     xPos2,
                     yPos + glyph.mBitmapHeight + glyph.mMarginTop);
             xPos = xPos2 + glyph.mMarginRight;
+            prevGlyph = glyph.mChars;
         }
     }
 

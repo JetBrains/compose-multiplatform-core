@@ -82,6 +82,9 @@ class ZoomCompatTest {
             override val sessionKeys: Set<CaptureRequest.Key<*>>
                 get() = TODO("Not yet implemented")
 
+            override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>>
+                get() = TODO("Not yet implemented")
+
             override fun awaitPhysicalMetadata(cameraId: CameraId): CameraMetadata {
                 TODO("Not yet implemented")
             }

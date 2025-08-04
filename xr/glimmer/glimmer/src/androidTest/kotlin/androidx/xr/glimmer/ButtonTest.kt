@@ -141,7 +141,7 @@ class ButtonTest {
             GlimmerTheme(Colors(surface = surfaceColor)) {
                 expectedShape = GlimmerTheme.shapes.large
                 Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
-                    Box(Modifier.size(10.dp, 10.dp))
+                    Box(Modifier.size(100.dp, 100.dp))
                 }
             }
         }

@@ -5,6 +5,12 @@ package androidx.compose.ui.unit {
     method public static androidx.compose.ui.unit.Density Density(android.content.Context context);
   }
 
+  @SuppressCompatibility @androidx.compose.ui.unit.ExperimentalUnitApi public final class ComposeUiUnitFlags {
+    property public boolean isDpCompareToChanged;
+    field public static final androidx.compose.ui.unit.ComposeUiUnitFlags INSTANCE;
+    field public static boolean isDpCompareToChanged;
+  }
+
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Constraints {
     ctor @KotlinOnly public Constraints(long value);
     method @BytecodeOnly public static androidx.compose.ui.unit.Constraints! box-impl(long);

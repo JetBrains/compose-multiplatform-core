@@ -54,6 +54,7 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
     public val requestKeys: Set<CaptureRequest.Key<*>>
     public val resultKeys: Set<CaptureResult.Key<*>>
     public val sessionKeys: Set<CaptureRequest.Key<*>>
+    public val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>>
 
     public val physicalCameraIds: Set<CameraId>
     public val physicalRequestKeys: Set<CaptureRequest.Key<*>>

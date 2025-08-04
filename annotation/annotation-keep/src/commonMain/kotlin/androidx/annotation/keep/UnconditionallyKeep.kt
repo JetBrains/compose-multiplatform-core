@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// ***********************************************************************************
+// GENERATED FILE. DO NOT EDIT! See KeepItemAnnotationGenerator.java.
+// ***********************************************************************************
+
+// ***********************************************************************************
+// MAINTAINED AND TESTED IN THE R8 REPO. PLEASE MAKE CHANGES THERE AND REPLICATE.
+// ***********************************************************************************
+
 package androidx.annotation.keep
 
 /**
@@ -40,6 +48,7 @@ package androidx.annotation.keep
     AnnotationTarget.CONSTRUCTOR,
 )
 public annotation class UnconditionallyKeep(
+
     /**
      * Should the name be preserved.
      *

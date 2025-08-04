@@ -81,7 +81,7 @@ class FloatSize2dTest {
     }
 
     @Test
-    fun divOperator_returnsCorrectValues() {
+    fun divOperator_withFloat_returnsCorrectValues() {
         val size1 = FloatSize2d(width = 2.0f, height = 2.0f)
         val size2 = FloatSize2d(width = 1.0f, height = 1.0f)
 
@@ -89,10 +89,26 @@ class FloatSize2dTest {
     }
 
     @Test
-    fun timesOperator_returnsCorrectValues() {
+    fun divOperator_withInt_returnsCorrectValues() {
+        val size1 = FloatSize2d(width = 2.0f, height = 2.0f)
+        val size2 = FloatSize2d(width = 1.0f, height = 1.0f)
+
+        assertThat(size1 / 2).isEqualTo(size2)
+    }
+
+    @Test
+    fun timesOperator_withFloat_returnsCorrectValues() {
         val size1 = FloatSize2d(width = 1.0f, height = 1.0f)
         val size2 = FloatSize2d(width = 2.0f, height = 2.0f)
 
         assertThat(size1 * 2.0f).isEqualTo(size2)
+    }
+
+    @Test
+    fun timesOperator_withInt_returnsCorrectValues() {
+        val size1 = FloatSize2d(width = 1.0f, height = 1.0f)
+        val size2 = FloatSize2d(width = 2.0f, height = 2.0f)
+
+        assertThat(size1 * 2).isEqualTo(size2)
     }
 }

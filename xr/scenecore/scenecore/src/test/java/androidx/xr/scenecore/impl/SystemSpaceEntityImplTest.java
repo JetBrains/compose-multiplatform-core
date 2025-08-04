@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.verify;
 
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -352,6 +353,8 @@ public abstract class SystemSpaceEntityImplTest {
                 systemSpaceEntity.getActivitySpaceScale(),
                 scale.div(getActivitySpaceEntity().getWorldSpaceScale()));
         assertVector3(systemSpaceEntity.getWorldSpaceScale(), scale);
-        assertVector3(systemSpaceEntity.getScale(), scale);
+        assertVector3(
+                systemSpaceEntity.getScale(Space.ACTIVITY),
+                scale.div(getActivitySpaceEntity().getWorldSpaceScale()));
     }
 }

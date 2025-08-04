@@ -598,13 +598,15 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
-                if (lastShape !== graphicsLayerScope.shape || lastClip != graphicsLayerScope.clip) {
+                val hasShapeChanged = lastShape !== graphicsLayerScope.shape
+                val hasClipChanged = lastClip != graphicsLayerScope.clip
+                if (hasShapeChanged || hasClipChanged) {
                     lastShape = graphicsLayerScope.shape
                     lastClip = graphicsLayerScope.clip
-                    if (wasLayerBlockInvoked) {
+                    if (wasLayerBlockInvoked && (hasClipChanged || (lastClip && hasShapeChanged))) {
                         // Semantics are already applied by the time the layer block is invoked for
                         // the first time, so we only invalidate semantics after subsequent layer
-                        // block invocations and if the shape or clip changed.
+                        // block invocations and if clip changed or shape changed and clip == true.
                         layoutNode.invalidateSemantics()
                     }
                 }

@@ -39,11 +39,23 @@
             android:textAllCaps="false"/>
     </LinearLayout>
 
-    <Button
-        android:id="@+id/getAppSdksButton"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_gravity="center_horizontal"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/get_app_sdks"
-        android:textAllCaps="false"/>
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/getAppSdksFromAppButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/get_app_sdks_from_app"
+            android:textAllCaps="false"/>
+        <Button
+            android:id="@+id/getAppSdksFromSdkButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/get_app_sdks_from_sdk"
+            android:textAllCaps="false"/>
+    </LinearLayout>
 
 </LinearLayout>

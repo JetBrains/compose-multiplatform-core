@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationApi::class)
+@file:OptIn(
+    ExperimentalSharedTransitionApi::class,
+    ExperimentalAnimationApi::class,
+    ExperimentalComposeUiApi::class,
+)
 
 package androidx.compose.animation
 
@@ -28,6 +32,7 @@ import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
@@ -70,6 +75,7 @@ import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Alignment.Companion.TopEnd
 import androidx.compose.ui.Alignment.Companion.TopStart
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
@@ -85,6 +91,7 @@ import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.approachLayout
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.lookaheadScopeCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
@@ -3444,7 +3451,917 @@ class SharedTransitionTest {
         }
     }
 
+    val noContentTransform: AnimatedContentTransitionScope<*>.() -> ContentTransform = {
+        EnterTransition.None togetherWith ExitTransition.None using null
+    }
+
     @Test
+    fun testIsEnabledOnlyInOneDirection() {
+        var target by mutableStateOf(true)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    transitionCreated = transition
+                    transition.AnimatedContent(transitionSpec = noContentTransform) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState("test"),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else {
+                                Box(
+                                    Modifier.offset(20.dp, 20.dp)
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                "test",
+                                                config =
+                                                    SharedContentConfig {
+                                                        // Only enable shared element when going
+                                                        // from
+                                                        // true
+                                                        // to
+                                                        // false
+                                                        !transition.targetState
+                                                    },
+                                            ),
+                                            this@AnimatedContent,
+                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                        )
+                                        .onPlaced {
+                                            sizes2.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets2.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(180.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = false }
+        // Expect animation from true to false
+        while (transitionCreated?.currentState != false) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        sizes2.forEachIndexed { i, size ->
+            if (i == 0) {
+                assertTrue(size.width >= 20)
+                assertTrue(size.height >= 20)
+            } else {
+                val prevSize = sizes2[i - 1]
+                assertTrue(
+                    "Error: shared element width is not monotonically increasing",
+                    size.width >= prevSize.width,
+                )
+                assertTrue(
+                    "Error: shared element height is not monotonically increasing",
+                    size.height >= prevSize.height,
+                )
+            }
+        }
+        assertEquals(IntSize(20, 20), sizes2.first())
+        assertEquals(IntSize(180, 180), sizes2.last())
+
+        offsets2.forEachIndexed { i, offset ->
+            if (i == 0) {
+                assertTrue(offset.x >= 0)
+                assertTrue(offset.y >= 0)
+            } else {
+                val prevOffset = offsets2[i - 1]
+                assertTrue(
+                    "Error: shared element offset is not monotonically increasing",
+                    offset.x >= prevOffset.x,
+                )
+                assertTrue(
+                    "Error: shared element offset is not monotonically increasing",
+                    offset.y >= prevOffset.y,
+                )
+            }
+        }
+        assertEquals(Offset(0f, 0f), offsets2.first())
+        assertEquals(Offset(20f, 20f), offsets2.last())
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect no animation
+        rule.mainClock.autoAdvance = false
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle { target = true }
+
+        // Expect no animation from true to false
+        while (transitionCreated?.currentState != true) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Since we don't expect animations on the way back, the sizes & positions should only
+        // contain one value (or duplicates of the same value) each.
+        sizes1.forEach { assertEquals(IntSize(20, 20), it) }
+        sizes2.forEach { assertEquals(IntSize(180, 180), it) }
+        offsets1.forEach { assertEquals(Offset(0f, 0f), it) }
+        offsets2.forEach { assertEquals(Offset(20f, 20f), it) }
+    }
+
+    @Test
+    // The shared element transition is only enabled in one direction, but before the transition
+    // finishes it is interrupted. Expect the not-enabled direction to handle the interruption
+    // with animation in this test.
+    fun testIsEnabledOnlyInOneDirectionWithInterruption() {
+        var target by mutableStateOf(true)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    transitionCreated = transition
+                    transition.AnimatedContent(transitionSpec = noContentTransform) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState("test"),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else {
+                                Box(
+                                    Modifier.offset(20.dp, 20.dp)
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                "test",
+                                                config =
+                                                    SharedContentConfig {
+                                                        // Only enable shared element when going
+                                                        // from
+                                                        // true
+                                                        // to
+                                                        // false
+                                                        !transition.targetState
+                                                    },
+                                            ),
+                                            this@AnimatedContent,
+                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                        )
+                                        .onPlaced {
+                                            sizes2.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets2.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(180.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = false }
+        // Expect animation from true to false
+        while (sizes1.last().width == 20) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        // Now the animation has started. Run 3 frames
+        repeat(3) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Verify through the values that the animation has started, but not yet finished.
+        assertTrue(
+            "Error: shared element width is ${sizes1.last().width}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().width > 20 && sizes1.last().width < 180,
+        )
+        assertTrue(
+            "Error: shared element height is ${sizes1.last().height}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().height > 20 && sizes1.last().height < 180,
+        )
+
+        assertTrue(
+            "Error: shared element x is ${offsets1.last().x}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().x > 0 && offsets1.last().x < 20,
+        )
+        assertTrue(
+            "Error: shared element y is ${offsets1.last().y}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().y > 0 && offsets1.last().y < 20,
+        )
+
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect animation because the config
+        // states disable unless animation is ongoing.
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle { target = true }
+
+        // Expect animation since `accountForAnimation` has not be overridden from true to false
+        while (transitionCreated?.currentState != true || transitionCreated?.targetState != true) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        sizes2.forEachIndexed { i, size ->
+            if (i > 3) {
+                val prevSize = sizes2[i - 1]
+                assertTrue(
+                    "Error: shared element width is not monotonically decreasing," +
+                        " from ${prevSize.width} to ${size.width}",
+                    prevSize.width >= size.width,
+                )
+                assertTrue(
+                    "Error: shared element height is not monotonically decreasing",
+                    prevSize.height >= size.height,
+                )
+            } else if (i > 0) {
+                val prevSize = sizes2[i - 1]
+                // Expect at least 3 frames of changing value
+                assertTrue(
+                    "Error: shared element width is not monotonically decreasing," +
+                        " from ${prevSize.width} to ${size.width}",
+                    prevSize.width >= size.width,
+                )
+                assertTrue(
+                    "Error: shared element height is not monotonically decreasing",
+                    prevSize.height >= size.height,
+                )
+            }
+        }
+
+        // Also check that there are more than just initial and target values from offsets, to
+        // confirm that animation has been run.
+        assertTrue(offsets2.distinct().size > 2)
+    }
+
+    @Test
+    // The shared element transition is only enabled in one direction, but before the transition
+    // finishes it is interrupted. Expect the not-enabled direction to have no animation, since
+    // user explicitly configures the shared element to disable even when animating.
+    fun testIsEnabledOnlyInOneDirectionExplicitlyNoInterruptionHandling() {
+        var target by mutableStateOf(true)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    val disableInSpiteOfAnimationConfig = remember {
+                        object : SharedTransitionScope.SharedContentConfig {
+                            override val shouldKeepEnabledForOngoingAnimation: Boolean
+                                get() = false
+
+                            override val SharedTransitionScope.SharedContentState.isEnabled: Boolean
+                                get() = !transition.targetState
+                        }
+                    }
+                    transitionCreated = transition
+                    transition.AnimatedContent(transitionSpec = noContentTransform) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState(
+                                                "test",
+                                                config = disableInSpiteOfAnimationConfig,
+                                            ),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else {
+                                Box(
+                                    Modifier.offset(20.dp, 20.dp)
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                "test",
+                                                config = disableInSpiteOfAnimationConfig,
+                                            ),
+                                            this@AnimatedContent,
+                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                        )
+                                        .onPlaced {
+                                            sizes2.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets2.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(180.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = false }
+        // Expect animation from true to false
+        while (sizes1.last().width == 20) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        // Now the animation has started. Run 3 frames
+        repeat(3) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Verify through the values that the animation has started, but not yet finished.
+        assertTrue(
+            "Error: shared element width is ${sizes1.last().width}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().width > 20 && sizes1.last().width < 180,
+        )
+        assertTrue(
+            "Error: shared element height is ${sizes1.last().height}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().height > 20 && sizes1.last().height < 180,
+        )
+
+        assertTrue(
+            "Error: shared element x is ${offsets1.last().x}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().x > 0 && offsets1.last().x < 20,
+        )
+        assertTrue(
+            "Error: shared element y is ${offsets1.last().y}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().y > 0 && offsets1.last().y < 20,
+        )
+
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect no animation
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle { target = true }
+
+        // Expect animation since `accountForAnimation` has not be overridden from true to false
+        while (transitionCreated?.currentState != true || transitionCreated?.targetState != true) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Since we don't expect animations on the way back, the sizes & positions should only
+        // contain one value (or duplicates of the same value) each.
+        sizes1.forEach { assertEquals(IntSize(20, 20), it) }
+        sizes2.forEach { assertEquals(IntSize(180, 180), it) }
+        offsets1.forEach { assertEquals(Offset(0f, 0f), it) }
+        offsets2.forEach { assertEquals(Offset(20f, 20f), it) }
+    }
+
+    @Test
+    fun removeTargetWithoutExplicitAlternativeTarget() {
+        // Expect animation to stop right away
+        var target by mutableStateOf(true)
+        var removeTarget by mutableStateOf(false)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    transitionCreated = transition
+                    val configWithoutAlternativeTarget = remember {
+                        object : SharedTransitionScope.SharedContentConfig {
+                            override fun SharedTransitionScope.SharedContentState
+                                .alternativeTargetBoundsInTransitionScopeAfterRemoval(
+                                targetBoundsBeforeRemoval: Rect,
+                                sharedTransitionLayoutSize: Size,
+                            ): Rect? = null
+                        }
+                    }
+                    transition.AnimatedContent(
+                        transitionSpec = {
+                            // Intentionally make the animation longer than the bounds transform
+                            // so we'll get the last frame of the bounds transform.
+                            fadeIn(tween(2000)) togetherWith fadeOut(tween(2000)) using null
+                        }
+                    ) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState("test"),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else {
+                                Box(Modifier.size(200.dp))
+                                if (!removeTarget) {
+                                    Box(
+                                        Modifier.offset(20.dp, 20.dp)
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    "test",
+                                                    config = configWithoutAlternativeTarget,
+                                                ),
+                                                this@AnimatedContent,
+                                                boundsTransform =
+                                                    BoundsTransform { _, _ -> tween(160) },
+                                            )
+                                            .onPlaced {
+                                                sizes2.add(it.size)
+                                                val lookaheadScopeCoords =
+                                                    it.lookaheadScopeCoordinates(
+                                                        this@SharedTransitionLayout
+                                                    )
+                                                offsets2.add(
+                                                    lookaheadScopeCoords.localPositionOf(it)
+                                                )
+                                            }
+                                            .size(180.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = false }
+        // Expect animation from true to false
+        while (sizes1.last().width == 20) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        // Now the animation has started. Run 3 frames
+        repeat(3) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Verify through the values that the animation has started, but not yet finished.
+        assertTrue(
+            "Error: shared element width is ${sizes1.last().width}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().width > 20 && sizes1.last().width < 180,
+        )
+        assertTrue(
+            "Error: shared element height is ${sizes1.last().height}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().height > 20 && sizes1.last().height < 180,
+        )
+
+        assertTrue(
+            "Error: shared element x is ${offsets1.last().x}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().x > 0 && offsets1.last().x < 20,
+        )
+        assertTrue(
+            "Error: shared element y is ${offsets1.last().y}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().y > 0 && offsets1.last().y < 20,
+        )
+
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect animation because the config
+        // states disable unless animation is ongoing.
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle { removeTarget = true }
+
+        while (transitionCreated?.currentState != false) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Expect no animation since the alternative target is not specified.
+        sizes1.forEach { assertEquals(IntSize(20, 20), it) }
+        offsets1.forEach { assertEquals(Offset(0f, 0f), it) }
+
+        assertTrue(sizes2.isEmpty())
+        assertTrue(offsets2.isEmpty())
+    }
+
+    // Expect animation to stop right away since the disable logic explicitly ignores animation.
+    @Test
+    fun disableIgnoreAnimationWithAlternativeTargetOnDisabledContent() {
+
+        var target by mutableStateOf(false)
+        var enableTarget by mutableStateOf(true)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    transitionCreated = transition
+                    val configWithAlternativeTarget = remember {
+                        object : SharedTransitionScope.SharedContentConfig {
+                            override val shouldKeepEnabledForOngoingAnimation: Boolean
+                                get() = false
+
+                            override val SharedTransitionScope.SharedContentState.isEnabled: Boolean
+                                get() = enableTarget
+
+                            override fun SharedTransitionScope.SharedContentState
+                                .alternativeTargetBoundsInTransitionScopeAfterRemoval(
+                                targetBoundsBeforeRemoval: Rect,
+                                sharedTransitionLayoutSize: Size,
+                            ): Rect? {
+                                return Rect(Offset(30f, 40f), Size(50f, 60f))
+                            }
+                        }
+                    }
+                    transition.AnimatedContent(
+                        transitionSpec = {
+                            // Intentionally make the animation longer than the bounds transform
+                            // so we'll get the last frame of the bounds transform.
+                            fadeIn(tween(2000)) togetherWith fadeOut(tween(2000)) using null
+                        }
+                    ) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState("test"),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else { // targetState == false
+                                Box(Modifier.size(200.dp))
+                                Box(
+                                    Modifier.offset(20.dp, 20.dp)
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                "test",
+                                                config = configWithAlternativeTarget,
+                                            ),
+                                            this@AnimatedContent,
+                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                        )
+                                        .onPlaced {
+                                            sizes2.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets2.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(180.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = true }
+        // Expect animation from false to true
+        while (sizes2.last().width == 180) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        // Now the animation has started. Run 3 frames
+        repeat(3) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Verify through the values that the animation has started, but not yet finished.
+        assertTrue(
+            "Error: shared element width is ${sizes1.last().width}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().width > 20 && sizes1.last().width < 180,
+        )
+        assertTrue(
+            "Error: shared element height is ${sizes1.last().height}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().height > 20 && sizes1.last().height < 180,
+        )
+
+        assertTrue(
+            "Error: shared element x is ${offsets1.last().x}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().x > 0 && offsets1.last().x < 20,
+        )
+        assertTrue(
+            "Error: shared element y is ${offsets1.last().y}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().y > 0 && offsets1.last().y < 20,
+        )
+
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect animation because the config
+        // states disable unless animation is ongoing.
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle {
+            // Change target during the animation, while disabling the target state shared element
+            enableTarget = false
+            target = false
+        }
+
+        // Expect no animation.
+        while (
+            transitionCreated?.targetState != false || transitionCreated?.currentState != false
+        ) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        sizes1.forEach { assertEquals(IntSize(20, 20), it) }
+        offsets1.forEach { assertEquals(Offset(0f, 0f), it) }
+        sizes2.forEach { assertEquals(IntSize(180, 180), it) }
+        offsets2.forEach { assertEquals(Offset(20f, 20f), it) }
+    }
+
+    @Test
+    fun testRemoveTargetWithAlternativeTargetSpecified() {
+        var target by mutableStateOf(true)
+        var removeTarget by mutableStateOf(false)
+        // Track sizes & positions in state == true
+        val sizes1 = mutableListOf<IntSize>()
+        val offsets1 = mutableListOf<Offset>()
+        // Track sizes & positions in state == false
+        val sizes2 = mutableListOf<IntSize>()
+        val offsets2 = mutableListOf<Offset>()
+
+        var transitionCreated: Transition<*>? = null
+        // Test that when going from state true -> false there's shared element, otherwise no.
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout {
+                    val transition = updateTransition(target)
+                    transitionCreated = transition
+                    val configWithAlternativeTarget = remember {
+                        object : SharedTransitionScope.SharedContentConfig {
+                            override fun SharedTransitionScope.SharedContentState
+                                .alternativeTargetBoundsInTransitionScopeAfterRemoval(
+                                targetBoundsBeforeRemoval: Rect,
+                                sharedTransitionLayoutSize: Size,
+                            ): Rect? {
+                                return Rect(Offset(30f, 40f), Size(50f, 60f))
+                            }
+                        }
+                    }
+                    transition.AnimatedContent(
+                        transitionSpec = {
+                            // Intentionally make the animation longer than the bounds transform
+                            // so we'll get the last frame of the bounds transform.
+                            fadeIn(tween(2000)) togetherWith fadeOut(tween(2000)) using null
+                        }
+                    ) { targetState ->
+                        Box(Modifier.size(200.dp)) {
+                            if (targetState) {
+                                Box(
+                                    Modifier.sharedElement(
+                                            rememberSharedContentState("test"),
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                        .onPlaced {
+                                            sizes1.add(it.size)
+                                            val lookaheadScopeCoords =
+                                                it.lookaheadScopeCoordinates(
+                                                    this@SharedTransitionLayout
+                                                )
+                                            offsets1.add(lookaheadScopeCoords.localPositionOf(it))
+                                        }
+                                        .size(20.dp)
+                                )
+                            } else {
+                                Box(Modifier.size(200.dp))
+                                if (!removeTarget) {
+                                    Box(
+                                        Modifier.offset(20.dp, 20.dp)
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    "test",
+                                                    config = configWithAlternativeTarget,
+                                                ),
+                                                this@AnimatedContent,
+                                                boundsTransform =
+                                                    BoundsTransform { _, _ -> tween(160) },
+                                            )
+                                            .onPlaced {
+                                                sizes2.add(it.size)
+                                                val lookaheadScopeCoords =
+                                                    it.lookaheadScopeCoordinates(
+                                                        this@SharedTransitionLayout
+                                                    )
+                                                offsets2.add(
+                                                    lookaheadScopeCoords.localPositionOf(it)
+                                                )
+                                            }
+                                            .size(180.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { target = false }
+        // Expect animation from true to false
+        while (sizes1.last().width == 20) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+        // Now the animation has started. Run 3 frames
+        repeat(3) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Verify through the values that the animation has started, but not yet finished.
+        assertTrue(
+            "Error: shared element width is ${sizes1.last().width}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().width > 20 && sizes1.last().width < 180,
+        )
+        assertTrue(
+            "Error: shared element height is ${sizes1.last().height}, not within the" +
+                " valid range for a running animation",
+            sizes1.last().height > 20 && sizes1.last().height < 180,
+        )
+
+        assertTrue(
+            "Error: shared element x is ${offsets1.last().x}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().x > 0 && offsets1.last().x < 20,
+        )
+        assertTrue(
+            "Error: shared element y is ${offsets1.last().y}, not within the" +
+                " valid range for a running animation",
+            offsets1.last().y > 0 && offsets1.last().y < 20,
+        )
+
+        rule.waitForIdle()
+
+        // Now go back the other way (i.e. false -> true), expect animation because the config
+        // states disable unless animation is ongoing.
+        offsets2.clear()
+        offsets1.clear()
+        sizes2.clear()
+        sizes1.clear()
+
+        rule.runOnIdle { removeTarget = true }
+
+        // Expect animation to animate to the alternative target
+        while (transitionCreated?.currentState != false) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Animation has finished
+        assertEquals(0, sizes2.size)
+        assertEquals(0, offsets2.size)
+
+        // Verify that by the end of the animation, the size & position reached the alternative
+        // target.
+        assertEquals(IntSize(50, 60), sizes1.last())
+        assertEquals(Offset(30f, 40f), offsets1.last())
+
+        // Also check that there are more than just initial and target values from offsets, to
+        // confirm that animation has been run.
+        assertTrue(offsets1.distinct().size > 2)
+        assertTrue(sizes1.distinct().size > 2)
+    }
+
     fun NewlyAddedSharedElementWithCallerManagedVisibilityTriggersAnimation() {
         var state by mutableStateOf(State.Start)
         val targetSizes = mutableListOf<IntSize>()

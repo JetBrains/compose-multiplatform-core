@@ -35,6 +35,9 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":tracing:tracing-driver"))
+                api(libs.kotlinStdlib)
+                api(libs.kotlinCoroutinesCore)
+                api(libs.androidx.annotation)
                 implementation(libs.wireRuntime)
                 implementation(libs.okio)
             }

@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.layout
 
-import kotlin.jvm.JvmField
-
 /**
  * This is a collection of flags which are used to guard against regressions in some of the
  * "riskier" refactors or new feature support that is added to this module. These flags are always
@@ -50,19 +48,4 @@ import kotlin.jvm.JvmField
  *          public static boolean SomeFeatureEnabled return false
  *      }
  */
-@ExperimentalLayoutApi
-object ComposeFoundationLayoutFlags {
-    /**
-     * When this flag is true, Compose will no longer consume window insets if window insets are
-     * queried within Compose, using the WindowInsets API. This allows child views to receive
-     * insets, and is the expected behavior in most cases. When this flag is false, insets will be
-     * consumed if they are queried, to fall back to prior behavior.
-     *
-     * If you intentionally do not want child views to receive insets, you can set
-     * [AbstractComposeView.consumeWindowInsets] to `true` to make the Compose view always consume
-     * all insets.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isWindowInsetsDefaultPassThroughEnabled: Boolean = true
-}
+@ExperimentalLayoutApi object ComposeFoundationLayoutFlags {}

@@ -4,12 +4,14 @@ import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import javax.`annotation`.processing.Generated
 import kotlin.String
@@ -38,7 +40,8 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         AppFunctionParameterMetadata(
             name = "parameters",
             isRequired = true,
-            dataType = PARAMETER_METADATA_PARAMETERS_REFERENCE_DATA_TYPE
+            dataType = PARAMETER_METADATA_PARAMETERS_REFERENCE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
@@ -53,12 +56,12 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = REFERENCE_RESPONSE_VALUE_TYPE
+            valueType = REFERENCE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COM_TESTDATA_SHOWNOTEFUNCTION_PARAMETERS_OBJECT_DATA_TYPE_PROPERTIES_MAP_NOTEID:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -83,8 +86,7 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val COM_TESTDATA_SHOWNOTEFUNCTION_RESPONSE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_PENDINGINTENT:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 13,
+        AppFunctionPendingIntentTypeMetadata = AppFunctionPendingIntentTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -157,7 +159,8 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         AppFunctionParameterMetadata(
             name = "parameters",
             isRequired = true,
-            dataType = PARAMETER_METADATA_PARAMETERS_REFERENCE_DATA_TYPE
+            dataType = PARAMETER_METADATA_PARAMETERS_REFERENCE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
@@ -172,12 +175,12 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = REFERENCE_RESPONSE_VALUE_TYPE
+            valueType = REFERENCE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -202,8 +205,7 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING_NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -228,8 +230,7 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val COM_TESTDATA_ATTACHMENT_OBJECT_DATA_TYPE_PROPERTIES_MAP_URI:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -287,8 +288,7 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val COM_TESTDATA_UPDATENOTEFUNCTION_PARAMETERS_OBJECT_DATA_TYPE_PROPERTIES_MAP_NOTEID:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -340,50 +340,43 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_YEAR:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MONTH:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_DAYOFMONTH:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_HOUR:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MINUTE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_SECOND:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_NANOOFSECOND:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -419,23 +412,20 @@ public class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
             description = ""
         )
 
-    private val COM_TESTDATA_NOTE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ID:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+    private val COM_TESTDATA_NOTE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ID: AppFunctionStringTypeMetadata
+        = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val COM_TESTDATA_NOTE_OBJECT_DATA_TYPE_PROPERTIES_MAP_TITLE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val COM_TESTDATA_NOTE_OBJECT_DATA_TYPE_PROPERTIES_MAP_CONTENT_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )

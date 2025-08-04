@@ -92,7 +92,7 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
     }
 
     @Override
-    public int addNamedColor(String name, int color) {
+    public int addNamedColor(@NonNull String name, int color) {
         Utils.log("addNamedColor " + name);
 
         if (name.equals("android.textColorPrimary")) {

@@ -122,7 +122,7 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
 
     @Override
     public void paint(@NonNull PaintContext context) {
-        context.drawToBitmap(mBitmapId, mMode, mColor);
+        context.drawToBitmap(getId(mBitmapId, context), mMode, mColor);
     }
 
     @Override

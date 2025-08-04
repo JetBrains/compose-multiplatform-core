@@ -921,6 +921,32 @@ class SandboxedSdkViewTest {
         }
     }
 
+    @Test
+    fun setContentView_calledTwice_throwsIllegalStateException() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            sandboxedSdkView.setContentView(View(context))
+            val exception =
+                assertThrows(IllegalStateException::class.java) {
+                    sandboxedSdkView.setContentView(View(context))
+                }
+            assertThat(exception.message).isEqualTo("Child view is already attached")
+        }
+    }
+
+    @Test
+    fun setContentView_withTemporarySurfaceViewAttached_succeeds() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            val surfaceView = SurfaceView(context)
+            sandboxedSdkView.setContentView(surfaceView)
+            sandboxedSdkView.tempSurfaceView = surfaceView
+            val newView = View(context)
+            // This call should not fail, since the only child is the temporary SurfaceView
+            sandboxedSdkView.setContentView(newView)
+        }
+    }
+
     private fun addViewToLayout(
         waitToBeActive: Boolean = false,
         placeInsideFrameLayout: Boolean = false,

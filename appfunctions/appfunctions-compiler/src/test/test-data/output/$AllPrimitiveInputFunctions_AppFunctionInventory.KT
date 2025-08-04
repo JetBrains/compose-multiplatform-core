@@ -1,12 +1,18 @@
 package com.testdata
 
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
@@ -50,9 +56,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionIntMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+    private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionIntTypeMetadata =
+        AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -61,22 +66,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "intParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       INTPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -101,9 +107,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionLongMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+    private val PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionLongTypeMetadata =
+        AppFunctionLongTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -112,22 +117,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "longParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       LONGPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -152,9 +158,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionFloatMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 5,
+    private val PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE: AppFunctionFloatTypeMetadata =
+        AppFunctionFloatTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -163,22 +168,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "floatParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       FLOATPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -203,9 +209,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionDoubleMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 4,
+    private val PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE: AppFunctionDoubleTypeMetadata =
+        AppFunctionDoubleTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -214,22 +219,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "doubleParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       DOUBLEPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -254,9 +260,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionBooleanMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 1,
+    private val PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE: AppFunctionBooleanTypeMetadata
+        = AppFunctionBooleanTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -265,22 +270,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "booleanParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       BOOLEANPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -305,9 +311,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionStringMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+    private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionStringTypeMetadata =
+        AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -316,22 +321,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "stringParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       STRINGPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -356,9 +362,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableIntMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+    private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionIntTypeMetadata =
+        AppFunctionIntTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -367,22 +372,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "intParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       INTPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -407,9 +413,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableLongMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+    private val PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionLongTypeMetadata =
+        AppFunctionLongTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -418,22 +423,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "longParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_LONGPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       LONGPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -458,9 +464,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableFloatMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 5,
+    private val PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE: AppFunctionFloatTypeMetadata =
+        AppFunctionFloatTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -469,22 +474,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "floatParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_FLOATPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       FLOATPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -509,9 +515,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableDoubleMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 4,
+    private val PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE: AppFunctionDoubleTypeMetadata =
+        AppFunctionDoubleTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -520,22 +525,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "doubleParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_DOUBLEPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       DOUBLEPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -560,9 +566,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableBooleanMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 1,
+    private val PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE: AppFunctionBooleanTypeMetadata
+        = AppFunctionBooleanTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -571,22 +576,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "booleanParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_BOOLEANPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       BOOLEANPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -611,9 +617,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableStringMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
-    private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionPrimitiveTypeMetadata
-        = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+    private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionStringTypeMetadata =
+        AppFunctionStringTypeMetadata(
             isNullable = true,
             description = ""
         )
@@ -622,22 +627,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "stringParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       STRINGPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -663,8 +669,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -680,22 +685,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "intArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       INTARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -721,8 +727,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+        AppFunctionLongTypeMetadata = AppFunctionLongTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -738,22 +743,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "longArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       LONGARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -779,8 +785,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 5,
+        AppFunctionFloatTypeMetadata = AppFunctionFloatTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -796,22 +801,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "floatArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       FLOATARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -837,8 +843,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 4,
+        AppFunctionDoubleTypeMetadata = AppFunctionDoubleTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -854,22 +859,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "doubleArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       DOUBLEARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -895,8 +901,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 1,
+        AppFunctionBooleanTypeMetadata = AppFunctionBooleanTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -912,22 +917,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "booleanArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       BOOLEANARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -953,8 +959,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -970,22 +975,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "stringListParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       STRINGLISTPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1011,8 +1017,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 7,
+        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1028,22 +1033,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "intArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       INTARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1069,8 +1075,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 6,
+        AppFunctionLongTypeMetadata = AppFunctionLongTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1086,22 +1091,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "longArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_LONGARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       LONGARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1127,8 +1133,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 5,
+        AppFunctionFloatTypeMetadata = AppFunctionFloatTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1144,22 +1149,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "floatArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_FLOATARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       FLOATARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1185,8 +1191,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 4,
+        AppFunctionDoubleTypeMetadata = AppFunctionDoubleTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1202,22 +1207,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "doubleArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_DOUBLEARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       DOUBLEARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1243,8 +1249,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 1,
+        AppFunctionBooleanTypeMetadata = AppFunctionBooleanTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1260,22 +1265,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "booleanArrayParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_BOOLEANARRAYPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       BOOLEANARRAYPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -1301,8 +1307,7 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 8,
+        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -1318,22 +1323,23 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
         AppFunctionParameterMetadata(
             name = "stringListParam",
             isRequired = true,
-            dataType = PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE
+            dataType = PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       STRINGLISTPARAM_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

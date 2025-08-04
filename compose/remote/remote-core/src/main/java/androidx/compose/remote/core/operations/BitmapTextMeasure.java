@@ -154,11 +154,13 @@ public class BitmapTextMeasure extends PaintOperation {
         float xPos = 0;
         int pos = 0;
         int len = textToMeasure.length();
+        String prevGlyph = "";
         while (pos < len) {
             BitmapFontData.Glyph glyph = bitmapFont.lookupGlyph(textToMeasure, pos);
 
             if (glyph == null) {
                 pos++;
+                prevGlyph = "";
                 continue;
             }
 
@@ -168,9 +170,16 @@ public class BitmapTextMeasure extends PaintOperation {
                 // Space is represented by a glyph of -1.
                 xPos += glyph.mBitmapWidth;
             }
+
+            Short kerningAdjustment = bitmapFont.mKerningTable.get(prevGlyph + glyph.mChars);
+            if (kerningAdjustment != null) {
+                xPos += kerningAdjustment;
+            }
+
             xMax = xPos;
             yMax = Math.max(yMax, glyph.mBitmapHeight + glyph.mMarginTop + glyph.mMarginBottom);
             yMin = Math.min(yMin, glyph.mMarginTop);
+            prevGlyph = glyph.mChars;
         }
 
         mBounds[0] = xMin;
@@ -203,7 +212,6 @@ public class BitmapTextMeasure extends PaintOperation {
                 break;
             case MEASURE_BOTTOM:
                 context.getContext().loadFloat(mId, mBounds[3]);
-
                 break;
         }
     }

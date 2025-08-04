@@ -3,6 +3,12 @@ AddedAbstractMethod: androidx.glance.unit.ColorProvider#getColor-vNxB06k(android
     Binary breaking change: Added method androidx.glance.unit.ColorProvider.getColor-vNxB06k(android.content.Context)
 
 
+RemovedFromBytecode: androidx.glance.CompositionLocalsKt#currentState():
+    Binary breaking change: method androidx.glance.CompositionLocalsKt.currentState() has been removed from bytecode
+RemovedFromBytecode: androidx.glance.CompositionLocalsKt#currentState(androidx.datastore.preferences.core.Preferences.Key<T>):
+    Binary breaking change: method androidx.glance.CompositionLocalsKt.currentState(androidx.datastore.preferences.core.Preferences.Key<T>) has been removed from bytecode
+RemovedFromBytecode: androidx.glance.action.StartActivityActionKt#actionStartActivity(androidx.glance.action.ActionParameters):
+    Binary breaking change: method androidx.glance.action.StartActivityActionKt.actionStartActivity(androidx.glance.action.ActionParameters) has been removed from bytecode
 RemovedFromBytecode: androidx.glance.layout.ContentScale#ContentScale(int):
     Binary breaking change: constructor androidx.glance.layout.ContentScale(int) has been removed from bytecode
 RemovedFromBytecode: androidx.glance.text.TextStyle#TextStyle(androidx.glance.unit.ColorProvider, androidx.compose.ui.unit.TextUnit, androidx.glance.text.FontWeight, androidx.glance.text.FontStyle, androidx.glance.text.TextAlign, androidx.glance.text.TextDecoration, androidx.glance.text.FontFamily):

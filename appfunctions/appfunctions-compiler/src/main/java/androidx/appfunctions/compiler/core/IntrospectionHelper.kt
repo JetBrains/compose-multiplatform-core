@@ -89,8 +89,27 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParameterMetadata")
     val APP_FUNCTION_DATA_TYPE_METADATA =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDataTypeMetadata")
-    val APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS =
-        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionPrimitiveTypeMetadata")
+
+    // Primitive Types
+    val APP_FUNCTION_UNIT_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionUnitTypeMetadata")
+    val APP_FUNCTION_BOOLEAN_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionBooleanTypeMetadata")
+    val APP_FUNCTION_BYTES_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionBytesTypeMetadata")
+    val APP_FUNCTION_DOUBLE_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDoubleTypeMetadata")
+    val APP_FUNCTION_FLOAT_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionFloatTypeMetadata")
+    val APP_FUNCTION_LONG_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionLongTypeMetadata")
+    val APP_FUNCTION_INT_TYPE_METADATA_CLASS = // You already have this one
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionIntTypeMetadata")
+    val APP_FUNCTION_STRING_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionStringTypeMetadata")
+    val APP_FUNCTION_PENDING_INTENT_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionPendingIntentTypeMetadata")
+
     val APP_FUNCTION_OBJECT_TYPE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionObjectTypeMetadata")
     val APP_FUNCTION_ARRAY_TYPE_METADATA_CLASS =

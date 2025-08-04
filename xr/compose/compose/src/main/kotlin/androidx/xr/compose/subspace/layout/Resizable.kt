@@ -75,9 +75,6 @@ private class ResizableElement(
 ) : SubspaceModifierNodeElement<ResizableNode>() {
 
     init {
-        // TODO(b/345303299): Decide on implementation for min/max size bound checking against
-        // current
-        //  size.
         require(
             minimumSize.depth <= maximumSize.depth &&
                 minimumSize.height <= maximumSize.height &&

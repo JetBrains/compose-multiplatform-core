@@ -121,7 +121,7 @@ package androidx.appfunctions {
     method @RequiresPermission(value="android.permission.EXECUTE_APP_FUNCTIONS", conditional=true) public suspend Object? isAppFunctionEnabled(String packageName, String functionId, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
     method public suspend Object? isAppFunctionEnabled(String functionId, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
     method @RequiresPermission(value="android.permission.EXECUTE_APP_FUNCTIONS", conditional=true) public kotlinx.coroutines.flow.Flow<java.util.List<androidx.appfunctions.metadata.AppFunctionPackageMetadata>> observeAppFunctions(androidx.appfunctions.AppFunctionSearchSpec searchSpec);
-    method @RequiresPermission(value="android.permission.EXECUTE_APP_FUNCTIONS", conditional=true) public suspend Object? setAppFunctionEnabled(String functionId, int newEnabledState, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? setAppFunctionEnabled(String functionId, int newEnabledState, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     field public static final int APP_FUNCTION_STATE_DEFAULT = 0; // 0x0
     field public static final int APP_FUNCTION_STATE_DISABLED = 2; // 0x2
     field public static final int APP_FUNCTION_STATE_ENABLED = 1; // 0x1
@@ -271,6 +271,16 @@ package androidx.appfunctions.metadata {
   public static final class AppFunctionArrayTypeMetadata.Companion {
   }
 
+  public final class AppFunctionBooleanTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionBooleanTypeMetadata(boolean isNullable);
+    ctor public AppFunctionBooleanTypeMetadata(boolean isNullable, optional String description);
+  }
+
+  public final class AppFunctionBytesTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionBytesTypeMetadata(boolean isNullable);
+    ctor public AppFunctionBytesTypeMetadata(boolean isNullable, optional String description);
+  }
+
   public final class AppFunctionComponentsMetadata {
     ctor public AppFunctionComponentsMetadata();
     ctor public AppFunctionComponentsMetadata(optional java.util.Map<java.lang.String,? extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata> dataTypes);
@@ -287,6 +297,26 @@ package androidx.appfunctions.metadata {
   }
 
   public static final class AppFunctionDataTypeMetadata.Companion {
+  }
+
+  public final class AppFunctionDoubleTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionDoubleTypeMetadata(boolean isNullable);
+    ctor public AppFunctionDoubleTypeMetadata(boolean isNullable, optional String description);
+  }
+
+  public final class AppFunctionFloatTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionFloatTypeMetadata(boolean isNullable);
+    ctor public AppFunctionFloatTypeMetadata(boolean isNullable, optional String description);
+  }
+
+  public final class AppFunctionIntTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionIntTypeMetadata(boolean isNullable);
+    ctor public AppFunctionIntTypeMetadata(boolean isNullable, optional String description);
+  }
+
+  public final class AppFunctionLongTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionLongTypeMetadata(boolean isNullable);
+    ctor public AppFunctionLongTypeMetadata(boolean isNullable, optional String description);
   }
 
   public final class AppFunctionMetadata {
@@ -337,41 +367,20 @@ package androidx.appfunctions.metadata {
 
   public final class AppFunctionParameterMetadata {
     ctor public AppFunctionParameterMetadata(String name, boolean isRequired, androidx.appfunctions.metadata.AppFunctionDataTypeMetadata dataType);
+    ctor public AppFunctionParameterMetadata(String name, boolean isRequired, androidx.appfunctions.metadata.AppFunctionDataTypeMetadata dataType, optional String description);
     method public androidx.appfunctions.metadata.AppFunctionDataTypeMetadata getDataType();
+    method public String getDescription();
     method public String getName();
     method public boolean isRequired();
     property public androidx.appfunctions.metadata.AppFunctionDataTypeMetadata dataType;
+    property public String description;
     property public boolean isRequired;
     property public String name;
   }
 
-  public final class AppFunctionPrimitiveTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
-    ctor public AppFunctionPrimitiveTypeMetadata(int type, boolean isNullable);
-    ctor public AppFunctionPrimitiveTypeMetadata(int type, boolean isNullable, optional String description);
-    method public int getType();
-    property public int type;
-    field public static final androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion Companion;
-    field public static final int TYPE_BOOLEAN = 1; // 0x1
-    field public static final int TYPE_BYTES = 2; // 0x2
-    field public static final int TYPE_DOUBLE = 4; // 0x4
-    field public static final int TYPE_FLOAT = 5; // 0x5
-    field public static final int TYPE_INT = 7; // 0x7
-    field public static final int TYPE_LONG = 6; // 0x6
-    field public static final int TYPE_PENDING_INTENT = 13; // 0xd
-    field public static final int TYPE_STRING = 8; // 0x8
-    field public static final int TYPE_UNIT = 0; // 0x0
-  }
-
-  public static final class AppFunctionPrimitiveTypeMetadata.Companion {
-    property public static int TYPE_BOOLEAN;
-    property public static int TYPE_BYTES;
-    property public static int TYPE_DOUBLE;
-    property public static int TYPE_FLOAT;
-    property public static int TYPE_INT;
-    property public static int TYPE_LONG;
-    property public static int TYPE_PENDING_INTENT;
-    property public static int TYPE_STRING;
-    property public static int TYPE_UNIT;
+  public final class AppFunctionPendingIntentTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionPendingIntentTypeMetadata(boolean isNullable);
+    ctor public AppFunctionPendingIntentTypeMetadata(boolean isNullable, optional String description);
   }
 
   public final class AppFunctionReferenceTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
@@ -387,7 +396,10 @@ package androidx.appfunctions.metadata {
 
   public final class AppFunctionResponseMetadata {
     ctor public AppFunctionResponseMetadata(androidx.appfunctions.metadata.AppFunctionDataTypeMetadata valueType);
+    ctor public AppFunctionResponseMetadata(androidx.appfunctions.metadata.AppFunctionDataTypeMetadata valueType, optional String description);
+    method public String getDescription();
     method public androidx.appfunctions.metadata.AppFunctionDataTypeMetadata getValueType();
+    property public String description;
     property public androidx.appfunctions.metadata.AppFunctionDataTypeMetadata valueType;
   }
 
@@ -399,6 +411,17 @@ package androidx.appfunctions.metadata {
     property public String category;
     property public String name;
     property public long version;
+  }
+
+  public final class AppFunctionStringTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionStringTypeMetadata(boolean isNullable);
+    ctor public AppFunctionStringTypeMetadata(boolean isNullable, optional String description);
+  }
+
+  public final class AppFunctionUnitTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionUnitTypeMetadata();
+    ctor public AppFunctionUnitTypeMetadata(optional boolean isNullable);
+    ctor public AppFunctionUnitTypeMetadata(optional boolean isNullable, optional String description);
   }
 
 }

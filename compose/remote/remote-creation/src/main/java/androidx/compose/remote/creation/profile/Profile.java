@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.creation.profile;
 
+import androidx.annotation.RequiresApi;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.Platform;
@@ -96,6 +97,7 @@ public class Profile {
      * @param apiLevel the api level used by this profile
      * @param operationProfiles the operation profiles bitmask (specifying valid set of operations)
      * @param platform a platform services implementation
+     * @param supportedOperations supplier of supported operations
      * @param factory a valid factory returning a RemoteComposeWriter
      */
     public Profile(
@@ -165,6 +167,7 @@ public class Profile {
      *
      * @return a set of operations
      */
+    @RequiresApi(24)
     public @Nullable Set<Integer> getSupportedOperations() {
         if (mSupportedOperations == null) return null;
 

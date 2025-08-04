@@ -87,6 +87,20 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // Visible trigger doesn't have modifications
+            return obj instanceof OnVisibleTrigger;
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -112,20 +126,6 @@ public final class TriggerBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public TriggerProto.@NonNull Trigger toTriggerProto() {
             return TriggerProto.Trigger.newBuilder().setOnVisibleTrigger(mImpl).build();
-        }
-
-        @Override
-        public int hashCode() {
-            return 1;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            // Visible trigger doesn't have modifications
-            return obj instanceof OnVisibleTrigger;
         }
 
         @Override
@@ -169,6 +169,20 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            return 2;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // VisibleOnce trigger doesn't have modifications
+            return obj instanceof OnVisibleOnceTrigger;
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -196,20 +210,6 @@ public final class TriggerBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public TriggerProto.@NonNull Trigger toTriggerProto() {
             return TriggerProto.Trigger.newBuilder().setOnVisibleOnceTrigger(mImpl).build();
-        }
-
-        @Override
-        public int hashCode() {
-            return 2;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            // VisibleOnce trigger doesn't have modifications
-            return obj instanceof OnVisibleOnceTrigger;
         }
 
         @Override
@@ -248,6 +248,20 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            return 3;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // Visible trigger doesn't have modifications
+            return obj instanceof OnLoadTrigger;
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -274,20 +288,6 @@ public final class TriggerBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public TriggerProto.@NonNull Trigger toTriggerProto() {
             return TriggerProto.Trigger.newBuilder().setOnLoadTrigger(mImpl).build();
-        }
-
-        @Override
-        public int hashCode() {
-            return 3;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            // Visible trigger doesn't have modifications
-            return obj instanceof OnLoadTrigger;
         }
 
         @Override
@@ -338,6 +338,31 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            DynamicBool condition = getCondition();
+            return condition == null ? 4 : Arrays.hashCode(getCondition().toDynamicBoolByteArray());
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof OnConditionMetTrigger)) {
+                return false;
+            }
+            OnConditionMetTrigger that = (OnConditionMetTrigger) obj;
+            DynamicBool condition = getCondition();
+            DynamicBool thatCondition = that.getCondition();
+            return (condition == thatCondition)
+                    || (condition != null
+                    && thatCondition != null
+                    && Arrays.equals(
+                    condition.toDynamicBoolByteArray(),
+                    thatCondition.toDynamicBoolByteArray()));
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -366,31 +391,6 @@ public final class TriggerBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         public TriggerProto.@NonNull Trigger toTriggerProto() {
             return TriggerProto.Trigger.newBuilder().setOnConditionMetTrigger(mImpl).build();
-        }
-
-        @Override
-        public int hashCode() {
-            DynamicBool condition = getCondition();
-            return condition == null ? 4 : Arrays.hashCode(getCondition().toDynamicBoolByteArray());
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof OnConditionMetTrigger)) {
-                return false;
-            }
-            OnConditionMetTrigger that = (OnConditionMetTrigger) obj;
-            DynamicBool condition = getCondition();
-            DynamicBool thatCondition = that.getCondition();
-            return (condition == thatCondition)
-                    || (condition != null
-                            && thatCondition != null
-                            && Arrays.equals(
-                                    condition.toDynamicBoolByteArray(),
-                                    thatCondition.toDynamicBoolByteArray()));
         }
 
         @Override

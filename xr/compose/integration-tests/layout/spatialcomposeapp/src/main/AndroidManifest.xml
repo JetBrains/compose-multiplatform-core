@@ -17,9 +17,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
   <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
-  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.HAND_TRACKING" />
+  <uses-permission android:name="android.permission.HEAD_TRACKING" />
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+
 
   <application
       android:label="Spatial Compose App">

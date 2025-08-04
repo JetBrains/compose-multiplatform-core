@@ -20,13 +20,12 @@ import android.os.Build
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.junit.testparameterinjector.TestParameter
@@ -59,8 +58,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "long",
                 isRequired = true,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = isNullable),
+                dataType = AppFunctionLongTypeMetadata(isNullable = isNullable),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -76,8 +74,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "fakeDouble",
                 isRequired = true,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = isNullable),
+                dataType = AppFunctionDoubleTypeMetadata(isNullable = isNullable),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -93,8 +90,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "boolean",
                 isRequired = false,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_BOOLEAN, isNullable = isNullable),
+                dataType = AppFunctionBooleanTypeMetadata(isNullable = isNullable),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -108,7 +104,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "fakeInt",
                 isRequired = false,
-                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = true),
+                dataType = AppFunctionIntTypeMetadata(isNullable = true),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -122,7 +118,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "fakeInt",
                 isRequired = false,
-                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                dataType = AppFunctionIntTypeMetadata(isNullable = false),
             )
 
         val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
@@ -139,8 +135,7 @@ class AppFunctionDataParameterExtractorTest {
             AppFunctionParameterMetadata(
                 name = "boolean",
                 isRequired = isRequired,
-                dataType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = isNullable),
+                dataType = AppFunctionStringTypeMetadata(isNullable = isNullable),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
@@ -159,8 +154,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                        itemType = AppFunctionLongTypeMetadata(isNullable = false),
                     ),
             )
 
@@ -181,8 +175,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false),
+                        itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                     ),
             )
 
@@ -202,11 +195,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_BOOLEAN,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
                     ),
             )
 
@@ -225,8 +214,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = true,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = true),
+                        itemType = AppFunctionStringTypeMetadata(isNullable = true),
                     ),
             )
 
@@ -244,8 +232,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = false,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                        itemType = AppFunctionStringTypeMetadata(isNullable = false),
                     ),
             )
 
@@ -266,8 +253,7 @@ class AppFunctionDataParameterExtractorTest {
                 dataType =
                     AppFunctionArrayTypeMetadata(
                         isNullable = isNullable,
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                        itemType = AppFunctionStringTypeMetadata(isNullable = false),
                     ),
             )
 

@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// ***********************************************************************************
+// GENERATED FILE. DO NOT EDIT! See KeepItemAnnotationGenerator.java.
+// ***********************************************************************************
+
+// ***********************************************************************************
+// MAINTAINED AND TESTED IN THE R8 REPO. PLEASE MAKE CHANGES THERE AND REPLICATE.
+// ***********************************************************************************
+
 package androidx.annotation.keep
 
 import kotlin.reflect.KClass
@@ -40,6 +48,7 @@ import kotlin.reflect.KClass
     AnnotationTarget.CONSTRUCTOR,
 )
 public annotation class UsesReflectionToConstruct(
+
     /**
      * Class to be instantiated.
      *
@@ -55,20 +64,22 @@ public annotation class UsesReflectionToConstruct(
     val className: String = "",
 
     /**
-     * Defines which constructor to keep by specifying set of parameter classes passed.
+     * Defines which constructor to keep by specifying the parameter list types.
      *
-     * Defaults to `[ Unspecified::class ]`, which will keep all constructors.
+     * If neither `parameterTypes` nor `parameterTypeNames` is specified then constructors with all
+     * parameter lists are kept.
      *
-     * Mutually exclusive with [paramClassNames].
+     * Mutually exclusive with [parameterTypeNames].
      */
-    val params: Array<KClass<*>> = [Unspecified::class],
+    val parameterTypes: Array<KClass<*>> = [Unspecified::class],
 
     /**
-     * Defines which constructor to keep by specifying set of parameter classes passed.
+     * Defines which constructor to keep by specifying the parameter list types.
      *
-     * Defaults to `[""]`, which will keep all constructors.
+     * If neither `parameterTypes` nor `parameterTypeNames` is specified then constructors with all
+     * parameter lists are kept.
      *
-     * Mutually exclusive with [params]
+     * Mutually exclusive with [parameterTypes].
      */
-    val paramClassNames: Array<String> = [""],
+    val parameterTypeNames: Array<String> = [""],
 )

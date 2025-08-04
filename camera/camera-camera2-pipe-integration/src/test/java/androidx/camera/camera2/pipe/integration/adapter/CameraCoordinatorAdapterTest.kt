@@ -21,6 +21,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import androidx.camera.camera2.pipe.CameraBackendId
+import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
@@ -34,9 +35,11 @@ import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_S
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraRepository
+import androidx.camera.core.impl.CameraUpdateException
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.test.core.app.ApplicationProvider
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -274,5 +277,48 @@ class CameraCoordinatorAdapterTest {
         assertThat(cameraCoordinatorAdapter.cameraOperatingMode)
             .isEqualTo(CAMERA_OPERATING_MODE_UNSPECIFIED)
         assertThat(cameraCoordinatorAdapter.concurrentModeOn).isFalse()
+    }
+
+    @Test
+    fun onCamerasUpdated_removesConcurrentPair_whenCameraIsNoLongerAvailable() {
+        // Arrange: Initial state from setup has the concurrent pair {"0", "1"}
+        assertThat(cameraCoordinatorAdapter.concurrentCameraSelectors).hasSize(1)
+
+        // Act: Update with a list that only contains camera "0"
+        cameraCoordinatorAdapter.onCamerasUpdated(listOf("0"))
+
+        // Assert: The concurrent pair should be gone because camera "1" is no longer available.
+        assertThat(cameraCoordinatorAdapter.concurrentCameraSelectors).isEmpty()
+    }
+
+    @Test
+    fun onCamerasUpdated_filtersPair_whenCameraNotBackwardCompatible() {
+        // Arrange: FakeCameraDevices reports {"0", "2"} as a concurrent pair, but camera "2" is
+        // not backward compatible (as defined in the test class properties).
+
+        // Act: Update with a list containing both cameras of the incompatible pair.
+        cameraCoordinatorAdapter.onCamerasUpdated(listOf("0", "2"))
+
+        // Assert: The concurrent pair {"0", "2"} should be filtered out.
+        assertThat(cameraCoordinatorAdapter.concurrentCameraSelectors).isEmpty()
+    }
+
+    @Test
+    fun onCamerasUpdated_throws_whenCameraDevicesFails() {
+        // Arrange: Create a special CameraDevices that will fail.
+        val failingCameraDevices =
+            object : CameraDevices by cameraDevices {
+                override fun awaitConcurrentCameraIds(
+                    cameraBackendId: CameraBackendId?
+                ): Set<Set<CameraId>> {
+                    throw RuntimeException("Test failure from CameraDevices")
+                }
+            }
+        val coordinatorWithFailingDeps = CameraCoordinatorAdapter(cameraPipe, failingCameraDevices)
+
+        // Act & Assert: onCamerasUpdated should throw a CameraUpdateException.
+        assertThrows<CameraUpdateException> {
+            coordinatorWithFailingDeps.onCamerasUpdated(listOf("0", "1"))
+        }
     }
 }

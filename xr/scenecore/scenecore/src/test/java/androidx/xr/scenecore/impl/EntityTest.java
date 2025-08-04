@@ -139,7 +139,7 @@ public final class EntityTest {
                         new Vector3(5f, 6f, 7f),
                         Quaternion.fromEulerAngles(22f, 33f, 44f),
                         new Vector3(2f, 2f, 2f)));
-        assertVector3(activitySpace.getScale(Space.PARENT), new Vector3(2f, 2f, 2f));
+        assertVector3(activitySpace.getScale(Space.REAL_WORLD), new Vector3(2f, 2f, 2f));
 
         mEntity.setPose(mTestPose, Space.PARENT);
         assertPose(mEntity.getPose(Space.PARENT), mTestPose);
@@ -154,10 +154,11 @@ public final class EntityTest {
                         new Vector3(5f, 6f, 7f),
                         Quaternion.fromEulerAngles(22f, 33f, 44f),
                         new Vector3(2f, 2f, 2f)));
-        assertVector3(activitySpace.getScale(Space.PARENT), new Vector3(2f, 2f, 2f));
+        assertVector3(activitySpace.getScale(Space.REAL_WORLD), new Vector3(2f, 2f, 2f));
 
         mEntity.setParent(activitySpace);
         mEntity.setPose(mTestPose, Space.PARENT);
+        assertPose(mEntity.getPose(Space.PARENT), mTestPose);
         assertPose(mEntity.getPose(Space.ACTIVITY), mTestPose);
     }
 
@@ -316,7 +317,7 @@ public final class EntityTest {
                         new Vector3(5f, 6f, 7f),
                         Quaternion.fromEulerAngles(22f, 33f, 44f),
                         new Vector3(2f, 2f, 2f)));
-        assertVector3(activitySpace.getScale(Space.PARENT), new Vector3(2f, 2f, 2f));
+        assertVector3(activitySpace.getScale(Space.REAL_WORLD), new Vector3(2f, 2f, 2f));
 
         assertPose(mEntity.getPose(Space.PARENT), mTestPose);
         assertPose(mEntity.getPose(Space.ACTIVITY), mTestPose);

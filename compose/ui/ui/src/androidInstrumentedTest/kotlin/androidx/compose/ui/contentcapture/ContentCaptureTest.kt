@@ -43,7 +43,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat
 import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearTextSubstitution
@@ -96,7 +95,7 @@ class ContentCaptureTest {
 
     private val tag = "tag"
     private lateinit var androidComposeView: AndroidComposeView
-    private lateinit var contentCaptureSessionCompat: ContentCaptureSessionCompat
+    private lateinit var contentCaptureSessionWrapper: ContentCaptureSessionWrapper
     private lateinit var viewStructureCompat: ViewStructureCompat
     private val contentCaptureEventLoopIntervalMs = 100L
     private val optimizationEnabled = ComposeUiFlags.isContentCaptureOptimizationEnabled
@@ -114,15 +113,15 @@ class ContentCaptureTest {
             if (!optimizationEnabled) {
                 // since there is no content, we don't expect to see notifyContentCaptureChanges()
                 // is called
-                verify(contentCaptureSessionCompat).newVirtualViewStructure(any(), any())
-                verify(contentCaptureSessionCompat).notifyViewAppeared(any())
-                verify(contentCaptureSessionCompat).flush()
+                verify(contentCaptureSessionWrapper).newVirtualViewStructure(any(), any())
+                verify(contentCaptureSessionWrapper).notifyViewAppeared(any())
+                verify(contentCaptureSessionWrapper).flush()
                 verify(viewStructureCompat).setDimens(any(), any(), any(), any(), any(), any())
                 verify(viewStructureCompat, times(1)).extras
                 verify(viewStructureCompat).toViewStructure()
             }
 
-            verifyNoMoreInteractions(contentCaptureSessionCompat)
+            verifyNoMoreInteractions(contentCaptureSessionWrapper)
             verifyNoMoreInteractions(viewStructureCompat)
         }
     }
@@ -138,10 +137,10 @@ class ContentCaptureTest {
             androidComposeView.doOnDetach {
 
                 // Assert.
-                verify(contentCaptureSessionCompat).newAutofillId(any())
-                verify(contentCaptureSessionCompat).notifyViewDisappeared(any())
-                verify(contentCaptureSessionCompat).flush()
-                verifyNoMoreInteractions(contentCaptureSessionCompat)
+                verify(contentCaptureSessionWrapper).newAutofillId(any())
+                verify(contentCaptureSessionWrapper).notifyViewDisappeared(any())
+                verify(contentCaptureSessionWrapper).flush()
+                verifyNoMoreInteractions(contentCaptureSessionWrapper)
                 verifyNoMoreInteractions(viewStructureCompat)
             }
         }
@@ -199,8 +198,8 @@ class ContentCaptureTest {
                 verify(viewStructureCompat, times(1)).setId(anyInt(), isNull(), isNull(), capture())
                 assertThat(firstValue).isEqualTo("testTagFoo")
             }
-            verify(contentCaptureSessionCompat, times(0)).notifyViewsDisappeared(any())
-            verify(contentCaptureSessionCompat, times(2)).notifyViewAppeared(any())
+            verify(contentCaptureSessionWrapper, times(0)).notifyViewsDisappeared(any())
+            verify(contentCaptureSessionWrapper, times(2)).notifyViewAppeared(any())
         }
     }
 
@@ -236,9 +235,9 @@ class ContentCaptureTest {
 
         // Assert.
         rule.runOnIdle {
-            verify(contentCaptureSessionCompat, times(3)).notifyViewDisappeared(any())
-            verify(contentCaptureSessionCompat, times(0)).notifyViewsAppeared(any())
-            verify(contentCaptureSessionCompat, times(0)).notifyViewTextChanged(any(), any())
+            verify(contentCaptureSessionWrapper, times(3)).notifyViewDisappeared(any())
+            verify(contentCaptureSessionWrapper, times(0)).notifyViewsAppeared(any())
+            verify(contentCaptureSessionWrapper, times(0)).notifyViewTextChanged(any(), any())
         }
     }
 
@@ -285,9 +284,9 @@ class ContentCaptureTest {
 
         // Assert.
         rule.runOnIdle {
-            verify(contentCaptureSessionCompat, times(3)).notifyViewDisappeared(any())
-            verify(contentCaptureSessionCompat, times(3)).notifyViewAppeared(any())
-            verify(contentCaptureSessionCompat, times(0)).notifyViewTextChanged(any(), any())
+            verify(contentCaptureSessionWrapper, times(3)).notifyViewDisappeared(any())
+            verify(contentCaptureSessionWrapper, times(3)).notifyViewAppeared(any())
+            verify(contentCaptureSessionWrapper, times(0)).notifyViewTextChanged(any(), any())
         }
     }
 
@@ -320,13 +319,13 @@ class ContentCaptureTest {
         }
 
         rule.runOnIdle {
-            verify(contentCaptureSessionCompat, times(1)).newAutofillId(any())
-            verify(contentCaptureSessionCompat, times(1)).newVirtualViewStructure(any(), any())
-            verify(contentCaptureSessionCompat, times(1)).notifyViewAppeared(any())
-            verify(contentCaptureSessionCompat, times(0)).notifyViewTextChanged(any(), any())
-            verify(contentCaptureSessionCompat, times(1)).flush()
-            verifyNoMoreInteractions(contentCaptureSessionCompat)
-            clearInvocations(contentCaptureSessionCompat)
+            verify(contentCaptureSessionWrapper, times(1)).newAutofillId(any())
+            verify(contentCaptureSessionWrapper, times(1)).newVirtualViewStructure(any(), any())
+            verify(contentCaptureSessionWrapper, times(1)).notifyViewAppeared(any())
+            verify(contentCaptureSessionWrapper, times(0)).notifyViewTextChanged(any(), any())
+            verify(contentCaptureSessionWrapper, times(1)).flush()
+            verifyNoMoreInteractions(contentCaptureSessionWrapper)
+            clearInvocations(contentCaptureSessionWrapper)
         }
 
         // Act.
@@ -343,10 +342,10 @@ class ContentCaptureTest {
 
         // Assert.
         rule.runOnIdle {
-            verify(contentCaptureSessionCompat, times(1)).newAutofillId(any())
-            verify(contentCaptureSessionCompat, times(1)).notifyViewDisappeared(any())
-            verify(contentCaptureSessionCompat, times(1)).flush()
-            verifyNoMoreInteractions(contentCaptureSessionCompat)
+            verify(contentCaptureSessionWrapper, times(1)).newAutofillId(any())
+            verify(contentCaptureSessionWrapper, times(1)).notifyViewDisappeared(any())
+            verify(contentCaptureSessionWrapper, times(1)).flush()
+            verifyNoMoreInteractions(contentCaptureSessionWrapper)
         }
     }
 
@@ -369,7 +368,7 @@ class ContentCaptureTest {
         // Assert
         rule.runOnIdle {
             // At least 5 times(List itself + 4 children)
-            verify(contentCaptureSessionCompat, atLeast(5)).notifyViewAppeared(any())
+            verify(contentCaptureSessionWrapper, atLeast(5)).notifyViewAppeared(any())
             with(argumentCaptor<String>()) {
                 verify(viewStructureCompat, times(5)).setClassName(capture())
                 assertThat(firstValue).isEqualTo("android.widget.ViewGroup")
@@ -411,12 +410,12 @@ class ContentCaptureTest {
             rule.runOnIdle {
                 val viewStructures = mutableListOf<ViewStructure>()
                 with(argumentCaptor<ViewStructure>()) {
-                    verify(contentCaptureSessionCompat, times(1)).notifyViewAppeared(capture())
+                    verify(contentCaptureSessionWrapper, times(1)).notifyViewAppeared(capture())
                     viewStructures.addAll(allValues)
                 }
                 assertThat(viewStructures.size).isEqualTo(1)
                 assertAdditionalIndices(bundle1, 3)
-                verify(contentCaptureSessionCompat, times(1)).notifyViewDisappeared(any())
+                verify(contentCaptureSessionWrapper, times(1)).notifyViewDisappeared(any())
             }
         }
 
@@ -452,13 +451,13 @@ class ContentCaptureTest {
             rule.runOnIdle {
                 val viewStructures = mutableListOf<ViewStructure>()
                 with(argumentCaptor<ViewStructure>()) {
-                    verify(contentCaptureSessionCompat, times(2)).notifyViewAppeared(capture())
+                    verify(contentCaptureSessionWrapper, times(2)).notifyViewAppeared(capture())
                     viewStructures.addAll(allValues)
                 }
                 assertThat(viewStructures.size).isEqualTo(2)
                 assertAdditionalIndices(bundle1, 2)
                 assertAdditionalIndices(bundle2, 3)
-                verify(contentCaptureSessionCompat, times(2)).notifyViewDisappeared(any())
+                verify(contentCaptureSessionWrapper, times(2)).notifyViewDisappeared(any())
             }
         }
 
@@ -494,12 +493,12 @@ class ContentCaptureTest {
             rule.runOnIdle {
                 val viewStructures = mutableListOf<ViewStructure>()
                 with(argumentCaptor<ViewStructure>()) {
-                    verify(contentCaptureSessionCompat, times(1)).notifyViewAppeared(capture())
+                    verify(contentCaptureSessionWrapper, times(1)).notifyViewAppeared(capture())
                     viewStructures.addAll(allValues)
                 }
                 assertThat(viewStructures.size).isEqualTo(1)
                 assertAdditionalIndices(bundle1, 0)
-                verify(contentCaptureSessionCompat, times(1)).notifyViewDisappeared(any())
+                verify(contentCaptureSessionWrapper, times(1)).notifyViewDisappeared(any())
             }
         }
 
@@ -535,13 +534,13 @@ class ContentCaptureTest {
             rule.runOnIdle {
                 val viewStructures = mutableListOf<ViewStructure>()
                 with(argumentCaptor<ViewStructure>()) {
-                    verify(contentCaptureSessionCompat, times(2)).notifyViewAppeared(capture())
+                    verify(contentCaptureSessionWrapper, times(2)).notifyViewAppeared(capture())
                     viewStructures.addAll(allValues)
                 }
                 assertThat(viewStructures.size).isEqualTo(2)
                 assertAdditionalIndices(bundle1, 0)
                 assertAdditionalIndices(bundle2, 1)
-                verify(contentCaptureSessionCompat, times(2)).notifyViewDisappeared(any())
+                verify(contentCaptureSessionWrapper, times(2)).notifyViewDisappeared(any())
             }
         }
 
@@ -812,11 +811,11 @@ class ContentCaptureTest {
         retainInteractionsDuringInitialization: Boolean = false,
         content: @Composable () -> Unit,
     ) {
-        contentCaptureSessionCompat = mock()
+        contentCaptureSessionWrapper = mock()
         viewStructureCompat = mock()
         val viewStructure: ViewStructure = mock()
 
-        whenever(contentCaptureSessionCompat.newVirtualViewStructure(any(), any()))
+        whenever(contentCaptureSessionWrapper.newVirtualViewStructure(any(), any()))
             .thenReturn(viewStructureCompat)
         whenever(viewStructureCompat.toViewStructure()).thenReturn(viewStructure)
 
@@ -826,10 +825,10 @@ class ContentCaptureTest {
         setContent {
             androidComposeView = LocalView.current as AndroidComposeView
             androidComposeView.contentCaptureManager.onContentCaptureSession = {
-                contentCaptureSessionCompat
+                contentCaptureSessionWrapper
             }
 
-            whenever(contentCaptureSessionCompat.newAutofillId(any())).thenAnswer {
+            whenever(contentCaptureSessionWrapper.newAutofillId(any())).thenAnswer {
                 androidComposeView.autofillId
             }
 
@@ -844,7 +843,7 @@ class ContentCaptureTest {
 
         runOnIdle {
             if (!retainInteractionsDuringInitialization) {
-                clearInvocations(contentCaptureSessionCompat, viewStructureCompat)
+                clearInvocations(contentCaptureSessionWrapper, viewStructureCompat)
             }
         }
     }

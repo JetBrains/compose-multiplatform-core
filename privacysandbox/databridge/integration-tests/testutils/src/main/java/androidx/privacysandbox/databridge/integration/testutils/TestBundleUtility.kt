@@ -27,6 +27,7 @@ private const val KEY_NAME = "keyName"
 private const val KEY_TYPE = "keyType"
 private const val IS_SUCCESS = "isSuccess"
 private const val VALUE = "value"
+private const val IS_VALUE_NULL = "isValueNull"
 
 fun Bundle.toKeyResultPair(): Pair<Key, Result<Any?>> {
     return when (getString(KEY_TYPE)) {
@@ -124,22 +125,29 @@ fun Bundle.toKeyResultPair(): Pair<Key, Result<Any?>> {
 
 fun Bundle.toKeyValuePair(keyName: String, keyType: String): Pair<Key, Any?> {
     return when (keyType) {
-        "INT" -> Key.createIntKey(keyName) to getInt(VALUE)
-        "LONG" -> Key.createLongKey(keyName) to getLong(VALUE)
-        "FLOAT" -> Key.createFloatKey(keyName) to getFloat(VALUE)
-        "DOUBLE" -> Key.createDoubleKey(keyName) to getDouble(VALUE)
-        "BOOLEAN" -> Key.createBooleanKey(keyName) to getBoolean(VALUE)
-        "STRING" -> Key.createStringKey(keyName) to getString(VALUE)
+        "INT" -> Key.createIntKey(keyName) to getValue { getInt(VALUE) }
+        "LONG" -> Key.createLongKey(keyName) to getValue { getLong(VALUE) }
+        "FLOAT" -> Key.createFloatKey(keyName) to getValue { getFloat(VALUE) }
+        "DOUBLE" -> Key.createDoubleKey(keyName) to getValue { getDouble(VALUE) }
+        "BOOLEAN" -> Key.createBooleanKey(keyName) to getValue { getBoolean(VALUE) }
+        "STRING" -> Key.createStringKey(keyName) to getValue { getString(VALUE) }
         "STRING_SET" -> {
-            Key.createStringSetKey(keyName) to getStringArrayList(VALUE)?.toSet()
+            Key.createStringSetKey(keyName) to getValue { getStringArrayList(VALUE)?.toSet() }
         }
-        "BYTE_ARRAY" -> Key.createByteArrayKey(keyName) to getByteArray(VALUE)
+        "BYTE_ARRAY" -> Key.createByteArrayKey(keyName) to getValue { getByteArray(VALUE) }
         else -> throw IllegalArgumentException("Unsupported type: " + getString(KEY_TYPE))
     }
 }
 
 @Suppress("UNCHECKED_CAST")
 fun Bundle.fromKeyValue(key: Key, value: Any?): Bundle {
+    if (value == null) {
+        putBoolean(IS_VALUE_NULL, true)
+        putString(VALUE, null)
+        return this
+    }
+
+    putBoolean("isValueNull", false)
     when (key.type.toString()) {
         "INT" -> putInt(VALUE, value as Int)
         "LONG" -> putLong(VALUE, value as Long)
@@ -222,4 +230,8 @@ private fun getResultFailureFromThrowable(
             }
         }
     return Result.failure(throwable)
+}
+
+private fun Bundle.getValue(getValue: Bundle.() -> Any?): Any? {
+    return if (getBoolean(IS_VALUE_NULL)) null else getValue()
 }

@@ -758,6 +758,7 @@ fun WideNavigationRailItem(
     message = "Deprecated in favor of function with required railExpanded parameter",
     level = DeprecationLevel.HIDDEN,
 )
+@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun WideNavigationRailItem(
     selected: Boolean,
@@ -813,8 +814,14 @@ constructor(
 
     @Deprecated(
         message = "Deprecated in favor of constructor with modalContentColor parameter",
-        level = DeprecationLevel.HIDDEN,
+        replaceWith =
+            ReplaceWith(
+                "WideNavigationRailColors(containerColor, contentColor, modalContainerColor, " +
+                    "modalScrimColor, modalContentColor)"
+            ),
+        level = DeprecationLevel.WARNING,
     )
+    @ExperimentalMaterial3ExpressiveApi
     constructor(
         containerColor: Color,
         contentColor: Color,
@@ -849,6 +856,7 @@ constructor(
         message = "Deprecated in favor of function with modalContentColor parameter",
         level = DeprecationLevel.HIDDEN,
     )
+    @ExperimentalMaterial3ExpressiveApi
     fun copy(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
@@ -970,6 +978,7 @@ object WideNavigationRailDefaults {
         message = "Deprecated in favor of function with modalContentColor parameter",
         level = DeprecationLevel.HIDDEN,
     )
+    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun colors(
         containerColor: Color = WideNavigationRailDefaults.containerColor,
@@ -989,16 +998,18 @@ object WideNavigationRailDefaults {
     @Deprecated(
         message = "Deprecated in favor of shape.",
         replaceWith = ReplaceWith("WideNavigationRailDefaults.shape"),
-        level = DeprecationLevel.HIDDEN,
+        level = DeprecationLevel.WARNING,
     )
+    @ExperimentalMaterial3ExpressiveApi
     val containerShape: Shape
         @Composable get() = NavigationRailCollapsedTokens.ContainerShape.value
 
     @Deprecated(
         message = "Deprecated in favor of modalExpandedShape.",
         replaceWith = ReplaceWith("WideNavigationRailDefaults.modalExpandedShape"),
-        level = DeprecationLevel.HIDDEN,
+        level = DeprecationLevel.WARNING,
     )
+    @ExperimentalMaterial3ExpressiveApi
     /** Default container shape of a modal wide navigation rail. */
     val modalContainerShape: Shape
         @Composable get() = NavigationRailExpandedTokens.ModalContainerShape.value
@@ -1099,17 +1110,21 @@ object WideNavigationRailItemDefaults {
 /** Default values for [ModalWideNavigationRail]. */
 @Deprecated(
     message = "Deprecated in favor of default values in WideNavigationRailDefaults",
-    level = DeprecationLevel.HIDDEN,
+    replaceWith = ReplaceWith("WideNavigationRailDefaults"),
+    level = DeprecationLevel.WARNING,
 )
 @Immutable
+@ExperimentalMaterial3ExpressiveApi
 object ModalWideNavigationRailDefaults {
     /** Properties used to customize the window behavior of a [ModalWideNavigationRail]. */
     @Deprecated(
         message =
-            "Deprecated in favor of function with WideNavigationRailDefaults.ModalExpandedProperties",
+            "Deprecated in favor of function with " +
+                "WideNavigationRailDefaults.ModalExpandedProperties",
         replaceWith = ReplaceWith("WideNavigationRailDefaults.ModalExpandedProperties"),
-        level = DeprecationLevel.HIDDEN,
+        level = DeprecationLevel.WARNING,
     )
+    @ExperimentalMaterial3ExpressiveApi
     val Properties: ModalWideNavigationRailProperties =
         createDefaultModalWideNavigationRailProperties()
 }

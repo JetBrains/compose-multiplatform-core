@@ -78,6 +78,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class RemoteComposeWriter {
     protected @NonNull RemoteComposeBuffer mBuffer;
@@ -218,6 +219,7 @@ public class RemoteComposeWriter {
      * create a new RemoteComposeWriter
      *
      * @param profile the profile to use
+     * @param buffer the buffer to use
      * @param tags properties of the document
      */
     protected RemoteComposeWriter(
@@ -1076,6 +1078,25 @@ public class RemoteComposeWriter {
     public void drawBitmapFontTextRun(
             int textId, int bitmapFontId, int start, int end, float x, float y) {
         mBuffer.addDrawBitmapFontTextRun(textId, bitmapFontId, start, end, x, y);
+    }
+
+    /**
+     * Draw the text along the path.
+     *
+     * @param textId The id of the text to be drawn
+     * @param bitmapFontId The id of the bitmap font to draw with
+     * @param path The path to draw along
+     * @param start The index of the first character in text to draw
+     * @param end (end - 1) is the index of the last character in text to draw
+     * @param yAdj Adjustment away from the path along the normal at that point
+     */
+    public void drawBitmapFontTextRunOnPath(
+            int textId, int bitmapFontId, @NonNull Object path, int start, int end, float yAdj) {
+        int pathId = mState.dataGetId(path);
+        if (pathId == -1) { // never been seen before
+            pathId = addPathData(path);
+        }
+        mBuffer.addDrawBitmapFontTextRunOnPath(textId, bitmapFontId, pathId, start, end, yAdj);
     }
 
     /**
@@ -2339,6 +2360,19 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * This looks up an entry in a id array
+     *
+     * @param arrayId
+     * @param index
+     * @return
+     */
+    public int idLookup(float arrayId, float index) {
+        int id = mState.createNextAvailableId();
+        mBuffer.idLookup(id, arrayId, index);
+        return id;
+    }
+
+    /**
      * This looks up a entry in a text array
      *
      * @param arrayId the Nan encoded id of the array
@@ -3219,6 +3253,20 @@ public class RemoteComposeWriter {
     public int addBitmapFont(BitmapFontData.Glyph @NonNull [] glyphs) {
         int id = mState.createNextAvailableId();
         return mBuffer.addBitmapFont(id, glyphs);
+    }
+
+    /**
+     * Add a bitmap font
+     *
+     * @param glyphs array of glyphs
+     * @param kerningTable The kerning table, where the key is pairs of glyphs (literally $1$2) and
+     *     the value is the horizontal adjustment in pixels for that glyph pair. Can be empty.
+     * @return
+     */
+    public int addBitmapFont(
+            BitmapFontData.Glyph @NonNull [] glyphs, @NonNull Map<String, Short> kerningTable) {
+        int id = mState.createNextAvailableId();
+        return mBuffer.addBitmapFont(id, glyphs, kerningTable);
     }
 
     /**

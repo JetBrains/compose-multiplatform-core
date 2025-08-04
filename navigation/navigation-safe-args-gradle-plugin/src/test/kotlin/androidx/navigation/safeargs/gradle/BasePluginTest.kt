@@ -68,12 +68,17 @@ abstract class BasePluginTest {
 
     internal fun navResource(name: String) = File(projectRoot(), "$NAV_RESOURCES/$name")
 
-    internal fun gradleBuilder(vararg args: String) =
-        GradleRunner.create()
-            .withProjectDir(projectRoot())
-            .withPluginClasspath()
-            // b/175897186 set explicit metaspace size in hopes of fewer crashes
-            .withArguments("-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m", *args)
+    internal fun gradleBuilder(vararg args: String): GradleRunner {
+        val runner =
+            GradleRunner.create()
+                .withProjectDir(projectRoot())
+                .withPluginClasspath()
+                // b/175897186 set explicit metaspace size in hopes of fewer crashes
+                .withArguments("-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m", *args)
+        // Run tests using Gradle 8.14 to support AGP version used for the tests, b/431847270
+        projectSetup.setUpGradleVersion(runner, "8.14")
+        return runner
+    }
 
     internal fun runGradle(vararg args: String) = gradleBuilder(*args).build()
 

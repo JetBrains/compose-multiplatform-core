@@ -53,10 +53,8 @@ package androidx.glance {
   }
 
   public final class CompositionLocalsKt {
-    method @androidx.compose.runtime.Composable public static inline <reified T> T currentState();
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> T! currentState(androidx.compose.runtime.Composer!, int);
-    method @androidx.compose.runtime.Composable public static inline <reified T> T? currentState(androidx.datastore.preferences.core.Preferences.Key<T> key);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> T! currentState(androidx.datastore.preferences.core.Preferences.Key<T!>!, androidx.compose.runtime.Composer!, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static inline <reified T> T currentState();
+    method @KotlinOnly @androidx.compose.runtime.Composable public static inline <reified T> T? currentState(androidx.datastore.preferences.core.Preferences.Key<T> key);
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.Context> getLocalContext();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.glance.GlanceId> getLocalGlanceId();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.DpSize> getLocalSize();
@@ -199,8 +197,8 @@ package androidx.glance.action {
   public final class StartActivityActionKt {
     method public static androidx.glance.action.Action actionStartActivity(android.content.ComponentName componentName, optional androidx.glance.action.ActionParameters parameters);
     method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static androidx.glance.action.Action actionStartActivity(android.content.ComponentName componentName, optional androidx.glance.action.ActionParameters parameters, optional android.os.Bundle? activityOptions);
-    method public static inline <reified T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(optional androidx.glance.action.ActionParameters parameters);
-    method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static inline <reified T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(optional androidx.glance.action.ActionParameters parameters, optional android.os.Bundle? activityOptions);
+    method @KotlinOnly public static inline <reified T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(optional androidx.glance.action.ActionParameters parameters);
+    method @KotlinOnly @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static inline <reified T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(optional androidx.glance.action.ActionParameters parameters, optional android.os.Bundle? activityOptions);
     method public static <T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(Class<T> activity, optional androidx.glance.action.ActionParameters parameters);
     method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static <T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(Class<T> activity, optional androidx.glance.action.ActionParameters parameters, optional android.os.Bundle? activityOptions);
   }

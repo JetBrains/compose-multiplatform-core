@@ -36,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
@@ -93,7 +94,9 @@ class NetworkRequestConstraintControllerTest {
             val results = mutableListOf<ConstraintsState>()
             val deferred = CompletableDeferred<Unit>()
             val job = launch {
-                controller.track(constraints).take(2).collectIndexed { index, value ->
+                controller.track(constraints).distinctUntilChanged().take(2).collectIndexed {
+                    index,
+                    value ->
                     results.add(value)
                     if (index == 0) {
                         deferred.complete(Unit)
@@ -164,6 +167,7 @@ class NetworkRequestConstraintControllerTest {
             addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
 
         fun buildConstraint() =
             Constraints.Builder()
@@ -204,6 +208,50 @@ class NetworkRequestConstraintControllerTest {
 
         val results = asyncResults.awaitAll()
         assertThat(results).containsExactly(ConstraintsMet, ConstraintsMet)
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testTrackerAfterNetworkCapabilitiesInitialized() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val controller = NetworkRequestConstraintController(connectivityManager)
+        @Suppress("DEPRECATION") // due to NetworkInfo but that's what Robolectric needs
+        val mobileNetwork = connectivityManager.activeNetworkInfo
+
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+        connManagerShadow.setActiveNetworkInfo(mobileNetwork)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        fun buildConstraint() =
+            Constraints.Builder()
+                .setRequiredNetworkRequest(
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build(),
+                    NetworkType.CONNECTED,
+                )
+                .build()
+
+        backgroundScope.launch(Dispatchers.Unconfined) {
+            controller.track(buildConstraint()).collect {}
+        }
+
+        // Ensure initial capabilities are passed
+        connManagerShadow.networkCallbacks.forEach {
+            it.onCapabilitiesChanged(connectivityManager.activeNetwork!!, capabilities)
+        }
+
+        val state = async(Dispatchers.IO) { controller.track(buildConstraint()).first() }
+        assertThat(state.await()).isEqualTo(ConstraintsMet)
     }
 }
 

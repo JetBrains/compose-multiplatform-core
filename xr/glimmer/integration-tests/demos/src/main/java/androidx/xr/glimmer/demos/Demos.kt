@@ -17,6 +17,7 @@
 package androidx.xr.glimmer.demos
 
 import androidx.xr.glimmer.samples.ButtonSampleUsage
+import androidx.xr.glimmer.samples.CardSampleUsage
 import androidx.xr.glimmer.samples.ColorsSample
 import androidx.xr.glimmer.samples.IconSampleUsage
 import androidx.xr.glimmer.samples.ListItemSampleUsage
@@ -33,6 +34,7 @@ val Demos =
             ComposableDemo("Shapes") { ShapesSample() },
             ComposableDemo("Surface") { SurfaceSampleUsage() },
             ComposableDemo("Icons") { IconSampleUsage() },
+            ComposableDemo("Cards") { CardSampleUsage() },
             ComposableDemo("Buttons") { ButtonSampleUsage() },
             ComposableDemo("ListItems") { ListItemSampleUsage() },
             DemoCategory("Focus", FocusDemos),

@@ -15,12 +15,15 @@
  */
 package androidx.wear.compose.navigation
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Build
 import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,17 +34,22 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
+import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -329,6 +337,47 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText("Go").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("0").assertExists()
+    }
+
+    @SuppressLint("LocalContextConfigurationRead")
+    @Test
+    fun clip_content_for_round_screens() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            rule.setContent {
+                val originalConfiguration = LocalConfiguration.current
+                val originalContext = LocalContext.current
+
+                val roundScreenConfiguration =
+                    remember(originalConfiguration) {
+                        Configuration(originalConfiguration).apply {
+                            screenLayout = Configuration.SCREENLAYOUT_ROUND_YES
+                        }
+                    }
+                originalContext.resources.configuration.updateFrom(roundScreenConfiguration)
+
+                CompositionLocalProvider(
+                    LocalContext provides originalContext,
+                    LocalConfiguration provides roundScreenConfiguration,
+                ) {
+                    val navController = rememberSwipeDismissableNavController()
+                    SwipeDismissableNavHost(
+                        navController = navController,
+                        startDestination = START,
+                        modifier = Modifier.background(Color.Blue).testTag(TEST_TAG),
+                    ) {
+                        composable(START) {
+                            // Create a full screen box inside SwipeDismissableNavHost with yellow
+                            // background
+                            Box(modifier = Modifier.fillMaxSize().background(Color.Yellow))
+                        }
+                    }
+                }
+            }
+
+            // Quick check that the content, which is a full-screen yellow box is clipped. If it is
+            // clipped, then background color (Blue) should be visible
+            rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Blue)
+        }
     }
 
     @Test

@@ -603,7 +603,7 @@ public class Painter {
      * @param maxAnisotropy max anisotropy, 0 = no anisotropy
      * @return the painter object
      */
-    public Painter setTextureShader(
+    public @NonNull Painter setTextureShader(
             int texture, short tileModeX, short tileModeY, short filterMode, short maxAnisotropy) {
         mPaint.setTextureShader(texture, tileModeX, tileModeY, filterMode, maxAnisotropy);
         return this;

@@ -141,9 +141,6 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             task.removePrefix(project.getCheckoutRoot().path)
         }
 
-        project.zipComposeCompilerMetrics()
-        project.zipComposeCompilerReports()
-
         TaskUpToDateValidator.setup(project, registry)
 
         /**

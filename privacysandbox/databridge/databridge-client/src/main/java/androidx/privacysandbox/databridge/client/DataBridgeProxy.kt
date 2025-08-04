@@ -151,7 +151,14 @@ internal class DataBridgeProxy(val dataBridgeClient: DataBridgeClient) : IDataBr
             if (unregisterCallback) {
                 uuidToKeyUpdateInternalCallbackMap.remove(uuid)
             }
-            keys.forEach { key -> { keyToUuidMap[key]?.remove(uuid) } }
+            keys.forEach { key ->
+                {
+                    keyToUuidMap[key]?.remove(uuid)
+                    if (keyToUuidMap[key]?.isEmpty() == true) {
+                        keyToUuidMap.remove(key)
+                    }
+                }
+            }
         }
     }
 

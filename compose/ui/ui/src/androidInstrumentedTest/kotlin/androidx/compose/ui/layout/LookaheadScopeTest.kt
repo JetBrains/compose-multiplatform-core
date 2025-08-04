@@ -98,6 +98,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -3036,6 +3037,7 @@ class LookaheadScopeTest {
                                     ) {
                                         Text(text = "Header ${element.title}")
                                     }
+
                                 is Element.Item -> {
                                     Row(Modifier.animateItem().padding(16.dp)) {
                                         Box(
@@ -3066,6 +3068,7 @@ class LookaheadScopeTest {
                                         Text(text = element.text)
                                     }
                                 }
+
                                 is Element.Divider -> {
                                     Box(Modifier.animateItem().fillMaxWidth().height(5.dp))
                                 }
@@ -3353,12 +3356,14 @@ class LookaheadScopeTest {
     @Test
     fun testReorderChildrenInLookaheadScope() {
         val list = mutableStateListOf(1, 2)
+
         data class Stats(
             var lookaheadMeasurementCount: Int = 0,
             var measurementCount: Int = 0,
             var lookaheadPlacementCount: Int = 0,
             var placementCount: Int = 0,
         )
+
         val boxStats = Stats()
         val rowStats = Stats()
         rule.setContent {
@@ -3424,6 +3429,135 @@ class LookaheadScopeTest {
             assertEquals(2, rowStats.lookaheadPlacementCount)
             assertEquals(2, rowStats.measurementCount)
             assertEquals(2, rowStats.placementCount)
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun testObtainLookaheadScopeCoordinates() {
+        var padding by mutableStateOf(20.dp)
+        var alignment by mutableStateOf(Alignment.Center)
+        var lookaheadRootParentInnerCoords: LayoutCoordinates? = null
+        var expectedLookaheadScopeCoordinates: LayoutCoordinates? = null
+        var actualLookaheadScopeCoordinates: LayoutCoordinates? = null
+
+        var lookaheadCoords: LayoutCoordinates? = null
+        var coords: LayoutCoordinates? = null
+
+        rule.setContent {
+            Box(
+                Modifier.padding(padding).onPlaced { lookaheadRootParentInnerCoords = it },
+                contentAlignment = alignment,
+            ) {
+                LookaheadScope {
+                    LazyColumn(Modifier.fillMaxSize(0.5f)) {
+                        items(5) { Box(Modifier.size(10.dp)) }
+                        item {
+                            Box(
+                                Modifier.layout { m, c ->
+                                        m.measure(c).run {
+                                            layout(width, height) {
+                                                expectedLookaheadScopeCoordinates =
+                                                    lookaheadScopeCoordinates
+                                                // Check that in lookahead pass and approach pass
+                                                // the returning lookahead scope coords is the same.
+                                                assertEquals(
+                                                    expectedLookaheadScopeCoordinates,
+                                                    lookaheadScopeCoordinates,
+                                                )
+                                                if (coordinates != null) {
+                                                    if (isLookingAhead) {
+                                                        lookaheadCoords = coordinates
+                                                    } else {
+                                                        coords = coordinates
+                                                    }
+                                                }
+                                                place(0, 0)
+                                            }
+                                        }
+                                    }
+                                    .onPlaced {
+                                        actualLookaheadScopeCoordinates =
+                                            it.lookaheadScopeCoordinates(this@LookaheadScope)
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertNotNull(lookaheadRootParentInnerCoords)
+            assertNotNull(coords)
+            assertNotNull(lookaheadCoords)
+            assertNotNull(expectedLookaheadScopeCoordinates)
+            assertNotNull(actualLookaheadScopeCoordinates)
+            val expectedApproachOffset =
+                expectedLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            val actualApproachOffset: Offset =
+                actualLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            assertEquals(expectedApproachOffset, actualApproachOffset)
+
+            // These two coordinates may not be the same instance, but they should be derived from
+            // the same LayoutModifierNode, therefore the positions should always be the same.
+            assertEquals(
+                lookaheadRootParentInnerCoords!!.positionInWindow(),
+                actualLookaheadScopeCoordinates!!.positionInWindow(),
+            )
+
+            coords = null
+            lookaheadCoords = null
+            actualLookaheadScopeCoordinates = null
+        }
+
+        rule.runOnIdle { alignment = Alignment.BottomEnd }
+
+        rule.runOnIdle {
+            assertNotNull(lookaheadRootParentInnerCoords)
+            assertNotNull(coords)
+            assertNotNull(lookaheadCoords)
+            assertNotNull(expectedLookaheadScopeCoordinates)
+            assertNotNull(actualLookaheadScopeCoordinates)
+            val expectedApproachOffset =
+                expectedLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            val actualApproachOffset: Offset =
+                actualLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            assertEquals(expectedApproachOffset, actualApproachOffset)
+
+            assertEquals(
+                lookaheadRootParentInnerCoords!!.positionInWindow(),
+                actualLookaheadScopeCoordinates!!.positionInWindow(),
+            )
+
+            // reset coords
+            coords = null
+            lookaheadCoords = null
+            actualLookaheadScopeCoordinates = null
+        }
+
+        rule.runOnIdle { padding = 123.dp }
+
+        rule.runOnIdle {
+            assertNotNull(lookaheadRootParentInnerCoords)
+            assertNotNull(coords)
+            assertNotNull(lookaheadCoords)
+            assertNotNull(expectedLookaheadScopeCoordinates)
+            assertNotNull(actualLookaheadScopeCoordinates)
+            val expectedApproachOffset =
+                expectedLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            val actualApproachOffset: Offset =
+                actualLookaheadScopeCoordinates!!.localPositionOf(coords!!)
+            assertEquals(expectedApproachOffset, actualApproachOffset)
+
+            assertEquals(
+                lookaheadRootParentInnerCoords!!.positionInWindow(),
+                actualLookaheadScopeCoordinates!!.positionInWindow(),
+            )
+
+            // reset coords
+            coords = null
+            lookaheadCoords = null
+            actualLookaheadScopeCoordinates = null
         }
     }
 
@@ -3605,7 +3739,6 @@ class LookaheadScopeTest {
                                     .skipToLookaheadPosition()
                                     .onGloballyPositioned { coordinates ->
                                         columnPositions.add(coordinates.positionInRoot())
-                                        println("LTD, coordinates: ${coordinates.positionInRoot()}")
                                     }
                                     .fillMaxSize(0.5f)
                                     .background(Color.Black),

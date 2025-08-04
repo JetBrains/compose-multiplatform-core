@@ -42,6 +42,7 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.core.animation.addListener
+import androidx.core.graphics.toRectF
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Pools
 import androidx.core.util.keyIterator
@@ -376,6 +377,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var pageManager: PageManager? = null
     private var formWidgetInteractionHandler: FormWidgetInteractionHandler? = null
     private var formWidgetMetadataLoader: FormWidgetMetadataLoader? = null
+    private var pdfFormFillingStateManager: PdfFormFillingStateManager? = null
     private var layoutInfoCollector: Job? = null
     private var pageSignalCollector: Job? = null
     private var selectionStateCollector: Job? = null
@@ -1248,8 +1250,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
         setAccessibility()
 
+        restoreFormFillingState()
+
         stateToRestore = null
         return true
+    }
+
+    private fun restoreFormFillingState() {
+        val localPdfDocument = pdfDocument ?: return
+        val localStateToRestore = stateToRestore ?: return
+
+        if (localPdfDocument.formEditRecords == localStateToRestore.pdfFormEditRecords) {
+            return
+        }
+
+        pdfFormFillingStateManager?.restoreFormFillingState(localStateToRestore.pdfFormEditRecords)
     }
 
     private fun scrollToRestoredPosition(position: PointF, zoom: Float) {
@@ -1419,6 +1434,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         formWidgetInteractionHandler =
             FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow)
+
+        pdfFormFillingStateManager =
+            PdfFormFillingStateManager(localPdfDocument, backgroundScope, errorFlow) {
+                pagesInvalidatedAreas ->
+                if (!isAttachedToVisibleWindow) return@PdfFormFillingStateManager
+
+                val visiblePageAreas = pageMetadataLoader?.visiblePageAreas
+                visiblePageAreas?.keyIterator()?.forEach { pageNum ->
+                    pagesInvalidatedAreas[pageNum]
+                        ?.map { it.toRectF() }
+                        ?.let { areasToUpdateInPage ->
+                            pageManager?.maybeInvalidateAreas(
+                                pageNum,
+                                visiblePageAreas.get(pageNum),
+                                zoom,
+                                areasToUpdateInPage,
+                            )
+                        }
+                }
+            }
 
         val fastScrollCalculator = FastScrollCalculator(context)
         val fastScrollDrawer =

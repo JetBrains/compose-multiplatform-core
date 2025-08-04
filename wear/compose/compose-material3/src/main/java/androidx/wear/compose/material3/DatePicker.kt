@@ -193,7 +193,24 @@ public fun DatePicker(
         }
     }
 
-    val shortMonthNames = remember { getMonthNames("MMM") }
+    val locale = LocalConfiguration.current.locales[0]
+    val monthPattern =
+        remember(locale) {
+            val yearPattern = DateFormat.getBestDateTimePattern(locale, "y")
+            // REVISED, SAFER HEURISTIC:
+            // Check if the pattern contains any letter that isn't 'y'. This correctly
+            // identifies linguistic markers like '年', '년', 'г', etc., while safely
+            // ignoring spaces or simple punctuation.
+            val useNumericMonth = yearPattern.any { it.isLetter() && it != 'y' }
+
+            if (useNumericMonth) {
+                "MM"
+            } else {
+                "MMM"
+            }
+        }
+
+    val shortMonthNames = remember(monthPattern) { getMonthNames(monthPattern) }
     val fullMonthNames = remember { getMonthNames("MMMM") }
     val yearContentDescription = {
         createDescriptionDatePicker(selectedIndex, datePickerState.selectedYear, yearString)
@@ -237,22 +254,26 @@ public fun DatePicker(
 
         // Allow more room for the initial instruction heading under TalkBck
         val maxTextLines = if (selectedIndex == null) 2 else 1
-        val textPaddingPercentage = 24f
+        val textPaddingPercentage = 30f
+        val topPadding = if (selectedIndex == null) 0.dp else 14.dp
+        val headingHeight = 38.dp - topPadding
 
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(topPadding))
             FadeLabel(
                 text = heading,
                 animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                 modifier =
-                    Modifier.padding(
+                    Modifier.height(headingHeight)
+                        .padding(
                             horizontal =
                                 PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                         )
                         .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
                         .semantics(mergeDescendants = true) { heading() },
                 color = colors.pickerLabelColor,
                 style = labelTextStyle,

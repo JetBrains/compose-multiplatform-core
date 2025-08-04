@@ -51,6 +51,8 @@ public object Device {
 
     public fun isVivoDevice(): Boolean = isDeviceFrom("Vivo")
 
+    public fun isPocoDevice(): Boolean = isDeviceFrom("Poco")
+
     private fun isDeviceFrom(vendor: String) =
         Build.MANUFACTURER.equalsCaseInsensitive(vendor) ||
             Build.BRAND.equalsCaseInsensitive(vendor)

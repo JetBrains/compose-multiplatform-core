@@ -9,6 +9,11 @@ package androidx.navigationevent.compose {
     field public static final androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner INSTANCE;
   }
 
+  public final class NavigationEventDispatcherOwnerKt {
+    method @androidx.compose.runtime.Composable public static void NavigationEventDispatcherOwner(optional kotlin.jvm.functions.Function0<java.lang.Boolean> enabled, optional androidx.navigationevent.NavigationEventDispatcherOwner? parentNavigationEventDispatcherOwner, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void NavigationEventDispatcherOwner(kotlin.jvm.functions.Function0<java.lang.Boolean!>?, androidx.navigationevent.NavigationEventDispatcherOwner?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+  }
+
   public final class NavigationEventHandlerKt {
     method @androidx.compose.runtime.Composable public static void NavigationEventHandler(optional kotlin.jvm.functions.Function0<java.lang.Boolean> enabled, kotlin.jvm.functions.Function2<? super kotlinx.coroutines.flow.Flow<? extends androidx.navigationevent.NavigationEvent>,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onEvent);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void NavigationEventHandler(kotlin.jvm.functions.Function0<java.lang.Boolean!>?, kotlin.jvm.functions.Function2<? super kotlinx.coroutines.flow.Flow<androidx.navigationevent.NavigationEvent!>!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int, int);

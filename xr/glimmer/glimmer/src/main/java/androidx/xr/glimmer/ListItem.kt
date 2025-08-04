@@ -179,7 +179,7 @@ public fun ListItem(
 
 @Composable
 private fun ListItemImpl(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     onClick: (() -> Unit)?,
     supportingLabel: @Composable (() -> Unit)?,
     leadingIcon: @Composable (() -> Unit)?,

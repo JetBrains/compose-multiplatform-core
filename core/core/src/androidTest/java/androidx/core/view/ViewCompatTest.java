@@ -373,16 +373,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertEquals(mView.getAutofillId(), result.toAutofillId());
     }
 
-    @SdkSuppress(minSdkVersion = 28)
-    @Test
-    public void testSetAutofillId_throwsIllegalStateExceptionAboveSDK28() {
-        AutofillId id = mock(AutofillId.class);
-        AutofillIdCompat idCompat = AutofillIdCompat.toAutofillIdCompat(id);
-        // Some final methods in the mock object throw IllegalStateException.
-        assertThrows(IllegalStateException.class,
-                () -> ViewCompat.setAutofillId(mView, idCompat));
-    }
-
     @SdkSuppress(maxSdkVersion = 29)
     @Test
     public void testGetImportantForContentCapture_returnsZeroBelowSDK30() {

@@ -16,12 +16,15 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testapp.fragments
 
-import android.os.IBinder
 import android.widget.Button
+import androidx.lifecycle.lifecycleScope
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
-import androidx.privacysandbox.sdkruntime.integration.testaidl.IAppSdk
+import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.integration.testapp.AppOwnedSdk
 import androidx.privacysandbox.sdkruntime.integration.testapp.R
+import kotlin.collections.forEach
+import kotlinx.coroutines.launch
 
 /** Controls for working with AppOwned SDKs. */
 class AppOwnedInterfacesFragment : BaseFragment(layoutId = R.layout.fragment_app_sdks) {
@@ -36,7 +39,8 @@ class AppOwnedInterfacesFragment : BaseFragment(layoutId = R.layout.fragment_app
     override fun onCreate() {
         setupRegisterAppSdkButton()
         setupUnregisterAppSdkButton()
-        setupGetAppSdksButton()
+        setupGetAppSdksFromAppButton()
+        setupGetAppSdksFromSdkButton()
     }
 
     private fun setupRegisterAppSdkButton() {
@@ -60,27 +64,42 @@ class AppOwnedInterfacesFragment : BaseFragment(layoutId = R.layout.fragment_app
         }
     }
 
-    private fun setupGetAppSdksButton() {
-        val getAppSdksButton = findViewById<Button>(R.id.getAppSdksButton)
+    private fun setupGetAppSdksFromAppButton() {
+        val getAppSdksButton = findViewById<Button>(R.id.getAppSdksFromAppButton)
         getAppSdksButton.setOnClickListener {
             val sdks = getTestAppApi().getAppOwnedSdks()
-            addLogMessage("GetAppSdks results (${sdks.size}):")
-            sdks.forEach {
-                addLogMessage("   AppOwned SDK Package: ${it.getName()}")
-                addLogMessage("   AppOwned SDK Version: ${it.getVersion()}")
-                val appOwnedSdk = toAppOwnedSdk(it.getInterface())
-                if (appOwnedSdk != null) {
-                    addLogMessage("   AppOwned SDK Message: ${appOwnedSdk.getMessage(42)}")
-                }
+            logAppOwnedSdks("APP: GetAppSdks", sdks)
+
+            val messages = sdks.mapNotNull { callDoSomething(it.sdkInterface, "42") }
+            logAppOwnedSdkMessages("APP: callDoSomethingOnAppOwnedSdks()", messages)
+        }
+    }
+
+    private fun setupGetAppSdksFromSdkButton() {
+        val getAppSdksButton = findViewById<Button>(R.id.getAppSdksFromSdkButton)
+        getAppSdksButton.setOnClickListener {
+            lifecycleScope.launch {
+                val testSdk = getTestAppApi().getOrLoadTestSdk()
+                logAppOwnedSdks("SDK: GetAppSdks", testSdk.getAppOwnedSdks())
+
+                logAppOwnedSdkMessages(
+                    "SDK: callDoSomethingOnAppOwnedSdks()",
+                    testSdk.callDoSomethingOnAppOwnedSdks("42"),
+                )
             }
         }
     }
 
-    private fun toAppOwnedSdk(appInterface: IBinder?): IAppSdk? {
-        return if (IAppSdk.DESCRIPTOR == appInterface?.interfaceDescriptor) {
-            IAppSdk.Stub.asInterface(appInterface)
-        } else {
-            null
+    private fun logAppOwnedSdks(title: String, sdks: List<LoadedSdkInfo>) {
+        addLogMessage("$title results (${sdks.size}):")
+        sdks.forEach {
+            addLogMessage("   AppOwned SDK Package: ${it.sdkName}")
+            addLogMessage("   AppOwned SDK Version: ${it.sdkVersion}")
         }
+    }
+
+    private fun logAppOwnedSdkMessages(title: String, messages: List<String>) {
+        addLogMessage("$title results (${messages.size}):")
+        messages.forEach { addLogMessage("   AppOwned SDK Message: $it") }
     }
 }

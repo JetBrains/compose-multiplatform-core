@@ -68,7 +68,8 @@ class PipeCameraPresenceSourceTest {
         mockCameraManager = mock(CameraManager::class.java)
         `when`(mockContext.getSystemService(Context.CAMERA_SERVICE)).thenReturn(mockCameraManager)
 
-        pipeCameraPresenceSource = PipeCameraPresenceSource(idFlow, testScope, mockContext)
+        pipeCameraPresenceSource =
+            PipeCameraPresenceSource(idFlow, testScope, emptyList(), mockContext)
     }
 
     @After
@@ -109,7 +110,8 @@ class PipeCameraPresenceSourceTest {
             // Arrange: Create a new source with a flow that immediately throws an error
             val testError = RuntimeException("Flow error")
             val errorFlow = flow<List<CameraId>> { throw testError }
-            val errorSource = PipeCameraPresenceSource(errorFlow, testScope, mockContext)
+            val errorSource =
+                PipeCameraPresenceSource(errorFlow, testScope, emptyList(), mockContext)
             val observer = FakeObserver()
 
             try {

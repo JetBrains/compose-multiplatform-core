@@ -48,7 +48,6 @@ import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -56,15 +55,14 @@ import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executor
-import java.util.function.Consumer
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -463,12 +461,13 @@ class EntityTest {
 
         panelEntity.setPose(pose)
         gltfModelEntity.setPose(pose, Space.PARENT)
-        anchorEntity.setPose(pose, Space.ACTIVITY)
+        assertThrows(UnsupportedOperationException::class.java) {
+            anchorEntity.setPose(pose, Space.ACTIVITY)
+        }
         activityPanelEntity.setPose(pose, Space.REAL_WORLD)
 
         verify(mockPanelEntityImpl).setPose(any(), eq(RtSpace.PARENT))
         verify(mockGltfModelEntityImpl).setPose(any(), eq(RtSpace.PARENT))
-        verify(mockAnchorEntityImpl).setPose(any(), eq(RtSpace.ACTIVITY))
         verify(mockActivityPanelEntity).setPose(any(), eq(RtSpace.REAL_WORLD))
     }
 
@@ -593,20 +592,19 @@ class EntityTest {
 
         panelEntity.setScale(scale)
         gltfModelEntity.setScale(scale, Space.PARENT)
-        // Note that in production we expect this to raise an exception, but that should be handled
-        // by the runtime Entity.
-        anchorEntity.setScale(scale, Space.ACTIVITY)
+
+        // We expect this to raise an exception
+        assertThrows(UnsupportedOperationException::class.java) {
+            anchorEntity.setScale(scale, Space.ACTIVITY)
+        }
         activityPanelEntity.setScale(scale, Space.REAL_WORLD)
         groupEntity.setScale(scale)
-        // Note that in production we expect this to do nothing.
-        activitySpace.setScale(scale)
+        assertThrows(UnsupportedOperationException::class.java) { activitySpace.setScale(scale) }
 
         verify(mockPanelEntityImpl).setScale(any(), eq(RtSpace.PARENT))
         verify(mockGltfModelEntityImpl).setScale(any(), eq(RtSpace.PARENT))
-        verify(mockAnchorEntityImpl).setScale(any(), eq(RtSpace.ACTIVITY))
         verify(mockActivityPanelEntity).setScale(any(), eq(RtSpace.REAL_WORLD))
         verify(mockGroupEntity).setScale(any(), eq(RtSpace.PARENT))
-        assertThat(testActivitySpace.setScaleCalled).isTrue()
     }
 
     @Test
@@ -624,9 +622,7 @@ class EntityTest {
         assertThat(anchorEntity.getScale(Space.ACTIVITY)).isEqualTo(sdkScale)
         assertThat(activityPanelEntity.getScale(Space.REAL_WORLD)).isEqualTo(sdkScale)
 
-        // This is unrealistic, but we want to make sure the SDK delegates to the runtimeImpl.
-        assertThat(activitySpace.getScale()).isEqualTo(0f)
-        assertThat(testActivitySpace.getScaleCalled).isTrue()
+        assertThrows(IllegalArgumentException::class.java) { activitySpace.getScale() }
 
         verify(mockPanelEntityImpl).getScale(RtSpace.PARENT)
         verify(mockGltfModelEntityImpl).getScale(RtSpace.PARENT)
@@ -774,83 +770,6 @@ class EntityTest {
         activityPanelEntity.moveActivity(activity)
 
         verify(mockActivityPanelEntity).moveActivity(any())
-    }
-
-    @Test
-    fun activitySpaceGetBounds_callsImplGetBounds() {
-        val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
-
-        assertThat(activitySpace.bounds).isNotNull()
-        assertThat(testActivitySpace.getBoundsCalled).isTrue()
-    }
-
-    @Test
-    fun activitySpaceAddBoundsListener_receivesBoundsChangedCallback() {
-        val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
-        var called = false
-        val boundsChangedListener =
-            Consumer<FloatSize3d> { newBounds ->
-                assertThat(newBounds.width).isEqualTo(0.3f)
-                assertThat(newBounds.height).isEqualTo(0.2f)
-                assertThat(newBounds.depth).isEqualTo(0.1f)
-                called = true
-            }
-
-        activitySpace.addOnBoundsChangedListener(directExecutor(), boundsChangedListener)
-        testActivitySpace.sendBoundsChanged(RtDimensions(0.3f, 0.2f, 0.1f))
-        assertThat(called).isTrue()
-
-        called = false
-        activitySpace.removeOnBoundsChangedListener(boundsChangedListener)
-        testActivitySpace.sendBoundsChanged(RtDimensions(0.5f, 0.5f, 0.5f))
-        assertThat(called).isFalse()
-    }
-
-    @Test
-    fun addRemoveOnSpaceUpdatedListener_callsRuntimeSetOnSpaceUpdatedListener() {
-        val mockRtActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockRtActivitySpace)
-        val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
-
-        val listener = Runnable { print("Hello, World") }
-        activitySpace.addOnSpaceUpdatedListener(listener)
-
-        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(any(), eq(null))
-
-        activitySpace.removeOnSpaceUpdatedListener(listener)
-        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
-    }
-
-    @Test
-    fun addOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
-        val mockRtActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockRtActivitySpace)
-        val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
-
-        var listenerCalled = false
-        val captor = argumentCaptor<Runnable>()
-        activitySpace.addOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
-        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(captor.capture(), anyOrNull())
-        captor.firstValue.run()
-        assertThat(listenerCalled).isTrue()
-    }
-
-    @Test
-    fun setOnSpaceUpdatedListener_anchorEntity_withNullParams_callsRuntimeSetOnSpaceUpdatedListener() {
-        anchorEntity.setOnSpaceUpdatedListener(null)
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(eq(null), eq(null))
-    }
-
-    @Test
-    fun setOnSpaceUpdatedListener_anchorEntity_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
-        var listenerCalled = false
-        val captor = argumentCaptor<Runnable>()
-        anchorEntity.setOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
-
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(captor.capture(), any())
-        assertThat(listenerCalled).isFalse()
-        captor.firstValue.run()
-        assertThat(listenerCalled).isTrue()
     }
 
     @Test

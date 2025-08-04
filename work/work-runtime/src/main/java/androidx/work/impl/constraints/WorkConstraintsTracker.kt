@@ -267,11 +267,14 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
     private val requestsLock = Any()
     @GuardedBy("requestsLock")
     private val requests = mutableMapOf<OnConstraintState, NetworkRequest>()
+    @GuardedBy("requestsLock") var cachedCapabilities: NetworkCapabilities? = null
+    @GuardedBy("requestsLock") var capabilitiesInitialized = false
 
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
         Logger.get().debug(TAG, "NetworkRequestConstraintController onCapabilitiesChanged callback")
-        synchronized(requestsLock) { requests.entries.toList() }
-            .forEach { (onConstraintState, request) ->
+        synchronized(requestsLock) {
+            cachedCapabilities = networkCapabilities
+            requests.entries.forEach { (onConstraintState, request) ->
                 onConstraintState(
                     if (request.canBeSatisfiedBy(networkCapabilities)) {
                         ConstraintsMet
@@ -280,12 +283,15 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
                     }
                 )
             }
+        }
     }
 
     override fun onLost(network: Network) {
         Logger.get().debug(TAG, "NetworkRequestConstraintController onLost callback")
-        synchronized(requestsLock) { requests.keys.toList() }
-            .forEach { it(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)) }
+        synchronized(requestsLock) {
+            cachedCapabilities = null
+            requests.keys.forEach { it(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)) }
+        }
     }
 
     fun addCallback(
@@ -301,6 +307,17 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
                     .debug(TAG, "NetworkRequestConstraintController register shared callback")
                 connManager.registerDefaultNetworkCallback(this)
             }
+            // onCapabilitiesChanged is only guaranteed to be called the first time we register
+            // so we need to send the current constraint state immediately for the initial value
+            Logger.get().debug(TAG, "NetworkRequestConstraintController send initial capabilities")
+            val currentCapabilities = connManager.getCurrentNetworkCapabilities()
+            onConstraintState(
+                if (networkRequest.canBeSatisfiedBy(currentCapabilities)) {
+                    ConstraintsMet
+                } else {
+                    ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)
+                }
+            )
         }
         return {
             synchronized(requestsLock) {
@@ -309,8 +326,20 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
                     Logger.get()
                         .debug(TAG, "NetworkRequestConstraintController unregister shared callback")
                     connManager.unregisterNetworkCallback(this)
+                    cachedCapabilities = null
+                    capabilitiesInitialized = false
                 }
             }
         }
+    }
+
+    fun ConnectivityManager.getCurrentNetworkCapabilities(): NetworkCapabilities? {
+        // Cached to prevent unnecessary IPCs
+        if (capabilitiesInitialized) {
+            return cachedCapabilities
+        }
+        cachedCapabilities = getNetworkCapabilities(activeNetwork)
+        capabilitiesInitialized = true
+        return cachedCapabilities
     }
 }

@@ -310,6 +310,15 @@
     <issue
         id="GradleProjectIsolation"
         message="Use isolated.rootProject instead of getRootProject"
+        errorLine1="    return File(rootProject.projectDir, &quot;../../tools/external/gradle&quot;).canonicalFile"
+        errorLine2="                ~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*3}/androidx/build/AndroidXConfig.kt"/>
+    </issue>
+
+    <issue
+        id="GradleProjectIsolation"
+        message="Use isolated.rootProject instead of getRootProject"
         errorLine1="    return File(rootProject.projectDir, &quot;../../external&quot;).canonicalFile"
         errorLine2="                ~~~~~~~~~~~">
         <location

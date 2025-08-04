@@ -25,20 +25,19 @@ import android.os.Build
 import android.os.Bundle
 import android.os.ext.SdkExtensions
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -570,10 +569,7 @@ class AppFunctionDataTest {
         val personMetadata =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "firstName" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
-                    ),
+                    mapOf("firstName" to AppFunctionStringTypeMetadata(isNullable = false)),
                 required = listOf(),
                 qualifiedName =
                     "com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable",
@@ -629,10 +625,7 @@ class AppFunctionDataTest {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
@@ -664,10 +657,7 @@ class AppFunctionDataTest {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
@@ -676,10 +666,7 @@ class AppFunctionDataTest {
         val incorrectInnerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
@@ -709,10 +696,7 @@ class AppFunctionDataTest {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
@@ -721,10 +705,7 @@ class AppFunctionDataTest {
         val incorrectInnerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
@@ -860,7 +841,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withPrimitiveResponse_incorrectType() {
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
         assertFailsWith(IllegalArgumentException::class) {
@@ -874,7 +855,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withPrimitiveResponse_correctType() {
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
         val data =
@@ -890,10 +871,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withObjectResponse() {
         val objectMetadata =
             AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
-                    ),
+                properties = mapOf("long" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
@@ -923,10 +901,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withReferenceResponse() {
         val objectMetadata =
             AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
-                    ),
+                properties = mapOf("long" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
@@ -1055,53 +1030,51 @@ class AppFunctionDataTest {
             AppFunctionObjectTypeMetadata(
                 properties =
                     mapOf(
-                        "int" to AppFunctionPrimitiveTypeMetadata(TYPE_INT, false),
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false),
-                        "float" to AppFunctionPrimitiveTypeMetadata(TYPE_FLOAT, false),
-                        "double" to AppFunctionPrimitiveTypeMetadata(TYPE_DOUBLE, false),
-                        "boolean" to AppFunctionPrimitiveTypeMetadata(TYPE_BOOLEAN, false),
-                        "string" to AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false),
-                        "pendingIntent" to
-                            AppFunctionPrimitiveTypeMetadata(TYPE_PENDING_INTENT, false),
+                        "int" to AppFunctionIntTypeMetadata(false),
+                        "long" to AppFunctionLongTypeMetadata(false),
+                        "float" to AppFunctionFloatTypeMetadata(false),
+                        "double" to AppFunctionDoubleTypeMetadata(false),
+                        "boolean" to AppFunctionBooleanTypeMetadata(false),
+                        "string" to AppFunctionStringTypeMetadata(false),
+                        "pendingIntent" to AppFunctionPendingIntentTypeMetadata(false),
                         "intArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false),
+                                itemType = AppFunctionIntTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "longArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false),
+                                itemType = AppFunctionLongTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "floatArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_FLOAT, false),
+                                itemType = AppFunctionFloatTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "doubleArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_DOUBLE, false),
+                                itemType = AppFunctionDoubleTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "booleanArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_BOOLEAN, false),
+                                itemType = AppFunctionBooleanTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "byteArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_BYTES, false),
+                                itemType = AppFunctionBytesTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "stringList" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false),
+                                itemType = AppFunctionStringTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "pendingIntentList" to
                             AppFunctionArrayTypeMetadata(
-                                itemType =
-                                    AppFunctionPrimitiveTypeMetadata(TYPE_PENDING_INTENT, false),
+                                itemType = AppFunctionPendingIntentTypeMetadata(false),
                                 isNullable = false,
                             ),
                     ),
@@ -1116,57 +1089,44 @@ class AppFunctionDataTest {
                 AppFunctionParameterMetadata(
                     name = "int",
                     isRequired = true,
-                    dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "long",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                    dataType = AppFunctionLongTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "float",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_FLOAT, isNullable = false),
+                    dataType = AppFunctionFloatTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "double",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false),
+                    dataType = AppFunctionDoubleTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "boolean",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_BOOLEAN, isNullable = false),
+                    dataType = AppFunctionBooleanTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "string",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                    dataType = AppFunctionStringTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "pendingIntent",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_PENDING_INTENT,
-                            isNullable = false,
-                        ),
+                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "intArray",
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_INT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionIntTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1175,11 +1135,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_LONG,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionLongTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1188,11 +1144,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_FLOAT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionFloatTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1201,11 +1153,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_DOUBLE,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1214,11 +1162,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_BOOLEAN,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1227,11 +1171,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_BYTES,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionBytesTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1240,11 +1180,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_STRING,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionStringTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1253,11 +1189,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_PENDING_INTENT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1288,18 +1220,13 @@ class AppFunctionDataTest {
                             AppFunctionObjectTypeMetadata(
                                 properties =
                                     mapOf(
-                                        "uri" to
-                                            AppFunctionPrimitiveTypeMetadata(
-                                                type = TYPE_STRING,
-                                                isNullable = false,
-                                            )
+                                        "uri" to AppFunctionStringTypeMetadata(isNullable = false)
                                     ),
                                 required = listOf("uri"),
                                 qualifiedName = "android.net.Uri",
                                 isNullable = false,
                             ),
-                        "modeFlags" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                        "modeFlags" to AppFunctionIntTypeMetadata(isNullable = false),
                     ),
                 required = listOf(),
                 qualifiedName = "androidx.appfunctions.AppFunctionUriGrant",

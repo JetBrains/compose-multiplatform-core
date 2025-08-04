@@ -294,8 +294,8 @@ public class RxJava3Test extends TestDatabaseTest {
         User user = TestUtil.createUser(3);
         mUserDao.insert(user);
         drain();
-        TestObserver<User> consumer = new TestObserver<>();
-        mUserDao.rx3_observableUserById(3).subscribeWith(consumer);
+        TestObserver<User> consumer = mUserDao.rx3_observableUserById(3).subscribeWith(
+                new TestObserver<>());
         drain();
         consumer.assertValue(user);
         consumer.dispose();

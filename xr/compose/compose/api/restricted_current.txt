@@ -373,8 +373,8 @@ package androidx.xr.compose.subspace.layout {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier onGloballyPositioned(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates,kotlin.Unit> onGloballyPositioned);
   }
 
-  public final class OnPointSourceParamsKt {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.compose.subspace.layout.SubspaceModifier onPointSourceParams(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.scenecore.PointSourceParams,kotlin.Unit> onPointSourceParams);
+  public final class OnPointSourceParamsAvailableKt {
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier onPointSourceParamsAvailable(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.scenecore.PointSourceParams,kotlin.Unit> onPointSourceParamsAvailable);
   }
 
   @kotlin.PublishedApi internal interface OpaqueEntity {

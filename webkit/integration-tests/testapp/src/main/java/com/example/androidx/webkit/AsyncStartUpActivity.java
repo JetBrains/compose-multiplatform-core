@@ -51,6 +51,7 @@ public class AsyncStartUpActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_async_startup);
         setTitle(R.string.async_startup_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
                 Executors.newSingleThreadExecutor()).build();

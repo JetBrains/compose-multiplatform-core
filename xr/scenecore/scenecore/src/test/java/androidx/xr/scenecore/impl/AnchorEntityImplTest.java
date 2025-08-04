@@ -45,6 +45,7 @@ import androidx.xr.runtime.internal.AnchorEntity.State;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -188,6 +189,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
         // By default, set the activity space to the root of the underlying OpenXR reference space.
         mActivitySpace.setOpenXrReferenceSpacePose(Matrix4.Identity);
+        mEntityManager.addSystemSpaceActivityPose(
+                new PerceptionSpaceActivityPoseImpl(mActivitySpace, mActivitySpaceRoot));
     }
 
     /**
@@ -738,6 +741,27 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     }
 
     @Test
+    public void anchorEntityGetPoseRelativeToParentSpace_throwsException() throws Exception {
+        AnchorEntityImpl anchorEntity = createSemanticAnchorEntity();
+
+        assertThrows(UnsupportedOperationException.class, () -> anchorEntity.getPose(Space.PARENT));
+    }
+
+    @Test
+    public void anchorEntityGetPoseRelativeToActivitySpace_returnsActivitySpacePose() {
+        AnchorEntityImpl anchorEntity = createSemanticAnchorEntity();
+
+        assertPose(anchorEntity.getPose(Space.ACTIVITY), anchorEntity.getPoseInActivitySpace());
+    }
+
+    @Test
+    public void anchorEntityGetPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose() {
+        AnchorEntityImpl anchorEntity = createSemanticAnchorEntity();
+
+        assertPose(anchorEntity.getPose(Space.REAL_WORLD), anchorEntity.getPoseInPerceptionSpace());
+    }
+
+    @Test
     public void anchorEntitySetScale_throwsException() throws Exception {
         AnchorEntityImpl anchorEntity = createSemanticAnchorEntity();
         Vector3 scale = new Vector3(1, 1, 1);
@@ -745,9 +769,9 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     }
 
     @Test
-    public void anchorEntityGetScale_returnsIdentityScale() throws Exception {
+    public void anchorEntityGetScale_throwsException() throws Exception {
         AnchorEntityImpl anchorEntity = createSemanticAnchorEntity();
-        assertVector3(anchorEntity.getScale(), new Vector3(1f, 1f, 1f));
+        assertThrows(UnsupportedOperationException.class, () -> anchorEntity.getScale());
     }
 
     @Test
@@ -1145,5 +1169,27 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         assertThat(anchorEntity).isNotNull();
         assertThat(anchorEntity.getState()).isEqualTo(State.ERROR);
         assertThat(mNodeRepository.getParent(anchorEntity.getNode())).isEqualTo(null);
+    }
+
+    @Test
+    public void getScaleRelativeToParentSpace_throwsException() throws Exception {
+        AnchorEntityImpl anchorEntity = createAndInitAnchorEntity();
+
+        assertThrows(
+                UnsupportedOperationException.class, () -> anchorEntity.getScale(Space.PARENT));
+    }
+
+    @Test
+    public void getScaleRelativeToActivitySpace_returnsActivitySpaceScale() {
+        AnchorEntityImpl anchorEntity = createAndInitAnchorEntity();
+
+        assertVector3(anchorEntity.getScale(Space.ACTIVITY), anchorEntity.getActivitySpaceScale());
+    }
+
+    @Test
+    public void getScaleRelativeToRealWorldSpace_returnsVector3One() {
+        AnchorEntityImpl anchorEntity = createAndInitAnchorEntity();
+
+        assertVector3(anchorEntity.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
     }
 }

@@ -56,12 +56,7 @@ internal class CameraFactoryAdapter(
 ) : CameraFactory {
     private val cameraCoordinator: CameraCoordinatorAdapter =
         CameraCoordinatorAdapter(lazyCameraPipe.value, lazyCameraPipe.value.cameras())
-    private val pipeCameraPresenceObservable: PipeCameraPresenceSource =
-        PipeCameraPresenceSource(
-            idFlow = lazyCameraPipe.value.cameras().cameraIdsFlow(),
-            coroutineScope = CoroutineScope(threadConfig.cameraExecutor.asCoroutineDispatcher()),
-            context,
-        )
+    private val pipeCameraPresenceObservable: PipeCameraPresenceSource
     private val appComponent: CameraAppComponent by lazy {
         Debug.traceStart { "CameraFactoryAdapter#appComponent" }
         val timeSource = SystemTimeSource()
@@ -88,6 +83,14 @@ internal class CameraFactoryAdapter(
     init {
         val initialIds =
             appComponent.getCameraDevices().awaitCameraIds()?.map { it.value } ?: emptyList()
+        pipeCameraPresenceObservable =
+            PipeCameraPresenceSource(
+                idFlow = lazyCameraPipe.value.cameras().cameraIdsFlow(),
+                coroutineScope =
+                    CoroutineScope(threadConfig.cameraExecutor.asCoroutineDispatcher()),
+                initialCameraIds = initialIds,
+                context = context,
+            )
         onCameraIdsUpdated(initialIds)
     }
 

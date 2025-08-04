@@ -22,13 +22,13 @@ package androidx.xr.runtime.manifest {
     property public static String HEAD_TRACKING;
     property public static String SCENE_UNDERSTANDING_COARSE;
     property public static String SCENE_UNDERSTANDING_FINE;
-    field public static final String EYE_TRACKING_COARSE;
-    field public static final String EYE_TRACKING_FINE;
-    field public static final String FACE_TRACKING;
-    field public static final String HAND_TRACKING;
-    field public static final String HEAD_TRACKING;
-    field public static final String SCENE_UNDERSTANDING_COARSE;
-    field public static final String SCENE_UNDERSTANDING_FINE;
+    field public static final String EYE_TRACKING_COARSE = "android.permission.EYE_TRACKING_COARSE";
+    field public static final String EYE_TRACKING_FINE = "android.permission.EYE_TRACKING_FINE";
+    field public static final String FACE_TRACKING = "android.permission.FACE_TRACKING";
+    field public static final String HAND_TRACKING = "android.permission.HAND_TRACKING";
+    field public static final String HEAD_TRACKING = "android.permission.HEAD_TRACKING";
+    field public static final String SCENE_UNDERSTANDING_COARSE = "android.permission.SCENE_UNDERSTANDING_COARSE";
+    field public static final String SCENE_UNDERSTANDING_FINE = "android.permission.SCENE_UNDERSTANDING_FINE";
   }
 
   public final class ManifestPermissionGroup {

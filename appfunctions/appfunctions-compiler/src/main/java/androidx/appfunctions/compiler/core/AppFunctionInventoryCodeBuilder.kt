@@ -33,6 +33,7 @@ import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.C
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.RESPONSE_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.SCHEMA_METADATA_PROPERTY_NAME
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -282,12 +283,14 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                         addStatement(
                             """
                             %T(
-                                valueType = %L
+                                valueType = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_RESPONSE_METADATA_CLASS,
                             responseMetadataValueTypeName,
+                            appFunctionResponseMetadata.description,
                         )
                     }
                 )
@@ -397,7 +400,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             %T(
                                 name = %S,
                                 isRequired = %L,
-                                dataType = %L
+                                dataType = %L,
+                                description = %S,
                             )
                             """
                                 .trimIndent(),
@@ -405,6 +409,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             parameterMetadata.name,
                             parameterMetadata.isRequired,
                             datatypeVariableName,
+                            parameterMetadata.description,
                         )
                     }
                 )
@@ -418,24 +423,19 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
         primitiveTypeMetadata: AppFunctionPrimitiveTypeMetadata,
     ) {
         functionMetadataObjectClassBuilder.addProperty(
-            PropertySpec.builder(
-                    propertyName,
-                    IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS,
-                )
+            PropertySpec.builder(propertyName, primitiveTypeMetadata.toMetadataClassName())
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
                     buildCodeBlock {
                         addStatement(
                             """
                             %T(
-                                type = %L,
                                 isNullable = %L,
                                 description = %S
                             )
                             """
                                 .trimIndent(),
-                            IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS,
-                            primitiveTypeMetadata.type,
+                            primitiveTypeMetadata.toMetadataClassName(),
                             primitiveTypeMetadata.isNullable,
                             primitiveTypeMetadata.description,
                         )
@@ -444,6 +444,37 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                 .build()
         )
     }
+
+    /**
+     * Maps [AppFunctionPrimitiveTypeMetadata] to the corresponding metadata class names defined in
+     * app functions metadata package.
+     */
+    // TODO: b/421389790 - Remove AppFunctionPrimitiveTypeMetadata in compiler too.
+    private fun AppFunctionPrimitiveTypeMetadata.toMetadataClassName(): ClassName =
+        when (this.type) {
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT ->
+                IntrospectionHelper.APP_FUNCTION_INT_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN ->
+                IntrospectionHelper.APP_FUNCTION_BOOLEAN_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES ->
+                IntrospectionHelper.APP_FUNCTION_BYTES_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE ->
+                IntrospectionHelper.APP_FUNCTION_DOUBLE_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT ->
+                IntrospectionHelper.APP_FUNCTION_FLOAT_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG ->
+                IntrospectionHelper.APP_FUNCTION_LONG_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING ->
+                IntrospectionHelper.APP_FUNCTION_STRING_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_UNIT ->
+                IntrospectionHelper.APP_FUNCTION_UNIT_TYPE_METADATA_CLASS
+            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT ->
+                IntrospectionHelper.APP_FUNCTION_PENDING_INTENT_TYPE_METADATA_CLASS
+            else ->
+                throw IllegalArgumentException(
+                    "Unsupported or non-primitive type in AppFunctionPrimitiveTypeMetadata: ${this.type}"
+                )
+        }
 
     private fun addPropertyForArrayTypeMetadata(
         propertyName: String,

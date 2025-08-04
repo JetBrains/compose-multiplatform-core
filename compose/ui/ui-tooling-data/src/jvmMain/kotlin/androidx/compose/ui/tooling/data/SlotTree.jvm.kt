@@ -303,6 +303,9 @@ private fun boundsOfLayoutNode(node: LayoutInfo): IntRect {
         return IntRect(left = 0, top = 0, right = node.width, bottom = node.height)
     }
     val position = coordinates.positionInWindow()
+    if (!position.isValid()) {
+        return IntRect(left = 0, top = 0, right = node.width, bottom = node.height)
+    }
     val size = coordinates.size
     val left = position.x.roundToInt()
     val top = position.y.roundToInt()

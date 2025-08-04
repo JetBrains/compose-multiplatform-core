@@ -60,6 +60,7 @@
         <xs:element name="isRequired" cardinality="2" type="xs:boolean" />
         <xs:element name="dataTypeMetadata" cardinality="2"
             type="appfn:AppFunctionDataTypeMetadataDocument" />
+        <xs:element name="description" cardinality="2" type="xs:string" />
     </xs:documentType>
 
     <!-- Definition for AppFunctionResponseMetadataDocument -->
@@ -67,6 +68,7 @@
         <xs:element name="isNullable" cardinality="2" type="xs:boolean" />
         <xs:element name="valueType" cardinality="2"
             type="appfn:AppFunctionDataTypeMetadataDocument" />
+        <xs:element name="description" cardinality="2" type="xs:string" />
     </xs:documentType>
 
     <!-- Definition for AppFunctionComponentMetadataDocument -->

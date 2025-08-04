@@ -154,7 +154,7 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
         if (isDirty || previousDrawSize != size || targetImageConfig != cacheBitmapConfig) {
             tintFilter =
                 if (targetImageConfig == ImageBitmapConfig.Alpha8) {
-                    ColorFilter.tint(root.tintColor)
+                    ColorFilter.tint(root.tintColor.toOpaque())
                 } else {
                     null
                 }
@@ -642,6 +642,9 @@ internal class GroupComponent : VNode() {
  */
 internal fun Color.rgbEqual(other: Color) =
     this.red == other.red && this.green == other.green && this.blue == other.blue
+
+/** helper method to get the opaque version of color */
+internal fun Color.toOpaque(): Color = if (this.alpha != 1.0F) this.copy(alpha = 1.0F) else this
 
 /**
  * Helper method to determine if a particular ColorFilter will generate the same output if the

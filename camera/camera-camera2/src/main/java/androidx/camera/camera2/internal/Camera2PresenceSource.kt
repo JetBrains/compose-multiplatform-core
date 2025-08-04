@@ -32,9 +32,10 @@ import java.util.concurrent.Executor
  * [CameraManager.AvailabilityCallback].
  */
 public class Camera2PresenceSource(
+    initialCameraIds: List<String>,
     private val cameraManager: CameraManagerCompat,
     private val systemCallbackExecutor: Executor,
-) : AbstractCameraPresenceSource() {
+) : AbstractCameraPresenceSource(initialCameraIds) {
 
     private var systemAvailabilityCallback: CameraManager.AvailabilityCallback? = null
 

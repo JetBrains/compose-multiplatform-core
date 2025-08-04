@@ -211,9 +211,11 @@ package androidx.xr.runtime.math {
     ctor public FloatSize2d();
     ctor public FloatSize2d(optional float width, optional float height);
     method public operator androidx.xr.runtime.math.FloatSize2d div(float divisor);
+    method public operator androidx.xr.runtime.math.FloatSize2d div(int divisor);
     method public float getHeight();
     method public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
+    method public operator androidx.xr.runtime.math.FloatSize2d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
     property public float height;
     property public float width;
@@ -223,10 +225,12 @@ package androidx.xr.runtime.math {
     ctor public FloatSize3d();
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
     method public operator androidx.xr.runtime.math.FloatSize3d div(float divisor);
+    method public operator androidx.xr.runtime.math.FloatSize3d div(int divisor);
     method public float getDepth();
     method public float getHeight();
     method public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize3d times(float scalar);
+    method public operator androidx.xr.runtime.math.FloatSize3d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize2d to2d();
     property public float depth;
     property public float height;

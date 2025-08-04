@@ -111,6 +111,7 @@ class Animation : ComponentActivity() {
                     modifier =
                         SubspaceModifier.width(desiredWidth)
                             .height(desiredHeight)
+                            .offset(z = zOffset * 2)
                             .alpha(animatedAlpha.value)
                 ) {
                     PanelContent(

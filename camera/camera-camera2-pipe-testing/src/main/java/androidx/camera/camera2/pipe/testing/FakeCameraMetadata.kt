@@ -55,6 +55,7 @@ public class FakeCameraMetadata(
     override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     override val resultKeys: Set<CaptureResult.Key<*>> = emptySet(),
     override val sessionKeys: Set<CaptureRequest.Key<*>> = emptySet(),
+    override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>> = emptySet(),
     public val physicalMetadata: Map<CameraId, CameraMetadata> = emptyMap(),
     override val physicalRequestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     private val extensions: Map<Int, FakeCameraExtensionMetadata> = emptyMap(),

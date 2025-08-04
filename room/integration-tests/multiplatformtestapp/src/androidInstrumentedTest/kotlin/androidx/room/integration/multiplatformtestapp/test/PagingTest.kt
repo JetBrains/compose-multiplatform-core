@@ -34,8 +34,8 @@ class PagingTest(private val driver: Driver) : BasePagingTest() {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val file = instrumentation.targetContext.getDatabasePath("test.db")
 
-    override fun getRoomDatabase(): SampleDatabase {
-        return Room.databaseBuilder<SampleDatabase>(
+    override fun getRoomDatabase(): PagingDatabase {
+        return Room.databaseBuilder<PagingDatabase>(
                 context = instrumentation.targetContext,
                 name = file.path,
             )

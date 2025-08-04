@@ -36,7 +36,6 @@ internal constructor(
     private val activity: Activity,
     internal val perceptionManager: ProjectedPerceptionManager,
     internal val timeSource: ProjectedTimeSource,
-    // private val arCoreApkInstance: ArCoreApk = ArCoreApk.getInstance(),
 ) : LifecycleManager {
 
     override val config: Config = Config()

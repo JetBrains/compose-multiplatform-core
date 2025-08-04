@@ -62,7 +62,7 @@ android {
 
 androidx {
     name = "XR ARCore Play Services"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
     inceptionYear = "2025"
     description = "An implementation of the XR runtime using Google Play Services for AR."
     enableRobolectric()

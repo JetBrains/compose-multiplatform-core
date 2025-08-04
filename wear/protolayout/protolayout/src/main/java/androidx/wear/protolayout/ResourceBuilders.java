@@ -109,19 +109,6 @@ public final class ResourceBuilders {
             return mImpl.getResourceId();
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull AndroidImageResourceByResId fromProto(
-                ResourceProto.@NonNull AndroidImageResourceByResId proto) {
-            return new AndroidImageResourceByResId(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull AndroidImageResourceByResId toProto() {
-            return mImpl;
-        }
-
         @Override
         public int hashCode() {
             return getResourceId();
@@ -137,6 +124,19 @@ public final class ResourceBuilders {
             }
             AndroidImageResourceByResId that = (AndroidImageResourceByResId) obj;
             return that.getResourceId() == getResourceId();
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull AndroidImageResourceByResId fromProto(
+                ResourceProto.@NonNull AndroidImageResourceByResId proto) {
+            return new AndroidImageResourceByResId(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull AndroidImageResourceByResId toProto() {
+            return mImpl;
         }
 
         @Override
@@ -215,19 +215,6 @@ public final class ResourceBuilders {
             return mImpl.getFormat().getNumber();
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull InlineImageResource fromProto(
-                ResourceProto.@NonNull InlineImageResource proto) {
-            return new InlineImageResource(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull InlineImageResource toProto() {
-            return mImpl;
-        }
-
         @Override
         public int hashCode() {
             return Objects.hash(
@@ -247,6 +234,19 @@ public final class ResourceBuilders {
                     && that.getWidthPx() == getWidthPx()
                     && that.getHeightPx() == getHeightPx()
                     && Arrays.equals(that.getData(), getData());
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull InlineImageResource fromProto(
+                ResourceProto.@NonNull InlineImageResource proto) {
+            return new InlineImageResource(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull InlineImageResource toProto() {
+            return mImpl;
         }
 
         @Override
@@ -352,19 +352,6 @@ public final class ResourceBuilders {
             }
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull AndroidAnimatedImageResourceByResId fromProto(
-                ResourceProto.@NonNull AndroidAnimatedImageResourceByResId proto) {
-            return new AndroidAnimatedImageResourceByResId(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull AndroidAnimatedImageResourceByResId toProto() {
-            return mImpl;
-        }
-
         @Override
         @SuppressWarnings("ResourceType")
         public int hashCode() {
@@ -384,6 +371,19 @@ public final class ResourceBuilders {
             return that.getResourceId() == getResourceId()
                     && that.getAnimatedImageFormat() == getAnimatedImageFormat()
                     && Trigger.equal(that.getStartTrigger(), getStartTrigger());
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull AndroidAnimatedImageResourceByResId fromProto(
+                ResourceProto.@NonNull AndroidAnimatedImageResourceByResId proto) {
+            return new AndroidAnimatedImageResourceByResId(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull AndroidAnimatedImageResourceByResId toProto() {
+            return mImpl;
         }
 
         @Override
@@ -480,19 +480,6 @@ public final class ResourceBuilders {
             }
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull AndroidSeekableAnimatedImageResourceByResId fromProto(
-                ResourceProto.@NonNull AndroidSeekableAnimatedImageResourceByResId proto) {
-            return new AndroidSeekableAnimatedImageResourceByResId(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull AndroidSeekableAnimatedImageResourceByResId toProto() {
-            return mImpl;
-        }
-
         @Override
         @SuppressWarnings("ResourceType")
         public int hashCode() {
@@ -518,11 +505,24 @@ public final class ResourceBuilders {
             return that.getResourceId() == getResourceId()
                     && that.getAnimatedImageFormat() == getAnimatedImageFormat()
                     && (thatProgress == progress
-                            || (thatProgress != null
-                                    && progress != null
-                                    && Arrays.equals(
-                                            thatProgress.toDynamicFloatByteArray(),
-                                            progress.toDynamicFloatByteArray())));
+                    || (thatProgress != null
+                    && progress != null
+                    && Arrays.equals(
+                    thatProgress.toDynamicFloatByteArray(),
+                    progress.toDynamicFloatByteArray())));
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull AndroidSeekableAnimatedImageResourceByResId fromProto(
+                ResourceProto.@NonNull AndroidSeekableAnimatedImageResourceByResId proto) {
+            return new AndroidSeekableAnimatedImageResourceByResId(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull AndroidSeekableAnimatedImageResourceByResId toProto() {
+            return mImpl;
         }
 
         @Override
@@ -622,19 +622,6 @@ public final class ResourceBuilders {
             }
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull AndroidLottieResourceByResId fromProto(
-                ResourceProto.@NonNull AndroidLottieResourceByResId proto) {
-            return new AndroidLottieResourceByResId(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull AndroidLottieResourceByResId toProto() {
-            return mImpl;
-        }
-
         @Override
         public int hashCode() {
             DynamicFloat progress = getProgress();
@@ -658,11 +645,24 @@ public final class ResourceBuilders {
             return that.getRawResourceId() == getRawResourceId()
                     && Trigger.equal(that.getStartTrigger(), getStartTrigger())
                     && (thatProgress == progress
-                            || (thatProgress != null
-                                    && progress != null
-                                    && Arrays.equals(
-                                            thatProgress.toDynamicFloatByteArray(),
-                                            progress.toDynamicFloatByteArray())));
+                    || (thatProgress != null
+                    && progress != null
+                    && Arrays.equals(
+                    thatProgress.toDynamicFloatByteArray(),
+                    progress.toDynamicFloatByteArray())));
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull AndroidLottieResourceByResId fromProto(
+                ResourceProto.@NonNull AndroidLottieResourceByResId proto) {
+            return new AndroidLottieResourceByResId(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull AndroidLottieResourceByResId toProto() {
+            return mImpl;
         }
 
         @Override
@@ -808,18 +808,6 @@ public final class ResourceBuilders {
             }
         }
 
-        /** Creates a new wrapper instance from the proto. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull ImageResource fromProto(ResourceProto.@NonNull ImageResource proto) {
-            return new ImageResource(proto);
-        }
-
-        /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        public ResourceProto.@NonNull ImageResource toProto() {
-            return mImpl;
-        }
-
         @Override
         @OptIn(markerClass = ProtoLayoutExperimental.class)
         public int hashCode() {
@@ -850,15 +838,27 @@ public final class ResourceBuilders {
             ImageResource that = (ImageResource) obj;
             return Objects.equals(that.getAndroidResourceByResId(), getAndroidResourceByResId())
                     && Objects.equals(
-                            that.getAndroidAnimatedResourceByResId(),
-                            getAndroidAnimatedResourceByResId())
+                    that.getAndroidAnimatedResourceByResId(),
+                    getAndroidAnimatedResourceByResId())
                     && Objects.equals(
-                            that.getAndroidSeekableAnimatedResourceByResId(),
-                            getAndroidSeekableAnimatedResourceByResId())
+                    that.getAndroidSeekableAnimatedResourceByResId(),
+                    getAndroidSeekableAnimatedResourceByResId())
                     && Objects.equals(
-                            that.getAndroidLottieResourceByResId(),
-                            getAndroidLottieResourceByResId())
+                    that.getAndroidLottieResourceByResId(),
+                    getAndroidLottieResourceByResId())
                     && Objects.equals(that.getInlineResource(), getInlineResource());
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull ImageResource fromProto(ResourceProto.@NonNull ImageResource proto) {
+            return new ImageResource(proto);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull ImageResource toProto() {
+            return mImpl;
         }
 
         @Override

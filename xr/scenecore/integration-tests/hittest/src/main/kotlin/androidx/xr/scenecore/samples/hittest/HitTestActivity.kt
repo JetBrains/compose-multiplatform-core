@@ -101,7 +101,8 @@ class HitTestActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
-            val gltfEntity = GltfModelEntity.create(session, dragonModel, Pose(Vector3(1f, 0f, 0f)))
+            val gltfEntity =
+                GltfModelEntity.create(session, dragonModel, Pose(Vector3(1f, 1f, -2f)))
             gltfEntity.parent = session.scene.activitySpace
             val interactableComponent = InteractableComponent.create(session, mainExecutor) {}
             if (!gltfEntity.addComponent(interactableComponent)) {

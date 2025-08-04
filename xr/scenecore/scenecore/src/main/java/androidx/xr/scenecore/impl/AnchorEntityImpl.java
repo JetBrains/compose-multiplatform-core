@@ -29,8 +29,10 @@ import androidx.xr.runtime.internal.AnchorEntity;
 import androidx.xr.runtime.internal.AnchorEntity.OnStateChangedListener;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
@@ -68,6 +70,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     private static final String TAG = "AnchorEntityImpl";
     private final ActivitySpaceImpl mActivitySpace;
     private final AndroidXrEntity mActivitySpaceRoot;
+    private final EntityManager mEntityManager;
     private final PerceptionLibrary mPerceptionLibrary;
     private OnStateChangedListener mOnStateChangedListener;
     private @State int mState = State.UNANCHORED;
@@ -237,6 +240,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             ScheduledExecutorService executor,
             PerceptionLibrary perceptionLibrary) {
         super(context, node, extensions, entityManager, executor);
+        mEntityManager = entityManager;
         mPerceptionLibrary = perceptionLibrary;
 
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
@@ -502,7 +506,17 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
 
     @Override
     public @NonNull Pose getPose(@SpaceValue int relativeTo) {
-        throw new UnsupportedOperationException("Cannot get 'pose' on an AnchorEntity.");
+        switch (relativeTo) {
+            case Space.PARENT:
+                throw new UnsupportedOperationException(
+                        "AnchorEntity is a root space and it does not have a parent.");
+            case Space.ACTIVITY:
+                return getPoseInActivitySpace();
+            case Space.REAL_WORLD:
+                return getPoseInPerceptionSpace();
+            default:
+                throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
+        }
     }
 
     @Override
@@ -512,8 +526,22 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
 
     @Override
     public void setScale(@NonNull Vector3 scale, @SpaceValue int relativeTo) {
-        // TODO(b/349391097): make this behavior consistent with ActivitySpaceImpl
         throw new UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.");
+    }
+
+    @Override
+    public @NonNull Vector3 getScale(@SpaceValue int relativeTo) {
+        switch (relativeTo) {
+            case Space.PARENT:
+                throw new UnsupportedOperationException(
+                        "AnchorEntity is a root space and it does not have a parent.");
+            case Space.ACTIVITY:
+                return getActivitySpaceScale();
+            case Space.REAL_WORLD:
+                return super.getWorldSpaceScale();
+            default:
+                throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
+        }
     }
 
     @Override
@@ -535,6 +563,14 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             return mOpenXrActivityPoseHelper.getPoseInActivitySpace(
                     getPoseInOpenXrReferenceSpace());
         }
+    }
+
+    public Pose getPoseInPerceptionSpace() {
+        PerceptionSpaceActivityPose perceptionSpaceActivityPose =
+                mEntityManager
+                        .getSystemSpaceActivityPoseOfType(PerceptionSpaceActivityPose.class)
+                        .get(0);
+        return transformPoseTo(new Pose(), perceptionSpaceActivityPose);
     }
 
     @Override

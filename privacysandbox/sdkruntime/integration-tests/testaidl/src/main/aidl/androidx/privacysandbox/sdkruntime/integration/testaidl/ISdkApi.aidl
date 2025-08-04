@@ -16,7 +16,14 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testaidl;
 
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo;
+
 interface ISdkApi {
-    String getMessage();
-    boolean invert(boolean value);
+    String doSomething(String param);
+
+    List<LoadedSdkInfo> getSandboxedSdks();
+    List<LoadedSdkInfo> getAppOwnedSdks();
+
+    List<String> callDoSomethingOnSandboxedSdks(String param);
+    List<String> callDoSomethingOnAppOwnedSdks(String param);
 }

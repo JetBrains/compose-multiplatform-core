@@ -21,11 +21,8 @@ import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LE
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.os.Build
 import android.util.Size
-import androidx.camera.camera2.pipe.CameraBackendFactory
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraStream
-import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameBuffers.tryPeekAll
@@ -41,34 +38,17 @@ import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.graph.CameraGraphImpl
-import androidx.camera.camera2.pipe.graph.GraphState3A
-import androidx.camera.camera2.pipe.graph.Listener3A
-import androidx.camera.camera2.pipe.graph.SessionLock
-import androidx.camera.camera2.pipe.graph.StreamGraphImpl
-import androidx.camera.camera2.pipe.graph.SurfaceGraph
-import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
-import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
-import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
-import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
-import androidx.camera.camera2.pipe.internal.FrameDistributor
 import androidx.camera.camera2.pipe.internal.FrameImpl
 import androidx.camera.camera2.pipe.internal.FrameState
-import androidx.camera.camera2.pipe.internal.ImageSourceMap
 import androidx.camera.camera2.pipe.internal.OutputResult
-import androidx.camera.camera2.pipe.media.ImageReaderImageSources
 import androidx.camera.camera2.pipe.media.OutputImage
-import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
-import androidx.camera.camera2.pipe.testing.FakeAudioRestrictionController
-import androidx.camera.camera2.pipe.testing.FakeCameraBackend
+import androidx.camera.camera2.pipe.testing.CameraGraphSimulator
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
-import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeImage
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
 import androidx.camera.camera2.pipe.testing.FakeSurfaces
-import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -97,68 +77,17 @@ class FrameBufferImplTest {
         FakeCameraMetadata(
             mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
         )
-    private val fakeGraphProcessor = FakeGraphProcessor()
-    private val cameraSurfaceManager = CameraSurfaceManager()
-
     private val stream1Config = CameraStream.Config.create(Size(200, 100), StreamFormat.YUV_420_888)
     private val stream2Config = CameraStream.Config.create(Size(200, 100), StreamFormat.YUV_420_888)
-
-    private val graphId = CameraGraphId.nextId()
     private val graphConfig =
         CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
-    private val threads = FakeThreads.fromTestScope(testScope)
-    private val cameraPipeLifetime = CameraPipeLifetime()
-    private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
-    private val backends =
-        CameraBackendsImpl(
-            defaultBackendId = backend.id,
-            cameraBackends = mapOf(backend.id to CameraBackendFactory { backend }),
-            context,
-            threads,
-            cameraPipeLifetime,
-        )
-    private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
-    private val imageSources = ImageReaderImageSources(threads)
-    private val frameCaptureQueue = FrameCaptureQueue()
-    private val cameraController =
-        CameraControllerSimulator(cameraContext, graphId, graphConfig, fakeGraphProcessor)
-    private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
-    private val streamGraph = StreamGraphImpl(metadata, graphConfig, cameraControllerProvider)
-    private val imageSourceMap = ImageSourceMap(graphConfig, streamGraph, imageSources)
-    private val frameDistributor = FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
-    private val surfaceGraph =
-        SurfaceGraph(streamGraph, cameraControllerProvider, cameraSurfaceManager, emptyMap())
-    private val audioRestriction = FakeAudioRestrictionController()
-    private val sessionLock = SessionLock()
-    private val cameraGraphParameters =
-        CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope)
-    // TODO: b/420733360 - use FrameGraph/CameraGraph simulator for better setup and testing.
-    private val cameraGraph =
-        CameraGraphImpl(
-            graphConfig,
-            metadata,
-            fakeGraphProcessor,
-            fakeGraphProcessor,
-            streamGraph,
-            surfaceGraph,
-            cameraController,
-            GraphState3A(),
-            Listener3A(),
-            frameDistributor,
-            frameCaptureQueue,
-            audioRestriction,
-            graphId,
-            cameraGraphParameters,
-            sessionLock,
-        )
-    private val frameGraphBuffers = FrameGraphBuffers(cameraGraph, testScope)
+    private val simulator = CameraGraphSimulator.create(testScope, context, metadata, graphConfig)
+    private val frameGraphBuffers = FrameGraphBuffers(simulator, testScope)
     private val stream1Id: StreamId = StreamId(1)
     private val stream2Id: StreamId = StreamId(2)
-
     private val defaultStreams = setOf(stream1Id, stream2Id)
     private val defaultParameters = mapOf<Any, Any?>("paramKey" to "paramValue")
     private val defaultCapacity = 3
-
     private lateinit var frameBuffer: FrameBufferImpl
 
     private fun createFrameBuffer(

@@ -89,7 +89,7 @@ class CoreEntityTest {
     }
 
     @Test
-    @Ignore("b/430291253 - behavior is different in presubmit")
+    @Ignore("b/430291253 - behavior is different in presubmit after moving to targetSdk 35")
     fun coreEntity_size_shouldNotTriggerRecomposition() {
         var size = 100
         var sizeCount = 0
@@ -338,7 +338,7 @@ class CoreEntityTest {
                 composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
                     as? PanelEntity
             )
-        assertThat(panelEntity.sizeInPixels).isEqualTo(IntSize2d(1, 1))
+        assertThat(panelEntity.sizeInPixels).isEqualTo(IntSize2d(0, 0))
         assertThat(panelEntity.isEnabled()).isFalse()
 
         size = 100.dp

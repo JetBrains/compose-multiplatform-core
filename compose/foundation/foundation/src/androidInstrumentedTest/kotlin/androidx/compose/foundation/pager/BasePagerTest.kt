@@ -125,10 +125,10 @@ open class BasePagerTest(private val config: ParamConfig) :
 
     @OptIn(ExperimentalFoundationApi::class)
     internal fun createPager(
+        modifier: Modifier = Modifier,
         initialPage: Int = 0,
         initialPageOffsetFraction: Float = 0f,
         pageCount: () -> Int = { DefaultPageCount },
-        modifier: Modifier = Modifier,
         beyondViewportPageCount: Int = config.beyondViewportPageCount,
         pageSize: () -> PageSize = { PageSize.Fill },
         userScrollEnabled: Boolean = true,
@@ -185,12 +185,12 @@ open class BasePagerTest(private val config: ParamConfig) :
                     scope = rememberCoroutineScope()
                     Box(modifier = Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
                         HorizontalOrVerticalPager(
-                            state = state,
-                            beyondViewportPageCount = beyondViewportPageCount,
                             modifier =
                                 modifier.testTag(PagerTestTag).onSizeChanged {
                                     pagerSize = if (vertical) it.height else it.width
                                 },
+                            state = state,
+                            beyondViewportPageCount = beyondViewportPageCount,
                             pageSize = pageSize(),
                             userScrollEnabled = userScrollEnabled,
                             overscrollEffect = overscrollEffect(),
@@ -320,8 +320,8 @@ open class BasePagerTest(private val config: ParamConfig) :
 
     @Composable
     internal fun HorizontalOrVerticalPager(
-        state: PagerState = rememberPagerState(pageCount = { DefaultPageCount }),
         modifier: Modifier = Modifier,
+        state: PagerState = rememberPagerState(pageCount = { DefaultPageCount }),
         userScrollEnabled: Boolean = true,
         overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         reverseLayout: Boolean = false,

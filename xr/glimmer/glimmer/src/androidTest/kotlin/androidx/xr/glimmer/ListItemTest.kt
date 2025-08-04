@@ -124,9 +124,9 @@ class ListItemTest {
         val surfaceColor = Color.Blue
         rule.setGlimmerThemeContent {
             GlimmerTheme(Colors(surface = surfaceColor)) {
-                expectedShape = GlimmerTheme.shapes.large
+                expectedShape = GlimmerTheme.shapes.medium
                 ListItem(modifier = Modifier.testTag("listItem"), border = null) {
-                    Box(Modifier.size(10.dp, 10.dp))
+                    Box(Modifier.size(100.dp, 100.dp))
                 }
             }
         }
@@ -524,7 +524,7 @@ class ListItemTest {
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
             24.dp,
-            "Padding between end of leading icon and end of list item.",
+            "Padding between end of trailing icon and end of list item.",
         )
 
         // The width should fill the max width, like with the spacer
@@ -622,7 +622,7 @@ class ListItemTest {
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
             24.dp,
-            "Padding between end of leading icon and end of list item.",
+            "Padding between end of trailing icon and end of list item.",
         )
 
         // The width should fill the max width, like with the spacer
@@ -722,7 +722,7 @@ class ListItemTest {
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
             24.dp,
-            "Padding between end of leading icon and end of list item.",
+            "Padding between end of trailing icon and end of list item.",
         )
 
         // The width should fill the max width, like with the spacer

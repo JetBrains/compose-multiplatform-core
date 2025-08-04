@@ -22,7 +22,9 @@ import android.util.Log
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 
 /**
  * Wrapper around test app functionality.
@@ -33,9 +35,17 @@ class TestAppApi(appContext: Context) {
 
     private val sdkSandboxManager = SdkSandboxManagerCompat.from(appContext)
 
-    suspend fun loadTestSdk(): ISdkApi {
-        val loadedSdk = loadSdk(TEST_SDK_NAME)
+    suspend fun loadTestSdk(params: Bundle = Bundle()): ISdkApi {
+        val loadedSdk = loadSdk(TEST_SDK_NAME, params)
         return ISdkApi.Stub.asInterface(loadedSdk.getInterface())
+    }
+
+    suspend fun getOrLoadTestSdk(): ISdkApi {
+        var loadedSdk = getSandboxedSdks().firstOrNull { it.sdkName == TEST_SDK_NAME }?.sdkInterface
+        if (loadedSdk == null) {
+            loadedSdk = loadSdk(TEST_SDK_NAME).getInterface()!!
+        }
+        return ISdkApi.Stub.asInterface(loadedSdk)
     }
 
     suspend fun loadSdk(sdkName: String, params: Bundle = Bundle()): SandboxedSdkCompat {
@@ -59,14 +69,45 @@ class TestAppApi(appContext: Context) {
         sdkSandboxManager.unregisterAppOwnedSdkSandboxInterface(appOwnedSdkName)
     }
 
-    fun getSandboxedSdks() = sdkSandboxManager.getSandboxedSdks()
+    fun getSandboxedSdks(): List<LoadedSdkInfo> {
+        return sdkSandboxManager.getSandboxedSdks().map { sdk ->
+            LoadedSdkInfo(
+                sdkInterface = sdk.getInterface()!!,
+                sdkName = sdk.getSdkInfo()?.name,
+                sdkVersion = sdk.getSdkInfo()?.version,
+            )
+        }
+    }
 
-    fun getAppOwnedSdks() = sdkSandboxManager.getAppOwnedSdkSandboxInterfaces()
+    fun getAppOwnedSdks(): List<LoadedSdkInfo> {
+        return sdkSandboxManager.getAppOwnedSdkSandboxInterfaces().map { sdk ->
+            LoadedSdkInfo(
+                sdkInterface = sdk.getInterface(),
+                sdkName = sdk.getName(),
+                sdkVersion = sdk.getVersion(),
+            )
+        }
+    }
+
+    fun resetTestState() {
+        // Unregister AppOwned SDKs
+        sdkSandboxManager
+            .getAppOwnedSdkSandboxInterfaces()
+            .map(AppOwnedSdkSandboxInterfaceCompat::getName)
+            .forEach(sdkSandboxManager::unregisterAppOwnedSdkSandboxInterface)
+
+        // Unload all SDKs
+        sdkSandboxManager
+            .getSandboxedSdks()
+            .mapNotNull(SandboxedSdkCompat::getSdkInfo)
+            .map(SandboxedSdkInfo::name)
+            .forEach(sdkSandboxManager::unloadSdk)
+    }
 
     companion object {
         private const val TAG = "TestAppApi"
 
         /** Name of the Test SDK to be loaded. */
-        private const val TEST_SDK_NAME = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
+        const val TEST_SDK_NAME = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
     }
 }

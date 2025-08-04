@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+RemovedFromBytecode: androidx.lifecycle.serialization.SavedStateHandleDelegateKt#saved(androidx.lifecycle.SavedStateHandle, String, androidx.savedstate.serialization.SavedStateConfiguration, kotlin.jvm.functions.Function0<? extends T>):
+    Binary breaking change: method androidx.lifecycle.serialization.SavedStateHandleDelegateKt.saved(androidx.lifecycle.SavedStateHandle,String,androidx.savedstate.serialization.SavedStateConfiguration,kotlin.jvm.functions.Function0<T>) has been removed from bytecode
+
+
+RemovedFromJava: androidx.lifecycle.serialization.SavedStateHandleDelegateKt#saved(androidx.lifecycle.SavedStateHandle, String, androidx.savedstate.serialization.SavedStateConfiguration, kotlin.jvm.functions.Function0<? extends T>):
+    Source breaking change: method androidx.lifecycle.serialization.SavedStateHandleDelegateKt.saved(androidx.lifecycle.SavedStateHandle,String,androidx.savedstate.serialization.SavedStateConfiguration,kotlin.jvm.functions.Function0<T>) can no longer be resolved from Java source

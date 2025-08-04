@@ -24,19 +24,17 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata.Companion.TYPE as TYPE_OBJECT
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 
 // TODO(b/429588205): Generate a pseudo AppFunctionSerializable class to represent a function
 // input. This would allow the infra to reuse AppFunctionDataFactory to supply default values.
@@ -51,24 +49,57 @@ internal fun AppFunctionData.unsafeGetParameterValue(
     parameterMetadata: AppFunctionParameterMetadata
 ): Any? =
     try {
+        val key = parameterMetadata.name
+        val isRequired = parameterMetadata.isRequired
+        val isNullable = parameterMetadata.dataType.isNullable
         val value =
             when (val castDataType = parameterMetadata.dataType) {
-                is AppFunctionPrimitiveTypeMetadata -> {
-                    unsafeGetSingleProperty(
-                        key = parameterMetadata.name,
-                        type = castDataType.type,
-                        isNullable = castDataType.isNullable,
-                        isRequired = parameterMetadata.isRequired,
-                    )
+                is AppFunctionIntTypeMetadata -> {
+                    if (!isRequired && !isNullable) {
+                        getIntOrNull(key) ?: 0
+                    } else {
+                        getIntOrNull(key)
+                    }
+                }
+                is AppFunctionLongTypeMetadata -> {
+                    if (!isRequired && !isNullable) {
+                        getLongOrNull(key) ?: 0L
+                    } else {
+                        getLongOrNull(key)
+                    }
+                }
+                is AppFunctionFloatTypeMetadata -> {
+                    if (!isRequired && !isNullable) {
+                        getFloatOrNull(key) ?: 0.0f
+                    } else {
+                        getFloatOrNull(key)
+                    }
+                }
+                is AppFunctionDoubleTypeMetadata -> {
+                    if (!isRequired && !isNullable) {
+                        getDoubleOrNull(key) ?: 0.0
+                    } else {
+                        getDoubleOrNull(key)
+                    }
+                }
+                is AppFunctionBooleanTypeMetadata -> {
+                    if (!isRequired && !isNullable) {
+                        getBooleanOrNull(key) ?: false
+                    } else {
+                        getBooleanOrNull(key)
+                    }
+                }
+                is AppFunctionBytesTypeMetadata -> {
+                    throw IllegalStateException("Type of a single byte is not supported")
+                }
+                is AppFunctionStringTypeMetadata -> {
+                    getString(key)
+                }
+                is AppFunctionPendingIntentTypeMetadata -> {
+                    getPendingIntent(key)
                 }
                 is AppFunctionObjectTypeMetadata -> {
-                    unsafeGetSingleProperty(
-                        key = parameterMetadata.name,
-                        type = TYPE_OBJECT,
-                        isNullable = castDataType.isNullable,
-                        isRequired = parameterMetadata.isRequired,
-                        objectQualifiedName = castDataType.qualifiedName,
-                    )
+                    getAppFunctionData(key)?.deserialize(checkNotNull(castDataType.qualifiedName))
                 }
                 is AppFunctionArrayTypeMetadata -> {
                     getArrayTypeParameterValue(
@@ -79,13 +110,8 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                     )
                 }
                 is AppFunctionReferenceTypeMetadata -> {
-                    unsafeGetSingleProperty(
-                        key = parameterMetadata.name,
-                        type = TYPE_OBJECT,
-                        isNullable = castDataType.isNullable,
-                        isRequired = parameterMetadata.isRequired,
-                        objectQualifiedName = castDataType.referenceDataType,
-                    )
+                    getAppFunctionData(key)
+                        ?.deserialize(checkNotNull(castDataType.referenceDataType))
                 }
                 else ->
                     throw IllegalStateException(
@@ -119,173 +145,85 @@ private fun AppFunctionData.getArrayTypeParameterValue(
 ): Any? {
     val itemType = arrayDataTypeMetadata.itemType
     return when (itemType) {
-        is AppFunctionPrimitiveTypeMetadata -> {
-            unsafeGetCollectionProperty(
-                key = key,
-                type = itemType.type,
-                isNullable = isNullable,
-                isRequired = isRequired,
-            )
-        }
-        is AppFunctionObjectTypeMetadata -> {
-            unsafeGetCollectionProperty(
-                key = key,
-                type = TYPE_OBJECT,
-                isNullable = isNullable,
-                isRequired = isRequired,
-                objectQualifiedName = itemType.qualifiedName,
-            )
-        }
-        is AppFunctionReferenceTypeMetadata -> {
-            unsafeGetCollectionProperty(
-                key = key,
-                type = TYPE_OBJECT,
-                isNullable = isNullable,
-                isRequired = isRequired,
-                objectQualifiedName = itemType.referenceDataType,
-            )
-        }
-        else ->
-            throw IllegalStateException("Unknown item DataTypeMetadata: ${itemType::class.java}")
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionData.unsafeGetSingleProperty(
-    key: String,
-    type: Int,
-    isNullable: Boolean,
-    isRequired: Boolean,
-    objectQualifiedName: String? = null,
-): Any? {
-    return when (type) {
-        TYPE_INT -> {
-            if (!isRequired && !isNullable) {
-                getIntOrNull(key) ?: 0
-            } else {
-                getIntOrNull(key)
-            }
-        }
-        TYPE_LONG -> {
-            if (!isRequired && !isNullable) {
-                getLongOrNull(key) ?: 0L
-            } else {
-                getLongOrNull(key)
-            }
-        }
-        TYPE_FLOAT -> {
-            if (!isRequired && !isNullable) {
-                getFloatOrNull(key) ?: 0.0f
-            } else {
-                getFloatOrNull(key)
-            }
-        }
-        TYPE_DOUBLE -> {
-            if (!isRequired && !isNullable) {
-                getDoubleOrNull(key) ?: 0.0
-            } else {
-                getDoubleOrNull(key)
-            }
-        }
-        TYPE_BOOLEAN -> {
-            if (!isRequired && !isNullable) {
-                getBooleanOrNull(key) ?: false
-            } else {
-                getBooleanOrNull(key)
-            }
-        }
-        TYPE_BYTES -> {
-            throw IllegalStateException("Type of a single byte is not supported")
-        }
-        TYPE_STRING -> {
-            getString(key)
-        }
-        TYPE_PENDING_INTENT -> {
-            getPendingIntent(key)
-        }
-        TYPE_OBJECT -> {
-            getAppFunctionData(key)?.deserialize(checkNotNull(objectQualifiedName))
-        }
-        else -> throw IllegalStateException("Unknown data type $type")
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionData.unsafeGetCollectionProperty(
-    key: String,
-    type: Int,
-    isNullable: Boolean,
-    isRequired: Boolean,
-    objectQualifiedName: String? = null,
-): Any? {
-    return when (type) {
-        TYPE_INT -> {
+        is AppFunctionIntTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getIntArray(key) ?: intArrayOf()
             } else {
                 getIntArray(key)
             }
         }
-        TYPE_LONG -> {
+        is AppFunctionLongTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getLongArray(key) ?: longArrayOf()
             } else {
                 getLongArray(key)
             }
         }
-        TYPE_FLOAT -> {
+        is AppFunctionFloatTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getFloatArray(key) ?: floatArrayOf()
             } else {
                 getFloatArray(key)
             }
         }
-        TYPE_DOUBLE -> {
+        is AppFunctionDoubleTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getDoubleArray(key) ?: doubleArrayOf()
             } else {
                 getDoubleArray(key)
             }
         }
-        TYPE_BOOLEAN -> {
+        is AppFunctionBooleanTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getBooleanArray(key) ?: booleanArrayOf()
             } else {
                 getBooleanArray(key)
             }
         }
-        TYPE_BYTES -> {
+        is AppFunctionBytesTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getByteArray(key) ?: byteArrayOf()
             } else {
                 getByteArray(key)
             }
         }
-        TYPE_STRING -> {
+        is AppFunctionStringTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getStringList(key) ?: emptyList<String>()
             } else {
                 getStringList(key)
             }
         }
-        TYPE_PENDING_INTENT -> {
+        is AppFunctionPendingIntentTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getPendingIntentList(key) ?: emptyList<PendingIntent>()
             } else {
                 getPendingIntentList(key)
             }
         }
-        TYPE_OBJECT -> {
+        is AppFunctionObjectTypeMetadata -> {
             if (!isRequired && !isNullable) {
                 getAppFunctionDataList(key)?.map {
-                    it.deserialize<Any>(checkNotNull(objectQualifiedName))
+                    it.deserialize<Any>(checkNotNull(itemType.qualifiedName))
                 } ?: emptyList()
             } else {
                 getAppFunctionDataList(key)?.map {
-                    it.deserialize<Any>(checkNotNull(objectQualifiedName))
+                    it.deserialize<Any>(checkNotNull(itemType.qualifiedName))
                 }
             }
         }
-        else -> throw IllegalStateException("Unknown data type $type")
+        is AppFunctionReferenceTypeMetadata -> {
+            if (!isRequired && !isNullable) {
+                getAppFunctionDataList(key)?.map {
+                    it.deserialize<Any>(checkNotNull(itemType.referenceDataType))
+                } ?: emptyList()
+            } else {
+                getAppFunctionDataList(key)?.map {
+                    it.deserialize<Any>(checkNotNull(itemType.referenceDataType))
+                }
+            }
+        }
+        else ->
+            throw IllegalStateException("Unknown item DataTypeMetadata: ${itemType::class.java}")
     }
 }

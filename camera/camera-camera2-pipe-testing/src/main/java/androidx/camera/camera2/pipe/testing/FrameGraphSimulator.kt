@@ -20,5 +20,10 @@ import androidx.camera.camera2.pipe.FrameGraph
 
 public class FrameGraphSimulator(
     private val realFrameGraph: FrameGraph,
-    private val cameraGraphSimulator: CameraGraphSimulator,
-) : FrameGraph by realFrameGraph, AutoCloseable {}
+    private val cameraSimulator: CameraSimulator,
+) : FrameGraph by realFrameGraph, AutoCloseable, CameraSimulator by cameraSimulator {
+
+    override fun toString(): String {
+        return "FrameGraphSimulator($realFrameGraph, ${cameraSimulator})"
+    }
+}

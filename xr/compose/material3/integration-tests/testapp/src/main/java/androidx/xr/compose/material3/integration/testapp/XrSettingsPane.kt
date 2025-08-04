@@ -45,16 +45,15 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.scenecore.scene
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 internal fun XrSettingsPane(
     selectedNavSuiteType: NavigationSuiteType?,
-    selectedOrbiterEdgeOffset: OrbiterOffsetType,
+    selectedOrbiterPosition: OrbiterPosition,
     onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType) -> Unit,
+    onOrbiterPositionChanged: (OrbiterPosition) -> Unit,
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -64,14 +63,14 @@ internal fun XrSettingsPane(
             ListItem(headlineContent = { XrModeButton() })
             ListItem(
                 headlineContent = {
-                    NavigationSuiteTypeButton(selectedNavSuiteType, onNavSuiteTypeChanged)
+                    NavigationSuiteTypeDropdown(selectedNavSuiteType, onNavSuiteTypeChanged)
                 }
             )
             ListItem(
                 headlineContent = {
-                    XrNavigationOrbiterEdgeOffset(
-                        selectedOrbiterEdgeOffset,
-                        onOrbiterEdgeOffsetChanged,
+                    XrNavigationOrbiterPositionDropdown(
+                        selectedOrbiterPosition,
+                        onOrbiterPositionChanged,
                     )
                 }
             )
@@ -104,7 +103,7 @@ private fun XrModeButton() {
 }
 
 @Composable
-private fun NavigationSuiteTypeButton(
+private fun NavigationSuiteTypeDropdown(
     navSuiteType: NavigationSuiteType?,
     onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
 ) {
@@ -137,31 +136,18 @@ private fun NavigationSuiteTypeButton(
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
-private fun XrNavigationOrbiterEdgeOffset(
-    selectedItem: OrbiterOffsetType,
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType) -> Unit,
+private fun XrNavigationOrbiterPositionDropdown(
+    selectedItem: OrbiterPosition,
+    onOrbiterPositionChanged: (OrbiterPosition) -> Unit,
 ) {
     val expanded = remember { mutableStateOf(false) }
-
     SimpleDropdown(
-        dropdownLabel = "NavigationRail Orbiter EdgeOffset",
-        items =
-            listOf(
-                OrbiterOffsetType.InnerEdge,
-                OrbiterOffsetType.OuterEdge,
-                OrbiterOffsetType.Overlap,
-            ),
+        dropdownLabel = "NavigationSuite Orbiter Position",
+        items = OrbiterPosition.entries.toList(),
         selectedItem = selectedItem,
         expanded = expanded,
-        itemLabel = {
-            when (it) {
-                OrbiterOffsetType.InnerEdge -> "Default (InnerEdge)"
-                OrbiterOffsetType.OuterEdge -> "OuterEdge"
-                OrbiterOffsetType.Overlap -> "Overlap"
-                else -> error("Unexpected OrbiterOffsetType: $it")
-            }
-        },
-        onSelectedChange = onOrbiterEdgeOffsetChanged,
+        itemLabel = { it.name },
+        onSelectedChange = onOrbiterPositionChanged,
     )
 }
 

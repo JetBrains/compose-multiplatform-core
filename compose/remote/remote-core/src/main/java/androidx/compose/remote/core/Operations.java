@@ -34,6 +34,7 @@ import androidx.compose.remote.core.operations.DebugMessage;
 import androidx.compose.remote.core.operations.DrawArc;
 import androidx.compose.remote.core.operations.DrawBitmap;
 import androidx.compose.remote.core.operations.DrawBitmapFontText;
+import androidx.compose.remote.core.operations.DrawBitmapFontTextOnPath;
 import androidx.compose.remote.core.operations.DrawBitmapInt;
 import androidx.compose.remote.core.operations.DrawBitmapScaled;
 import androidx.compose.remote.core.operations.DrawBitmapTextAnchored;
@@ -57,6 +58,7 @@ import androidx.compose.remote.core.operations.FloatFunctionDefine;
 import androidx.compose.remote.core.operations.FontData;
 import androidx.compose.remote.core.operations.HapticFeedback;
 import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.IdLookup;
 import androidx.compose.remote.core.operations.ImageAttribute;
 import androidx.compose.remote.core.operations.IntegerExpression;
 import androidx.compose.remote.core.operations.MatrixFromPath;
@@ -198,6 +200,7 @@ public class Operations {
     public static final int PAINT_VALUES = 40;
     public static final int DRAW_RECT = 42;
     public static final int DRAW_BITMAP_FONT_TEXT_RUN = 48;
+    public static final int DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH = 49;
     public static final int DRAW_TEXT_RUN = 43;
     public static final int DRAW_CIRCLE = 46;
     public static final int DRAW_LINE = 47;
@@ -270,6 +273,7 @@ public class Operations {
     public static final int DATA_FONT = 189;
     public static final int DRAW_TO_BITMAP = 190;
     public static final int WAKE_IN = 191;
+    public static final int ID_LOOKUP = 192;
 
     ///////////////////////////////////////// ======================
 
@@ -435,11 +439,13 @@ public class Operations {
             sMapV7AndroidX.put(MATRIX_FROM_PATH, MatrixFromPath::read);
             sMapV7AndroidX.put(TEXT_SUBTEXT, TextSubtext::read);
             sMapV7AndroidX.put(BITMAP_TEXT_MEASURE, BitmapTextMeasure::read);
+            sMapV7AndroidX.put(DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH, DrawBitmapFontTextOnPath::read);
             sMapV7AndroidX.put(DRAW_BITMAP_TEXT_ANCHORED, DrawBitmapTextAnchored::read);
             sMapV7AndroidX.put(DATA_SHADER, ShaderData::read);
             sMapV7AndroidX.put(DATA_FONT, FontData::read);
             sMapV7AndroidX.put(DRAW_TO_BITMAP, DrawToBitmap::read);
             sMapV7AndroidX.put(WAKE_IN, WakeIn::read);
+            sMapV7AndroidX.put(ID_LOOKUP, IdLookup::read);
         }
         return sMapV7AndroidX;
     }
@@ -466,7 +472,11 @@ public class Operations {
             sMapV7Widgets.put(MATRIX_FROM_PATH, MatrixFromPath::read);
             sMapV7Widgets.put(TEXT_SUBTEXT, TextSubtext::read);
             sMapV7Widgets.put(BITMAP_TEXT_MEASURE, BitmapTextMeasure::read);
+            sMapV7Widgets.put(DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH, DrawBitmapFontTextOnPath::read);
             sMapV7Widgets.put(DRAW_BITMAP_TEXT_ANCHORED, DrawBitmapTextAnchored::read);
+            sMapV7Widgets.put(DRAW_TO_BITMAP, DrawToBitmap::read);
+            sMapV7Widgets.put(WAKE_IN, WakeIn::read);
+            sMapV7AndroidX.put(ID_LOOKUP, IdLookup::read);
         }
         return sMapV7Widgets;
     }

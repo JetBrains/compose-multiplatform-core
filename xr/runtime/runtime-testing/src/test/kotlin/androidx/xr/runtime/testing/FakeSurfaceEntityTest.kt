@@ -23,6 +23,7 @@ import androidx.xr.runtime.internal.PixelDimensions
 import androidx.xr.runtime.internal.SurfaceEntity
 import androidx.xr.runtime.internal.TextureResource
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +38,11 @@ class FakeSurfaceEntityTest {
     @Before
     fun setUp() {
         underTest = FakeSurfaceEntity()
+    }
+
+    @After
+    fun release() {
+        underTest.dispose()
     }
 
     @Test

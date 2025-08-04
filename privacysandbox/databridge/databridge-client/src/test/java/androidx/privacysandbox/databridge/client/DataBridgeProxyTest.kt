@@ -180,7 +180,6 @@ class DataBridgeProxyTest {
             listOf(intKey.type.toString()),
             callback,
         )
-        expect.that(callback.getValue(intKey.name)).isEqualTo(null)
 
         callback.initializeLatch()
         mDataBridgeClient.setValue(intKey, 1)
@@ -198,7 +197,6 @@ class DataBridgeProxyTest {
             listOf(intKey.type.toString()),
             callback,
         )
-        expect.that(callback.getValue(intKey.name)).isEqualTo(null)
 
         mDataBridgeProxy.removeKeysFromUpdates(
             uuid,

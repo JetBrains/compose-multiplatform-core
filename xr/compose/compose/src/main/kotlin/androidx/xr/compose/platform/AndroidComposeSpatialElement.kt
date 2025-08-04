@@ -16,9 +16,8 @@
 
 package androidx.xr.compose.platform
 
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
@@ -26,6 +25,8 @@ import androidx.xr.compose.subspace.node.SubspaceOwner
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.PanelEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * An implementation of the [SubspaceOwner] interface, bridging the Compose layout and rendering
@@ -46,13 +47,8 @@ internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
     override val root: SubspaceLayoutNode = SubspaceLayoutNode()
 
-    private val handler by lazy { Handler(Looper.getMainLooper()) }
     private val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver {
-        if (handler.looper === Looper.myLooper()) {
-            it()
-        } else {
-            handler.post(it)
-        }
+        uiCoroutineScope.launch { it() }
     }
 
     internal var wrappedComposition: WrappedComposition? = null
@@ -154,7 +150,7 @@ internal class AndroidComposeSpatialElement :
     // TODO: Consider adding stricter control over how this is called here, or at call sites, if it
     // becomes too easy to generate superfluous layouts.
     override fun requestRelayout() {
-        refreshLayout()
+        uiCoroutineScope.launch { refreshLayout() }
     }
 
     // TODO: Add unit tests.
@@ -181,7 +177,10 @@ internal class AndroidComposeSpatialElement :
         }
     }
 
-    public companion object {
+    companion object {
+        // This coroutine scope will launch tasks to the Choreographer on the main thread.
+        private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+
         private val onLayoutStateValueChanged: (AndroidComposeSpatialElement) -> Unit = {
             it.requestRelayout()
         }

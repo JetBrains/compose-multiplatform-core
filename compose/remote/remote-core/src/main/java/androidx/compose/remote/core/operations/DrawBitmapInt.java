@@ -220,7 +220,7 @@ public class DrawBitmapInt extends PaintOperation implements AccessibleComponent
     @Override
     public void paint(@NonNull PaintContext context) {
         context.drawBitmap(
-                mImageId,
+                getId(mImageId, context),
                 mSrcLeft,
                 mSrcTop,
                 mSrcRight,

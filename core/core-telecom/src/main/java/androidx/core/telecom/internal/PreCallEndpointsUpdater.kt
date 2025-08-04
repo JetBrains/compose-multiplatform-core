@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,112 +23,53 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.telecom.CallEndpointCompat
 import kotlinx.coroutines.channels.SendChannel
 
+/**
+ * Manages the set of available pre-call `CallEndpointCompat` objects and sends updates to a client
+ * via a `SendChannel`. This class ensures the list of devices is always consistent and up-to-date.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 internal class PreCallEndpointsUpdater(
-    var mCurrentDevices: MutableList<CallEndpointCompat> = mutableListOf(),
-    var mSendChannel: SendChannel<List<CallEndpointCompat>>,
+    // The single source of truth for the current audio endpoints.
+    // A Set is used for efficient add/remove/contains operations.
+    @get:VisibleForTesting
+    internal val currentDevices: MutableSet<CallEndpointCompat> = mutableSetOf(),
+    private val sendChannel: SendChannel<List<CallEndpointCompat>>,
 ) {
-    // earpiece, speaker, unknown, wired_headset
-    val mNonBluetoothEndpoints: HashMap<Int, CallEndpointCompat> = HashMap()
-    // all bt endpoints
-    val mBluetoothEndpoints: HashMap<String, CallEndpointCompat> = HashMap()
-
     companion object {
-        private val TAG: String = PreCallEndpointsUpdater::class.java.simpleName.toString()
-
-        // endpoints added constants
-        const val ALREADY_TRACKING_ENDPOINT: Int = 0
-        const val START_TRACKING_NEW_ENDPOINT: Int = 1
-
-        // endpoints removed constants
-        const val NOT_TRACKING_REMOVED_ENDPOINT: Int = 0
-        const val STOP_TRACKING_REMOVED_ENDPOINT: Int = 1
+        private val TAG: String = PreCallEndpointsUpdater::class.java.simpleName
     }
 
-    init {
-        for (device in mCurrentDevices) {
-            if (device.isBluetoothType()) {
-                mBluetoothEndpoints[device.name.toString()] = device
-            } else {
-                mNonBluetoothEndpoints[device.type] = device
-            }
-        }
-    }
-
+    /**
+     * Processes a list of newly available endpoints, adds them to the tracked set, and notifies the
+     * client if any new endpoints were actually added.
+     */
     fun endpointsAddedUpdate(addedCallEndpoints: List<CallEndpointCompat>) {
-        // START tracking an endpoint
-        var addedDevicesCount = 0
-        for (maybeNewEndpoint in addedCallEndpoints) {
-            addedDevicesCount += maybeAddCallEndpoint(maybeNewEndpoint)
-        }
-        if (addedDevicesCount > 0) {
+        if (currentDevices.addAll(addedCallEndpoints)) {
             updateClient()
         } else {
-            Log.d(TAG, "endpointsAddedUpdate: no new added endpoints, not updating client!")
+            Log.d(TAG, "endpointsAddedUpdate: No new endpoints to add, not updating client.")
         }
     }
 
+    /**
+     * Processes a list of endpoints that are no longer available, removes them from the tracked
+     * set, and notifies the client if any existing endpoints were removed.
+     */
     fun endpointsRemovedUpdate(removedCallEndpoints: List<CallEndpointCompat>) {
-        // STOP tracking an endpoint
-        var removedDevicesCount = 0
-        for (maybeRemovedDevice in removedCallEndpoints) {
-            removedDevicesCount += maybeRemoveCallEndpoint(maybeRemovedDevice)
-        }
-        if (removedDevicesCount > 0) {
-            mCurrentDevices =
-                (mBluetoothEndpoints.values + mNonBluetoothEndpoints.values).toMutableList()
+        if (currentDevices.removeAll(removedCallEndpoints.toSet())) {
             updateClient()
         } else {
-            Log.d(TAG, "endpointsRemovedUpdate: no removed endpoints, not updating client!")
+            Log.d(
+                TAG,
+                "endpointsRemovedUpdate: No tracked endpoints were removed, not updating client.",
+            )
         }
     }
 
-    internal fun isCallEndpointBeingTracked(endpoint: CallEndpointCompat?): Boolean {
-        return mCurrentDevices.contains(endpoint)
-    }
-
-    @VisibleForTesting
-    internal fun maybeAddCallEndpoint(endpoint: CallEndpointCompat): Int {
-        if (endpoint.isBluetoothType()) {
-            if (!mBluetoothEndpoints.containsKey(endpoint.name.toString())) {
-                mBluetoothEndpoints[endpoint.name.toString()] = endpoint
-                mCurrentDevices.add(endpoint)
-                return START_TRACKING_NEW_ENDPOINT
-            } else {
-                return ALREADY_TRACKING_ENDPOINT
-            }
-        } else {
-            if (!mNonBluetoothEndpoints.containsKey(endpoint.type)) {
-                mNonBluetoothEndpoints[endpoint.type] = endpoint
-                mCurrentDevices.add(endpoint)
-                return START_TRACKING_NEW_ENDPOINT
-            } else {
-                return ALREADY_TRACKING_ENDPOINT
-            }
-        }
-    }
-
-    @VisibleForTesting
-    internal fun maybeRemoveCallEndpoint(endpoint: CallEndpointCompat): Int {
-        // TODO:: determine if it is necessary to cleanup listeners here
-        if (endpoint.isBluetoothType()) {
-            if (mBluetoothEndpoints.containsKey(endpoint.name.toString())) {
-                mBluetoothEndpoints.remove(endpoint.name.toString())
-                return STOP_TRACKING_REMOVED_ENDPOINT
-            } else {
-                return NOT_TRACKING_REMOVED_ENDPOINT
-            }
-        } else {
-            if (mNonBluetoothEndpoints.containsKey(endpoint.type)) {
-                mNonBluetoothEndpoints.remove(endpoint.type)
-                return STOP_TRACKING_REMOVED_ENDPOINT
-            } else {
-                return NOT_TRACKING_REMOVED_ENDPOINT
-            }
-        }
-    }
-
-    internal fun updateClient(): List<CallEndpointCompat> {
-        return mCurrentDevices.sorted().also { mSendChannel.trySend(it) }
+    /** Sorts the current list of endpoints and sends the result to the client. */
+    private fun updateClient() {
+        // The sorted() extension creates a new sorted list before sending.
+        val sortedList = currentDevices.sorted()
+        sendChannel.trySend(sortedList)
     }
 }

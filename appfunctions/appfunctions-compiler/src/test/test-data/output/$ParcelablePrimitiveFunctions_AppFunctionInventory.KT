@@ -3,9 +3,10 @@ package com.testdata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
@@ -28,8 +29,7 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_PENDINGINTENT_PRIMITIVE_DATA_TYPE:
-        AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
-            type = 13,
+        AppFunctionPendingIntentTypeMetadata = AppFunctionPendingIntentTypeMetadata(
             isNullable = false,
             description = ""
         )
@@ -38,22 +38,23 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
         AppFunctionParameterMetadata(
             name = "pendingIntent",
             isRequired = true,
-            dataType = PARAMETER_METADATA_PENDINGINTENT_PRIMITIVE_DATA_TYPE
+            dataType = PARAMETER_METADATA_PENDINGINTENT_PRIMITIVE_DATA_TYPE,
+            description = "",
         )
 
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
       PENDINGINTENT_PARAMETER_METADATA,
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 0,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -81,15 +82,15 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
     private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
     )
 
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
-        AppFunctionPrimitiveTypeMetadata(
-            type = 13,
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPendingIntentTypeMetadata =
+        AppFunctionPendingIntentTypeMetadata(
             isNullable = false,
             description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

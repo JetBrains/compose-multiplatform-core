@@ -22,6 +22,7 @@ import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -36,6 +37,7 @@ import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.JxrPlatformAdapter;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -236,16 +238,10 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     }
 
     @Test
-    public void setScale_doesNothing() throws Exception {
+    public void setScale_throwsException() throws Exception {
         Vector3 scale = new Vector3(1, 1, 9999);
-        mActivitySpace.setScale(scale);
 
-        // The returned scale(s) here should be the identity scale despite the setScale call.
-        assertThat(mActivitySpace.getScale().getX()).isWithin(1e-5f).of(1.0f);
-        assertThat(mActivitySpace.getScale().getY()).isWithin(1e-5f).of(1.0f);
-        assertThat(mActivitySpace.getScale().getZ()).isWithin(1e-5f).of(1.0f);
-
-        // Note that there's no exception thrown.
+        assertThrows(UnsupportedOperationException.class, () -> mActivitySpace.setScale(scale));
     }
 
     @Test
@@ -378,5 +374,64 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
                         new Vector3(-1.73f / 2, -1.61f / 2, -0.5f / 2),
                         new Vector3(1.73f / 2, 1.61f / 2, 0.5f / 2));
         assertThat(resultBox).isEqualTo(expectedBox);
+    }
+
+    @Test
+    public void activitySpaceSetPose_throwsException() throws Exception {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+        Pose pose = new Pose();
+
+        assertThrows(UnsupportedOperationException.class, () -> activitySpaceImpl.setPose(pose));
+    }
+
+    @Test
+    public void getPoseRelativeToParentSpace_throwsException() throws Exception {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertThrows(
+                UnsupportedOperationException.class, () -> activitySpaceImpl.getPose(Space.PARENT));
+    }
+
+    @Test
+    public void getPoseRelativeToActivitySpace_returnsIdentity() {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.ACTIVITY),
+                activitySpaceImpl.getPoseInActivitySpace());
+    }
+
+    @Test
+    public void getPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose() {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.REAL_WORLD),
+                activitySpaceImpl.getPoseInPerceptionSpace());
+    }
+
+    @Test
+    public void getScaleRelativeToParentSpace_throwsException() throws Exception {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> activitySpaceImpl.getScale(Space.PARENT));
+    }
+
+    @Test
+    public void getScaleRelativeToActivitySpace_returnsActivitySpaceScale() {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertVector3(
+                activitySpaceImpl.getScale(Space.ACTIVITY),
+                activitySpaceImpl.getActivitySpaceScale());
+    }
+
+    @Test
+    public void getScaleRelativeToRealWorldSpace_returnsVector3One() {
+        ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) mActivitySpace;
+
+        assertVector3(activitySpaceImpl.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
     }
 }

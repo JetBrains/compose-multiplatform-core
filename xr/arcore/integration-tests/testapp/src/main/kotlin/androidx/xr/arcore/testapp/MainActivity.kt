@@ -59,10 +59,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.getString
 import androidx.xr.arcore.testapp.common.TestCaseButton
+import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
+import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
-import androidx.xr.arcore.testapp.helloar.HelloArActivity
+import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
+import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
 import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.JXRARCoreTestsTheme
@@ -91,8 +93,10 @@ class MainActivity : ComponentActivity() {
         requestUserPermissions(
             arrayOf(
                 SCENE_UNDERSTANDING_COARSE_PERMISSION,
+                SCENE_UNDERSTANDING_FINE_PERMISSION,
                 HAND_TRACKING_PERMISSION,
                 HEAD_TRACKING_PERMISSION,
+                FACE_TRACKING_PERMISSION,
             )
         )
 
@@ -153,9 +157,13 @@ class MainActivity : ComponentActivity() {
     private fun TestCases() {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(10.dp).verticalScroll(rememberScrollState())) {
-                TestCaseColumnRowItem(R.string.plane_tracking) { startTest<HelloArActivity>(it) }
-                TestCaseColumnRowItem(R.string.session_lifecycle) { startTest<HelloArActivity>(it) }
-                TestCaseColumnRowItem(R.string.hit_test) { startTest<HelloArActivity>(it) }
+                TestCaseColumnRowItem(R.string.plane_tracking) {
+                    startTest<HelloArPlaneActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.session_lifecycle) {
+                    startTest<HelloArPlaneActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.hit_test) { startTest<HelloArPlaneActivity>(it) }
                 TestCaseColumnRowItem(R.string.device_tracking_test) {
                     startTest<PersistentAnchorsActivity>(it)
                 }
@@ -170,6 +178,13 @@ class MainActivity : ComponentActivity() {
                 }
                 TestCaseColumnRowItem(R.string.hand_tracking) {
                     startTest<HandTrackingActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.face_tracking) {
+                    startTest<FaceTrackingActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.depth_maps) { startTest<DepthMapActivity>(it) }
+                TestCaseColumnRowItem(R.string.object_tracking) {
+                    startTest<HelloArObjectActivity>(it)
                 }
             }
         }
@@ -235,12 +250,13 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    private inline fun <reified T> createIntent(): Intent = Intent(this@MainActivity, T::class.java)
-
     companion object {
         const val SCENE_UNDERSTANDING_COARSE_PERMISSION =
             "android.permission.SCENE_UNDERSTANDING_COARSE"
+        const val SCENE_UNDERSTANDING_FINE_PERMISSION =
+            "android.permission.SCENE_UNDERSTANDING_FINE"
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val HEAD_TRACKING_PERMISSION = "android.permission.HEAD_TRACKING"
+        const val FACE_TRACKING_PERMISSION = "android.permission.FACE_TRACKING"
     }
 }

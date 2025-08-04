@@ -243,22 +243,6 @@ interface SampleDao {
     @Query("SELECT * FROM StringSampleEntity1")
     suspend fun getSampleManyToMany(): SampleManyAndMany
 
-    @Transaction
-    @Query("SELECT * FROM SampleEntity3")
-    fun getPagingSourceRelation(): androidx.paging.PagingSource<Int, SampleRelation>
-
-    data class SampleRelation(
-        val pk3: Long,
-        @ColumnInfo(defaultValue = "0") val data3: Long,
-        @Relation(parentColumn = "pk3", entityColumn = "pk3") val relationEntity: SampleEntity3,
-    )
-
-    @Query("SELECT * FROM SampleEntity")
-    fun getAllIds(): androidx.paging.PagingSource<Int, SampleEntity>
-
-    @Query("SELECT * FROM SampleEntity WHERE pk > :gt ORDER BY pk ASC")
-    fun getAllIdsWithArgs(gt: Long): androidx.paging.PagingSource<Int, SampleEntity>
-
     data class Sample1And2(
         @Embedded val sample1: SampleEntity,
         @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2,

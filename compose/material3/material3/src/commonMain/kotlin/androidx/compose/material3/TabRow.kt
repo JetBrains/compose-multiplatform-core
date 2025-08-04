@@ -752,6 +752,7 @@ internal class TabIndicatorOffsetNode(
     }
 }
 
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 private fun TabRowWithSubcomposeImpl(
     modifier: Modifier,
@@ -821,6 +822,7 @@ private fun TabRowWithSubcomposeImpl(
     }
 }
 
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 private fun ScrollableTabRowWithSubcomposeImpl(
     selectedTabIndex: Int,

@@ -38,6 +38,7 @@ class FakeProcessCameraProviderWrapper(
 ) : ProcessCameraProviderWrapper {
 
     private var unbindInvoked = false
+    private var shouldThrowOnGetCameraInfo = false
 
     fun unbindInvoked(): Boolean {
         return unbindInvoked
@@ -71,6 +72,13 @@ class FakeProcessCameraProviderWrapper(
     }
 
     override fun getCameraInfo(cameraSelector: CameraSelector?): CameraInfo {
+        if (shouldThrowOnGetCameraInfo) {
+            throw IllegalArgumentException("Fake error: No camera available for selector")
+        }
         return camera.cameraInfo
+    }
+
+    fun setShouldThrowOnGetCameraInfo(shouldThrow: Boolean) {
+        shouldThrowOnGetCameraInfo = shouldThrow
     }
 }

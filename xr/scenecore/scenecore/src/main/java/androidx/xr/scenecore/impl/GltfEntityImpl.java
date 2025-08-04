@@ -150,10 +150,10 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         // TODO: b/414790933 - temporarily commenting out the call to `deleteSubspace` because there
         //  is a bug when releasing the underlying glTF model resource. This line should be restored
         //  as soon as the bug is resolved.
-        //if (mSubspace != null) {
+        // if (mSubspace != null) {
         //  Destroying the subspace will also destroy the underlying Impress nodes.
         //  mSplitEngineSubspaceManager.deleteSubspace(mSubspace.subspaceId);
-        //}
+        // }
         super.dispose();
     }
 

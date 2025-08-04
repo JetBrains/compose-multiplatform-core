@@ -93,11 +93,11 @@ internal class RenderInTransitionOverlayNode(
 ) : Modifier.Node(), DrawModifierNode, ModifierLocalModifierNode {
     var zIndexInOverlay by mutableFloatStateOf(zIndexInOverlay)
 
-    val parentState: SharedElementInternalState?
+    val parentState: SharedElementEntry?
         get() = ModifierLocalSharedElementInternalState.current
 
     private inner class LayerWithRenderer(val layer: GraphicsLayer) : LayerRenderer {
-        override val parentState: SharedElementInternalState?
+        override val parentState: SharedElementEntry?
             get() = this@RenderInTransitionOverlayNode.parentState
 
         override val zIndex: Float

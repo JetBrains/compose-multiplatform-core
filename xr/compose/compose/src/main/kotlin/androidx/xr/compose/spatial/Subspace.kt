@@ -36,7 +36,6 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -276,7 +275,7 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
         }
     }
     var subspaceContentPixelSize by remember { mutableStateOf(IntSize.Zero) }
-    val viewSize = LocalView.current.size
+    val parentSize = coreEntity.mutableSize.run { IntSize(width, height) }
     val density = LocalDensity.current
     val placeholderDpSize =
         subspaceContentPixelSize.run { with(density) { DpSize(width.toDp(), height.toDp()) } }
@@ -335,15 +334,16 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
             // Here we determine the correct position for the 3D content and place the root node.
             // This ensures tighter coordination between the 2D and 3D placement. Note that this is
             // still imperfect as rendering is not explicitly synchronized.
-            if (measuredPlaceholderSize != IntSize.Zero) {
+            if (measuredPlaceholderSize != IntSize.Zero && parentSize != IntSize.Zero) {
                 val contentOffset = coordinates?.positionInRoot() ?: return@layout
                 val nextPose =
-                    calculatePose(contentOffset, viewSize, measuredPlaceholderSize, density)
+                    calculatePose(contentOffset, parentSize, measuredPlaceholderSize, density)
                 if (subspaceRootContainer.getPose() != nextPose) {
                     subspaceRootContainer.setPose(nextPose)
-                    if (!subspaceRootContainer.isEnabled(false)) {
-                        subspaceRootContainer.setEnabled(true)
-                    }
+                }
+                // This needs to be checked aside from the pose check since the pose may not change.
+                if (!subspaceRootContainer.isEnabled(false)) {
+                    subspaceRootContainer.setEnabled(true)
                 }
             }
         }

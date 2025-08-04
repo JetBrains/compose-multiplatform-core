@@ -17,8 +17,8 @@
 package androidx.appfunctions.service.internal
 
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -75,11 +75,7 @@ class AggregatedAppFunctionInventoryTest {
                         parameters = emptyList(),
                         response =
                             AppFunctionResponseMetadata(
-                                valueType =
-                                    AppFunctionPrimitiveTypeMetadata(
-                                        type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                        isNullable = false,
-                                    )
+                                valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                             ),
                         components = AppFunctionComponentsMetadata(),
                     )
@@ -97,11 +93,7 @@ class AggregatedAppFunctionInventoryTest {
                         parameters = emptyList(),
                         response =
                             AppFunctionResponseMetadata(
-                                valueType =
-                                    AppFunctionPrimitiveTypeMetadata(
-                                        type = AppFunctionPrimitiveTypeMetadata.TYPE_UNIT,
-                                        isNullable = false,
-                                    )
+                                valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                             ),
                         components = AppFunctionComponentsMetadata(),
                     )

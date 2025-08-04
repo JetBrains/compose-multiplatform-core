@@ -500,6 +500,7 @@ internal class FocusOwnerImpl(
     override val listeners: MutableObjectList<FocusListener> = MutableObjectList(1)
 
     override var activeFocusTargetNode: FocusTargetNode? = null
+        get() = if (field?.isAttached == true) field else null
         set(value) {
             val previousValue = field
             field = value

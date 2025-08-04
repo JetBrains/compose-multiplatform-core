@@ -25,10 +25,16 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.SpaceEvenly
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +45,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.FloatingActionButton
@@ -54,16 +66,25 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.lookaheadScopeCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -522,4 +543,258 @@ fun SharedElementClipRevealSample() {
 @Composable
 fun BackHandler(content: @Composable () -> Unit) {
     TODO("Not yet implemented")
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalComposeUiApi::class)
+@Sampled
+@Composable
+fun DynamicallyEnabledSharedElementInPagerSample() {
+    // In this example, we will dynamically enable/disable shared elements for the items in the
+    // Pager. Specifically, we will only enable shared element transition for items that are
+    // completely visible in the viewport.
+    val colors = remember {
+        listOf(
+            Color(0xFFffd7d7.toInt()),
+            Color(0xFFffe9d6.toInt()),
+            Color(0xFFfffbd0.toInt()),
+            Color(0xFFe3ffd9.toInt()),
+            Color(0xFFd0fff8.toInt()),
+        )
+    }
+    val TwoPagesPerViewport = remember {
+        object : PageSize {
+            override fun Density.calculateMainAxisPageSize(
+                availableSpace: Int,
+                pageSpacing: Int,
+            ): Int {
+                return (availableSpace - 2 * pageSpacing) / 2
+            }
+        }
+    }
+    var selectedColor by remember { mutableStateOf<Color?>(null) }
+    val pagerState = rememberPagerState { colors.size }
+    SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+        AnimatedContent(selectedColor) { colorSelected ->
+            if (colorSelected == null) {
+                HorizontalPager(
+                    modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+                    state = pagerState,
+                    pageSize = TwoPagesPerViewport,
+                    pageSpacing = 8.dp,
+                    snapPosition = SnapPosition.Center,
+                    flingBehavior =
+                        PagerDefaults.flingBehavior(
+                            state = pagerState,
+                            pagerSnapDistance = PagerSnapDistance.atMost(3),
+                        ),
+                ) {
+                    val color = colors[it]
+                    var coordinates: LayoutCoordinates? by remember { mutableStateOf(null) }
+                    Box(
+                        Modifier.clickable { selectedColor = color }
+                            .onPlaced { coordinates = it }
+                            .sharedElement(
+                                rememberSharedContentState(
+                                    color,
+                                    SharedContentConfig {
+                                        // This is a lambda that returns a Boolean indicating
+                                        // whether shared element should be enabled.
+                                        val nonNullCoordinates =
+                                            // If the item has never been placed, we will consider
+                                            // it enabled.
+                                            coordinates ?: return@SharedContentConfig true
+
+                                        // In this specific case, we will use the
+                                        // SharedTransitionLayout to approximate viewport.
+                                        val scopeCoords =
+                                            // Obtain the coordinates of the SharedTransitionLayout/
+                                            // SharedTransitionScope.
+                                            // Since SharedTransitionScope is a LookaheadScope, we
+                                            // can use `lookaheadScopeCoordinates` to acquire the
+                                            // coordinates of the scope.
+                                            nonNullCoordinates.lookaheadScopeCoordinates(
+                                                this@SharedTransitionLayout
+                                            )
+                                        val (w, h) = scopeCoords.size
+                                        // Calculate the relative position of the item within
+                                        // SharedTransitionLayout.
+                                        val positionInScope =
+                                            scopeCoords.localPositionOf(nonNullCoordinates)
+                                        // Check the left, top, right, bottom of the relative
+                                        // bounds of the item to see if it is within
+                                        // SharedTransitionLayout. This result will inform
+                                        // whether shared element transition should be enabled
+                                        // for this item.
+                                        positionInScope.x >= 0 &&
+                                            positionInScope.y >= 0 &&
+                                            positionInScope.x + nonNullCoordinates.size.width <=
+                                                w &&
+                                            positionInScope.y + nonNullCoordinates.size.height <= h
+                                    },
+                                ),
+                                this@AnimatedContent,
+                            )
+                            .background(color)
+                            .size(150.dp)
+                    )
+                }
+            } else {
+                Box(
+                    Modifier.sharedElement(
+                            rememberSharedContentState(colorSelected),
+                            this@AnimatedContent,
+                        )
+                        .background(colorSelected)
+                        .aspectRatio(1f)
+                        .fillMaxWidth()
+                        .clickable { selectedColor = null }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Sampled
+@Composable
+fun SharedContentConfigSample() {
+    val customConfig = remember {
+        // Creates a custom SharedContentConfig to configure the alternative target
+        // bounds in the case of the target shared element being disposed amid
+        // shared element transition.
+        object : SharedTransitionScope.SharedContentConfig {
+            override fun SharedTransitionScope.SharedContentState
+                .alternativeTargetBoundsInTransitionScopeAfterRemoval(
+                targetBoundsBeforeRemoval: Rect,
+                sharedTransitionLayoutSize: Size,
+            ): Rect? {
+
+                // If the bottom edge of the target shared element is below the
+                // viewport, we move the target bounds to 300 pixels below the
+                // viewport in this example, while keeping the same left position,
+                // and target size.
+                if (targetBoundsBeforeRemoval.bottom >= sharedTransitionLayoutSize.height) {
+                    return Rect(
+                        Offset(
+                            targetBoundsBeforeRemoval.left,
+                            sharedTransitionLayoutSize.height + 300f,
+                        ),
+                        targetBoundsBeforeRemoval.size,
+                    )
+                }
+
+                // If the top edge of the target shared element is above the
+                // viewport before it is disposed, we will move the target bounds
+                // to 300 pixels above the viewport in this example, while keeping
+                // the same left position and target size.
+                if (targetBoundsBeforeRemoval.top < 0) {
+
+                    return Rect(
+                        Offset(
+                            targetBoundsBeforeRemoval.left,
+                            -300 - targetBoundsBeforeRemoval.height,
+                        ),
+                        targetBoundsBeforeRemoval.size,
+                    )
+                }
+
+                // If the target bounds were well within the range of the viewport
+                // height, we will use the last seen target bounds as the new
+                // target bounds. Note: The default alternative bounds is null,
+                // meaning the animation will be stopped if the target shared
+                // element is removed.
+                return targetBoundsBeforeRemoval
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Sampled
+@Composable
+fun DynamicallyEnableSharedElementsSample() {
+    // In this example, we will enable shared element transition for transitioning from A to B,
+    // from A to C, but not the other directions such as B -> A, or B -> C
+    @Composable
+    fun ScreenA(modifier: Modifier = Modifier) {
+        Box(modifier.size(200.dp).background(Color.Red), contentAlignment = Alignment.Center) {
+            Text(text = "A", fontSize = 50.sp)
+        }
+    }
+
+    @Composable
+    fun ScreenB(modifier: Modifier = Modifier) {
+        Box(modifier.size(400.dp).background(Color.Yellow), contentAlignment = Alignment.Center) {
+            Text(text = "B", fontSize = 50.sp)
+        }
+    }
+
+    @Composable
+    fun ScreenC(modifier: Modifier = Modifier) {
+        Box(
+            modifier.size(100.dp, 300.dp).background(Color.Blue),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = "C", fontSize = 50.sp)
+        }
+    }
+
+    var targetState by remember { mutableStateOf("A") }
+    val listOfEnabledStatePairs = remember { mutableStateListOf("A" to "B", "A" to "C") }
+
+    Column {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = SpaceEvenly) {
+            Button(onClick = { targetState = "A" }) { Text("To A") }
+            Button(onClick = { targetState = "B" }) { Text("To B") }
+            Button(onClick = { targetState = "C" }) { Text("To C") }
+        }
+        SharedTransitionLayout {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                val animatedContentTransition = updateTransition(targetState)
+
+                val config = remember {
+                    // Creates a SharedContentConfig to dynamically enable/disable shared elements
+                    SharedContentConfig {
+                        // Returns whether a shared element should be enabled based on
+                        // the current state of the target state of the AnimatedContent.
+                        listOfEnabledStatePairs.contains(
+                            animatedContentTransition.currentState to
+                                animatedContentTransition.targetState
+                        )
+                    }
+                }
+                animatedContentTransition.AnimatedContent(
+                    transitionSpec = { fadeIn() togetherWith fadeOut() using null }
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        when (it) {
+                            "A" ->
+                                ScreenA(
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState("square", config),
+                                        this@AnimatedContent,
+                                    )
+                                )
+
+                            "B" ->
+                                ScreenB(
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState("square", config),
+                                        this@AnimatedContent,
+                                    )
+                                )
+
+                            "C" ->
+                                ScreenC(
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState("square", config),
+                                        this@AnimatedContent,
+                                    )
+                                )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

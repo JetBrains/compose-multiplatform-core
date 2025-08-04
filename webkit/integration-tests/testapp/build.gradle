@@ -32,6 +32,7 @@ plugins {
 dependencies {
     api(libs.jspecify)
     implementation("androidx.appcompat:appcompat:1.1.0")
+    implementation("androidx.activity:activity:1.10.1")
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(project(":webkit:webkit"))
@@ -56,6 +57,7 @@ dependencies {
 ApkCopyHelperKt.setupAppApkCopy(project, "release")
 
 android {
+    compileSdk = 35
     lint {
         disable.add("UnusedResources")
     }

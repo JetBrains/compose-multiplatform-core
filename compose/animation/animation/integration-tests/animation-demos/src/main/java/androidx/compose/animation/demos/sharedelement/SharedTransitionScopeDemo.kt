@@ -64,6 +64,7 @@ fun SharedElementDemos() {
             "Nested" to { NestedSharedElementDemo() },
             "Expanded Card" to { SwitchBetweenCollapsedAndExpanded() },
             "Container Transform" to { ContainerTransformDemo() },
+            "Dynamically Enabled Shared Elements" to { DynamicallyEnableSharedElementsDemo() },
             "Shared Element\n Caller Managed Vis" to { SharedElementWithCallerManagedVisibility() },
             "FABInOverlay" to { SharedElementWithFABInOverlaySample() },
             "AnimatedContent" to { SharedElementInAnimatedContentSample() },

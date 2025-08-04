@@ -70,7 +70,9 @@ import kotlin.math.sqrt
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  * @param style A @Composable factory to provide the style to use. This composable SHOULDN'T
  *   generate any compose nodes.
  */

@@ -27,6 +27,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.GestureDetector
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -52,6 +53,7 @@ import androidx.lifecycle.withStarted
 import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
+import androidx.pdf.featureflag.PdfFeatureFlags.isExternalHardwareInteractionEnabled
 import androidx.pdf.util.AnnotationUtils
 import androidx.pdf.util.Uris
 import androidx.pdf.view.PdfContentLayout
@@ -526,6 +528,19 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 }
             }
         pdfView.setLinkClickListener(linkClickListener)
+
+        // Activates text search when PdfView receives Ctrl + F key press
+        _pdfView.setOnKeyListener { _, keyCode, event ->
+            if (
+                isExternalHardwareInteractionEnabled &&
+                    keyCode == KeyEvent.KEYCODE_F &&
+                    event.action == KeyEvent.ACTION_DOWN
+            ) {
+                isTextSearchActive = true
+                return@setOnKeyListener true
+            }
+            return@setOnKeyListener false
+        }
     }
 
     private fun setupSearchViewListeners(searchView: PdfSearchView) {

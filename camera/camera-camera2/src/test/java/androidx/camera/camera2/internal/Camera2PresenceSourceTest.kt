@@ -114,7 +114,11 @@ class Camera2PresenceSourceTest {
     fun setUp() {
         fakeCameraManager = FakeCameraManagerCompat()
         camera2PresenceSource =
-            Camera2PresenceSource(CameraManagerCompat.from(fakeCameraManager), directExecutor)
+            Camera2PresenceSource(
+                emptyList(),
+                CameraManagerCompat.from(fakeCameraManager),
+                directExecutor,
+            )
     }
 
     @Test

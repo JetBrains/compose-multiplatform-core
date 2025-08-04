@@ -570,6 +570,20 @@ package androidx.xr.runtime.testing {
     ctor public FakePointerCaptureComponent(optional java.util.concurrent.Executor? executor, optional androidx.xr.runtime.internal.PointerCaptureComponent.StateListener? stateListener);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntime implements androidx.xr.runtime.internal.RenderingRuntime {
+    ctor public FakeRenderingRuntime(androidx.xr.runtime.internal.SceneRuntime sceneRuntime, android.app.Activity activity);
+    method public void dispose();
+    method public void startRenderer();
+    method public void stopRenderer();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntimeFactory implements androidx.xr.runtime.internal.RenderingRuntimeFactory {
+    ctor public FakeRenderingRuntimeFactory();
+    method public androidx.xr.runtime.internal.RenderingRuntime create(androidx.xr.runtime.internal.SceneRuntime sceneRuntime, android.app.Activity activity);
+    method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
+    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeResizableComponent extends androidx.xr.runtime.testing.FakeComponent implements androidx.xr.runtime.internal.ResizableComponent {
     ctor public FakeResizableComponent();
     ctor public FakeResizableComponent(optional androidx.xr.runtime.internal.Dimensions size, optional androidx.xr.runtime.internal.Dimensions minimumSize, optional androidx.xr.runtime.internal.Dimensions maximumSize, optional float fixedAspectRatio, optional boolean autoHideContent, optional boolean autoUpdateSize, optional boolean forceShowResizeOverlay);
@@ -822,6 +836,18 @@ package androidx.xr.runtime.testing {
   public static final class FakeRuntimeViewCamera.Companion {
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.runtime.internal.SceneRuntime {
+    ctor public FakeSceneRuntime(android.app.Activity activity);
+    method public void dispose();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntimeFactory implements androidx.xr.runtime.internal.SceneRuntimeFactory {
+    ctor public FakeSceneRuntimeFactory();
+    method public androidx.xr.runtime.internal.SceneRuntime create(android.app.Activity activity);
+    method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
+    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSoundPoolExtensionsWrapper implements androidx.xr.runtime.internal.SoundPoolExtensionsWrapper {
     ctor public FakeSoundPoolExtensionsWrapper();
     method @androidx.xr.runtime.internal.SpatializerConstants.SourceType public int getSpatialSourceType(android.media.SoundPool soundPool, int streamId);
@@ -834,8 +860,10 @@ package androidx.xr.runtime.testing {
     method public void addOnPassthroughOpacityChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Float> listener);
     method public void addOnSpatialEnvironmentChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Boolean> listener);
     method public float getCurrentPassthroughOpacity();
+    method public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Float>> getPassthroughOpacityChangedListenerMap();
     method public float getPreferredPassthroughOpacity();
     method public androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference? getPreferredSpatialEnvironment();
+    method public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Boolean>> getSpatialEnvironmentChangedListenerMap();
     method public boolean isPreferredSpatialEnvironmentActive();
     method public void removeOnPassthroughOpacityChangedListener(java.util.function.Consumer<java.lang.Float> listener);
     method public void removeOnSpatialEnvironmentChangedListener(java.util.function.Consumer<java.lang.Boolean> listener);
@@ -843,8 +871,10 @@ package androidx.xr.runtime.testing {
     method public void setPreferredSpatialEnvironment(androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference?);
     property public float currentPassthroughOpacity;
     property public boolean isPreferredSpatialEnvironmentActive;
+    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Float>> passthroughOpacityChangedListenerMap;
     property public float preferredPassthroughOpacity;
     property public androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference? preferredSpatialEnvironment;
+    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Boolean>> spatialEnvironmentChangedListenerMap;
   }
 
   public final class FakeSpatialModeChangeListener implements androidx.xr.runtime.internal.SpatialModeChangeListener {

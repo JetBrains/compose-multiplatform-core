@@ -133,8 +133,9 @@ class ProjectedServiceBindingTest {
             assertThrows(IllegalStateException::class.java) {
                 ProjectedServiceBinding.bind(mockContext, mockServiceConnection)
             }
+        val intent: Intent = Intent(ACTION_BIND)
         assertThat(exception.message)
-            .isEqualTo("More than one system service found for action: $ACTION_BIND.")
+            .isEqualTo("More than one system service found for action: $intent.")
         verify(mockContext, never()).bindService(any(), any(), anyInt())
     }
 

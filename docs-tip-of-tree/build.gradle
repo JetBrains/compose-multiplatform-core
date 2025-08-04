@@ -83,6 +83,9 @@ dependencies {
     kmpDocs(project(":compose:material:material"))
     kmpDocs(project(":compose:material:material-ripple"))
     docs(project(":compose:material:material-navigation"))
+    docs(project(":compose:remote:remote-core"))
+    docs(project(":compose:remote:remote-creation"))
+    docs(project(":compose:remote:remote-player-view"))
     kmpDocs(project(":compose:runtime:runtime"))
     kmpDocs(project(":compose:runtime:runtime-annotation"))
     docs(project(":compose:runtime:runtime-livedata"))
@@ -440,6 +443,8 @@ dependencies {
     docs(project(":xr:runtime:runtime-testing"))
     docs(project(":xr:scenecore:scenecore"))
     docs(project(":xr:scenecore:scenecore-guava"))
+    docs(project(":xr:scenecore:scenecore-spatial-core"))
+    docs(project(":xr:scenecore:scenecore-spatial-rendering"))
     docs(project(":xr:scenecore:scenecore-testing"))
 }
 afterEvaluate {

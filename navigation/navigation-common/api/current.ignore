@@ -1,13 +1,87 @@
 // Baseline format: 1.0
-AddedFinal: androidx.navigation.NavDestinationBuilder#deepLink(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
-    Method androidx.navigation.NavDestinationBuilder.deepLink has added 'final' qualifier
-AddedFinal: androidx.navigation.NavDestinationBuilder#deepLinkSafeArgs(String):
-    Method androidx.navigation.NavDestinationBuilder.deepLinkSafeArgs has added 'final' qualifier
-AddedFinal: androidx.navigation.NavGraph#findNode():
-    Method androidx.navigation.NavGraph.findNode has added 'final' qualifier
-AddedFinal: androidx.navigation.NavGraph#setStartDestination():
-    Method androidx.navigation.NavGraph.setStartDestination has added 'final' qualifier
-
-
 ChangedType: androidx.navigation.NavDestination.ClassType#value():
-    Method androidx.navigation.NavDestination.ClassType.value has changed return type from java.lang.Class<?> to kotlin.reflect.KClass<?>
+    Binary breaking change: Method androidx.navigation.NavDestination.ClassType.value has changed return type from kotlin.reflect.KClass<?> to java.lang.Class<?>
+
+
+DefaultValueChange: androidx.navigation.NavOptions.Builder#setPopUpTo(boolean, boolean) parameter #1:
+    Source breaking change: Attempted to remove default value from parameter saveState in androidx.navigation.NavOptions.Builder.setPopUpTo
+DefaultValueChange: androidx.navigation.NavOptionsBuilder#popUpTo(kotlin.jvm.functions.Function1<androidx.navigation.PopUpToBuilder,kotlin.Unit>) parameter #0:
+    Source breaking change: Attempted to remove default value from parameter popUpToBuilder in androidx.navigation.NavOptionsBuilder.popUpTo
+
+
+ParameterNameChange: androidx.navigation.NavDestinationBuilder#deepLink(String) parameter #0:
+    Source breaking change: Attempted to change parameter name from uriPattern to basePath in method androidx.navigation.NavDestinationBuilder.deepLink
+
+
+RemovedFromBytecode: androidx.navigation.NavBackStackEntryKt#toRoute(androidx.navigation.NavBackStackEntry):
+    Binary breaking change: method androidx.navigation.NavBackStackEntryKt.toRoute(androidx.navigation.NavBackStackEntry) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavDeepLink.Builder#setUriPattern(String, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>):
+    Binary breaking change: method androidx.navigation.NavDeepLink.Builder.setUriPattern(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavDeepLinkDslBuilderKt#navDeepLink(String, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.NavDeepLinkDslBuilderKt.navDeepLink(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavDestination.Companion#hasRoute(androidx.navigation.NavDestination):
+    Binary breaking change: method androidx.navigation.NavDestination.Companion.hasRoute(androidx.navigation.NavDestination) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavDestinationBuilder#deepLink(String):
+    Binary breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavDestinationBuilder#deepLink(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraph#findNode():
+    Binary breaking change: method androidx.navigation.NavGraph.findNode() has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraph#setStartDestination():
+    Binary breaking change: method androidx.navigation.NavGraph.setStartDestination() has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, Object, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.NavGraphBuilderKt.navigation(androidx.navigation.NavGraphBuilder,Object,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavGraphBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, kotlin.reflect.KClass<?>, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.NavGraphBuilderKt.navigation(androidx.navigation.NavGraphBuilder,kotlin.reflect.KClass<?>,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavGraphBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraphKt#contains(androidx.navigation.NavGraph, kotlin.reflect.KClass<T>):
+    Binary breaking change: method androidx.navigation.NavGraphKt.contains(androidx.navigation.NavGraph,kotlin.reflect.KClass<T>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavGraphKt#get(androidx.navigation.NavGraph, kotlin.reflect.KClass<T>):
+    Binary breaking change: method androidx.navigation.NavGraphKt.get(androidx.navigation.NavGraph,kotlin.reflect.KClass<T>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavOptions.Builder#setPopUpTo(boolean, boolean):
+    Binary breaking change: method androidx.navigation.NavOptions.Builder.setPopUpTo(boolean,boolean) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavOptionsBuilder#popUpTo(kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.NavOptionsBuilder.popUpTo(kotlin.jvm.functions.Function1<androidx.navigation.PopUpToBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.SavedStateHandleKt#toRoute(androidx.lifecycle.SavedStateHandle, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>):
+    Binary breaking change: method androidx.navigation.SavedStateHandleKt.toRoute(androidx.lifecycle.SavedStateHandle,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>) has been removed from bytecode
+
+
+RemovedFromJava: androidx.navigation.NavBackStackEntryKt#toRoute(androidx.navigation.NavBackStackEntry):
+    Source breaking change: method androidx.navigation.NavBackStackEntryKt.toRoute(androidx.navigation.NavBackStackEntry) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavDeepLink.Builder#setUriPattern(String, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>):
+    Source breaking change: method androidx.navigation.NavDeepLink.Builder.setUriPattern(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavDeepLinkDslBuilderKt#navDeepLink(String, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.NavDeepLinkDslBuilderKt.navDeepLink(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavDestination.Companion#hasRoute(androidx.navigation.NavDestination):
+    Source breaking change: method androidx.navigation.NavDestination.Companion.hasRoute(androidx.navigation.NavDestination) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavDestinationBuilder#deepLink(String):
+    Source breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavDestinationBuilder#deepLink(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraph#findNode():
+    Source breaking change: method androidx.navigation.NavGraph.findNode() can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraph#setStartDestination():
+    Source breaking change: method androidx.navigation.NavGraph.setStartDestination() can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, Object, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.NavGraphBuilderKt.navigation(androidx.navigation.NavGraphBuilder,Object,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavGraphBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, kotlin.reflect.KClass<?>, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.NavGraphBuilderKt.navigation(androidx.navigation.NavGraphBuilder,kotlin.reflect.KClass<?>,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavGraphBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraphKt#contains(androidx.navigation.NavGraph, kotlin.reflect.KClass<T>):
+    Source breaking change: method androidx.navigation.NavGraphKt.contains(androidx.navigation.NavGraph,kotlin.reflect.KClass<T>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraphKt#get(androidx.navigation.NavGraph, kotlin.reflect.KClass<T>):
+    Source breaking change: method androidx.navigation.NavGraphKt.get(androidx.navigation.NavGraph,kotlin.reflect.KClass<T>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavOptions.Builder#setPopUpTo(boolean):
+    Source breaking change: method androidx.navigation.NavOptions.Builder.setPopUpTo(boolean) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavOptions.Builder#setPopUpTo(boolean, boolean):
+    Source breaking change: method androidx.navigation.NavOptions.Builder.setPopUpTo(boolean,boolean) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavOptionsBuilder#popUpTo(kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.NavOptionsBuilder.popUpTo(kotlin.jvm.functions.Function1<androidx.navigation.PopUpToBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.SavedStateHandleKt#toRoute(androidx.lifecycle.SavedStateHandle, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>):
+    Source breaking change: method androidx.navigation.SavedStateHandleKt.toRoute(androidx.lifecycle.SavedStateHandle,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.navigation.NavOptions.Builder#setPopUpTo(boolean):
+    Source breaking change: method androidx.navigation.NavOptions.Builder.setPopUpTo(boolean) can no longer be resolved from Kotlin source
+
+
+RemovedMethod: androidx.navigation.NavDestinationBuilder#deepLinkSafeArgs(String):
+    Binary breaking change: Removed method androidx.navigation.NavDestinationBuilder.deepLinkSafeArgs(String)

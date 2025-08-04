@@ -44,7 +44,6 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
@@ -558,89 +557,8 @@ class NavDisplayTest {
         assertThat(composeTestRule.onNodeWithText(third).isDisplayed()).isTrue()
     }
 
-    @Ignore
     @Test
-    fun testNonConsecutiveDuplicateKeyStateIsCorrect() {
-        lateinit var numberOnScreen1: MutableState<Int>
-        lateinit var numberOnScreen2: MutableState<Int>
-        lateinit var backStack: NavBackStack
-        composeTestRule.setContent {
-            backStack = rememberNavBackStack(First)
-            NavDisplay(
-                backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
-            ) {
-                when (it) {
-                    First ->
-                        NavEntry(First, First.toString()) {
-                            numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
-                            Text("numberOnScreen1: ${numberOnScreen1.value}")
-                        }
-                    Second ->
-                        NavEntry(Second, Second.toString()) {
-                            numberOnScreen2 = rememberSaveable { mutableStateOf(0) }
-                            Text("numberOnScreen2: ${numberOnScreen2.value}")
-                        }
-                    else -> error("Invalid key passed")
-                }
-            }
-        }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.add(Second) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen2.value).isEqualTo(0)
-            numberOnScreen2.value++
-            numberOnScreen2.value++
-            numberOnScreen2.value++
-            numberOnScreen2.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen2: 4").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.add(First) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 3").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.removeAt(backStack.size - 1) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("The number should be restored")
-                .that(numberOnScreen2.value)
-                .isEqualTo(4)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen2: 4").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.removeAt(backStack.size - 1) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("The number should be restored")
-                .that(numberOnScreen1.value)
-                .isEqualTo(2)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
-    }
-
-    @Ignore("TODO: figure out how duplicate keys should work")
-    @Test
-    fun testDuplicateKeyStateIsCorrect() {
+    fun testDuplicateKeyStateIsShared() {
         lateinit var numberOnScreen1: MutableState<Int>
         lateinit var backStack: NavBackStack
         composeTestRule.setContent {
@@ -660,117 +578,25 @@ class NavDisplayTest {
             }
         }
 
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
+        composeTestRule.waitForIdle()
 
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
+        assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
+        numberOnScreen1.value++
+        numberOnScreen1.value++
 
-        composeTestRule.runOnIdle { backStack.add(First) }
+        composeTestRule.onNodeWithText("numberOnScreen1: 2").assertIsDisplayed()
 
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
+        backStack.add(First)
+        composeTestRule.waitForIdle()
 
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 4").isDisplayed()).isTrue()
+        assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(2)
+        composeTestRule.onNodeWithText("numberOnScreen1: 2").assertIsDisplayed()
 
-        composeTestRule.runOnIdle { backStack.add(First) }
+        backStack.removeLastOrNull()
+        composeTestRule.waitForIdle()
 
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 3").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.removeAt(backStack.size - 1) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("The number should be restored")
-                .that(numberOnScreen1.value)
-                .isEqualTo(4)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 4").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.removeAt(backStack.size - 1) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("The number should be restored")
-                .that(numberOnScreen1.value)
-                .isEqualTo(2)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
-    }
-
-    @Ignore("TODO: figure out how duplicate keys should work")
-    @Test
-    fun testDuplicateKeyStateIsReset() {
-        lateinit var numberOnScreen1: MutableState<Int>
-        lateinit var backStack: NavBackStack
-        composeTestRule.setContent {
-            backStack = rememberNavBackStack(First)
-            NavDisplay(
-                backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
-            ) {
-                when (it) {
-                    First ->
-                        NavEntry(First, First.toString()) {
-                            numberOnScreen1 = rememberSaveable { mutableStateOf(0) }
-                            Text("numberOnScreen1: ${numberOnScreen1.value}")
-                        }
-                    else -> error("Invalid key passed")
-                }
-            }
-        }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.add(First) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-            numberOnScreen1.value++
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 4").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.removeAt(backStack.size - 1) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("The number should be restored")
-                .that(numberOnScreen1.value)
-                .isEqualTo(2)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 2").isDisplayed()).isTrue()
-
-        composeTestRule.runOnIdle { backStack.add(First) }
-
-        composeTestRule.runOnIdle {
-            assertWithMessage("Initial number should be 0").that(numberOnScreen1.value).isEqualTo(0)
-        }
-
-        assertThat(composeTestRule.onNodeWithText("numberOnScreen1: 0").isDisplayed()).isTrue()
+        assertWithMessage("The number should be restored").that(numberOnScreen1.value).isEqualTo(2)
+        composeTestRule.onNodeWithText("numberOnScreen1: 2").assertIsDisplayed()
     }
 
     @Test

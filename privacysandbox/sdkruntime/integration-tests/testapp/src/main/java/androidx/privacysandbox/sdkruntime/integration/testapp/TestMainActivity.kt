@@ -64,7 +64,7 @@ class TestMainActivity : AppCompatActivity() {
                 try {
                     addLogMessage("Loading TestSDK...")
                     val testSdk = api.loadTestSdk()
-                    addLogMessage("TestSDK Message: " + testSdk.getMessage())
+                    addLogMessage("TestSDK Message: " + testSdk.doSomething("42"))
                     addLogMessage("Successfully loaded TestSDK")
                 } catch (ex: LoadSdkCompatException) {
                     addLogMessage("Failed to load TestSDK: " + ex.message)

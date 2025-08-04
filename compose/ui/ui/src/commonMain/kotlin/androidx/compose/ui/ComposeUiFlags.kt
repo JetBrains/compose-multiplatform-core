@@ -160,27 +160,6 @@ object ComposeUiFlags {
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
 
-    /**
-     * Flag for enabling the fix for correctly dispatching interop pointer events during the
-     * [PointerEventPass.Main] pass and not the final pass.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isPointerInteropFilterDispatchingFixEnabled: Boolean = true
-
-    /**
-     * Flag for enabling the fix for calling the correct nested scrolling methods from the
-     * connection created by [rememberNestedScrollInteropConnection].
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isNestedScrollInteropPostFlingFixEnabled: Boolean = true
-
-    /** Flag for enabling the fix for using the correct node for nested scroll operations. */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isNestedScrollDispatcherNodeFixEnabled: Boolean = true
-
     /** Flag for enabling indirect touch event navigation gestures in Compose. */
     @Suppress("MutableBareField")
     @JvmField
@@ -191,4 +170,13 @@ object ComposeUiFlags {
 
     /** Flag for enabling the performance optimization for content capture. */
     @Suppress("MutableBareField") @JvmField var isContentCaptureOptimizationEnabled: Boolean = true
+
+    /**
+     * Flag for enabling nested scroll interop fix for propagating integers, this fixes an issue
+     * with interop between compose and views nested scroll where small deltas with the wrong sign
+     * were being scaled up due to the rounding used.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollInteropIntegerPropagationEnabled: Boolean = true
 }

@@ -61,7 +61,7 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onDown(@NonNull MotionEvent e) {
-        if ((MotionEvents.isAltKeyPressed(e) && MotionEvents.isPrimaryMouseButtonPressed(e))
+        if ((MotionEvents.isAltKeyPressed(e) && MotionEvents.isPrimaryMouseButtonPressed(e, true))
                 || MotionEvents.isSecondaryMouseButtonPressed(e)) {
             return onRightClick(e);
         }
@@ -128,7 +128,8 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-        if (MotionEvents.isAltKeyPressed(e) || !MotionEvents.isPrimaryMouseButtonPressed(e)) {
+        if (MotionEvents.isAltKeyPressed(e)
+                || !MotionEvents.isPrimaryMouseButtonPressed(e, true)) {
             return false;
         }
 
@@ -163,7 +164,8 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onDoubleTap(@NonNull MotionEvent e) {
-        if (MotionEvents.isAltKeyPressed(e) || !MotionEvents.isPrimaryMouseButtonPressed(e)) {
+        if (MotionEvents.isAltKeyPressed(e)
+                || !MotionEvents.isPrimaryMouseButtonPressed(e, true)) {
             return false;
         }
 

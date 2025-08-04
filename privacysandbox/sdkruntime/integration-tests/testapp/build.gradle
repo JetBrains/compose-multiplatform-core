@@ -33,6 +33,7 @@ android {
 dependencies {
     implementation(project(":privacysandbox:sdkruntime:integration-tests:testaidl"))
     implementation(project(":privacysandbox:sdkruntime:integration-tests:testsdk-asb"))
+    implementation(project(":privacysandbox:sdkruntime:integration-tests:mediateesdk-asb"))
 
     implementation("androidx.appcompat:appcompat:1.6.0")
     implementation("com.google.android.material:material:1.6.0")
@@ -42,6 +43,8 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     androidTestImplementation(project(":internal-testutils-runtime"))
+    androidTestImplementation(project(":internal-testutils-truth"))
+    androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.espressoCore)

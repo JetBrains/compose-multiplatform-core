@@ -29,6 +29,7 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("androidx.stableaidl")
 }
 
 dependencies {
@@ -36,22 +37,42 @@ dependencies {
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime"))
 
+    implementation(project(":xr:projected:projected"))
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core-ktx:1.12.0")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinTest)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
 }
 
 android {
+    compileSdk = 35
     namespace = "androidx.xr.arcore.projected"
 
+    buildFeatures {
+        aidl = true
+    }
+
+    buildTypes.all {
+       stableAidl {
+        version 1
+       }
+    }
 
     defaultConfig {
-        minSdk = 34
+        minSdk = 35
     }
 }
 
 androidx {
     name = "XR Projected ARCore"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
     inceptionYear = "2025"
-    description = "An implementation of the XR Perception APIs using Projected Glasses runtime."
+    description = "An implementation of the XR Perception APIs using the XR Projected SDK."
+    enableRobolectric()
 }

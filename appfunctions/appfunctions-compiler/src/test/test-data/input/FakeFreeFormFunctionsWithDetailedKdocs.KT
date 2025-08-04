@@ -17,7 +17,7 @@ class FakeFreeFormFunctions {
      *
      * @param appFunctionContext the AppFunction's context.
      * @param serializableParam an input AppFunctionSerializable.
-     * @return a string.
+     * @return The result string.
      * @throws IllegalArgumentException if the parameters have an incorrect format.
      */
     @AppFunction(isDescribedByKdoc = true)
@@ -37,7 +37,7 @@ class FakeFreeFormFunctions {
      *
      * @param appFunctionContext the AppFunction's context.
      * @param input an input AppFunctionSerializable.
-     * @return a string.
+     * @return The result string.
      * @throws IllegalArgumentException if the inputString is in an incorrect format.
      */
     @AppFunction(isDescribedByKdoc = true)
@@ -56,7 +56,7 @@ class FakeFreeFormFunctions {
      *
      * @param appFunctionContext the AppFunction's context.
      * @param input an input AppFunctionSerializable.
-     * @return a string.
+     * @return The result string.
      * @throws IllegalArgumentException if the inputString is in an incorrect format.
      */
     @AppFunction(isDescribedByKdoc = false)

@@ -20,11 +20,11 @@ import android.content.Context
 import android.os.Bundle
 import androidx.privacysandbox.databridge.client.DataBridgeClient
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testsdk.TestSdk
 import androidx.privacysandbox.databridge.integration.testsdk.TestSdkFactory.wrapToTestSdk
-import androidx.privacysandbox.databridge.integration.testutils.fromKeyValue
-import androidx.privacysandbox.databridge.integration.testutils.toKeyResultPair
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
+import java.util.concurrent.Executor
 
 class TestAppApi(appContext: Context) {
 
@@ -43,35 +43,23 @@ class TestAppApi(appContext: Context) {
 
     fun unloadTestSdk() = sdkSandboxManager.unloadSdk(TEST_SDK_NAME)
 
-    suspend fun getValuesFromApp(keys: Set<Key>): Map<Key, Result<Any?>> {
+    suspend fun getValues(keys: Set<Key>): Map<Key, Result<Any?>> {
         return dataBridgeClient.getValues(keys)
     }
 
-    suspend fun getValuesFromSdk(keys: Set<Key>): Map<Key, Result<Any?>> {
-        val (keyNames, keyTypes) = keys.map { it.name to it.type.toString() }.unzip()
-        val result = sdk!!.getValues(keyNames, keyTypes)
-        return result.associate { it.toKeyResultPair() }
-    }
-
-    suspend fun setValuesFromApp(keyValueMap: Map<Key, Any?>) {
+    suspend fun setValues(keyValueMap: Map<Key, Any?>) {
         dataBridgeClient.setValues(keyValueMap)
     }
 
-    suspend fun setValuesFromSdk(keyValueMap: Map<Key, Any?>) {
-        val keyValueData = keyValueMap.map { Bundle().fromKeyValue(it.key, it.value) }
-        sdk!!.setValues(
-            keyValueMap.keys.map { it.name },
-            keyValueMap.keys.map { it.type.toString() },
-            keyValueData,
-        )
-    }
-
-    suspend fun removeValuesFromApp(keys: Set<Key>) {
+    suspend fun removeValues(keys: Set<Key>) {
         return dataBridgeClient.removeValues(keys)
     }
 
-    suspend fun removeValuesFromSdk(keys: Set<Key>) {
-        val (keyNames, keyTypes) = keys.map { it.name to it.type.toString() }.unzip()
-        sdk!!.removeValues(keyNames, keyTypes)
+    fun registerKeyUpdateCallback(keys: Set<Key>, executor: Executor, callback: KeyUpdateCallback) {
+        dataBridgeClient.registerKeyUpdateCallback(keys, executor, callback)
+    }
+
+    fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback) {
+        dataBridgeClient.unregisterKeyUpdateCallback(callback)
     }
 }

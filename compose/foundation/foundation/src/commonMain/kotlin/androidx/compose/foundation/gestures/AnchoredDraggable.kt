@@ -40,6 +40,7 @@ import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -880,6 +881,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * Strongly consider using [requireOffset] which will throw if the offset is read before it is
      * initialized. This helps catch issues early in your workflow.
      */
+    @get:FrequentlyChangingValue
     var offset: Float by mutableFloatStateOf(Float.NaN)
         private set
 
@@ -889,6 +891,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @throws IllegalStateException If the offset has not been initialized yet
      * @see offset
      */
+    @FrequentlyChangingValue
     fun requireOffset(): Float {
         checkPrecondition(!offset.isNaN()) {
             "The offset was read before being initialized. Did you access the offset in a phase " +
@@ -908,6 +911,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param from The starting value used to calculate the distance
      * @param to The end value used to calculate the distance
      */
+    @FrequentlyChangingValue
     @FloatRange(from = 0.0, to = 1.0)
     fun progress(from: T, to: T): Float {
         val fromOffset = anchors.positionOf(from)
@@ -933,6 +937,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
             "Use the progress function to query the progress between two specified " + "anchors.",
         replaceWith = ReplaceWith("progress(state.settledValue, state.targetValue)"),
     )
+    @get:FrequentlyChangingValue
     @get:FloatRange(from = 0.0, to = 1.0)
     val progress: Float by
         derivedStateOf(structuralEqualityPolicy()) {
@@ -1591,7 +1596,7 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
-        return keys[minAnchorIndex]
+        return keys.getOrNull(minAnchorIndex)
     }
 
     override fun closestAnchor(position: Float, searchUpwards: Boolean): T? {
@@ -1605,7 +1610,7 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
-        return keys[minAnchorIndex]
+        return keys.getOrNull(minAnchorIndex)
     }
 
     override fun minPosition() = anchors.minOrNull() ?: Float.NaN

@@ -101,7 +101,7 @@ class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClass
             isEnabledByDefault = true,
             schema = annotationProperties.getAppFunctionSchemaMetadata(),
             parameters = parameterTypeMetadataList,
-            response = AppFunctionResponseMetadata(responseTypeMetadata),
+            response = AppFunctionResponseMetadata(responseTypeMetadata, description = ""),
             components = AppFunctionComponentsMetadata(sharedDataTypeMap),
         )
     }

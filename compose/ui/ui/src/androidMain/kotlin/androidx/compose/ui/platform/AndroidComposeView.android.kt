@@ -96,6 +96,7 @@ import androidx.compose.ui.autofill.PlatformAutofillManagerImpl
 import androidx.compose.ui.autofill.performAutofill
 import androidx.compose.ui.autofill.populateViewStructure
 import androidx.compose.ui.contentcapture.AndroidContentCaptureManager
+import androidx.compose.ui.contentcapture.ContentCaptureSessionWrapper
 import androidx.compose.ui.draganddrop.AndroidDragAndDropManager
 import androidx.compose.ui.draganddrop.ComposeDragShadowBuilder
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
@@ -176,7 +177,6 @@ import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.node.visitSubtree
 import androidx.compose.ui.platform.MotionEventVerifierApi29.isValidMotionEvent
-import androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat
 import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.scrollcapture.ScrollCapture
@@ -3544,7 +3544,7 @@ private fun View.containsDescendant(other: View): Boolean {
     return false
 }
 
-private fun View.getContentCaptureSessionCompat(): ContentCaptureSessionCompat? {
+private fun View.getContentCaptureSessionCompat(): ContentCaptureSessionWrapper? {
     ViewCompatShims.setImportantForContentCapture(
         this,
         ViewCompatShims.IMPORTANT_FOR_CONTENT_CAPTURE_YES,

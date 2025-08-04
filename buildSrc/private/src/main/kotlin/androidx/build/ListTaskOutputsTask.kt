@@ -110,6 +110,7 @@ val taskNamesKnownToDuplicateOutputs =
 
         // b/308798582
         "transformNonJvmMainCInteropDependenciesMetadataForIde",
+        "transformAppleMainCInteropDependenciesMetadataForIde",
         "transformAppleTestCInteropDependenciesMetadataForIde",
         "transformDarwinTestCInteropDependenciesMetadataForIde",
         "transformDarwinMainCInteropDependenciesMetadataForIde",

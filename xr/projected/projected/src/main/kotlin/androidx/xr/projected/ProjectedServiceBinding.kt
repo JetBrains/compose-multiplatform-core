@@ -33,11 +33,32 @@ import androidx.annotation.RestrictTo
  * 2. Service must include the "androidx.xr.projected.ACTION_BIND" action in its
  *    [android.content.IntentFilter].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object ProjectedServiceBinding {
 
     internal const val ACTION_BIND: String = "androidx.xr.projected.ACTION_BIND"
-    private val QUERY_INTENT = Intent(ACTION_BIND)
+    internal const val ACTION_PERCEPTION_BIND: String =
+        "androidx.xr.projected.ACTION_PERCEPTION_BIND"
+
+    /**
+     * Binds to a perception projected service using provided [ServiceConnection].
+     *
+     * If service can't be found, the method throws [IllegalStateException]. It means that the
+     * system doesn't include a service supporting Projected XR devices.
+     *
+     * @param context can be either a host [Context] or the Projected device [Context].
+     * @return true if the system is in the process of bringing up a service that your client has
+     *   permission to bind to; false if the system couldn't find the service or if your client
+     *   doesn't have permission to bind to it. Regardless of the return value, you should later
+     *   call unbindService to release the connection.
+     */
+    @JvmStatic
+    public fun bindPerception(context: Context, serviceConnection: ServiceConnection): Boolean =
+        context.bindService(
+            getIntent(context, ACTION_PERCEPTION_BIND),
+            serviceConnection,
+            Context.BIND_AUTO_CREATE,
+        )
 
     /**
      * Binds to a service using provided [ServiceConnection].
@@ -53,10 +74,15 @@ public object ProjectedServiceBinding {
      */
     @JvmStatic
     public fun bind(context: Context, serviceConnection: ServiceConnection): Boolean =
-        context.bindService(getIntent(context), serviceConnection, Context.BIND_AUTO_CREATE)
+        context.bindService(
+            getIntent(context, ACTION_BIND),
+            serviceConnection,
+            Context.BIND_AUTO_CREATE,
+        )
 
-    private fun getIntent(context: Context): Intent {
-        val projectedSystemServiceResolveInfo = findProjectedSystemService(context)
+    private fun getIntent(context: Context, intentAction: String): Intent {
+        val intent = Intent(intentAction)
+        val projectedSystemServiceResolveInfo = findProjectedSystemService(context, intent)
         val foundService =
             ComponentName(
                 projectedSystemServiceResolveInfo.serviceInfo.packageName,
@@ -65,16 +91,13 @@ public object ProjectedServiceBinding {
 
         return Intent().apply {
             component = foundService
-            action = ACTION_BIND
+            action = intentAction
         }
     }
 
-    private fun findProjectedSystemService(context: Context): ResolveInfo {
+    private fun findProjectedSystemService(context: Context, intent: Intent): ResolveInfo {
         val resolveInfoList: List<ResolveInfo> =
-            context.packageManager.queryIntentServices(
-                QUERY_INTENT,
-                PackageManager.GET_RESOLVED_FILTER,
-            )
+            context.packageManager.queryIntentServices(intent, PackageManager.GET_RESOLVED_FILTER)
 
         val resolveInfoSystemApps =
             resolveInfoList.filter {
@@ -90,7 +113,7 @@ public object ProjectedServiceBinding {
             "System doesn't include a service supporting Projected XR devices."
         }
         check(resolveInfoSystemApps.size == 1) {
-            "More than one system service found for action: $ACTION_BIND."
+            "More than one system service found for action: $intent."
         }
 
         return resolveInfoSystemApps.first()

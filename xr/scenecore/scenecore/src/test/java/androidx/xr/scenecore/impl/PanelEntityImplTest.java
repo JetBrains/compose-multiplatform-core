@@ -19,8 +19,6 @@ package androidx.xr.scenecore.impl;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -181,34 +179,6 @@ public class PanelEntityImplTest {
         assertThat(panelEntity.getSize().width).isEqualTo(640f);
         assertThat(panelEntity.getSize().height).isEqualTo(480f);
         assertThat(panelEntity.getSize().depth).isEqualTo(0f);
-    }
-
-    @Test
-    public void setSizeForZeroWidth_throwsException() {
-        PanelEntityImpl panelEntity = createPanelEntity(kVgaResolutionPx);
-        Dimensions invalidDimensions = new Dimensions(0f, 10f, 0f);
-
-        try {
-            panelEntity.setSize(invalidDimensions);
-            fail("Expected IllegalArgumentException to be thrown, but it wasn't.");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).isInstanceOf(IllegalArgumentException.class);
-            assertEquals("Dimensions width and height must be greater than zero.", e.getMessage());
-        }
-    }
-
-    @Test
-    public void setSizeForZeroHeight_throwsException() {
-        PanelEntityImpl panelEntity = createPanelEntity(kVgaResolutionPx);
-        Dimensions invalidDimensions = new Dimensions(10f, 0f, 0f);
-
-        try {
-            panelEntity.setSize(invalidDimensions);
-            fail("Expected IllegalArgumentException to be thrown, but it wasn't.");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).isInstanceOf(IllegalArgumentException.class);
-            assertEquals("Dimensions width and height must be greater than zero.", e.getMessage());
-        }
     }
 
     @Test

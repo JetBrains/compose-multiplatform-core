@@ -1,7 +1,33 @@
 // Baseline format: 1.0
-AddedFinal: androidx.navigation.NavController#clearBackStack():
-    Method androidx.navigation.NavController.clearBackStack has added 'final' qualifier
-AddedFinal: androidx.navigation.NavController#getBackStackEntry():
-    Method androidx.navigation.NavController.getBackStackEntry has added 'final' qualifier
-AddedFinal: androidx.navigation.NavController#popBackStack(boolean, boolean):
-    Method androidx.navigation.NavController.popBackStack has added 'final' qualifier
+DefaultValueChange: androidx.navigation.NavController#popBackStack(boolean, boolean) parameter #1:
+    Source breaking change: Attempted to remove default value from parameter saveState in androidx.navigation.NavController.popBackStack
+
+
+RemovedFromBytecode: androidx.navigation.ActivityNavArgsLazyKt#navArgs(android.app.Activity):
+    Binary breaking change: method androidx.navigation.ActivityNavArgsLazyKt.navArgs(android.app.Activity) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.ActivityNavigatorDestinationBuilderKt#activity(androidx.navigation.NavGraphBuilder, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.ActivityNavigatorDestinationBuilder,kotlin.Unit>):
+    Binary breaking change: method androidx.navigation.ActivityNavigatorDestinationBuilderKt.activity(androidx.navigation.NavGraphBuilder,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.ActivityNavigatorDestinationBuilder,kotlin.Unit>) has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavController#clearBackStack():
+    Binary breaking change: method androidx.navigation.NavController.clearBackStack() has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavController#getBackStackEntry():
+    Binary breaking change: method androidx.navigation.NavController.getBackStackEntry() has been removed from bytecode
+RemovedFromBytecode: androidx.navigation.NavController#popBackStack(boolean, boolean):
+    Binary breaking change: method androidx.navigation.NavController.popBackStack(boolean,boolean) has been removed from bytecode
+
+
+RemovedFromJava: androidx.navigation.ActivityNavArgsLazyKt#navArgs(android.app.Activity):
+    Source breaking change: method androidx.navigation.ActivityNavArgsLazyKt.navArgs(android.app.Activity) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.ActivityNavigatorDestinationBuilderKt#activity(androidx.navigation.NavGraphBuilder, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.ActivityNavigatorDestinationBuilder,kotlin.Unit>):
+    Source breaking change: method androidx.navigation.ActivityNavigatorDestinationBuilderKt.activity(androidx.navigation.NavGraphBuilder,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.ActivityNavigatorDestinationBuilder,kotlin.Unit>) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavController#clearBackStack():
+    Source breaking change: method androidx.navigation.NavController.clearBackStack() can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavController#getBackStackEntry():
+    Source breaking change: method androidx.navigation.NavController.getBackStackEntry() can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavController#popBackStack(boolean):
+    Source breaking change: method androidx.navigation.NavController.popBackStack(boolean) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavController#popBackStack(boolean, boolean):
+    Source breaking change: method androidx.navigation.NavController.popBackStack(boolean,boolean) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.navigation.NavController#popBackStack(boolean):
+    Source breaking change: method androidx.navigation.NavController.popBackStack(boolean) can no longer be resolved from Kotlin source

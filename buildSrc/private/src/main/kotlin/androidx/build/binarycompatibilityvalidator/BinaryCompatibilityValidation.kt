@@ -43,6 +43,7 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Provider
@@ -196,6 +197,14 @@ class BinaryCompatibilityValidation(
                 it.previousApiDump.set(
                     extractReleaseTask.map { extract -> extract.outputAbiFile.get() }
                 )
+                it.dependencies.set(
+                    kotlinMultiplatformExtension.nativeTargets().map { target ->
+                        DependenciesForTarget(
+                            konanTargetNameMapping[target.konanTarget.name]!!,
+                            target.compileDependencyFiles(),
+                        )
+                    }
+                )
                 it.ignoreFile.set(ignoreFile)
                 it.runtimeClasspath.from(runtimeClasspath)
                 it.projectVersion = provider { projectVersion.toString() }
@@ -205,6 +214,14 @@ class BinaryCompatibilityValidation(
                     }
             }
             project.tasks.register(CHECK_RELEASE_NAME, CheckAbiIsCompatibleTask::class.java) {
+                it.dependencies.set(
+                    kotlinMultiplatformExtension.nativeTargets().map { target ->
+                        DependenciesForTarget(
+                            konanTargetNameMapping[target.konanTarget.name]!!,
+                            target.compileDependencyFiles(),
+                        )
+                    }
+                )
                 it.currentApiDump.set(mergedApiFile.map { fileProperty -> fileProperty.get() })
                 it.previousApiDump.set(
                     extractReleaseTask.map { extract -> extract.outputAbiFile.get() }
@@ -482,3 +499,9 @@ private fun instantiateKlibTarget(
             ?: throw IllegalStateException("Constructor for KlibTarget doesn't exist")
     return constructor.newInstance(targetName, configurableName) as KlibTarget
 }
+
+private fun KotlinNativeTarget.compileDependencyFiles(): FileCollection =
+    compilations.getByName(MAIN_COMPILATION_NAME).compileDependencyFiles.filter {
+        // stdlib is a klib directory so no extension
+        it.extension == "" || it.extension == "klib"
+    }

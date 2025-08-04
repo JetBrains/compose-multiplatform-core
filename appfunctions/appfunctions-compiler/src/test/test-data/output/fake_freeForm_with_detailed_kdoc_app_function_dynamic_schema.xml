@@ -76,6 +76,7 @@
                 <isNullable>false</isNullable>
                 <type>8</type>
             </valueType>
+            <description>The result string.</description>
         </response>
         <functionId>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_isDescribedByKdoc_true</functionId>
     </appfunction>
@@ -106,6 +107,7 @@
                 <isNullable>false</isNullable>
                 <type>8</type>
             </valueType>
+            <description>The result string.</description>
         </response>
         <functionId>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_isDescribedByKdoc_withDerivedSerializable_true</functionId>
     </appfunction>

@@ -90,7 +90,7 @@ public object OrbiterDefaults {
  *
  * Example:
  * ```
- * Orbiter(position = OrbiterEdge.Top, offset = 10.dp) {
+ * Orbiter(position = ContentEdge.Top, offset = 10.dp) {
  *   Text("This is a top edge Orbiter")
  * }
  * ```
@@ -142,7 +142,7 @@ public fun Orbiter(
  *
  * Example:
  * ```
- * Orbiter(position = OrbiterEdge.Start, offset = 10.dp) {
+ * Orbiter(position = ContentEdge.Start, offset = 10.dp) {
  *   Text("This is a start edge Orbiter")
  * }
  * ```
@@ -379,7 +379,7 @@ private fun OrbiterData.calculateOffset(
             when (position) {
                 ContentEdge.Start -> xOffset
                 ContentEdge.End -> viewSize.width - contentSize.width - xOffset
-                else -> error("Unexpected OrbiterEdge: $position")
+                else -> error("Unexpected ContentEdge: $position")
             }
         return Offset(x, y.toFloat())
     } else {
@@ -399,7 +399,7 @@ private fun OrbiterData.calculateOffset(
             when (position) {
                 ContentEdge.Top -> yOffset
                 ContentEdge.Bottom -> viewSize.height - contentSize.height - yOffset
-                else -> error("Unexpected OrbiterEdge: $position")
+                else -> error("Unexpected ContentEdge: $position")
             }
         return Offset(x.toFloat(), y)
     }

@@ -725,6 +725,35 @@ class GraphicsLayerSemanticsTest(private val modifierVariant: ModifierVariant) {
         rule.runOnIdle { assertThat(info2.isVisibleToUser).isTrue() }
     }
 
+    @Test
+    fun blockGraphicsLayer_invalidateSemantics_setsGraphicsLayerScopeProperties() {
+        // Arrange.
+        val densityLog = mutableListOf<Float>()
+        val sizeLog = mutableListOf<Size>()
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).graphicsLayer {
+                    densityLog.add(density)
+                    sizeLog.add(size)
+                }
+            )
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(densityLog).containsExactly(rule.density.density, rule.density.density)
+
+            assertThat(sizeLog).hasSize(2)
+            // The size is not yet measured when semantics are invalidated the first time.
+            assertThat(sizeLog[0]).isEqualTo(Size.Zero)
+            // The second semantics invalidation happens after layout, so the size is now measured.
+            with(rule.density) {
+                sizeLog[1].width.toDp().assertIsEqualTo(10.dp)
+                sizeLog[1].height.toDp().assertIsEqualTo(10.dp)
+            }
+        }
+    }
+
     private fun Modifier.parameterizedGraphicsLayer(shape: Shape, clip: Boolean) =
         when (modifierVariant) {
             ModifierVariant.Simple -> this.graphicsLayer(shape = shape, clip = clip)

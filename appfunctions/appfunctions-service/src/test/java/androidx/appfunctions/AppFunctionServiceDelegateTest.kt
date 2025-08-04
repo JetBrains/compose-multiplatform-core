@@ -18,13 +18,12 @@ package androidx.appfunctions
 
 import android.content.Context
 import android.os.OutcomeReceiver
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_UNIT
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.AppFunctionServiceDelegate
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
@@ -104,17 +103,12 @@ class AppFunctionServiceDelegateTest {
                         AppFunctionParameterMetadata(
                             name = "requiredLong",
                             isRequired = true,
-                            dataType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_LONG,
-                                    isNullable = false,
-                                ),
+                            dataType = AppFunctionLongTypeMetadata(isNullable = false),
                         )
                     ),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_UNIT, isNullable = false)
+                        valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
             )
         )
@@ -141,8 +135,7 @@ class AppFunctionServiceDelegateTest {
                 parameters = listOf(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
+                        valueType = AppFunctionLongTypeMetadata(isNullable = false)
                     ),
             )
         )
@@ -170,8 +163,7 @@ class AppFunctionServiceDelegateTest {
                 parameters = listOf(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                        valueType = AppFunctionStringTypeMetadata(isNullable = false)
                     ),
             )
         )
@@ -206,17 +198,12 @@ class AppFunctionServiceDelegateTest {
                         AppFunctionParameterMetadata(
                             name = "testArg",
                             isRequired = true,
-                            dataType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_LONG,
-                                    isNullable = false,
-                                ),
+                            dataType = AppFunctionLongTypeMetadata(isNullable = false),
                         )
                     ),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                        valueType = AppFunctionStringTypeMetadata(isNullable = false)
                     ),
             )
         )
@@ -312,8 +299,7 @@ class AppFunctionServiceDelegateTest {
                 parameters = listOf(),
                 response =
                     AppFunctionResponseMetadata(
-                        valueType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
+                        valueType = AppFunctionStringTypeMetadata(isNullable = false)
                     ),
             )
     }

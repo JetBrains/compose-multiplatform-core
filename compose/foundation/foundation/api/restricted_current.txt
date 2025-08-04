@@ -138,30 +138,20 @@ package androidx.compose.foundation {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public final class ComposeFoundationFlags {
-    property public boolean DragGesturePickUpEnabled;
-    property public boolean isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled;
-    property public boolean isAutomaticNestedPrefetchEnabled;
     property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    property public boolean isFlingContinuationAtBoundsEnabled;
     property public boolean isKeepInViewFocusObservationChangeEnabled;
     property public boolean isNewContextMenuEnabled;
     property public boolean isNonComposedClickableEnabled;
     property public boolean isNonSuspendingPointerInputInClickableEnabled;
-    property public boolean isOnScrollChangedCallbackEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
     property public boolean isSmartSelectionEnabled;
     property public boolean isTextFieldDpadNavigationEnabled;
-    field public static boolean DragGesturePickUpEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
-    field public static boolean isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled;
-    field public static boolean isAutomaticNestedPrefetchEnabled;
     field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    field public static boolean isFlingContinuationAtBoundsEnabled;
     field public static boolean isKeepInViewFocusObservationChangeEnabled;
     field public static boolean isNewContextMenuEnabled;
     field public static boolean isNonComposedClickableEnabled;
     field public static boolean isNonSuspendingPointerInputInClickableEnabled;
-    field public static boolean isOnScrollChangedCallbackEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
     field public static boolean isSmartSelectionEnabled;
     field public static boolean isTextFieldDpadNavigationEnabled;
@@ -528,14 +518,14 @@ package androidx.compose.foundation.gestures {
     method public T getCurrentValue();
     method @Deprecated public androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float> getDecayAnimationSpec();
     method public float getLastVelocity();
-    method public float getOffset();
-    method @Deprecated @FloatRange(from=0.0, to=1.0) public float getProgress();
+    method @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getOffset();
+    method @Deprecated @FloatRange(from=0.0, to=1.0) @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getProgress();
     method public T getSettledValue();
     method @Deprecated public androidx.compose.animation.core.AnimationSpec<java.lang.Float> getSnapAnimationSpec();
     method public T getTargetValue();
     method public boolean isAnimationRunning();
-    method @FloatRange(from=0.0, to=1.0) public float progress(T from, T to);
-    method public float requireOffset();
+    method @FloatRange(from=0.0, to=1.0) @androidx.compose.runtime.annotation.FrequentlyChangingValue public float progress(T from, T to);
+    method @androidx.compose.runtime.annotation.FrequentlyChangingValue public float requireOffset();
     method public suspend Object? settle(androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public suspend Object? settle(float velocity, kotlin.coroutines.Continuation<? super java.lang.Float>);
     method public void updateAnchors(androidx.compose.foundation.gestures.DraggableAnchors<T> newAnchors, optional T newTarget);
@@ -544,8 +534,8 @@ package androidx.compose.foundation.gestures {
     property @Deprecated public androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float> decayAnimationSpec;
     property public boolean isAnimationRunning;
     property public float lastVelocity;
-    property public float offset;
-    property @Deprecated @FloatRange(from=0.0, to=1.0) public float progress;
+    property @androidx.compose.runtime.annotation.FrequentlyChangingValue public float offset;
+    property @Deprecated @FloatRange(from=0.0, to=1.0) @androidx.compose.runtime.annotation.FrequentlyChangingValue public float progress;
     property public T settledValue;
     property @Deprecated public androidx.compose.animation.core.AnimationSpec<java.lang.Float> snapAnimationSpec;
     property public T targetValue;

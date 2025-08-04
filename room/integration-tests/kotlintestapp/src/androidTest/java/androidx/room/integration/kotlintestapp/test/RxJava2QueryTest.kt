@@ -16,6 +16,7 @@
 
 package androidx.room.integration.kotlintestapp.test
 
+import androidx.kruth.assertThat
 import androidx.room.EmptyResultSetException
 import androidx.room.integration.kotlintestapp.vo.BookWithPublisher
 import androidx.test.filters.SmallTest
@@ -160,7 +161,12 @@ class RxJava2QueryTest : TestDatabaseTest() {
     @Test
     fun mainThreadSubscribe_preparedQuery() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            booksDao.deleteBookWithIdsSingle("b1", "b2").subscribeOn(Schedulers.io()).blockingGet()
+            val deleted =
+                booksDao
+                    .deleteBookWithIdsSingle("b1", "b2")
+                    .subscribeOn(Schedulers.io())
+                    .blockingGet()
+            assertThat(deleted).isEqualTo(0)
         }
     }
 }

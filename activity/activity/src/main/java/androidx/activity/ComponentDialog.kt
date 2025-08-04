@@ -30,6 +30,7 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.NavigationEventInputHandler
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
@@ -57,6 +58,12 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
 
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
+
+    // Input from for `ComponentDialog.onBackPressed()`, which can get called when API < 33 or
+    // when `android:enableOnBackInvokedCallback` is `false`.
+    private val onBackPressedInputHandler: NavigationEventInputHandler by lazy {
+        NavigationEventInputHandler(navigationEventDispatcher)
+    }
 
     override fun onSaveInstanceState(): Bundle {
         val bundle = super.onSaveInstanceState()
@@ -111,7 +118,7 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
     @Suppress("OVERRIDE_DEPRECATION") // b/407493719
     @CallSuper
     override fun onBackPressed() {
-        navigationEventDispatcher.dispatchOnCompleted()
+        onBackPressedInputHandler.sendOnCompleted()
     }
 
     override fun setContentView(layoutResID: Int) {

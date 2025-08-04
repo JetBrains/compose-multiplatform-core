@@ -147,54 +147,14 @@ fun SwipeToRevealSingleActionCardSample() {
     }
 }
 
-@Composable
-@Sampled
-fun SwipeToRevealNoPartiallyRevealedStateSample() {
-    SwipeToReveal(
-        primaryAction = {
-            PrimaryActionButton(
-                onClick = { /* This block is called when the primary action is executed. */ },
-                icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                text = { Text("Delete") },
-            )
-        },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-        },
-        undoPrimaryAction = {
-            UndoActionButton(
-                onClick = { /* This block is called when the undo primary action is executed. */ },
-                icon = { Icon(Icons.Outlined.Refresh, contentDescription = "Undo") },
-                text = { Text("Undo") },
-            )
-        },
-        hasPartiallyRevealedState = false,
-    ) {
-        Button(
-            modifier =
-                Modifier.fillMaxWidth().semantics {
-                    // Use custom actions to make the primary action accessible
-                    customActions =
-                        listOf(
-                            CustomAccessibilityAction("Delete") {
-                                /* Add the primary action click handler here */
-                                true
-                            }
-                        )
-                },
-            onClick = {},
-        ) {
-            Text("Swipe to execute the primary action.", modifier = Modifier.fillMaxSize())
-        }
-    }
-}
-
 @Preview
 @Composable
 @Sampled
-fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
+fun SwipeToRevealWithTransformingLazyColumnSample() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()
+
     TransformingLazyColumn(
         state = tlcState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
@@ -203,7 +163,7 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
         items(count = 100) { index ->
             val revealState = rememberRevealState()
 
-            // SwipeToReveal is covered on scroll.
+            // SwipeToReveal should be reset to covered when scrolling occurs.
             LaunchedEffect(tlcState.isScrollInProgress) {
                 if (
                     tlcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
@@ -220,6 +180,7 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
                         onClick = { /* Called when the primary action is executed. */ },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = { Text("Delete") },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
                     )
                 },
                 revealState = revealState,
@@ -236,7 +197,7 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
                 TitleCard(
                     onClick = {},
                     title = { Text("Message #$index") },
-                    subtitle = { Text("Body of the message") },
+                    subtitle = { Text("Subtitle") },
                     modifier =
                         Modifier.semantics {
                             // Use custom actions to make the primary action accessible
@@ -248,7 +209,9 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
                                     }
                                 )
                         },
-                )
+                ) {
+                    Text("Message body which extends over multiple lines to extend the card")
+                }
             }
         }
     }
@@ -257,9 +220,10 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
 @Preview
 @Composable
 @Sampled
-fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
+fun SwipeToRevealWithScalingLazyColumnSample() {
     val slcState = rememberScalingLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
     ScalingLazyColumn(
         state = slcState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
@@ -268,7 +232,7 @@ fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
         items(count = 100) { index ->
             val revealState = rememberRevealState()
 
-            // SwipeToReveal is covered on scroll.
+            // SwipeToReveal should be reset to covered when scrolling occurs.
             LaunchedEffect(slcState.isScrollInProgress) {
                 if (
                     slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
@@ -280,24 +244,93 @@ fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
             }
 
             SwipeToReveal(
+                revealState = revealState,
                 primaryAction = {
                     PrimaryActionButton(
-                        onClick = { /* Called when the primary action is executed. */ },
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = { Text("Delete") },
                     )
                 },
-                revealState = revealState,
                 onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
                 },
-                hasPartiallyRevealedState = true,
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* This block is called when the secondary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
+                    )
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
             ) {
-                TitleCard(
-                    onClick = {},
-                    title = { Text("Message #$index") },
-                    subtitle = { Text("Body of the message") },
+                Button(
                     modifier =
-                        Modifier.semantics {
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Options") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has two actions", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+@Sampled
+fun SwipeToRevealNoPartialRevealWithScalingLazyColumnSample() {
+    val slcState = rememberScalingLazyListState()
+    ScalingLazyColumn(
+        state = slcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(count = 100) { index ->
+            SwipeToReveal(
+                hasPartiallyRevealedState = false,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Refresh, contentDescription = "Undo") },
+                        text = { Text("Undo") },
+                    )
+                },
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
                             // Use custom actions to make the primary action accessible
                             customActions =
                                 listOf(
@@ -307,7 +340,10 @@ fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
                                     }
                                 )
                         },
-                )
+                    onClick = {},
+                ) {
+                    Text("Swipe to execute the primary action.", modifier = Modifier.fillMaxSize())
+                }
             }
         }
     }

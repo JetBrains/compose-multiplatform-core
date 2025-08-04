@@ -1,0 +1,11 @@
+// Baseline format: 1.0
+RemovedFromBytecode: androidx.core.content.ContextKt#getSystemService(android.content.Context):
+    Binary breaking change: method androidx.core.content.ContextKt.getSystemService(android.content.Context) has been removed from bytecode
+RemovedFromBytecode: androidx.core.text.SpannedStringKt#getSpans(android.text.Spanned, int, int):
+    Binary breaking change: method androidx.core.text.SpannedStringKt.getSpans(android.text.Spanned,int,int) has been removed from bytecode
+RemovedFromBytecode: androidx.core.view.ViewKt#updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<? super android.view.ViewGroup.LayoutParams,kotlin.Unit>):
+    Binary breaking change: method androidx.core.view.ViewKt.updateLayoutParams(android.view.View,kotlin.jvm.functions.Function1<T,kotlin.Unit>) has been removed from bytecode
+
+
+RemovedMethod: androidx.core.view.ViewKt#updateLayoutParamsTyped(android.view.View, kotlin.jvm.functions.Function1<? super T,kotlin.Unit>):
+    Binary breaking change: Removed method androidx.core.view.ViewKt.updateLayoutParamsTyped(android.view.View,kotlin.jvm.functions.Function1<? super T,kotlin.Unit>)

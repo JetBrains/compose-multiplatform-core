@@ -89,7 +89,6 @@ public constructor(
      * @param newEnabledState The new state of the app function.
      * @throws IllegalArgumentException If the [functionId] is not available.
      */
-    @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public suspend fun setAppFunctionEnabled(
         functionId: String,
         @EnabledState newEnabledState: Int,

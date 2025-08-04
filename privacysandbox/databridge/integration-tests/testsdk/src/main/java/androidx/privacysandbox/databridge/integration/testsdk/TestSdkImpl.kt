@@ -18,13 +18,19 @@ package androidx.privacysandbox.databridge.integration.testsdk
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testutils.fromKeyResult
+import androidx.privacysandbox.databridge.integration.testutils.fromKeyValue
 import androidx.privacysandbox.databridge.integration.testutils.toKeyValuePair
 import androidx.privacysandbox.databridge.sdkprovider.DataBridgeSdkProvider
+import java.util.concurrent.Executor
 
 class TestSdkImpl(context: Context) : TestSdk {
     private val dataBridgeSdkProvider = DataBridgeSdkProvider.getInstance(context)
+    private val currentThreadExecutor = Executor { command -> command.run() }
+    private val uuidToKeyUpdateCallbackMap = mutableMapOf<String, KeyUpdateCallback>()
 
     override suspend fun getValues(keyNames: List<String>, keyTypes: List<String>): List<Bundle> {
         val keyValueMap = dataBridgeSdkProvider.getValues(getKeyList(keyNames, keyTypes).toSet())
@@ -52,6 +58,32 @@ class TestSdkImpl(context: Context) : TestSdk {
         dataBridgeSdkProvider.removeValues(getKeyList(keyNames, keyTypes).toSet())
     }
 
+    override fun registerKeyUpdateCallback(
+        uuid: String,
+        keyNames: List<String>,
+        keyTypes: List<String>,
+        callback: SdkKeyUpdateCallback,
+    ) {
+        val keys = getKeyList(keyNames, keyTypes)
+
+        if (!uuidToKeyUpdateCallbackMap.containsKey(uuid)) {
+            uuidToKeyUpdateCallbackMap[uuid] = KeyUpdateCallbackSdkImpl(callback)
+        }
+        dataBridgeSdkProvider.registerKeyUpdateCallback(
+            keys.toSet(),
+            currentThreadExecutor,
+            uuidToKeyUpdateCallbackMap[uuid]!!,
+        )
+    }
+
+    override fun unregisterKeyUpdateCallback(uuid: String, callback: SdkKeyUpdateCallback) {
+        if (!uuidToKeyUpdateCallbackMap.containsKey(uuid)) {
+            return
+        }
+        dataBridgeSdkProvider.unregisterKeyUpdateCallback(uuidToKeyUpdateCallbackMap[uuid]!!)
+        uuidToKeyUpdateCallbackMap.remove(uuid)
+    }
+
     private fun getKeyList(keyNames: List<String>, keyTypes: List<String>): List<Key> {
         return keyNames.zip(keyTypes).map { (name, typeString) ->
             when (typeString) {
@@ -64,6 +96,21 @@ class TestSdkImpl(context: Context) : TestSdk {
                 "STRING_SET" -> Key.createStringSetKey(name)
                 "BYTE_ARRAY" -> Key.createByteArrayKey(name)
                 else -> throw IllegalStateException("$typeString is not a valid key type")
+            }
+        }
+    }
+
+    class KeyUpdateCallbackSdkImpl(val sdkKeyUpdateCallback: SdkKeyUpdateCallback) :
+        KeyUpdateCallback {
+        override fun onKeyUpdated(key: Key, value: Any?) {
+            try {
+                sdkKeyUpdateCallback.onKeyUpdated(
+                    key.name,
+                    key.type.toString(),
+                    Bundle().fromKeyValue(key, value),
+                )
+            } catch (ex: Exception) {
+                Log.d("DATABRIDGE", "exception when SdkKeyUpdateCallback called. $ex")
             }
         }
     }

@@ -20,10 +20,13 @@ import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
 import androidx.binarycompatibilityvalidator.KlibDumpParser
 import androidx.build.Version
 import androidx.build.metalava.shouldFreezeApis
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
@@ -31,6 +34,7 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -62,6 +66,8 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
 
     @get:Input abstract var projectVersion: Provider<String>
 
+    @get:Nested abstract val dependencies: ListProperty<DependenciesForTarget>
+
     @TaskAction
     fun execute() {
         // Execute BCV code as a WorkAction to allow setting the classpath for the action.
@@ -74,6 +80,9 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
             params.ignoreFile.set(ignoreFile)
             params.referenceVersion.set(referenceVersion.get())
             params.projectVersion.set(projectVersion.get())
+            params.dependencies.set(
+                dependencies.get().associate { it.targetName to it.files.files }
+            )
         }
     }
 }
@@ -84,6 +93,7 @@ private interface IgnoreChangesParameters : WorkParameters {
     val ignoreFile: RegularFileProperty
     val referenceVersion: Property<String>
     val projectVersion: Property<String>
+    val dependencies: MapProperty<String, Set<File>>
 }
 
 private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters> {
@@ -103,6 +113,7 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
                     null,
                     validate = false,
                     shouldFreeze = shouldFreeze,
+                    dependencies = parameters.dependencies.get(),
                 )
                 .map { it.toString() }
                 .toSet()

@@ -25,6 +25,7 @@ import java.util.Locale
 internal actual object NativeLibraryLoader {
 
     private const val LIB_PATH_PROPERTY_NAME = "androidx.sqlite.driver.bundled.path"
+    private const val LIB_NAME_PROPERTY_NAME = "androidx.sqlite.driver.bundled.name"
 
     private val osName: String
         get() = System.getProperty("os.name")?.lowercase(Locale.US) ?: error("Cannot read osName")
@@ -66,12 +67,11 @@ internal actual object NativeLibraryLoader {
                 // Likely not on Android, continue...
             }
 
-            val libName = getLibraryName(name)
-
             // Load from configured property path
             val libraryPath = System.getProperty(LIB_PATH_PROPERTY_NAME)
             if (libraryPath != null) {
-                val libFile = File("$libraryPath/$libName")
+                val libName = System.getProperty(LIB_NAME_PROPERTY_NAME) ?: getLibraryName(name)
+                val libFile = File(libraryPath, libName)
                 check(libFile.exists()) {
                     "Cannot find a suitable SQLite binary for $osName | $osArch at the " +
                         "configured path ($LIB_PATH_PROPERTY_NAME = $libraryPath). " +
@@ -80,6 +80,8 @@ internal actual object NativeLibraryLoader {
                 tryLoad(libFile.canonicalPath)
                 return
             }
+
+            val libName = getLibraryName(name)
 
             // Load from shared lib/ or bin/ dir in Java home
             val javaHomeLibs =

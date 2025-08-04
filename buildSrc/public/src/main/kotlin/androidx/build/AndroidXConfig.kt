@@ -97,6 +97,10 @@ val Project.defaultAndroidConfig: AndroidConfig
         extensions.findByType(AndroidConfigImpl::class.java)
             ?: extensions.create("androidx.build.AndroidConfigImpl", AndroidConfigImpl::class.java)
 
+fun Project.getGradlePrebuiltsPath(): File {
+    return File(rootProject.projectDir, "../../tools/external/gradle").canonicalFile
+}
+
 fun Project.getExternalProjectPath(): File {
     return File(rootProject.projectDir, "../../external").canonicalFile
 }

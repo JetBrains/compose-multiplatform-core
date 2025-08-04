@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// ***********************************************************************************
+// GENERATED FILE. DO NOT EDIT! See KeepItemAnnotationGenerator.java.
+// ***********************************************************************************
+
+// ***********************************************************************************
+// MAINTAINED AND TESTED IN THE R8 REPO. PLEASE MAKE CHANGES THERE AND REPLICATE.
+// ***********************************************************************************
+
 package androidx.annotation.keep
 
 import kotlin.reflect.KClass
@@ -37,56 +45,59 @@ import kotlin.reflect.KClass
     AnnotationTarget.CONSTRUCTOR,
 )
 public annotation class UsesReflectionToAccessMethod(
+
     /**
-     * Class containing the field accessed by reflection.
+     * Class containing the method accessed by reflection.
      *
      * Mutually exclusive with [className].
      */
     @Suppress("KotlinDefaultParameterOrder") val classConstant: KClass<*> = Unspecified::class,
 
     /**
-     * Class name (or pattern) containing the field accessed by reflection.
+     * Class name (or class name pattern) containing the method accessed by reflection.
      *
      * Mutually exclusive with [classConstant].
      */
     @Suppress("KotlinDefaultParameterOrder") val className: String = "",
 
-    /** Method name (or pattern) accessed by reflection. */
+    /** Name (or name pattern) of method accessed by reflection. */
     val methodName: String,
 
     /**
      * Defines which method to keep by specifying set of parameter classes passed.
      *
-     * Defaults to `[ Unspecified::class ]`, which will keep all methods.
+     * If neither `parameterTypes` nor `parameterTypeNames` is specified then methods with all
+     * parameter lists are kept.
      *
-     * Mutually exclusive with [paramClassNames].
+     * Mutually exclusive with [parameterTypeNames].
      */
-    val params: Array<KClass<*>> = [Unspecified::class],
+    val parameterTypes: Array<KClass<*>> = [Unspecified::class],
 
     /**
      * Defines which method to keep by specifying set of parameter classes passed.
      *
-     * Defaults to `[""]`, which will keep all methods.
+     * If neither `parameterTypes` nor `parameterTypeNames` is specified then methods with all
+     * parameter lists are kept.
      *
-     * Mutually exclusive with [params].
+     * Mutually exclusive with [parameterTypes].
      */
-    val paramClassNames: Array<String> = [""],
+    val parameterTypeNames: Array<String> = [""],
 
     /**
-     * Class of field accessed by reflection.
+     * Return type of the method accessed by reflection.
      *
      * Ignored if not specified.
      *
-     * Mutually exclusive with [returnClassName].
+     * Mutually exclusive with [returnTypeName].
      */
-    val returnClass: KClass<*> = Unspecified::class,
+    val returnType: KClass<*> = Unspecified::class,
 
     /**
-     * Class (or class pattern) of field accessed by reflection.
+     * Return type (or type pattern) of the method accessed by reflection.
      *
      * Ignored if not specified.
      *
-     * Mutually exclusive with [returnClass].
+     * Mutually exclusive with [returnType].
      */
-    val returnClassName: String = "",
+    val returnTypeName: String = "",
 )

@@ -20,7 +20,6 @@ import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +34,6 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 
 /**
@@ -66,8 +64,6 @@ public fun SpatialElevation(
 
 @Composable
 private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Unit) {
-    val bufferPadding = 1.dp
-    val bufferPaddingPx = with(LocalDensity.current) { bufferPadding.toPx() }
     var contentSize by remember { mutableStateOf(IntSize.Zero) }
     var contentOffset: Offset? by remember { mutableStateOf(null) }
 
@@ -88,24 +84,18 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
             contentSize = contentSize,
             contentOffset = contentOffset,
         ) {
-            // This padding prevents visual aberrations due to stretched panels. The panel is still
-            // being stretched in those cases (which will affect input tracking), but it will not be
-            // visible to the user.
-            // TODO(b/333074376): Remove this padding when the underlying bug is fixed.
             Box(
-                Modifier.constrainTo(constraints)
-                    .onSizeChanged {
-                        if (it.width <= bufferPaddingPx * 2 || it.height <= bufferPaddingPx * 2) {
-                            Log.w(
-                                "SpatialElevation",
-                                "Empty composables cannot be placed at a SpatialElevation. You may be trying" +
-                                    " to use a Popup or Dialog with a SpatialElevation, which is not supported.",
-                            )
-                            return@onSizeChanged
-                        }
-                        contentSize = it
+                Modifier.constrainTo(constraints).onSizeChanged {
+                    if (it.width <= 0 || it.height <= 0) {
+                        Log.w(
+                            "SpatialElevation",
+                            "Empty composables cannot be placed at a SpatialElevation. You may be trying" +
+                                " to use a Popup or Dialog with a SpatialElevation, which is not supported.",
+                        )
+                        return@onSizeChanged
                     }
-                    .padding(bufferPadding)
+                    contentSize = it
+                }
             ) {
                 content()
             }

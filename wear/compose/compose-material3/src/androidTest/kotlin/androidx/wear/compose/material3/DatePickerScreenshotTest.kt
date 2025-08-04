@@ -16,11 +16,13 @@
 
 package androidx.wear.compose.material3
 
+import android.content.res.Configuration
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -39,6 +41,7 @@ import androidx.wear.compose.material3.internal.Strings
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.LocalDate
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -262,6 +265,29 @@ class DatePickerScreenshotTest {
                     maxValidDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                 )
+            },
+        )
+    }
+
+    @Test
+    fun datePicker_japanese_numericMonth() {
+        rule.verifyDatePickerScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            content = {
+                // This test case verifies that for locales with linguistic suffixes for the
+                // year (like '年' in Japanese), the month format correctly switches to
+                // numeric ('MM') to avoid a mixed-style date.
+
+                // 1. Create a new configuration with the Japanese locale.
+                val japaneseConfig =
+                    Configuration(LocalConfiguration.current).apply { setLocale(Locale.JAPANESE) }
+                // 2. Provide this new context and configuration to the composable tree.
+                // The DatePicker will now use this locale to determine the month format.
+                CompositionLocalProvider(LocalConfiguration provides japaneseConfig) {
+                    // 3. Render the DatePicker. We expect the month to be numeric.
+                    DatePickerMonthDayYear()
+                }
             },
         )
     }

@@ -21,7 +21,9 @@ import androidx.tracing.driver.PooledTracePacketArray
 import androidx.tracing.driver.Queue
 import androidx.tracing.driver.TraceEvent
 import androidx.tracing.driver.TraceSink
+import androidx.tracing.driver.synchronized
 import com.squareup.wire.ProtoWriter
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
@@ -31,6 +33,9 @@ import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import okio.BufferedSink
+
+// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
+@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 
 /**
  * The trace sink that writes [BufferedSink], to a new file per trace session.

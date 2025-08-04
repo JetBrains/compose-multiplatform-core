@@ -18,11 +18,14 @@ package androidx.appfunctions.metadata
 
 import android.content.Context
 import android.content.res.Resources
+import android.content.res.XmlResourceParser
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata.Companion.APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata.Companion.APP_METADATA_ATTRIBUTE_NAMESPACE
 import org.xmlpull.v1.XmlPullParser
 
 /**
@@ -110,27 +113,16 @@ public class AppFunctionPackageMetadata(
                 }
             }
 
-            val description =
-                xmlParser.getAttributeValue(
-                    APP_METADATA_ATTRIBUTE_NAMESPACE,
-                    DESCRIPTION_ATTRIBUTE_NAME,
-                )
+            val description = getXmlAttributeValue(xmlParser, DESCRIPTION_ATTRIBUTE_NAME)
 
             val displayDescriptionResId =
-                xmlParser.getAttributeResourceValue(
-                    APP_METADATA_ATTRIBUTE_NAMESPACE,
-                    DISPLAY_DESCRIPTION_ATTRIBUTE_NAME,
-                    0,
-                )
+                getXmlAttributeResourceValue(xmlParser, DISPLAY_DESCRIPTION_ATTRIBUTE_NAME)
 
             val displayDescription =
                 if (displayDescriptionResId != 0) {
                     targetAppResources.getString(displayDescriptionResId)
                 } else {
-                    xmlParser.getAttributeValue(
-                        APP_METADATA_ATTRIBUTE_NAMESPACE,
-                        DISPLAY_DESCRIPTION_ATTRIBUTE_NAME,
-                    )
+                    getXmlAttributeValue(xmlParser, DISPLAY_DESCRIPTION_ATTRIBUTE_NAME)
                 }
 
             AppFunctionAppMetadata(
@@ -147,10 +139,73 @@ public class AppFunctionPackageMetadata(
         }
     }
 
+    /**
+     * Retrieves the value of an attribute from an XML parser, checking both the generic and
+     * library-specific namespaces.
+     *
+     * This function attempts to get the attribute value using [APP_METADATA_ATTRIBUTE_NAMESPACE]
+     * first. If the attribute is not found, it then tries to get it using
+     * [APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE].
+     *
+     * @param xmlParser The [XmlResourceParser] to read the attribute from.
+     * @param attributeName The name of the attribute to retrieve.
+     * @return The attribute value as a [String], or `null` if the attribute is not found in either
+     *   namespace.
+     * @see APP_METADATA_ATTRIBUTE_NAMESPACE
+     * @see APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE
+     */
+    private fun getXmlAttributeValue(xmlParser: XmlResourceParser, attributeName: String): String? {
+        return xmlParser.getAttributeValue(APP_METADATA_ATTRIBUTE_NAMESPACE, attributeName)
+            ?: xmlParser.getAttributeValue(
+                APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE,
+                attributeName,
+            )
+    }
+
+    /**
+     * Retrieves the resource ID for the display description attribute from an XML parser.
+     *
+     * This function attempts to get the attribute resource value using
+     * [APP_METADATA_ATTRIBUTE_NAMESPACE] first. If the attribute is not found (returns 0), it then
+     * tries to get it using [APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE].
+     *
+     * @param xmlParser The [XmlResourceParser] to read the attribute from.
+     * @return The resource ID as an [Int], or 0 if the attribute is not found in either namespace.
+     * @see APP_METADATA_ATTRIBUTE_NAMESPACE
+     * @see APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE
+     */
+    private fun getXmlAttributeResourceValue(
+        xmlParser: XmlResourceParser,
+        attributeName: String,
+    ): Int {
+        val displayDescriptionResIdWithGenericNamespace =
+            xmlParser.getAttributeResourceValue(APP_METADATA_ATTRIBUTE_NAMESPACE, attributeName, 0)
+
+        return if (displayDescriptionResIdWithGenericNamespace == 0) {
+            xmlParser.getAttributeResourceValue(
+                APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE,
+                attributeName,
+                0,
+            )
+        } else displayDescriptionResIdWithGenericNamespace
+    }
+
     private companion object {
         private const val APP_METADATA_XML_PROPERTY = "android.app.appfunctions.app_metadata"
+
+        /**
+         * Build systems like Gradle merge library resources with app's resources hence `res-auto`
+         * can be used.
+         */
         private const val APP_METADATA_ATTRIBUTE_NAMESPACE =
             "http://schemas.android.com/apk/res-auto"
+
+        /**
+         * Build systems like Bazel keep app resources separate from the library hence users need to
+         * explicitly mention the library package in the namespace.
+         */
+        private const val APP_METADATA_APPFUNCTIONS_LIBRARY_ATTRIBUTE_NAMESPACE =
+            "http://schemas.android.com/apk/androidx.appfunctions"
         private const val DISPLAY_DESCRIPTION_ATTRIBUTE_NAME = "displayDescription"
         private const val DESCRIPTION_ATTRIBUTE_NAME = "description"
     }

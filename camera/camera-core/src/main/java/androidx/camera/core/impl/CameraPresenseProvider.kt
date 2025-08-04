@@ -74,6 +74,8 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
         }
         Logger.i(TAG, "Starting CameraPresenceProvider monitoring.")
 
+        this.currentFilteredIds =
+            cameraFactory.availableCameraIds.map { CameraIdentifier.create(it) }
         this.cameraFactory = cameraFactory
         this.cameraRepository = cameraRepository
         this.sourcePresenceObservable = cameraFactory.cameraPresenceSource

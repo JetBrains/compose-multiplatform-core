@@ -231,19 +231,20 @@ class TransformationTestsActivity : AppCompatActivity() {
             try {
                 trackedEntity.getPose().toFormattedString()
             } catch (e: UnsupportedOperationException) {
-                "getPose is not enabled on this Entity"
+                "getPose is not allowed with Space.PARENT on this Entity ${e.cause}"
             }
         view.setLine("localPose", localPose)
 
-        view.setLine("worldSpacePose", trackedEntity.activitySpacePose.toFormattedString())
+        view.setLine("worldSpacePose", trackedEntity.getPose(Space.REAL_WORLD).toFormattedString())
         view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
-        if (
-            trackedEntity == sunDragon ||
-                trackedEntity == planetDragon ||
-                trackedEntity == moonDragon
-        ) {
-            view.setLine("local scale", trackedEntity.getScale(Space.PARENT).toString())
-        }
+
+        val localScale =
+            try {
+                trackedEntity.getScale()
+            } catch (e: UnsupportedOperationException) {
+                "getScale is not allowed with Space.PARENT on this Entity ${e.cause}"
+            }
+        view.setLine("local scale", localScale.toString())
 
         val activitySpacePose =
             trackedEntity.transformPoseTo(Pose.Identity, session.scene.activitySpace)

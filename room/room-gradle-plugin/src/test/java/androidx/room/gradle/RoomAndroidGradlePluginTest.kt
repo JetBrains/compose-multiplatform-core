@@ -523,11 +523,8 @@ class RoomAndroidGradlePluginTest {
             }
     }
 
-    private fun runGradleTasks(
-        vararg args: String,
-        projectDir: File = projectSetup.rootDir,
-        expectFailure: Boolean = false,
-    ) = runGradle(*args, projectDir = projectDir, expectFailure = expectFailure)
+    private fun runGradleTasks(vararg args: String, expectFailure: Boolean = false) =
+        runGradle(*args, projectSetup = projectSetup, expectFailure = expectFailure)
 
     enum class ProcessingBackend(val isForKotlin: Boolean) {
         JAVAC(false),

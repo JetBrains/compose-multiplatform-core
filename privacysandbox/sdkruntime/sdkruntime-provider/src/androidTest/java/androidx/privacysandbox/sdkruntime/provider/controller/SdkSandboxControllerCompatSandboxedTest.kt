@@ -41,7 +41,7 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
-// TODO(b/249982507) Rewrite test to use real SDK in sandbox instead of mocking controller
+// TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
 class SdkSandboxControllerCompatSandboxedTest {
 
     @Test
@@ -54,7 +54,8 @@ class SdkSandboxControllerCompatSandboxedTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     fun getSandboxedSdks_withoutLocalImpl_returnsListFromPlatformApi() {
         val context = spy(ApplicationProvider.getApplicationContext<Context>())
         val sdkSandboxController = mock(SdkSandboxController::class.java)
@@ -74,7 +75,8 @@ class SdkSandboxControllerCompatSandboxedTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     fun registerSdkSandboxHandlerCompat_withoutLocalImpl_registerItToPlatform() {
         val context = spy(ApplicationProvider.getApplicationContext<Context>())
         val sdkSandboxController = mock(SdkSandboxController::class.java)
@@ -145,7 +147,8 @@ class SdkSandboxControllerCompatSandboxedTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     fun unregisterSdkSandboxHandlerCompat_withoutLocalImpl_unregisterItToPlatform() {
         val context = spy(ApplicationProvider.getApplicationContext<Context>())
         val sdkSandboxController = mock(SdkSandboxController::class.java)

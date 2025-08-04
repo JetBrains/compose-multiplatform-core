@@ -31,7 +31,8 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  * @param sandboxedUiAdapter an adapter that provides content from a SandboxedSdk to be displayed as
  *   part of a host app's window.
  * @param modifier the [Modifier] to be applied to this SandboxedSdkUi.
- * @param providerUiOnTop sets the Z-order of the SandboxedSdkUi surface, relative to its window.
+ * @param providerUiOnTop sets the Z-order of the SandboxedSdkUi surface, relative to its host
+ *   window. True means on top, while false means below (it is false if it is not specified).
  * @param sandboxedSdkViewEventListener an event listener to the UI presentation.
  */
 @Composable
@@ -64,21 +65,37 @@ public fun SandboxedSdkUi(
 }
 
 /**
- * Similar to SandboxedSdkUi(SandboxedUiAdapter, Modifier, SandboxedSdkViewEventListener?, Boolean),
- * but always set the Z-order of the provider surface below the client window.
+ * Composable that can be used to remotely render UI from a SandboxedSdk to host app window.
  *
- * @see SandboxedSdkUi(SandboxedUiAdapter, Modifier, Boolean, SandboxedSdkViewEventListener?)
+ * It always sets the Z-order of the remote content surface below its host window.
+ *
+ * @param sandboxedUiAdapter an adapter that provides content from a SandboxedSdk to be displayed as
+ *   part of a host app's window.
+ * @param modifier the [Modifier] to be applied to this SandboxedSdkUiBelowHostWindow.
+ * @param sandboxedSdkViewEventListener an event listener to the UI presentation.
  */
 @Composable
 // No need for @JvmOverloads as this is Kotlin only API
 @Suppress("MissingJvmstatic")
 // The listener relates to UI event and is expected to be triggered on the main thread.
 @SuppressLint("ExecutorRegistration")
-@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
-public fun SandboxedSdkUi(
+public fun SandboxedSdkUiBelowHostWindow(
     sandboxedUiAdapter: SandboxedUiAdapter,
     modifier: Modifier = Modifier,
     sandboxedSdkViewEventListener: SandboxedSdkViewEventListener? = null,
 ) {
-    SandboxedSdkUi(sandboxedUiAdapter, modifier, false, sandboxedSdkViewEventListener)
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            SandboxedSdkView(context).apply { preserveSessionOnWindowDetachment() }
+        },
+        update = { view ->
+            view.apply {
+                setEventListener(sandboxedSdkViewEventListener)
+                setAdapter(sandboxedUiAdapter)
+            }
+        },
+        onReset = { view -> view.setEventListener(null) },
+        onRelease = { view -> view.setAdapter(null) },
+    )
 }

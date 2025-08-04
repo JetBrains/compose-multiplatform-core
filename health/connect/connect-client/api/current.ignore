@@ -1,0 +1,27 @@
+// Baseline format: 1.0
+RemovedFromBytecode: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, androidx.health.connect.client.time.TimeRangeFilter, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Binary breaking change: method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,androidx.health.connect.client.time.TimeRangeFilter,kotlin.coroutines.Continuation<? super java.lang.Void>) has been removed from bytecode
+RemovedFromBytecode: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, java.util.List<java.lang.String>, java.util.List<java.lang.String>, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Binary breaking change: method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,java.util.List<java.lang.String>,java.util.List<java.lang.String>,kotlin.coroutines.Continuation<? super java.lang.Void>) has been removed from bytecode
+RemovedFromBytecode: androidx.health.connect.client.HealthConnectClientExt#readRecord(androidx.health.connect.client.HealthConnectClient, String, kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>):
+    Binary breaking change: method androidx.health.connect.client.HealthConnectClientExt.readRecord(androidx.health.connect.client.HealthConnectClient,String,kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>) has been removed from bytecode
+RemovedFromBytecode: androidx.health.connect.client.permission.HealthPermission.Companion#getReadPermission():
+    Binary breaking change: method androidx.health.connect.client.permission.HealthPermission.Companion.getReadPermission() has been removed from bytecode
+RemovedFromBytecode: androidx.health.connect.client.permission.HealthPermission.Companion#getWritePermission():
+    Binary breaking change: method androidx.health.connect.client.permission.HealthPermission.Companion.getWritePermission() has been removed from bytecode
+RemovedFromBytecode: androidx.health.connect.client.request.ReadRecordsRequestKt#ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter, java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>, boolean, int, String):
+    Binary breaking change: method androidx.health.connect.client.request.ReadRecordsRequestKt.ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter,java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>,boolean,int,String) has been removed from bytecode
+
+
+RemovedFromJava: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, androidx.health.connect.client.time.TimeRangeFilter, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,androidx.health.connect.client.time.TimeRangeFilter,kotlin.coroutines.Continuation<? super java.lang.Void>) can no longer be resolved from Java source
+RemovedFromJava: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, java.util.List<java.lang.String>, java.util.List<java.lang.String>, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,java.util.List<java.lang.String>,java.util.List<java.lang.String>,kotlin.coroutines.Continuation<? super java.lang.Void>) can no longer be resolved from Java source
+RemovedFromJava: androidx.health.connect.client.HealthConnectClientExt#readRecord(androidx.health.connect.client.HealthConnectClient, String, kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>):
+    Source breaking change: method androidx.health.connect.client.HealthConnectClientExt.readRecord(androidx.health.connect.client.HealthConnectClient,String,kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ReadRecordResponse<T>>) can no longer be resolved from Java source
+RemovedFromJava: androidx.health.connect.client.permission.HealthPermission.Companion#getReadPermission():
+    Source breaking change: method androidx.health.connect.client.permission.HealthPermission.Companion.getReadPermission() can no longer be resolved from Java source
+RemovedFromJava: androidx.health.connect.client.permission.HealthPermission.Companion#getWritePermission():
+    Source breaking change: method androidx.health.connect.client.permission.HealthPermission.Companion.getWritePermission() can no longer be resolved from Java source
+RemovedFromJava: androidx.health.connect.client.request.ReadRecordsRequestKt#ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter, java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>, boolean, int, String):
+    Source breaking change: method androidx.health.connect.client.request.ReadRecordsRequestKt.ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter,java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>,boolean,int,String) can no longer be resolved from Java source

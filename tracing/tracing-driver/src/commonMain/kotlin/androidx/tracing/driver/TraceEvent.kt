@@ -33,7 +33,8 @@ internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
  * Code outside of tracing-driver implementation should only ever consume these objects, not produce
  * them.
  */
-@Suppress("NOTHING_TO_INLINE")
+// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
+@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 public class TraceEvent
 internal constructor(
     /**

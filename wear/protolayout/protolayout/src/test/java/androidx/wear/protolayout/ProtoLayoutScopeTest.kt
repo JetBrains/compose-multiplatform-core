@@ -127,7 +127,7 @@ class ProtoLayoutScopeTest {
     }
 
     @Test
-    public fun clear_EmptiesMappings() {
+    public fun clear_emptiesMappings() {
         val scope = ProtoLayoutScope()
         val intent = PendingIntent.getActivity(getApplicationContext(), 1, Intent(), 1)
         val image =

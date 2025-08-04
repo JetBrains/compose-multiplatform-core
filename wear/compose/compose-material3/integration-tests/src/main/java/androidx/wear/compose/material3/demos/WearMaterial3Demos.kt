@@ -37,11 +37,11 @@ import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
-import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
+import androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
-import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnResetOnScrollSample
-import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnResetOnScrollSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
@@ -195,28 +195,24 @@ val WearMaterial3Demos =
                         ComposableDemo("Single action with Card") {
                             ScalingLazyDemo { item { SwipeToRevealSingleActionCardSample() } }
                         },
-                        ComposableDemo("In ScalingLazyColumn") {
-                            SwipeToRevealInScalingLazyColumn()
+                        ComposableDemo("In SLC") { SwipeToRevealWithScalingLazyColumnSample() },
+                        ComposableDemo("In SLC, bi-directional") {
+                            SwipeToRevealInScalingLazyColumnDemo()
                         },
-                        ComposableDemo("In TransformingLazyColumn") {
-                            SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo()
+                        ComposableDemo("In SLC, no Partial Reveal") {
+                            SwipeToRevealNoPartialRevealWithScalingLazyColumnSample()
                         },
-                        ComposableDemo("In TLC, with icon action") {
-                            SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo()
+                        ComposableDemo("In TLC") {
+                            SwipeToRevealWithTransformingLazyColumnSample()
                         },
-                        ComposableDemo("In TLC with expansions and deletions") {
+                        ComposableDemo("In TLC, bi-directional") {
+                            SwipeToRevealWithTransformingLazyColumnDemo()
+                        },
+                        ComposableDemo("In TLC, icon only") {
+                            SwipeToRevealIconOnlyWithTransformingLazyColumnDemo()
+                        },
+                        ComposableDemo("In TLC, expand & delete") {
                             SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo()
-                        },
-                        ComposableDemo("In TLC, with reset on scroll") {
-                            SwipeToRevealWithTransformingLazyColumnResetOnScrollSample()
-                        },
-                        ComposableDemo("In SLC, with reset on scroll") {
-                            SwipeToRevealWithScalingLazyColumnResetOnScrollSample()
-                        },
-                        ComposableDemo("No Partial Reveal") {
-                            ScalingLazyDemo {
-                                item { SwipeToRevealNoPartiallyRevealedStateSample() }
-                            }
                         },
                         ComposableDemo("Long labels") { SwipeToRevealWithLongLabels() },
                         ComposableDemo("Custom Icons") { SwipeToRevealWithCustomIcons() },

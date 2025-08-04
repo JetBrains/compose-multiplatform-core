@@ -20,8 +20,6 @@ else
   # Run Gradle
   # If/when we enable desktop, enable VerifyDependencyVersionsTask.kt/shouldVerifyConfiguration
   if ! busytown/impl/build.sh buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms \
-      -Pandroidx.enableComposeCompilerMetrics=true \
-      -Pandroidx.enableComposeCompilerReports=true \
       --no-daemon "$@"; then
     EXIT_VALUE=1
   else

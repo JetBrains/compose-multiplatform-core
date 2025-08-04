@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         final Context activityContext = this;
@@ -115,4 +116,5 @@ public class MainActivity extends AppCompatActivity {
         };
         listView.setItems(menuItems);
     }
+
 }

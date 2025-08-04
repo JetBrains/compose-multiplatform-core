@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 
 /**
  * Specify an abstract context used to playback RemoteCompose documents
@@ -670,6 +671,16 @@ public abstract class RemoteContext {
      * @param variableSupport call back when value changes
      */
     public abstract void listensTo(int id, @NonNull VariableSupport variableSupport);
+
+    /**
+     * Get the listeners for a given id
+     *
+     * @param id
+     * @return
+     */
+    public @Nullable ArrayList<VariableSupport> getListeners(int id) {
+        return null;
+    }
 
     /**
      * Notify commands with variables have changed

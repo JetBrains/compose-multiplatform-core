@@ -18,12 +18,15 @@ package androidx.appfunctions.compiler.core
 
 import androidx.annotation.VisibleForTesting
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import kotlin.collections.joinToString
 
 private const val PARAM_TAG_REGEX_PATTERN = """^@param\s+(\w+)\s*(.*)"""
+private const val RESPONSE_TAG_REGEX_PATTERN = """^@return\s+(.*)"""
 private const val ANY_TAG_REGEX_PATTERN = """^@\w+.*"""
 private const val KOTLIN_SUPPORTED_TAGS_PATTERN =
     """^@(param|return|constructor|receiver|property|throws|exception|sample|see|author|since|suppress)\b.*"""
 private val PARAM_TAG_REGEX = Regex(PARAM_TAG_REGEX_PATTERN)
+private val RESPONSE_TAG_REGEX = Regex(RESPONSE_TAG_REGEX_PATTERN)
 private val ANY_TAG_REGEX = Regex(ANY_TAG_REGEX_PATTERN)
 private val KOTLIN_SUPPORTED_TAGS = Regex(KOTLIN_SUPPORTED_TAGS_PATTERN)
 
@@ -84,6 +87,43 @@ internal fun getParamDescriptionsFromKDoc(docString: String): Map<String, String
         descriptionMap[currentParamName] = currentDescriptionBuilder.toString().trim()
     }
     return descriptionMap
+}
+
+/**
+ * Returns the function's response description, extracted from the `@return` tag of the function's
+ * KDoc.
+ */
+fun KSFunctionDeclaration.getResponseDescriptionFromKDoc(): String {
+    return if (docString != null) {
+        getResponseDescriptionFromKDoc(checkNotNull(docString))
+    } else {
+        ""
+    }
+}
+
+/** The input docString is expected to be stripped from any "/**", "*/" or "*". */
+@VisibleForTesting
+internal fun getResponseDescriptionFromKDoc(docString: String): String {
+    val responseDescriptionBuilder = StringBuilder()
+
+    for (line in docString.lines()) {
+        val trimmedLine = line.trim()
+        val responseMatch = RESPONSE_TAG_REGEX.find(trimmedLine)
+
+        when {
+            responseMatch != null -> {
+                responseDescriptionBuilder.append(checkNotNull(responseMatch.groupValues[1]))
+            }
+            responseDescriptionBuilder.isNotEmpty() -> {
+                if (ANY_TAG_REGEX.matches(trimmedLine)) {
+                    return responseDescriptionBuilder.toString()
+                } else {
+                    responseDescriptionBuilder.append(" $trimmedLine")
+                }
+            }
+        }
+    }
+    return responseDescriptionBuilder.toString().trim()
 }
 
 /**

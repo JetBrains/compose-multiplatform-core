@@ -198,7 +198,10 @@ class PdfViewAccessibilityManagerTest {
         val pageSpacing = pdfView.context.getDimensions(R.dimen.page_spacing)
 
         // Wait until layout completes for the required pages
-        pdfDocument.waitForLayout(untilPage = 0)
+        pdfDocument.waitForLayout(untilPage = 5)
+
+        // Hide the fast scroller to prevent it from overlapping with the bounds of other views.
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
 
         val testCases =
             listOf(

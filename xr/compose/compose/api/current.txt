@@ -292,6 +292,10 @@ package androidx.xr.compose.subspace.layout {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier onGloballyPositioned(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates,kotlin.Unit> onGloballyPositioned);
   }
 
+  public final class OnPointSourceParamsAvailableKt {
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier onPointSourceParamsAvailable(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.scenecore.PointSourceParams,kotlin.Unit> onPointSourceParamsAvailable);
+  }
+
   public final class PaddingKt {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, float all);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, optional float horizontal, optional float vertical, optional float depth);

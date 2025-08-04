@@ -367,6 +367,17 @@
         </activity>
 
         <activity
+            android:name=".SwipeDismissableNavHostActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SWIPE_DISMISSABLE_NAV_HOST_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".TimePickerActivity"
             android:theme="@style/AppTheme"
             android:exported="true"

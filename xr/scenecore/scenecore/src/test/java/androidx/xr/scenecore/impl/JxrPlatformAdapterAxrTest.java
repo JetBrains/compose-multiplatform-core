@@ -861,7 +861,6 @@ public final class JxrPlatformAdapterAxrTest {
                                 new Vector3(5f, 6f, 7f),
                                 Quaternion.fromEulerAngles(22f, 33, 44),
                                 new Vector3(2f, 2f, 2f)));
-        assertVector3(activitySpace.getScale(), new Vector3(2f, 2f, 2f));
 
         // Set a non-unit local scale to each child.
         child1.setParent(activitySpace);
@@ -1005,7 +1004,9 @@ public final class JxrPlatformAdapterAxrTest {
         GltfEntityImpl child1 = (GltfEntityImpl) createGltfEntity(localPose);
         GltfEntityImpl child2 = (GltfEntityImpl) createGltfEntity(localPose);
         GltfEntityImpl child3 = (GltfEntityImpl) createGltfEntity(localPose);
-        assertVector3(mRuntime.getActivitySpaceRootImpl().getScale(), new Vector3(1f, 1f, 1f));
+        assertVector3(
+                mRuntime.getActivitySpaceRootImpl().getScale(Space.ACTIVITY),
+                new Vector3(1f, 1f, 1f));
 
         // Set a non-unit local scale to each child.
         child1.setParent(mRuntime.getActivitySpaceRootImpl());

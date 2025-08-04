@@ -61,13 +61,13 @@ public class ResizeEvent(
     internal annotation class ResizeStateValue
 
     public object ResizeState {
-        /** Constant for {@link resizeState}: The resize state is unknown. */
+        /** The resize state is unknown. */
         public const val RESIZE_STATE_UNKNOWN: Int = 0
-        /** Constant for {@link resizeState}: The user has started dragging the resize handles. */
+        /** The user has started dragging the resize handles. */
         public const val RESIZE_STATE_START: Int = 1
-        /** Constant for {@link resizeState}: The user is continuing to drag the resize handles. */
+        /** The user is continuing to drag the resize handles. */
         public const val RESIZE_STATE_ONGOING: Int = 2
-        /** Constant for {@link resizeState}: The user has stopped dragging the resize handles. */
+        /** The user has stopped dragging the resize handles. */
         public const val RESIZE_STATE_END: Int = 3
     }
 }
