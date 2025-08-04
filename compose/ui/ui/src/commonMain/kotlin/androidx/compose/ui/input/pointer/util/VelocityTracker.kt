@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.util.VelocityTracker1D.Strategy
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.throwIllegalArgumentException
 import androidx.compose.ui.unit.Velocity
@@ -29,13 +30,6 @@ import androidx.compose.ui.util.fastForEach
 import kotlin.math.abs
 import kotlin.math.sign
 import kotlin.math.sqrt
-
-private const val AssumePointerMoveStoppedMilliseconds: Int = 40
-// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-6853
-internal expect val HistorySize: Int
-
-// TODO(b/204895043): Keep value in sync with VelocityPathFinder.HorizonMilliSeconds
-private const val HorizonMilliseconds: Int = 100
 
 /**
  * Computes a pointer's velocity.
@@ -128,7 +122,7 @@ class VelocityTracker {
 class VelocityTracker1D
 internal constructor(
     // whether the data points added to the tracker represent differential values
-    // (i.e. change in the  tracked object's displacement since the previous data point).
+    // (i.e. change in the tracked object's displacement since the previous data point).
     // If false, it means that the data points added to the tracker will be considered as absolute
     // values (e.g. positional values).
     val isDataDifferential: Boolean = false,
@@ -158,7 +152,7 @@ internal constructor(
      * data points is when tracking velocity for an object whose positions on a geometrical axis
      * over different instances of time are known.
      *
-     * @param isDataDifferential [true] if the data ponits provided to the constructed tracker are
+     * @param isDataDifferential [true] if the data points provided to the constructed tracker are
      *   differential. [false] otherwise.
      */
     constructor(isDataDifferential: Boolean) : this(isDataDifferential, Strategy.Impulse)
@@ -188,13 +182,40 @@ internal constructor(
         Impulse,
     }
 
+    /**
+     * Interface for building data points used in velocity calculation.
+     * This interface defines the contract for constructing processed arrays of data points
+     * and timestamps.
+     */
+    internal interface DataPointsBuilder {
+        /**
+         * The size of the historical data to be retained for processing is defined by the platform.
+         */
+        val historySize: Int
+
+        /**
+         * Constructs data points and timestamps for velocity calculations based on the provided
+         * parameters.
+         */
+        fun buildDataPoints(
+            samples: Array<DataPointAtTime?>,
+            index: Int,
+            strategy: Strategy,
+            isDataDifferential: Boolean,
+            dataPoints: FloatArray,
+            time: FloatArray
+        ): Int
+    }
+
+    private val dataPointsBuilder: DataPointsBuilder = platformVelocityDataPointsBuilder()
+
     // Circular buffer; current sample at index.
-    private val samples: Array<DataPointAtTime?> = arrayOfNulls(HistorySize)
+    private val samples: Array<DataPointAtTime?> = arrayOfNulls(dataPointsBuilder.historySize)
     private var index: Int = 0
 
     // Reusable arrays to avoid allocation inside calculateVelocity.
-    private val reusableDataPointsArray = FloatArray(HistorySize)
-    private val reusableTimeArray = FloatArray(HistorySize)
+    private val reusableDataPointsArray = FloatArray(dataPointsBuilder.historySize)
+    private val reusableTimeArray = FloatArray(dataPointsBuilder.historySize)
 
     // Reusable array to minimize allocations inside calculateLeastSquaresVelocity.
     private val reusableVelocityCoefficients = FloatArray(3)
@@ -211,7 +232,7 @@ internal constructor(
      * tracker) has no knowledge of the units used.
      */
     fun addDataPoint(timeMillis: Long, dataPoint: Float) {
-        index = (index + 1) % HistorySize
+        index = (index + 1) % dataPointsBuilder.historySize
         samples.set(index, timeMillis, dataPoint)
     }
 
@@ -224,59 +245,32 @@ internal constructor(
      * This can be expensive. Only call this when you need the velocity.
      */
     fun calculateVelocity(): Float {
-        val dataPoints = reusableDataPointsArray
-        val time = reusableTimeArray
-        var sampleCount = 0
-        var index: Int = index
+        val sampleCount = dataPointsBuilder.buildDataPoints(
+            samples = samples,
+            index = index,
+            strategy = strategy,
+            isDataDifferential = isDataDifferential,
+            dataPoints = reusableDataPointsArray,
+            time = reusableTimeArray
+        )
 
-        // The sample at index is our newest sample.  If it is null, we have no samples so return.
-        val newestSample: DataPointAtTime = samples[index] ?: return 0f
-
-        var previousSample: DataPointAtTime = newestSample
-        var afterPointerStop = false
-
-        // Starting with the most recent PointAtTime sample, iterate backwards while
-        // the samples represent continuous motion.
-        do {
-            val sample: DataPointAtTime = samples[index] ?: break
-
-            val age: Float = (newestSample.time - sample.time).toFloat()
-            val delta: Float = abs(sample.time - previousSample.time).toFloat()
-            previousSample =
-                if (strategy == Strategy.Lsq2 || isDataDifferential) {
-                    sample
-                } else {
-                    newestSample
-                }
-            if (delta > AssumePointerMoveStoppedMilliseconds) {
-                afterPointerStop = true
-                break
-            }
-            if (age > HorizonMilliseconds) {
-                break
-            }
-
-            dataPoints[sampleCount] = sample.dataPoint
-            time[sampleCount] = -age
-            index = (if (index == 0) HistorySize else index) - 1
-
-            sampleCount += 1
-        } while (sampleCount < HistorySize)
-
-        if (sampleCount >= minSampleSize && shouldUseDataPoints(
-                dataPoints,
-                time,
-                sampleCount,
-                afterPointerStop
-            )
-        ) {
+        if (sampleCount >= minSampleSize) {
             // Choose computation logic based on strategy.
             return when (strategy) {
                 Strategy.Impulse -> {
-                    calculateImpulseVelocity(dataPoints, time, sampleCount, isDataDifferential)
+                    calculateImpulseVelocity(
+                        dataPoints = reusableDataPointsArray,
+                        time = reusableTimeArray,
+                        sampleCount = sampleCount,
+                        isDataDifferential = isDataDifferential
+                    )
                 }
                 Strategy.Lsq2 -> {
-                    calculateLeastSquaresVelocity(dataPoints, time, sampleCount)
+                    calculateLeastSquaresVelocity(
+                        dataPoints = reusableDataPointsArray,
+                        time = reusableTimeArray,
+                        sampleCount = sampleCount
+                    )
                 }
             } * 1000 // Multiply by "1000" to convert from units/ms to units/s
         }
@@ -340,6 +334,69 @@ internal constructor(
     }
 }
 
+internal expect fun platformVelocityDataPointsBuilder(): VelocityTracker1D.DataPointsBuilder
+
+/**
+ * DefaultVelocityDataPointsBuilder is an implementation of the VelocityTracker1D.DataPointsBuilder
+ * interface. It manages the creation of velocity data points based on provided sample data.
+ *
+ * This builder processes point samples to calculate a specified number of data points and their
+ * corresponding time differences, adhering to continuous motion constraints.
+ */
+internal class DefaultVelocityDataPointsBuilder: VelocityTracker1D.DataPointsBuilder {
+    companion object {
+        const val AssumePointerMoveStoppedMilliseconds: Int = 40
+
+        // TODO(b/204895043): Keep value in sync with VelocityPathFinder.HorizonMilliSeconds
+        const val HorizonMilliseconds: Int = 100
+    }
+
+    override val historySize: Int = 20
+
+    override fun buildDataPoints(
+        samples: Array<DataPointAtTime?>,
+        index: Int,
+        strategy: Strategy,
+        isDataDifferential: Boolean,
+        dataPoints: FloatArray,
+        time: FloatArray
+    ): Int {
+        var sampleCount = 0
+        var index: Int = index
+
+        // The sample at index is our newest sample.  If it is null, we have no samples so return.
+        val newestSample: DataPointAtTime = samples[index] ?: return 0
+
+        var previousSample: DataPointAtTime = newestSample
+
+        // Starting with the most recent PointAtTime sample, iterate backwards while
+        // the samples represent continuous motion.
+        do {
+            val sample: DataPointAtTime = samples[index] ?: break
+
+            val age: Float = (newestSample.time - sample.time).toFloat()
+            val delta: Float = abs(sample.time - previousSample.time).toFloat()
+            previousSample =
+                if (strategy == Strategy.Lsq2 || isDataDifferential) {
+                    sample
+                } else {
+                    newestSample
+                }
+            if (age > HorizonMilliseconds || delta > AssumePointerMoveStoppedMilliseconds) {
+                break
+            }
+
+            dataPoints[sampleCount] = sample.dataPoint
+            time[sampleCount] = -age
+            index = (if (index == 0) historySize else index) - 1
+
+            sampleCount += 1
+        } while (sampleCount < historySize)
+
+        return sampleCount
+    }
+}
+
 /**
  * Extension to simplify either creating a new [DataPointAtTime] at an array index (if the index was
  * never populated), or to update an existing [DataPointAtTime] (if the index had an existing
@@ -355,17 +412,6 @@ private fun Array<DataPointAtTime?>.set(index: Int, time: Long, dataPoint: Float
         currentEntry.dataPoint = dataPoint
     }
 }
-
-/**
- * Some platforms (e.g. iOS) ignore certain events during velocity calculation.
- */
-internal expect fun VelocityTracker1D.shouldUseDataPoints(
-    points: FloatArray,
-    times: FloatArray,
-    count: Int,
-    afterPointerStop: Boolean
-): Boolean
-
 
 /**
  * Track the positions and timestamps inside this event change.

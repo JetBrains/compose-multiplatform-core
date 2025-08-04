@@ -16,13 +16,5 @@
 
 package androidx.compose.ui.input.pointer.util
 
-// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-6853
-
-internal actual const val HistorySize: Int = 20
-
-internal actual fun VelocityTracker1D.shouldUseDataPoints(
-    points: FloatArray,
-    times: FloatArray,
-    count: Int,
-    afterPointerStop: Boolean
-): Boolean = true
+internal actual fun platformVelocityDataPointsBuilder(): VelocityTracker1D.DataPointsBuilder =
+    DefaultVelocityDataPointsBuilder()

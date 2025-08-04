@@ -16,14 +16,5 @@
 
 package androidx.compose.ui.input.pointer.util
 
-internal actual const val HistorySize: Int = 20
-
-/**
- * Some platforms (e.g. iOS) filter certain gestures during velocity calculation.
- */
-internal actual fun VelocityTracker1D.shouldUseDataPoints(
-    points: FloatArray,
-    times: FloatArray,
-    count: Int,
-    afterPointerStop: Boolean
-): Boolean = true
+internal actual fun platformVelocityDataPointsBuilder(): VelocityTracker1D.DataPointsBuilder =
+    DefaultVelocityDataPointsBuilder()

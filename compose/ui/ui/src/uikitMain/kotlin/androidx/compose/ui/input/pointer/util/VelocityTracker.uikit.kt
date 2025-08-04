@@ -16,29 +16,63 @@
 
 package androidx.compose.ui.input.pointer.util
 
+import androidx.compose.ui.input.pointer.util.VelocityTracker1D.Strategy
 import kotlin.math.abs
-
-internal actual const val HistorySize: Int = 40 // Increased to store history on 120 Hz devices
 
 private const val MinimumGestureDurationMilliseconds: Int = 50
 
-/**
- * Some platforms (e.g. iOS) filter certain gestures during velocity calculation.
- */
-internal actual fun VelocityTracker1D.shouldUseDataPoints(
-    points: FloatArray,
-    times: FloatArray,
-    count: Int,
-    afterPointerStop: Boolean
-): Boolean {
-    if (count == 0) {
-        return false
-    }
+internal actual fun platformVelocityDataPointsBuilder(): VelocityTracker1D.DataPointsBuilder =
+    UIKitVelocityDataPointsBuilder()
 
-    val timeDelta = abs(times[0] - times[count - 1])
-    if (timeDelta < MinimumGestureDurationMilliseconds && afterPointerStop) {
-        return false
-    }
+private class UIKitVelocityDataPointsBuilder: VelocityTracker1D.DataPointsBuilder {
+    override val historySize: Int = 40 // Extended for 120 FPS devices
 
-    return true
+    override fun buildDataPoints(
+        samples: Array<DataPointAtTime?>,
+        index: Int,
+        strategy: Strategy,
+        isDataDifferential: Boolean,
+        dataPoints: FloatArray,
+        time: FloatArray
+    ): Int {
+        var sampleCount = 0
+        var index: Int = index
+
+        // The sample at index is our newest sample.  If it is null, we have no samples so return.
+        val newestSample: DataPointAtTime = samples[index] ?: return 0
+
+        var previousSample: DataPointAtTime = newestSample
+
+        // Starting with the most recent PointAtTime sample, iterate backwards while
+        // the samples represent continuous motion.
+        do {
+            val sample: DataPointAtTime = samples[index] ?: break
+
+            val age: Float = (newestSample.time - sample.time).toFloat()
+            val delta: Float = abs(sample.time - previousSample.time).toFloat()
+            previousSample =
+                if (strategy == Strategy.Lsq2 || isDataDifferential) {
+                    sample
+                } else {
+                    newestSample
+                }
+            if (delta > DefaultVelocityDataPointsBuilder.AssumePointerMoveStoppedMilliseconds) {
+                if (age < MinimumGestureDurationMilliseconds) {
+                    // Short gestures made after a pointer stops are considered unintentional.
+                    return 0
+                }
+            }
+            if (age > DefaultVelocityDataPointsBuilder.HorizonMilliseconds) {
+                break
+            }
+
+            dataPoints[sampleCount] = sample.dataPoint
+            time[sampleCount] = -age
+            index = (if (index == 0) historySize else index) - 1
+
+            sampleCount += 1
+        } while (sampleCount < historySize)
+
+        return sampleCount
+    }
 }
