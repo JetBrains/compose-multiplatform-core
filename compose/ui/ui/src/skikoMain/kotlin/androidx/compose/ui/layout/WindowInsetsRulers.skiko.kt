@@ -57,15 +57,15 @@ internal actual fun findInsetsAnimationProperties(
 }
 
 internal class RulerProviderModifierElement(
-    val windowInsetsManager: PlatformWindowInsets
+    val windowInsets: PlatformWindowInsets
 ): ModifierNodeElement<RulerProviderModifierNode>() {
-    override fun create(): RulerProviderModifierNode = RulerProviderModifierNode(windowInsetsManager)
-    override fun hashCode(): Int = windowInsetsManager.hashCode()
+    override fun create(): RulerProviderModifierNode = RulerProviderModifierNode(windowInsets)
+    override fun hashCode(): Int = windowInsets.hashCode()
     override fun equals(other: Any?): Boolean {
         if (other === this) {
             return true
         }
-        return (other as? RulerProviderModifierElement)?.windowInsetsManager === windowInsetsManager
+        return (other as? RulerProviderModifierElement)?.windowInsets === windowInsets
     }
     override fun update(node: RulerProviderModifierNode) = Unit
 }
