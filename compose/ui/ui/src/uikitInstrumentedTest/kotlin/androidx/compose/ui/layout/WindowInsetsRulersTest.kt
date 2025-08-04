@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Placeable.PlacementScope
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -45,6 +46,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutsCountForPortrait() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.Portrait)
 
         assertNotNull(insetsRect)
@@ -56,6 +58,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutsCountForLandscapeLeft() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.LandscapeLeft)
 
         waitForIdle()
@@ -69,6 +72,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutsCountForLandscapeRight() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.LandscapeRight)
 
         waitForIdle()
@@ -82,6 +86,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutsCountForPortraitUpsideDown() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.PortraitUpsideDown)
 
         waitForIdle()
@@ -95,6 +100,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsPortrait() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.Portrait)
 
         waitForIdle()
@@ -106,6 +112,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsLandscapeLeft() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.LandscapeLeft)
 
         waitForIdle()
@@ -117,6 +124,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsLandscapeRight() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.LandscapeRight)
 
         waitForIdle()
@@ -128,6 +136,7 @@ class WindowInsetsRulersTest {
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsPortraitUpsideDown() = runUIKitInstrumentedTest {
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
+        hostingViewController.updateSafeAreaInsets(PlatformInsets(1,2,3,4))
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.PortraitUpsideDown)
 
         waitForIdle()

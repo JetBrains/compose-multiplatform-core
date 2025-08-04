@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.IOSLifecycleOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -225,6 +226,11 @@ internal class ComposeHostingViewController(
     fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
         interfaceOrientationState.value = orientation
         mediator?.updateInterfaceOrientation(orientation)
+    }
+
+    // Used for tests
+    fun updateSafeAreaInsets(insets: PlatformInsets) {
+        mediator?.updateSafeAreaInsets(insets)
     }
 
     override fun viewWillTransitionToSize(

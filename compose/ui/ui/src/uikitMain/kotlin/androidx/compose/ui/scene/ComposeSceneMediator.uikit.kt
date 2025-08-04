@@ -311,6 +311,10 @@ internal class ComposeSceneMediator(
         windowInsetsManager.interfaceOrientation.value = interfaceOrientation
     }
 
+    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
+        windowInsetsManager.safeAreaInsets.value = safeAreaInsets
+    }
+
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
      *
