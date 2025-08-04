@@ -1,2 +1,3 @@
 // Baseline format: 1.0
-[linuxX64]: Removed declaration androidx.compose.material3/BasicAlertDialogOverrideScope from androidx.compose.material
+[linuxX64]: Removed declaration androidx.compose.material3/androidx_compose_material3_MaterialShapes$stableprop from androidx.compose.material
+[linuxX64]: Removed declaration androidx.compose.material3/androidx_compose_material3_MaterialShapes$stableprop_getter() from androidx.compose.material
