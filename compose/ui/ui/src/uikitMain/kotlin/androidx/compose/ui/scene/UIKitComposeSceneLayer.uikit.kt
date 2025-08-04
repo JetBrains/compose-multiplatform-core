@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.Canvas
@@ -28,6 +29,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -64,6 +66,8 @@ internal class UIKitComposeSceneLayer(
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
+    private val safeAreaInsetsState: MutableState<PlatformInsets>,
+    private val interfaceOrientationState: MutableState<InterfaceOrientation>
 ) : ComposeSceneLayer {
 
     override var focusable: Boolean = focusedViewsList != null
@@ -95,7 +99,9 @@ internal class UIKitComposeSceneLayer(
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
-        backGestureDispatcher = backGestureDispatcher
+        backGestureDispatcher = backGestureDispatcher,
+        safeAreaInsetsState = safeAreaInsetsState,
+        interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
     }
@@ -213,9 +219,5 @@ internal class UIKitComposeSceneLayer(
 
     fun sceneWillDisappear() {
         mediator.sceneWillDisappear()
-    }
-
-    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
-        mediator.updateInterfaceOrientation(interfaceOrientation)
     }
 }

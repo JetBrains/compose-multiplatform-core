@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -188,6 +189,8 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
+    private val safeAreaInsetsState: MutableState<PlatformInsets>,
+    private val interfaceOrientationState: MutableState<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext
@@ -305,15 +308,10 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
-    val windowInsetsManager = UIKitWindowInsetsManager()
-
-    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
-        windowInsetsManager.interfaceOrientation.value = interfaceOrientation
-    }
-
-    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
-        windowInsetsManager.safeAreaInsets.value = safeAreaInsets
-    }
+    val windowInsetsManager = UIKitWindowInsetsManager(
+        interfaceOrientation = interfaceOrientationState,
+        safeAreaInsets = safeAreaInsetsState
+    )
 
     /**
      * A callback to define whether the precondition for the user input view hit test is met.

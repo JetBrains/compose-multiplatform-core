@@ -190,12 +190,6 @@ internal class UIKitComposeSceneLayersHolder(
         return false
     }
 
-    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
-        this.layers.fastForEach {
-            it.updateInterfaceOrientation(interfaceOrientation)
-        }
-    }
-
     /**
      * Iterate through existing layers and merge their interop transactions to be consumed by the
      * [MetalView], also include transactions of the layers that were removed and are not

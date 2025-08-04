@@ -138,6 +138,7 @@ internal class ComposeHostingViewController(
         InterfaceOrientation.Portrait
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
+    private val safeAreaInsetsState: MutableState<PlatformInsets> = mutableStateOf(PlatformInsets.Zero)
 
     var focusedViewsList: FocusedViewsList? = FocusedViewsList()
 
@@ -225,13 +226,10 @@ internal class ComposeHostingViewController(
 
     fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
         interfaceOrientationState.value = orientation
-        layers?.updateInterfaceOrientation(orientation)
-        mediator?.updateInterfaceOrientation(orientation)
     }
 
-    // Used for tests
     fun updateSafeAreaInsets(insets: PlatformInsets) {
-        mediator?.updateSafeAreaInsets(insets)
+        safeAreaInsetsState.value = insets
     }
 
     override fun viewWillTransitionToSize(
@@ -325,7 +323,9 @@ internal class ComposeHostingViewController(
             composeSceneFactory = { invalidate, context ->
                 createComposeScene(invalidate, context, layers.metalView)
             },
-            backGestureDispatcher = backGestureDispatcher
+            backGestureDispatcher = backGestureDispatcher,
+            safeAreaInsetsState = safeAreaInsetsState,
+            interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
             rootView.embedSubview(mediator.inputView)
             rootView.updateMetalView(metalView, ::onDidMoveToWindow)
@@ -483,6 +483,8 @@ internal class ComposeHostingViewController(
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
                     enableBackGesture = configuration.enableBackGesture,
+                    safeAreaInsetsState = safeAreaInsetsState,
+                    interfaceOrientationState = interfaceOrientationState
                 )
 
                 attachLayer(layer)
