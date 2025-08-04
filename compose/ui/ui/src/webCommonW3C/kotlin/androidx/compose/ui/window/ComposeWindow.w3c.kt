@@ -205,6 +205,9 @@ internal class ComposeWindow(
 
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
+    // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
+    private var activeTouchOffset: Offset? = null
+
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty {
         override val windowInfo get() = _windowInfo
 
@@ -259,7 +262,10 @@ internal class ComposeWindow(
                 null
             }
 
-        override val textInputService = object : WebTextInputService() {
+        override val textInputService: WebTextInputService = object : WebTextInputService() {
+
+            override val currentTouchOffset: Offset?
+                get() = activeTouchOffset
 
             override val backingDomInputContainer: HTMLElement
                 get() = interopContainerElement
@@ -540,6 +546,7 @@ internal class ComposeWindow(
             )
         }
 
+        activeTouchOffset = pointers.firstOrNull()?.position
         scene.sendPointerEvent(
             eventType = eventType,
             pointers = pointers,
@@ -549,7 +556,7 @@ internal class ComposeWindow(
             nativeEvent = event,
             button = null
         )
-
+        activeTouchOffset = null
     }
 
     private fun onMouseEvent(
@@ -689,12 +696,15 @@ internal actual fun InternalComposeViewport(
     configure: ComposeViewportConfiguration.() -> Unit,
     content: @Composable () -> Unit
 ) {
-    val providedContainer = if (viewportContainerId != null) {
-        document.getElementById(viewportContainerId) ?: error("failed to find element by viewportContainerId: '$viewportContainerId'")
-    } else {
-        document.body ?: error("failed to find <body> element")
+    onDomReady {
+        val providedContainer = if (viewportContainerId != null) {
+            document.getElementById(viewportContainerId) ?: error("failed to find element by viewportContainerId: '$viewportContainerId'")
+        } else {
+            document.body ?: error("failed to find <body> element")
+        }
+
+        ComposeViewport(providedContainer, configure, content)
     }
-    ComposeViewport(providedContainer, configure, content)
 }
 
 /**

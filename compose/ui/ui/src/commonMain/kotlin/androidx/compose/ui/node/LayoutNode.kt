@@ -610,6 +610,7 @@ internal class LayoutNode(
         owner.onDetach(this)
         this.owner = null
 
+        offsetFromRoot = IntOffset.Max
         lookaheadRoot = null
         depth = 0
         measurePassDelegate.onNodeDetached()
@@ -1145,6 +1146,7 @@ internal class LayoutNode(
         scheduleMeasureAndLayout: Boolean = true,
         invalidateIntrinsics: Boolean = true,
     ) {
+        outerToInnerOffsetDirty = true
         if (!ignoreRemeasureRequests && !isVirtual) {
             val owner = owner ?: return
             owner.onRequestMeasure(
@@ -1171,6 +1173,7 @@ internal class LayoutNode(
             "Lookahead measure cannot be requested on a node that is not a part of the " +
                 "LookaheadScope"
         }
+        outerToInnerOffsetDirty = true
         val owner = owner ?: return
         if (!ignoreRemeasureRequests && !isVirtual) {
             owner.onRequestMeasure(
@@ -1196,7 +1199,6 @@ internal class LayoutNode(
             parent?.invalidateMeasurements()
             return
         }
-        outerToInnerOffsetDirty = true
         if (lookaheadRoot != null) {
             requestLookaheadRemeasure()
         } else {
@@ -1216,6 +1218,21 @@ internal class LayoutNode(
         requireOwner().requestOnPositionedCallback(this)
     }
 
+    /**
+     * When the position of this node changes, we need to invalidate the cached [offsetFromRoot]
+     * value. Additionally, this will make all of the [offsetFromRoot] values below it incorrect as
+     * well.
+     */
+    internal fun invalidateOffsetFromRoot() {
+        // we want to avoid doing this recursive invalidation multiple times.
+        // if offsetFromRoot is already "unset", then we can assume that everything below
+        // it is also unset, and can exit early.
+        if (offsetFromRoot == IntOffset.Max) return
+        // Recursively "unset" offsetFromRoot
+        offsetFromRoot = IntOffset.Max
+        forEachChild { it.invalidateOffsetFromRoot() }
+    }
+
     internal inline fun <T> ignoreRemeasureRequests(block: () -> T): T {
         ignoreRemeasureRequests = true
         val result = block()
@@ -1232,6 +1249,7 @@ internal class LayoutNode(
     }
 
     internal fun requestLookaheadRelayout(forceRequest: Boolean = false) {
+        outerToInnerOffsetDirty = true
         if (!isVirtual) {
             owner?.onRequestRelayout(this, affectsLookahead = true, forceRequest)
         }

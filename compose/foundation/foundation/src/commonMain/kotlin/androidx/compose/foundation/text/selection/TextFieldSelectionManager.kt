@@ -24,6 +24,8 @@ import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.hasText
 import androidx.compose.foundation.internal.isAutofillAvailable
+import androidx.compose.foundation.internal.isReadSupported
+import androidx.compose.foundation.internal.isWriteSupported
 import androidx.compose.foundation.internal.readAnnotatedString
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.DefaultCursorThickness
@@ -66,7 +68,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
@@ -213,10 +214,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
      */
     internal var latestSelection: TextRange? = null
 
-    // TODO(grantapher) android ClipboardManager has a way to notify primary clip changes.
-    //  That could possibly be used so that this doesn't have to be updated manually.
-    /** The current clip entry. Updated via [updateClipboardEntry]. */
-    private var clipEntry: ClipEntry? by mutableStateOf(null)
+    private var hasAvailableTextToPaste by mutableStateOf(false)
 
     @VisibleForTesting internal var toolbarRequester: ToolbarRequester = ToolbarRequesterImpl()
 
@@ -641,10 +639,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 updateFloatingToolbar(show = true)
             }
 
-            override fun onCancel() {
-                draggingHandle = null
-                currentDragPosition = null
-            }
+            override fun onCancel() {}
         }
 
     /** [TextDragObserver] for dragging the cursor to change the selection in TextField. */
@@ -796,10 +791,13 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
     private val hasSelection: Boolean
         get() = !value.selection.collapsed
 
-    internal fun canCopy(): Boolean = hasSelection && !isPassword
+    internal fun canCopy(): Boolean =
+        hasSelection && !isPassword && (clipboard?.isWriteSupported() == true)
 
     internal suspend fun updateClipboardEntry() {
-        clipEntry = clipboard?.getClipEntry()
+        if (clipboard?.isReadSupported() == true) {
+            hasAvailableTextToPaste = hasAvailableTextToPaste()
+        }
     }
 
     private fun getContextTextAndSelection(): Pair<String, TextRange>? {
@@ -816,9 +814,11 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
     }
 
     /** Only fully accurate if [updateClipboardEntry] has been called. */
-    internal fun canPaste(): Boolean = editable && clipEntry?.hasText() == true
+    internal fun canPaste(): Boolean =
+        editable && (clipboard?.isReadSupported() == true) && hasAvailableTextToPaste
 
-    internal fun canCut(): Boolean = hasSelection && editable && !isPassword
+    internal fun canCut(): Boolean =
+        hasSelection && editable && !isPassword && clipboard?.isWriteSupported() == true
 
     internal fun canSelectAll(): Boolean = value.selection.length != value.text.length
 
@@ -1043,6 +1043,8 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
      */
     private fun showSelectionToolbarViaTextToolbar() =
         coroutineScope?.launch(start = CoroutineStart.UNDISPATCHED) {
+            updateClipboardEntry()
+
             // Because this is undispatched and the above is called once in CoreTextField
             // composition, disable read observation to avoid reading many states and landing
             // in a composition loop.
@@ -1063,7 +1065,6 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                         }
                     } else null
 
-                updateClipboardEntry()
                 val paste: (() -> Unit)? =
                     if (canPaste()) {
                         {
@@ -1440,3 +1441,5 @@ internal fun TextFieldSelectionManager.contextMenuBuilder(
         textFieldItem(Autofill, enabled = availability.canAutofill) { autofill() }
     }
 }
+//TODO upstream https://youtrack.jetbrains.com/issue/CMP-7517
+internal expect suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean
