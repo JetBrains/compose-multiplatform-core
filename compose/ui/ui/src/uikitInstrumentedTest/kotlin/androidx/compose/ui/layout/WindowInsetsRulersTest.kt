@@ -48,13 +48,8 @@ class WindowInsetsRulersTest {
         hostingViewController.updateInterfaceOrientation(InterfaceOrientation.Portrait)
 
         assertNotNull(insetsRect)
-
-        if (insetsRect!!.top > 0) {
-            assertFalse(displayCutoutRects.any { it == null })
-            assertEquals(1, displayCutoutRects.size)
-        } else {
-            assertEquals(0, displayCutoutRects.size)
-        }
+        assertFalse(displayCutoutRects.any { it == null })
+        assertEquals(1, displayCutoutRects.size)
     }
 
     @Test
@@ -66,13 +61,8 @@ class WindowInsetsRulersTest {
         waitForIdle()
 
         assertNotNull(insetsRect)
-
-        if (insetsRect!!.left > 0) {
-            assertFalse(displayCutoutRects.any { it == null })
-            assertEquals(1, displayCutoutRects.size)
-        } else {
-            assertEquals(0, displayCutoutRects.size)
-        }
+        assertFalse(displayCutoutRects.any { it == null })
+        assertEquals(1, displayCutoutRects.size)
     }
 
     @Test
@@ -84,13 +74,8 @@ class WindowInsetsRulersTest {
         waitForIdle()
 
         assertNotNull(insetsRect)
-
-        if (insetsRect!!.right < contentSize.width) {
-            assertFalse(displayCutoutRects.any { it == null })
-            assertEquals(1, displayCutoutRects.size)
-        } else {
-            assertEquals(0, displayCutoutRects.size)
-        }
+        assertFalse(displayCutoutRects.any { it == null })
+        assertEquals(1, displayCutoutRects.size)
     }
 
     @Test
@@ -102,13 +87,8 @@ class WindowInsetsRulersTest {
         waitForIdle()
 
         assertNotNull(insetsRect)
-
-        if (insetsRect!!.bottom < contentSize.height) {
-            assertFalse(displayCutoutRects.any { it == null })
-            assertEquals(1, displayCutoutRects.size)
-        } else {
-            assertEquals(0, displayCutoutRects.size)
-        }
+        assertFalse(displayCutoutRects.any { it == null })
+        assertEquals(1, displayCutoutRects.size)
     }
 
     @Test
