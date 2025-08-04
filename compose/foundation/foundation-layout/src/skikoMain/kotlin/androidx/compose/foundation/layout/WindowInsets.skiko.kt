@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.platform.safeGestures
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import kotlin.jvm.JvmName
 
 actual val WindowInsets.Companion.captionBar: WindowInsets
@@ -80,4 +82,9 @@ actual val WindowInsets.Companion.safeContent: WindowInsets
     @Composable
     get() = LocalPlatformWindowInsets.current.safeContent.toWindowInsets()
 
-private fun PlatformInsets.toWindowInsets(): WindowInsets = WindowInsets(left, top, right, bottom)
+private fun PlatformInsets.toWindowInsets(): WindowInsets = object : WindowInsets {
+    override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int = left
+    override fun getTop(density: Density): Int = top
+    override fun getRight(density: Density, layoutDirection: LayoutDirection): Int = right
+    override fun getBottom(density: Density): Int = bottom
+}

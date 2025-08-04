@@ -98,29 +98,19 @@ internal class UIKitWindowInsetsManager {
                 }
             }
         override val captionBar: PlatformInsets get() = PlatformInsets.Zero
-        override val displayCutout: PlatformInsets
-            get() {
-                val orientation = interfaceOrientation()
-                val safeAreaInsets = safeAreaInsets()
-
-                return when (orientation) {
-                    InterfaceOrientation.Portrait -> PlatformInsets(top = safeAreaInsets.top)
-                    InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(bottom = safeAreaInsets.bottom)
-                    InterfaceOrientation.LandscapeLeft -> PlatformInsets(left = safeAreaInsets.left)
-                    InterfaceOrientation.LandscapeRight -> PlatformInsets(right = safeAreaInsets.right)
+        override val displayCutout: PlatformInsets get() = when (interfaceOrientation()) {
+                    InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
+                    InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
+                    InterfaceOrientation.LandscapeLeft -> PlatformInsets(getLeft = { safeAreaInsets().left })
+                    InterfaceOrientation.LandscapeRight -> PlatformInsets(getRight = { safeAreaInsets().right })
                 }
-            }
-        override val ime: PlatformInsets get() = PlatformInsets(bottom = keyboardOverlapHeight())
-        override val mandatorySystemGestures: PlatformInsets
-            get() {
-                val safeAreaInsets = safeAreaInsets()
-                return PlatformInsets(top = safeAreaInsets.top, bottom = safeAreaInsets.bottom)
-            }
-        override val navigationBars: PlatformInsets get() = PlatformInsets(bottom = safeAreaInsets().bottom)
-        override val statusBars: PlatformInsets get() = PlatformInsets(top = safeAreaInsets().top)
-        override val systemBars: PlatformInsets get() = safeAreaInsets()
-        override val systemGestures: PlatformInsets get() = layoutMargins()
-        override val tappableElement: PlatformInsets get() = PlatformInsets(top = safeAreaInsets().top)
+        override val ime: PlatformInsets get() = PlatformInsets(getBottom = keyboardOverlapHeight)
+        override val mandatorySystemGestures: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top }, getBottom = { safeAreaInsets().bottom })
+        override val navigationBars: PlatformInsets get() = PlatformInsets(getBottom = { safeAreaInsets().bottom })
+        override val statusBars: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top })
+        override val systemBars: PlatformInsets get() = PlatformInsets(getLeft = { safeAreaInsets().left }, getRight = { safeAreaInsets().right }, getTop = { safeAreaInsets().top }, getBottom = { safeAreaInsets().bottom })
+        override val systemGestures: PlatformInsets get() = PlatformInsets(getLeft = { layoutMargins().left }, getRight = { layoutMargins().right }, getTop = { layoutMargins().top }, getBottom = { layoutMargins().bottom })
+        override val tappableElement: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top })
         override val waterfall: PlatformInsets get() = PlatformInsets.Zero
 
         override fun excluding(safeInsets: Boolean, ime: Boolean): PlatformWindowInsets {

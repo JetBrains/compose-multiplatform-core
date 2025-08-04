@@ -133,6 +133,40 @@ interface PlatformInsets {
 }
 
 @InternalComposeUiApi
+fun PlatformInsets(
+    getLeft: () -> Int = { 0 },
+    getTop: () -> Int = { 0 },
+    getRight: () -> Int = { 0 },
+    getBottom: () -> Int = { 0 }
+): PlatformInsets = DynamicPlatformInsets(getLeft, getTop, getRight, getBottom)
+
+internal fun PlatformInsets.exclude(insets: PlatformInsets) = PlatformInsets(
+    getLeft = { (left - insets.left).coerceAtLeast(0) },
+    getTop = { (top - insets.top).coerceAtLeast(0) },
+    getRight = { (right - insets.right).coerceAtLeast(0) },
+    getBottom = { (bottom - insets.bottom).coerceAtLeast(0) }
+)
+
+internal fun PlatformInsets.union(insets: PlatformInsets) = PlatformInsets(
+    getLeft = { maxOf(left, insets.left) },
+    getTop = { maxOf(top, insets.top) },
+    getRight = { maxOf(right, insets.right) },
+    getBottom = { maxOf(bottom, insets.bottom) }
+)
+
+private class DynamicPlatformInsets(
+    private val getLeft: () -> Int = { 0 },
+    private val getTop: () -> Int = { 0 },
+    private val getRight: () -> Int = { 0 },
+    private val getBottom: () -> Int = { 0 }
+): PlatformInsets {
+    override val left: Int get() = getLeft()
+    override val top: Int get() = getTop()
+    override val right: Int get() = getRight()
+    override val bottom: Int get() = getBottom()
+}
+
+@InternalComposeUiApi
 fun Density.PlatformInsets(
     left: Dp = 0.dp,
     top: Dp = 0.dp,
@@ -152,20 +186,6 @@ fun PlatformInsets(
     right: Int = 0,
     bottom: Int = 0
 ): PlatformInsets = ValuePlatformInsets(left, top, right, bottom)
-
-internal fun PlatformInsets.exclude(insets: PlatformInsets) = PlatformInsets(
-    left = (left - insets.left).coerceAtLeast(0),
-    top = (top - insets.top).coerceAtLeast(0),
-    right = (right - insets.right).coerceAtLeast(0),
-    bottom = (bottom - insets.bottom).coerceAtLeast(0)
-)
-
-internal fun PlatformInsets.union(insets: PlatformInsets) = PlatformInsets(
-    left = maxOf(left, insets.left),
-    top = maxOf(top, insets.top),
-    right = maxOf(right, insets.right),
-    bottom = maxOf(bottom, insets.bottom)
-)
 
 @JvmInline
 private value class ValuePlatformInsets(
