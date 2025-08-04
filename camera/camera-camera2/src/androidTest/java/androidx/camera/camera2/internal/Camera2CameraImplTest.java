@@ -1031,12 +1031,11 @@ public final class Camera2CameraImplTest {
 
     private @NonNull TestUseCase createUseCase(int template, @NonNull SurfaceOption surfaceOption,
             int imageFormat) {
-        return createUseCase(template, surfaceOption, imageFormat, null, null);
+        return createUseCase(template, surfaceOption, imageFormat, null);
     }
 
     private @NonNull TestUseCase createUseCase(int template, @NonNull SurfaceOption surfaceOption,
-            int imageFormat, @Nullable Range<Integer> targetFpsRange,
-            @Nullable DynamicRange dynamicRange) {
+            int imageFormat, @Nullable Range<Integer> targetFpsRange) {
         boolean isZslDisabled = getDefaultZslDisabled(template);
         FakeUseCaseConfig.Builder configBuilder =
                 new FakeUseCaseConfig.Builder().setSessionOptionUnpacker(
@@ -1044,9 +1043,6 @@ public final class Camera2CameraImplTest {
                         .setZslDisabled(isZslDisabled);
         if (targetFpsRange != null) {
             configBuilder.setTargetFrameRate(targetFpsRange);
-        }
-        if (dynamicRange != null) {
-            configBuilder.setDynamicRange(dynamicRange);
         }
         new Camera2Interop.Extender<>(configBuilder).setSessionStateCallback(mSessionStateCallback);
         return createUseCase(configBuilder.getUseCaseConfig(), template, surfaceOption,
@@ -1516,38 +1512,7 @@ public final class Camera2CameraImplTest {
                 fpsRangeExceed30 != null);
 
         UseCase useCase = createUseCase(CameraDevice.TEMPLATE_PREVIEW, DEFAULT_SURFACE_OPTION,
-                DEFAULT_IMAGE_FORMAT, fpsRangeExceed30, null);
-
-        Camera2CameraControlImpl camera2CameraControlImpl =
-                (Camera2CameraControlImpl) mCamera2CameraImpl.getCameraControlInternal();
-        LowLightBoostControl lowLightBoostControl =
-                camera2CameraControlImpl.getLowLightBoostControl();
-
-        mCamera2CameraImpl.onUseCaseActive(useCase);
-        mCamera2CameraImpl.attachUseCases(singletonList(useCase));
-        HandlerUtil.waitForLooperToIdle(sCameraHandler);
-        assertThat(lowLightBoostControl.isLowLightBoostDisabledByUseCaseSessionConfig()).isTrue();
-    }
-
-    @SdkSuppress(minSdkVersion = 35)
-    @Test
-    public void lowLightBoostDisabled_whenHdr10BitEnabled() throws InterruptedException {
-        assumeTrue(mCamera2CameraImpl.getCameraInfo().isLowLightBoostSupported());
-
-        Set<DynamicRange> supportedDynamicRanges =
-                mCamera2CameraImpl.mCameraInfoInternal.getSupportedDynamicRanges();
-        DynamicRange hdr10BitDynamicRange = null;
-        for (DynamicRange dynamicRange: supportedDynamicRanges) {
-            if (dynamicRange != DynamicRange.SDR) {
-                hdr10BitDynamicRange = dynamicRange;
-                break;
-            }
-        }
-        assumeTrue("The test only runs on devices that support HDR 10-bit dynamic range.",
-                hdr10BitDynamicRange != null);
-
-        UseCase useCase = createUseCase(CameraDevice.TEMPLATE_PREVIEW, DEFAULT_SURFACE_OPTION,
-                DEFAULT_IMAGE_FORMAT, null, hdr10BitDynamicRange);
+                DEFAULT_IMAGE_FORMAT, fpsRangeExceed30);
 
         Camera2CameraControlImpl camera2CameraControlImpl =
                 (Camera2CameraControlImpl) mCamera2CameraImpl.getCameraControlInternal();

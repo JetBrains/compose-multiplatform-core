@@ -73,7 +73,18 @@ public class ExtraSupportedSurfaceCombinationsQuirk : Quirk {
         private val LEVEL_3_LEVEL_PRIV_PRIV_YUV_SUBSET_CONFIGURATION =
             createLevel3PrivPrivYuvSubsetConfiguration()
         private val SUPPORT_EXTRA_LEVEL_3_CONFIGURATIONS_GOOGLE_MODELS: Set<String> =
-            setOf("PIXEL 6", "PIXEL 6 PRO", "PIXEL 7", "PIXEL 7 PRO", "PIXEL 8", "PIXEL 8 PRO")
+            setOf(
+                "PIXEL 6",
+                "PIXEL 6 PRO",
+                "PIXEL 7",
+                "PIXEL 7 PRO",
+                "PIXEL 8",
+                "PIXEL 8 PRO",
+                "PIXEL 9",
+                "PIXEL 9 PRO",
+                "PIXEL 9 PRO XL",
+                "PIXEL 9 PRO FOLD",
+            )
 
         private val SUPPORT_EXTRA_LEVEL_3_CONFIGURATIONS_SAMSUNG_MODELS: Set<String> =
             setOf(

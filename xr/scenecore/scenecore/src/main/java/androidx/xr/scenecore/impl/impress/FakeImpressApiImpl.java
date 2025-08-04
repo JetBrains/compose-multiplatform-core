@@ -18,6 +18,8 @@ package androidx.xr.scenecore.impl.impress;
 
 import android.content.res.Resources.NotFoundException;
 import android.graphics.SurfaceTexture;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
@@ -162,6 +164,9 @@ public class FakeImpressApiImpl implements ImpressApi {
         }
     }
 
+    // Non-functional resource manager.
+    private final BindingsResourceManager mResourceManager =
+            new BindingsResourceManager(new Handler(Looper.getMainLooper()));
     // Vector of image based lighting asset tokens.
     private final List<Long> mImageBasedLightingAssets = new ArrayList<>();
     // Map of model tokens to the list of impress nodes that are instances of that model.
@@ -198,6 +203,15 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void onPause() {}
+
+    @Override
+    @NonNull
+    public BindingsResourceManager getBindingsResourceManager() {
+        if (mResourceManager == null) {
+            throw new IllegalStateException("BindingsResourceManager is not initialized");
+        }
+        return mResourceManager;
+    }
 
     @Override
     public void releaseImageBasedLightingAsset(long iblToken) {

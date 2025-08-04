@@ -62,6 +62,9 @@ public final class FakeCameraFactory implements CameraFactory {
 
     private @NonNull CameraCoordinator mCameraCoordinator = new FakeCameraCoordinator();
 
+    private @NonNull Observable<List<CameraIdentifier>> mCameraSourceObservable =
+            ConstantObservable.withValue(new ArrayList<>());
+
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Map<String, Pair<Integer, Callable<CameraInternal>>> mCameraMap = new HashMap<>();
 
@@ -133,6 +136,28 @@ public final class FakeCameraFactory implements CameraFactory {
         insertCamera(CameraSelector.LENS_FACING_BACK, cameraId, cameraInternal);
     }
 
+    /**
+     * Removes a camera with the given camera ID.
+     *
+     * <p>Subsequent calls to {@link #getAvailableCameraIds()} will no longer include this camera,
+     * and {@link #getCamera(String)} will throw an {@link IllegalArgumentException} for it.
+     *
+     * @param cameraId Identifier of the camera to remove.
+     * @return The {@link Callable} that was associated with the removed camera, or {@code null}
+     * if the camera was not found.
+     */
+    public @Nullable Callable<CameraInternal> removeCamera(@NonNull String cameraId) {
+        // Invalidate caches
+        mCachedCameraIds = null;
+
+        // Remove from the map and return the old value.
+        Pair<Integer, Callable<CameraInternal>> removed = mCameraMap.remove(cameraId);
+        if (removed != null) {
+            return removed.second;
+        }
+        return null; // Not found
+    }
+
     @Override
     public @NonNull Set<String> getAvailableCameraIds() {
         // Lazily cache the set of all camera ids. This cache will be invalidated anytime a new
@@ -192,7 +217,12 @@ public final class FakeCameraFactory implements CameraFactory {
 
     @Override
     public @NonNull Observable<List<CameraIdentifier>> getCameraPresenceSource() {
-        return ConstantObservable.withValue(new ArrayList<>());
+        return mCameraSourceObservable;
+    }
+
+    public void setCameraPresenceSource(
+            @NonNull Observable<List<CameraIdentifier>> cameraSourceObservable) {
+        mCameraSourceObservable = cameraSourceObservable;
     }
 
     @Override

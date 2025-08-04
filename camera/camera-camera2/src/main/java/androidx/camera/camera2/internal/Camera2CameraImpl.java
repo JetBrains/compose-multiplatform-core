@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.internal;
 
-import static android.hardware.camera2.params.DynamicRangeProfiles.STANDARD;
-
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
 
 import android.annotation.SuppressLint;
@@ -26,9 +24,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.media.CamcorderProfile;
-import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -44,7 +40,6 @@ import androidx.camera.camera2.internal.compat.ApiCompat;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
-import androidx.camera.camera2.internal.compat.params.DynamicRangeConversions;
 import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.LegacyCameraOutputConfigNullPointerQuirk;
@@ -56,7 +51,6 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.CameraXConfig;
-import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
@@ -1229,27 +1223,6 @@ final class Camera2CameraImpl implements CameraInternal {
         if (useCaseSessionConfig.getExpectedFrameRateRange().getUpper() > 30) {
             mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(true);
             return;
-        }
-
-        // HDR 10-bit can be supported since API level 33
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return;
-        }
-
-        for (SessionConfig.OutputConfig outputConfig : useCaseSessionConfig.getOutputConfigs()) {
-            DynamicRangeProfiles dynamicRangeProfiles =
-                    mDynamicRangesCompat.toDynamicRangeProfiles();
-            if (dynamicRangeProfiles != null) {
-                DynamicRange requestedDynamicRange = outputConfig.getDynamicRange();
-                Long dynamicRangeProfileOrNull =
-                        DynamicRangeConversions.dynamicRangeToFirstSupportedProfile(
-                                requestedDynamicRange, dynamicRangeProfiles);
-                // Low-light boost should be disabled when HDR 10-bit is enabled.
-                if (dynamicRangeProfileOrNull != null && dynamicRangeProfileOrNull != STANDARD) {
-                    mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(true);
-                    return;
-                }
-            }
         }
 
         mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(false);

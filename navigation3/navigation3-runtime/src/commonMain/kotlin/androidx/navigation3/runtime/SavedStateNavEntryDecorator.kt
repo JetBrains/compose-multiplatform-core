@@ -17,22 +17,13 @@
 package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleRegistry
-import androidx.savedstate.SavedState
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
-import androidx.savedstate.savedState
 
 /**
  * Returns a [SavedStateNavEntryDecorator] that is remembered across recompositions.
@@ -60,55 +51,9 @@ public fun rememberSavedStateNavEntryDecorator(
 public fun SavedStateNavEntryDecorator(
     saveableStateHolder: SaveableStateHolder
 ): NavEntryDecorator<Any> {
-    val registryMap = mutableMapOf<Any, EntrySavedStateRegistry>()
-
-    val onPop: (Any) -> Unit = { contentKey ->
-        if (registryMap.contains(contentKey)) {
-            // saveableStateHolder onPop
-            saveableStateHolder.removeState(contentKey)
-
-            // saved state onPop
-            val savedState = savedState()
-            val childRegistry = registryMap.getValue(contentKey)
-            childRegistry.savedStateRegistryController.performSave(savedState)
-            childRegistry.savedState = savedState
-            childRegistry.lifecycle.currentState = Lifecycle.State.DESTROYED
-        }
-    }
+    val onPop: (Any) -> Unit = { contentKey -> saveableStateHolder.removeState(contentKey) }
 
     return navEntryDecorator(onPop = onPop) { entry ->
-        val childRegistry by
-            rememberSaveable(
-                entry.contentKey,
-                stateSaver =
-                    Saver(
-                        save = { it.savedState },
-                        restore = { EntrySavedStateRegistry().apply { savedState = it } },
-                    ),
-            ) {
-                mutableStateOf(EntrySavedStateRegistry())
-            }
-        registryMap.put(entry.contentKey, childRegistry)
-
-        saveableStateHolder.SaveableStateProvider(entry.contentKey) {
-            CompositionLocalProvider(LocalSavedStateRegistryOwner provides childRegistry) {
-                entry.Content()
-            }
-        }
-        childRegistry.lifecycle.currentState = Lifecycle.State.RESUMED
-    }
-}
-
-internal class EntrySavedStateRegistry : SavedStateRegistryOwner {
-    override val lifecycle: LifecycleRegistry = LifecycleRegistry(this)
-    val savedStateRegistryController: SavedStateRegistryController =
-        SavedStateRegistryController.create(this)
-    override val savedStateRegistry: SavedStateRegistry =
-        savedStateRegistryController.savedStateRegistry
-
-    var savedState: SavedState? = null
-
-    init {
-        savedStateRegistryController.performRestore(savedState)
+        saveableStateHolder.SaveableStateProvider(entry.contentKey) { entry.Content() }
     }
 }

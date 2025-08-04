@@ -25,4 +25,15 @@ import android.net.Uri
  * @param uri The [Uri] extracted from the PDF document, representing the destination of the
  *   external link.
  */
-public class ExternalLink(public val uri: Uri)
+public class ExternalLink(public val uri: Uri) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ExternalLink) return false
+        return uri == other.uri
+    }
+
+    override fun hashCode(): Int = uri.hashCode()
+
+    override fun toString(): String = "ExternalLink(uri=$uri)"
+}

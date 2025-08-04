@@ -26,6 +26,7 @@ import androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.InlineImageResource
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -124,6 +125,19 @@ class ProtoLayoutScopeTest {
 
         assertThat(BundleCompat.getParcelable(intentsBundle, id, PendingIntent::class.java))
             .isEqualTo(intent)
+    }
+
+    @Test
+    public fun twoPendingIntents_registerToSameId_throws() {
+        val scope = ProtoLayoutScope()
+        val id = "test"
+        val intent = PendingIntent.getActivity(getApplicationContext(), 1, Intent(), 1)
+        scope.registerPendingIntent(id, intent)
+        val secondIntent = PendingIntent.getActivity(getApplicationContext(), 2, Intent(), 1)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            scope.registerPendingIntent(id, secondIntent)
+        }
     }
 
     @Test

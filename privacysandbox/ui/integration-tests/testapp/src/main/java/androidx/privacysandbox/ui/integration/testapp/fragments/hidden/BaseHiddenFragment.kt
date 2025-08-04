@@ -29,7 +29,9 @@ import java.util.concurrent.TimeUnit
 
 /** Base hidden fragment to be used for testing different automation and benchmarking flows. */
 abstract class BaseHiddenFragment : BaseFragment() {
-    val uiDisplayedLatch = CountDownLatch(1)
+
+    var uiDisplayedLatch = CountDownLatch(1)
+    var uiClosedLatch = CountDownLatch(1)
 
     val eventListener =
         object : SandboxedSdkViewEventListener {
@@ -39,7 +41,9 @@ abstract class BaseHiddenFragment : BaseFragment() {
 
             override fun onUiError(error: Throwable) {}
 
-            override fun onUiClosed() {}
+            override fun onUiClosed() {
+                uiClosedLatch.countDown()
+            }
         }
 
     final override fun handleLoadAdFromDrawer(
@@ -57,17 +61,25 @@ abstract class BaseHiddenFragment : BaseFragment() {
         return uiDisplayedLatch.await(callBackWaitMs, TimeUnit.MILLISECONDS)
     }
 
+    open fun ensureUiIsClosed(callBackWaitMs: Long): Boolean {
+        return uiClosedLatch.await(callBackWaitMs, TimeUnit.MILLISECONDS)
+    }
+
     suspend fun buildAdapter(automatedTestCallbackBundle: Bundle): SandboxedUiAdapter {
         return SandboxedUiAdapterFactory.createFromCoreLibInfo(
-            getSdkApi()
-                .loadBannerAdForAutomatedTests(
-                    AdFormat.BANNER_AD,
-                    currentAdType,
-                    currentMediationOption,
-                    false,
-                    shouldDrawViewabilityLayer,
-                    automatedTestCallbackBundle,
-                )
+            loadAdapterBundle(automatedTestCallbackBundle)
         )
+    }
+
+    suspend fun loadAdapterBundle(automatedTestCallbackBundle: Bundle): Bundle {
+        return getSdkApi()
+            .loadBannerAdForAutomatedTests(
+                currentAdFormat,
+                currentAdType,
+                currentMediationOption,
+                false,
+                shouldDrawViewabilityLayer,
+                automatedTestCallbackBundle,
+            )
     }
 }

@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.OutcomeReceiver;
@@ -468,13 +469,20 @@ public abstract class TileService extends Service {
                                                 tileFuture.get().toProto().toBuilder()
                                                         .setSchemaVersion(Version.CURRENT);
 
-                                        if (!isResourcesWithTileEnabled(tileRequest)) {
-                                            updateTileData(
-                                                    callback,
-                                                    tileBuilder.build(),
-                                                    TileData.VERSION_PROTOBUF_1);
+                                        if (!isResourcesWithTileAndExtrasEnabled(tileRequest)) {
+                                            updateTileDataV1(callback, tileBuilder.build());
                                             return;
                                         }
+
+                                        // Collect the PendingIntents used in the layout clickable
+                                        // if any
+                                        Bundle pendingIntents =
+                                                tileService
+                                                        .getScope(tileId)
+                                                        .collectPendingIntents();
+                                        Bundle extras = new Bundle();
+                                        extras.putParcelable(
+                                                TileData.PENDING_INTENT_KEY, pendingIntents);
 
                                         String lastResVer =
                                                 tileRequest.toProto().getLastResourcesVersion();
@@ -482,15 +490,10 @@ public abstract class TileService extends Service {
                                         if (incomingResVer.isEmpty()
                                                 || incomingResVer.equals(lastResVer)) {
                                             // If the tile has no resources, or the resources
-                                            // version is the same as the
-                                            // last one, then the renderer will use the cached
-                                            // resources. We can skip the
-                                            // resources fetch and send the tile
-                                            // data directly.
-                                            updateTileData(
-                                                    callback,
-                                                    tileBuilder.build(),
-                                                    TileData.VERSION_PROTOBUF_2);
+                                            // version is the same as the last one, then the
+                                            // renderer will use the cached resources. We can skip
+                                            // the resources fetch and send the tile data directly.
+                                            updateTileDataV2(callback, tileBuilder.build(), extras);
                                             return;
                                         }
 
@@ -512,10 +515,7 @@ public abstract class TileService extends Service {
                                                                         .setResources(
                                                                                 resources.toProto())
                                                                         .build();
-                                                        updateTileData(
-                                                                callback,
-                                                                tile,
-                                                                TileData.VERSION_PROTOBUF_2);
+                                                        updateTileDataV2(callback, tile, extras);
                                                     }
                                                 });
                                     } catch (ExecutionException
@@ -818,10 +818,20 @@ public abstract class TileService extends Service {
         }
     }
 
-    private static void updateTileData(
-            @NonNull TileCallback callback, TileProto.@NonNull Tile tile, int version) {
+    private static void updateTileDataV1(
+            @NonNull TileCallback callback, TileProto.@NonNull Tile tile) {
         try {
-            callback.updateTileData(new TileData(tile.toByteArray(), version));
+            callback.updateTileData(new TileData(tile.toByteArray(), TileData.VERSION_PROTOBUF_1));
+        } catch (RemoteException ex) {
+            Log.e(TAG, "RemoteException while returning tile payload", ex);
+        }
+    }
+
+    private static void updateTileDataV2(
+            @NonNull TileCallback callback, TileProto.@NonNull Tile tile, @Nullable Bundle extras) {
+        try {
+            callback.updateTileData(
+                    new TileData(tile.toByteArray(), extras, TileData.VERSION_PROTOBUF_2));
         } catch (RemoteException ex) {
             Log.e(TAG, "RemoteException while returning tile payload", ex);
         }
@@ -1034,13 +1044,13 @@ public abstract class TileService extends Service {
 
     /**
      * Checks if the given renderer version is at least the minimum supported version for fetching
-     * resources in the same tile request.
+     * resources in the same tile request and extra {@code Bundle} of {@code PendingIntent}.
      */
-    private static boolean isResourcesWithTileEnabled(@NonNull TileRequest tileRequest) {
+    private static boolean isResourcesWithTileAndExtrasEnabled(@NonNull TileRequest tileRequest) {
         VersionBuilders.VersionInfo versionInfo =
                 tileRequest.getDeviceConfiguration().getRendererSchemaVersion();
         int major = 1;
-        int minor = 525;
+        int minor = 526;
         return (versionInfo.getMajor() == major && versionInfo.getMinor() >= minor)
                 || versionInfo.getMajor() > major;
     }

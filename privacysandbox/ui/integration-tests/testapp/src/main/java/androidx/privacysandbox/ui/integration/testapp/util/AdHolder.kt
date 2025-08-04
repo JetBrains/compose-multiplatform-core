@@ -30,15 +30,14 @@ import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.client.view.SharedUiContainer
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
-import androidx.privacysandbox.ui.integration.testapp.R
 
 @SuppressLint("NullAnnotationGroup")
 @OptIn(
     ExperimentalFeatures.SharedUiPresentationApi::class,
     ExperimentalFeatures.ChangingContentUiZOrderApi::class,
 )
-class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(context, attrs) {
-    private val nativeAdLoader = NativeAdLoader(context)
+open class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(context, attrs) {
+    protected var nativeAdLoader = NativeAdLoader(context)
     private val bannerAdView: SandboxedSdkView = SandboxedSdkView(context)
     private val nativeAdView: SharedUiContainer
         get() = nativeAdLoader.adView
@@ -47,18 +46,14 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
         get() =
             when (currentAdFormat) {
                 AdFormat.BANNER_AD -> listOf(bannerAdView)
-                AdFormat.NATIVE_AD ->
-                    listOf(
-                        nativeAdView.findViewById(R.id.native_ad_remote_overlay_icon),
-                        nativeAdView.findViewById(R.id.native_ad_media_view_1),
-                    )
+                AdFormat.NATIVE_AD -> nativeAdLoader.sandboxedSdkViews
                 else -> listOf()
             }
 
     private var _currentAdFormat = AdFormat.BANNER_AD
     var currentAdFormat: Int
         get() = _currentAdFormat
-        private set(value) {
+        set(value) {
             _currentAdFormat = value
             currentAdView =
                 when (currentAdFormat) {
@@ -94,5 +89,11 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
 
     private fun populateBannerAd(sdkBundle: Bundle) {
         bannerAdView.setAdapter(SandboxedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
+    }
+}
+
+class HiddenAdHolder(context: Context, attrs: AttributeSet? = null) : AdHolder(context, attrs) {
+    init {
+        nativeAdLoader = NativeAdLoader(context, NativeAdLoader.NATIVE_AD_LAYOUT_HIDDEN_ID)
     }
 }

@@ -30,6 +30,7 @@ import androidx.privacysandbox.ui.integration.testapp.fragments.compose.ScrollCo
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.OcclusionFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.compose.ResizeComposeHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.compose.ScrollComposeHiddenFragment
+import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.views.PoolingContainerHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.views.ResizeViewHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.views.ScrollViewHiddenFragment
 import androidx.privacysandbox.ui.integration.testapp.fragments.views.PoolingContainerFragment
@@ -55,6 +56,7 @@ data class FragmentOptions(
         const val FRAGMENT_SCROLL_HIDDEN = "scroll-hidden"
         const val FRAGMENT_SCROLL = "scroll"
         const val FRAGMENT_POOLING_CONTAINER = "pooling-container"
+        const val FRAGMENT_REUSABLE_LIST_HIDDEN = "pooling-container-hidden"
         const val FRAGMENT_OCCLUSIONS_HIDDEN = "occlusions-hidden"
 
         const val KEY_AD_FORMAT = "ad-format"
@@ -95,6 +97,7 @@ data class FragmentOptions(
                     FRAGMENT_RESIZE -> FragmentOption.RESIZE
                     FRAGMENT_RESIZE_HIDDEN -> FragmentOption.RESIZE_HIDDEN
                     FRAGMENT_POOLING_CONTAINER -> FragmentOption.POOLING_CONTAINER
+                    FRAGMENT_REUSABLE_LIST_HIDDEN -> FragmentOption.REUSABLE_LIST_HIDDEN
                     FRAGMENT_SCROLL -> FragmentOption.SCROLL
                     FRAGMENT_SCROLL_HIDDEN -> FragmentOption.SCROLL_HIDDEN
                     FRAGMENT_OCCLUSIONS_HIDDEN -> FragmentOption.OCCLUSIONS_HIDDEN
@@ -179,6 +182,7 @@ data class FragmentOptions(
                     FragmentOption.RESIZE -> ResizeFragment()
                     FragmentOption.RESIZE_HIDDEN -> ResizeViewHiddenFragment()
                     FragmentOption.POOLING_CONTAINER -> PoolingContainerFragment()
+                    FragmentOption.REUSABLE_LIST_HIDDEN -> PoolingContainerHiddenFragment()
                     FragmentOption.OCCLUSIONS_HIDDEN -> OcclusionFragment()
                     else -> ResizeFragment()
                 }

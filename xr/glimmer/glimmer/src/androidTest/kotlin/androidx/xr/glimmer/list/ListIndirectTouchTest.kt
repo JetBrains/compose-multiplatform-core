@@ -16,31 +16,27 @@
 
 package androidx.xr.glimmer.list
 
-import android.os.SystemClock
-import android.view.MotionEvent
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performIndirectTouchEvent
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
-import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.setGlimmerThemeContent
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @MediumTest
+@RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalIndirectTouchTypeApi::class)
 class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) {
 
@@ -87,46 +83,5 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
         rule.onNodeWithText("Item-0").isDisplayed()
         rule.onNodeWithText("Item-1").isDisplayed()
         rule.onNodeWithText("Item-2").isNotDisplayed()
-    }
-
-    /** Synthetically range the x movements from 1000 to 0 */
-    private fun SemanticsNodeInteraction.performIndirectSwipe(distance: Float) {
-        val currentTime = SystemClock.uptimeMillis()
-
-        val down =
-            MotionEvent.obtain(
-                currentTime, // downTime,
-                currentTime, // eventTime,
-                MotionEvent.ACTION_DOWN,
-                0f,
-                Offset.Zero.y,
-                0,
-            )
-        down.source = SOURCE_TOUCH_NAVIGATION
-        performIndirectTouchEvent(IndirectTouchEvent(down))
-
-        val move =
-            MotionEvent.obtain(
-                currentTime + 200L,
-                currentTime + 200L,
-                MotionEvent.ACTION_MOVE,
-                distance,
-                Offset.Zero.y,
-                0,
-            )
-        move.source = SOURCE_TOUCH_NAVIGATION
-        performIndirectTouchEvent(IndirectTouchEvent(move))
-
-        val up =
-            MotionEvent.obtain(
-                currentTime + 200L,
-                currentTime + 200L,
-                MotionEvent.ACTION_UP,
-                distance,
-                Offset.Zero.y,
-                0,
-            )
-        up.source = SOURCE_TOUCH_NAVIGATION
-        performIndirectTouchEvent(IndirectTouchEvent(up))
     }
 }

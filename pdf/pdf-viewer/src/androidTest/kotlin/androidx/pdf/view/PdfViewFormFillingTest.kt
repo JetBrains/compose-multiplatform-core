@@ -21,6 +21,9 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
@@ -37,7 +40,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.test.runTest
@@ -62,6 +64,17 @@ class PdfViewFormFillingTest {
     ) {
         PdfViewTestActivity.onCreateCallback = { activity ->
             val container = FrameLayout(activity)
+
+            // With targetSdk of AndroidX = 35, UI is drawn beneath the top system bars,
+            // which causes click interactions to be blocked and not being propagated
+            // properly to PdfView. Hence we add padding to offset the PdfView so that it lies
+            // below the system bars.
+            ViewCompat.setOnApplyWindowInsetsListener(container) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.updatePadding(top = systemBars.top)
+                insets
+            }
+
             container.addView(
                 PdfView(activity).apply {
                     isFormFillingEnabled = enableFormFilling
@@ -74,7 +87,6 @@ class PdfViewFormFillingTest {
         }
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427563341
     @Test
     fun testInteractionWithClickTypeFormWidget() = runTest {
         val fakePdfDocument =
@@ -124,7 +136,6 @@ class PdfViewFormFillingTest {
             )
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427563341
     @Test
     fun testInteractionWhenClickedOnSingleChoiceTypeFormWidget() = runTest {
         val fakePdfDocument = getFakePdfDocumentInstance(getChoiceTypeFormWidgets(false))
@@ -162,7 +173,6 @@ class PdfViewFormFillingTest {
             )
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427563341
     @Test
     fun testInteractionWhenClickedOnMultipleChoiceTypeFormWidget() = runTest {
         val fakePdfDocument = getFakePdfDocumentInstance(getChoiceTypeFormWidgets(true))

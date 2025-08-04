@@ -593,7 +593,7 @@ public class TileServiceTest {
                                         .setRendererSchemaVersion(
                                                 VersionInfo.newBuilder()
                                                         .setMajor(1)
-                                                        .setMinor(525)
+                                                        .setMinor(526)
                                                         .build())
                                         .build())
                         .build();
@@ -617,7 +617,7 @@ public class TileServiceTest {
                                         .setRendererSchemaVersion(
                                                 VersionInfo.newBuilder()
                                                         .setMajor(1)
-                                                        .setMinor(525)
+                                                        .setMinor(526)
                                                         .build())
                                         .build())
                         .build();
@@ -646,7 +646,7 @@ public class TileServiceTest {
                                         .setRendererSchemaVersion(
                                                 VersionInfo.newBuilder()
                                                         .setMajor(1)
-                                                        .setMinor(525)
+                                                        .setMinor(526)
                                                         .build())
                                         .build())
                         .setLastResourcesVersion("4")
@@ -676,7 +676,7 @@ public class TileServiceTest {
                                         .setRendererSchemaVersion(
                                                 VersionInfo.newBuilder()
                                                         .setMajor(1)
-                                                        .setMinor(525)
+                                                        .setMinor(526)
                                                         .build())
                                         .build())
                         .setLastResourcesVersion("5")

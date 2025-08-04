@@ -74,24 +74,3 @@ package androidx.privacysandbox.sdkruntime.core.activity {
 
 }
 
-package androidx.privacysandbox.sdkruntime.core.controller {
-
-  @Deprecated public final class SdkSandboxControllerCompat {
-    method @Deprecated public static androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat from(android.content.Context context);
-    method @Deprecated public java.util.List<androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat> getAppOwnedSdkSandboxInterfaces();
-    method @Deprecated public String getClientPackageName();
-    method @Deprecated public java.util.List<androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat> getSandboxedSdks();
-    method @Deprecated public suspend Object? loadSdk(String sdkName, android.os.Bundle params, kotlin.coroutines.Continuation<? super androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat>);
-    method @Deprecated public android.os.IBinder registerSdkSandboxActivityHandler(androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat handlerCompat);
-    method @Deprecated public void registerSdkSandboxClientImportanceListener(java.util.concurrent.Executor executor, androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat listenerCompat);
-    method @Deprecated public void unregisterSdkSandboxActivityHandler(androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat handlerCompat);
-    method @Deprecated public void unregisterSdkSandboxClientImportanceListener(androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat listenerCompat);
-    field @Deprecated public static final androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat.Companion Companion;
-  }
-
-  @Deprecated public static final class SdkSandboxControllerCompat.Companion {
-    method @Deprecated public androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat from(android.content.Context context);
-  }
-
-}
-

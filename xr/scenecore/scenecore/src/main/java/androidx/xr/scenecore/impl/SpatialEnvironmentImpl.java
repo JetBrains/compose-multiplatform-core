@@ -27,6 +27,7 @@ import androidx.xr.runtime.internal.GltfModelResource;
 import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.runtime.internal.SpatialEnvironment;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.Material;
 
 import com.android.extensions.xr.XrExtensionResult;
 import com.android.extensions.xr.XrExtensions;
@@ -328,9 +329,9 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
                     mImpressApi.instanceGltfModel(
                             geometry.getExtensionModelToken(), /* enableCollider= */ false);
             if (material != null && meshName != null) {
-                MaterialResourceImpl materialImpl = (MaterialResourceImpl) material;
+                Material materialImpl = (Material) material;
                 mImpressApi.setMaterialOverride(
-                        modelImpressNode, materialImpl.getMaterialToken(), meshName);
+                        modelImpressNode, materialImpl.getNativeHandle(), meshName);
             }
             if (animationName != null) {
                 ListenableFuture<Void> unused =

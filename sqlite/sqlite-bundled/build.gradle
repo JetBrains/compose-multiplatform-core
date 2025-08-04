@@ -83,7 +83,7 @@ def prepareSqliteSourcesTask = ext.registerPrepareSqliteSourcesTask(
 configurations {
     // Configuration for producing a shareable archive file of compiled SQLite. Only the Linux X64
     // target of SQLite is produced hence the explicit name and attributes
-    linuxSharedArchive {
+    register("linuxSharedArchive") {
         canBeConsumed = true
         canBeResolved = false
         attributes {
@@ -91,7 +91,7 @@ configurations {
         }
     }
     // Configuration for producing a shareable directory that includes SQLite amalgamation sources.
-    sqliteSources {
+    register("sqliteSources") {
         canBeConsumed = true
         canBeResolved = false
         attributes {

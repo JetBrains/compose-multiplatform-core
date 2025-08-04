@@ -40,6 +40,8 @@ import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.node.requireLayoutCoordinates
@@ -79,6 +81,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
     Modifier.Node(),
     DrawModifierNode,
     ModifierLocalModifierNode,
+    ObserverModifierNode,
     BoundsProvider {
 
     override val lastBoundsInSharedTransitionScope: Rect?
@@ -154,6 +157,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
 
     override fun onAttach() {
         super.onAttach()
+        observeReads(sharedElement.observingVisibilityChange)
         setup()
         sharedElementEntry.isAttached = true
     }
@@ -410,6 +414,11 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
             }
             drawLayer(layer)
         }
+    }
+
+    override fun onObservedReadsChanged() {
+        sharedElement.updateMatch()
+        observeReads(sharedElement.observingVisibilityChange)
     }
 }
 

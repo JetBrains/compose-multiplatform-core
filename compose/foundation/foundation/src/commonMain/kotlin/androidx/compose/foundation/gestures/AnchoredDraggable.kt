@@ -428,10 +428,10 @@ private class AnchoredDraggableNode<T>(
 
     override fun onDragStarted(startedPosition: Offset) {}
 
-    override fun onDragStopped(velocity: Velocity) {
+    override fun onDragStopped(event: DragEvent.DragStopped) {
         if (!isAttached) return
         coroutineScope.launch {
-            val oneDirectionalVelocity = velocity.reverseIfNeeded().toFloat()
+            val oneDirectionalVelocity = event.velocity.reverseIfNeeded().toFloat()
             if (overscrollEffect == null) {
                 fling(oneDirectionalVelocity)
             } else {

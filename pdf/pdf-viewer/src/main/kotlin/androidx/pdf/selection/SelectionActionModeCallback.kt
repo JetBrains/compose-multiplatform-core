@@ -15,52 +15,21 @@
  */
 package androidx.pdf.selection
 
-import android.content.Context
 import android.graphics.Rect
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import androidx.pdf.util.ClipboardUtils
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.TextSelection
 import kotlin.math.roundToInt
 
-internal class SelectionActionModeCallback(private val pdfView: PdfView) :
-    ActionMode.Callback2(), SelectionMenuSession {
+internal class SelectionActionModeCallback(
+    private val pdfView: PdfView,
+    private val menuItems: List<ContextMenuComponent>,
+) : ActionMode.Callback2(), SelectionMenuSession {
     internal var actionMode: ActionMode? = null
         private set
 
-    private val context: Context = pdfView.context
-    private val defaultMenuItems =
-        listOf<ContextMenuComponent>(
-            DefaultSelectionMenuComponent(
-                key = PdfSelectionMenuKeys.CopyKey,
-                label = context.getString(android.R.string.copy),
-            ) { pdfView ->
-                // We can't copy the current selection if no text is selected
-                val text = (pdfView.currentSelection as? TextSelection)?.text
-                if (text != null) ClipboardUtils.copyToClipboard(context, text.toString())
-                // close the context menu upon copy action
-                close()
-                // After completion of action the selection should be cleared.
-                pdfView.clearSelection()
-            },
-            DefaultSelectionMenuComponent(
-                key = PdfSelectionMenuKeys.SelectAllKey,
-                label = context.getString(android.R.string.selectAll),
-            ) { pdfView ->
-                val page = pdfView.currentSelection?.bounds?.first()?.pageNum
-                // We can't select all if we don't know what page the selection is on, or if
-                // we don't know the size of that page
-                if (page != null) {
-                    // Action mode for old selection should be closed which will be triggered
-                    // after select all is completed.
-                    close()
-                    pdfView.selectAllTextOnPage(page)
-                }
-            },
-        )
     private lateinit var selectionMenuItems: MutableList<ContextMenuComponent>
 
     override fun close() {
@@ -75,7 +44,7 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         actionMode = mode
         // Start afresh with the default menu items
-        selectionMenuItems = defaultMenuItems.toMutableList()
+        selectionMenuItems = menuItems.toMutableList()
         pdfView.selectionMenuItemPreparer?.onPrepareSelectionMenuItems(selectionMenuItems)
         selectionMenuItems.forEachIndexed { index, component ->
             when (component) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-syntax = "proto2";
+syntax = "proto3";
 
 // NOTE: We get away with a copy of the proto definitions here only because in this module
 // we are using mutable types. Otherwise benchmark's definitions and this would collide and cause
@@ -26,8 +26,8 @@ package perfetto.protos;
 ///////////////////////////////////////////////////////////////////////////////
 
 message EventName {
-  optional uint64 iid = 1;
-  optional string name = 2;
+  uint64 iid = 1;
+  string name = 2;
 }
 
 message InternedData {
@@ -35,22 +35,22 @@ message InternedData {
 }
 
 message TracePacketDefaults {
-  optional uint32 timestamp_clock_id = 58;
-  optional TrackEventDefaults track_event_defaults = 11;
+  uint32 timestamp_clock_id = 58;
+  TrackEventDefaults track_event_defaults = 11;
 }
 
 // A random unique ID that identifies the trace.
 // This message has been introduced in v32. Prior to that, the UUID was
 // only (optionally) present in the TraceConfig.trace_uuid_msb/lsb fields.
 message TraceUuid {
-  optional int64 msb = 1;
-  optional int64 lsb = 2;
+  int64 msb = 1;
+  int64 lsb = 2;
 }
 
 message ProcessDescriptor {
-  required int32 pid = 1; // Making this required to avoid boxing an Int
+  int32 pid = 1; // Making this required to avoid boxing an Int
   repeated string cmdline = 2;
-  optional string process_name = 6;
+  string process_name = 6;
   // Labels can be used to further describe properties of the work performed by
   // the process. For example, these can be used by Chrome renderer process to
   // provide titles of frames being rendered.
@@ -63,24 +63,98 @@ message TrackEvent {
     string name = 23;
   }
   enum Type {
+    TYPE_SLICE_UNSPECIFIED = 0;
     TYPE_SLICE_BEGIN = 1;
     TYPE_SLICE_END = 2;
     TYPE_INSTANT = 3;
     TYPE_COUNTER = 4;
   }
-  optional Type type = 9;
-  required uint64 track_uuid = 11; // Making this required to avoid boxing
+  Type type = 9;
+  uint64 track_uuid = 11; // Making this required to avoid boxing
   oneof counter_value_field {
     int64 counter_value = 30;
     double double_counter_value = 44;
   }
   repeated fixed64 flow_ids = 47;
+
+  // ---------------------------------------------------------------------------
+  // TrackEvent arguments:
+  // ---------------------------------------------------------------------------
+
+  // Unstable key/value annotations shown in the trace viewer but not intended
+  // for metrics use.
+  repeated DebugAnnotation debug_annotations = 4;
+}
+
+// Proto representation of untyped key/value annotations provided in TRACE_EVENT
+// macros. Users of the Perfetto SDK should prefer to use the
+// perfetto::TracedValue API to fill these protos, rather than filling them
+// manually.
+//
+// Debug annotations are intended for debug use and are not considered a stable
+// API of the trace contents. Trace-based metrics that use debug annotation
+// values are prone to breakage, so please rely on typed TrackEvent fields for
+// these instead.
+//
+// DebugAnnotations support nested arrays and dictionaries. Each entry is
+// encoded as a single DebugAnnotation message. Only dictionary entries
+// set the "name" field. The TrackEvent message forms an implicit root
+// dictionary.
+//
+// Example TrackEvent with nested annotations:
+//   track_event {
+//     debug_annotations {
+//       name: "foo"
+//       dict_entries {
+//         name: "a"
+//         bool_value: true
+//       }
+//       dict_entries {
+//         name: "b"
+//         int_value: 123
+//       }
+//     }
+//     debug_annotations {
+//       name: "bar"
+//       array_values {
+//         string_value: "hello"
+//       }
+//       array_values {
+//         string_value: "world"
+//       }
+//     }
+//   }
+//
+// Next ID: 18.
+// Reserved ID: 15
+message DebugAnnotation {
+  // Name fields are set only for dictionary entries.
+  oneof name_field {
+    // interned DebugAnnotationName.
+    uint64 name_iid = 1;
+    // non-interned variant.
+    string name = 10;
+  }
+
+  oneof value {
+    bool bool_value = 2;
+    uint64 uint_value = 3;
+    int64 int_value = 4;
+    double double_value = 5;
+    // interned and non-interned variants of strings.
+    string string_value = 6;
+    // Corresponds to |debug_annotation_string_values| field in InternedData.
+    uint64 string_value_iid = 17;
+  }
+
+  repeated DebugAnnotation dict_entries = 11;
+  repeated DebugAnnotation array_values = 12;
 }
 
 message ThreadDescriptor {
-  required int32 pid = 1; // Making this required to avoid boxing an Int
-  required int32 tid = 2; // Making this required to avoid boxing an Int
-  optional string thread_name = 5;
+  int32 pid = 1;
+  int32 tid = 2;
+  string thread_name = 5;
 }
 
 message CounterDescriptor {
@@ -112,7 +186,7 @@ message CounterDescriptor {
   // For built-in counters (e.g. thread time). Custom user-specified counters
   // (e.g. those emitted by TRACE_COUNTER macros of the client library)
   // shouldn't set this, and instead provide a counter name via TrackDescriptor.
-  optional BuiltinCounterType type = 1;
+  BuiltinCounterType type = 1;
 
   // Names of categories of the counter (usually for user-specified counters).
   // In the client library, categories are a way to turn groups of individual
@@ -121,15 +195,15 @@ message CounterDescriptor {
 
   // Type of the counter's values. Built-in counters imply a value for this
   // field.
-  optional Unit unit = 3;
+  Unit unit = 3;
 
   // In order to use a unit not defined as a part of |Unit|, a free-form unit
   // name can be used instead.
-  optional string unit_name = 6;
+  string unit_name = 6;
 
   // Multiplication factor of this counter's values, e.g. to supply
   // COUNTER_THREAD_TIME_NS timestamps in microseconds instead.
-  optional int64 unit_multiplier = 4;
+  int64 unit_multiplier = 4;
 
   // Whether values for this counter are provided as delta values. Only
   // supported for counters that are emitted on a single packet-sequence (e.g.
@@ -138,43 +212,43 @@ message CounterDescriptor {
   // recent value for the counter. When incremental state is cleared, the
   // counter value is considered to be reset to 0. Thus, the first value after
   // incremental state is cleared is effectively an absolute value.
-  optional bool is_incremental = 5;
+  bool is_incremental = 5;
 }
 
 message TrackDescriptor {
-  optional uint64 uuid = 1;
-  optional string name = 2;
-  optional uint64 parent_uuid = 5;
-  optional ProcessDescriptor process = 3;
-  optional ThreadDescriptor thread = 4;
-  optional CounterDescriptor counter = 8;
-  optional bool disallow_merging_with_system_tracks = 9;
+  uint64 uuid = 1;
+  string name = 2;
+  uint64 parent_uuid = 5;
+  ProcessDescriptor process = 3;
+  ThreadDescriptor thread = 4;
+  CounterDescriptor counter = 8;
+  bool disallow_merging_with_system_tracks = 9;
 }
 
 message TrackEventDefaults {
-  optional uint64 track_uuid = 11;
+  uint64 track_uuid = 11;
 }
 
 message TracePacket {
-  required uint64 timestamp = 8; // Making this required to avoid boxing
-  optional uint32 timestamp_clock_id = 58;
+  uint64 timestamp = 8;
+  uint32 timestamp_clock_id = 58;
   oneof data {
     TrackEvent track_event = 11;
     TrackDescriptor track_descriptor = 60;
     TraceUuid trace_uuid = 89;
     bytes compressed_packets = 50; // kept for testing purposes
   }
-  required uint32 trusted_packet_sequence_id = 10; // Making this required to avoid boxing
-  optional InternedData interned_data = 12;
+  uint32 trusted_packet_sequence_id = 10;
+  InternedData interned_data = 12;
 
   enum SequenceFlags {
     SEQ_UNSPECIFIED = 0;
     SEQ_INCREMENTAL_STATE_CLEARED = 1;
     SEQ_NEEDS_INCREMENTAL_STATE = 2;
   };
-  optional uint32 sequence_flags = 13;
-  optional bool incremental_state_cleared = 41;
-  optional TracePacketDefaults trace_packet_defaults = 59;
+  uint32 sequence_flags = 13;
+  bool incremental_state_cleared = 41;
+  TracePacketDefaults trace_packet_defaults = 59;
 }
 
 message Trace {

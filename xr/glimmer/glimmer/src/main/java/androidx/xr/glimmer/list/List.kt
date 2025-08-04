@@ -150,6 +150,8 @@ internal fun List(
             modifier
                 .then(state.remeasurementModifier)
                 .then(state.awaitLayoutModifier)
+                .autoFocus(state.autoFocusBehaviour)
+                // TODO: b/433237949 - Behaviour conflicts between the AutoFocus and D-Pad.
                 .lazyLayoutSemantics(
                     itemProviderLambda = itemProvider,
                     state = semanticState,
@@ -157,6 +159,7 @@ internal fun List(
                     userScrollEnabled = userScrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
+                // TODO: b/433235501 - Behaviour conflicts between the AutoFocus and BeyondBounds.
                 .then(beyondBoundsModifier)
                 .clipScrollableContainer(orientation)
                 .scrollable(

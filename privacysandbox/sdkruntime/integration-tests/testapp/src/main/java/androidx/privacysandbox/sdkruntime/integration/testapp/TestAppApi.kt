@@ -23,6 +23,7 @@ import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
+import androidx.privacysandbox.sdkruntime.integration.testaidl.IMediateeSdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 
@@ -38,6 +39,11 @@ class TestAppApi(appContext: Context) {
     suspend fun loadTestSdk(params: Bundle = Bundle()): ISdkApi {
         val loadedSdk = loadSdk(TEST_SDK_NAME, params)
         return ISdkApi.Stub.asInterface(loadedSdk.getInterface())
+    }
+
+    suspend fun loadMediateeSdk(params: Bundle = Bundle()): IMediateeSdkApi {
+        val loadedSdk = loadSdk(MEDIATEE_SDK_NAME, params)
+        return IMediateeSdkApi.Stub.asInterface(loadedSdk.getInterface())
     }
 
     suspend fun getOrLoadTestSdk(): ISdkApi {
@@ -56,6 +62,8 @@ class TestAppApi(appContext: Context) {
     }
 
     fun unloadTestSdk() = unloadSdk(TEST_SDK_NAME)
+
+    fun unloadMediateeSdk() = unloadSdk(MEDIATEE_SDK_NAME)
 
     fun unloadSdk(sdkName: String) {
         sdkSandboxManager.unloadSdk(sdkName)
@@ -109,5 +117,7 @@ class TestAppApi(appContext: Context) {
 
         /** Name of the Test SDK to be loaded. */
         const val TEST_SDK_NAME = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
+        const val MEDIATEE_SDK_NAME =
+            "androidx.privacysandbox.sdkruntime.integrationtest.mediateesdk"
     }
 }

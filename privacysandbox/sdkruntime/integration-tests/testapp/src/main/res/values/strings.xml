@@ -15,8 +15,11 @@
   -->
 
 <resources>
-    <string name="load_sdk">Load SDK</string>
-    <string name="unload_sdk">Unload SDK</string>
+    <string name="load_test_sdk">Load TestSDK</string>
+    <string name="unload_test_sdk">Unload TestSDK</string>
+    <string name="load_mediatee_sdk">Load MediateeSDK</string>
+    <string name="unload_mediatee_sdk">Unload MediateeSDK</string>
+    <string name="load_mediatee_sdk_from_sdk">SDK: Load MediateeSDK</string>
     <string name="cuj_list">CUJs list</string>
     <string name="sandbox_sdks_cuj">Loaded Sdks CUJ</string>
     <string name="app_sdks_cuj">AppOwned Sdks CUJ</string>

@@ -28,12 +28,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.R
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.graphics.Insets as AndroidXInsets
+import androidx.core.view.DisplayCutoutCompat
 import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -193,6 +196,14 @@ actual val WindowInsets.Companion.tappableElement: WindowInsets
 /** The insets for the curved areas in a waterfall display. */
 actual val WindowInsets.Companion.waterfall: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().waterfall
+
+/**
+ * The path for the cutout, if any
+ *
+ * See [DisplayCutoutCompat.getCutoutPath]
+ */
+actual val WindowInsets.Companion.cutoutPath: Path?
+    @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().cutoutPath
 
 /**
  * The insets that include areas where content may be covered by other drawn content. This includes
@@ -362,6 +373,9 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         systemInsets(insets, WindowInsetsCompat.Type.tappableElement(), "tappableElement")
     val waterfall =
         ValueInsets(insets?.displayCutout?.waterfallInsets ?: AndroidXInsets.NONE, "waterfall")
+    var cutoutPath by mutableStateOf(insets?.displayCutout?.cutoutPath?.asComposePath())
+        private set
+
     val safeDrawing = systemBars.union(ime).union(displayCutout)
     val safeGestures: WindowInsets =
         tappableElement.union(mandatorySystemGestures).union(systemGestures).union(waterfall)
@@ -497,10 +511,8 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
                     .toInsetsValues()
 
             val cutout = insets.displayCutout
-            if (cutout != null) {
-                val waterfallInsets = cutout.waterfallInsets
-                waterfall.value = waterfallInsets.toInsetsValues()
-            }
+            waterfall.value = (cutout?.waterfallInsets ?: AndroidXInsets.NONE).toInsetsValues()
+            cutoutPath = cutout?.cutoutPath?.asComposePath()
         }
         Snapshot.sendApplyNotifications()
     }

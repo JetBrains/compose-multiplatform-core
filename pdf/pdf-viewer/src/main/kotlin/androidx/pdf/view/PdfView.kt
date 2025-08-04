@@ -59,6 +59,7 @@ import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.SelectionActionModeCallback
+import androidx.pdf.selection.SelectionMenuManager
 import androidx.pdf.util.Accessibility
 import androidx.pdf.util.MathUtils
 import androidx.pdf.util.ZoomUtils
@@ -74,15 +75,18 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A [View] for presenting PDF content, represented by [PdfDocument].
@@ -311,8 +315,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var linkClickListener: LinkClickListener? = null
 
     /** The [ActionMode.Callback2] for selection */
-    private val selectionActionModeCallback: SelectionActionModeCallback =
-        SelectionActionModeCallback(this)
+    private var selectionActionModeCallback: SelectionActionModeCallback? = null
 
     /** Interface to customize the set of actions in the selection menu */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -371,10 +374,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     internal var backgroundScope: CoroutineScope =
         CoroutineScope(Executors.newFixedThreadPool(5).asCoroutineDispatcher() + SupervisorJob())
 
+    private lateinit var mainDispatcher: CoroutineDispatcher
+
     internal var pageMetadataLoader: PageMetadataLoader? = null
         private set
 
     private var pageManager: PageManager? = null
+    private val selectionMenuManager: SelectionMenuManager = SelectionMenuManager(context)
     private var formWidgetInteractionHandler: FormWidgetInteractionHandler? = null
     private var formWidgetMetadataLoader: FormWidgetMetadataLoader? = null
     private var pdfFormFillingStateManager: PdfFormFillingStateManager? = null
@@ -383,6 +389,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var selectionStateCollector: Job? = null
     private var errorStateCollector: Job? = null
     private var formEditInfoCollector: Job? = null
+    private var selectionMenuJob: Job? = null
 
     private var deferredScrollPage: Int? = null
     private var deferredScrollPosition: PdfPoint? = null
@@ -1071,6 +1078,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         super.onAttachedToWindow()
         stopCollectingData()
         awaitingFirstLayout = true
+        mainDispatcher = HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher()
 
         accessibilityManager.addAccessibilityStateChangeListener(accessibilityStateChangeHandler)
         // PageManager is being reset on onDetachToWindow we should make sure we set it back.
@@ -1282,8 +1290,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     @MainThread
     private fun startCollectingData() {
-        val mainScope =
-            CoroutineScope(HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher())
+        val mainScope = CoroutineScope(mainDispatcher)
         pageMetadataLoader?.let { manager ->
             // Don't let two copies of this run concurrently
             val layoutInfoToJoin = layoutInfoCollector?.apply { cancel() }
@@ -1388,16 +1395,35 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 invalidate()
             }
             is SelectionUiSignal.ToggleActionMode -> {
-                if (
-                    signal.show &&
-                        selectionActionModeCallback.actionMode == null &&
-                        currentSelection != null
-                ) {
-                    startActionMode(selectionActionModeCallback, ActionMode.TYPE_FLOATING)
-                } else if (!signal.show) {
-                    selectionActionModeCallback.close()
+                if (signal.show) {
+                    showActionMode()
+                } else {
+                    hideActionMode()
                 }
             }
+        }
+    }
+
+    private fun hideActionMode() {
+        selectionMenuJob?.cancel()
+        selectionActionModeCallback?.close()
+    }
+
+    private fun showActionMode() {
+        val localCurrentSelection = currentSelection ?: return
+        if (selectionActionModeCallback?.actionMode == null) {
+            val previousJob = selectionMenuJob
+            selectionMenuJob =
+                backgroundScope.launch {
+                    previousJob?.cancelAndJoin()
+                    val menuItems =
+                        selectionMenuManager.getSelectionMenuItems(localCurrentSelection)
+                    selectionActionModeCallback =
+                        SelectionActionModeCallback(this@PdfView, menuItems)
+                    withContext(mainDispatcher) {
+                        startActionMode(selectionActionModeCallback, ActionMode.TYPE_FLOATING)
+                    }
+                }
         }
     }
 
@@ -1584,7 +1610,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     private fun updateSelectionActionModeVisibility() {
         if (selectionIsVisible() && gestureState == GESTURE_STATE_IDLE) {
-            selectionActionModeCallback.actionMode?.invalidateContentRect()
+            selectionActionModeCallback?.actionMode?.invalidateContentRect()
             selectionStateManager?.maybeShowActionMode()
         } else {
             selectionStateManager?.maybeHideActionMode()

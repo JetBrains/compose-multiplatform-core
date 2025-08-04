@@ -32,7 +32,7 @@ public open class ThreadTrack(
                 TrackDescriptor(
                     name = name,
                     uuid = uuid,
-                    parentUuid = INVALID_LONG,
+                    parentUuid = DEFAULT_LONG,
                     pid = process.id,
                     tid = id,
                     type = TRACK_DESCRIPTOR_TYPE_THREAD,

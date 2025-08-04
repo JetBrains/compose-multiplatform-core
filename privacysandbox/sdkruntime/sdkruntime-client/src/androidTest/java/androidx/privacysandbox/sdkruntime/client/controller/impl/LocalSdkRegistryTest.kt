@@ -108,7 +108,7 @@ class LocalSdkRegistryTest {
     }
 
     @Test
-    fun loadSdk_whenLocalSdkExists_rethrowsExceptionFromLocallyLoadedSdk() {
+    fun loadSdk_whenLocalSdkExists_rethrowsLoadSdkCompatExceptionFromLocallyLoadedSdk() {
         val params = failParams()
 
         val result =
@@ -116,7 +116,23 @@ class LocalSdkRegistryTest {
                 localSdkRegistry.loadTestSdk(params = params)
             }
 
+        assertThat(result.message).isEqualTo("Expected to fail")
         assertThat(result.extraInformation).isEqualTo(params)
+        assertThat(result.loadSdkErrorCode)
+            .isEqualTo(LoadSdkCompatException.LOAD_SDK_SDK_DEFINED_ERROR)
+        assertThat(localSdkRegistry.getLoadedSdks()).isEmpty()
+    }
+
+    @Test
+    fun loadSdk_whenLocalSdkExists_rethrowsRuntimeExceptionFromLocallyLoadedSdk() {
+        val params = failWithRuntimeExceptionParams()
+
+        val result =
+            assertThrows(LoadSdkCompatException::class.java) {
+                localSdkRegistry.loadTestSdk(params = params)
+            }
+
+        assertThat(result.message).isEqualTo("Expected to fail")
         assertThat(result.loadSdkErrorCode)
             .isEqualTo(LoadSdkCompatException.LOAD_SDK_SDK_DEFINED_ERROR)
         assertThat(localSdkRegistry.getLoadedSdks()).isEmpty()
@@ -320,6 +336,12 @@ class LocalSdkRegistryTest {
     private fun failParams(): Bundle {
         val result = Bundle()
         result.putBoolean("needFail", true)
+        return result
+    }
+
+    private fun failWithRuntimeExceptionParams(): Bundle {
+        val result = Bundle()
+        result.putBoolean("needFailWithRuntimeException", true)
         return result
     }
 

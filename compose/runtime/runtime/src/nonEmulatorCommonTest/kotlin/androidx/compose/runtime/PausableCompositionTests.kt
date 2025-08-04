@@ -33,7 +33,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -629,6 +631,28 @@ class PausableCompositionTests {
 
         awaiter.await()
     }
+
+    @Test
+    fun markInvalidFromBackgroundThread() = compositionTest {
+        val awaiter = Awaiter()
+        val workflow = workflow {
+            setContent()
+            resumeTillComplete { false }
+
+            repeat(1000) {
+                val job = launch(Dispatchers.Default) { repeat(10) { launch { invalidate() } } }
+                job.join()
+
+                resumeTillComplete { false }
+            }
+            apply()
+            awaiter.done()
+        }
+
+        compose { PausableContent(workflow) { Text("Some composable") } }
+
+        awaiter.await()
+    }
 }
 
 fun String.splitRecording() = split(", ")
@@ -788,6 +812,8 @@ interface PausableContentWorkflowScope {
     fun apply()
 
     fun cancel()
+
+    fun invalidate()
 }
 
 fun PausableContentWorkflowScope.run(shouldPause: () -> Boolean = { true }) {
@@ -844,6 +870,10 @@ class PausableContentWorkflowDriver(
         val pausedComposition = pausedComposition
         checkPrecondition(pausedComposition != null)
         pausedComposition.cancel()
+    }
+
+    override fun invalidate() {
+        (pausedComposition as? PausedCompositionImpl)?.markIncomplete()
     }
 }
 

@@ -26,28 +26,48 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <Button
+            android:id="@+id/cujListButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/cuj_list"
+            android:textAllCaps="false"/>
+
         <LinearLayout
             android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button
-                android:id="@+id/loadSdkButton"
+                android:id="@+id/loadTestSdkButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/load_sdk"
+                android:text="@string/load_test_sdk"
                 android:textAllCaps="false"/>
             <Button
-                android:id="@+id/unloadSdkButton"
+                android:id="@+id/unloadTestSdkButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/unload_sdk"
+                android:text="@string/unload_test_sdk"
+                android:textAllCaps="false"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/loadMediateeSdkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/load_mediatee_sdk"
                 android:textAllCaps="false"/>
             <Button
-                android:id="@+id/cujListButton"
+                android:id="@+id/unloadMediateeSdkButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/cuj_list"
+                android:text="@string/unload_mediatee_sdk"
                 android:textAllCaps="false"/>
         </LinearLayout>
 

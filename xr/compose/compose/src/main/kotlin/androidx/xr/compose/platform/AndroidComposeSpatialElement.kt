@@ -47,9 +47,7 @@ internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
     override val root: SubspaceLayoutNode = SubspaceLayoutNode()
 
-    private val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver {
-        uiCoroutineScope.launch { it() }
-    }
+    private val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver(::run)
 
     internal var wrappedComposition: WrappedComposition? = null
 

@@ -106,6 +106,7 @@ fun AppCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("App card") } }
         item { AppCardSample() }
+        item { AppCardDisabledDemo() }
         item { AppCardWithIconSample() }
         item { AppCardWithImageSample() }
         item { AppCardWithMultipleImagesDemo() }
@@ -157,6 +158,20 @@ fun CardWithMultipleImagesDemo() {
     Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         MultipleImagesContent()
+    }
+}
+
+@Composable
+fun AppCardDisabledDemo() {
+    AppCard(
+        onClick = { /* Do something */ },
+        appName = { Text("App name") },
+        title = { Text("Card title") },
+        time = { Text("Now") },
+        enabled = false,
+    ) {
+        Text("Card content")
+        Text("Disabled state")
     }
 }
 

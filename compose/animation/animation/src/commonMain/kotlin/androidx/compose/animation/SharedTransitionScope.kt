@@ -16,6 +16,7 @@
 
 package androidx.compose.animation
 
+import androidx.annotation.VisibleForTesting
 import androidx.collection.MutableScatterMap
 import androidx.compose.animation.SharedTransitionScope.OverlayClip
 import androidx.compose.animation.SharedTransitionScope.PlaceHolderSize
@@ -38,7 +39,6 @@ import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -48,7 +48,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.BottomEnd
@@ -61,7 +60,6 @@ import androidx.compose.ui.Alignment.Companion.TopEnd
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
@@ -72,8 +70,17 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.approachLayout
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -126,27 +133,70 @@ public fun SharedTransitionScope(content: @Composable SharedTransitionScope.(Mod
     LookaheadScope {
         val coroutineScope = rememberCoroutineScope()
         val sharedScope = remember { SharedTransitionScopeImpl(this, coroutineScope) }
-        sharedScope.content(
-            Modifier.layout { measurable, constraints ->
-                    val p = measurable.measure(constraints)
-                    layout(p.width, p.height) {
-                        val coords = coordinates
-                        if (coords != null) {
-                            if (!isLookingAhead) {
-                                sharedScope.root = coords
-                            } else {
-                                sharedScope.nullableLookaheadRoot = coords
-                            }
-                        }
-                        p.place(0, 0)
-                    }
+        sharedScope.content(SharedTransitionScopeRootModifierElement(sharedScope))
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+private data class SharedTransitionScopeRootModifierElement(
+    val sharedTransitionScope: SharedTransitionScopeImpl
+) : ModifierNodeElement<SharedTransitionScopeRootModifierNode>() {
+    override fun create(): SharedTransitionScopeRootModifierNode {
+        return SharedTransitionScopeRootModifierNode(sharedTransitionScope)
+    }
+
+    override fun update(node: SharedTransitionScopeRootModifierNode) {
+        node.sharedScope = sharedTransitionScope
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "SharedTransitionScopeRootModifier"
+        properties["sharedTransitionScope"] = sharedTransitionScope
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+private class SharedTransitionScopeRootModifierNode(sharedScope: SharedTransitionScopeImpl) :
+    Modifier.Node(), LayoutModifierNode, ObserverModifierNode, DrawModifierNode {
+    override fun onAttach() {
+        super.onAttach()
+        observeReads(sharedScope.observeAnimatingBlock)
+    }
+
+    var sharedScope: SharedTransitionScopeImpl = sharedScope
+        set(newScope) {
+            if (newScope != field) {
+                observeReads(newScope.observeAnimatingBlock)
+            }
+            field = newScope
+        }
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val p = measurable.measure(constraints)
+        return layout(p.width, p.height) {
+            val coords = coordinates
+            if (coords != null) {
+                if (!isLookingAhead) {
+                    sharedScope.root = coords
+                } else {
+                    sharedScope.nullableLookaheadRoot = coords
                 }
-                .drawWithContent {
-                    drawContent()
-                    sharedScope.drawInOverlay(this)
-                }
-        )
-        DisposableEffect(Unit) { onDispose { sharedScope.onDispose() } }
+            }
+            p.place(0, 0)
+        }
+    }
+
+    override fun onObservedReadsChanged() {
+        sharedScope.updateTransitionActiveness()
+        observeReads(sharedScope.observeAnimatingBlock)
+    }
+
+    override fun ContentDrawScope.draw() {
+        drawContent()
+        sharedScope.drawInOverlay(this)
     }
 }
 
@@ -833,16 +883,11 @@ public interface SharedTransitionScope : LookaheadScope {
 internal class SharedTransitionScopeImpl
 internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: CoroutineScope) :
     SharedTransitionScope, LookaheadScope by lookaheadScope {
-    companion object {
-        private val SharedTransitionObserver by
-            lazy(LazyThreadSafetyMode.NONE) { SnapshotStateObserver { it() }.also { it.start() } }
-    }
-
-    internal var disposed: Boolean = false
-        private set
 
     override var isTransitionActive: Boolean by mutableStateOf(false)
         private set
+
+    @VisibleForTesting var testBlockToRun: (() -> Unit)? = null
 
     override fun Modifier.skipToLookaheadSize(): Modifier = this.then(SkipToLookaheadElement())
 
@@ -1049,16 +1094,12 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         return remember(key) { SharedContentState(key, config) }.also { it.config = config }
     }
 
-    /** ******** Impl details below **************** */
-    private val observeAnimatingBlock: () -> Unit = {
+    // Called from the observation in SharedTransitionScopeRootModifierNode
+    internal val observeAnimatingBlock: () -> Unit = {
         sharedElements.any { _, element -> element.isAnimating() }
     }
 
-    private val updateTransitionActiveness: (SharedTransitionScope) -> Unit = {
-        updateTransitionActiveness()
-    }
-
-    private fun updateTransitionActiveness() {
+    internal fun updateTransitionActiveness() {
         val isActive = sharedElements.any { _, element -> element.isAnimating() }
         if (isActive != isTransitionActive) {
             isTransitionActive = isActive
@@ -1067,8 +1108,9 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
             }
         }
         sharedElements.forEach { _, element -> element.updateMatch() }
-        this@SharedTransitionScopeImpl.observeIsAnimating()
     }
+
+    /** ******** Impl details below **************** */
 
     /**
      * sharedBoundsImpl is the implementation for creating animations for shared element or shared
@@ -1240,8 +1282,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         }
         with(sharedElementState.sharedElement) {
             removeEntry(sharedElementState)
-            updateTransitionActiveness.invoke(this@SharedTransitionScopeImpl)
-            scope.observeIsAnimating()
+            updateTransitionActiveness()
             renderers.remove(sharedElementState)
             if (allEntries.isEmpty()) {
                 scope.coroutineScope.launch {
@@ -1263,8 +1304,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     internal fun onEntryAdded(sharedElementState: SharedElementEntry) {
         with(sharedElementState.sharedElement) {
             addEntry(sharedElementState)
-            updateTransitionActiveness.invoke(this@SharedTransitionScopeImpl)
-            scope.observeIsAnimating()
+            updateTransitionActiveness()
             val id =
                 renderers.indexOfFirst {
                     (it as? SharedElementEntry)?.sharedElement == sharedElementState.sharedElement
@@ -1283,39 +1323,6 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
 
     internal fun onLayerRendererRemoved(renderer: LayerRenderer) {
         renderers.remove(renderer)
-    }
-
-    internal fun onDispose() {
-        SharedTransitionObserver.clear(this)
-        disposed = true
-    }
-
-    // TestOnly
-    internal val observerForTest: SnapshotStateObserver
-        get() = SharedTransitionObserver
-
-    private fun observeIsAnimating() {
-        if (!disposed) {
-            SharedTransitionObserver.observeReads(
-                this,
-                updateTransitionActiveness,
-                observeAnimatingBlock,
-            )
-        }
-    }
-
-    internal fun observeReads(
-        scope: SharedElement,
-        onValueChangedForScope: (SharedElement) -> Unit,
-        block: () -> Unit,
-    ) {
-        if (!disposed) {
-            SharedTransitionObserver.observeReads(scope, onValueChangedForScope, block)
-        }
-    }
-
-    internal fun clearObservation(scope: Any) {
-        SharedTransitionObserver.clear(scope)
     }
 
     private class ShapeBasedClip(val clipShape: Shape) : OverlayClip {

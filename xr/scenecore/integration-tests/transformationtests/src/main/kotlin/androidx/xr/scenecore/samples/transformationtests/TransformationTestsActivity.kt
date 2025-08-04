@@ -43,7 +43,6 @@ import androidx.xr.scenecore.samples.commontestview.DebugTextLinearView
 import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
 import com.google.errorprone.annotations.CanIgnoreReturnValue
-import java.lang.UnsupportedOperationException
 import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
@@ -226,11 +225,11 @@ class TransformationTestsActivity : AppCompatActivity() {
         anchorState: Int,
     ) {
 
-        // Need to handle unsupported exception from the anchorEntity's getPose
+        // Need to handle IllegalArgumentException from the anchorEntity's getPose
         val localPose =
             try {
                 trackedEntity.getPose().toFormattedString()
-            } catch (e: UnsupportedOperationException) {
+            } catch (e: IllegalArgumentException) {
                 "getPose is not allowed with Space.PARENT on this Entity ${e.cause}"
             }
         view.setLine("localPose", localPose)
@@ -241,7 +240,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         val localScale =
             try {
                 trackedEntity.getScale()
-            } catch (e: UnsupportedOperationException) {
+            } catch (e: IllegalArgumentException) {
                 "getScale is not allowed with Space.PARENT on this Entity ${e.cause}"
             }
         view.setLine("local scale", localScale.toString())

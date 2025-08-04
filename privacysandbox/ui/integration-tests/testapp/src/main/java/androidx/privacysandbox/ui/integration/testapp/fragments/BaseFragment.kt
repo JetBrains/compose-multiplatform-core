@@ -91,7 +91,7 @@ abstract class BaseFragment : Fragment() {
         setEventListener(TestEventListener(this))
     }
 
-    fun handleOptionsFromIntent(options: FragmentOptions) {
+    open fun handleOptionsFromIntent(options: FragmentOptions) {
         currentAdFormat = options.adFormat
         currentMediationOption = options.mediation
         currentAdType = options.adType

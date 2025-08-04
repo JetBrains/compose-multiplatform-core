@@ -169,6 +169,63 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
                     "1",
                     createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro XL",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro XL",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro Fold",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 9 Pro Fold",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+
                 // Tests for FULL Samsung devices
                 Config("Samsung", null, "SCG25", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
                 Config(

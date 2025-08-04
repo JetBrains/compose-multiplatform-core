@@ -193,7 +193,7 @@ class SnapshotObserverTests {
         ) {
             val snapshot = Snapshot.takeSnapshot(readObserver = { read.add(it to false) })
             try {
-                val result = snapshot.enter { state.value }
+                val result = snapshot.enter { state.intValue }
                 assertEquals(10, result)
                 assertEquals(mutableListOf<Pair<Any, Boolean>>(state to true, state to false), read)
             } finally {
@@ -219,7 +219,7 @@ class SnapshotObserverTests {
         ) {
             val snapshot = Snapshot.takeMutableSnapshot(readObserver = { read.add(it to false) })
             try {
-                val result = snapshot.enter { state.value }
+                val result = snapshot.enter { state.intValue }
                 assertEquals(10, result)
                 assertEquals(mutableListOf<Pair<Any, Boolean>>(state to true, state to false), read)
             } finally {
@@ -247,7 +247,7 @@ class SnapshotObserverTests {
                 val result =
                     snapshot.enter {
                         state.intValue = 20
-                        state.value
+                        state.intValue
                     }
                 assertEquals(20, result)
                 assertEquals(
@@ -305,8 +305,8 @@ class SnapshotObserverTests {
                 val ros1 = Snapshot.takeSnapshot()
                 try {
                     ros1.enter {
-                        state1.value
-                        state2.value
+                        state1.intValue
+                        state2.intValue
                     }
                 } finally {
                     ros1.dispose()

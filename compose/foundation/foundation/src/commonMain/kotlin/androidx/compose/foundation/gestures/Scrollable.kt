@@ -348,7 +348,15 @@ internal class ScrollableNode(
         with(scrollingLogic) {
             scroll(scrollPriority = MutatePriority.UserInput) {
                 forEachDelta {
-                    scrollByWithOverscroll(it.delta.singleAxisOffset(), source = UserInput)
+                    // Indirect Touch Events should be reverted to account for the reverse we
+                    // do in Scrollable. Regular touchscreen events are inverted in scrollable, but
+                    // that shouldn't happen for indirect touch events, so we cancel the reverse
+                    // here.
+                    val invertIndirectTouch = if (it.isIndirectTouchEvent) -1f else 1f
+                    scrollByWithOverscroll(
+                        it.delta.singleAxisOffset() * invertIndirectTouch,
+                        source = UserInput,
+                    )
                 }
             }
         }
@@ -356,9 +364,17 @@ internal class ScrollableNode(
 
     override fun onDragStarted(startedPosition: Offset) {}
 
-    override fun onDragStopped(velocity: Velocity) {
+    override fun onDragStopped(event: DragEvent.DragStopped) {
         nestedScrollDispatcher.coroutineScope.launch {
-            scrollingLogic.onScrollStopped(velocity, isMouseWheel = false)
+            // Indirect Touch Events should be reverted to account for the reverse we
+            // do in Scrollable. Regular touchscreen events are inverted in scrollable, but
+            // that shouldn't happen for indirect touch events, so we cancel the reverse
+            // here.
+            val invertIndirectTouch = if (event.isIndirectTouchEvent) -1f else 1f
+            scrollingLogic.onScrollStopped(
+                event.velocity * invertIndirectTouch,
+                isMouseWheel = false,
+            )
         }
     }
 

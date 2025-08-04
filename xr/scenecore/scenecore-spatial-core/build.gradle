@@ -38,9 +38,11 @@ dependencies {
     api(project(":xr:scenecore:scenecore"))
 
     implementation("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.concurrent:concurrent-futures:1.0.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.mockitoCore)
     testImplementation("org.robolectric:robolectric")
     testImplementation(project(":xr:scenecore:scenecore-testing"))
 

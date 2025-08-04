@@ -179,15 +179,11 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
+    @ExperimentalOriginMatchedHeader
     public void setOriginMatchedHeader(@NonNull String headerName,
             @NonNull String headerValue, @NonNull Set<String> originRules) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
         if (feature.isSupportedByWebView()) {
-            if (mProfileImpl.hasOriginMatchedHeader(headerName)) {
-                throw new IllegalStateException(
-                        "Profile " + mProfileImpl.getName() + " already has origin-matched header: "
-                                + headerName);
-            }
             mProfileImpl.setOriginMatchedHeader(headerName, headerValue, originRules);
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
@@ -195,6 +191,18 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
+    @ExperimentalOriginMatchedHeader
+    public boolean hasOriginMatchedHeader(@NonNull String headerName) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            return mProfileImpl.hasOriginMatchedHeader(headerName);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    @ExperimentalOriginMatchedHeader
     public void clearOriginMatchedHeader(@NonNull String headerName) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
         if (feature.isSupportedByWebView()) {
@@ -205,6 +213,7 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
+    @ExperimentalOriginMatchedHeader
     public void clearAllOriginMatchedHeaders() {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
         if (feature.isSupportedByWebView()) {

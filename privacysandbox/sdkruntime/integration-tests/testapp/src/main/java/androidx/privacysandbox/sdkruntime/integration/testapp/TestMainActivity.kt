@@ -45,8 +45,10 @@ class TestMainActivity : AppCompatActivity() {
         logView = findViewById(R.id.logView)
         logView.setMovementMethod(ScrollingMovementMethod())
 
-        setupLoadSdkButton()
-        setupUnloadSdkButton()
+        setupLoadTestSdkButton()
+        setupUnloadTestSdkButton()
+        setupLoadMediateeSdkButton()
+        setupUnloadMediateeSdkButton()
         setupCUJList()
 
         switchContentFragment(LoadedSdksFragment())
@@ -57,8 +59,8 @@ class TestMainActivity : AppCompatActivity() {
         logView.append(message + System.lineSeparator())
     }
 
-    private fun setupLoadSdkButton() {
-        val loadSdkButton = findViewById<Button>(R.id.loadSdkButton)
+    private fun setupLoadTestSdkButton() {
+        val loadSdkButton = findViewById<Button>(R.id.loadTestSdkButton)
         loadSdkButton.setOnClickListener {
             lifecycleScope.launch {
                 try {
@@ -73,11 +75,35 @@ class TestMainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupUnloadSdkButton() {
-        val unloadSdkButton = findViewById<Button>(R.id.unloadSdkButton)
+    private fun setupLoadMediateeSdkButton() {
+        val loadSdkButton = findViewById<Button>(R.id.loadMediateeSdkButton)
+        loadSdkButton.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    addLogMessage("Loading MediateeSDK...")
+                    val testSdk = api.loadMediateeSdk()
+                    addLogMessage("MediateeSDK Message: " + testSdk.doSomething("42"))
+                    addLogMessage("Successfully loaded MediateeSDK")
+                } catch (ex: LoadSdkCompatException) {
+                    addLogMessage("Failed to load MediateeSDK: " + ex.message)
+                }
+            }
+        }
+    }
+
+    private fun setupUnloadTestSdkButton() {
+        val unloadSdkButton = findViewById<Button>(R.id.unloadTestSdkButton)
         unloadSdkButton.setOnClickListener {
             api.unloadTestSdk()
             addLogMessage("Unloaded TestSDK")
+        }
+    }
+
+    private fun setupUnloadMediateeSdkButton() {
+        val unloadSdkButton = findViewById<Button>(R.id.unloadMediateeSdkButton)
+        unloadSdkButton.setOnClickListener {
+            api.unloadMediateeSdk()
+            addLogMessage("Unloaded MediateeSDK")
         }
     }
 

@@ -23,6 +23,7 @@ import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.GltfEntity;
 import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.Material;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -137,11 +138,11 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
 
     @Override
     public void setMaterialOverride(@NonNull MaterialResource material, @NonNull String meshName) {
-        if (!(material instanceof MaterialResourceImpl)) {
-            throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
+        if (!(material instanceof Material)) {
+            throw new IllegalArgumentException("MaterialResource is not a Material");
         }
         mImpressApi.setMaterialOverride(
-                mModelImpressNode, ((MaterialResourceImpl) material).getMaterialToken(), meshName);
+                mModelImpressNode, ((Material) material).getNativeHandle(), meshName);
     }
 
     @SuppressWarnings("ObjectToString")

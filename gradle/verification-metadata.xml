@@ -270,6 +270,7 @@
          <trusted-key id="54A26BFDC7ECDD39BA4C123AC3BAB45F4AF71FAB" group="io.opencensus"/>
          <trusted-key id="54F6E594923EBD04F2B88606125A9EC9FAA91AE1" group="io.antmedia" name="rtmp-client"/>
          <trusted-key id="55E770230E69CC6DE143FB5B62C82E50836EB3EE" group="com.github.gundy"/>
+         <trusted-key id="D58760A74BFDE983E890B455005B27E7CA8E530D" group="jakarta.json"/>
          <trusted-key id="56B505DC8A29C69138A430B9429C8816DEA04CDB" group="org.xerial"/>
          <trusted-key id="5719E50EAC5A4B1DD390B72C2A742740E08E7F8D" group="org.antlr"/>
          <trusted-key id="5767F9CDE920750621875079A40E24B5B408DBD5" group="org.robolectric"/>
@@ -512,6 +513,7 @@
             <trusting group="com.google.protobuf"/>
             <trusting group="^com[.]google($|([.].*))" regex="true"/>
          </trusted-key>
+         <trusted-key id="C89074FC8BE681B7C7EAAB6E4C5EED3C53B75933" group="org.skyscreamer"/>
          <trusted-key id="C9A503282182EC4ECDB914EA102E05D8DA6C286D" group="javax.xml.bind" name="jaxb-api"/>
          <trusted-key id="CA62ED130E4053944406DF640181B45EA58677BC" group="org.apache.logging"/>
          <trusted-key id="CACFBD4755A2FC78709BDD92BE096E29EDB8D141" group="net.sf.proguard"/>

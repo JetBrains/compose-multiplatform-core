@@ -16,32 +16,47 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.wear.compose.material3.samples.R
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CardScreenshotTest {
 
@@ -51,13 +66,11 @@ class CardScreenshotTest {
 
     @get:Rule val testName = TestName()
 
-    @Test fun card_ltr() = verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestCard() }
-
     @Test
-    fun card_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestCard(enabled = false) }
-
-    @Test fun card_rtl() = verifyScreenshot(layoutDirection = LayoutDirection.Rtl) { TestCard() }
+    fun card(
+        @TestParameter enabled: EnabledState,
+        @TestParameter layoutDirection: LayoutDirection,
+    ) = verifyScreenshot(layoutDirection = layoutDirection) { TestCard(enabled = enabled.enabled) }
 
     @Test
     fun card_image_background() = verifyScreenshot {
@@ -82,108 +95,72 @@ class CardScreenshotTest {
     }
 
     @Test
-    fun outlined_card_ltr() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
+    fun outlined_card(
+        @TestParameter enabled: EnabledState,
+        @TestParameter layoutDirection: LayoutDirection,
+    ) =
+        verifyScreenshot(layoutDirection = layoutDirection) {
             OutlinedCard(
                 onClick = {},
                 modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
+                enabled = enabled.enabled,
             ) {
                 Text("Outlined Card: Some body content")
             }
         }
 
+    @Test fun app_card() = verifyScreenshot { TestAppCard() }
+
     @Test
-    fun outlined_card_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            OutlinedCard(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
-                enabled = false,
-            ) {
-                Text("Outlined Card: Some body content")
-            }
+    fun app_card(
+        @TestParameter enabled: EnabledState,
+        @TestParameter layoutDirection: LayoutDirection,
+    ) =
+        verifyScreenshot(layoutDirection = layoutDirection) {
+            TestAppCard(enabled = enabled.enabled)
         }
 
     @Test
-    fun outlined_card_rtl() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            OutlinedCard(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
-            ) {
-                Text("Outlined Card: Some body content")
-            }
+    fun app_card_with_border() = verifyScreenshot {
+        TestAppCard(borderStroke = BorderStroke(4.dp, Color.Red))
+    }
+
+    @Test
+    fun app_card_with_content_padding() = verifyScreenshot {
+        TestAppCard(contentPadding = PaddingValues(all = 16.dp))
+    }
+
+    @Test fun app_card_with_body_image() = verifyScreenshot { TestAppCard(hasBodyImage = true) }
+
+    @Test
+    fun title_card(
+        @TestParameter enabled: EnabledState,
+        @TestParameter layoutDirection: LayoutDirection,
+    ) =
+        verifyScreenshot(layoutDirection) {
+            TestTitleCard(enabled = enabled.enabled, hasTime = true, useIntrinsicWidth = true)
         }
 
     @Test
-    fun app_card_ltr() = verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestAppCard() }
-
-    @Test
-    fun app_card_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestAppCard(enabled = false) }
-
-    @Test
-    fun app_card_rtl() = verifyScreenshot(layoutDirection = LayoutDirection.Rtl) { TestAppCard() }
-
-    @Test
-    fun title_card_ltr() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestTitleCard() }
-
-    @Test
-    fun title_card_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { TestTitleCard(enabled = false) }
-
-    @Test
-    fun title_card_rtl() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Rtl) { TestTitleCard() }
-
-    @Test
-    fun title_card_with_time_and_subtitle_ltr() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            TestTitleCardWithTimeAndSubtitle()
-        }
-
-    @Test
-    fun title_card_without_time_and_with_subtitle_ltr() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            TitleCard(
+    fun title_card(
+        @TestParameter hasTime: TimeState,
+        @TestParameter hasSubtitle: SubtitleState,
+        @TestParameter hasContent: ContentState,
+        @TestParameter layoutDirection: LayoutDirection,
+    ) =
+        verifyScreenshot(layoutDirection = layoutDirection) {
+            TestTitleCard(
+                hasTime = hasTime.enabled,
+                hasSubtitle = hasSubtitle.enabled,
+                hasContent = hasContent.enabled,
                 enabled = true,
-                onClick = {},
-                title = { Text("TitleCard") },
-                subtitle = { Text("Subtitle") },
-                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
     @Test
-    fun title_card_with_time_and_subtitle_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            TestTitleCardWithTimeAndSubtitle(enabled = false)
-        }
-
-    @Test
-    fun title_card_with_time_and_subtitle_rtl() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            TestTitleCardWithTimeAndSubtitle()
-        }
-
-    @Test
-    fun title_card_with_content_time_and_subtitle_ltr() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            TestTitleCardWithContentTimeAndSubtitle()
-        }
-
-    @Test
-    fun title_card_with_content_time_and_subtitle_disabled() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-            TestTitleCardWithContentTimeAndSubtitle(enabled = false)
-        }
-
-    @Test
-    fun title_card_with_content_time_and_subtitle_rtl() =
-        verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            TestTitleCardWithContentTimeAndSubtitle()
-        }
+    fun title_card_with_content_time_subtitle_and_border() = verifyScreenshot {
+        TestTitleCard(hasSubtitle = true, hasTime = true, hasContent = true, hasBorder = true)
+    }
 
     @Test
     fun title_card_image_background() = verifyScreenshot {
@@ -214,44 +191,6 @@ class CardScreenshotTest {
     }
 
     @Composable
-    private fun TestAppCard(
-        enabled: Boolean = true,
-        colors: CardColors = CardDefaults.cardColors(),
-    ) {
-        AppCard(
-            enabled = enabled,
-            onClick = {},
-            appName = { Text("AppName") },
-            appImage = { TestIcon() },
-            title = { Text("AppCard") },
-            colors = colors,
-            time = { Text("now") },
-            modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
-        ) {
-            Text("Some body content and some more body content")
-        }
-    }
-
-    @Composable
-    private fun TestTitleCard(
-        enabled: Boolean = true,
-        contentPadding: PaddingValues = CardDefaults.ContentPadding,
-        colors: CardColors = CardDefaults.cardColors(),
-    ) {
-        TitleCard(
-            enabled = enabled,
-            onClick = {},
-            title = { Text("TitleCard") },
-            time = { Text("now") },
-            colors = colors,
-            contentPadding = contentPadding,
-            modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
-        ) {
-            Text("Some body content and some more body content")
-        }
-    }
-
-    @Composable
     fun TestCardWithContainerPainter(
         image: Painter,
         sizeToIntrinsics: Boolean,
@@ -269,6 +208,46 @@ class CardScreenshotTest {
             modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
         ) {
             Text("Card: Some body content")
+        }
+    }
+
+    @Composable
+    private fun TestAppCard(
+        enabled: Boolean = true,
+        hasBodyImage: Boolean = false,
+        colors: CardColors = CardDefaults.cardColors(),
+        contentPadding: PaddingValues = CardDefaults.ContentPadding,
+        borderStroke: BorderStroke? = null,
+    ) {
+        AppCard(
+            enabled = enabled,
+            onClick = {},
+            appName = { Text("AppName") },
+            appImage = { TestIcon() },
+            title = { Text("AppCard") },
+            colors = colors,
+            time = { Text("now") },
+            contentPadding = contentPadding,
+            border = borderStroke,
+            modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
+        ) {
+            if (hasBodyImage) {
+                Text("Some body content and some more body content and an image")
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Image(
+                        modifier =
+                            Modifier.weight(1f)
+                                .aspectRatio(16f / 9f)
+                                .clip(RoundedCornerShape(16.dp)),
+                        painter = painterResource(id = R.drawable.card_content_image),
+                        contentScale = ContentScale.Crop,
+                        contentDescription = null,
+                    )
+                }
+            } else {
+                Text("Some body content and some more body content")
+            }
         }
     }
 
@@ -298,29 +277,36 @@ class CardScreenshotTest {
     }
 
     @Composable
-    private fun TestTitleCardWithTimeAndSubtitle(enabled: Boolean = true) {
-        TitleCard(
-            enabled = enabled,
-            onClick = {},
-            time = { Text("XXm") },
-            title = { Text("TitleCard") },
-            subtitle = { Text("Subtitle") },
-            modifier = Modifier.testTag(TEST_TAG),
-        )
-    }
-
-    @Composable
-    private fun TestTitleCardWithContentTimeAndSubtitle(enabled: Boolean = true) {
-        TitleCard(
-            enabled = enabled,
-            onClick = {},
-            time = { Text("XXm") },
-            title = { Text("TitleCard") },
-            subtitle = { Text("Subtitle") },
-            modifier = Modifier.testTag(TEST_TAG),
-        ) {
-            Text("Card content")
+    private fun TestTitleCard(
+        hasContent: Boolean = true,
+        hasTime: Boolean = false,
+        hasSubtitle: Boolean = false,
+        hasBorder: Boolean = false,
+        enabled: Boolean = true,
+        contentPadding: PaddingValues = CardDefaults.ContentPadding,
+        useIntrinsicWidth: Boolean = false,
+        colors: CardColors = CardDefaults.cardColors(),
+    ) {
+        val timeComposable: @Composable (() -> Unit) = { Text("now") }
+        val subtitleComposable: @Composable ((ColumnScope) -> Unit) = { Text("Subtitle") }
+        val contentComposable: @Composable (() -> Unit) = {
+            Text("Some body content and some more body content")
         }
+        TitleCard(
+            enabled = enabled,
+            onClick = {},
+            title = { Text("TitleCard") },
+            subtitle = if (hasSubtitle) subtitleComposable else null,
+            time = if (hasTime) timeComposable else null,
+            colors = colors,
+            border = if (hasBorder) BorderStroke(4.dp, Color.Red) else null,
+            contentPadding = contentPadding,
+            modifier =
+                Modifier.testTag(TEST_TAG).run {
+                    if (useIntrinsicWidth) width(IntrinsicSize.Max) else this
+                },
+            content = if (hasContent) contentComposable else null,
+        )
     }
 
     private fun verifyScreenshot(
@@ -338,6 +324,31 @@ class CardScreenshotTest {
             }
         }
 
-        rule.verifyScreenshot(testName, screenshotRule)
+        rule.verifyScreenshot(testName, screenshotRule, generateScreenshots = true)
+    }
+
+    enum class SubtitleState(val enabled: Boolean) {
+        Subtitle(true),
+        NoSubtitle(false),
+    }
+
+    enum class TimeState(val enabled: Boolean) {
+        Time(true),
+        NoTime(false),
+    }
+
+    enum class ContentState(val enabled: Boolean) {
+        Content(true),
+        NoContent(false),
+    }
+
+    enum class BorderState(val enabled: Boolean) {
+        Border(true),
+        NoBorder(false),
+    }
+
+    enum class EnabledState(val enabled: Boolean) {
+        Enabled(true),
+        Disabled(false),
     }
 }

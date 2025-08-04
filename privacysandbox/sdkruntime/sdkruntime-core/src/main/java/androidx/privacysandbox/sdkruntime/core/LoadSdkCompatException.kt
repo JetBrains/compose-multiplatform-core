@@ -87,7 +87,7 @@ public class LoadSdkCompatException : Exception {
     public constructor(
         cause: Throwable,
         extraInfo: Bundle,
-    ) : this(LOAD_SDK_SDK_DEFINED_ERROR, "", cause, extraInfo)
+    ) : this(LOAD_SDK_SDK_DEFINED_ERROR, cause.message, cause, extraInfo)
 
     @IntDef(
         SDK_SANDBOX_PROCESS_NOT_AVAILABLE,

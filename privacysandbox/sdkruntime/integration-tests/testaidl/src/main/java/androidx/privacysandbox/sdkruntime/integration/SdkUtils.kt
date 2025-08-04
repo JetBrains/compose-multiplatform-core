@@ -18,6 +18,7 @@ package androidx.privacysandbox.sdkruntime.integration
 
 import android.os.IBinder
 import androidx.privacysandbox.sdkruntime.integration.testaidl.IAppSdk
+import androidx.privacysandbox.sdkruntime.integration.testaidl.IMediateeSdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
 
 fun callDoSomething(sdkInterface: IBinder?, param: String): String? {
@@ -26,12 +27,25 @@ fun callDoSomething(sdkInterface: IBinder?, param: String): String? {
         return maybeTestSdk.doSomething(param)
     }
 
+    val maybeMediateeSdk = toMediateeSdk(sdkInterface)
+    if (maybeMediateeSdk != null) {
+        return maybeMediateeSdk.doSomething(param)
+    }
+
     return toAppOwnedSdk(sdkInterface)?.doSomething(param)
 }
 
 private fun toTestSdk(sdkInterface: IBinder?): ISdkApi? {
     return if (ISdkApi.DESCRIPTOR == sdkInterface?.interfaceDescriptor) {
         ISdkApi.Stub.asInterface(sdkInterface)
+    } else {
+        null
+    }
+}
+
+private fun toMediateeSdk(sdkInterface: IBinder?): IMediateeSdkApi? {
+    return if (IMediateeSdkApi.DESCRIPTOR == sdkInterface?.interfaceDescriptor) {
+        IMediateeSdkApi.Stub.asInterface(sdkInterface)
     } else {
         null
     }

@@ -73,6 +73,14 @@ static jlong JNICALL nativeOpen(
         throwSQLiteException(env, rc, nullptr);
         return 0;
     }
+
+    // Enable the C function to load extensions but not the load_extension() SQL function.
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0);
+    if (rc != SQLITE_OK) {
+        throwSQLiteException(env, rc, nullptr);
+        return 0;
+    }
+
     return reinterpret_cast<jlong>(db);
 }
 
@@ -105,6 +113,32 @@ static jlong JNICALL nativePrepare(
         return 0;
     }
     return reinterpret_cast<jlong>(stmt);
+}
+
+static void JNICALL nativeLoadExtension(
+        JNIEnv *env,
+        jclass clazz,
+        jlong dbPointer,
+        jstring fileName,
+        jstring entryPoint) {
+    sqlite3 *db = reinterpret_cast<sqlite3 *>(dbPointer);
+    const char *zFileName = env->GetStringUTFChars(fileName, nullptr);
+    const char *zEntryPoint = nullptr;
+    if (entryPoint) {
+        zEntryPoint = env->GetStringUTFChars(entryPoint, nullptr);
+    }
+    char *errorMsg = nullptr;
+    int rc = sqlite3_load_extension(db, zFileName, zEntryPoint, &errorMsg);
+    env->ReleaseStringUTFChars(fileName, zFileName);
+    if (entryPoint) {
+        env->ReleaseStringUTFChars(entryPoint, zEntryPoint);
+    }
+    if (rc != SQLITE_OK) {
+        throwSQLiteException(env, rc, errorMsg);
+        if (errorMsg) {
+            sqlite3_free(errorMsg);
+        }
+    }
 }
 
 static void JNICALL nativeConnectionClose(
@@ -328,9 +362,10 @@ static const JNINativeMethod sDriverMethods[] = {
 };
 
 static const JNINativeMethod sConnectionMethods[] = {
-        {"nativeInTransaction", "(J)Z",                   (void *) nativeInTransaction},
-        {"nativePrepare",       "(JLjava/lang/String;)J", (void *) nativePrepare},
-        {"nativeClose",         "(J)V",                   (void *) nativeConnectionClose}
+        {"nativeInTransaction", "(J)Z",                                     (void *) nativeInTransaction},
+        {"nativePrepare",       "(JLjava/lang/String;)J",                   (void *) nativePrepare},
+        {"nativeLoadExtension", "(JLjava/lang/String;Ljava/lang/String;)V", (void *) nativeLoadExtension},
+        {"nativeClose",         "(J)V",                                     (void *) nativeConnectionClose}
 };
 
 static const JNINativeMethod sStatementMethods[] = {

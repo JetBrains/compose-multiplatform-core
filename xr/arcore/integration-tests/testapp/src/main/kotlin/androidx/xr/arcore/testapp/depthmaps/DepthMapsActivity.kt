@@ -61,8 +61,7 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.movable
-import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.unit.DpVolumeSize
+import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import javax.microedition.khronos.egl.EGLConfig
@@ -129,17 +128,7 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                     surfaceView.setRenderer(this)
                     surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY)
                     surfaceView.setWillNotDraw(false)
-                    setContent {
-                        Subspace {
-                            SpatialPanel(
-                                modifier =
-                                    SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                        .movable()
-                            ) {
-                                DepthMapPanel(surfaceView)
-                            }
-                        }
-                    }
+                    setContent { DepthMapPanel(surfaceView) }
                 },
             )
         sessionHelper.tryCreateSession()
@@ -219,70 +208,74 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                 }
             },
         ) { innerPadding ->
-            AndroidView(
-                modifier = Modifier.width(1200.dp).height(1200.dp),
-                factory = { _ -> surfaceView },
-            )
-            Orbiter(
-                position = ContentEdge.Top,
-                offset = 8.dp,
-                shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
-                offsetType = OrbiterOffsetType.InnerEdge,
-            ) {
-                Row(modifier = Modifier.padding(innerPadding)) {
-                    BackToMainActivityButton()
-                    val depthDescription: String =
-                        when (selectedDepthMode) {
-                            DepthMode.RAW ->
-                                when (selectedView) {
-                                    ViewSelection.LEFT -> "Left Smooth"
-                                    ViewSelection.RIGHT -> "Right Smooth"
-                                }
-                            DepthMode.SMOOTH ->
-                                when (selectedView) {
-                                    ViewSelection.LEFT -> "Left Raw"
-                                    ViewSelection.RIGHT -> "Right Raw"
-                                }
-                        }
-                    Text(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Rendering $depthDescription Depth",
-                        color = Color.White,
-                        fontSize = 50.sp,
+            Subspace {
+                SpatialPanel(modifier = SubspaceModifier.movable()) {
+                    AndroidView(
+                        modifier = Modifier.width(1200.dp).height(1200.dp).padding(innerPadding),
+                        factory = { _ -> surfaceView },
                     )
-                    Button(
-                        modifier = Modifier.padding(8.dp),
-                        onClick = {
-                            runBlocking {
-                                configurationMutex.withLock {
-                                    when (selectedDepthMode) {
-                                        DepthMode.RAW -> {
-                                            session.configure(smoothConfig)
-                                            selectedDepthMode = DepthMode.SMOOTH
+                    Orbiter(
+                        position = ContentEdge.Top,
+                        offset = 8.dp,
+                        shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
+                        offsetType = OrbiterOffsetType.InnerEdge,
+                    ) {
+                        Row(modifier = Modifier.padding(innerPadding)) {
+                            val depthDescription: String =
+                                when (selectedDepthMode) {
+                                    DepthMode.RAW ->
+                                        when (selectedView) {
+                                            ViewSelection.LEFT -> "Left Smooth"
+                                            ViewSelection.RIGHT -> "Right Smooth"
                                         }
 
-                                        DepthMode.SMOOTH -> {
-                                            session.configure(rawConfig)
-                                            selectedDepthMode = DepthMode.RAW
+                                    DepthMode.SMOOTH ->
+                                        when (selectedView) {
+                                            ViewSelection.LEFT -> "Left Raw"
+                                            ViewSelection.RIGHT -> "Right Raw"
+                                        }
+                                }
+                            Text(
+                                modifier = Modifier.padding(8.dp),
+                                text = "Rendering $depthDescription Depth",
+                                color = Color.White,
+                                fontSize = 50.sp,
+                            )
+                            Button(
+                                modifier = Modifier.padding(8.dp),
+                                onClick = {
+                                    runBlocking {
+                                        configurationMutex.withLock {
+                                            when (selectedDepthMode) {
+                                                DepthMode.RAW -> {
+                                                    session.configure(smoothConfig)
+                                                    selectedDepthMode = DepthMode.SMOOTH
+                                                }
+
+                                                DepthMode.SMOOTH -> {
+                                                    session.configure(rawConfig)
+                                                    selectedDepthMode = DepthMode.RAW
+                                                }
+                                            }
                                         }
                                     }
-                                }
+                                },
+                            ) {
+                                Text("Toggle Depth Type")
                             }
-                        },
-                    ) {
-                        Text("Toggle Depth Type")
-                    }
-                    Button(
-                        modifier = Modifier.padding(8.dp),
-                        onClick = {
-                            selectedView =
-                                when (selectedView) {
-                                    ViewSelection.LEFT -> ViewSelection.RIGHT
-                                    ViewSelection.RIGHT -> ViewSelection.LEFT
-                                }
-                        },
-                    ) {
-                        Text("Toggle View")
+                            Button(
+                                modifier = Modifier.padding(8.dp),
+                                onClick = {
+                                    selectedView =
+                                        when (selectedView) {
+                                            ViewSelection.LEFT -> ViewSelection.RIGHT
+                                            ViewSelection.RIGHT -> ViewSelection.LEFT
+                                        }
+                                },
+                            ) {
+                                Text("Toggle View")
+                            }
+                        }
                     }
                 }
             }

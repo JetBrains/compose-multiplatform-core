@@ -912,18 +912,6 @@ constructor(
             return
         }
 
-        // HDR 10-bit can be supported since API level 33
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return
-        }
-
-        // Low-light boost should be disabled when dynamic range setting is not 8-bit.
-        val attachedSurfaceInfoList = attachedUseCases.getAttachedSurfaceInfoList()
-        if (getRequiredMaxBitDepth(attachedSurfaceInfoList) != DynamicRange.BIT_DEPTH_8_BIT) {
-            lowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(true)
-            return
-        }
-
         lowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(false)
     }
 

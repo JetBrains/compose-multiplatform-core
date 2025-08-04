@@ -43,6 +43,7 @@ import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
+import androidx.camera.core.impl.CameraPresenceProvider;
 import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
@@ -96,6 +97,7 @@ public final class CameraX {
     private CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
     private final RetryPolicy mRetryPolicy;
     private final ListenableFuture<Void> mInitInternalFuture;
+    private final CameraPresenceProvider mCameraPresenceProvider;
 
     @GuardedBy("mInitializeLock")
     private InternalInitState mInitState = InternalInitState.UNINITIALIZED;
@@ -153,6 +155,8 @@ public final class CameraX {
 
         mRetryPolicy = new RetryPolicy.Builder(
                 mCameraXConfig.getCameraProviderInitRetryPolicy()).build();
+        mCameraPresenceProvider = new CameraPresenceProvider(mCameraExecutor);
+
         mInitInternalFuture = initInternal(context);
     }
 
@@ -366,6 +370,11 @@ public final class CameraX {
         }
     }
 
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @NonNull CameraPresenceProvider getCameraAvailabilityProvider() {
+        return mCameraPresenceProvider;
+    }
+
     /**
      * Initializes camera stack on the given thread and retry recursively until timeout.
      */
@@ -448,6 +457,11 @@ public final class CameraX {
                             mCameraUseCaseAdapterProvider);
                 }
 
+                mCameraPresenceProvider.startup(mCameraFactory, mCameraRepository);
+                mCameraPresenceProvider.addDependentInternalListener(mSurfaceManager);
+                mCameraPresenceProvider.addDependentInternalListener(
+                        mCameraFactory.getCameraCoordinator());
+
                 // Please ensure only validate the camera at the last of the initialization.
                 validateCameras(appContext, mCameraRepository, availableCamerasLimiter);
 
@@ -465,6 +479,7 @@ public final class CameraX {
                 RetryPolicy.RetryConfig retryConfig = mRetryPolicy.onRetryDecisionRequested(
                         executionState);
                 traceExecutionState(executionState);
+                mCameraPresenceProvider.shutdown();
                 if (retryConfig.shouldRetry() && attemptCount < Integer.MAX_VALUE) {
                     Logger.w(TAG, "Retry init. Start time " + startMs + " current time "
                             + SystemClock.elapsedRealtime(), e);
@@ -528,6 +543,7 @@ public final class CameraX {
                     decreaseMinLogLevelReference(mMinLogLevel);
                     mShutdownInternalFuture = CallbackToFutureAdapter.getFuture(
                             completer -> {
+                                mCameraPresenceProvider.shutdown();
                                 ListenableFuture<Void> future = mCameraRepository.deinit();
 
                                 // Deinit camera executor at last to avoid RejectExecutionException.

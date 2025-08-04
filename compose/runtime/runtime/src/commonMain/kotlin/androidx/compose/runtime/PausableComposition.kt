@@ -309,10 +309,13 @@ internal class PausedCompositionImpl(
     }
 
     internal fun markIncomplete() {
-        if (state.get() == PausedCompositionState.RecomposePending) {
-            return
-        }
-        updateState(PausedCompositionState.ApplyPending, PausedCompositionState.RecomposePending)
+        // Ensure we are in a RecomposePending state if and only if we are in ApplyPending,
+        // ignore otherwise. This specifically doesn't call updateState() as we are not required
+        // to be in ApplyPending a thread may have already moved the state to RecomposePending
+        state.compareAndSet(
+            PausedCompositionState.ApplyPending,
+            PausedCompositionState.RecomposePending,
+        )
     }
 
     private fun markComplete() {

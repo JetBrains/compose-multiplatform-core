@@ -870,22 +870,22 @@ class CompositionLocalTests {
     }
 }
 
-val cacheLocal = staticCompositionLocalOf { "Unset" }
+val LocalCache = staticCompositionLocalOf { "Unset" }
 
 @Composable
 fun CacheInvalidate(state: State<Int>) {
     Text("${state.value}")
-    Text(cacheLocal.current)
+    Text(LocalCache.current)
     CacheInvalidateSet {
         Text("${state.value}")
-        Text(cacheLocal.current)
+        Text(LocalCache.current)
     }
-    Text(cacheLocal.current)
+    Text(LocalCache.current)
 }
 
 @Composable
 fun CacheInvalidateSet(content: @Composable () -> Unit) {
-    CompositionLocalProvider(cacheLocal provides "Set") { content() }
+    CompositionLocalProvider(LocalCache provides "Set") { content() }
 }
 
 fun MockViewValidator.CacheInvalidate(state: State<Int>) {

@@ -42,6 +42,7 @@ class FakeSurfaceEntityTest {
 
     @After
     fun release() {
+        underTest.surface.release()
         underTest.dispose()
     }
 

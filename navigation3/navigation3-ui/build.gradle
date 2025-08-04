@@ -55,8 +55,9 @@ androidXMultiplatform {
                 implementation("androidx.annotation:annotation:1.8.0")
                 implementation(libs.kotlinStdlib)
                 implementation("androidx.collection:collection:1.4.5")
-                implementation("androidx.lifecycle:lifecycle-runtime:2.9.1")
-                implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
+                // TODO pin lifecycle:lifecycle-runtime to the version that contains the `LifecycleOwner` composable api when it is released
+                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation(project(":lifecycle:lifecycle-runtime-compose"))
             }
         }
 

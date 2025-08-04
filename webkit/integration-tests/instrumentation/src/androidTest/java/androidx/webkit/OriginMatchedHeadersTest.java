@@ -57,6 +57,7 @@ public class OriginMatchedHeadersTest {
     private static final String SERVER_PATH = "/index.html";
     private static final String EXPECTED_HEADER_VALUE = "active";
     private static final int TIMEOUT_SECONDS = 5;
+    private static final String OTHER_PROFILE_NAME = "OriginMatchedHeaderTestProfile";
 
     private WebViewOnUiThread mWebViewOnUiThread;
     private Profile mDefaultProfile;
@@ -81,27 +82,58 @@ public class OriginMatchedHeadersTest {
     }
 
     @Test
-    public void settingSameHeaderTwiceThrowsException() {
+    public void canSetAndClearHeader() {
         Set<String> originRules = Set.of("http://example.com");
         WebkitUtils.onMainThreadSync(() -> {
             mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, EXPECTED_HEADER_VALUE, originRules);
-
-            Assert.assertThrows(IllegalStateException.class,
-                    () -> mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, EXPECTED_HEADER_VALUE,
-                            originRules));
+            Assert.assertTrue(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
+            mDefaultProfile.clearOriginMatchedHeader(HEADER_NAME);
+            Assert.assertFalse(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
         });
     }
-
 
     @Test
-    public void canUpdateHeaderByClearingFirst() {
+    public void canSetAndClearAllHeaders() {
         Set<String> originRules = Set.of("http://example.com");
         WebkitUtils.onMainThreadSync(() -> {
             mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, EXPECTED_HEADER_VALUE, originRules);
-            mDefaultProfile.clearOriginMatchedHeader(HEADER_NAME);
-            mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, "DifferentValue", originRules);
+            Assert.assertTrue(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
+            mDefaultProfile.clearAllOriginMatchedHeaders();
+            Assert.assertFalse(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
         });
     }
+
+    @Test
+    public void canOverwriteHeader() {
+        Set<String> originRules = Set.of("http://example.com");
+        WebkitUtils.onMainThreadSync(() -> {
+            mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, EXPECTED_HEADER_VALUE, originRules);
+            mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, "NewValue", originRules);
+            Assert.assertTrue(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
+        });
+    }
+
+    @Test
+    public void settingHeaderOnlyAppliesToProvidedProfile() {
+        Set<String> originRules = Set.of("http://example.com");
+        WebkitUtils.onMainThreadSync(() -> {
+            Profile otherProfile = ProfileStore.getInstance().getOrCreateProfile(
+                    OTHER_PROFILE_NAME);
+            Assert.assertNotNull(otherProfile);
+
+            mDefaultProfile.setOriginMatchedHeader(HEADER_NAME, EXPECTED_HEADER_VALUE, originRules);
+            Assert.assertTrue(mDefaultProfile.hasOriginMatchedHeader(HEADER_NAME));
+            Assert.assertFalse(otherProfile.hasOriginMatchedHeader(HEADER_NAME));
+
+            String otherHeaderName = "OtherHeaderName";
+            otherProfile.setOriginMatchedHeader(otherHeaderName, "Value", originRules);
+            Assert.assertTrue(otherProfile.hasOriginMatchedHeader(otherHeaderName));
+            Assert.assertFalse(mDefaultProfile.hasOriginMatchedHeader(otherHeaderName));
+            otherProfile.clearOriginMatchedHeader(otherHeaderName);
+            Assert.assertFalse(otherProfile.hasOriginMatchedHeader(otherHeaderName));
+        });
+    }
+
 
     @Test
     public void headerNotAttachedByDefault() throws Exception {

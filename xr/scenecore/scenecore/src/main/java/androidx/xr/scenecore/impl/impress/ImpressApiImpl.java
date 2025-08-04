@@ -16,6 +16,8 @@
 
 package androidx.xr.scenecore.impl.impress;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
@@ -33,8 +35,8 @@ import org.jspecify.annotations.Nullable;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public final class ImpressApiImpl implements ImpressApi {
     private static final String TAG = ImpressApiImpl.class.getSimpleName();
-
     private View view;
+    private BindingsResourceManager resourceManager;
 
     /*
      * This is mostly here to throw on unsupported values. The int cast works as long as
@@ -138,6 +140,7 @@ public final class ImpressApiImpl implements ImpressApi {
     public void setup(@NonNull View view) {
         this.view = view;
         nSetup(getViewNativeHandle(view));
+        resourceManager = new BindingsResourceManager(new Handler(Looper.getMainLooper()));
     }
 
     @Override
@@ -148,6 +151,15 @@ public final class ImpressApiImpl implements ImpressApi {
     @Override
     public void onPause() {
         view.onPause();
+    }
+
+    @Override
+    @NonNull
+    public BindingsResourceManager getBindingsResourceManager() {
+        if (resourceManager == null) {
+            throw new IllegalStateException("BindingsResourceManager is not initialized");
+        }
+        return resourceManager;
     }
 
     @Override

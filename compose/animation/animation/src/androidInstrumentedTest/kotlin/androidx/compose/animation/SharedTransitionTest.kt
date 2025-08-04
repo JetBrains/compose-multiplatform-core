@@ -22,6 +22,7 @@
 
 package androidx.compose.animation
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.SharedTransitionScope.PlaceHolderSize.Companion.animatedSize
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
@@ -63,6 +64,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Alignment
@@ -113,17 +115,20 @@ import androidx.compose.ui.unit.round
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import java.lang.Thread.sleep
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
+import kotlin.concurrent.thread
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlinx.coroutines.runBlocking
 import leakcanary.DetectLeaksAfterTestSuccess
+import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -750,11 +755,6 @@ class SharedTransitionTest {
 
         shouldDispose = true
         rule.waitForIdle()
-
-        assertTrue(transitionScope!!.disposed)
-        transitionScope!!.observerForTest.clearIf {
-            error("Scope $it is not cleared from SharedTransitionScopeObserver")
-        }
     }
 
     @SdkSuppress(minSdkVersion = 26)
@@ -4362,6 +4362,70 @@ class SharedTransitionTest {
         assertTrue(sizes1.distinct().size > 2)
     }
 
+    @Test
+    fun testAndVerifyObserveIsNotDoneOnNonUIThread() {
+        var visible by mutableStateOf(false)
+        var isEnabled by mutableStateOf(false)
+        var scope: SharedTransitionScopeImpl? = null
+        var show2ndBox by mutableStateOf(true)
+        var threadId by mutableStateOf(-1L)
+        var testBlockInvocationCount = 0
+        rule.setContent {
+            SharedTransitionLayout(Modifier.requiredSize(120.dp).testTag("root")) {
+                scope = this@SharedTransitionLayout as SharedTransitionScopeImpl
+                Box(
+                    modifier =
+                        Modifier.sharedElementWithCallerManagedVisibility(
+                                sharedContentState =
+                                    rememberSharedContentState(
+                                        "box",
+                                        SharedContentConfig { isEnabled },
+                                    ),
+                                visible = !visible,
+                                boundsTransform = BoundsTransform { _, _ -> tween() },
+                            )
+                            .background(Color.LightGray)
+                            .fillMaxSize()
+                )
+                if (show2ndBox) {
+                    Box(
+                        modifier =
+                            Modifier.sharedElementWithCallerManagedVisibility(
+                                    sharedContentState = rememberSharedContentState("box"),
+                                    visible = visible,
+                                    boundsTransform = BoundsTransform { _, _ -> tween() },
+                                )
+                                .background(Color.LightGray)
+                                .size(110.dp)
+                    )
+                }
+            }
+        }
+        scope!!.testBlockToRun = {
+            // Check that the test block is never ran on the custom thread
+            assertNotEquals(threadId, Thread.currentThread().id)
+            testBlockInvocationCount++
+        }
+        rule.waitForIdle()
+        val thread =
+            @SuppressLint("BanThreadSleep")
+            thread(start = true) {
+                threadId = Thread.currentThread().id
+                repeat(100) {
+                    Snapshot.withMutableSnapshot { isEnabled = !isEnabled }
+                    sleep(1)
+                }
+            }
+        repeat(10) {
+            // Triggers observations on the UI thread
+            show2ndBox = !show2ndBox
+            rule.waitForIdle()
+        }
+        thread.join()
+        assertTrue(testBlockInvocationCount >= 10)
+    }
+
+    @Test
     fun NewlyAddedSharedElementWithCallerManagedVisibilityTriggersAnimation() {
         var state by mutableStateOf(State.Start)
         val targetSizes = mutableListOf<IntSize>()

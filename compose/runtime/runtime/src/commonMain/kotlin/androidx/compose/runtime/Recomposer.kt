@@ -856,7 +856,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
     private fun clearKnownCompositionsLocked() {
-        knownCompositionsLocked().forEach { composition ->
+        knownCompositionsLocked().fastForEach { composition ->
             unregisterCompositionLocked(composition)
         }
         _knownCompositions.clear()
@@ -1099,8 +1099,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private suspend fun awaitWorkAvailable() {
         if (!hasSchedulingWork) {
             // NOTE: Do not remove the `<Unit>` from the next line even if the IDE reports it as
-            // redundant. Removing this causes the Kotlin compiler to crash without reporting
-            // an error message
+            // redundant. Removing this causes reports it cannot infer the type. (KT-79553)
+            @Suppress("RemoveExplicitTypeArguments") // See note above
             suspendCancellableCoroutine<Unit> { co ->
                 synchronized(stateLock) {
                         if (hasSchedulingWork) {
@@ -1403,13 +1403,13 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     // We have at least one nested state we could use, if a state
                                     // is available for the container then schedule the state to be
                                     // removed from the container when it is released.
-                                    pairs.map { pair ->
+                                    pairs.fastMap { pair ->
                                         if (pair.second == null) {
                                             val nestedContentReference =
                                                 movableContentNestedStatesAvailable.removeLast(
                                                     pair.first.content
                                                 )
-                                            if (nestedContentReference == null) return@map pair
+                                            if (nestedContentReference == null) return@fastMap pair
                                             val content = nestedContentReference.content
                                             val container = nestedContentReference.container
                                             movableContentNestedExtractionsPending.add(

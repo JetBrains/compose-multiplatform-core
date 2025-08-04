@@ -34,8 +34,8 @@ public open class CounterTrack(
                         uuid = uuid,
                         parentUuid = parent.uuid,
                         type = TRACK_DESCRIPTOR_TYPE_COUNTER,
-                        pid = INVALID_INT,
-                        tid = INVALID_INT,
+                        pid = DEFAULT_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
             }

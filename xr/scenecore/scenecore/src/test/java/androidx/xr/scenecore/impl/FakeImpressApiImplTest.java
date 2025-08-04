@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 
 import android.view.Surface;
 
+import androidx.xr.scenecore.impl.impress.BindingsResourceManager;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.GltfNodeData;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData;
@@ -38,6 +39,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.List;
@@ -48,10 +50,12 @@ import java.util.concurrent.ExecutionException;
 @RunWith(RobolectricTestRunner.class)
 public final class FakeImpressApiImplTest {
     private FakeImpressApiImpl mFakeImpressApi;
+    private BindingsResourceManager mResourceManager;
 
     @Before
     public void setUp() {
         mFakeImpressApi = new FakeImpressApiImpl();
+        mResourceManager = Mockito.mock(BindingsResourceManager.class);
     }
 
     @Test

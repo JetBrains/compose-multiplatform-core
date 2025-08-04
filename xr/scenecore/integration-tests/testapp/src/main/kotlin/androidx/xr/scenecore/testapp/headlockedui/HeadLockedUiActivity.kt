@@ -36,6 +36,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ScenePose
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
@@ -209,7 +210,9 @@ class HeadLockedUiActivity : AppCompatActivity() {
         if (this.mProjectionSource != null) {
             // Since the panel is parented by the activitySpace, we need to inverse its scale
             // so that the panel stays at a fixed size in the view even when ActivitySpace scales.
-            this.mHeadLockedPanel.setScale(0.5f / session!!.scene.activitySpace.getScale())
+            this.mHeadLockedPanel.setScale(
+                0.5f / session!!.scene.activitySpace.getScale(Space.REAL_WORLD)
+            )
             this.mProjectionSource
                 ?.transformPoseTo(mUserForward.value, session!!.scene.activitySpace)
                 ?.let {
@@ -227,9 +230,9 @@ class HeadLockedUiActivity : AppCompatActivity() {
         )
         mDebugPanel.view.setLine(
             "ActivitySpace WorldScale",
-            session!!.scene.activitySpace.getScale().toString(),
+            session!!.scene.activitySpace.getScale(Space.REAL_WORLD).toString(),
         )
-        val worldScaleValue = this.mHeadLockedPanel.getScale().toString()
+        val worldScaleValue = this.mHeadLockedPanel.getScale(Space.REAL_WORLD).toString()
         mDebugPanel.view.setLine("Head Locked Panel WorldScale", worldScaleValue)
         mDebugPanel.view.setLine(
             "Head ActivityPose",

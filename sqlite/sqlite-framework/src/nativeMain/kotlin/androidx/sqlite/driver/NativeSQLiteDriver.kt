@@ -25,9 +25,11 @@ import kotlinx.cinterop.allocPointerTo
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
+import sqlite3.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
 import sqlite3.SQLITE_OK
 import sqlite3.SQLITE_OPEN_CREATE
 import sqlite3.SQLITE_OPEN_READWRITE
+import sqlite3.sqlite3_db_config
 import sqlite3.sqlite3_open_v2
 import sqlite3.sqlite3_threadsafe
 
@@ -43,6 +45,7 @@ import sqlite3.sqlite3_threadsafe
  * the compiled threading mode of the host library.
  */
 public class NativeSQLiteDriver : SQLiteDriver {
+    private val extensions = mutableMapOf<String, String?>()
 
     /**
      * The thread safe mode SQLite was compiled with.
@@ -68,11 +71,43 @@ public class NativeSQLiteDriver : SQLiteDriver {
      */
     public fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection = memScoped {
         val dbPointer = allocPointerTo<sqlite3>()
-        val resultCode =
+        var resultCode =
             sqlite3_open_v2(filename = fileName, ppDb = dbPointer.ptr, flags = flags, zVfs = null)
         if (resultCode != SQLITE_OK) {
             throwSQLiteException(resultCode, null)
         }
-        NativeSQLiteConnection(dbPointer.value!!)
+
+        // Enable the C function to load extensions but not the load_extension() SQL function.
+        resultCode =
+            sqlite3_db_config(dbPointer.value!!, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0)
+        if (resultCode != SQLITE_OK) {
+            throwSQLiteException(resultCode, null)
+        }
+
+        NativeSQLiteConnection(dbPointer.value!!).also {
+            extensions.forEach { (file, entrypoint) -> it.loadExtension(file, entrypoint) }
+        }
+    }
+
+    /**
+     * Registers a dynamically-linked SQLite extension to load for every subsequent connection
+     * opened with this driver.
+     *
+     * The extension is loaded by SQLite in a platform-specific way. SQLite will attempt to open the
+     * file using (e.g. dlopen on POSIX) and look up a native function responsible for initializing
+     * the extension. The [entryPoint] can be used to give an explicit function name to invoke -
+     * otherwise SQLite will derive the entry function from the file name.
+     *
+     * It is the developer's responsibility to ensure that the library is actually available with
+     * the app.
+     *
+     * See also: [Load an extension](https://www.sqlite.org/c3ref/load_extension.html)
+     *
+     * @param fileName The path to the extension to load. A given file can only be added as an
+     *   extension once.
+     * @param entryPoint An optional entry point function in the loaded extension library.
+     */
+    public fun addExtension(fileName: String, entryPoint: String?) {
+        extensions[fileName] = entryPoint
     }
 }

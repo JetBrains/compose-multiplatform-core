@@ -41,7 +41,8 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
 
     fun isAnimating(): Boolean = enabledEntries.fastAny { it.boundsAnimation.isRunning }
 
-    fun updateMatch() {
+    internal fun updateMatch() {
+        @Suppress("VisibleForTests") scope.testBlockToRun?.invoke()
         _enabledEntries.removeAll { !allEntries.contains(it) || !it.isEnabled }
         allEntries.fastForEach {
             if (it.isEnabled && !enabledEntries.contains(it)) {
@@ -50,9 +51,6 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
         }
         val hasVisibleContent = _enabledEntries.hasVisibleContent()
         stateMachine.checkForAndDeferStateUpdates(hasVisibleContent)
-        if (allEntries.isNotEmpty()) {
-            scope.observeReads(this, updateMatch, observingVisibilityChange)
-        }
     }
 
     fun invalidateTargetBoundsProvider() = stateMachine.invalidateTargetBoundsProvider()
@@ -118,26 +116,19 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
     private val _allEntries = mutableStateListOf<SharedElementEntry>()
     private val _enabledEntries = mutableStateListOf<SharedElementEntry>()
 
-    private val updateMatch: (SharedElement) -> Unit = { updateMatch() }
-
-    private val observingVisibilityChange: () -> Unit = {
+    internal val observingVisibilityChange: () -> Unit = {
         allEntries.any { it.target && it.isEnabled }
     }
 
     fun addEntry(sharedElementState: SharedElementEntry) {
         _allEntries.add(sharedElementState)
-        scope.observeReads(this, updateMatch, observingVisibilityChange)
+        updateMatch()
     }
 
     fun removeEntry(sharedElementState: SharedElementEntry) {
         _allEntries.remove(sharedElementState)
         _enabledEntries.remove(sharedElementState)
-        if (allEntries.isEmpty()) {
-            updateMatch()
-            scope.clearObservation(scope = this)
-        } else {
-            scope.observeReads(scope = this, updateMatch, observingVisibilityChange)
-        }
+        updateMatch()
     }
 }
 

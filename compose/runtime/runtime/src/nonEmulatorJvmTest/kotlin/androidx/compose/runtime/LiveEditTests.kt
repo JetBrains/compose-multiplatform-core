@@ -16,11 +16,12 @@
 
 package androidx.compose.runtime
 
-import androidx.compose.runtime.mock.Linear
+import androidx.collection.mutableIntSetOf
 import androidx.compose.runtime.mock.Text
 import androidx.compose.runtime.mock.View
 import androidx.compose.runtime.mock.ViewApplier
 import androidx.compose.runtime.mock.compositionTest
+import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.tooling.Linear
 import kotlin.test.Test
 import org.junit.After
@@ -453,8 +454,8 @@ class LiveEditTests {
                 recomposeCount++
             }
 
-            Subcompose { content() }
-            Subcompose { crashyContent() }
+            subcompose { content() }
+            subcompose { crashyContent() }
         }
     }
 
@@ -549,7 +550,7 @@ fun LiveEditTestScope.InlineTarget(ref: String, content: @Composable () -> Unit 
 }
 
 @Composable
-fun LiveEditTestScope.Subcompose(content: @Composable () -> Unit): Composition {
+fun LiveEditTestScope.subcompose(content: @Composable () -> Unit): Composition {
     val context = rememberCompositionContext()
     return remember(context) {
         Composition(ViewApplier(View()), context).apply { setContent(content) }
@@ -637,21 +638,17 @@ class TestException(message: String) : RuntimeException(message)
 
 @Stable
 class LiveEditTestScope {
-    private val targetKeys = mutableSetOf<Int>()
+    private val targetKeys = mutableIntSetOf()
     private val checks = mutableListOf<() -> Unit>()
     private val errors = mutableSetOf<Throwable>()
     private val logs = mutableListOf<Pair<String, String>>()
 
     fun invalidateTargets() {
-        for (key in targetKeys) {
-            invalidateGroupsWithKey(key)
-        }
+        targetKeys.forEach { key -> invalidateGroupsWithKey(key) }
     }
 
     fun runChecks() {
-        for (check in checks) {
-            check()
-        }
+        checks.fastForEach { check -> check() }
     }
 
     fun addTargetKey(key: Int) {

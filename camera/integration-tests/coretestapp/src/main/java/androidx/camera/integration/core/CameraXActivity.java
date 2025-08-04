@@ -54,6 +54,7 @@ import static java.util.Objects.requireNonNull;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -110,7 +111,9 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CameraPresenceListener;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DisplayOrientedMeteringPointFactory;
 import androidx.camera.core.DynamicRange;
@@ -1535,6 +1538,7 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @SuppressLint("NullAnnotationGroup")
+    @SuppressWarnings("RestrictedApiAndroidX")
     @OptIn(markerClass = ExperimentalLensFacing.class)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -1711,6 +1715,10 @@ public class CameraXActivity extends AppCompatActivity {
             mInitializationIdlingResource.decrement();
             if (cameraProviderResult.hasProvider()) {
                 mCameraProvider = cameraProviderResult.getProvider();
+                requireNonNull(mCameraProvider).addCameraPresenceListener(
+                        CameraXExecutors.mainThreadExecutor(),
+                        new CameraPresenceChangeListener(CameraXActivity.this,
+                                mCameraIterateButton));
 
                 // Initialize CameraSelectorList
                 mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
@@ -1727,6 +1735,63 @@ public class CameraXActivity extends AppCompatActivity {
         });
 
         setupPermissions();
+    }
+
+    @SuppressWarnings("RestrictedApiAndroidX")
+    private class CameraPresenceChangeListener implements CameraPresenceListener {
+
+        private final Context mContext;
+        private final ImageButton mSwitchButton;
+
+        CameraPresenceChangeListener(@NonNull Context context,
+                @NonNull ImageButton switchButton) {
+            mContext = context;
+            mSwitchButton = switchButton;
+        }
+
+        @Override
+        public void onCamerasAdded(@NonNull Set<CameraIdentifier> cameraIdentifiers) {
+            // The Set contains all cameras that were just made available.
+            // This includes the full list on initial registration.
+            String message = cameraIdentifiers.size() + " camera(s) now available.";
+            Log.i(TAG, message + " IDs: " + cameraIdentifiers);
+            Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+
+            // Refresh the list of cameras for the UI switcher.
+            mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
+        }
+
+        @Override
+        public void onCamerasRemoved(@NonNull Set<CameraIdentifier> removedIdentifiers) {
+            String message = removedIdentifiers.size() + " camera(s) removed.";
+            Log.w(TAG, message + " IDs: " + removedIdentifiers);
+
+            boolean activeCameraWasRemoved = false;
+            // Assume getCameraInfo() returns the active CameraInfo, null if no camera is bound.
+            CameraInfo currentCameraInfo = getCameraInfo();
+
+            if (currentCameraInfo != null) {
+                // Check if the set of removed cameras contains our currently active camera.
+                if (removedIdentifiers.contains(currentCameraInfo.getCameraIdentifier())) {
+                    activeCameraWasRemoved = true;
+                }
+            }
+
+            // Always refresh the UI list with the new set of available cameras.
+            mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
+
+            // If our active camera was removed, we must take action.
+            if (activeCameraWasRemoved) {
+                Log.w(TAG, "The active camera was removed! Triggering switch.");
+                Toast.makeText(mContext, "Active camera disconnected. Switching...",
+                        Toast.LENGTH_LONG).show();
+
+                // Programmatically "click" the switch button to select the next available camera.
+                mSwitchButton.performClick();
+            } else {
+                Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -3041,6 +3106,7 @@ public class CameraXActivity extends AppCompatActivity {
                 for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
                     if (Objects.equals(mLaunchCameraId, mCameraSelectorInfos.get(i).mCameraId)) {
                         mCurrentSelectorIndex = i;
+                        mLaunchCameraId = null;
                         break;
                     }
                 }
@@ -3050,6 +3116,7 @@ public class CameraXActivity extends AppCompatActivity {
                 for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
                     if (targetLensFacing == mCameraSelectorInfos.get(i).mLensFacing) {
                         mCurrentSelectorIndex = i;
+                        mLaunchDirection = null;
                         break;
                     }
                 }

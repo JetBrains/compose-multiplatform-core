@@ -30,6 +30,7 @@ import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape;
 import androidx.xr.runtime.internal.TextureResource;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.Texture;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -257,10 +258,10 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     public void setPrimaryAlphaMaskTexture(@Nullable TextureResource alphaMask) {
         long alphaMaskToken = -1;
         if (alphaMask != null) {
-            if (!(alphaMask instanceof TextureResourceImpl)) {
-                throw new IllegalArgumentException("TextureResource is not a TextureResourceImpl");
+            if (!(alphaMask instanceof Texture)) {
+                throw new IllegalArgumentException("TextureResource is not a Texture");
             }
-            alphaMaskToken = ((TextureResourceImpl) alphaMask).getTextureToken();
+            alphaMaskToken = ((Texture) alphaMask).getNativeHandle();
         }
         try {
             mImpressApi.setPrimaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);
@@ -273,10 +274,10 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     public void setAuxiliaryAlphaMaskTexture(@Nullable TextureResource alphaMask) {
         long alphaMaskToken = -1;
         if (alphaMask != null) {
-            if (!(alphaMask instanceof TextureResourceImpl)) {
-                throw new IllegalArgumentException("TextureResource is not a TextureResourceImpl");
+            if (!(alphaMask instanceof Texture)) {
+                throw new IllegalArgumentException("TextureResource is not a Texture");
             }
-            alphaMaskToken = ((TextureResourceImpl) alphaMask).getTextureToken();
+            alphaMaskToken = ((Texture) alphaMask).getNativeHandle();
         }
         try {
             mImpressApi.setAuxiliaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);

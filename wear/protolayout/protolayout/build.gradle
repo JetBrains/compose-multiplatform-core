@@ -37,6 +37,7 @@ dependencies {
 
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation(project(":wear:protolayout:protolayout-proto"))
+    implementation(libs.androidx.core)
 
     lintChecks(project(":wear:protolayout:protolayout-lint"))
 

@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Use register instead of create"
-        errorLine1="            project.configurations.create(COMPILER_PLUGIN_CONFIGURATION) {"
-        errorLine2="                                   ~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
-    </issue>
+<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
 
     <issue
         id="EagerGradleConfiguration"
@@ -174,29 +165,11 @@
 
     <issue
         id="EagerGradleConfiguration"
-        message="Avoid using method findByName"
-        errorLine1="        if (tasks.findByName(&quot;check&quot;) != null) {"
-        errorLine2="                  ~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/Ktfmt.kt"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
         message="Avoid using method forEach"
         errorLine1="        otherProject.tasks.forEach { task -> allTasks.add(task) }"
         errorLine2="                           ~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/ListTaskOutputsTask.kt"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Avoid using method findByName"
-        errorLine1="    tasks.findByName(taskName)"
-        errorLine2="          ~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/MavenUploadHelper.kt"/>
     </issue>
 
     <issue
@@ -245,12 +218,39 @@
     </issue>
 
     <issue
-        id="EagerGradleConfiguration"
-        message="Avoid using method findByName"
-        errorLine1="            if (project.tasks.findByName(&quot;check&quot;) != null) {"
-        errorLine2="                              ~~~~~~~~~~">
+        id="GradlePerformance"
+        message="Avoid using method mustRunAfter"
+        errorLine1="                task.mustRunAfter(&quot;updateApiLintBaseline&quot;)"
+        errorLine2="                     ~~~~~~~~~~~~">
         <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/sources/ValidateMultiplatformSourceSetNaming.kt"/>
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/metalava/MetalavaTasks.kt"/>
+    </issue>
+
+    <issue
+        id="GradlePerformance"
+        message="Avoid using method mustRunAfter"
+        errorLine1="        ignoreApiChanges?.configure { it.mustRunAfter(regenerateOldApis) }"
+        errorLine2="                                         ~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/metalava/MetalavaTasks.kt"/>
+    </issue>
+
+    <issue
+        id="GradlePerformance"
+        message="Avoid using method mustRunAfter"
+        errorLine1="        checkApiRelease?.configure { it.mustRunAfter(regenerateOldApis) }"
+        errorLine2="                                        ~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/metalava/MetalavaTasks.kt"/>
+    </issue>
+
+    <issue
+        id="GradlePerformance"
+        message="Avoid using method mustRunAfter"
+        errorLine1="        ignoreApiChanges?.configure { it.mustRunAfter(updateApi) }"
+        errorLine2="                                         ~~~~~~~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/metalava/MetalavaTasks.kt"/>
     </issue>
 
     <issue
@@ -265,44 +265,8 @@
     <issue
         id="GradleProjectIsolation"
         message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="                val compilerProject = project.rootProject.resolveProject(&quot;:compose&quot;)"
-        errorLine2="                                              ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="            project.rootProject.tasks.named(zipComposeMetricsTaskName).configure { zipTask ->"
-        errorLine2="                    ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="            project.rootProject.tasks.named(zipComposeReportsTaskName).configure { zipTask ->"
-        errorLine2="                    ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="    return project.rootProject.layout.buildDirectory"
-        errorLine2="                   ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="    return project.rootProject.layout.buildDirectory"
-        errorLine2="                   ~~~~~~~~~~~">
+        errorLine1="            val compilerProject = project.rootProject.resolveProject(&quot;:compose&quot;)"
+        errorLine2="                                          ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXComposeImplPlugin.kt"/>
     </issue>
@@ -647,60 +611,6 @@
         errorLine2="        ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/testConfiguration/TestSuiteConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs"
-        errorLine1="import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs"
-        errorLine1="import com.android.build.gradle.internal.lint.LintModelWriterTask"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs"
-        errorLine1="import com.android.build.gradle.internal.lint.VariantInputs"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs (method getJavaDirectories from com.android.build.gradle.internal.lint.SourceProviderInput)"
-        errorLine1="            sourceProvider.javaDirectories.withChangesAllowed {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs (method getVariantInputs from com.android.build.gradle.internal.lint.AndroidLintAnalysisTask)"
-        errorLine1="        it.variantInputs.addSourceSets()"
-        errorLine2="        ~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
-    </issue>
-
-    <issue
-        id="InternalAgpApiUsage"
-        message="Avoid using internal Android Gradle Plugin APIs (method getVariantInputs from com.android.build.gradle.internal.lint.LintModelWriterTask)"
-        errorLine1="    project.tasks.withType&lt;LintModelWriterTask>().configureEach { it.variantInputs.addSourceSets() }"
-        errorLine2="                                                                  ~~~~~~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/LintConfiguration.kt"/>
     </issue>
 
     <issue

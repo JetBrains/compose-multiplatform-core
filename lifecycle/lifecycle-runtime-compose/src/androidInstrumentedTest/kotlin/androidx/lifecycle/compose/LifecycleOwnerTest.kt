@@ -40,11 +40,11 @@ class LifecycleOwnerTest {
 
     @Test
     fun lifecycleOwner_whenComposed_thenProvidesNewLifecycleOwner() = runTest {
-        val parentLifecycleOwner = TestLifecycleOwner(State.INITIALIZED)
+        val parentLifecycleOwner = TestLifecycleOwner()
         lateinit var childLifecycleOwner: LifecycleOwner
 
         rule.setContent {
-            LifecycleOwner(parentLifecycleOwner = parentLifecycleOwner) {
+            LifecycleOwner(parent = parentLifecycleOwner) {
                 childLifecycleOwner = LocalLifecycleOwner.current
             }
         }
@@ -52,7 +52,7 @@ class LifecycleOwnerTest {
         rule.awaitIdle()
 
         assertThat(childLifecycleOwner).isNotSameInstanceAs(parentLifecycleOwner)
-        assertThat(childLifecycleOwner.lifecycle.currentState).isEqualTo(State.INITIALIZED)
+        assertThat(childLifecycleOwner.lifecycle.currentState).isEqualTo(State.STARTED)
     }
 
     @Test
@@ -61,7 +61,7 @@ class LifecycleOwnerTest {
         lateinit var childLifecycle: Lifecycle
 
         rule.setContent {
-            LifecycleOwner(parentLifecycleOwner = parentLifecycleOwner) {
+            LifecycleOwner(parent = parentLifecycleOwner) {
                 childLifecycle = LocalLifecycleOwner.current.lifecycle
             }
         }
@@ -86,10 +86,7 @@ class LifecycleOwnerTest {
         lateinit var childLifecycle: Lifecycle
 
         rule.setContent {
-            LifecycleOwner(
-                maxLifecycle = State.STARTED,
-                parentLifecycleOwner = parentLifecycleOwner,
-            ) {
+            LifecycleOwner(maxLifecycle = State.STARTED, parent = parentLifecycleOwner) {
                 childLifecycle = LocalLifecycleOwner.current.lifecycle
             }
         }
@@ -105,10 +102,7 @@ class LifecycleOwnerTest {
         var maxLifecycle by mutableStateOf(State.STARTED)
 
         rule.setContent {
-            LifecycleOwner(
-                maxLifecycle = maxLifecycle,
-                parentLifecycleOwner = parentLifecycleOwner,
-            ) {
+            LifecycleOwner(maxLifecycle = maxLifecycle, parent = parentLifecycleOwner) {
                 childLifecycle = LocalLifecycleOwner.current.lifecycle
             }
         }
@@ -130,7 +124,7 @@ class LifecycleOwnerTest {
 
         rule.setContent {
             if (showContent) {
-                LifecycleOwner(parentLifecycleOwner = parentLifecycleOwner) {}
+                LifecycleOwner(parent = parentLifecycleOwner) {}
             }
         }
 
@@ -140,5 +134,88 @@ class LifecycleOwnerTest {
         showContent = false
         rule.awaitIdle()
         assertThat(parentLifecycleOwner.observerCount).isEqualTo(0)
+    }
+
+    @Test
+    fun lifecycleOwner_whenDisposed_thenChildIsDestroyed() = runTest {
+        // Keep the parent alive to ensure the child's destruction is not just
+        // a result of the parent being destroyed.
+        val parentLifecycleOwner = TestLifecycleOwner(State.RESUMED)
+        lateinit var childLifecycle: Lifecycle
+        var showContent by mutableStateOf(true)
+
+        rule.setContent {
+            if (showContent) {
+                LifecycleOwner(parent = parentLifecycleOwner) {
+                    childLifecycle = LocalLifecycleOwner.current.lifecycle
+                }
+            }
+        }
+
+        rule.awaitIdle()
+        // At this point, the child should be active.
+        assertThat(childLifecycle.currentState).isEqualTo(State.RESUMED)
+
+        // Now, remove the composable from the composition.
+        showContent = false
+        rule.awaitIdle()
+
+        // Verify that the child lifecycle was explicitly moved to DESTROYED,
+        // even though the parent is still RESUMED.
+        assertThat(childLifecycle.currentState).isEqualTo(State.DESTROYED)
+        assertThat(parentLifecycleOwner.lifecycle.currentState).isEqualTo(State.RESUMED)
+    }
+
+    @Test
+    fun lifecycleOwner_whenParentIsNull_thenStartsItself() = runTest {
+        lateinit var rootLifecycle: Lifecycle
+
+        rule.setContent {
+            LifecycleOwner(parent = null) { rootLifecycle = LocalLifecycleOwner.current.lifecycle }
+        }
+
+        rule.awaitIdle()
+
+        // When there is no parent, the lifecycle should start itself as RESUMED by default.
+        assertThat(rootLifecycle.currentState).isEqualTo(State.RESUMED)
+    }
+
+    @Test
+    fun lifecycleOwner_whenParentIsNullAndMaxLifecycle_thenIsCapped() = runTest {
+        lateinit var rootLifecycle: Lifecycle
+
+        rule.setContent {
+            LifecycleOwner(parent = null, maxLifecycle = State.STARTED) {
+                rootLifecycle = LocalLifecycleOwner.current.lifecycle
+            }
+        }
+
+        rule.awaitIdle()
+
+        // The root lifecycle should respect the maxLifecycle cap.
+        assertThat(rootLifecycle.currentState).isEqualTo(State.STARTED)
+    }
+
+    @Test
+    fun lifecycleOwner_whenParentIsNull_thenDestroyedOnDispose() = runTest {
+        lateinit var rootLifecycle: Lifecycle
+        var showContent by mutableStateOf(true)
+
+        rule.setContent {
+            if (showContent) {
+                LifecycleOwner(parent = null) {
+                    rootLifecycle = LocalLifecycleOwner.current.lifecycle
+                }
+            }
+        }
+
+        rule.awaitIdle()
+        assertThat(rootLifecycle.currentState).isEqualTo(State.RESUMED)
+
+        // Remove the composable — root should destroy itself.
+        showContent = false
+        rule.awaitIdle()
+
+        assertThat(rootLifecycle.currentState).isEqualTo(State.DESTROYED)
     }
 }

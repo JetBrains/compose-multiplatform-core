@@ -20,6 +20,7 @@ import android.os.StrictMode
 import androidx.kruth.assertThat
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -37,6 +38,15 @@ class BundledSQLiteDriverTest : BaseBundledConformanceTest() {
 
     override fun getDriver(): BundledSQLiteDriver {
         return BundledSQLiteDriver()
+    }
+
+    override fun getTestExtensionPath(): String {
+        val file =
+            File(
+                instrumentation.targetContext.applicationInfo.nativeLibraryDir,
+                "libsqliteExtension.so",
+            )
+        return file.absolutePath
     }
 
     @BeforeTest

@@ -16,8 +16,7 @@
 
 package androidx.pdf
 
-import android.app.Activity
-import android.app.Instrumentation
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Point
@@ -542,6 +541,8 @@ class PdfViewerFragmentV2TestSuite {
         val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
         onView(withId(R.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
 
+        Espresso.onIdle()
+
         onView(withText("Handled by custom link handler"))
             .inRoot(isDialog())
             .check(matches(isDisplayed()))
@@ -569,8 +570,7 @@ class PdfViewerFragmentV2TestSuite {
             )
         }
 
-        intending(hasAction(Intent.ACTION_VIEW))
-            .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+        @SuppressLint("CheckResult") intending(hasAction(Intent.ACTION_VIEW))
 
         val selectionViewActions = SelectionViewActions()
 

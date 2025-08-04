@@ -135,6 +135,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import kotlin.math.sign
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -241,7 +242,12 @@ class ScrollableTest {
             Modifier.scrollable(state = controller, orientation = Orientation.Horizontal)
         }
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeForward()
-        rule.runOnIdle { assertThat(total).isGreaterThan(0) }
+        rule.runOnIdle {
+            assertThat(total).isNonZero()
+            // Swipe forward has a negative sign because indirect touch events are inverted in
+            // Scrollable.
+            assertThat(total.sign).isEqualTo(-1f)
+        }
 
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeBackward()
         rule.runOnIdle { assertThat(total).isWithin(0.5f).of(0.0f) }
@@ -437,7 +443,13 @@ class ScrollableTest {
         }
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeForward()
 
-        rule.runOnIdle { assertThat(total).isLessThan(0) }
+        rule.runOnIdle {
+            assertThat(total).isNonZero()
+            // Swipe forward has a positive sign because we have a double negative. The first is
+            // because reverse direction is true, the second is because all ITE are reverted
+            // in scrollable.
+            assertThat(total.sign).isEqualTo(1f)
+        }
 
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeBackward()
         rule.runOnIdle { assertThat(total).isWithin(0.5f).of(0.0f) }
@@ -1054,8 +1066,12 @@ class ScrollableTest {
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeEvent(delayTimeMills = 64L)
         val lastEqualDrag =
             rule.runOnIdle {
-                assertThat(innerDrag).isGreaterThan(0f)
-                assertThat(outerDrag).isGreaterThan(0f)
+                assertThat(innerDrag).isNonZero()
+                assertThat(outerDrag).isNonZero()
+                // Swipe forward has a negative sign because indirect touch events are inverted in
+                // Scrollable.
+                assertThat(innerDrag.sign).isEqualTo(-1f)
+                assertThat(outerDrag.sign).isEqualTo(-1f)
                 // we consumed half delta in child, so exactly half should go to the parent
                 assertThat(outerDrag).isEqualTo(innerDrag)
                 innerDrag
@@ -1354,9 +1370,12 @@ class ScrollableTest {
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeEvent(delayTimeMills = 64L)
 
         rule.runOnIdle {
-            assertThat(innerDrag).isGreaterThan(0f)
-            assertThat(outerDrag).isGreaterThan(0f)
+            assertThat(innerDrag).isNonZero()
+            assertThat(outerDrag).isNonZero()
             assertThat(innerDrag).isEqualTo(outerDrag)
+            // Swipe forward has a negative sign because indirect touch events are inverted in
+            // Scrollable.
+            assertThat(innerDrag.sign).isEqualTo(-1f)
         }
     }
 
@@ -1503,14 +1522,17 @@ class ScrollableTest {
         // swipe again with velocity
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeForward()
 
-        assertThat(innerDrag).isGreaterThan(0f)
-        assertThat(outerDrag).isGreaterThan(0f)
+        assertThat(innerDrag).isNonZero()
+        assertThat(outerDrag).isNonZero()
         // we consumed half delta in child, so exactly half should go to the parent
         assertThat(outerDrag).isEqualTo(innerDrag)
+        // Swipe forward has a negative sign because indirect touch events are inverted in
+        // Scrollable.
+        assertThat(innerDrag.sign).isEqualTo(-1f)
         val lastEqualDrag = innerDrag
         rule.runOnIdle {
-            assertThat(innerDrag).isGreaterThan(lastEqualDrag)
-            assertThat(outerDrag).isGreaterThan(lastEqualDrag)
+            assertThat(innerDrag).isLessThan(lastEqualDrag)
+            assertThat(outerDrag).isLessThan(lastEqualDrag)
         }
     }
 
@@ -2499,14 +2521,20 @@ class ScrollableTest {
         }
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeForward()
         assertThat(flingCalled).isEqualTo(1)
-        assertThat(flingVelocity).isGreaterThan(0f)
+        assertThat(flingVelocity).isNonZero()
+        // Swipe forward has a negative sign because indirect touch events are inverted in
+        // Scrollable.
+        assertThat(flingVelocity.sign).isEqualTo(-1f)
 
         flingCalled = 0
         flingVelocity = 0.0f
 
         rule.onNodeWithTag(scrollableBoxTag).sendIndirectSwipeBackward()
         assertThat(flingCalled).isEqualTo(1)
-        assertThat(flingVelocity).isLessThan(0f)
+        assertThat(flingVelocity).isNonZero()
+        // Swipe backwards has a positive sign because indirect touch events are inverted in
+        // Scrollable.
+        assertThat(flingVelocity.sign).isEqualTo(1f)
     }
 
     @Test

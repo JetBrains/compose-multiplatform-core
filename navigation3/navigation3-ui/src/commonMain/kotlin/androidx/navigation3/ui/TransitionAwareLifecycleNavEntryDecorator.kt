@@ -17,15 +17,8 @@
 package androidx.navigation3.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleOwner
 import androidx.navigation3.runtime.navEntryDecorator
 
 @Composable
@@ -40,56 +33,3 @@ internal fun transitionAwareLifecycleNavEntryDecorator(backStack: List<Any>, isS
             }
         LifecycleOwner(maxLifecycle = maxLifecycle) { entry.Content() }
     }
-
-@Composable
-private fun LifecycleOwner(
-    maxLifecycle: Lifecycle.State = Lifecycle.State.RESUMED,
-    parentLifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    content: @Composable () -> Unit,
-) {
-    val childLifecycleOwner = remember(parentLifecycleOwner) { ChildLifecycleOwner() }
-    // Pass LifecycleEvents from the parent down to the child
-    DisposableEffect(childLifecycleOwner, parentLifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            childLifecycleOwner.handleLifecycleEvent(event)
-        }
-
-        parentLifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose { parentLifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    // Ensure that the child lifecycle is capped at the maxLifecycle
-    LaunchedEffect(childLifecycleOwner, maxLifecycle) {
-        childLifecycleOwner.maxLifecycle = maxLifecycle
-    }
-    // Now install the LifecycleOwner as a composition local
-    CompositionLocalProvider(LocalLifecycleOwner provides childLifecycleOwner) { content.invoke() }
-}
-
-private class ChildLifecycleOwner : LifecycleOwner {
-    private val lifecycleRegistry = LifecycleRegistry(this)
-
-    override val lifecycle: Lifecycle
-        get() = lifecycleRegistry
-
-    var maxLifecycle: Lifecycle.State = Lifecycle.State.INITIALIZED
-        set(maxState) {
-            field = maxState
-            updateState()
-        }
-
-    private var parentLifecycleState: Lifecycle.State = Lifecycle.State.CREATED
-
-    fun handleLifecycleEvent(event: Lifecycle.Event) {
-        parentLifecycleState = event.targetState
-        updateState()
-    }
-
-    fun updateState() {
-        if (parentLifecycleState.ordinal < maxLifecycle.ordinal) {
-            lifecycleRegistry.currentState = parentLifecycleState
-        } else {
-            lifecycleRegistry.currentState = maxLifecycle
-        }
-    }
-}

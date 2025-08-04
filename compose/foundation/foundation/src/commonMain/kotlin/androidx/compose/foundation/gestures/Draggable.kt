@@ -325,10 +325,13 @@ internal class DraggableNode(
         }
     }
 
-    override fun onDragStopped(velocity: Velocity) {
+    override fun onDragStopped(event: DragStopped) {
         if (!isAttached || onDragStopped == NoOpOnDragStopped) return
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            this@DraggableNode.onDragStopped(this, velocity.reverseIfNeeded().toFloat(orientation))
+            this@DraggableNode.onDragStopped(
+                this,
+                event.velocity.reverseIfNeeded().toFloat(orientation),
+            )
         }
     }
 
@@ -431,7 +434,7 @@ internal abstract class DragGestureNode(
      * Passes the action needed when a drag stops. This gives the ability to pass the desired
      * behavior from other nodes implementing AbstractDraggableNode
      */
-    abstract fun onDragStopped(velocity: Velocity)
+    abstract fun onDragStopped(event: DragStopped)
 
     /**
      * If touch slop recognition should be skipped. If this is true, this node will start
@@ -555,7 +558,9 @@ internal abstract class DragGestureNode(
                 val velocity =
                     velocityTracker.calculateVelocity(Velocity(maximumVelocity, maximumVelocity))
                 velocityTracker.resetTracking()
-                channel?.trySend(DragStopped(velocity.toValidVelocity()))
+                channel?.trySend(
+                    DragStopped(velocity.toValidVelocity(), isIndirectTouchEvent = false)
+                )
             }
 
             val onDragCancel: () -> Unit = { channel?.trySend(DragCancelled) }
@@ -572,7 +577,7 @@ internal abstract class DragGestureNode(
                     }
                     previousPositionOnScreen = currentPositionOnScreen
                     velocityTracker.addPointerInputChange(event = change, offset = nodeOffset)
-                    channel?.trySend(DragDelta(delta))
+                    channel?.trySend(DragDelta(delta, isIndirectTouchEvent = false))
                 }
 
             coroutineScope {
@@ -613,7 +618,7 @@ internal abstract class DragGestureNode(
             interactionSource?.emit(DragInteraction.Stop(interaction))
             dragInteraction = null
         }
-        onDragStopped(event.velocity)
+        onDragStopped(event)
     }
 
     private suspend fun processDragCancel() {
@@ -621,7 +626,7 @@ internal abstract class DragGestureNode(
             interactionSource?.emit(DragInteraction.Cancel(interaction))
             dragInteraction = null
         }
-        onDragStopped(Velocity.Zero)
+        onDragStopped(DragStopped(Velocity.Zero, isIndirectTouchEvent = false))
     }
 
     fun disposeInteractionSource() {
@@ -689,11 +694,11 @@ private class DefaultDraggableState(val onDelta: (Float) -> Unit) : DraggableSta
 internal sealed class DragEvent {
     class DragStarted(val startPoint: Offset) : DragEvent()
 
-    class DragStopped(val velocity: Velocity) : DragEvent()
+    class DragStopped(val velocity: Velocity, val isIndirectTouchEvent: Boolean) : DragEvent()
 
     object DragCancelled : DragEvent()
 
-    class DragDelta(val delta: Offset) : DragEvent()
+    class DragDelta(val delta: Offset, val isIndirectTouchEvent: Boolean) : DragEvent()
 }
 
 private fun Offset.toFloat(orientation: Orientation) =
@@ -772,7 +777,7 @@ private class IndirectTouchEventProcessor(
                 ) {
                     requireVelocityTracker().addPosition(event.uptimeMillis, smoothedEventPosition)
                     consumed = true // regular move, consume it
-                    onDragEvent(DragDelta(delta))
+                    onDragEvent(DragDelta(delta, isIndirectTouchEvent = true))
                 }
                 previousIndirectTouchPosition = smoothedEventPosition
                 consumed
@@ -784,7 +789,8 @@ private class IndirectTouchEventProcessor(
                         val event =
                             DragStopped(
                                 requireVelocityTracker()
-                                    .calculateVelocity(Velocity(maxVelocity, maxVelocity))
+                                    .calculateVelocity(Velocity(maxVelocity, maxVelocity)),
+                                isIndirectTouchEvent = true,
                             )
                         onDragEvent(event)
                         true // gesture finished, consume it

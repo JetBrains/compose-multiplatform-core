@@ -28,16 +28,14 @@ import java.util.function.Consumer
 /** Forwards remote interactions to [RemoteInteractionsManager]. */
 internal open class RemoteInteractionsManagerCompat(context: Context) : IRemoteInteractionsManager {
 
-    // TODO(b/411162268): Use `WearApiVersionHelper` for the SDK version check.
-    private val wearApiVersion: WearApiVersion = WearApiVersion(context)
+    override val isAvailabilityStatusApiSupported =
+        isCurrentDeviceAWatch(context) &&
+            WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_TIRAMISU_4)
 
     private val remoteInteractionsManager: RemoteInteractionsManager? =
         if (isAvailabilityStatusApiSupported)
             Sdk.getWearManager(context, RemoteInteractionsManager::class.java)
         else null
-
-    override val isAvailabilityStatusApiSupported: Boolean
-        get() = wearApiVersion.wearSdkVersion >= 4
 
     override val isWearSdkApiStartRemoteActivitySupported =
         isCurrentDeviceAWatch(context) &&

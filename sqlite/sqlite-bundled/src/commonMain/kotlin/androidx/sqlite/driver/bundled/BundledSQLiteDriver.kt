@@ -41,6 +41,26 @@ public expect class BundledSQLiteDriver() : SQLiteDriver {
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val threadingMode: Int
 
+    /**
+     * Registers a dynamically-linked SQLite extension to load for every subsequent connection
+     * opened with this driver.
+     *
+     * The extension is loaded by SQLite in a platform-specific way. SQLite will attempt to open the
+     * file using (e.g. dlopen on POSIX) and look up a native function responsible for initializing
+     * the extension. The [entryPoint] can be used to give an explicit function name to invoke -
+     * otherwise SQLite will derive the entry function from the file name.
+     *
+     * It is the developer's responsibility to ensure that the library is actually available with
+     * the app.
+     *
+     * See also: [Load an extension](https://www.sqlite.org/c3ref/load_extension.html)
+     *
+     * @param fileName The path to the extension to load. A given file can only be added as an
+     *   extension once.
+     * @param entryPoint An optional entry point function in the loaded extension library.
+     */
+    public fun addExtension(fileName: String, entryPoint: String?)
+
     override fun open(fileName: String): SQLiteConnection
 
     /**

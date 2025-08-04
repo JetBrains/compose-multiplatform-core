@@ -658,46 +658,6 @@ class UseCaseManagerTest {
         }
     }
 
-    @Test
-    @Config(minSdk = 35)
-    fun enableLowLightBoost_when10BitIsOn() = runTest {
-        // Arrange
-        initializeUseCaseThreads(this)
-        val useCaseManager =
-            createUseCaseManager(
-                characteristicsMap =
-                    mapOf(
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to
-                            streamConfigurationMap,
-                        CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                            intArrayOf(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY),
-                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
-                            intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
-                        REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES to
-                            DynamicRangeProfiles(
-                                longArrayOf(
-                                    DynamicRangeProfiles.HLG10,
-                                    DynamicRangeProfiles.HLG10,
-                                    0L,
-                                )
-                            ),
-                    )
-            )
-
-        val fakeUseCase =
-            FakeUseCaseConfig.Builder().setDynamicRange(DynamicRange.HLG_10_BIT).build().apply {
-                simulateActivation(DynamicRange.HLG_10_BIT)
-                updateSessionConfigForTesting(
-                    SessionConfig.Builder().setTemplateType(TEMPLATE_PREVIEW).build()
-                )
-            }
-        useCaseManager.attach(listOf(fakeUseCase))
-
-        assertThrows<IllegalStateException> {
-            lowLightBoostControl.setLowLightBoostAsync(true).await()
-        }
-    }
-
     @OptIn(ExperimentalCamera2Interop::class)
     @Suppress("UNCHECKED_CAST", "PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private fun createUseCaseManager(
@@ -867,7 +827,7 @@ class UseCaseManagerTest {
                 useCaseList.add(it)
             }
 
-    private fun UseCase.simulateActivation(dynamicRange: DynamicRange? = null) {
+    private fun UseCase.simulateActivation() {
         bindToCamera(
             FakeCamera("0"),
             null,
@@ -877,11 +837,6 @@ class UseCaseManagerTest {
                 CameraUseCaseAdapter(ApplicationProvider.getApplicationContext()),
             ),
         )
-        updateSuggestedStreamSpec(
-            StreamSpec.builder(supportedSizes[0])
-                .also { builder -> dynamicRange?.let { builder.setDynamicRange(it) } }
-                .build(),
-            null,
-        )
+        updateSuggestedStreamSpec(StreamSpec.builder(supportedSizes[0]).build(), null)
     }
 }

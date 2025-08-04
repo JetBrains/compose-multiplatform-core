@@ -19,10 +19,14 @@ package androidx.privacysandbox.sdkruntime.integration.testapp
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +55,65 @@ class SdkLoadingIntegrationTest {
         val params = Bundle()
         params.putBoolean("needFail", true)
         assertThrows<LoadSdkCompatException> { testAppApi.loadTestSdk(params) }
+            .hasMessageThat()
+            .isEqualTo("Expected to fail")
         assertThat(testAppApi.getSandboxedSdks()).hasSize(0)
+    }
+
+    @Test
+    fun loadSdkFromSdk_successTest() = runTest {
+        testSetup.assumeCompatRunOrAdServicesVersionAtLeast(10)
+
+        val testAppApi = testSetup.testAppApi()
+        val testSdk = testAppApi.getOrLoadTestSdk()
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME)
+
+        val callback = LoadSdkCallback()
+        testSdk.loadSdk(TestAppApi.MEDIATEE_SDK_NAME, Bundle(), callback)
+        val result = callback.waitForResult()
+
+        assertThat(result.sdkName).isEqualTo(TestAppApi.MEDIATEE_SDK_NAME)
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME, TestAppApi.MEDIATEE_SDK_NAME)
+    }
+
+    @Test
+    fun loadSdkFromSdk_failTest() = runTest {
+        testSetup.assumeCompatRunOrAdServicesVersionAtLeast(10)
+
+        val testAppApi = testSetup.testAppApi()
+        val testSdk = testAppApi.getOrLoadTestSdk()
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME)
+
+        val params = Bundle()
+        params.putBoolean("needFail", true)
+        val callback = LoadSdkCallback()
+        testSdk.loadSdk(TestAppApi.MEDIATEE_SDK_NAME, params, callback)
+        val result = callback.waitForError()
+
+        assertThat(result).isEqualTo("Expected to fail")
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME)
+    }
+
+    @Test
+    fun loadSdkFromSdk_notSupportedTest() = runTest {
+        testSetup.assumeSandboxRunAndAdServicesVersionBelow(10)
+
+        val testAppApi = testSetup.testAppApi()
+        val testSdk = testAppApi.getOrLoadTestSdk()
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME)
+
+        val callback = LoadSdkCallback()
+        testSdk.loadSdk(TestAppApi.MEDIATEE_SDK_NAME, Bundle(), callback)
+        val result = callback.waitForError()
+
+        assertThat(result).isEqualTo("Loading SDK not supported on this device")
+        assertThat(testAppApi.getSandboxedSdks().map(LoadedSdkInfo::sdkName))
+            .containsExactly(TestAppApi.TEST_SDK_NAME)
     }
 
     @Test
@@ -104,5 +166,32 @@ class SdkLoadingIntegrationTest {
         val result = testAppApi.loadTestSdk().callDoSomethingOnSandboxedSdks("42")
 
         assertThat(result).containsExactly("TestSdk result is 42")
+    }
+
+    private class LoadSdkCallback : ILoadSdkCallback.Stub() {
+
+        private val async = CountDownLatch(1)
+        private var result: LoadedSdkInfo? = null
+        private var errorMessage: String? = null
+
+        fun waitForResult(): LoadedSdkInfo {
+            async.await(5, TimeUnit.SECONDS)
+            return result!!
+        }
+
+        fun waitForError(): String {
+            async.await(5, TimeUnit.SECONDS)
+            return errorMessage!!
+        }
+
+        override fun onSuccess(loadedSdk: LoadedSdkInfo) {
+            result = loadedSdk
+            async.countDown()
+        }
+
+        override fun onFailure(error: String) {
+            errorMessage = error
+            async.countDown()
+        }
     }
 }

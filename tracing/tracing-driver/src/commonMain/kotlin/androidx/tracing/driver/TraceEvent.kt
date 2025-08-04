@@ -99,9 +99,9 @@ internal constructor(
 ) {
     public constructor() :
         this(
-            type = INVALID_INT,
-            trackUuid = INVALID_LONG,
-            timestamp = INVALID_LONG,
+            type = DEFAULT_INT,
+            trackUuid = DEFAULT_LONG,
+            timestamp = DEFAULT_LONG,
             name = null,
             counterDoubleValue = null,
             counterLongValue = null,
@@ -161,9 +161,9 @@ internal constructor(
     }
 
     public fun reset() {
-        type = INVALID_INT
-        trackUuid = INVALID_LONG
-        timestamp = INVALID_LONG
+        type = DEFAULT_INT
+        trackUuid = DEFAULT_LONG
+        timestamp = DEFAULT_LONG
         name = null
         counterDoubleValue = null
         counterLongValue = null

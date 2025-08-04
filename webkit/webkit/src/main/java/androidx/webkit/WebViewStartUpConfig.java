@@ -135,12 +135,12 @@ public final class WebViewStartUpConfig {
          *
          * <p>The behavior depends on the value provided:
          * <ul>
-         * <li><b>{@code null}:</b> The default state, loading the default profile during startup
-         * .</li>
          * <li><b>Empty Set:</b> No profiles are loaded, not even the default profile.</li>
          * <li><b>Non-empty Set:</b> All profiles named in the set are loaded. These profiles
          * will be created if they do not already exist.</li>
          * </ul>
+         *
+         * If this method isn't called, the default profile will be loaded during startup.
          *
          * <p><b>Note:</b> A copy of the provided {@code Set} will be made when the {@link #build()}
          * method is called. Any subsequent modifications to the original {@code Set} will not be
@@ -149,8 +149,7 @@ public final class WebViewStartUpConfig {
          * <p><b>Note:</b> This method cannot be used if
          * {@link #setShouldRunUiThreadStartUpTasks(boolean)} is set to {@code false}.
          *
-         * @param profiles A {@link Set} of profile names to pre-load, an empty Set to load none,
-         *                 or {@code null} to use the default behavior.
+         * @param profiles A {@link Set} of profile names to pre-load or an empty Set to load none.
          * @return The {@link Builder} instance for method chaining.
          * @throws IllegalArgumentException if this method is called when
          *                                  {@link #setShouldRunUiThreadStartUpTasks(boolean)}

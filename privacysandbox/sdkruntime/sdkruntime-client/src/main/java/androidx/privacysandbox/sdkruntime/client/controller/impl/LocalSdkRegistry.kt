@@ -204,8 +204,8 @@ internal class LocalSdkRegistry(
             reportError(
                 executor,
                 callback,
-                loadSdkErrorCode = LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
-                message = "Unexpected error",
+                loadSdkErrorCode = LoadSdkCompatException.LOAD_SDK_SDK_DEFINED_ERROR,
+                message = ex.message,
                 cause = ex,
             )
         }
@@ -215,7 +215,7 @@ internal class LocalSdkRegistry(
         executor: Executor,
         callback: LoadSdkCallback,
         loadSdkErrorCode: Int,
-        message: String,
+        message: String?,
         cause: Throwable? = null,
     ) = reportError(executor, callback, LoadSdkCompatException(loadSdkErrorCode, message, cause))
 

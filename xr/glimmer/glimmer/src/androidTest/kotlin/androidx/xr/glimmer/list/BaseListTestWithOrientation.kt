@@ -53,6 +53,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
     @Composable
     internal fun TestList(
         modifier: Modifier = Modifier,
+        listOrientation: Orientation = orientation,
         horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
         horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
         verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
@@ -65,7 +66,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
     ) {
         List(
             state = state,
-            orientation = orientation,
+            orientation = listOrientation,
             horizontalAlignment = horizontalAlignment,
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,

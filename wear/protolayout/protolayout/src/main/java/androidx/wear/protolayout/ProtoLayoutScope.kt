@@ -22,6 +22,7 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
+import androidx.core.os.BundleCompat
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.Resources
 import java.util.Objects
@@ -73,7 +74,15 @@ public constructor() {
     /** Registers the given [PendingIntent] with given clickable ID. */
     @RestrictTo(Scope.LIBRARY)
     public fun registerPendingIntent(id: String, intent: PendingIntent) {
-        pendingIntents.putParcelable(id, intent)
+        val storedIntent: PendingIntent? =
+            BundleCompat.getParcelable(pendingIntents, id, PendingIntent::class.java)
+        if (storedIntent != null && storedIntent != intent) {
+            throw IllegalArgumentException(
+                "Duplicate use of clickable ID \"$id\" for PendingIntents."
+            )
+        } else if (storedIntent == null) {
+            pendingIntents.putParcelable(id, intent)
+        }
     }
 
     /**

@@ -197,8 +197,10 @@ internal class Scrollable2DNode(
 
     override fun onDragStarted(startedPosition: Offset) {}
 
-    override fun onDragStopped(velocity: Velocity) {
-        nestedScrollDispatcher.coroutineScope.launch { scrollingLogic.onScrollStopped(velocity) }
+    override fun onDragStopped(event: DragEvent.DragStopped) {
+        nestedScrollDispatcher.coroutineScope.launch {
+            scrollingLogic.onScrollStopped(event.velocity)
+        }
     }
 
     override fun startDragImmediately(): Boolean {

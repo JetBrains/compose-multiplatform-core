@@ -31,8 +31,8 @@ import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandle
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackendHolder
 import androidx.privacysandbox.sdkruntime.core.controller.impl.ContinuationLoadSdkCallback
-import androidx.privacysandbox.sdkruntime.core.controller.impl.LocalImpl
-import androidx.privacysandbox.sdkruntime.core.controller.impl.PlatformUDCImpl
+import androidx.privacysandbox.sdkruntime.provider.controller.impl.LocalImpl
+import androidx.privacysandbox.sdkruntime.provider.controller.impl.PlatformUDCImpl
 import java.util.concurrent.Executor
 import kotlinx.coroutines.suspendCancellableCoroutine
 

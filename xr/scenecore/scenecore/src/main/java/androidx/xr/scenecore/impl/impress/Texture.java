@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,39 +16,42 @@
 
 package androidx.xr.scenecore.impl.impress;
 
+import android.util.Log;
+
 import androidx.annotation.RestrictTo;
+import androidx.xr.runtime.internal.TextureResource;
 import androidx.xr.runtime.internal.TextureSampler;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-/** Texture class for the native Impress texture wrapper struct. */
+/**
+ * Texture class for the native Impress texture wrapper struct which is an implementation a
+ * SceneCore TextureResource.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public final class Texture {
+public final class Texture extends BindingsResource implements TextureResource {
+    private final String TAG = getClass().getSimpleName();
     private final ImpressApi impressApi;
-    private final long nativeTexture;
     private final TextureSampler sampler;
 
     private Texture(Builder builder) {
+        super(builder.impressApi.getBindingsResourceManager(), builder.nativeTexture);
         this.impressApi = builder.impressApi;
-        this.nativeTexture = builder.nativeTexture;
         this.sampler = builder.sampler;
     }
 
-    /** Returns the native texture handle of the Impress texture. */
-    public long getNativeHandle() {
-        return nativeTexture;
+    @Override
+    protected void releaseBindingsResource(long nativeHandle) {
+        // TODO(b/433934447): Call into the JNI to release the native bindings resource.
+        Log.d(TAG, "Texture is getting destroyed manually");
     }
 
     /** Returns the sampler used to load the texture. */
     @Nullable
     public TextureSampler getTextureSampler() {
+        throwIfDestroyed();
         return sampler;
-    }
-
-    /** Destroys the native texture. */
-    public void destroyNativeObject() {
-        impressApi.destroyNativeObject(nativeTexture);
     }
 
     /** Use Builder to construct a Texture object instance. */

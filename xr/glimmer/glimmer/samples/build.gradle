@@ -50,7 +50,7 @@ androidx {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk = 35
+        minSdk = 23
     }
 
     namespace = "androidx.xr.glimmer.samples"

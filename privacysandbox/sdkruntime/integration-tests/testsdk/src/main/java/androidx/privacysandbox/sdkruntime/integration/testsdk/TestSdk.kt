@@ -17,17 +17,39 @@
 package androidx.privacysandbox.sdkruntime.integration.testsdk
 
 import android.content.Context
+import android.os.Bundle
 import android.util.Log
+import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 
 class TestSdk(private val sdkContext: Context) : ISdkApi.Stub() {
 
     override fun doSomething(param: String): String {
         Log.i(TAG, "TestSdk#doSomething($param)")
         return "TestSdk result is $param"
+    }
+
+    override fun loadSdk(sdkName: String, params: Bundle, callback: ILoadSdkCallback) {
+        MainScope().launch {
+            try {
+                val sdk = SdkSandboxControllerCompat.from(sdkContext).loadSdk(sdkName, params)
+                callback.onSuccess(
+                    LoadedSdkInfo(
+                        sdkInterface = sdk.getInterface()!!,
+                        sdkName = sdk.getSdkInfo()?.name,
+                        sdkVersion = sdk.getSdkInfo()?.version,
+                    )
+                )
+            } catch (ex: LoadSdkCompatException) {
+                callback.onFailure(ex.message)
+            }
+        }
     }
 
     override fun getSandboxedSdks(): List<LoadedSdkInfo> {

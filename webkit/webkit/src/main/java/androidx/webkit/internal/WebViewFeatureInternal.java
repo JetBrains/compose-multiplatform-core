@@ -786,8 +786,10 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
+     * {@link Profile#hasOriginMatchedHeader(String)},
      * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
      */
+    @Profile.ExperimentalOriginMatchedHeader
     public static final ApiFeature.NoFramework ORIGIN_MATCHED_HEADERS =
             new ApiFeature.NoFramework(WebViewFeature.ORIGIN_MATCHED_HEADERS,
                     Features.EXTRA_HEADER_FOR_ORIGINS);

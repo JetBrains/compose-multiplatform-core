@@ -35,6 +35,8 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
 
     abstract override fun getDriver(): BundledSQLiteDriver
 
+    abstract fun getTestExtensionPath(): String
+
     @Test
     fun readSQLiteVersion() {
         val connection = getDriver().open(":memory:")
@@ -93,6 +95,23 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
         // Validate bundled SQLite is compiled with SQLITE_THREADSAFE = 2
         val driver = BundledSQLiteDriver()
         assertThat(driver.threadingMode).isEqualTo(2)
+    }
+
+    @Test
+    fun loadExtension() {
+        val extensionPath = getTestExtensionPath() ?: return
+
+        val driver =
+            BundledSQLiteDriver().apply {
+                addExtension(extensionPath, "sqlite3_test_extension_init")
+            }
+
+        driver.open(":memory:").use { connection ->
+            connection.prepare("SELECT hello_world()").use { stmt ->
+                assertThat(stmt.step()).isTrue()
+                assertThat(stmt.getText(0)).isEqualTo("Hello from sqlite_extension.cpp!")
+            }
+        }
     }
 
     companion object {

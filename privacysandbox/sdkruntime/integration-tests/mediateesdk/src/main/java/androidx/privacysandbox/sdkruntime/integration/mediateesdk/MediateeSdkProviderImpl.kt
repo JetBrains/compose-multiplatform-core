@@ -22,6 +22,9 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
 
 class MediateeSdkProviderImpl() : SandboxedSdkProviderCompat() {
     override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
+        if (params.getBoolean("needFail", false)) {
+            throw RuntimeException("Expected to fail")
+        }
         return SandboxedSdkCompat(MediateeSdk())
     }
 }

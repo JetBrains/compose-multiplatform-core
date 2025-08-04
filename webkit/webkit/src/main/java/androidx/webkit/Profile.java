@@ -285,6 +285,16 @@ public interface Profile {
     void warmUpRendererProcess();
 
     /**
+     * Denotes that the OriginMatchedHeader API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalOriginMatchedHeader {
+    }
+
+    /**
      * Set a custom header to be applied to HTTP requests to the specified origins.
      * <p>
      * It applies to all requests that are initiated after this method is called, including
@@ -295,6 +305,9 @@ public interface Profile {
      * {@link WebResourceRequest#getRequestHeaders()} provided in
      * {@link android.webkit.WebViewClient#shouldInterceptRequest(WebView, WebResourceRequest)}
      * and {@link android.webkit.ServiceWorkerClient#shouldInterceptRequest(WebResourceRequest)}.
+     * <p>
+     * Calling this method again with the same {@code headerName} parameter will overwrite any
+     * previously set mapping.
      *
      * @param headerName  A
      *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
@@ -302,15 +315,28 @@ public interface Profile {
      *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
      * @param originRules a set of origin rules following the same format as
      *                    {@link WebViewCompat#addWebMessageListener}
-     * @throws IllegalStateException if the {@code headerName} has already been set. Use
-     *                               {@link #clearOriginMatchedHeader(String)} first in order to
-     *                               update the set header.
      */
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
+    @ExperimentalOriginMatchedHeader
     void setOriginMatchedHeader(@NonNull String headerName,
             @NonNull String headerValue, @NonNull Set<String> originRules);
+
+    /**
+     * Returns true if the profile has a value set for the given header name.
+     *
+     * @param headerName A
+     *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
+     * @return {@code true} if there is a value mapped for the provided {@code
+     *                   headerName}, {code false} otherwise.
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalOriginMatchedHeader
+    boolean hasOriginMatchedHeader(@NonNull String headerName);
 
     /**
      * Removes the specified header from the set of headers attached to requests.
@@ -319,10 +345,12 @@ public interface Profile {
      * {@link #setOriginMatchedHeader(String, String, Set)}
      *
      * @param headerName Header to remove.
+     * @see #setOriginMatchedHeader(String, String, Set)
      */
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
+    @ExperimentalOriginMatchedHeader
     void clearOriginMatchedHeader(@NonNull String headerName);
 
     /**
@@ -333,5 +361,6 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
+    @ExperimentalOriginMatchedHeader
     void clearAllOriginMatchedHeaders();
 }

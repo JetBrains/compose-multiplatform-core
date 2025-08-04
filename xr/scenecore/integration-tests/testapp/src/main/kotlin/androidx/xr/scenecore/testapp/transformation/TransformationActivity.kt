@@ -199,11 +199,11 @@ class TransformationActivity : AppCompatActivity() {
         trackedEntity: Entity,
         anchorState: Int,
     ) {
-        // Need to handle unsupported exception from the anchorEntity's getPose
+        // Need to handle IllegalArgumentException from the anchorEntity's getPose
         val localPose =
             try {
                 trackedEntity.getPose().toFormattedString()
-            } catch (e: UnsupportedOperationException) {
+            } catch (e: IllegalArgumentException) {
                 "getPose is not allowed with Space.PARENT on this Entity: ${e.message}"
             }
         view.setLine("localPose", localPose)
@@ -214,7 +214,7 @@ class TransformationActivity : AppCompatActivity() {
         val localScale =
             try {
                 trackedEntity.getScale()
-            } catch (e: UnsupportedOperationException) {
+            } catch (e: IllegalArgumentException) {
                 "getScale is not allowed with Space.PARENT on this Entity ${e.message}"
             }
         view.setLine("local scale", localScale.toString())

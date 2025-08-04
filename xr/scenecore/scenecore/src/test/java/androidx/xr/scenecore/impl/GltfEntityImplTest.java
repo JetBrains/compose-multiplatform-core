@@ -108,7 +108,7 @@ public class GltfEntityImplTest {
                 mFakeImpressApi.createWaterMaterial(isAlphaMapVersion);
 
         WaterMaterial material = materialFuture.get();
-        materialResourceFuture.set(new MaterialResourceImpl(material.getNativeHandle()));
+        materialResourceFuture.set(material);
 
         return materialResourceFuture.get();
     }

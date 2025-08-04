@@ -37,6 +37,7 @@ import static java.lang.Math.round;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -100,6 +101,7 @@ import androidx.wear.protolayout.proto.ActionProto.AndroidActivity;
 import androidx.wear.protolayout.proto.ActionProto.AndroidExtra;
 import androidx.wear.protolayout.proto.ActionProto.LaunchAction;
 import androidx.wear.protolayout.proto.ActionProto.LoadAction;
+import androidx.wear.protolayout.proto.ActionProto.PendingIntentAction;
 import androidx.wear.protolayout.proto.AlignmentProto.AngularAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.ArcAnchorType;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignment;
@@ -319,6 +321,7 @@ public final class ProtoLayoutInflater {
     private final @NonNull InflaterStatsLogger mInflaterStatsLogger;
     final @Nullable Executor mLoadActionExecutor;
     final LoadActionListener mLoadActionListener;
+    final PendingIntentActionListener mPendingIntentActionListener;
     final boolean mAnimationEnabled;
 
     private boolean mApplyFontVariantBodyAsDefault = false;
@@ -344,6 +347,21 @@ public final class ProtoLayoutInflater {
          * @param nextState The state that the next layout should be in.
          */
         void onClick(@NonNull State nextState);
+    }
+
+    /**
+     * Listener for clicks on Clickable objects that have an action to perform the operation
+     * associated with a {@link PendingIntent}.
+     */
+    public interface PendingIntentActionListener {
+
+        /**
+         * Called when a Clickable that has a {@link PendingIntentAction} is clicked.
+         *
+         * @param source the {@link View} that received the click.
+         * @param id the id for retrieving the associated {@link PendingIntent}.
+         */
+        void onClick(@NonNull View source, @NonNull String id);
     }
 
     /**
@@ -557,6 +575,7 @@ public final class ProtoLayoutInflater {
         private final @NonNull ResourceResolvers mLayoutResourceResolvers;
         private final @Nullable Executor mLoadActionExecutor;
         private final @NonNull LoadActionListener mLoadActionListener;
+        private final @NonNull PendingIntentActionListener mPendingIntentActionListener;
         private final @NonNull Resources mRendererResources;
         private final @NonNull ProtoLayoutTheme mProtoLayoutTheme;
         private final @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline;
@@ -575,6 +594,7 @@ public final class ProtoLayoutInflater {
                 @NonNull ResourceResolvers layoutResourceResolvers,
                 @Nullable Executor loadActionExecutor,
                 @NonNull LoadActionListener loadActionListener,
+                @NonNull PendingIntentActionListener mPendingIntentActionListener,
                 @NonNull Resources rendererResources,
                 @NonNull ProtoLayoutTheme protoLayoutTheme,
                 @Nullable ProtoLayoutDynamicDataPipeline dataPipeline,
@@ -589,6 +609,7 @@ public final class ProtoLayoutInflater {
             this.mLayoutResourceResolvers = layoutResourceResolvers;
             this.mLoadActionExecutor = loadActionExecutor;
             this.mLoadActionListener = loadActionListener;
+            this.mPendingIntentActionListener = mPendingIntentActionListener;
             this.mRendererResources = rendererResources;
             this.mProtoLayoutTheme = protoLayoutTheme;
             this.mDataPipeline = dataPipeline;
@@ -623,6 +644,14 @@ public final class ProtoLayoutInflater {
         /** Listener for clicks that will cause contents to be reloaded. */
         public @NonNull LoadActionListener getLoadActionListener() {
             return mLoadActionListener;
+        }
+
+        /**
+         * Gets the listener for clicks that will cause to perform operation associated with a
+         * {@link PendingIntent}.
+         */
+        public @NonNull PendingIntentActionListener getPendingIntentActionListener() {
+            return mPendingIntentActionListener;
         }
 
         /**
@@ -689,6 +718,7 @@ public final class ProtoLayoutInflater {
             private final @NonNull ResourceResolvers mLayoutResourceResolvers;
             private @Nullable Executor mLoadActionExecutor;
             private @Nullable LoadActionListener mLoadActionListener;
+            private @Nullable PendingIntentActionListener mPendingIntentActionListener;
             private @NonNull Resources mRendererResources;
             private @Nullable ProtoLayoutTheme mProtoLayoutTheme;
             private @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline = null;
@@ -735,6 +765,16 @@ public final class ProtoLayoutInflater {
             public @NonNull Builder setLoadActionListener(
                     @NonNull LoadActionListener loadActionListener) {
                 this.mLoadActionListener = loadActionListener;
+                return this;
+            }
+
+            /**
+             * Sets the listener for clicks that will cause to perform the operation associated with
+             * a {@link PendingIntent}.
+             */
+            public @NonNull Builder setPendingIntentActionListener(
+                    @Nullable PendingIntentActionListener pendingIntentActionListener) {
+                this.mPendingIntentActionListener = pendingIntentActionListener;
                 return this;
             }
 
@@ -830,6 +870,10 @@ public final class ProtoLayoutInflater {
                     mLoadActionListener = p -> {};
                 }
 
+                if (mPendingIntentActionListener == null) {
+                    mPendingIntentActionListener = (k, v) -> {};
+                }
+
                 if (mProtoLayoutTheme == null) {
                     this.mProtoLayoutTheme = ProtoLayoutThemeImpl.defaultTheme(mUiContext);
                 }
@@ -850,6 +894,7 @@ public final class ProtoLayoutInflater {
                         mLayoutResourceResolvers,
                         mLoadActionExecutor,
                         checkNotNull(mLoadActionListener),
+                        checkNotNull(mPendingIntentActionListener),
                         mRendererResources,
                         checkNotNull(mProtoLayoutTheme),
                         mDataPipeline,
@@ -876,6 +921,7 @@ public final class ProtoLayoutInflater {
         this.mLayoutResourceResolvers = config.getLayoutResourceResolvers();
         this.mLoadActionExecutor = config.getLoadActionExecutor();
         this.mLoadActionListener = config.getLoadActionListener();
+        this.mPendingIntentActionListener = config.getPendingIntentActionListener();
         this.mDataPipeline = Optional.ofNullable(config.getDynamicDataPipeline());
         this.mAnimationEnabled = config.getAnimationEnabled();
         this.mClickableIdExtra = config.getClickableIdExtra();
@@ -1441,6 +1487,13 @@ public final class ProtoLayoutInflater {
                                                                             .getLoadAction(),
                                                                     clickable.getId()));
                                                 }));
+                break;
+            case PENDING_INTENT_ACTION:
+                hasAction = true;
+                view.setOnClickListener(
+                        source -> {
+                            mPendingIntentActionListener.onClick(source, clickable.getId());
+                        });
                 break;
             case VALUE_NOT_SET:
                 break;
@@ -4993,7 +5046,7 @@ public final class ProtoLayoutInflater {
                                                     action.getLoadAction(), mClickable.getId())));
                     break;
                 case PENDING_INTENT_ACTION:
-                    // TODO: b/427644099 - get the pending intent and launch associated operation.
+                    mPendingIntentActionListener.onClick(widget, mClickable.getId());
                     break;
                 case VALUE_NOT_SET:
                     break;

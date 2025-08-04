@@ -50,7 +50,10 @@ class CompatProvider : SandboxedSdkProviderCompat() {
 
         lastOnLoadSdkParams = params
         if (params.getBoolean("needFail", false)) {
-            throw LoadSdkCompatException(RuntimeException(), params)
+            throw LoadSdkCompatException(RuntimeException("Expected to fail"), params)
+        }
+        if (params.getBoolean("needFailWithRuntimeException", false)) {
+            throw RuntimeException("Expected to fail")
         }
         return SandboxedSdkCompat(result)
     }

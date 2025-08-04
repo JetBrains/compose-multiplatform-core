@@ -1470,28 +1470,30 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             "LayoutCoordinate operations are only valid " + "when isAttached is true"
         const val UnmeasuredError = "Asking for measurement result of unmeasured layout modifier"
         private val onCommitAffectingLayerParams: (NodeCoordinator) -> Unit = { coordinator ->
-            if (coordinator.isValidOwnerScope) {
-                // coordinator.layerPositionalProperties should always be non-null here, but
-                // we'll just be careful with a null check.
-                val positionalPropertiesChanged = coordinator.updateLayerParameters()
-                if (positionalPropertiesChanged) {
-                    val layoutNode = coordinator.layoutNode
-                    val layoutDelegate = layoutNode.layoutDelegate
-                    if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
-                        if (
-                            layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
-                                layoutDelegate.coordinatesAccessedDuringPlacement
-                        ) {
-                            layoutNode.requestRelayout()
+            withComposeStackTrace(coordinator.layoutNode) {
+                if (coordinator.isValidOwnerScope) {
+                    // coordinator.layerPositionalProperties should always be non-null here, but
+                    // we'll just be careful with a null check.
+                    val positionalPropertiesChanged = coordinator.updateLayerParameters()
+                    if (positionalPropertiesChanged) {
+                        val layoutNode = coordinator.layoutNode
+                        val layoutDelegate = layoutNode.layoutDelegate
+                        if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
+                            if (
+                                layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
+                                    layoutDelegate.coordinatesAccessedDuringPlacement
+                            ) {
+                                layoutNode.requestRelayout()
+                            }
+                            layoutDelegate.measurePassDelegate
+                                .notifyChildrenUsingCoordinatesWhilePlacing()
                         }
-                        layoutDelegate.measurePassDelegate
-                            .notifyChildrenUsingCoordinatesWhilePlacing()
-                    }
-                    layoutNode.invalidateOffsetFromRoot()
-                    val owner = layoutNode.requireOwner()
-                    owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                    if (layoutNode.globallyPositionedObservers > 0) {
-                        owner.requestOnPositionedCallback(layoutNode)
+                        layoutNode.invalidateOffsetFromRoot()
+                        val owner = layoutNode.requireOwner()
+                        owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
+                        if (layoutNode.globallyPositionedObservers > 0) {
+                            owner.requestOnPositionedCallback(layoutNode)
+                        }
                     }
                 }
             }

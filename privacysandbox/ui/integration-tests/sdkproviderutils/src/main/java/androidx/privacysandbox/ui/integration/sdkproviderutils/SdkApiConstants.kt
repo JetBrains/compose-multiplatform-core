@@ -85,6 +85,7 @@ class SdkApiConstants {
                 const val RESIZE_HIDDEN = 3
                 const val OCCLUSIONS_HIDDEN = 4
                 const val SCROLL_HIDDEN = 5
+                const val REUSABLE_LIST_HIDDEN = 6
             }
         }
 

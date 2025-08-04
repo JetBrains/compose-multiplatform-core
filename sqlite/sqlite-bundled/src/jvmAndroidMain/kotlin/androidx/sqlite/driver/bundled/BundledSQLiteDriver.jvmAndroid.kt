@@ -36,6 +36,7 @@ import androidx.sqlite.SQLiteDriver
 // TODO(b/313895287): Explore usability of @FastNative and @CriticalNative for the external
 // functions.
 public actual class BundledSQLiteDriver : SQLiteDriver {
+    private val extensions = mutableMapOf<String, String?>()
 
     @Suppress("INAPPLICABLE_JVM_NAME") // Due to KT-31420
     @get:JvmName("hasConnectionPool")
@@ -67,7 +68,31 @@ public actual class BundledSQLiteDriver : SQLiteDriver {
     public actual fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection {
         NativeLibraryObject // loads native library
         val address = nativeOpen(fileName, flags)
-        return BundledSQLiteConnection(address)
+        return BundledSQLiteConnection(address).also {
+            extensions.forEach { (file, entrypoint) -> it.loadExtension(file, entrypoint) }
+        }
+    }
+
+    /**
+     * Registers a dynamically-linked SQLite extension to load for every subsequent connection
+     * opened with this driver.
+     *
+     * The extension is loaded by SQLite in a platform-specific way. SQLite will attempt to open the
+     * file using e.g. dlopen on POSIX and look up a native function responsible for initializing
+     * the extension. The entrypoint can be used to give an explicit function name to invoke -
+     * otherwise SQLite will derive the entrypoint from the file name.
+     *
+     * It is the developer's responsibility to ensure that the library is actually available with
+     * the app.
+     *
+     * See also: [Load an extension](https://www.sqlite.org/c3ref/load_extension.html)
+     *
+     * @param fileName The path to the extension to load. A given file can only be added as an
+     *   extension once.
+     * @param entryPoint An optional entrypoint in the loaded extension library.
+     */
+    public actual fun addExtension(fileName: String, entryPoint: String?) {
+        extensions[fileName] = entryPoint
     }
 
     private object NativeLibraryObject {

@@ -17,6 +17,8 @@
 package androidx.xr.glimmer
 
 import android.graphics.RuntimeShader
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
@@ -38,8 +40,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -264,7 +268,7 @@ private class SurfaceNode(
     private var focusedBorderWidth: (() -> Dp)? = null
 
     // Highlight shader / brush
-    var shader: RuntimeShader? = null
+    var shader: Shader? = null
     var shaderBrush: Brush? = null
 
     private var interactionCollectionJob: Job? = null
@@ -415,12 +419,17 @@ private class SurfaceNode(
         if (border != null) {
             val progress = focusedHighlightProgress
             if (progress > 0f) {
-                shader = shader ?: RuntimeShader(FocusedHighlightShader)
-                shaderBrush = shaderBrush ?: ShaderBrush(shader!!)
-                val rotationRadians = focusedHighlightRotationProgress * Math.TAU
-                shader!!.setFloatUniform("iResolution", size.width, size.height)
-                shader!!.setFloatUniform("iRotation", rotationRadians.toFloat())
-                shader!!.setFloatUniform("iAlphaProgress", progress)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val rotationRadians = focusedHighlightRotationProgress * Math.TAU
+                    shader =
+                        HighlightShaderHelper.configureShader(
+                            shader = shader,
+                            size = size,
+                            rotationRadians = rotationRadians.toFloat(),
+                            progress = progress,
+                        )
+                    shaderBrush = shaderBrush ?: ShaderBrush(shader!!)
+                }
                 focusedBorderLogic = focusedBorderLogic ?: BorderLogic()
                 focusedHighlightBorderLogic = focusedHighlightBorderLogic ?: BorderLogic()
                 focusedBorderWidth =
@@ -442,12 +451,14 @@ private class SurfaceNode(
                         }
                 focusedBorderLogic!!.drawBorder(this, focusedBorderWidth!!, border!!.brush, outline)
 
-                focusedHighlightBorderLogic!!.drawBorder(
-                    this,
-                    focusedBorderWidth!!,
-                    shaderBrush!!,
-                    outline,
-                )
+                shaderBrush?.let {
+                    focusedHighlightBorderLogic!!.drawBorder(
+                        this,
+                        focusedBorderWidth!!,
+                        it,
+                        outline,
+                    )
+                }
             } else {
                 unfocusedBorderLogic.drawBorder(this, unfocusedBorderWidth, border!!.brush, outline)
             }
@@ -549,3 +560,20 @@ half4 main(float2 fragCoord) {
     return color;
 }
 """
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private object HighlightShaderHelper {
+    @JvmStatic
+    fun configureShader(
+        shader: Shader?,
+        size: Size,
+        rotationRadians: Float,
+        progress: Float,
+    ): Shader {
+        val shader = shader as? RuntimeShader ?: RuntimeShader(FocusedHighlightShader)
+        shader.setFloatUniform("iResolution", size.width, size.height)
+        shader.setFloatUniform("iRotation", rotationRadians)
+        shader.setFloatUniform("iAlphaProgress", progress)
+        return shader
+    }
+}

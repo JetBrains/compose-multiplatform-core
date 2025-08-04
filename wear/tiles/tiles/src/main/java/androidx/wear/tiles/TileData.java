@@ -24,7 +24,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Holder for ProtoTiles' Tile class, to be parceled and transferred to Wear.
+ * Holder for Tiles' Tile class, to be parceled and transferred to Wear.
  *
  * <ul>
  *   <li>Version 1: encodes the version (int) and the Tile as a proto contents (byte[]).
@@ -44,6 +44,9 @@ public final class TileData extends ProtoParcelable {
      * Bundle}.
      */
     public static final int VERSION_PROTOBUF_2 = 2;
+
+    /** The key for retrieving {@code PendingIntent} bundle from the extras of the tile data. */
+    public static final String PENDING_INTENT_KEY = "pending_intents";
 
     public static final Creator<TileData> CREATOR =
             newCreator(

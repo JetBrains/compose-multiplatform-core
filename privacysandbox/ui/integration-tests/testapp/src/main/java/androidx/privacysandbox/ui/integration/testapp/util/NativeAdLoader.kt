@@ -39,16 +39,18 @@ import androidx.privacysandbox.ui.integration.testapp.R
 
 @SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-class NativeAdLoader(context: Context) {
-    val adView: SharedUiContainer = inflate(context, NATIVE_AD_LAYOUT_ID, null) as SharedUiContainer
+class NativeAdLoader(context: Context, layoutId: Int = NATIVE_AD_LAYOUT_ID) {
+    val adView: SharedUiContainer = inflate(context, layoutId, null) as SharedUiContainer
     private val adHeadline: TextView = adView.findViewById(R.id.native_ad_headline)
     private val adBody: TextView = adView.findViewById(R.id.native_ad_body)
-    private val adRemoteOverlayIcon: SandboxedSdkView =
+    private val adRemoteOverlayIcon: SandboxedSdkView? =
         adView.findViewById(R.id.native_ad_remote_overlay_icon)
     private val adMediaView1: SandboxedSdkView = adView.findViewById(R.id.native_ad_media_view_1)
     private val adOverlayIcon: ImageView = adView.findViewById(R.id.native_ad_overlay_icon)
     private val adMediaView2: PlayerView = adView.findViewById(R.id.native_ad_media_view_2)
     private val adCallToAction: Button = adView.findViewById(R.id.native_ad_call_to_action)
+
+    val sandboxedSdkViews = listOfNotNull(adMediaView1, adRemoteOverlayIcon)
 
     fun populateAd(sdkBundle: Bundle) {
         adView.setAdapter(SharedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
@@ -80,16 +82,18 @@ class NativeAdLoader(context: Context) {
             )
         )
 
-        val adChoicesAssets = assets?.getBundle(NativeAdAssetName.AD_CHOICES)
-        if (adChoicesAssets != null) {
-            adView.registerSharedUiAsset(
-                SharedUiAsset(
-                    adRemoteOverlayIcon,
-                    NativeAdAssetName.AD_CHOICES,
-                    sandboxedUiAdapter =
-                        SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets),
+        if (adRemoteOverlayIcon != null) {
+            val adChoicesAssets = assets?.getBundle(NativeAdAssetName.AD_CHOICES)
+            if (adChoicesAssets != null) {
+                adView.registerSharedUiAsset(
+                    SharedUiAsset(
+                        adRemoteOverlayIcon,
+                        NativeAdAssetName.AD_CHOICES,
+                        sandboxedUiAdapter =
+                            SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets),
+                    )
                 )
-            )
+            }
         }
 
         val mediaView1Assets = assets?.getBundle(NativeAdAssetName.MEDIA_VIEW_1)
@@ -150,5 +154,6 @@ class NativeAdLoader(context: Context) {
 
     companion object {
         val NATIVE_AD_LAYOUT_ID = R.layout.native_ad_layout
+        val NATIVE_AD_LAYOUT_HIDDEN_ID = R.layout.native_ad_layout_hidden
     }
 }

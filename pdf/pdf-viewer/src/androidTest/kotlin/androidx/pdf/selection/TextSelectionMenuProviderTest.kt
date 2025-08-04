@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -45,7 +46,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionEmail() {
+    fun getMenuItems_withEmail_returnsEmailMenu() = runTest {
         val emailText = "test@example.com"
         val textSelection = TextSelection(emailText, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -57,7 +58,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionPhoneNumber() {
+    fun getMenuItems_withPhoneNumber_returnsCallMenu() = runTest {
         val phoneNumber = "8044566807"
         val textSelection = TextSelection(phoneNumber, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -69,7 +70,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionURL() {
+    fun getMenuItems_withURL_returnsOpenMenu() = runTest {
         val url = "https://www.google.com"
         val textSelection = TextSelection(url, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -81,7 +82,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionLongText() {
+    fun getMenuItems_withLongText_returnsDefaultMenu() = runTest {
         val longText = "A".repeat(501)
         val textSelection = TextSelection(longText, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -96,7 +97,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testSmartActionMenuComponentDisabled() {
+    fun getMenuItems_withSmartActionMenuDisabled_returnsDefaultMenu() = runTest {
         PdfFeatureFlags.isSmartActionMenuComponentEnabled = false
         val emailText = "test@example.com"
         val textSelection = TextSelection(emailText, emptyList())

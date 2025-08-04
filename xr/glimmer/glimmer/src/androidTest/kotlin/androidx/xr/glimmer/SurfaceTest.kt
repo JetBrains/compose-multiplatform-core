@@ -16,6 +16,7 @@
 
 package androidx.xr.glimmer
 
+import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.FocusInteraction
@@ -84,6 +85,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import com.google.common.truth.Truth.assertThat
@@ -97,6 +99,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+// The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
+// available below 33)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class SurfaceTest {
 
     @get:Rule val rule = createComposeRule()

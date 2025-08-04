@@ -163,6 +163,13 @@ public interface ImpressApi {
     /** Called when the activity or fragment is paused. */
     public fun onPause()
 
+    /**
+     * Returns the resource manager
+     *
+     * @throws IllegalStateException if the BindingsResourceManager is not initialized.
+     */
+    public fun getBindingsResourceManager(): BindingsResourceManager
+
     /** This method releases the asset pointer of a previously loaded image based lighting asset. */
     public fun releaseImageBasedLightingAsset(iblToken: Long)
 

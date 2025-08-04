@@ -28,7 +28,7 @@ import org.jspecify.annotations.NonNull;
 /**
  * Base implementation of JXRCore ActivityPose.
  *
- * <p>A ActivityPose is an object that has a pose in the world space.
+ * <p>A ActivityPose is an object that has a pose in the activity space.
  */
 abstract class BaseActivityPose implements ActivityPose {
     @Override

@@ -18,18 +18,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:orientation="vertical">
 
     <Button
-        android:id="@+id/getSandboxedSdksFromAppButton"
+        android:id="@+id/loadMediateeSdkFromTestSdkButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/get_sandboxed_sdks_from_app"
-        android:textAllCaps="false"/>
-    <Button
-        android:id="@+id/getSandboxedSdksFromSdkButton"
+        android:text="@string/load_mediatee_sdk_from_sdk"
+        android:textAllCaps="false" />
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/get_sandboxed_sdks_from_sdk"
-        android:textAllCaps="false"/>
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/getSandboxedSdksFromAppButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/get_sandboxed_sdks_from_app"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/getSandboxedSdksFromSdkButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/get_sandboxed_sdks_from_sdk"
+            android:textAllCaps="false" />
+    </LinearLayout>
 </LinearLayout>

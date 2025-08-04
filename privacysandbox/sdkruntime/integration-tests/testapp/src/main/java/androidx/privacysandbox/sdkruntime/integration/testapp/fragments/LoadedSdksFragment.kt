@@ -16,19 +16,36 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testapp.fragments
 
+import android.os.Bundle
 import android.widget.Button
 import androidx.lifecycle.lifecycleScope
 import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.integration.testapp.R
+import androidx.privacysandbox.sdkruntime.integration.testapp.TestAppApi
 import kotlinx.coroutines.launch
 
 /** Controls for retrieving currently loaded SDKs. */
 class LoadedSdksFragment : BaseFragment(layoutId = R.layout.fragment_loaded_sdks) {
 
+    private val loadSdkCallback = LoadSdkCallback(this::addLogMessage)
+
     override fun onCreate() {
+        setupLoadMediateeSdkFromTestSdkButton()
         setupGetSandboxedSdksFromAppButton()
         setupGetSandboxedSdksFromSdkButton()
+    }
+
+    private fun setupLoadMediateeSdkFromTestSdkButton() {
+        val loadMediateeSdkButton = findViewById<Button>(R.id.loadMediateeSdkFromTestSdkButton)
+        loadMediateeSdkButton.setOnClickListener {
+            lifecycleScope.launch {
+                getTestAppApi()
+                    .getOrLoadTestSdk()
+                    .loadSdk(TestAppApi.MEDIATEE_SDK_NAME, Bundle(), loadSdkCallback)
+            }
+        }
     }
 
     private fun setupGetSandboxedSdksFromAppButton() {
@@ -67,5 +84,19 @@ class LoadedSdksFragment : BaseFragment(layoutId = R.layout.fragment_loaded_sdks
     private fun logSdkMessages(title: String, messages: List<String>) {
         addLogMessage("$title results (${messages.size}):")
         messages.forEach { addLogMessage("   SDK Message: $it") }
+    }
+
+    private class LoadSdkCallback(private val logFunction: (String) -> Unit) :
+        ILoadSdkCallback.Stub() {
+        override fun onSuccess(loadedSdk: LoadedSdkInfo) {
+            logFunction(
+                "SDK: MediateeSDK Message: " + callDoSomething(loadedSdk.sdkInterface, "42")
+            )
+            logFunction("SDK: Successfully loaded MediateeSDK")
+        }
+
+        override fun onFailure(error: String) {
+            logFunction("SDK: Failed to load MediateeSDK: $error")
+        }
     }
 }

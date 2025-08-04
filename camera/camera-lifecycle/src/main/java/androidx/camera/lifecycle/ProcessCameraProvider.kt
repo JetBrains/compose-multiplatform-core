@@ -23,10 +23,12 @@ import android.content.pm.PackageManager
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraInfoUnavailableException
+import androidx.camera.core.CameraPresenceListener
 import androidx.camera.core.CameraProvider
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -50,6 +52,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.tracing.trace
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -381,6 +384,16 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
 
     override fun getCameraInfo(cameraSelector: CameraSelector): CameraInfo {
         return lifecycleCameraProvider.getCameraInfo(cameraSelector)
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {
+        lifecycleCameraProvider.addCameraPresenceListener(executor, listener)
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun removeCameraPresenceListener(listener: CameraPresenceListener) {
+        lifecycleCameraProvider.removeCameraPresenceListener(listener)
     }
 
     /**

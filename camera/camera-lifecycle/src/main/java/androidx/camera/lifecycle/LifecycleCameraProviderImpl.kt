@@ -21,12 +21,15 @@ import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
 import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn as JavaOptIn
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraInfoUnavailableException
+import androidx.camera.core.CameraPresenceListener
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraX
 import androidx.camera.core.CameraXConfig
@@ -66,6 +69,7 @@ import androidx.tracing.trace
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.Objects
 import java.util.Objects.requireNonNull
+import java.util.concurrent.Executor
 
 /** Implementation of the [LifecycleCameraProvider] interface. */
 @OptIn(ExperimentalSessionConfig::class)
@@ -679,6 +683,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
             return@trace adapterCameraInfo!!
         }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {
+        cameraX!!.cameraAvailabilityProvider.addCameraPresenceListener(listener, executor)
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun removeCameraPresenceListener(listener: CameraPresenceListener) {
+        cameraX!!.cameraAvailabilityProvider.removeCameraPresenceListener(listener)
+    }
 
     private fun isVideoCapture(useCase: UseCase): Boolean {
         return useCase.currentConfig.containsOption(UseCaseConfig.OPTION_CAPTURE_TYPE) &&

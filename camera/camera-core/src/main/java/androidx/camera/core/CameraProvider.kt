@@ -18,6 +18,7 @@ package androidx.camera.core
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.lifecycle.LifecycleOwner
+import java.util.concurrent.Executor
 
 /**
  * A [CameraProvider] provides basic access to a set of cameras such as querying for camera
@@ -91,6 +92,38 @@ public interface CameraProvider {
     public fun getCameraInfo(cameraSelector: CameraSelector): CameraInfo {
         throw UnsupportedOperationException("The camera provider is not implemented properly.")
     }
+
+    /**
+     * Adds a listener for changes in camera presence.
+     *
+     * The listener will be notified when cameras are added to or removed from the set of devices
+     * that can be used by CameraX. This list of "usable" cameras has already been processed by any
+     * configured [CameraSelector] limiters and compatibility filters.
+     *
+     * **Important Note on Synchronization:** To prevent race conditions, this method immediately
+     * invokes [CameraPresenceListener.onCamerasAdded] **once** on the provided [executor] with a
+     * `Set` containing all cameras that are currently available. This guarantees that the
+     * listener's state is synchronized with the provider's state at the moment of registration.
+     *
+     * This listener reports on persistent hardware changes and does not fire for temporary,
+     * recoverable errors, such as when a camera is in use by another application.
+     *
+     * @param executor The [Executor] on which the listener's methods will be invoked.
+     * @param listener The listener to be added.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener)
+
+    /**
+     * Removes a previously registered camera presence listener.
+     *
+     * Once removed, the listener will no longer receive updates. If the listener was not previously
+     * registered, this method is a no-op.
+     *
+     * @param listener The same listener instance that was passed to [addCameraPresenceListener].
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public fun removeCameraPresenceListener(listener: CameraPresenceListener)
 
     /** Returns the [CameraXConfig] implementation type. */
     @get:RestrictTo(Scope.LIBRARY_GROUP) @CameraXConfig.ImplType public val configImplType: Int

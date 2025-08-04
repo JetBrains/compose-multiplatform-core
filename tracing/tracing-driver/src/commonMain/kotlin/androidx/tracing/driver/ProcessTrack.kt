@@ -38,10 +38,10 @@ public open class ProcessTrack(
                     TrackDescriptor(
                         name,
                         uuid,
-                        parentUuid = INVALID_LONG,
+                        parentUuid = DEFAULT_LONG,
                         type = TRACK_DESCRIPTOR_TYPE_PROCESS,
                         pid = id,
-                        tid = INVALID_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
             }

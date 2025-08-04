@@ -74,16 +74,16 @@ class MarqueeModifier(
     }
 }
 
-fun androidx.compose.remote.frontend.modifier.RemoteModifier.basicMarquee(
+fun RemoteModifier.basicMarquee(
     iterations: Int = Int.MAX_VALUE,
     animationMode: Int = 0,
     repeatDelayMillis: Float = 0f,
     initialDelayMillis: Float = 0f,
     spacing: Float = 0f,
     velocity: Float = 20f,
-): androidx.compose.remote.frontend.modifier.RemoteModifier =
+): RemoteModifier =
     then(
-        androidx.compose.remote.frontend.modifier.MarqueeModifier(
+        MarqueeModifier(
             iterations,
             animationMode,
             repeatDelayMillis,

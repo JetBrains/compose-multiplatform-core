@@ -24,6 +24,7 @@ final class androidx.sqlite.driver/NativeSQLiteDriver : androidx.sqlite/SQLiteDr
     final val threadingMode // androidx.sqlite.driver/NativeSQLiteDriver.threadingMode|{}threadingMode[0]
         final fun <get-threadingMode>(): kotlin/Int // androidx.sqlite.driver/NativeSQLiteDriver.threadingMode.<get-threadingMode>|<get-threadingMode>(){}[0]
 
+    final fun addExtension(kotlin/String, kotlin/String?) // androidx.sqlite.driver/NativeSQLiteDriver.addExtension|addExtension(kotlin.String;kotlin.String?){}[0]
     final fun open(kotlin/String): androidx.sqlite/SQLiteConnection // androidx.sqlite.driver/NativeSQLiteDriver.open|open(kotlin.String){}[0]
     final fun open(kotlin/String, kotlin/Int): androidx.sqlite/SQLiteConnection // androidx.sqlite.driver/NativeSQLiteDriver.open|open(kotlin.String;kotlin.Int){}[0]
 }

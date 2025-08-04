@@ -750,8 +750,9 @@ class MovableContentTests {
     }
 
     @Test
+    @Suppress("RememberInComposition") // See note below
     fun compositionLocalsShouldBeAvailable() = compositionTest {
-        var someValue by mutableStateOf(0)
+        var someValue by mutableIntStateOf(0)
         val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
         compose {
@@ -1864,11 +1865,11 @@ private fun Marker(value: Int) {
 }
 
 @Composable
-private fun Stack(isHorizontal: Boolean, block: @Composable () -> Unit) {
+private fun Stack(isHorizontal: Boolean, content: @Composable () -> Unit) {
     if (isHorizontal) {
-        Column(block)
+        Column(content)
     } else {
-        Row(block)
+        Row(content)
     }
 }
 

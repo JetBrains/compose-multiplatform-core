@@ -43,7 +43,7 @@ import java.util.Set;
 /**
  * A collection of {@link CameraInternal} instances.
  */
-public final class CameraRepository implements InternalCameraPresenceListener {
+public class CameraRepository implements InternalCameraPresenceListener {
     private static final String TAG = "CameraRepository";
     private final Object mCamerasLock = new Object();
     @GuardedBy("mCamerasLock")

@@ -65,6 +65,7 @@ private fun ColorItem(color: Color, colorName: String, modifier: Modifier = Modi
                 shape = RectangleShape,
                 color = color,
                 border = BorderStroke(1.dp, color = Color.White),
+                focusable = false,
             )
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,

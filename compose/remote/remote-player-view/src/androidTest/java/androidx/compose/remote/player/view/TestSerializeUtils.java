@@ -19,6 +19,9 @@ import static androidx.compose.remote.player.view.TestUtils.createDocument;
 
 import android.content.Context;
 
+import androidx.compose.remote.core.operations.Theme;
+import androidx.compose.remote.serialization.yaml.YAMLSerializer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,7 +40,6 @@ public class TestSerializeUtils {
         return doc.getDocument().getBuffer().getBuffer().cloneBytes();
     }
 
-    // Temporary remove YAML from the tests
     /**
      * Convert to YAML
      *
@@ -45,8 +47,7 @@ public class TestSerializeUtils {
      * @return
      */
     public static String toYamlString(byte[] rawDoc) {
-        // return toYamlString(rawDoc, null);
-        return "";
+        return toYamlString(rawDoc, null);
     }
 
     /**
@@ -57,19 +58,18 @@ public class TestSerializeUtils {
      * @return
      */
     public static String toYamlString(byte[] rawDoc, String sub) {
-        //        RemoteComposeDocument doc = new RemoteComposeDocument(rawDoc);
-        //
-        //        DebugPlayerContext debugContext = new DebugPlayerContext();
-        //        doc.paint(debugContext, Theme.UNSPECIFIED);
-        //        YAMLSerializer serializer = new YAMLSerializer();
-        //
-        //        doc.serialize(serializer.serializeMap());
-        //        if (sub != null) {
-        //            String s = serializer.toFlatString();
-        //            return TestUtils.grep(s, sub).replace("  ", " ");
-        //        }
-        //        return serializer.toSimpleString();
-        return "";
+        RemoteComposeDocument doc = new RemoteComposeDocument(rawDoc);
+
+        DebugPlayerContext debugContext = new DebugPlayerContext();
+        doc.paint(debugContext, Theme.UNSPECIFIED);
+        YAMLSerializer serializer = new YAMLSerializer();
+
+        doc.serialize(serializer.serializeMap());
+        if (sub != null) {
+            String s = serializer.toFlatString();
+            return TestUtils.grep(s, sub).replace("  ", " ");
+        }
+        return serializer.toSimpleString();
     }
 
     static String loadFileFromRaw(Context context, int id) {

@@ -623,7 +623,12 @@ class VideoPlayerActivity : ComponentActivity() {
                 attributes.canvasShape,
                 attributes.protected,
             )
-            setupExoPlayer(videoPath, attributes.stereoMode, attributes.canvasShape)
+            setupExoPlayer(
+                videoPath,
+                attributes.stereoMode,
+                attributes.canvasShape,
+                attributes.protected,
+            )
         }
     }
 
@@ -689,7 +694,7 @@ class VideoPlayerActivity : ComponentActivity() {
         videoUri: String,
         stereoMode: Int,
         canvasShape: SurfaceEntity.CanvasShape,
-        protected: Boolean = false,
+        protected: Boolean,
     ) {
         val drmLicenseUrl = "https://proxy.uat.widevine.com/proxy?provider=widevine_test"
 

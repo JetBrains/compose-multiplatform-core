@@ -1,0 +1,35 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.2.0'
+    id 'com.squareup.wire' version '5.3.5'
+    //noinspection JavaPluginLanguageLevel
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'androidx.bundle'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+wire {
+    kotlin {}
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.squareup.wire:wire-runtime-jvm:5.3.5'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+application {
+    mainClass = 'androidx.bundle.MainKt'
+}
+
+test {
+    useJUnitPlatform()
+}
+kotlin {
+    jvmToolchain(11)
+}

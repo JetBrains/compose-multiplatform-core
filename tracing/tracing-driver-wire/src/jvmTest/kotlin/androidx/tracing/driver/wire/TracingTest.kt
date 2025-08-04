@@ -16,7 +16,7 @@
 
 package androidx.tracing.driver.wire
 
-import androidx.tracing.driver.INVALID_LONG
+import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
 import androidx.tracing.driver.TraceContext
 import androidx.tracing.driver.TraceSink
@@ -39,11 +39,11 @@ class TestSink : TraceSink() {
         pooledPacketArray.forEach { it ->
             packets.add(
                 MutableTracePacket(
-                        timestamp = INVALID_LONG,
+                        timestamp = DEFAULT_LONG,
                         trusted_packet_sequence_id = 1, // arbitrary value
                     )
                     .apply {
-                        track_event = MutableTrackEvent(track_uuid = INVALID_LONG)
+                        track_event = MutableTrackEvent(track_uuid = DEFAULT_LONG)
                         // slightly abuse this function by passing in freshly allocated objects each
                         // time so this test can keep ref to all packets created, and doesn't need
                         // to bother with proto serialization,
@@ -55,7 +55,7 @@ class TestSink : TraceSink() {
                             scratchTrackDescriptor = MutableTrackDescriptor(),
                             // this is sometimes not used, but we don't care about extra
                             // allocations during this test
-                            scratchTrackEvent = MutableTrackEvent(track_uuid = INVALID_LONG),
+                            scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG),
                         )
                     }
             )

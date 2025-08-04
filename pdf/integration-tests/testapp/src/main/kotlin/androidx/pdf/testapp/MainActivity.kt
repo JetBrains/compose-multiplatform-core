@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         PdfFeatureFlags.isExternalHardwareInteractionEnabled = true
+        PdfFeatureFlags.isSmartActionMenuComponentEnabled = true
 
         val mainActivity = MainActivityBinding.inflate(layoutInflater)
         setContentView(mainActivity.root)

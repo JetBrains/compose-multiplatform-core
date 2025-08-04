@@ -149,8 +149,7 @@ public final class SpatialEnvironmentImplTest {
     @SuppressWarnings({"FutureReturnValueIgnored", "AndroidJdkLibsChecker"})
     private MaterialResource fakeLoadMaterial(boolean isAlphaMapVersion) {
         try {
-            return new MaterialResourceImpl(
-                    mFakeImpressApi.createWaterMaterial(isAlphaMapVersion).get().getNativeHandle());
+            return mFakeImpressApi.createWaterMaterial(isAlphaMapVersion).get();
         } catch (Exception e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();

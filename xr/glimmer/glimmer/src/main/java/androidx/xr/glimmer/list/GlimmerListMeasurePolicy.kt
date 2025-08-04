@@ -45,7 +45,7 @@ internal fun rememberGlimmerListMeasurePolicy(
     state: ListState,
     /** The inner padding to be added for the whole content(nor for each individual item) */
     contentPadding: PaddingValues,
-    /** reverse the direction of scrolling and layout */
+    /** Reverse the direction of scrolling and layout */
     reverseLayout: Boolean,
     /** Number of items to layout before and after the visible items */
     orientation: Orientation,
@@ -119,7 +119,8 @@ internal fun rememberGlimmerListMeasurePolicy(
 
             val density = this
             with(layoutProperties) {
-                measureGlimmerList(
+                val measureResult =
+                    measureGlimmerList(
                         itemsCount = itemsCount,
                         measuredItemProvider = measuredItemProvider,
                         firstVisibleItemIndex = firstVisibleItemIndex,
@@ -137,7 +138,13 @@ internal fun rememberGlimmerListMeasurePolicy(
                             )
                         },
                     )
-                    .also { state.applyMeasureResult(it) }
+                state.autoFocusBehaviour.applyMeasureResult(
+                    scrollToBeConsumed = state.scrollToBeConsumed,
+                    layoutProperties = layoutProperties,
+                    measureResult = measureResult,
+                )
+                state.applyMeasureResult(measureResult)
+                measureResult
             }
         }
     }

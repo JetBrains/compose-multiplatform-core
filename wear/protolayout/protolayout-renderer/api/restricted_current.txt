@@ -38,6 +38,7 @@ package androidx.wear.protolayout.renderer.impl {
     method public String getClickableIdExtra();
     method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.LoadActionListener getLoadActionListener();
     method public androidx.wear.protolayout.renderer.common.LoggingUtils? getLoggingUtils();
+    method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.PendingIntentActionListener getPendingIntentActionListener();
     method public java.util.Map<androidx.wear.protolayout.expression.pipeline.PlatformDataProvider!,java.util.Set<androidx.wear.protolayout.expression.PlatformDataKey<? extends java.lang.Object!>!>!> getPlatformDataProviders();
     method public androidx.wear.protolayout.expression.pipeline.StateStore? getStateStore();
     method public android.content.Context getUiContext();
@@ -49,11 +50,16 @@ package androidx.wear.protolayout.renderer.impl {
     method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config.Builder addPlatformDataProvider(androidx.wear.protolayout.expression.pipeline.PlatformDataProvider, androidx.wear.protolayout.expression.PlatformDataKey<? extends java.lang.Object!>!...);
     method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config build();
     method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config.Builder setLoadActionListener(androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.LoadActionListener);
+    method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config.Builder setPendingIntentActionListener(androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.PendingIntentActionListener?);
     method public androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config.Builder setStateStore(androidx.wear.protolayout.expression.pipeline.StateStore);
   }
 
   public static interface ProtoLayoutViewInstance.LoadActionListener {
     method public void onClick(androidx.wear.protolayout.proto.StateProto.State);
+  }
+
+  public static interface ProtoLayoutViewInstance.PendingIntentActionListener {
+    method public void onClick(android.view.View, String);
   }
 
 }

@@ -22,7 +22,7 @@ package androidx.privacysandbox.sdkruntime.core
  *
  * When an SDK wants to get notified about changes in client's importance, it should register an
  * implementation of this interface by calling
- * [androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener].
+ * [androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener].
  */
 public interface SdkSandboxClientImportanceListenerCompat {
     /**

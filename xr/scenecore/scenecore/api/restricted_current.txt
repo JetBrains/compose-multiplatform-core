@@ -1425,6 +1425,22 @@ package androidx.xr.scenecore.impl.impress {
     method public void onSuccess(long value);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class BindingsObjectPhantomReference extends java.lang.ref.PhantomReference<java.lang.Object!> {
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BindingsResource {
+    ctor protected BindingsResource(androidx.xr.scenecore.impl.impress.BindingsResourceManager, long);
+    method public final void destroy();
+    method public long getNativeHandle();
+    method protected abstract void releaseBindingsResource(long);
+    method protected void throwIfDestroyed();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class BindingsResourceManager {
+    ctor public BindingsResourceManager(android.os.Handler);
+    method public void register(Object, Runnable);
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeImpressApiImpl implements androidx.xr.scenecore.impl.impress.ImpressApi {
     ctor public FakeImpressApiImpl();
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> animateGltfModel(int, String?, boolean);
@@ -1439,6 +1455,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void destroyImpressNode(int);
     method public void destroyNativeObject(long);
     method public void disposeAllResources();
+    method public androidx.xr.scenecore.impl.impress.BindingsResourceManager getBindingsResourceManager();
     method public long getCurrentEnvironmentLight();
     method public java.util.Map<java.lang.Long!,java.util.List<java.lang.Integer!>!> getGltfModels();
     method public java.util.List<java.lang.Long!> getImageBasedLightingAssets();
@@ -1576,6 +1593,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void destroyImpressNode(int impressNode);
     method public void destroyNativeObject(long nativeHandle);
     method public void disposeAllResources();
+    method public androidx.xr.scenecore.impl.impress.BindingsResourceManager getBindingsResourceManager();
     method public androidx.xr.scenecore.impl.impress.Texture getReflectionTextureFromIbl(long iblToken);
     method public android.view.Surface getSurfaceFromStereoSurface(int panelImpressNode);
     method public int instanceGltfModel(long gltfToken);
@@ -1767,6 +1785,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void destroyImpressNode(int);
     method public void destroyNativeObject(long);
     method public void disposeAllResources();
+    method public androidx.xr.scenecore.impl.impress.BindingsResourceManager getBindingsResourceManager();
     method public androidx.xr.scenecore.impl.impress.Texture getReflectionTextureFromIbl(long);
     method public android.view.Surface getSurfaceFromStereoSurface(int);
     method public int instanceGltfModel(long);
@@ -1875,16 +1894,14 @@ package androidx.xr.scenecore.impl.impress {
     method public androidx.xr.scenecore.impl.impress.KhronosPbrMaterial.Builder setNativeMaterial(long);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class Material {
-    ctor public Material(androidx.xr.scenecore.impl.impress.ImpressApi, long);
-    method public void destroyNativeObject();
-    method public long getNativeHandle();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class Material extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.runtime.internal.MaterialResource {
+    ctor protected Material(androidx.xr.scenecore.impl.impress.ImpressApi, long);
+    method protected void releaseBindingsResource(long);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Texture {
-    method public void destroyNativeObject();
-    method public long getNativeHandle();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Texture extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.runtime.internal.TextureResource {
     method public androidx.xr.runtime.internal.TextureSampler? getTextureSampler();
+    method protected void releaseBindingsResource(long);
   }
 
   public static class Texture.Builder {

@@ -59,7 +59,11 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
                     "PIXEL 7",
                     "PIXEL 7 PRO",
                     "PIXEL 8",
-                    "PIXEL 8 PRO"));
+                    "PIXEL 8 PRO",
+                    "PIXEL 9",
+                    "PIXEL 9 PRO",
+                    "PIXEL 9 PRO XL",
+                    "PIXEL 9 PRO FOLD"));
 
     private static final Set<String> SUPPORT_EXTRA_LEVEL_3_CONFIGURATIONS_SAMSUNG_MODELS =
             new HashSet<>(Arrays.asList(

@@ -17,9 +17,12 @@
 package androidx.privacysandbox.sdkruntime.integration.testaidl;
 
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo;
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback;
 
 interface ISdkApi {
     String doSomething(String param);
+
+    oneway void loadSdk(in String sdkName, in Bundle params, in ILoadSdkCallback callback);
 
     List<LoadedSdkInfo> getSandboxedSdks();
     List<LoadedSdkInfo> getAppOwnedSdks();

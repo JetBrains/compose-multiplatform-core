@@ -712,6 +712,20 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override val clipboard = AndroidClipboard(clipboardManager)
 
     override val snapshotObserver = OwnerSnapshotObserver { command ->
+        val exceptionHandler = uncaughtExceptionHandler
+        var command =
+            if (exceptionHandler != null) {
+                {
+                    try {
+                        command()
+                    } catch (e: Exception) {
+                        exceptionHandler.onUncaughtException(e)
+                    }
+                }
+            } else {
+                command
+            }
+
         if (handler?.looper === Looper.myLooper()) {
             command()
         } else {

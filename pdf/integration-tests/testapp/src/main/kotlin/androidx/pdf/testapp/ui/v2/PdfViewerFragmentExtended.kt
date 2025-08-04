@@ -45,6 +45,7 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
     private var configProvider: ConfigurationProvider? = null
+    private var lastClickedLinkUri: String? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -74,6 +75,17 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
         return hostView
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        lastClickedLinkUri = savedInstanceState?.getString(LAST_CLICKED_LINK_URI)
+        lastClickedLinkUri?.let { showCustomLinkHandlerDialog(it) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        lastClickedLinkUri?.let { outState.putString(LAST_CLICKED_LINK_URI, it) }
+    }
+
     override fun onRequestImmersiveMode(enterImmersive: Boolean) {
         super.onRequestImmersiveMode(enterImmersive)
         if (!enterImmersive) search?.show() else search?.hide()
@@ -89,14 +101,23 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
 
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
         return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Custom Link Handler")
-                .setMessage("Intercepted link:\n${externalLink.uri}")
-                .setPositiveButton("OK", null)
-                .show()
+            lastClickedLinkUri = externalLink.uri.toString()
+            lastClickedLinkUri?.let { showCustomLinkHandlerDialog(it) }
             true
         } else {
             false
         }
+    }
+
+    private fun showCustomLinkHandlerDialog(linkUri: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Custom Link Handler")
+            .setMessage("Intercepted link:\n$linkUri")
+            .setPositiveButton("OK") { _, _ -> lastClickedLinkUri = null }
+            .show()
+    }
+
+    companion object {
+        private const val LAST_CLICKED_LINK_URI = "last_clicked_link_uri"
     }
 }

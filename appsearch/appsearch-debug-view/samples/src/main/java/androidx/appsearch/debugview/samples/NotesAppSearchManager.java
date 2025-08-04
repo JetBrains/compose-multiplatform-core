@@ -17,15 +17,19 @@
 package androidx.appsearch.debugview.samples;
 
 import android.content.Context;
+import android.os.Build;
 
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.PutDocumentsRequest;
+import androidx.appsearch.app.SearchResult;
+import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.appsearch.debugview.samples.model.Note;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.localstorage.LocalStorage;
+import androidx.appsearch.platformstorage.PlatformStorage;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -34,6 +38,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -41,12 +46,12 @@ import java.util.concurrent.Executor;
  * Manages interactions with AppSearch.
  */
 public class NotesAppSearchManager implements Closeable {
-    private static final String DB_NAME = "notesDb";
+    static final String DB_NAME = "notesDb";
     private static final boolean FORCE_OVERRIDE = true;
 
     private final Context mContext;
     private final Executor mExecutor;
-    private final SettableFuture<AppSearchSession> mAppSearchSessionFuture =
+    final SettableFuture<AppSearchSession> mAppSearchSessionFuture =
             SettableFuture.create();
 
     private NotesAppSearchManager(@NonNull Context context, @NonNull Executor executor) {
@@ -91,15 +96,76 @@ public class NotesAppSearchManager implements Closeable {
         try {
             PutDocumentsRequest request = new PutDocumentsRequest.Builder().addDocuments(notes)
                     .build();
-            return Futures.transformAsync(mAppSearchSessionFuture,
-                    session -> session.putAsync(request), mExecutor);
+            ListenableFuture<AppSearchBatchResult<String, Void>> putFuture =
+                    Futures.transformAsync(mAppSearchSessionFuture,
+                            session -> session.putAsync(request),
+                            mExecutor);
+
+            return Futures.transform(putFuture,
+                    batchResult -> {
+                        if (!batchResult.isSuccess()) {
+                            throw new RuntimeException("One or more documents failed: "
+                                    + batchResult.getFailures());
+                        }
+                        return batchResult;
+                    }, mExecutor);
+        } catch (Exception e) {
+            return Futures.immediateFailedFuture(e);
+        }
+    }
+
+    /**
+     * Insert documents into AppSearch by performing the given {@putRequests}
+     *
+     * @param putRequests list of put document requests.
+     */
+    public @NonNull ListenableFuture<List<AppSearchBatchResult<String, Void>>> insertDocuments(
+            @NonNull List<PutDocumentsRequest> putRequests) {
+        try {
+            List<ListenableFuture<AppSearchBatchResult<String, Void>>> futures = new ArrayList<>();
+            for (PutDocumentsRequest request : putRequests) {
+                ListenableFuture<AppSearchBatchResult<String, Void>> putFuture =
+                        Futures.transformAsync(mAppSearchSessionFuture,
+                                session -> session.putAsync(request),
+                                mExecutor);
+
+                ListenableFuture<AppSearchBatchResult<String, Void>> checkedFuture =
+                        Futures.transform(putFuture, batchResult -> {
+                            if (!batchResult.isSuccess()) {
+                                throw new RuntimeException("One or more documents failed: "
+                                        + batchResult.getFailures());
+                            }
+                            return batchResult;
+                        }, mExecutor);
+
+                futures.add(checkedFuture);
+            }
+            return Futures.allAsList(futures);
+        } catch (Exception e) {
+            return Futures.immediateFailedFuture(e);
+        }
+    }
+
+    /**
+     * Searches within the AppSearch database.
+     *
+     * @param query      string for the search.
+     * @param searchSpec for the search.
+     */
+    public @NonNull ListenableFuture<List<SearchResult>> search(@NonNull String query,
+            @NonNull SearchSpec searchSpec) {
+        try {
+            return Futures.transformAsync(
+                    mAppSearchSessionFuture,
+                    session -> session.search(query, searchSpec).getNextPageAsync(),
+                    mExecutor);
         } catch (Exception e) {
             return Futures.immediateFailedFuture(e);
         }
     }
 
     private @NonNull ListenableFuture<Void> initialize() {
-        return Futures.transformAsync(createLocalSession(), session -> {
+        return Futures.transformAsync(createPlatformSession(), session -> {
             mAppSearchSessionFuture.set(session);
             return Futures.transformAsync(resetDocuments(),
                     unusedResetResult -> Futures.transform(setSchema(),
@@ -116,7 +182,23 @@ public class NotesAppSearchManager implements Closeable {
         );
     }
 
-    private ListenableFuture<SetSchemaResponse> resetDocuments() {
+
+    private @NonNull ListenableFuture<AppSearchSession> createPlatformSession() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return PlatformStorage.createSearchSessionAsync(
+                    new PlatformStorage.SearchContext.Builder(mContext, DB_NAME)
+                            .build()
+            );
+        } else {
+            return Futures.immediateFailedFuture(
+                    new UnsupportedOperationException("Platform session requires API level 31+"));
+        }
+    }
+
+    /**
+     * Resets the AppSearch database and clears all documents.
+     */
+    public @NonNull ListenableFuture<SetSchemaResponse> resetDocuments() {
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().setForceOverride(FORCE_OVERRIDE).build();
         return Futures.transformAsync(mAppSearchSessionFuture,
@@ -124,7 +206,10 @@ public class NotesAppSearchManager implements Closeable {
                 mExecutor);
     }
 
-    private ListenableFuture<SetSchemaResponse> setSchema() {
+    /**
+     * Sets schema for the app database.
+     */
+    public @NonNull ListenableFuture<SetSchemaResponse> setSchema() {
         try {
             SetSchemaRequest request = new SetSchemaRequest.Builder().addDocumentClasses(Note.class)
                     .build();

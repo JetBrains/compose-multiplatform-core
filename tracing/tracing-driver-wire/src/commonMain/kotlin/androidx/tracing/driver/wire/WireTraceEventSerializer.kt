@@ -16,7 +16,8 @@
 
 package androidx.tracing.driver.wire
 
-import androidx.tracing.driver.INVALID_LONG
+import androidx.tracing.driver.DEFAULT_LONG
+import androidx.tracing.driver.DEFAULT_STRING
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_COUNTER
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_PROCESS
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_THREAD
@@ -45,14 +46,14 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
      * Always has the same track_event set on it
      */
     private val scratchTracePacket =
-        MutableTracePacket(timestamp = INVALID_LONG, trusted_packet_sequence_id = sequenceId)
+        MutableTracePacket(timestamp = DEFAULT_LONG, trusted_packet_sequence_id = sequenceId)
     /**
      * Private scratchpad descriptor, used to avoid allocating a descriptor for each new track
      * created
      */
     private val scratchTrackDescriptor = MutableTrackDescriptor()
 
-    private val scratchTrackEvent = MutableTrackEvent(track_uuid = INVALID_LONG)
+    private val scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG)
 
     fun writeTraceEvent(event: TraceEvent) {
         updateScratchPacketFromTraceEvent(
@@ -103,13 +104,13 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                             scratchTrackDescriptor.counter = MutableCounterDescriptor()
                         }
                         TRACK_DESCRIPTOR_TYPE_PROCESS -> {
-                            scratchTrackDescriptor.name = null
+                            scratchTrackDescriptor.name = DEFAULT_STRING
                             scratchTrackDescriptor.uuid = uuid
                             scratchTrackDescriptor.process =
                                 MutableProcessDescriptor(pid = pid, process_name = name)
                         }
                         TRACK_DESCRIPTOR_TYPE_THREAD -> {
-                            scratchTrackDescriptor.name = null
+                            scratchTrackDescriptor.name = DEFAULT_STRING
                             scratchTrackDescriptor.uuid = uuid
                             scratchTrackDescriptor.thread =
                                 MutableThreadDescriptor(pid = pid, tid = tid, thread_name = name)
@@ -121,7 +122,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             } else {
                 // If the track event is needed (that is, when track descriptor isn't present)
                 // populate and use the scratch track event
-                scratchTrackEvent.type = MutableTrackEvent.Type.fromValue(event.type)
+                scratchTrackEvent.type = MutableTrackEvent.Type.fromValue(event.type)!!
                 scratchTrackEvent.track_uuid = event.trackUuid
                 scratchTrackEvent.name = event.name
                 scratchTrackEvent.counter_value = event.counterLongValue
