@@ -643,7 +643,10 @@ private const val defaultCanvasElementId = "ComposeTarget"
  * This can be turned off by setting [applyDefaultStyles] to false.
  */
 @ExperimentalComposeUiApi
-@Deprecated("CanvasBasedWindow doesn't support HTML interop via WebElementView API and it doesn't support A11Y feature. Use ComposeViewport API instead")
+@Deprecated(
+message = "CanvasBasedWindow doesn't support HTML interop via WebElementView API and it doesn't support A11Y feature. Use ComposeViewport API instead",
+replaceWith = ReplaceWith("ComposeViewport"),
+level = DeprecationLevel.ERROR)
 fun CanvasBasedWindow(
     title: String? = null,
     canvasElementId: String = defaultCanvasElementId,
