@@ -228,6 +228,11 @@ internal class ComposeHostingViewController(
         interfaceOrientationState.value = orientation
     }
 
+    // Used for tests
+    fun updateSafeAreaInsets(insets: PlatformInsets) {
+        mediator?.updateSafeAreaInsets(insets)
+    }
+
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
         withTransitionCoordinator: UIViewControllerTransitionCoordinatorProtocol

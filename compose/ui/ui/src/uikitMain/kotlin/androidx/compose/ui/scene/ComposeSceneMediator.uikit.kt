@@ -309,6 +309,10 @@ internal class ComposeSceneMediator(
 
     private val windowInsetsManager = UIKitWindowInsetsManager(interfaceOrientation = interfaceOrientationState)
 
+    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
+        windowInsetsManager.safeAreaInsets.value = safeAreaInsets
+    }
+
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
      *
