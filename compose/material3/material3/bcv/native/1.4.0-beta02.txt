@@ -387,17 +387,6 @@ final class androidx.compose.material3/AppBarMenuState { // androidx.compose.mat
     final fun show() // androidx.compose.material3/AppBarMenuState.show|show(){}[0]
 }
 
-final class androidx.compose.material3/BasicAlertDialogOverrideScope { // androidx.compose.material3/BasicAlertDialogOverrideScope|null[0]
-    final val content // androidx.compose.material3/BasicAlertDialogOverrideScope.content|{}content[0]
-        final fun <get-content>(): kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> // androidx.compose.material3/BasicAlertDialogOverrideScope.content.<get-content>|<get-content>(){}[0]
-    final val modifier // androidx.compose.material3/BasicAlertDialogOverrideScope.modifier|{}modifier[0]
-        final fun <get-modifier>(): androidx.compose.ui/Modifier // androidx.compose.material3/BasicAlertDialogOverrideScope.modifier.<get-modifier>|<get-modifier>(){}[0]
-    final val onDismissRequest // androidx.compose.material3/BasicAlertDialogOverrideScope.onDismissRequest|{}onDismissRequest[0]
-        final fun <get-onDismissRequest>(): kotlin/Function0<kotlin/Unit> // androidx.compose.material3/BasicAlertDialogOverrideScope.onDismissRequest.<get-onDismissRequest>|<get-onDismissRequest>(){}[0]
-    final val properties // androidx.compose.material3/BasicAlertDialogOverrideScope.properties|{}properties[0]
-        final fun <get-properties>(): androidx.compose.ui.window/DialogProperties // androidx.compose.material3/BasicAlertDialogOverrideScope.properties.<get-properties>|<get-properties>(){}[0]
-}
-
 final class androidx.compose.material3/BottomSheetScaffoldState { // androidx.compose.material3/BottomSheetScaffoldState|null[0]
     constructor <init>(androidx.compose.material3/SheetState, androidx.compose.material3/SnackbarHostState) // androidx.compose.material3/BottomSheetScaffoldState.<init>|<init>(androidx.compose.material3.SheetState;androidx.compose.material3.SnackbarHostState){}[0]
 
