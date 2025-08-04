@@ -217,4 +217,8 @@ internal class UIKitComposeSceneLayer(
     fun sceneWillDisappear() {
         mediator.sceneWillDisappear()
     }
+
+    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
+        mediator.updateInterfaceOrientation(interfaceOrientation)
+    }
 }

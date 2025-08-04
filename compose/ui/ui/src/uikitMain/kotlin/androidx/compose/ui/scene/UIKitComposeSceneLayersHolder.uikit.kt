@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.util.fastForEach
@@ -187,6 +188,12 @@ internal class UIKitComposeSceneLayersHolder(
             }
         }
         return false
+    }
+
+    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
+        this.layers.fastForEach {
+            it.updateInterfaceOrientation(interfaceOrientation)
+        }
     }
 
     /**
