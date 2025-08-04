@@ -165,3 +165,5 @@ androidx {
     samples(project(":compose:material3:adaptive:adaptive-samples"))
     addGoldenImageAssets()
 }
+
+// TODO: Restore updateTranslations task
