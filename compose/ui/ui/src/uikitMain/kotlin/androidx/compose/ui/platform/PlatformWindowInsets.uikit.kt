@@ -16,17 +16,19 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.IntSize
 
-internal class UIKitWindowInsetsManager {
-    var layoutMargins = mutableStateOf(PlatformInsets.Zero)
-    var safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
-    var keyboardOverlapHeight = mutableStateOf(0)
-    var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
-    var sceneSize = mutableStateOf(IntSize.Zero)
+internal class UIKitWindowInsetsManager(
+    val interfaceOrientation: MutableState<InterfaceOrientation>,
+    val safeAreaInsets: MutableState<PlatformInsets>
+) {
+    val layoutMargins = mutableStateOf(PlatformInsets.Zero)
+    val keyboardOverlapHeight = mutableStateOf(0)
+    val sceneSize = mutableStateOf(IntSize.Zero)
 
     val windowInsets: PlatformWindowInsets = UIKitWindowInsets(
         { layoutMargins.value },
