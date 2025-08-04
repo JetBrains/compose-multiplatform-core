@@ -73,7 +73,7 @@ internal class RulerProviderModifierElement(
 private const val RulerKey = "androidx.compose.ui.layout.WindowInsetsRulers"
 
 internal class RulerProviderModifierNode(
-    windowInsetsManager: PlatformWindowInsets,
+    windowInsets: PlatformWindowInsets,
 ) : Modifier.Node(), LayoutModifierNode, TraversableNode {
 
     val displayCutoutRulers = mutableStateListOf<RectRulers>()
@@ -81,17 +81,17 @@ internal class RulerProviderModifierNode(
     val rulerLambda: RulerScope.() -> Unit = {
         val (width, height) = coordinates.size
 
-        provideInsetsValues(CaptionBar, windowInsetsManager.captionBar, width, height)
-        provideInsetsValues(DisplayCutout, windowInsetsManager.displayCutout, width, height)
-        provideInsetsValues(Ime, windowInsetsManager.ime, width, height)
-        provideInsetsValues(MandatorySystemGestures, windowInsetsManager.mandatorySystemGestures, width, height)
-        provideInsetsValues(NavigationBars, windowInsetsManager.navigationBars, width, height)
-        provideInsetsValues(StatusBars, windowInsetsManager.statusBars, width, height)
-        provideInsetsValues(SystemGestures, windowInsetsManager.systemGestures, width, height)
-        provideInsetsValues(TappableElement, windowInsetsManager.tappableElement, width, height)
-        provideInsetsValues(Waterfall, windowInsetsManager.waterfall, width, height)
+        provideInsetsValues(CaptionBar, windowInsets.captionBar, width, height)
+        provideInsetsValues(DisplayCutout, windowInsets.displayCutout, width, height)
+        provideInsetsValues(Ime, windowInsets.ime, width, height)
+        provideInsetsValues(MandatorySystemGestures, windowInsets.mandatorySystemGestures, width, height)
+        provideInsetsValues(NavigationBars, windowInsets.navigationBars, width, height)
+        provideInsetsValues(StatusBars, windowInsets.statusBars, width, height)
+        provideInsetsValues(SystemGestures, windowInsets.systemGestures, width, height)
+        provideInsetsValues(TappableElement, windowInsets.tappableElement, width, height)
+        provideInsetsValues(Waterfall, windowInsets.waterfall, width, height)
 
-        val displayCutouts = windowInsetsManager.displayCutouts
+        val displayCutouts = windowInsets.displayCutouts
 
         if (displayCutouts.isEmpty()) {
             displayCutoutRulers.clear()
