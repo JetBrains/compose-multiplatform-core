@@ -139,7 +139,6 @@ internal class ComposeHostingViewController(
         InterfaceOrientation.Portrait
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
-    private val safeAreaInsetsState: MutableState<PlatformInsets> = mutableStateOf(PlatformInsets.Zero)
 
     var focusedViewsList: FocusedViewsList? = FocusedViewsList()
 
@@ -229,9 +228,14 @@ internal class ComposeHostingViewController(
         interfaceOrientationState.value = orientation
     }
 
+    /**
+     * Used for testing purposes.
+     * Updates safe area insets on the main compose scene mediator.
+     */
     fun updateSafeAreaInsets(insets: PlatformInsets) {
-        safeAreaInsetsState.value = insets
+        mediator?.updateSafeAreaInsets(insets)
     }
+
 
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,

@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.IntSize
 
 internal class UIKitWindowInsetsManager(
     val interfaceOrientation: MutableState<InterfaceOrientation>,
-    val safeAreaInsets: MutableState<PlatformInsets>
 ) {
     val layoutMargins = mutableStateOf(PlatformInsets.Zero)
+    val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
     val keyboardOverlapHeight = mutableStateOf(0)
     val sceneSize = mutableStateOf(IntSize.Zero)
 
