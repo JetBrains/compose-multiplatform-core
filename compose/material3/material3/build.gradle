@@ -104,7 +104,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 api(project(":compose:runtime:runtime"))
                 api(project(":compose:ui:ui-graphics"))
                 api(project(":compose:ui:ui-text"))
-                api("org.jetbrains.androidx.graphics:graphics-shapes:1.0.0-alpha09")
 
                 implementation(project(":compose:ui:ui-util"))
                 implementation(project(":compose:ui:ui-backhandler"))

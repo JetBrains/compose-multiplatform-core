@@ -22,11 +22,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.catalog.library.model.ColorMode
-import androidx.compose.material3.catalog.library.model.ExpressiveThemeMode
 import androidx.compose.material3.catalog.library.model.FontScaleMode
 import androidx.compose.material3.catalog.library.model.TextDirection
 import androidx.compose.material3.catalog.library.model.Theme
@@ -34,7 +31,6 @@ import androidx.compose.material3.catalog.library.model.ThemeColorMode
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -49,7 +45,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.view.WindowCompat
 
 @SuppressLint("NewApi")
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
     val context = LocalContext.current
@@ -57,11 +52,7 @@ fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
         when (theme.colorMode) {
             ColorMode.Dynamic -> dynamicLightColorScheme(context)
             ColorMode.Custom -> LightCustomColorScheme
-            ColorMode.Baseline -> {
-                if (theme.expressiveThemeMode == ExpressiveThemeMode.Expressive) {
-                    expressiveLightColorScheme()
-                } else lightColorScheme()
-            }
+            ColorMode.Baseline -> lightColorScheme()
         }
     val darkColorScheme =
         when (theme.colorMode) {
@@ -103,11 +94,7 @@ fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
                     },
             ),
     ) {
-        if (theme.expressiveThemeMode == ExpressiveThemeMode.Expressive) {
-            MaterialExpressiveTheme(colorScheme = colorScheme, content = content)
-        } else {
-            MaterialTheme(colorScheme = colorScheme, content = content)
-        }
+        MaterialTheme(colorScheme = colorScheme, content = content)
     }
 }
 
