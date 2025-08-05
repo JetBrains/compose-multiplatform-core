@@ -31,6 +31,7 @@ import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requestRemeasure
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowInsets
@@ -67,7 +68,9 @@ internal class RulerProviderModifierElement(
         }
         return (other as? RulerProviderModifierElement)?.windowInsets === windowInsets
     }
-    override fun update(node: RulerProviderModifierNode) = Unit
+    override fun update(node: RulerProviderModifierNode) {
+        node.windowInsets = windowInsets
+    }
 }
 
 private const val RulerKey = "androidx.compose.ui.layout.WindowInsetsRulers"
@@ -77,6 +80,14 @@ internal class RulerProviderModifierNode(
 ) : Modifier.Node(), LayoutModifierNode, TraversableNode {
 
     val displayCutoutRulers = mutableStateListOf<RectRulers>()
+
+    var windowInsets: PlatformWindowInsets = windowInsets
+        set(value) {
+            if (field !== value) {
+                field = value
+                requestRemeasure()
+            }
+        }
 
     val rulerLambda: RulerScope.() -> Unit = {
         val (width, height) = coordinates.size
