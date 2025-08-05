@@ -66,7 +66,6 @@ internal class UIKitComposeSceneLayer(
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
-    private val safeAreaInsetsState: MutableState<PlatformInsets>,
     private val interfaceOrientationState: MutableState<InterfaceOrientation>
 ) : ComposeSceneLayer {
 
@@ -100,7 +99,6 @@ internal class UIKitComposeSceneLayer(
         redrawer = metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher,
-        safeAreaInsetsState = safeAreaInsetsState,
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)

@@ -81,6 +81,7 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGSize
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
+import platform.UIKit.UIEdgeInsets
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UITraitCollection
@@ -138,7 +139,6 @@ internal class ComposeHostingViewController(
         InterfaceOrientation.Portrait
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
-    private val safeAreaInsetsState: MutableState<PlatformInsets> = mutableStateOf(PlatformInsets.Zero)
 
     var focusedViewsList: FocusedViewsList? = FocusedViewsList()
 
@@ -228,9 +228,14 @@ internal class ComposeHostingViewController(
         interfaceOrientationState.value = orientation
     }
 
+    /**
+     * Used for testing purposes.
+     * Updates safe area insets on the main compose scene mediator.
+     */
     fun updateSafeAreaInsets(insets: PlatformInsets) {
-        safeAreaInsetsState.value = insets
+        mediator?.updateSafeAreaInsets(insets)
     }
+
 
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
@@ -324,7 +329,6 @@ internal class ComposeHostingViewController(
                 createComposeScene(invalidate, context, layers.metalView)
             },
             backGestureDispatcher = backGestureDispatcher,
-            safeAreaInsetsState = safeAreaInsetsState,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
             rootView.embedSubview(mediator.inputView)
@@ -483,7 +487,6 @@ internal class ComposeHostingViewController(
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
                     enableBackGesture = configuration.enableBackGesture,
-                    safeAreaInsetsState = safeAreaInsetsState,
                     interfaceOrientationState = interfaceOrientationState
                 )
 

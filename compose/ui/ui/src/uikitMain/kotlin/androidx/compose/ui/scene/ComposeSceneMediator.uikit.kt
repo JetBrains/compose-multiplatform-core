@@ -104,6 +104,7 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
+import platform.UIKit.UIEdgeInsets
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
 import platform.UIKit.UIEventButtonMaskSecondary
@@ -189,8 +190,7 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
-    private val safeAreaInsetsState: MutableState<PlatformInsets>,
-    private val interfaceOrientationState: MutableState<InterfaceOrientation>,
+    interfaceOrientationState: MutableState<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext
@@ -308,10 +308,14 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
-    val windowInsetsManager = UIKitWindowInsetsManager(
-        interfaceOrientation = interfaceOrientationState,
-        safeAreaInsets = safeAreaInsetsState
-    )
+    val windowInsetsManager = UIKitWindowInsetsManager(interfaceOrientation = interfaceOrientationState)
+
+    /**
+     * Used for testing purposes.
+     */
+    fun updateSafeAreaInsets(insets: PlatformInsets) {
+        windowInsetsManager.safeAreaInsets.value = insets
+    }
 
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
