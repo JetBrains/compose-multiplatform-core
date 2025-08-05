@@ -46,6 +46,12 @@ androidXMultiplatform {
                 }
             }
         }
+
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
     }
 }
 

@@ -54,6 +54,12 @@ androidXMultiplatform {
                 api("androidx.lifecycle:lifecycle-runtime:$version")
             }
         }
+
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
     }
 }
 

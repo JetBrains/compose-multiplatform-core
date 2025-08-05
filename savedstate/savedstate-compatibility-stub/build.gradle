@@ -33,6 +33,12 @@ androidXMultiplatform {
                 api("androidx.savedstate:savedstate:$version")
             }
         }
+
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
     }
 }
 

@@ -108,6 +108,12 @@ kotlin {
             dependsOn(commonTest)
         }
 
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
         targets.all { target ->
             if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
