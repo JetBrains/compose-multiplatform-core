@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.input.pointer.util
+package androidx.compose.foundation.gestures
 
-internal actual fun platformVelocityDataPointsBuilder(): VelocityTracker1D.DataPointsBuilder =
-    DefaultVelocityDataPointsBuilder()
+internal actual fun createDraggableVelocityTracker(): DraggableVelocityTracker =
+    DefaultDraggableVelocityTracker()
