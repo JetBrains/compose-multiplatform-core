@@ -48,7 +48,7 @@ import kotlin.math.min
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun NestedMenuDemo() {
+fun NoriaContext.NestedMenuDemo() {
     var nestedMenuState by remember { mutableStateOf(NestedMenuState.Level1) }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
@@ -115,21 +115,21 @@ private fun NestedMenuState.previous(): NestedMenuState =
     NestedMenuState.values()[max(this.ordinal - 1, 0)]
 
 @Composable
-fun MenuLevel1() {
+fun NoriaContext.MenuLevel1() {
     Box(Modifier.size(100.dp, 200.dp).border(2.dp, turquoiseColors[0]).background(menuColor)) {
         Text("Menu\nLevel 1", Modifier.align(Alignment.Center))
     }
 }
 
 @Composable
-fun MenuLevel2() {
+fun NoriaContext.MenuLevel2() {
     Box(Modifier.size(60.dp, 100.dp).border(2.dp, turquoiseColors[1]).background(menuColor)) {
         Text("Menu\nLevel 2", Modifier.align(Alignment.Center))
     }
 }
 
 @Composable
-fun MenuLevel3() {
+fun NoriaContext.MenuLevel3() {
     Box(Modifier.size(300.dp, 240.dp).border(2.dp, turquoiseColors[2]).background(menuColor)) {
         Text("Menu\nLevel 3", Modifier.align(Alignment.Center))
     }

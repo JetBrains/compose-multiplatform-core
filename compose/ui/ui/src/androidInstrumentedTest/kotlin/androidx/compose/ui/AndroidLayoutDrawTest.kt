@@ -3875,7 +3875,7 @@ fun assertColorsEqual(
 }
 
 @Composable
-fun AtLeastSize(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
+fun NoriaContext.AtLeastSize(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
     Layout(
         measurePolicy = { measurables, constraints ->
             val newConstraints =
@@ -3910,7 +3910,7 @@ fun AtLeastSize(size: Int, modifier: Modifier = Modifier, content: @Composable (
 }
 
 @Composable
-fun FixedSize(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
+fun NoriaContext.FixedSize(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
     Layout(content = content, modifier = modifier) { measurables, _ ->
         val newConstraints = Constraints.fixed(size, size)
         val placeables = measurables.map { m -> m.measure(newConstraints) }
@@ -3919,7 +3919,7 @@ fun FixedSize(size: Int, modifier: Modifier = Modifier, content: @Composable () 
 }
 
 @Composable
-fun Align(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.Align(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(
         modifier = modifier,
         measurePolicy = { measurables, constraints ->
@@ -3946,7 +3946,7 @@ fun Align(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 }
 
 @Composable
-internal fun Padding(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun NoriaContext.Padding(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(
         modifier = modifier,
         measurePolicy = { measurables, constraints ->
@@ -3988,7 +3988,7 @@ internal fun Padding(size: Int, modifier: Modifier = Modifier, content: @Composa
 }
 
 @Composable
-fun Wrap(
+fun NoriaContext.Wrap(
     modifier: Modifier = Modifier,
     minWidth: Int = 0,
     minHeight: Int = 0,
@@ -4003,7 +4003,7 @@ fun Wrap(
 }
 
 @Composable
-fun Scroller(
+fun NoriaContext.Scroller(
     modifier: Modifier = Modifier,
     onScrollPositionChanged: (position: Int, maxPosition: Int) -> Unit,
     offset: State<Int>,
@@ -4022,7 +4022,7 @@ fun Scroller(
 }
 
 @Composable
-private fun ScrollerLayout(
+private fun NoriaContext.ScrollerLayout(
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") maxPosition: Int,
     onMaxPositionChanged: () -> Unit,
@@ -4042,7 +4042,7 @@ private fun ScrollerLayout(
 }
 
 @Composable
-fun WrapForceRelayout(
+fun NoriaContext.WrapForceRelayout(
     model: State<Int>,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -4059,7 +4059,7 @@ fun WrapForceRelayout(
 }
 
 @Composable
-fun SimpleRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.SimpleRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         var width = 0
         var height = 0
@@ -4081,7 +4081,7 @@ fun SimpleRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun JustConstraints(modifier: Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.JustConstraints(modifier: Modifier, content: @Composable () -> Unit) {
     Layout(content, modifier) { _, constraints ->
         layout(constraints.minWidth, constraints.minHeight) {}
     }

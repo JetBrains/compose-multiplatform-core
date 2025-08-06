@@ -40,7 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun RemovableAutofillText(state: MutableState<Boolean>) {
+internal fun NoriaContext.RemovableAutofillText(state: MutableState<Boolean>) {
     Column {
         Row {
             if (state.value) {
@@ -92,7 +92,7 @@ internal fun RemovableAutofillText(state: MutableState<Boolean>) {
 }
 
 @Composable
-internal fun ChangingAutofillText(state: MutableState<Boolean>) {
+internal fun NoriaContext.ChangingAutofillText(state: MutableState<Boolean>) {
     Column {
         Row {
             TextField(
@@ -140,7 +140,7 @@ internal fun ChangingAutofillText(state: MutableState<Boolean>) {
 }
 
 @Composable
-internal fun ChangingAutofillFocus(state: MutableState<Boolean>) {
+internal fun NoriaContext.ChangingAutofillFocus(state: MutableState<Boolean>) {
     Column {
         Row {
             TextField(
@@ -190,7 +190,7 @@ internal fun ChangingAutofillFocus(state: MutableState<Boolean>) {
 }
 
 @Composable
-internal fun AutofillTextScreen() {
+internal fun NoriaContext.AutofillTextScreen() {
     Column {
         TextField(
             value = data.firstName,
@@ -236,7 +236,7 @@ internal fun AutofillTextScreen() {
 }
 
 @Composable
-internal fun AutofillScreen() {
+internal fun NoriaContext.AutofillScreen() {
     Scaffold(
         content = { padding ->
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {

@@ -17,25 +17,14 @@
 package noria
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.RememberObserver
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
 
 /**
  * Adds callback that is called when current cell is destroyed
  */
 @Composable
 fun NoriaContext.onDestroy(f: () -> Unit) {
-  if (!isReadOnly()) {
-    remember {
-      object : RememberObserver {
-        override fun onRemembered() {}
-
-        override fun onForgotten() {
-          f()
-        }
-
-        override fun onAbandoned() {}
-      }
-    }
+  DisposableEffect {
+    onDispose(f)
   }
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import androidx.compose.ui.unit.Constraints
+import noria.NoriaContext
 
 /**
  * A layout that only composes and lays out currently needed items. Can be used to build efficient
@@ -61,7 +62,7 @@ import androidx.compose.ui.unit.Constraints
 @Deprecated("Please use overload with LazyLayoutMeasurePolicy", level = DeprecationLevel.HIDDEN)
 @ExperimentalFoundationApi
 @Composable
-fun LazyLayout(
+fun NoriaContext.LazyLayout(
     itemProvider: () -> LazyLayoutItemProvider,
     modifier: Modifier = Modifier,
     prefetchState: LazyLayoutPrefetchState? = null,
@@ -104,7 +105,7 @@ fun LazyLayout(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LazyLayout(
+fun NoriaContext.LazyLayout(
     itemProvider: () -> LazyLayoutItemProvider,
     modifier: Modifier = Modifier,
     prefetchState: LazyLayoutPrefetchState? = null,

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.setValue
+import noria.NoriaContext
 
 /**
  * Helps to test the state restoration for your Composable component.
@@ -48,10 +49,10 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
      *
      * @see ComposeUiTest.setContent
      */
-    fun setContent(composable: @Composable () -> Unit) {
+    fun setContent(composable: @Composable NoriaContext.() -> Unit) {
         composeTest.setContent {
             InjectRestorationRegistry { registry ->
-                this.registry = registry
+                this@StateRestorationTester.registry = registry
                 composable()
             }
         }
@@ -74,7 +75,7 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
     }
 
     @Composable
-    private fun InjectRestorationRegistry(content: @Composable (RestorationRegistry) -> Unit) {
+    private fun NoriaContext.InjectRestorationRegistry(content: @Composable NoriaContext.(RestorationRegistry) -> Unit) {
         val original =
             requireNotNull(LocalSaveableStateRegistry.current) {
                 "StateRestorationTester requires composeTestRule.setContent() to provide " +

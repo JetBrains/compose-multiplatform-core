@@ -95,7 +95,7 @@ fun main() = singleWindowApplication(
 }
 
 @Composable
-fun Fonts() {
+fun NoriaContext.Fonts() {
     Column {
         var fontFamilyInfo by remember { mutableStateOf(FontFamilyInfo.Default) }
         var fontSize by remember { mutableStateOf(48) }

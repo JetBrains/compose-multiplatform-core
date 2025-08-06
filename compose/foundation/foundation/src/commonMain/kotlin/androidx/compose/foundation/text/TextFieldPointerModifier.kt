@@ -26,9 +26,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.input.OffsetMapping
+import noria.NoriaContext
 
 @Composable
-internal expect fun Modifier.textFieldPointer(
+internal expect fun NoriaContext.textFieldPointerModifier(
     manager: TextFieldSelectionManager,
     enabled: Boolean,
     interactionSource: MutableInteractionSource?,
@@ -38,7 +39,6 @@ internal expect fun Modifier.textFieldPointer(
     offsetMapping: OffsetMapping
 ): Modifier
 
-@Composable
 internal fun Modifier.defaultTextFieldPointer(
     manager: TextFieldSelectionManager,
     enabled: Boolean,

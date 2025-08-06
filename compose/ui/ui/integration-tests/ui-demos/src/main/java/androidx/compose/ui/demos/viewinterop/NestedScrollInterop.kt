@@ -73,7 +73,7 @@ private val ToolbarHeight = 48.dp
 
 @SuppressLint("UnnecessaryLambdaCreation")
 @Composable
-private fun OuterComposeWithNestedScroll(factory: (Context) -> View) {
+private fun NoriaContext.OuterComposeWithNestedScroll(factory: (Context) -> View) {
     val toolbarHeightPx = with(LocalDensity.current) { ToolbarHeight.roundToPx().toFloat() }
     var toolbarOffsetHeightPx by remember { mutableFloatStateOf(0f) }
 
@@ -116,12 +116,12 @@ private fun AndroidViewWithNestedScrollEnabled(context: Context): View {
 }
 
 @Composable
-internal fun NestedScrollInteropComposeParentWithAndroidChild() {
+internal fun NoriaContext.NestedScrollInteropComposeParentWithAndroidChild() {
     OuterComposeWithNestedScroll { context -> AndroidViewWithNestedScrollEnabled(context) }
 }
 
 @Composable
-private fun LazyColumnWithNestedScrollInteropEnabled() {
+private fun NoriaContext.LazyColumnWithNestedScrollInteropEnabled() {
     LazyColumn(
         modifier = Modifier.nestedScroll(rememberNestedScrollInteropConnection()),
         contentPadding = PaddingValues(top = ToolbarHeight),
@@ -140,7 +140,7 @@ private fun LazyColumnWithNestedScrollInteropEnabled() {
 }
 
 @Composable
-private fun ScrollableColumnWithNestedScrollInteropEnabled(state: ScrollState, hostView: View) {
+private fun NoriaContext.ScrollableColumnWithNestedScrollInteropEnabled(state: ScrollState, hostView: View) {
     Column(
         modifier =
             Modifier.nestedScroll(rememberNestedScrollInteropConnection(hostView))
@@ -158,7 +158,7 @@ private fun ScrollableColumnWithNestedScrollInteropEnabled(state: ScrollState, h
 }
 
 @Composable
-internal fun ComposeViewComposeNestedInterop() {
+internal fun NoriaContext.ComposeViewComposeNestedInterop() {
     OuterComposeWithNestedScroll { context ->
         LayoutInflater.from(context)
             .inflate(R.layout.three_fold_nested_scroll_interop, null)

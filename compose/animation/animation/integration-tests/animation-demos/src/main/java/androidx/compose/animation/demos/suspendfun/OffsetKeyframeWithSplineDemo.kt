@@ -50,7 +50,7 @@ import kotlinx.coroutines.isActive
 @OptIn(ExperimentalAnimationSpecApi::class)
 @Preview
 @Composable
-fun OffsetKeyframeWithSplineDemo() {
+fun NoriaContext.OffsetKeyframeWithSplineDemo() {
     val points = remember { mutableStateListOf<Offset>() }
     val offsetAnim = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
     val density = LocalDensity.current

@@ -48,7 +48,7 @@ import androidx.core.view.WindowInsetsCompat
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideThenSample() {
+fun NoriaContext.DeviceConfigurationOverrideThenSample() {
     DeviceConfigurationOverride(
         DeviceConfigurationOverride.FontScale(1.5f) then
             DeviceConfigurationOverride.FontWeightAdjustment(200)
@@ -59,7 +59,7 @@ fun DeviceConfigurationOverrideThenSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideFontScaleSample() {
+fun NoriaContext.DeviceConfigurationOverrideFontScaleSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.FontScale(1.5f)) {
         MyScreen() // will be rendered with a larger than default font scale
     }
@@ -67,7 +67,7 @@ fun DeviceConfigurationOverrideFontScaleSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideForcedSizeSample() {
+fun NoriaContext.DeviceConfigurationOverrideForcedSizeSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(1280.dp, 800.dp))) {
         MyScreen() // will be rendered in the space for 1280dp by 800dp without clipping
     }
@@ -75,7 +75,7 @@ fun DeviceConfigurationOverrideForcedSizeSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideLayoutDirectionSample() {
+fun NoriaContext.DeviceConfigurationOverrideLayoutDirectionSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Rtl)) {
         MyComponent() // will be rendered with a right-to-left layout direction
     }
@@ -83,7 +83,7 @@ fun DeviceConfigurationOverrideLayoutDirectionSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideLocalesSample() {
+fun NoriaContext.DeviceConfigurationOverrideLocalesSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.Locales(LocaleList("es-ES"))) {
         MyScreen() // will be rendered with overridden locale
     }
@@ -91,7 +91,7 @@ fun DeviceConfigurationOverrideLocalesSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideDarkModeSample() {
+fun NoriaContext.DeviceConfigurationOverrideDarkModeSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.DarkMode(true)) {
         isSystemInDarkTheme() // will be true
     }
@@ -99,7 +99,7 @@ fun DeviceConfigurationOverrideDarkModeSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideFontWeightAdjustmentSample() {
+fun NoriaContext.DeviceConfigurationOverrideFontWeightAdjustmentSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.FontWeightAdjustment(200)) {
         MyComponent() // will be rendered with adjusted font weight
     }
@@ -107,7 +107,7 @@ fun DeviceConfigurationOverrideFontWeightAdjustmentSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideRoundScreenSample() {
+fun NoriaContext.DeviceConfigurationOverrideRoundScreenSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
         LocalConfiguration.current.isScreenRound // will be true
     }
@@ -115,7 +115,7 @@ fun DeviceConfigurationOverrideRoundScreenSample() {
 
 @Sampled
 @Composable
-fun DeviceConfigurationOverrideWindowInsetsSample() {
+fun NoriaContext.DeviceConfigurationOverrideWindowInsetsSample() {
     fun IntRect.toAndroidXInsets() = androidx.core.graphics.Insets.of(left, top, right, bottom)
 
     DeviceConfigurationOverride(

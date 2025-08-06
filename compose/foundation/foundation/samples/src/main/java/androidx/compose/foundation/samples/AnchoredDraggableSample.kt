@@ -121,7 +121,7 @@ fun AnchoredDraggableAnchorsFromCompositionSample() {
 
 @Preview
 @Composable
-fun AnchoredDraggableLayoutDependentAnchorsSample() {
+fun NoriaContext.AnchoredDraggableLayoutDependentAnchorsSample() {
     val state =
         rememberSaveable(saver = AnchoredDraggableState.Saver()) {
             AnchoredDraggableState(initialValue = Center)
@@ -157,7 +157,7 @@ fun AnchoredDraggableLayoutDependentAnchorsSample() {
 
 @Preview
 @Composable
-fun AnchoredDraggableCustomAnchoredSample() {
+fun NoriaContext.AnchoredDraggableCustomAnchoredSample() {
     @Suppress("unused")
     // Using AnchoredDraggableState's anchoredDrag APIs, we can build a custom animation
     suspend fun <T> AnchoredDraggableState<T>.customAnimation(
@@ -185,7 +185,7 @@ fun AnchoredDraggableCustomAnchoredSample() {
 
 @Preview
 @Composable
-fun AnchoredDraggableWithOverscrollSample() {
+fun NoriaContext.AnchoredDraggableWithOverscrollSample() {
     val state =
         rememberSaveable(saver = AnchoredDraggableState.Saver()) {
             AnchoredDraggableState(initialValue = Center)
@@ -222,7 +222,7 @@ fun AnchoredDraggableWithOverscrollSample() {
 }
 
 @Composable
-fun AnchoredDraggableProgressSample() {
+fun NoriaContext.AnchoredDraggableProgressSample() {
     val state =
         rememberSaveable(saver = AnchoredDraggableState.Saver()) {
             AnchoredDraggableState(initialValue = Center)
@@ -268,7 +268,7 @@ fun AnchoredDraggableProgressSample() {
 
 @Preview
 @Composable
-fun DraggableAnchorsSample() {
+fun NoriaContext.DraggableAnchorsSample() {
     var anchors by remember { mutableStateOf(DraggableAnchors<AnchoredDraggableSampleValue> {}) }
     var offset by rememberSaveable { mutableFloatStateOf(0f) }
     val thumbSize = 16.dp
@@ -310,7 +310,7 @@ fun DraggableAnchorsSample() {
 
 @Sampled
 @Composable
-fun AnchoredDraggableDynamicAnchorsSample() {
+fun NoriaContext.AnchoredDraggableDynamicAnchorsSample() {
     val open = "Open"
     val closed = "Closed"
 
@@ -319,8 +319,8 @@ fun AnchoredDraggableDynamicAnchorsSample() {
         state: AnchoredDraggableState<String>,
         activePositions: List<String> = listOf(open, closed),
         modifier: Modifier = Modifier,
-        drawerContent: @Composable () -> Unit,
-        content: @Composable () -> Unit,
+        drawerContent: @Composable NoriaContext.() -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         Box(modifier) {
             Box(Modifier.anchoredDraggable(state, Orientation.Horizontal)) { content() }
@@ -381,7 +381,7 @@ fun AnchoredDraggableDynamicAnchorsSample() {
  * [AnchoredDraggableDefaults.flingBehavior]. Note that this is an advanced use case.
  */
 @Composable
-fun AnchoredDraggableProgrammaticFlingSample() {
+fun NoriaContext.AnchoredDraggableProgrammaticFlingSample() {
     val state =
         rememberSaveable(saver = AnchoredDraggableState.Saver()) {
             AnchoredDraggableState(initialValue = Center)

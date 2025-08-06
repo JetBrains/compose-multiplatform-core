@@ -42,7 +42,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 private const val ItemCount = 50
 
 @Composable
-fun ScrollingAndroidViewsDemo() {
+fun NoriaContext.ScrollingAndroidViewsDemo() {
     Column {
         var checkedItems by remember { mutableStateOf(emptySet<Int>()) }
         Row(
@@ -72,7 +72,7 @@ fun ScrollingAndroidViewsDemo() {
 }
 
 @Composable
-private fun RecyclingAndroidViewLazyColumn(
+private fun NoriaContext.RecyclingAndroidViewLazyColumn(
     checkedItems: Set<Int>,
     onChangeCheck: (Int, Boolean) -> Unit,
 ) {

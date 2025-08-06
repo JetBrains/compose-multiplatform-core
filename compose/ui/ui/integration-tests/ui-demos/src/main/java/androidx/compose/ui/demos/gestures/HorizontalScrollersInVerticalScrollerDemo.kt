@@ -49,7 +49,7 @@ import kotlin.math.roundToInt
 
 /** Demonstration for how multiple DragGestureDetectors interact. */
 @Composable
-fun HorizontalScrollersInVerticalScrollersDemo() {
+fun NoriaContext.HorizontalScrollersInVerticalScrollersDemo() {
     Column {
         Text("Demonstrates scroll orientation locking.")
         Text(
@@ -74,7 +74,7 @@ fun HorizontalScrollersInVerticalScrollersDemo() {
 
 /** A very simple ScrollView like implementation that allows for vertical scrolling. */
 @Composable
-private fun Scrollable(orientation: Orientation, content: @Composable () -> Unit) {
+private fun NoriaContext.Scrollable(orientation: Orientation, content: @Composable () -> Unit) {
     val maxOffset = 0f
     var offset by remember { mutableFloatStateOf(maxOffset) }
     var minOffset by remember { mutableFloatStateOf(0f) }
@@ -158,7 +158,7 @@ private val ClipModifier =
 
 /** A very simple Button like implementation that visually indicates when it is being pressed. */
 @Composable
-private fun Pressable(width: Dp, height: Dp) {
+private fun NoriaContext.Pressable(width: Dp, height: Dp) {
 
     val pressedColor = PressedColor
     val defaultColor = Red
@@ -215,7 +215,7 @@ private fun Pressable(width: Dp, height: Dp) {
  */
 @Suppress("SameParameterValue")
 @Composable
-private fun RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
+private fun NoriaContext.RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
     Column {
         for (i in 1..repetitions) {
             content()
@@ -229,7 +229,7 @@ private fun RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
  */
 @Suppress("SameParameterValue")
 @Composable
-private fun RepeatingRow(repetitions: Int, content: @Composable () -> Unit) {
+private fun NoriaContext.RepeatingRow(repetitions: Int, content: @Composable () -> Unit) {
     Row {
         for (i in 1..repetitions) {
             content()

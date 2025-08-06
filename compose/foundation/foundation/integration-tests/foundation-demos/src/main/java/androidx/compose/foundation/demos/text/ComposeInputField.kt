@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun InputFieldDemo() {
+fun NoriaContext.InputFieldDemo() {
     LazyColumn {
         item { TagLine(tag = "LTR Layout") }
         item {
@@ -72,7 +72,7 @@ fun InputFieldDemo() {
 }
 
 @Composable
-internal fun EditLine(
+internal fun NoriaContext.EditLine(
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     singleLine: Boolean = false,

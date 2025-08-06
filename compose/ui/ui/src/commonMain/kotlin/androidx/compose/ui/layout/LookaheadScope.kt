@@ -29,6 +29,7 @@ import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
+import noria.NoriaContext
 
 /**
  * [LookaheadScope] creates a scope in which all layouts will first determine their destination
@@ -46,7 +47,7 @@ import androidx.compose.ui.unit.IntSize
  */
 @UiComposable
 @Composable
-fun LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit) {
+fun NoriaContext.LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit) {
     val scope = remember { LookaheadScopeImpl() }
     ReusableComposeNode<LayoutNode, Applier<Any>>(
         factory = { LayoutNode(isVirtual = true) },
@@ -199,7 +200,7 @@ private class ApproachLayoutModifierNodeImpl(
  *
  * @sample androidx.compose.ui.samples.LookaheadLayoutCoordinatesSample
  */
-interface LookaheadScope {
+interface LookaheadScope : NoriaContext {
     /**
      * Converts a [LayoutCoordinates] into a [LayoutCoordinates] in the Lookahead coordinate space.
      * This can be used for layouts within [LookaheadScope].

@@ -72,6 +72,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Enable drag gestures between a set of predefined values.
@@ -1512,7 +1513,7 @@ object AnchoredDraggableDefaults {
      * @param animationSpec The animation spec used to perform the settling
      */
     @Composable
-    fun <T> flingBehavior(
+    fun <T> NoriaContext.flingBehavior(
         state: AnchoredDraggableState<T>,
         positionalThreshold: (totalDistance: Float) -> Float = PositionalThreshold,
         animationSpec: AnimationSpec<Float> = SnapAnimationSpec,

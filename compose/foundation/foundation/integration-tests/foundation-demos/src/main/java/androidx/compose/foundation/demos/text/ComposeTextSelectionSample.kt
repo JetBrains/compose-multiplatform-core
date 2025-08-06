@@ -72,7 +72,7 @@ val langContent =
     )
 
 @Composable
-fun TextSelectionSample() {
+fun NoriaContext.TextSelectionSample() {
     SelectionContainer {
         LazyColumn(Modifier.padding(12.dp)) {
             item { Basics() }
@@ -86,7 +86,7 @@ fun TextSelectionSample() {
 }
 
 @Composable
-private fun Basics() {
+private fun NoriaContext.Basics() {
     Text(text = "Jetpack Compose Basics", style = commonStyle.merge(header))
     Row {
         Box(Modifier.padding(8.dp).size(48.dp).background(rectColor))
@@ -102,7 +102,7 @@ private fun Basics() {
 }
 
 @Composable
-private fun AddTextElement() {
+private fun NoriaContext.AddTextElement() {
     Text(text = "Add a text element", style = commonStyle.merge(header2))
     Row {
         Column(Modifier.weight(1f)) {
@@ -145,7 +145,7 @@ private fun AddTextElement() {
 }
 
 @Composable
-private fun MultiParagraph() {
+private fun NoriaContext.MultiParagraph() {
     Text(
         text = "Define a composable function (Multi Paragraph)",
         style = commonStyle.merge(header2),
@@ -178,7 +178,7 @@ private fun MultiParagraph() {
 }
 
 @Composable
-private fun MultiLanguage(title: String, content: String) {
+private fun NoriaContext.MultiLanguage(title: String, content: String) {
     Text(text = title, style = commonStyle.merge(header))
     Row {
         Box(Modifier.padding(8.dp).size(48.dp).background(rectColor))

@@ -233,7 +233,7 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
 }
 
 @Composable
-fun MyLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.MyLayout(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(content = content, measurePolicy = EmptyMeasurePolicy, modifier = modifier)
 }
 
@@ -252,31 +252,31 @@ class ColorModel(color: Color = Color.Black) {
 private val defaultModifier = Modifier.background(Color.Yellow)
 
 @Composable
-private fun Rect() {
+private fun NoriaContext.Rect() {
     Column(defaultModifier) {}
 }
 
 @Composable
-private fun SimpleText(text: String) {
+private fun NoriaContext.SimpleText(text: String) {
     val measurer = rememberTextMeasurer()
     Box(modifier = Modifier.drawBehind { drawText(measurer, text) })
 }
 
 @Composable
-private fun Rect(color: Color) {
+private fun NoriaContext.Rect(color: Color) {
     val modifier = remember(color) { Modifier.background(color) }
     Column(modifier) {}
 }
 
 @Composable
-fun OneRect(model: ColorModel) {
+fun NoriaContext.OneRect(model: ColorModel) {
     Rect(model.color)
 }
 
-@Composable fun Observe(body: @Composable () -> Unit) = body()
+@Composable fun Observe(body: @Composable NoriaContext.() -> Unit) = body()
 
 @Composable
-fun TenRects(model: ColorModel, narrow: Boolean = false) {
+fun NoriaContext.TenRects(model: ColorModel, narrow: Boolean = false) {
     if (narrow) {
         Observe { Rect(model.color) }
     } else {
@@ -286,7 +286,7 @@ fun TenRects(model: ColorModel, narrow: Boolean = false) {
 }
 
 @Composable
-fun HundredRects(model: ColorModel, narrow: Boolean = false) {
+fun NoriaContext.HundredRects(model: ColorModel, narrow: Boolean = false) {
     repeat(100) {
         if (it % 10 == 0)
             if (narrow) {

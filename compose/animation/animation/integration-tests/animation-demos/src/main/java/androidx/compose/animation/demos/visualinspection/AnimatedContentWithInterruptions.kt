@@ -46,7 +46,7 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AnimatedContentWithInterruptions() {
+fun NoriaContext.AnimatedContentWithInterruptions() {
     var count by remember { mutableIntStateOf(0) }
     AnimatedContent(
         targetState = count,

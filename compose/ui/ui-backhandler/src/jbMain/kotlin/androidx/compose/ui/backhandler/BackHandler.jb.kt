@@ -29,6 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import noria.NoriaContext
 
 /**
  * Provides a [BackGestureDispatcher] that can be used by Composables to handle back events.
@@ -38,7 +39,7 @@ val LocalBackGestureDispatcher = staticCompositionLocalOf<BackGestureDispatcher?
 
 @Composable
 @ExperimentalComposeUiApi
-actual fun PredictiveBackHandler(
+actual fun NoriaContext.PredictiveBackHandler(
     enabled: Boolean,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 ) {
@@ -73,7 +74,7 @@ actual fun PredictiveBackHandler(
 
 @Composable
 @ExperimentalComposeUiApi
-actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
+actual fun NoriaContext.BackHandler(enabled: Boolean, onBack: () -> Unit) {
     PredictiveBackHandler(enabled) { progress ->
         try {
             progress.collect { /*ignore*/ }

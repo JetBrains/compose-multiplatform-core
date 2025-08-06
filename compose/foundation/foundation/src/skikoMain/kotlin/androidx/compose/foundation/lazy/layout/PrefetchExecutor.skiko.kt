@@ -18,6 +18,7 @@ package androidx.compose.foundation.lazy.layout
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 // TODO https://youtrack.jetbrains.com/issue/COMPOSE-1265/Implement-rememberDefaultPrefetchExecutor
 
@@ -27,7 +28,7 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 @ExperimentalFoundationApi
-internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
+internal actual fun NoriaContext.rememberDefaultPrefetchScheduler(): PrefetchScheduler {
     return object : PrefetchScheduler {
         override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
         }

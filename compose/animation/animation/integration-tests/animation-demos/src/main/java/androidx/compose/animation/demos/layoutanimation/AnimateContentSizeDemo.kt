@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun AnimateContentSizeDemo() {
+fun NoriaContext.AnimateContentSizeDemo() {
     Column(
         Modifier.wrapContentHeight()
             .padding(50.dp)

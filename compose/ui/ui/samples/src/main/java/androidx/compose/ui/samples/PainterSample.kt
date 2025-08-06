@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun PainterModifierSample() {
+fun NoriaContext.PainterModifierSample() {
     class CustomPainter : Painter() {
 
         override val intrinsicSize: Size
@@ -58,7 +58,7 @@ fun PainterModifierSample() {
 
 @Sampled
 @Composable
-fun PainterResourceSample() {
+fun NoriaContext.PainterResourceSample() {
     // Sample showing how to render a Painter based on a different resource (vector vs png)
     // Here a Vector asset is used in the portrait orientation, however, a png is used instead
     // in the landscape orientation based on the res/drawable and res/drawable-land-hdpi folders

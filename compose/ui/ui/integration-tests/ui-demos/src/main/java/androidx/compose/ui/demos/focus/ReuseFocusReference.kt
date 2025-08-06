@@ -47,7 +47,7 @@ private enum class CurrentShape {
 }
 
 @Composable
-fun ReuseFocusRequesterDemo() {
+fun NoriaContext.ReuseFocusRequesterDemo() {
     Column(verticalArrangement = Arrangement.Top) {
         Text(
             "Click to Focus on the shape. The focused shape disappears, and is replaced by " +
@@ -80,7 +80,7 @@ fun ReuseFocusRequesterDemo() {
 }
 
 @Composable
-private fun Circle(modifier: Modifier = Modifier, nextShape: () -> Unit) {
+private fun NoriaContext.Circle(modifier: Modifier = Modifier, nextShape: () -> Unit) {
     var isFocused by remember { mutableStateOf(false) }
     val scale by
         animateFloatAsState(if (isFocused) 0f else 1f, TweenSpec(2000)) {
@@ -99,7 +99,7 @@ private fun Circle(modifier: Modifier = Modifier, nextShape: () -> Unit) {
 }
 
 @Composable
-private fun Square(modifier: Modifier = Modifier, nextShape: () -> Unit) {
+private fun NoriaContext.Square(modifier: Modifier = Modifier, nextShape: () -> Unit) {
     var isFocused by remember { mutableStateOf(false) }
     val scale by
         animateFloatAsState(if (isFocused) 0f else 1f, TweenSpec(2000)) {

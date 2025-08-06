@@ -22,23 +22,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun DesignInfoProviderA() {
+fun NoriaContext.DesignInfoProviderA() {
     designInfoWithCustomArgument("A", "ObjectA")
 }
 
 @Composable
-fun DesignInfoProviderB() {
+fun NoriaContext.DesignInfoProviderB() {
     designInfoWithCustomArgument("B", "ObjectB")
 }
 
 @Preview
 @Composable
-fun ScaffoldDesignInfoProvider() {
+fun NoriaContext.ScaffoldDesignInfoProvider() {
     Scaffold { DesignInfoProviderA() }
 }
 
 @Composable
-private fun designInfoWithCustomArgument(expectedArgumentValue: String, response: String) =
+private fun NoriaContext.designInfoWithCustomArgument(expectedArgumentValue: String, response: String) =
     remember {
         object : Any() {
             fun getDesignInfo(x: Int, y: Int, args: String) = run {

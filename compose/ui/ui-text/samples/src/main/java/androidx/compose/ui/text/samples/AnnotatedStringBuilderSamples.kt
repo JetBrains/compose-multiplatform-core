@@ -209,7 +209,7 @@ fun AnnotatedStringWithLinkSample() {
 
 @Sampled
 @Composable
-fun AnnotatedStringWithHoveredLinkStylingSample() {
+fun NoriaContext.AnnotatedStringWithHoveredLinkStylingSample() {
     // Display a link in the text that gets an underline when hovered
     BasicText(
         buildAnnotatedString {

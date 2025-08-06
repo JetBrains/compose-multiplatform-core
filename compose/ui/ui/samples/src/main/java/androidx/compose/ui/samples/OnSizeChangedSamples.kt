@@ -24,7 +24,7 @@ import androidx.compose.ui.layout.onSizeChanged
 
 @Sampled
 @Composable
-fun OnSizeChangedSample(name: String) {
+fun NoriaContext.OnSizeChangedSample(name: String) {
     // Use onSizeChanged() for diagnostics. Use Layout or SubcomposeLayout if you want
     // to use the size of one component to affect the size of another component.
     Text(

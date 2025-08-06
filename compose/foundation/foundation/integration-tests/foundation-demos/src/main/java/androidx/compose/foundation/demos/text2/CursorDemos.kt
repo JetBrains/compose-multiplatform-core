@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
 @Composable
-fun TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
+fun NoriaContext.TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         val textFieldDecoration =
             Modifier.border(2.dp, Color.DarkGray, RoundedCornerShape(5.dp)).padding(8.dp)

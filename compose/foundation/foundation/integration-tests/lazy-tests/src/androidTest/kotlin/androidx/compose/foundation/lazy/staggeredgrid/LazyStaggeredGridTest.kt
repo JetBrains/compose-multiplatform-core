@@ -121,13 +121,13 @@ class LazyStaggeredGridTest(
     }
 
     private fun ComposeContentTestRule.setContentWithConfigurableLookahead(
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     ) {
         setContent { ConfigurableLookaheadScope(useLookahead, content) }
     }
 
     @Composable
-    private fun ConfigurableLookaheadScope(useLookahead: Boolean, content: @Composable () -> Unit) {
+    private fun ConfigurableLookaheadScope(useLookahead: Boolean, content: @Composable NoriaContext.() -> Unit) {
         if (useLookahead) {
             LookaheadScope { content() }
         } else {
@@ -137,7 +137,7 @@ class LazyStaggeredGridTest(
 
     private fun ComposeContentTestRule.setContentWithTestViewConfiguration(
         useLookahead: Boolean,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         setContentWithTestViewConfiguration { ConfigurableLookaheadScope(useLookahead, content) }
     }

@@ -38,7 +38,7 @@ val BigTestMaxHeight = 5000.dp
 fun SkikoComposeUiTest.setContentForSizeAssertions(
     parentMaxWidth: Dp = BigTestMaxWidth,
     parentMaxHeight: Dp = BigTestMaxHeight,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): SemanticsNodeInteraction {
     setContent {
         Box {

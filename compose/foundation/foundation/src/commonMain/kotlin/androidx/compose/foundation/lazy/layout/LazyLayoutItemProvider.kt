@@ -19,6 +19,7 @@ package androidx.compose.foundation.lazy.layout
 import androidx.annotation.IntRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import noria.NoriaContext
 
 /**
  * Provides all the needed info about the items which could be later composed and displayed as
@@ -55,7 +56,7 @@ interface LazyLayoutItemProvider {
      * @param index the index of the item in the list
      * @param key The key of the item as described above.
      */
-    @Composable fun Item(@IntRange(from = 0) index: Int, key: Any)
+    @Composable fun NoriaContext.Item(@IntRange(from = 0) index: Int, key: Any)
 
     /**
      * Returns the content type for the item on this index. It is used to improve the item

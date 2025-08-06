@@ -25,7 +25,7 @@ import androidx.compose.runtime.NonSkippableComposable
 // </linear>
 @Suppress("ComposableNaming")
 @Composable
-fun contact(contact: Contact) {
+fun NoriaContext.contact(contact: Contact) {
     Linear {
         Text(value = "Name: ${contact.name}")
         Text(value = "email: ${contact.email}")
@@ -48,7 +48,7 @@ fun MockViewValidator.contact(contact: Contact) {
 // </linear>
 @Suppress("ComposableNaming")
 @Composable
-fun contacts(contacts: Collection<Contact>, selected: Contact?) {
+fun NoriaContext.contacts(contacts: Collection<Contact>, selected: Contact?) {
     Linear { Repeated(of = contacts) { SelectBox(it == selected) { contact(it) } } }
 }
 

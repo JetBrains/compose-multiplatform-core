@@ -1160,7 +1160,7 @@ class ScrollTest(private val config: Config) {
                 .then(sizeModifiers)
                 .then(CountMeasureModifier { measurements++ })
 
-        val content: @Composable () -> Unit = {
+        val content: @Composable NoriaContext.() -> Unit = {
             repeat(25) { Box(modifier = Modifier.size(100.dp).padding(2.dp).background(Color.Red)) }
         }
 

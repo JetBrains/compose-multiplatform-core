@@ -841,7 +841,7 @@ class ModifierNodeReuseAndDeactivationTest {
 }
 
 @Composable
-private fun TestLayout(
+private fun NoriaContext.TestLayout(
     key: Any? = null,
     onReset: () -> Unit = {},
     onCreate: () -> Unit = {},

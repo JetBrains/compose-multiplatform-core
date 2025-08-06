@@ -33,7 +33,7 @@ import kotlin.math.sin
 
 @Sampled
 @Composable
-fun AndroidExternalSurfaceColors() {
+fun NoriaContext.AndroidExternalSurfaceColors() {
     AndroidExternalSurface(modifier = Modifier.fillMaxWidth().height(400.dp)) {
         // Resources can be initialized/cached here
 
@@ -74,7 +74,7 @@ fun AndroidExternalSurfaceColors() {
 
 @Sampled
 @Composable
-fun AndroidEmbeddedExternalSurfaceColors() {
+fun NoriaContext.AndroidEmbeddedExternalSurfaceColors() {
     AndroidEmbeddedExternalSurface(modifier = Modifier.fillMaxWidth().height(400.dp)) {
         // Resources can be initialized/cached here
 

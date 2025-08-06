@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SoftwareKeyboardControllerSample() {
+fun NoriaContext.SoftwareKeyboardControllerSample() {
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // used to ensure a TextField is focused when showing keyboard

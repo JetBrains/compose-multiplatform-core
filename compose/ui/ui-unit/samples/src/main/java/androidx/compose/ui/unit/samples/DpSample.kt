@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun DpSample() {
+fun NoriaContext.DpSample() {
     Box(
         Modifier.padding(
             10.dp, // Int
@@ -42,7 +42,7 @@ fun DpSample() {
 
 @Sampled
 @Composable
-fun ToPxSample() {
+fun NoriaContext.ToPxSample() {
     val lineThickness = 6.dp
     Canvas(Modifier.fillMaxSize()) {
         val lineThicknessPx = lineThickness.toPx()

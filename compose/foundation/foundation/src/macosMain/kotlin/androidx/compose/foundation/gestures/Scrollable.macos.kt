@@ -28,7 +28,7 @@ internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavi
     )
 
 @Composable
-internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
+internal actual fun NoriaContext.rememberPlatformDefaultFlingBehavior(): FlingBehavior {
     val flingSpec = rememberSplineBasedDecay<Float>()
     return remember(flingSpec) {
         DefaultFlingBehavior(flingSpec)

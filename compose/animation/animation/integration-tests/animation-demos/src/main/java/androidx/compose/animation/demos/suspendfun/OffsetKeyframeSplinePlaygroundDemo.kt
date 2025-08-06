@@ -90,7 +90,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun OffsetKeyframeSplinePlaygroundDemo() {
+fun NoriaContext.OffsetKeyframeSplinePlaygroundDemo() {
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val playgroundModel = remember { SplineKeyframesPlaygroundModel(scope) }

@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectTransformGestures] demo with scale only. */
 @Composable
-fun ScaleGestureFilterDemo() {
+fun NoriaContext.ScaleGestureFilterDemo() {
     val size = remember { mutableStateOf(192.dp) }
 
     Column {

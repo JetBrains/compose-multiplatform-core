@@ -210,7 +210,7 @@ class NodesRemeasuredOnceTest {
 }
 
 @Composable
-private fun WrapChild(onMeasured: (Int) -> Unit = {}, content: @Composable () -> Unit) {
+private fun NoriaContext.WrapChild(onMeasured: (Int) -> Unit = {}, content: @Composable () -> Unit) {
     Layout(content = content) { measurables, constraints ->
         val placeable =
             measurables
@@ -222,7 +222,7 @@ private fun WrapChild(onMeasured: (Int) -> Unit = {}, content: @Composable () ->
 }
 
 @Composable
-private fun WrapChildMeasureDuringLayout(
+private fun NoriaContext.WrapChildMeasureDuringLayout(
     onMeasured: (Int) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
@@ -242,7 +242,7 @@ private fun WrapChildMeasureDuringLayout(
 }
 
 @Composable
-private fun IntrinsicSizeAndMeasureDuringLayout(
+private fun NoriaContext.IntrinsicSizeAndMeasureDuringLayout(
     onMeasured: (Int) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
@@ -261,7 +261,7 @@ private fun IntrinsicSizeAndMeasureDuringLayout(
 }
 
 @Composable
-private fun NotPlaceChild(height: State<Int>, content: @Composable () -> Unit) {
+private fun NoriaContext.NotPlaceChild(height: State<Int>, content: @Composable () -> Unit) {
     Layout(content = content) { measurables, constraints ->
         layout(
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth,
@@ -275,7 +275,7 @@ private fun NotPlaceChild(height: State<Int>, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Child(height: State<Int>) {
+private fun NoriaContext.Child(height: State<Int>) {
     Layout { _, constraints ->
         layout(
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth,

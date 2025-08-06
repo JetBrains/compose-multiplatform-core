@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * Properties used to customize the behavior of a [Popup].
@@ -121,12 +122,12 @@ internal class AlignmentOffsetPositionProvider(val alignment: Alignment, val off
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-expect fun Popup(
+expect fun NoriaContext.Popup(
     alignment: Alignment = Alignment.TopStart,
     offset: IntOffset = IntOffset(0, 0),
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 )
 
 /**
@@ -141,9 +142,9 @@ expect fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-expect fun Popup(
+expect fun NoriaContext.Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 )

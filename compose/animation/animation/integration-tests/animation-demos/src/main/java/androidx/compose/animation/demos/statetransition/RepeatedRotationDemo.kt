@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun RepeatedRotationDemo() {
+fun NoriaContext.RepeatedRotationDemo() {
     val state = remember { mutableStateOf(RotationStates.Original) }
     Column(
         Modifier.fillMaxSize().wrapContentSize(Alignment.Center),

@@ -470,7 +470,7 @@ class VelocityTrackingListParityTest {
 }
 
 @Composable
-fun TestComposeList(state: LazyListState) {
+fun NoriaContext.TestComposeList(state: LazyListState) {
     LazyColumn(Modifier.fillMaxSize(), state = state) {
         items(2000) {
             Box(modifier = Modifier.fillMaxWidth().height(64.dp).background(Color.Black)) {

@@ -32,7 +32,7 @@ import androidx.compose.ui.modifier.modifierLocalProvider
 
 @Sampled
 @Composable
-fun ModifierLocalParentChildCommunicationWithinLayoutNodeSample() {
+fun NoriaContext.ModifierLocalParentChildCommunicationWithinLayoutNodeSample() {
 
     // Define the type of data.
     val ModifierLocalMessage = modifierLocalOf { "Unknown" }
@@ -53,7 +53,7 @@ fun ModifierLocalParentChildCommunicationWithinLayoutNodeSample() {
 
 @Sampled
 @Composable
-fun ModifierLocalChildParentCommunicationWithinLayoutNodeSample() {
+fun NoriaContext.ModifierLocalChildParentCommunicationWithinLayoutNodeSample() {
 
     class Sender(val onMessageReceived: (String) -> Unit) {
         fun sendMessage(message: String) {
@@ -83,7 +83,7 @@ fun ModifierLocalChildParentCommunicationWithinLayoutNodeSample() {
 
 @Sampled
 @Composable
-fun ModifierLocalParentChildCommunicationInterLayoutNodeSample() {
+fun NoriaContext.ModifierLocalParentChildCommunicationInterLayoutNodeSample() {
 
     // Define the type of data.
     val ModifierLocalMessage = modifierLocalOf { "Unknown" }
@@ -104,7 +104,7 @@ fun ModifierLocalParentChildCommunicationInterLayoutNodeSample() {
 
 @Sampled
 @Composable
-fun ModifierLocalChildParentCommunicationInterLayoutNodeSample() {
+fun NoriaContext.ModifierLocalChildParentCommunicationInterLayoutNodeSample() {
 
     class Sender(val onMessageReceived: (String) -> Unit) {
         fun sendMessage(message: String) {

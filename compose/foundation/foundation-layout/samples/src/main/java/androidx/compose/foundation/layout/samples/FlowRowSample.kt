@@ -58,7 +58,7 @@ import kotlin.random.Random
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowRow() {
+fun NoriaContext.SimpleFlowRow() {
     Text(
         modifier =
             Modifier.fillMaxWidth(1f).padding(20.dp).wrapContentHeight(align = Alignment.Top),
@@ -89,7 +89,7 @@ fun SimpleFlowRow() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowRowMaxLinesWithSeeMore() {
+fun NoriaContext.SimpleFlowRowMaxLinesWithSeeMore() {
     val totalCount = 20
     var maxLines by remember { mutableStateOf(2) }
 
@@ -128,7 +128,7 @@ fun SimpleFlowRowMaxLinesWithSeeMore() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SimpleFlowRowWithMaxHeight() {
+fun NoriaContext.SimpleFlowRowWithMaxHeight() {
     var initialHeight = 200.dp
     var height by remember { mutableStateOf(initialHeight) }
 
@@ -172,7 +172,7 @@ fun SimpleFlowRowWithMaxHeight() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowRowMaxLinesDynamicSeeMore() {
+fun NoriaContext.SimpleFlowRowMaxLinesDynamicSeeMore() {
     val totalCount = 40
     var maxLines by remember { mutableStateOf(2) }
 
@@ -229,7 +229,7 @@ fun SimpleFlowRowMaxLinesDynamicSeeMore() {
 }
 
 @Composable
-internal fun DynamicSeeMoreForDrawText(
+internal fun NoriaContext.DynamicSeeMoreForDrawText(
     isHorizontal: Boolean,
     totalCount: Int,
     shownItemCount: () -> Int?,
@@ -298,7 +298,7 @@ internal fun DynamicSeeMoreForDrawText(
 }
 
 @Composable
-internal fun Ellipsis(text: String, onClick: () -> Unit) {
+internal fun NoriaContext.Ellipsis(text: String, onClick: () -> Unit) {
     Box(Modifier.clickable(onClick = onClick).width(50.dp).height(50.dp).background(Color.Green)) {
         Text(
             modifier = Modifier.align(Alignment.Center).padding(3.dp),
@@ -311,7 +311,7 @@ internal fun Ellipsis(text: String, onClick: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowRow_EqualHeight() {
+fun NoriaContext.SimpleFlowRow_EqualHeight() {
     FlowRow(
         Modifier.fillMaxWidth(1f).padding(20.dp).wrapContentHeight(align = Alignment.Top),
         horizontalArrangement = Arrangement.spacedBy(10.dp),

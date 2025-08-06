@@ -35,11 +35,12 @@ import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import noria.NoriaContext
 
 @Composable
-internal fun WebTextToolbarArea(
+internal fun NoriaContext.WebTextToolbarArea(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     Box(modifier, propagateMinConstraints = true) {
         content()
@@ -49,7 +50,7 @@ internal fun WebTextToolbarArea(
 
 @OptIn(InternalComposeUiApi::class)
 @Composable
-private fun WebTextToolbarPopup() {
+private fun NoriaContext.WebTextToolbarPopup() {
     val textToolbar = LocalTextToolbar.current as? WebTextToolbar ?: return
 
     // we must remove a parent offset because

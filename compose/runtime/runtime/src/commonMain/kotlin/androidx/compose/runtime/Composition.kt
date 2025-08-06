@@ -38,6 +38,7 @@ import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.ObservableComposition
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import noria.NoriaContext
 
 /**
  * A composition object is usually constructed for you, and returned from an API that is used to
@@ -81,7 +82,7 @@ public interface Composition {
      * @param content A composable function that describes the content of the composition.
      * @exception IllegalStateException thrown in the composition has been [dispose]d.
      */
-    public fun setContent(content: @Composable () -> Unit)
+    public fun setContent(content: @Composable NoriaContext.() -> Unit)
 }
 
 /**
@@ -106,7 +107,7 @@ public sealed interface ReusableComposition : Composition {
      * @param content A composable function that describes the content of the composition.
      * @exception IllegalStateException thrown in the composition has been [dispose]d.
      */
-    public fun setContentWithReuse(content: @Composable () -> Unit)
+    public fun setContentWithReuse(content: @Composable NoriaContext.() -> Unit)
 
     /**
      * Deactivate all observation scopes in composition and remove all remembered slots while
@@ -180,7 +181,7 @@ public sealed interface ControlledComposition : Composition {
      *
      * @param content A composable function that describes the tree.
      */
-    public fun composeContent(content: @Composable () -> Unit)
+    public fun composeContent(content: @Composable NoriaContext.() -> Unit)
 
     /**
      * Record the values that were modified after the last call to [recompose] or from the initial
@@ -619,7 +620,7 @@ internal class CompositionImpl(
      * The [Composable] function used to define the tree managed by this composition. This is set by
      * [setContent].
      */
-    var composable: @Composable () -> Unit = {}
+    var composable: @Composable NoriaContext.() -> Unit = {}
 
     override val isComposing: Boolean
         get() = composer.isComposing
@@ -630,7 +631,7 @@ internal class CompositionImpl(
     override val hasPendingChanges: Boolean
         get() = synchronized(lock) { composer.hasPendingChanges }
 
-    override fun setContent(content: @Composable () -> Unit) {
+    override fun setContent(content: @Composable NoriaContext.() -> Unit) {
         val wasDeactivated = clearDeactivated()
         ensureRunning()
 
@@ -641,19 +642,19 @@ internal class CompositionImpl(
         }
     }
 
-    override fun setContentWithReuse(content: @Composable () -> Unit) {
+    override fun setContentWithReuse(content: @Composable NoriaContext.() -> Unit) {
         clearDeactivated()
         ensureRunning()
 
         composeInitialWithReuse(content)
     }
 
-    override fun setPausableContent(content: @Composable () -> Unit): PausedComposition {
+    override fun setPausableContent(content: @Composable NoriaContext.() -> Unit): PausedComposition {
         val wasDeactivated = clearDeactivated()
         return composeInitialPaused(reusable = wasDeactivated, content)
     }
 
-    override fun setPausableContentWithReuse(content: @Composable () -> Unit): PausedComposition {
+    override fun setPausableContentWithReuse(content: @Composable NoriaContext.() -> Unit): PausedComposition {
         clearDeactivated()
         ensureRunning()
 
@@ -668,14 +669,14 @@ internal class CompositionImpl(
         }
     }
 
-    private fun composeInitial(content: @Composable () -> Unit) {
+    private fun composeInitial(content: @Composable NoriaContext.() -> Unit) {
         this.composable = content
         parent.composeInitial(this, composable)
     }
 
     private fun composeInitialPaused(
         reusable: Boolean,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ): PausedComposition {
         checkPrecondition(pendingPausedComposition == null) {
             "A pausable composition is in progress"
@@ -695,7 +696,7 @@ internal class CompositionImpl(
         return pausedComposition
     }
 
-    private fun composeInitialWithReuse(content: @Composable () -> Unit) {
+    private fun composeInitialWithReuse(content: @Composable NoriaContext.() -> Unit) {
         composer.startReuseFromRoot()
         composeInitial(content)
         composer.endReuseFromRoot()
@@ -823,7 +824,7 @@ internal class CompositionImpl(
         }
     }
 
-    override fun composeContent(content: @Composable () -> Unit) {
+    override fun composeContent(content: @Composable NoriaContext.() -> Unit) {
         // TODO: This should raise a signal to any currently running recompose calls
         //   to halt and return
         guardChanges {

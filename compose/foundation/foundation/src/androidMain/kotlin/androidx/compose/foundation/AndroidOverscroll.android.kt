@@ -80,7 +80,7 @@ import kotlin.math.roundToInt
  *   before drawing it if the platform effect is a glow effect, otherwise ignored.
  */
 @Composable
-fun rememberPlatformOverscrollFactory(
+fun NoriaContext.rememberPlatformOverscrollFactory(
     glowColor: Color = DefaultGlowColor,
     glowDrawPadding: PaddingValues = DefaultGlowPaddingValues,
 ): OverscrollFactory {
@@ -105,7 +105,7 @@ internal actual fun CompositionLocalAccessorScope.defaultOverscrollFactory(): Ov
 @OptIn(ExperimentalFoundationApi::class)
 @Suppress("DEPRECATION")
 @Composable
-internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? {
+internal actual fun NoriaContext.rememberPlatformOverscrollEffect(): OverscrollEffect? {
     val context = LocalContext.current
     val density = LocalDensity.current
     val config = LocalOverscrollConfiguration.current

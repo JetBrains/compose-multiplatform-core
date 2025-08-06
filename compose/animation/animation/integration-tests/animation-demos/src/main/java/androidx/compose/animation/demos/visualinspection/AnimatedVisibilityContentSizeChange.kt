@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun AnimatedVisibilityContentSizeChange() {
+fun NoriaContext.AnimatedVisibilityContentSizeChange() {
     Column {
         val isOpen = remember { mutableStateOf(true) }
         val itemListState = remember { mutableStateOf(listOf(1)) }

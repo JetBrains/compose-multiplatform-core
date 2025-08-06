@@ -76,7 +76,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 
 @Composable
-fun DragAndDropMultiAppSample() {
+fun NoriaContext.DragAndDropMultiAppSample() {
     var dragAndDropEventSummary by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -108,7 +108,7 @@ fun DragAndDropMultiAppSample() {
 
 @Sampled
 @Composable
-fun TextDragAndDropSourceSample(modifier: Modifier) {
+fun NoriaContext.TextDragAndDropSourceSample(modifier: Modifier) {
     val label = remember { "Drag me" }
     Box(
         modifier =
@@ -135,7 +135,7 @@ fun TextDragAndDropSourceSample(modifier: Modifier) {
 
 @Sampled
 @Composable
-fun TextDragAndDropTargetSample(
+fun NoriaContext.TextDragAndDropTargetSample(
     eventSummary: String?,
     onDragAndDropEventDropped: (DragAndDropEvent) -> Unit,
 ) {
@@ -212,7 +212,7 @@ private fun DragAndDropEvent.summary() =
         }
 
 @Composable
-fun DragAndDropNestedSample() {
+fun NoriaContext.DragAndDropNestedSample() {
     Column(modifier = Modifier.fillMaxSize()) {
         TwoByTwoGrid(
             modifier =
@@ -254,7 +254,7 @@ fun DragAndDropNestedSample() {
 }
 
 @Composable
-private fun ColorSwatch() {
+private fun NoriaContext.ColorSwatch() {
     Row(
         modifier =
             Modifier.padding(16.dp)
@@ -269,7 +269,7 @@ private fun ColorSwatch() {
 
 @Sampled
 @Composable
-fun DragAndDropSourceWithColoredDragShadowSample(color: Color) {
+fun NoriaContext.DragAndDropSourceWithColoredDragShadowSample(color: Color) {
     Box(
         modifier =
             Modifier.size(56.dp).background(color = color).dragAndDropSource(
@@ -281,7 +281,7 @@ fun DragAndDropSourceWithColoredDragShadowSample(color: Color) {
 }
 
 @Composable
-private fun TwoByTwoGrid(
+private fun NoriaContext.TwoByTwoGrid(
     modifier: Modifier = Modifier,
     child: @Composable (RowScope.(rowAndColumn: RowAndColumn) -> Unit),
 ) {

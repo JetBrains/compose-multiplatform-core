@@ -52,6 +52,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import noria.NoriaContext
 
 //TODO: remove this file
 // when this will be in JB fork
@@ -95,7 +96,7 @@ internal object ContextMenuSpec {
 private val DefaultPopupProperties = PopupProperties(focusable = true)
 
 @Composable
-internal fun ContextMenuPopup(
+internal fun NoriaContext.ContextMenuPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -111,7 +112,7 @@ internal fun ContextMenuPopup(
 }
 
 @Composable
-internal fun ContextMenuPopup(
+internal fun NoriaContext.ContextMenuPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -128,7 +129,7 @@ internal fun ContextMenuPopup(
 }
 
 @Composable
-internal fun ContextMenuColumnBuilder(
+internal fun NoriaContext.ContextMenuColumnBuilder(
     modifier: Modifier = Modifier,
     colors: ContextMenuColors = DefaultContextMenuColors,
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
@@ -148,7 +149,7 @@ internal fun ContextMenuColumnBuilder(
 }
 
 @Composable
-internal fun ContextMenuColumn(
+internal fun NoriaContext.ContextMenuColumn(
     colors: ContextMenuColors,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
@@ -171,7 +172,7 @@ internal fun ContextMenuColumn(
 // Very similar to M3 DropdownMenuItemContent
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-internal fun ContextMenuItem(
+internal fun NoriaContext.ContextMenuItem(
     label: String,
     enabled: Boolean,
     colors: ContextMenuColors,
@@ -241,7 +242,7 @@ internal class ContextMenuScope
 internal constructor(
     private val itemUi:
     @Composable
-        (
+        NoriaContext.(
         modifier: Modifier,
         label: String,
         enabled: Boolean,
@@ -250,10 +251,10 @@ internal constructor(
         onClick: () -> Unit,
     ) -> Unit
 ) {
-    private val composables = mutableStateListOf<@Composable (colors: ContextMenuColors) -> Unit>()
+    private val composables = mutableStateListOf<@Composable NoriaContext.(colors: ContextMenuColors) -> Unit>()
 
     @Composable
-    internal fun Content(colors: ContextMenuColors) {
+    internal fun NoriaContext.Content(colors: ContextMenuColors) {
         composables.fastForEach { composable -> composable(colors) }
     }
 
@@ -276,7 +277,7 @@ internal constructor(
      *   context menu should be dismissed.
      */
     fun item(
-        label: @Composable () -> String,
+        label: @Composable NoriaContext.() -> String,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
         /**
@@ -374,4 +375,4 @@ internal class ContextMenuColors(
             ")"
 }
 
-@Composable internal fun computeContextMenuColors(): ContextMenuColors = DefaultContextMenuColors
+@Composable internal fun NoriaContext.computeContextMenuColors(): ContextMenuColors = DefaultContextMenuColors

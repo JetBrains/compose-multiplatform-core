@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.absoluteValue
 import kotlin.math.sign
+import noria.NoriaContext
 
 /**
  * A [SnapLayoutInfoProvider] for LazyLists.
@@ -110,7 +111,7 @@ fun SnapLayoutInfoProvider(
  *   within the viewport.
  */
 @Composable
-fun rememberSnapFlingBehavior(
+fun NoriaContext.rememberSnapFlingBehavior(
     lazyListState: LazyListState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): FlingBehavior {

@@ -29,7 +29,7 @@ import androidx.compose.ui.semantics.semantics
 
 @Sampled
 @Composable
-fun AutofillableTextFieldWithAutofillModifier() {
+fun NoriaContext.AutofillableTextFieldWithAutofillModifier() {
     TextField(
         state = rememberTextFieldState(),
         label = { Text("Enter your new username here.") },
@@ -40,7 +40,7 @@ fun AutofillableTextFieldWithAutofillModifier() {
 
 @Sampled
 @Composable
-fun AutofillableTextFieldWithContentTypeSemantics() {
+fun NoriaContext.AutofillableTextFieldWithContentTypeSemantics() {
     TextField(
         state = rememberTextFieldState(),
         label = { Text("Enter your new password here.") },

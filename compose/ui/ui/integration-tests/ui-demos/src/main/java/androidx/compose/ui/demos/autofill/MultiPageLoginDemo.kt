@@ -44,7 +44,7 @@ import androidx.navigation.compose.rememberNavController
 
 @Preview
 @Composable
-fun MultiPageLoginDemo() {
+fun NoriaContext.MultiPageLoginDemo() {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         val navController = rememberNavController()
         NavHost(
@@ -60,7 +60,7 @@ fun MultiPageLoginDemo() {
 }
 
 @Composable
-fun Screen1(navController: NavController) {
+fun NoriaContext.Screen1(navController: NavController) {
     var username by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize()) {
@@ -78,7 +78,7 @@ fun Screen1(navController: NavController) {
 }
 
 @Composable
-fun Screen2(navController: NavController) {
+fun NoriaContext.Screen2(navController: NavController) {
     Column(Modifier.fillMaxSize()) {
         var password by remember { mutableStateOf("") }
         val focusRequester = remember { FocusRequester() }
@@ -100,6 +100,6 @@ fun Screen2(navController: NavController) {
 }
 
 @Composable
-fun Screen3() {
+fun NoriaContext.Screen3() {
     Column(Modifier.fillMaxSize()) { Text("Credentials have been submitted.") }
 }

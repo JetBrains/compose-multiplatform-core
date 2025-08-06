@@ -19,7 +19,7 @@ package androidx.compose.runtime.mock
 import androidx.compose.runtime.Composable
 
 @Composable
-fun ReportsTo(report: Report) {
+fun NoriaContext.ReportsTo(report: Report) {
     Text(report.from)
     Text("reports to")
     Text(report.to)
@@ -32,7 +32,7 @@ fun MockViewValidator.ReportsTo(report: Report) {
 }
 
 @Composable
-fun ReportsReport(reports: Iterable<Report>) {
+fun NoriaContext.ReportsReport(reports: Iterable<Report>) {
     Linear { Repeated(of = reports) { report -> ReportsTo(report) } }
 }
 

@@ -313,7 +313,7 @@ class CoreTextFieldInputServiceIntegrationTest {
     }
 
     @Suppress("unused")
-    private fun setContent(content: @Composable () -> Unit) {
+    private fun setContent(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             focusManager = LocalFocusManager.current
             CompositionLocalProvider(

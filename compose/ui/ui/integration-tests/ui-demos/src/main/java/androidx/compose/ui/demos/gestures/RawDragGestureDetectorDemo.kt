@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [drag] demo. */
 @Composable
-fun RawDragGestureFilterDemo() {
+fun NoriaContext.RawDragGestureFilterDemo() {
     val offset = remember { mutableStateOf(Offset.Zero) }
 
     val (offsetX, offsetY) =

@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun OverscrollDemo() {
+fun NoriaContext.OverscrollDemo() {
     Column(
         Modifier.verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,

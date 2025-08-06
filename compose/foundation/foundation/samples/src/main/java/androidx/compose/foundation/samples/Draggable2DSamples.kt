@@ -39,7 +39,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun Draggable2DSample() {
+fun NoriaContext.Draggable2DSample() {
     // Draw a box that has a a grey background
     // with a red square that moves along 300.dp dragging in both directions
     val max = 200.dp

@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun LastClippedCharacterDemo() {
+fun NoriaContext.LastClippedCharacterDemo() {
     var lastCharacterBox by remember { mutableStateOf<Rect?>(null) }
 
     var overflow by remember { mutableStateOf(false) }

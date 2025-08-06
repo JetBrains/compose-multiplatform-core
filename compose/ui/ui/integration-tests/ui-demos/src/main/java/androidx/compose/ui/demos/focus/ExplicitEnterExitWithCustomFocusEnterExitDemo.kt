@@ -36,7 +36,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
 
 @Composable
-fun ExplicitEnterExitWithCustomFocusEnterExitDemo() {
+fun NoriaContext.ExplicitEnterExitWithCustomFocusEnterExitDemo() {
     val (top, row, item1, item2, item3, bottom) = remember { FocusRequester.createRefs() }
     val inputModeManager = LocalInputModeManager.current
     Column {

@@ -159,9 +159,11 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
             onKeyEvent = onKeyEvent,
         ) {
             scope.content()
-            undecoratedWindowResizer.Content(
-                modifier = Modifier.layoutId("UndecoratedWindowResizer")
-            )
+            undecoratedWindowResizer.run {
+                Content(
+                    modifier = Modifier.layoutId("UndecoratedWindowResizer")
+                )
+            }
         }
     }
 

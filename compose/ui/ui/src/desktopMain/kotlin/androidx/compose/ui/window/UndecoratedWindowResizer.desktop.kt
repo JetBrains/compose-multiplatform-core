@@ -35,6 +35,7 @@ import java.awt.Dimension
 import java.awt.MouseInfo
 import java.awt.Point
 import java.awt.Window
+import noria.NoriaContext
 
 internal class UndecoratedWindowResizer(
     private val window: Window,
@@ -47,7 +48,7 @@ internal class UndecoratedWindowResizer(
     private var initialWindowSize = Dimension()
 
     @Composable
-    fun Content(modifier: Modifier) {
+    fun NoriaContext.Content(modifier: Modifier) {
         if (!enabled) return
 
         Layout(
@@ -120,7 +121,7 @@ internal class UndecoratedWindowResizer(
     }
 
     @Composable
-    private fun Side(cursorId: Int, sides: Int) = Layout(
+    private fun NoriaContext.Side(cursorId: Int, sides: Int) = Layout(
         {},
         Modifier.cursor(cursorId).resizeOnDrag(sides),
         measurePolicy = { _, constraints ->

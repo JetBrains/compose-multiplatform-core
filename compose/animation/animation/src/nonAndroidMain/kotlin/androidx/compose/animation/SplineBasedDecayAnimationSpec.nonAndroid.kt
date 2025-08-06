@@ -24,11 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import kotlin.jvm.JvmName
+import noria.NoriaContext
 
 internal actual val platformFlingScrollFriction = 0.015f
 
 @Composable
-public actual fun <T> rememberSplineBasedDecay(): DecayAnimationSpec<T> {
+public actual fun <T> NoriaContext.rememberSplineBasedDecay(): DecayAnimationSpec<T> {
     // This function will internally update the calculation of fling decay when the density changes,
     // but the reference to the returned spec will not change across calls.
     val density = LocalDensity.current

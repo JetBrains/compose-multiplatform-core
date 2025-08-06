@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
+import androidx.compose.ui.noriaComposed
 
 /**
  * Create a modifier for processing pointer input within the region of the modified element.
@@ -36,15 +36,17 @@ fun Modifier.onPointerEvent(
     eventType: PointerEventType,
     pass: PointerEventPass = PointerEventPass.Main,
     onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
-): Modifier = composed {
-    val currentEventType by rememberUpdatedState(eventType)
-    val currentOnEvent by rememberUpdatedState(onEvent)
-    pointerInput(pass) {
-        awaitPointerEventScope {
-            while (true) {
-                val event = awaitPointerEvent(pass)
-                if (event.type == currentEventType) {
-                    currentOnEvent(event)
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val currentEventType by rememberUpdatedState(eventType)
+        val currentOnEvent by rememberUpdatedState(onEvent)
+        pointerInput(pass) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent(pass)
+                    if (event.type == currentEventType) {
+                        currentOnEvent(event)
+                    }
                 }
             }
         }

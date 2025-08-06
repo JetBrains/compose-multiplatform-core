@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview(widthDp = 200, heightDp = 400)
 @Composable
-fun NestedLazyListFocusSearchDemo() {
+fun NoriaContext.NestedLazyListFocusSearchDemo() {
     Column {
         Text("Use the DPad to navigate through these nested lazy lists.")
         LazyColumn {

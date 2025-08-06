@@ -51,7 +51,7 @@ import kotlin.random.Random
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun ContextualFlowColMaxLineDynamicSeeMore() {
+fun NoriaContext.ContextualFlowColMaxLineDynamicSeeMore() {
     val totalCount = 300
     var maxLines by remember { mutableStateOf(2) }
 
@@ -111,7 +111,7 @@ fun ContextualFlowColMaxLineDynamicSeeMore() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun ContextualFlowColumn_ItemPosition() {
+fun NoriaContext.ContextualFlowColumn_ItemPosition() {
     Text("Ln: Line No\nPs: Position No. in Line", modifier = Modifier.padding(20.dp))
     ContextualFlowColumn(
         modifier = Modifier.fillMaxHeight(1f).width(210.dp).padding(20.dp),

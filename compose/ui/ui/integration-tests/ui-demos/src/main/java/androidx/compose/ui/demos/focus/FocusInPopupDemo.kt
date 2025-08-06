@@ -39,7 +39,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun FocusInPopupDemo() {
+fun NoriaContext.FocusInPopupDemo() {
     var showPopup by remember { mutableStateOf(false) }
     var mainText by remember { mutableStateOf(TextFieldValue("Enter Value")) }
     var popupText by remember { mutableStateOf(TextFieldValue("Enter Value")) }
@@ -73,7 +73,7 @@ fun FocusInPopupDemo() {
 }
 
 @Composable
-private fun FocusStatus() {
+private fun NoriaContext.FocusStatus() {
     val windowInfo = LocalWindowInfo.current
     Text("Status: Window ${if (windowInfo.isWindowFocused) "is" else "is not"} focused.")
 }

@@ -69,7 +69,7 @@ import androidx.compose.ui.viewinterop.AndroidViewBinding
 import kotlin.math.max
 
 @Composable
-fun LastElementOverLaidColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.LastElementOverLaidColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     var yPosition = 0
 
     Layout(modifier = modifier, content = content) { measurables, constraints ->
@@ -92,7 +92,7 @@ fun LastElementOverLaidColumn(modifier: Modifier = Modifier, content: @Composabl
 
 @Preview
 @Composable
-fun OverlaidNodeLayoutDemo() {
+fun NoriaContext.OverlaidNodeLayoutDemo() {
     LastElementOverLaidColumn(modifier = Modifier.padding(8.dp)) {
         Row {
             Column(modifier = Modifier.testTag("Text1")) {
@@ -106,7 +106,7 @@ fun OverlaidNodeLayoutDemo() {
 }
 
 @Composable
-fun CardRow(
+fun NoriaContext.CardRow(
     modifier: Modifier,
     columnNumber: Int,
     topSampleText: String,
@@ -126,7 +126,7 @@ fun CardRow(
 
 @Preview
 @Composable
-fun NestedContainersFalseDemo() {
+fun NoriaContext.NestedContainersFalseDemo() {
     var topSampleText = "Top text in column "
     var bottomSampleText = "Bottom text in column "
     Column(Modifier.testTag("Test Tag").semantics { isTraversalGroup = true }) {
@@ -150,7 +150,7 @@ fun NestedContainersFalseDemo() {
 
 @Preview
 @Composable
-fun NestedContainersTrueDemo() {
+fun NoriaContext.NestedContainersTrueDemo() {
     var topSampleText = "Top text in column "
     var bottomSampleText = "Bottom text in column "
     Column(Modifier.testTag("Test Tag").semantics { isTraversalGroup = true }) {
@@ -173,13 +173,13 @@ fun NestedContainersTrueDemo() {
 }
 
 @Composable
-fun TopAppBar() {
+fun NoriaContext.TopAppBar() {
     val topAppBar = "Top App Bar"
     TopAppBar(title = { Text(text = topAppBar) })
 }
 
 @Composable
-fun ScrollColumn(padding: PaddingValues) {
+fun NoriaContext.ScrollColumn(padding: PaddingValues) {
     var counter = 0
     var sampleText = "Sample text in column"
     Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag("Test Tag")) {
@@ -189,7 +189,7 @@ fun ScrollColumn(padding: PaddingValues) {
 
 @Preview
 @Composable
-fun ScaffoldSampleDemo() {
+fun NoriaContext.ScaffoldSampleDemo() {
     val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
     Scaffold(
         scaffoldState = scaffoldState,
@@ -210,7 +210,7 @@ fun ScaffoldSampleDemo() {
 
 @Preview
 @Composable
-fun ScaffoldSampleScrollDemo() {
+fun NoriaContext.ScaffoldSampleScrollDemo() {
     val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
     Scaffold(
         scaffoldState = scaffoldState,
@@ -230,7 +230,7 @@ fun ScaffoldSampleScrollDemo() {
 
 @Preview
 @Composable
-fun ScrollingColumnDemo() {
+fun NoriaContext.ScrollingColumnDemo() {
     var sampleText = "Sample text in column"
     var counter = 0
 
@@ -242,7 +242,7 @@ fun ScrollingColumnDemo() {
 
 @Preview
 @Composable
-fun OverlaidNodeTraversalIndexDemo() {
+fun NoriaContext.OverlaidNodeTraversalIndexDemo() {
     LastElementOverLaidColumn(Modifier.semantics { isTraversalGroup = true }.padding(8.dp)) {
         Row {
             Column(modifier = Modifier.testTag("Text1")) {
@@ -266,7 +266,7 @@ fun OverlaidNodeTraversalIndexDemo() {
 }
 
 @Composable
-fun FloatingBox() {
+fun NoriaContext.FloatingBox() {
     Box(
         modifier =
             Modifier.semantics {
@@ -281,7 +281,7 @@ fun FloatingBox() {
 }
 
 @Composable
-fun ContentColumn(padding: PaddingValues) {
+fun NoriaContext.ContentColumn(padding: PaddingValues) {
     var counter = 0
     var sampleText = "Sample text in column"
     Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag("Test Tag")) {
@@ -304,7 +304,7 @@ fun ContentColumn(padding: PaddingValues) {
  */
 @Preview
 @Composable
-fun NestedTraversalIndexInheritanceDemo() {
+fun NoriaContext.NestedTraversalIndexInheritanceDemo() {
     val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
     Scaffold(
         scaffoldState = scaffoldState,
@@ -321,7 +321,7 @@ fun NestedTraversalIndexInheritanceDemo() {
 
 @Preview
 @Composable
-fun NestedAndPeerTraversalIndexDemo() {
+fun NoriaContext.NestedAndPeerTraversalIndexDemo() {
     Column(
         Modifier
             // Having a traversal index here as 8f shouldn't affect anything; this column
@@ -354,7 +354,7 @@ fun NestedAndPeerTraversalIndexDemo() {
 
 @Preview
 @Composable
-fun IconsInScaffoldWithListDemo() {
+fun NoriaContext.IconsInScaffoldWithListDemo() {
     Scaffold(
         topBar = {
             Row(horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -386,7 +386,7 @@ fun IconsInScaffoldWithListDemo() {
 }
 
 @Composable
-fun InteropColumn(padding: PaddingValues) {
+fun NoriaContext.InteropColumn(padding: PaddingValues) {
     Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag("Test Tag")) {
         Button(onClick = {}) { Text("Button that comes before an AndroidViewBinding") }
 
@@ -404,7 +404,7 @@ fun InteropColumn(padding: PaddingValues) {
 
 @Preview
 @Composable
-fun InteropSample() {
+fun NoriaContext.InteropSample() {
     val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
     Scaffold(
         scaffoldState = scaffoldState,
@@ -424,7 +424,7 @@ fun InteropSample() {
 }
 
 @Composable
-fun InteropColumnBackwards(padding: PaddingValues) {
+fun NoriaContext.InteropColumnBackwards(padding: PaddingValues) {
     Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag("Test Tag")) {
         Button(modifier = Modifier.semantics { traversalIndex = 4f }, onClick = {}) {
             Text("Last button after AndroidViewBinding")
@@ -453,7 +453,7 @@ fun InteropColumnBackwards(padding: PaddingValues) {
 
 @Preview
 @Composable
-fun InteropSampleBackwards() {
+fun NoriaContext.InteropSampleBackwards() {
     val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
     Scaffold(
         scaffoldState = scaffoldState,
@@ -474,7 +474,7 @@ fun InteropSampleBackwards() {
 
 @Preview
 @Composable
-fun LinearProgressIndicatorDemo() {
+fun NoriaContext.LinearProgressIndicatorDemo() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("LinearProgressIndicator with undefined progress")
         Spacer(Modifier.height(30.dp))
@@ -484,7 +484,7 @@ fun LinearProgressIndicatorDemo() {
 
 @Preview
 @Composable
-fun ReadableTraversalGroups() {
+fun NoriaContext.ReadableTraversalGroups() {
     Column {
         Row(Modifier.semantics { isTraversalGroup = true }.clickable {}) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "fab icon")
@@ -495,7 +495,7 @@ fun ReadableTraversalGroups() {
 
 @Preview
 @Composable
-fun SimpleRtlLayoutDemo() {
+fun NoriaContext.SimpleRtlLayoutDemo() {
     Column {
         Row(Modifier.semantics { isTraversalGroup = true }) {
             SimpleTestLayout(Modifier.requiredSize(100.dp)) { Text("Child 1") }
@@ -515,7 +515,7 @@ fun SimpleRtlLayoutDemo() {
 }
 
 @Composable
-private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         if (measurables.isEmpty()) {
             layout(constraints.minWidth, constraints.minHeight) {}

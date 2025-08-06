@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import kotlin.js.JsName
+import noria.NoriaContext
 
 /** Default camera distance for all layers */
 const val DefaultCameraDistance = 8.0f
@@ -247,7 +248,7 @@ private class GraphicsContextObserver(private val graphicsContext: GraphicsConte
  */
 @Composable
 @ComposableOpenTarget(-1)
-fun rememberGraphicsLayer(): GraphicsLayer {
+fun NoriaContext.rememberGraphicsLayer(): GraphicsLayer {
     val graphicsContext = LocalGraphicsContext.current
     return remember { GraphicsContextObserver(graphicsContext) }.graphicsLayer
 }

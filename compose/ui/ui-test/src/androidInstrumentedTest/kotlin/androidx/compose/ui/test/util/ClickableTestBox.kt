@@ -35,7 +35,7 @@ object ClickableTestBox {
 }
 
 @Composable
-fun ClickableTestBox(
+fun NoriaContext.ClickableTestBox(
     modifier: Modifier = Modifier,
     width: Float = defaultSize,
     height: Float = defaultSize,

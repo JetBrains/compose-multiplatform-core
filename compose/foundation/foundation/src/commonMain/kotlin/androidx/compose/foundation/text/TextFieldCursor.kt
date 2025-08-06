@@ -20,13 +20,13 @@ import androidx.compose.foundation.text.input.internal.CursorAnimationState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.isUnspecified
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalCursorBlinkEnabled
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.OffsetMapping
@@ -43,58 +43,62 @@ internal fun Modifier.cursor(
     enabled: Boolean,
 ) =
     if (enabled)
-        composed {
-            val animateCursor = LocalCursorBlinkEnabled.current
-            val cursorAnimation = remember(animateCursor) { CursorAnimationState(animateCursor) }
-            // Don't bother animating the cursor if it wouldn't draw any pixels.
-            val isBrushSpecified = !(cursorBrush is SolidColor && cursorBrush.value.isUnspecified)
-            // Only animate the cursor when its window is actually focused. This also disables the
-            // cursor
-            // animation when the screen is off.
-            // TODO confirm screen-off behavior.
-            val isWindowFocused = LocalWindowInfo.current.isWindowFocused
-            if (
-                isWindowFocused && state.hasFocus && value.selection.collapsed && isBrushSpecified
-            ) {
-                LaunchedEffect(value.annotatedString, value.selection) {
-                    cursorAnimation.snapToVisibleAndAnimate()
-                }
-                drawWithContent {
-                    this.drawContent()
-                    val cursorAlphaValue = cursorAnimation.cursorAlpha
-                    if (cursorAlphaValue != 0f) {
-                        val transformedOffset =
-                            offsetMapping.originalToTransformed(value.selection.start)
-                        val cursorRect =
-                            state.layoutResult?.value?.getCursorRect(transformedOffset)
-                                ?: Rect(0f, 0f, 0f, 0f)
-                        val cursorWidth = floor(DefaultCursorThickness.toPx()).coerceAtLeast(1f)
-                        val cursorX =
-                            (cursorRect.left + cursorWidth / 2)
-                                // Do not use coerceIn because it is not guaranteed that the minimum
-                                // value is
-                                // smaller than the maximum value.
-                                .coerceAtMost(size.width - cursorWidth / 2)
-                                .coerceAtLeast(cursorWidth / 2)
-                                .let {
-                                    // When cursor width is odd, draw it in the middle of a pixel,
-                                    // to avoid blurring due to antialiasing.
-                                    if (cursorWidth.toInt() % 2 == 1) {
-                                        floor(it) + 0.5f // round to nearest n+0.5
-                                    } else round(it)
-                                }
-
-                        drawLine(
-                            brush = cursorBrush,
-                            start = Offset(cursorX, cursorRect.top),
-                            end = Offset(cursorX, cursorRect.bottom),
-                            alpha = cursorAlphaValue,
-                            strokeWidth = cursorWidth,
-                        )
+        noriaComposed { noriaContext ->
+            noriaContext.run {
+                val animateCursor = LocalCursorBlinkEnabled.current
+                val cursorAnimation =
+                    remember(animateCursor) { CursorAnimationState(animateCursor) }
+                // Don't bother animating the cursor if it wouldn't draw any pixels.
+                val isBrushSpecified =
+                    !(cursorBrush is SolidColor && cursorBrush.value.isUnspecified)
+                // Only animate the cursor when its window is actually focused. This also disables the
+                // cursor
+                // animation when the screen is off.
+                // TODO confirm screen-off behavior.
+                val isWindowFocused = LocalWindowInfo.current.isWindowFocused
+                if (
+                    isWindowFocused && state.hasFocus && value.selection.collapsed && isBrushSpecified
+                ) {
+                    LaunchedEffect(value.annotatedString, value.selection) {
+                        cursorAnimation.snapToVisibleAndAnimate()
                     }
+                    drawWithContent {
+                        this.drawContent()
+                        val cursorAlphaValue = cursorAnimation.cursorAlpha
+                        if (cursorAlphaValue != 0f) {
+                            val transformedOffset =
+                                offsetMapping.originalToTransformed(value.selection.start)
+                            val cursorRect =
+                                state.layoutResult?.value?.getCursorRect(transformedOffset)
+                                    ?: Rect(0f, 0f, 0f, 0f)
+                            val cursorWidth = floor(DefaultCursorThickness.toPx()).coerceAtLeast(1f)
+                            val cursorX =
+                                (cursorRect.left + cursorWidth / 2)
+                                    // Do not use coerceIn because it is not guaranteed that the minimum
+                                    // value is
+                                    // smaller than the maximum value.
+                                    .coerceAtMost(size.width - cursorWidth / 2)
+                                    .coerceAtLeast(cursorWidth / 2)
+                                    .let {
+                                        // When cursor width is odd, draw it in the middle of a pixel,
+                                        // to avoid blurring due to antialiasing.
+                                        if (cursorWidth.toInt() % 2 == 1) {
+                                            floor(it) + 0.5f // round to nearest n+0.5
+                                        } else round(it)
+                                    }
+
+                            drawLine(
+                                brush = cursorBrush,
+                                start = Offset(cursorX, cursorRect.top),
+                                end = Offset(cursorX, cursorRect.bottom),
+                                alpha = cursorAlphaValue,
+                                strokeWidth = cursorWidth,
+                            )
+                        }
+                    }
+                } else {
+                    Modifier
                 }
-            } else {
-                Modifier
             }
         }
     else this

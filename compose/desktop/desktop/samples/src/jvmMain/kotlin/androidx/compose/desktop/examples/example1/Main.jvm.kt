@@ -627,7 +627,7 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
 }
 
 @Composable
-fun Animations(isCircularEnabled: Boolean) = Row {
+fun NoriaContext.Animations(isCircularEnabled: Boolean) = Row {
     if (isCircularEnabled) {
         CircularProgressIndicator(Modifier.padding(10.dp))
     }
@@ -673,7 +673,7 @@ private fun RightColumn(modifier: Modifier) = Box {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun BrushTextGradient(text: String) {
+fun NoriaContext.BrushTextGradient(text: String) {
     Text(
         text = text,
         style = TextStyle(
@@ -688,7 +688,7 @@ fun BrushTextGradient(text: String) {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun BrushTextImage(text: String) {
+fun NoriaContext.BrushTextImage(text: String) {
     val image = remember {
         useResource("androidx/compose/desktop/example/tray.png", ::loadImageBitmap)
     }

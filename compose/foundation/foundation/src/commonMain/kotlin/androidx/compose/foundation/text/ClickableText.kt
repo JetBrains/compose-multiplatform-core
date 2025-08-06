@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import noria.NoriaContext
 
 /**
  * A continent version of [BasicText] component to be able to handle click event on the text.
@@ -68,7 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
     "Use Text or BasicText and pass an AnnotatedString that contains a LinkAnnotation. " +
         "Check LinkAnnotation's documentation for more details and samples."
 )
-fun ClickableText(
+fun NoriaContext.ClickableText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,

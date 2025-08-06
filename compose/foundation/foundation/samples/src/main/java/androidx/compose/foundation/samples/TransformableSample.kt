@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun TransformableSample() {
+fun NoriaContext.TransformableSample() {
     Box(Modifier.size(200.dp).clipToBounds().background(Color.LightGray)) {
         // set up all transformation states
         var scale by remember { mutableStateOf(1f) }
@@ -105,7 +105,7 @@ fun TransformableSample() {
 
 @Sampled
 @Composable
-fun TransformableSampleInsideScroll() {
+fun NoriaContext.TransformableSampleInsideScroll() {
     Row(Modifier.size(width = 120.dp, height = 100.dp).horizontalScroll(rememberScrollState())) {
         // first child of the scrollable row is a transformable
         Box(Modifier.size(100.dp).clipToBounds().background(Color.LightGray)) {
@@ -161,7 +161,7 @@ fun TransformableSampleInsideScroll() {
 @OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
-fun TransformableAnimateBySample() {
+fun NoriaContext.TransformableAnimateBySample() {
     Box(Modifier.size(200.dp).clipToBounds().background(Color.LightGray)) {
         // set up all transformation states
         var scale by remember { mutableStateOf(1f) }

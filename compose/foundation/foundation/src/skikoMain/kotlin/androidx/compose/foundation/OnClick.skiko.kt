@@ -22,7 +22,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -30,6 +29,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.noriaComposed
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -64,16 +64,18 @@ fun Modifier.onClick(
     onDoubleClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
-) = composed {
-    Modifier.onClick(
-        enabled = enabled,
-        matcher = matcher,
-        keyboardModifiers = keyboardModifiers,
-        interactionSource = remember { MutableInteractionSource() },
-        onDoubleClick = onDoubleClick,
-        onLongClick = onLongClick,
-        onClick = onClick
-    )
+) = noriaComposed { noriaContext ->
+    noriaContext.run {
+        Modifier.onClick(
+            enabled = enabled,
+            matcher = matcher,
+            keyboardModifiers = keyboardModifiers,
+            interactionSource = remember { MutableInteractionSource() },
+            onDoubleClick = onDoubleClick,
+            onLongClick = onLongClick,
+            onClick = onClick
+        )
+    }
 }
 
 /**
@@ -110,7 +112,7 @@ fun Modifier.onClick(
     onDoubleClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
-) = composed(
+) = noriaComposed(
     inspectorInfo = {
         name = "onClick"
         properties["enabled"] = enabled
@@ -121,92 +123,94 @@ fun Modifier.onClick(
         properties["onClick"] = onClick
         properties["interactionSource"] = interactionSource
     },
-    factory = {
+    factory = { noriaContext ->
+        noriaContext.run {
+            val gestureModifier = if (enabled) {
+                val interactionData = remember { InteractionData() }
+                val onClickState = rememberUpdatedState(onClick)
+                val on2xClickState = rememberUpdatedState(onDoubleClick)
+                val onLongClickState = rememberUpdatedState(onLongClick)
+                val keyboardModifiersState = rememberUpdatedState(keyboardModifiers)
+                val focusRequester = remember { FocusRequester() }
+                val currentKeyPressInteractions =
+                    remember { mutableMapOf<Key, PressInteraction.Press>() }
 
-        val gestureModifier = if (enabled) {
-            val interactionData = remember { InteractionData() }
-            val onClickState = rememberUpdatedState(onClick)
-            val on2xClickState = rememberUpdatedState(onDoubleClick)
-            val onLongClickState = rememberUpdatedState(onLongClick)
-            val keyboardModifiersState = rememberUpdatedState(keyboardModifiers)
-            val focusRequester = remember { FocusRequester() }
-            val currentKeyPressInteractions = remember { mutableMapOf<Key, PressInteraction.Press>() }
+                val hasLongClick = onLongClick != null
+                val hasDoubleClick = onDoubleClick != null
 
-            val hasLongClick = onLongClick != null
-            val hasDoubleClick = onDoubleClick != null
-
-            DisposableEffect(hasLongClick) {
-                onDispose {
-                    interactionData.pressInteraction?.let { oldValue ->
-                        val interaction = PressInteraction.Cancel(oldValue)
-                        interactionSource.tryEmit(interaction)
-                        interactionData.pressInteraction = null
+                DisposableEffect(hasLongClick) {
+                    onDispose {
+                        interactionData.pressInteraction?.let { oldValue ->
+                            val interaction = PressInteraction.Cancel(oldValue)
+                            interactionSource.tryEmit(interaction)
+                            interactionData.pressInteraction = null
+                        }
                     }
                 }
-            }
-            DisposableEffect(interactionSource) {
-                onDispose {
-                    interactionData.pressInteraction?.let { oldValue ->
-                        val interaction = PressInteraction.Cancel(oldValue)
-                        interactionSource.tryEmit(interaction)
-                        interactionData.pressInteraction = null
+                DisposableEffect(interactionSource) {
+                    onDispose {
+                        interactionData.pressInteraction?.let { oldValue ->
+                            val interaction = PressInteraction.Cancel(oldValue)
+                            interactionSource.tryEmit(interaction)
+                            interactionData.pressInteraction = null
+                        }
+                        currentKeyPressInteractions.values.forEach {
+                            interactionSource.tryEmit(PressInteraction.Cancel(it))
+                        }
+                        currentKeyPressInteractions.clear()
                     }
-                    currentKeyPressInteractions.values.forEach {
-                        interactionSource.tryEmit(PressInteraction.Cancel(it))
-                    }
-                    currentKeyPressInteractions.clear()
                 }
-            }
 
-            val matcherState = rememberUpdatedState(matcher)
+                val matcherState = rememberUpdatedState(matcher)
 
-            Modifier.pointerInput(interactionSource, hasLongClick, hasDoubleClick) {
-                detectTapGestures(
-                    matcher = matcherState.value,
-                    keyboardModifiers = {
-                        keyboardModifiersState.value(this)
-                    },
-                    onDoubleTap = if (hasDoubleClick) {
-                        {
+                Modifier.pointerInput(interactionSource, hasLongClick, hasDoubleClick) {
+                    detectTapGestures(
+                        matcher = matcherState.value,
+                        keyboardModifiers = {
+                            keyboardModifiersState.value(this)
+                        },
+                        onDoubleTap = if (hasDoubleClick) {
+                            {
+                                if (isRequestFocusOnClickEnabled()) {
+                                    focusRequester.requestFocus()
+                                }
+                                on2xClickState.value!!.invoke()
+                            }
+                        } else {
+                            null
+                        },
+                        onLongPress = if (hasLongClick) {
+                            {
+                                if (isRequestFocusOnClickEnabled()) {
+                                    focusRequester.requestFocus()
+                                }
+                                onLongClickState.value!!.invoke()
+                            }
+                        } else {
+                            null
+                        },
+                        onTap = {
                             if (isRequestFocusOnClickEnabled()) {
                                 focusRequester.requestFocus()
                             }
-                            on2xClickState.value!!.invoke()
+                            onClickState.value()
+                        },
+                        onPress = {
+                            handlePressInteraction(
+                                pressPoint = it,
+                                interactionSource = interactionSource,
+                                interactionData = interactionData,
+                                delayPressInteraction = { false }
+                            )
                         }
-                    } else {
-                        null
-                    },
-                    onLongPress = if (hasLongClick) {
-                        {
-                            if (isRequestFocusOnClickEnabled()) {
-                                focusRequester.requestFocus()
-                            }
-                            onLongClickState.value!!.invoke()
-                        }
-                    } else {
-                        null
-                    },
-                    onTap = {
-                        if (isRequestFocusOnClickEnabled()) {
-                            focusRequester.requestFocus()
-                        }
-                        onClickState.value()
-                    },
-                    onPress = {
-                        handlePressInteraction(
-                            pressPoint = it,
-                            interactionSource = interactionSource,
-                            interactionData = interactionData,
-                            delayPressInteraction = { false }
-                        )
-                    }
-                )
-            }.focusRequester(focusRequester)
-        } else {
-            Modifier
+                    )
+                }.focusRequester(focusRequester)
+            } else {
+                Modifier
+            }
+
+            gestureModifier
         }
-
-        gestureModifier
     }
 )
 

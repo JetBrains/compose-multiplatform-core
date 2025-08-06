@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TextFieldReceiveContentDemo() {
+fun NoriaContext.TextFieldReceiveContentDemo() {
     var dragging by remember { mutableStateOf(false) }
     var hovering by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -182,7 +182,7 @@ fun TextFieldReceiveContentDemo() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NestedReceiveContentDemo() {
+fun NoriaContext.NestedReceiveContentDemo() {
     val state = remember { TextFieldState() }
     val context = LocalContext.current
 
@@ -258,12 +258,12 @@ fun NestedReceiveContentDemo() {
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ReceiveContentShowcase(
+private fun NoriaContext.ReceiveContentShowcase(
     title: String,
     onReceive: (TransferableContent) -> TransferableContent?,
     modifier: Modifier = Modifier,
     onClear: () -> Unit = {},
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val transferableContentState = remember { mutableStateOf<TransferableContent?>(null) }
     val receiveContentState = remember {
@@ -326,7 +326,7 @@ private fun ReceiveContentShowcase(
 }
 
 @Composable
-private fun KeyValueEntry(key: String, value: String) {
+private fun NoriaContext.KeyValueEntry(key: String, value: String) {
     Row {
         Text(key, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.width(8.dp))

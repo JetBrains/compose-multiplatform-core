@@ -1574,7 +1574,7 @@ private fun createPointerInputHandlersThatCapture(
 
 // Same as above but creates multiple [PointerInputEventHandler]s and captures with Compose.
 @Composable
-private fun createPointerInputHandlersThatCaptureWithCompose(
+private fun NoriaContext.createPointerInputHandlersThatCaptureWithCompose(
     key: MutableState<String>,
     lambda1CancellationLambda: () -> Unit,
 ): Pair<PointerInputEventHandler, PointerInputEventHandler> {

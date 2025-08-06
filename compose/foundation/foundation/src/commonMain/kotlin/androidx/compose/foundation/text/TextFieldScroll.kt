@@ -22,7 +22,6 @@ import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -35,13 +34,13 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.text.TextLayoutResult
@@ -54,9 +53,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.min
+import noria.NoriaContext
 
 @Composable
-internal expect fun rememberTextFieldOverscrollEffect(): OverscrollEffect?
+internal expect fun NoriaContext.rememberTextFieldOverscrollEffect(): OverscrollEffect?
 
 // Scrollable
 internal fun Modifier.textFieldScrollable(
@@ -65,7 +65,7 @@ internal fun Modifier.textFieldScrollable(
     enabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = null,
 ) =
-    composed(
+    noriaComposed(
         inspectorInfo =
             debugInspectorInfo {
                 name = "textFieldScrollable"
@@ -73,45 +73,48 @@ internal fun Modifier.textFieldScrollable(
                 properties["interactionSource"] = interactionSource
                 properties["enabled"] = enabled
             }
-    ) {
-        // do not reverse direction only in case of RTL in horizontal orientation
-        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        val reverseDirection = scrollerPosition.orientation == Orientation.Vertical || !rtl
-        val scrollableState = rememberScrollableState { delta ->
-            val newOffset = scrollerPosition.offset + delta
-            val consumedDelta =
-                when {
-                    newOffset > scrollerPosition.maximum ->
-                        scrollerPosition.maximum - scrollerPosition.offset
-                    newOffset < 0f -> -scrollerPosition.offset
-                    else -> delta
-                }
-            scrollerPosition.offset += consumedDelta
-            consumedDelta
-        }
-        // TODO: b/255557085 remove when / if rememberScrollableState exposes lambda parameters for
-        //  setting these
-        val wrappedScrollableState =
-            remember(scrollableState, scrollerPosition) {
-                object : ScrollableState by scrollableState {
-                    override val canScrollForward by derivedStateOf {
-                        scrollerPosition.offset < scrollerPosition.maximum
+    ) { noriaContext ->
+        noriaContext.run {
+            // do not reverse direction only in case of RTL in horizontal orientation
+            val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+            val reverseDirection = scrollerPosition.orientation == Orientation.Vertical || !rtl
+            val scrollableState = rememberScrollableState { delta ->
+                val newOffset = scrollerPosition.offset + delta
+                val consumedDelta =
+                    when {
+                        newOffset > scrollerPosition.maximum ->
+                            scrollerPosition.maximum - scrollerPosition.offset
+
+                        newOffset < 0f -> -scrollerPosition.offset
+                        else -> delta
                     }
-                    override val canScrollBackward by derivedStateOf {
-                        scrollerPosition.offset > 0f
-                    }
-                }
+                scrollerPosition.offset += consumedDelta
+                consumedDelta
             }
-        val scroll =
-            Modifier.scrollable(
-                orientation = scrollerPosition.orientation,
-                reverseDirection = reverseDirection,
-                overscrollEffect = overscrollEffect,
-                state = wrappedScrollableState,
-                interactionSource = interactionSource,
-                enabled = enabled && scrollerPosition.maximum != 0f,
-            )
-        scroll
+            // TODO: b/255557085 remove when / if rememberScrollableState exposes lambda parameters for
+            //  setting these
+            val wrappedScrollableState =
+                remember(scrollableState, scrollerPosition) {
+                    object : ScrollableState by scrollableState {
+                        override val canScrollForward by derivedStateOf {
+                            scrollerPosition.offset < scrollerPosition.maximum
+                        }
+                        override val canScrollBackward by derivedStateOf {
+                            scrollerPosition.offset > 0f
+                        }
+                    }
+                }
+            val scroll =
+                Modifier.scrollable(
+                    orientation = scrollerPosition.orientation,
+                    reverseDirection = reverseDirection,
+                    overscrollEffect = overscrollEffect,
+                    state = wrappedScrollableState,
+                    interactionSource = interactionSource,
+                    enabled = enabled && scrollerPosition.maximum != 0f,
+                )
+            scroll
+        }
     }
 
 // Layout

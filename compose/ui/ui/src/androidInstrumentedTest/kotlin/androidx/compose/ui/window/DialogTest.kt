@@ -1084,7 +1084,7 @@ class DialogTest {
 }
 
 @Composable
-private fun PopupUsingPosition(parentPositionInRoot: Offset) {
+private fun NoriaContext.PopupUsingPosition(parentPositionInRoot: Offset) {
     // In split screen mode, the parents can have a y offset in vertical mode and a x offset in
     // vertical mode, which needs to be accounted for when calculating gravity and offset
     val popupPositionOffset =

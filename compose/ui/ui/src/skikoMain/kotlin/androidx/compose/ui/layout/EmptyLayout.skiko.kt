@@ -18,6 +18,7 @@ package androidx.compose.ui.layout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import noria.NoriaContext
 
 /**
  * Creates a layout with no content. It's usually used to add modifier to the hierarchy.
@@ -25,7 +26,7 @@ import androidx.compose.ui.Modifier
  * @param modifier The modifier to be applied to the layout.
  */
 @Composable
-internal fun EmptyLayout(modifier: Modifier) = Layout(
+internal fun NoriaContext.EmptyLayout(modifier: Modifier) = Layout(
     content = {},
     modifier = modifier,
     measurePolicy = { _, constraints ->

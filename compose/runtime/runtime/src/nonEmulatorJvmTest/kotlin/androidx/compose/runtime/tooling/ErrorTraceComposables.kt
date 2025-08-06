@@ -53,12 +53,12 @@ import androidx.compose.runtime.rememberUpdatedState
 */
 
 @Composable
-inline fun InlineWrapper(block: @Composable () -> Unit) {
+inline fun NoriaContext.InlineWrapper(block: @Composable NoriaContext.() -> Unit) {
     block()
 }
 
 @Composable
-fun Subcompose(content: @Composable () -> Unit) {
+fun NoriaContext.Subcompose(content: @Composable NoriaContext.() -> Unit) {
     val context = rememberCompositionContext()
     val composition = remember(context) { Composition(ViewApplier(View()), context) }
     val currentContent = rememberUpdatedState(content)
@@ -69,7 +69,7 @@ fun Subcompose(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun Linear(content: @Composable () -> Unit) {
+fun NoriaContext.Linear(content: @Composable NoriaContext.() -> Unit) {
     ReusableComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "linear" } },
         update = {},
@@ -79,7 +79,7 @@ fun Linear(content: @Composable () -> Unit) {
 }
 
 @Composable
-inline fun InlineLinear(content: @Composable () -> Unit) {
+inline fun NoriaContext.InlineLinear(content: @Composable NoriaContext.() -> Unit) {
     ReusableComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "linear" } },
         update = {},
@@ -89,7 +89,7 @@ inline fun InlineLinear(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun <T : Any> Repeated(of: Iterable<T>, block: @Composable (value: T) -> Unit) {
+fun <T : Any> NoriaContext.Repeated(of: Iterable<T>, block: @Composable (value: T) -> Unit) {
     for (value in of) {
         key(value) { block(value) }
     }
@@ -105,12 +105,12 @@ fun Text(value: String) {
 }
 
 @Composable
-fun ComposableWithDefaults(value: String = remember { "" }, block: @Composable (String) -> Unit) {
+fun NoriaContext.ComposableWithDefaults(value: String = remember { "" }, block: @Composable (String) -> Unit) {
     block(value)
 }
 
 @Composable
-fun NodeWithCallbacks(
+fun NoriaContext.NodeWithCallbacks(
     onAttach: () -> Unit = {},
     onDetach: () -> Unit = {},
     onUpdate: () -> Unit = {},
@@ -145,19 +145,19 @@ fun NodeWithCallbacks(
 }
 
 @Composable
-fun Wrapper(content: @Composable () -> Unit) {
+fun NoriaContext.Wrapper(content: @Composable NoriaContext.() -> Unit) {
     content()
 }
 
 @Composable
-fun MovableWrapper(content: @Composable () -> Unit) {
+fun NoriaContext.MovableWrapper(content: @Composable NoriaContext.() -> Unit) {
     val movableContent = remember { movableContentOf(content) }
 
     movableContent()
 }
 
 @Composable
-fun WrappedMovableContent(
+fun NoriaContext.WrappedMovableContent(
     content: @Composable (Boolean) -> Unit,
     wrap: @Composable (@Composable (Boolean) -> Unit) -> Unit,
 ) {

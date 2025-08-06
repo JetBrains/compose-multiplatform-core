@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
-fun SceneHost(modifier: Modifier = Modifier, content: @Composable SceneScope.() -> Unit) {
+fun NoriaContext.SceneHost(modifier: Modifier = Modifier, content: @Composable SceneScope.() -> Unit) {
     Box(modifier) {
         LookaheadScope {
             val sceneScope = remember { SceneScope(this) }

@@ -529,7 +529,7 @@ fun LiveEditTestScope.Expect(
 fun LiveEditTestScope.Target(
     ref: String,
     restartable: Boolean = true,
-    content: @Composable () -> Unit = {},
+    content: @Composable NoriaContext.() -> Unit = {},
 ) {
     if (restartable) currentRecomposeScope
     MarkAsTarget()
@@ -538,14 +538,14 @@ fun LiveEditTestScope.Target(
 }
 
 @Composable
-fun LiveEditTestScope.InlineTarget(ref: String, content: @Composable () -> Unit = {}) {
+fun LiveEditTestScope.InlineTarget(ref: String, content: @Composable NoriaContext.() -> Unit = {}) {
     MarkAsTarget()
     Expect(ref, compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
     content()
 }
 
 @Composable
-fun LiveEditTestScope.Subcompose(content: @Composable () -> Unit): Composition {
+fun LiveEditTestScope.Subcompose(content: @Composable NoriaContext.() -> Unit): Composition {
     val context = rememberCompositionContext()
     return remember(context) {
         Composition(ViewApplier(View()), context).apply { setContent(content) }

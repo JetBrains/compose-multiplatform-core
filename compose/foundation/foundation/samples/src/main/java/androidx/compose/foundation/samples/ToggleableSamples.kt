@@ -30,7 +30,7 @@ import androidx.compose.ui.state.ToggleableState
 
 @Sampled
 @Composable
-fun ToggleableSample() {
+fun NoriaContext.ToggleableSample() {
     var checked by remember { mutableStateOf(false) }
     // content that you want to make toggleable
     Text(
@@ -41,7 +41,7 @@ fun ToggleableSample() {
 
 @Sampled
 @Composable
-fun TriStateToggleableSample() {
+fun NoriaContext.TriStateToggleableSample() {
     var checked by remember { mutableStateOf(ToggleableState.Indeterminate) }
     // content that you want to make toggleable
     Text(

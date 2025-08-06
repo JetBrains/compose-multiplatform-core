@@ -391,7 +391,7 @@ fun withConsumedInsetsSample() {
 
 @Sampled
 @Composable
-fun recalculateWindowInsetsSample() {
+fun NoriaContext.recalculateWindowInsetsSample() {
     var hasFirstItem by remember { mutableStateOf(true) }
     var hasLastItem by remember { mutableStateOf(true) }
     Column(Modifier.fillMaxSize()) {
@@ -428,7 +428,7 @@ fun recalculateWindowInsetsSample() {
 
 @Sampled
 @Composable
-fun consumeWindowInsetsWithPaddingSample() {
+fun NoriaContext.consumeWindowInsetsWithPaddingSample() {
     // The outer Box uses padding and properly compensates for it by using consumeWindowInsets()
     Box(
         Modifier.fillMaxSize()
@@ -441,7 +441,7 @@ fun consumeWindowInsetsWithPaddingSample() {
 
 @Sampled
 @Composable
-fun unconsumedWindowInsetsWithPaddingSample() {
+fun NoriaContext.unconsumedWindowInsetsWithPaddingSample() {
     // This outer Box is representing a 3rd-party layout that you don't control. It has a
     // padding, but doesn't properly use consumeWindowInsets()
     Box(Modifier.padding(10.dp)) {

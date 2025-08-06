@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ConditionalFocusabilityDemo() {
+fun NoriaContext.ConditionalFocusabilityDemo() {
     val localInputModeManager = LocalInputModeManager.current
     val (item1, item2, item3, item4) = remember { FocusRequester.createRefs() }
     Column {

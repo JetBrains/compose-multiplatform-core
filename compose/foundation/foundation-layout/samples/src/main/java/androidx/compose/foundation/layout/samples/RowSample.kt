@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun SimpleRow() {
+fun NoriaContext.SimpleRow() {
     Row {
         // The child with no weight will have the specified size.
         Box(Modifier.size(40.dp, 80.dp).background(Color.Magenta))
@@ -47,7 +47,7 @@ fun SimpleRow() {
 
 @Sampled
 @Composable
-fun SimpleAlignInRow() {
+fun NoriaContext.SimpleAlignInRow() {
     Row(Modifier.fillMaxHeight()) {
         // The child with no align modifier is positioned by default so that its top edge is
         // aligned to the top of the vertical axis.
@@ -66,7 +66,7 @@ fun SimpleAlignInRow() {
 
 @Sampled
 @Composable
-fun SimpleAlignByInRow() {
+fun NoriaContext.SimpleAlignByInRow() {
     Row(Modifier.fillMaxHeight()) {
         // The center of the magenta Box and the baselines of the two texts will be
         // vertically aligned. Note that alignBy() or alignByBaseline() has to be specified

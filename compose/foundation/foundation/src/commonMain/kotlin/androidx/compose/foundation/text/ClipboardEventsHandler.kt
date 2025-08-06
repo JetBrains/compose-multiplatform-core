@@ -17,10 +17,11 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 // TODO: upstreaming https://youtrack.jetbrains.com/issue/CMP-7517
 @Composable
-internal expect inline fun rememberClipboardEventsHandler(
+internal expect inline fun NoriaContext.rememberClipboardEventsHandler(
     crossinline onPaste: (String) -> Unit = {},
     crossinline onCopy: () -> String? = { null },
     crossinline onCut: () -> String? = { null },

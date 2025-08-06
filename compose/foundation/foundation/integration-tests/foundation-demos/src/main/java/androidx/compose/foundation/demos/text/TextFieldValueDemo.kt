@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun TextFieldValueDemo() {
+fun NoriaContext.TextFieldValueDemo() {
     LazyColumn {
         item {
             TagLine("Empty callback")

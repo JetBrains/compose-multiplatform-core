@@ -152,7 +152,7 @@ class TextFieldCursorTest : FocusedWindowTest {
     // default onTextLayout to capture cursor boundaries.
     private val onTextLayout: Density.(() -> TextLayoutResult?) -> Unit = { textLayoutResult = it }
 
-    private fun ComposeContentTestRule.setTestContent(content: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setTestContent(content: @Composable NoriaContext.() -> Unit) {
         this.setTextFieldTestContent {
             // The padding helps if the test is run accidentally in landscape. Landscape makes
             // the cursor to be next to the navigation bar which affects the red color to be a

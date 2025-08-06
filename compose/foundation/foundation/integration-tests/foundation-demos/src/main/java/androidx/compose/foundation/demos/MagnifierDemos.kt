@@ -61,7 +61,7 @@ val MagnifierDemos =
 
 @Preview
 @Composable
-fun MultitouchCustomMagnifierDemo() {
+fun NoriaContext.MultitouchCustomMagnifierDemo() {
     // Track the offset for every pointer ID that is currently "down".
     val magnifierOffsets = remember { mutableStateMapOf<PointerId, MutableState<Offset>>() }
 

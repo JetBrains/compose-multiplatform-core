@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.dp
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun BTFResetCredentialsDemo() {
+fun NoriaContext.BTFResetCredentialsDemo() {
     val autofillManager = LocalAutofillManager.current
 
     Column(modifier = Modifier.background(color = Color.Black)) {
@@ -94,7 +94,7 @@ fun BTFResetCredentialsDemo() {
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun BasicTextFieldAutofill() {
+fun NoriaContext.BasicTextFieldAutofill() {
     val autofillManager = LocalAutofillManager.current
 
     Column(modifier = Modifier.background(color = Color.Black)) {
@@ -129,7 +129,7 @@ fun BasicTextFieldAutofill() {
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun BasicSecureTextFieldAutofillDemo() {
+fun NoriaContext.BasicSecureTextFieldAutofillDemo() {
     var visible by remember { mutableStateOf(false) }
 
     val autofillManager = LocalAutofillManager.current
@@ -182,7 +182,7 @@ fun BasicSecureTextFieldAutofillDemo() {
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun LegacyTextFieldAutofillDemo() {
+fun NoriaContext.LegacyTextFieldAutofillDemo() {
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
 
@@ -214,7 +214,7 @@ fun LegacyTextFieldAutofillDemo() {
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun OutlinedTextFieldAutofillDemo() {
+fun NoriaContext.OutlinedTextFieldAutofillDemo() {
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
 
@@ -246,7 +246,7 @@ fun OutlinedTextFieldAutofillDemo() {
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun OutlinedTextFieldVisualTransformationAutofillDemo() {
+fun NoriaContext.OutlinedTextFieldVisualTransformationAutofillDemo() {
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
 

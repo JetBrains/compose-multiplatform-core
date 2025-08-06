@@ -367,7 +367,7 @@ class FocusTargetModifierNodeTest {
 }
 
 @Composable
-private fun FocusTargetModifierNodeBox(
+private fun NoriaContext.FocusTargetModifierNodeBox(
     focusTargetModifierNode: FocusTargetModifierNode,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},

@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectTapGestures] demo for double tap. */
 @Composable
-fun DoubleTapGestureFilterDemo() {
+fun NoriaContext.DoubleTapGestureFilterDemo() {
     val color = remember { mutableStateOf(Colors.random()) }
 
     val onDoubleTap: (Offset) -> Unit = { color.value = color.value.anotherRandomColor() }

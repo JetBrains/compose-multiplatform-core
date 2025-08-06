@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun SpringBackScrollingDemo() {
+fun NoriaContext.SpringBackScrollingDemo() {
     Column(Modifier.fillMaxHeight()) {
         Text("<== Scroll horizontally ==>", modifier = Modifier.padding(40.dp), fontSize = 20.sp)
 

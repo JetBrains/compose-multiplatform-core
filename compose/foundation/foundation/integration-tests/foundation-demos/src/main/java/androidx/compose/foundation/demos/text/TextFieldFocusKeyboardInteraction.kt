@@ -56,7 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @Preview
 @Composable
-fun TextFieldFocusKeyboardInteraction() {
+fun NoriaContext.TextFieldFocusKeyboardInteraction() {
     val focusManager = LocalFocusManager.current
     Column(
         verticalArrangement = spacedBy(4.dp),
@@ -84,7 +84,7 @@ fun TextFieldFocusKeyboardInteraction() {
 }
 
 @Composable
-private fun FocusableFieldRow() {
+private fun NoriaContext.FocusableFieldRow() {
     Row(horizontalArrangement = spacedBy(4.dp)) {
         var text1 by remember { mutableStateOf("") }
         var text2 by remember { mutableStateOf("") }

@@ -145,7 +145,7 @@ class TapGestureDetectorTest {
 
     private fun layoutWithGestureDetector(
         gestureDetector: suspend PointerInputScope.() -> Unit
-    ): @Composable () -> Unit = {
+    ): @Composable NoriaContext.() -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
             LocalViewConfiguration provides

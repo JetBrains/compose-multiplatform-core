@@ -54,7 +54,7 @@ fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
                 override val testCoroutineScheduler: TestCoroutineScheduler
                     get() = this@runTest.testScheduler
 
-                override fun compose(block: @Composable () -> Unit) {
+                override fun compose(block: @Composable NoriaContext.() -> Unit) {
                     check(!composed) { "Compose should only be called once" }
                     composed = true
                     root = View().apply { name = "root" }
@@ -66,7 +66,7 @@ fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
                 @OptIn(ExperimentalComposeRuntimeApi::class)
                 override fun compose(
                     observer: CompositionObserver,
-                    block: @Composable () -> Unit,
+                    block: @Composable NoriaContext.() -> Unit,
                 ): CompositionObserverHandle? {
                     check(!composed) { "Compose should only be called once" }
                     composed = true
@@ -123,13 +123,13 @@ interface CompositionTestScope : CoroutineScope {
     val testCoroutineScheduler: TestCoroutineScheduler
 
     /** Compose a block using the mock view composer. */
-    fun compose(block: @Composable () -> Unit)
+    fun compose(block: @Composable NoriaContext.() -> Unit)
 
     /** Compose a block observed using the mock view composer. */
     @OptIn(ExperimentalComposeRuntimeApi::class)
     fun compose(
         observer: CompositionObserver,
-        block: @Composable () -> Unit,
+        block: @Composable NoriaContext.() -> Unit,
     ): CompositionObserverHandle?
 
     /**

@@ -74,6 +74,7 @@ import kotlinx.cinterop.ExportObjCClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import noria.NoriaContext
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -95,7 +96,7 @@ import platform.darwin.dispatch_get_main_queue
 @ExportObjCClass
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
-    private val content: @Composable () -> Unit,
+    private val content: @Composable NoriaContext.() -> Unit,
     private val lifecycleOwner: IOSLifecycleOwner = IOSLifecycleOwner(),
     coroutineContext: CoroutineContext = Dispatchers.Main
 ) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner)) {
@@ -523,10 +524,10 @@ internal class ComposeHostingViewController(
     }
 
     @Composable
-    private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
+    private fun NoriaContext.ProvideContainerCompositionLocals(content: @Composable NoriaContext.() -> Unit) =
         CompositionLocalProvider(
             LocalHapticFeedback provides hapticFeedback,
-            LocalUIViewController provides this,
+            LocalUIViewController provides this@ComposeHostingViewController,
             LocalInterfaceOrientation provides interfaceOrientationState.value,
             LocalSystemTheme provides systemThemeState.value,
             LocalLifecycleOwner provides lifecycleOwner,

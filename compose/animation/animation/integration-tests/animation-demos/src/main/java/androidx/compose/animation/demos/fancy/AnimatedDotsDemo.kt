@@ -37,7 +37,7 @@ import kotlin.math.min
 
 @Preview
 @Composable
-fun AnimatedDotsDemo() {
+fun NoriaContext.AnimatedDotsDemo() {
     val infiniteTransition = rememberInfiniteTransition()
     val position by
         infiniteTransition.animateFloat(

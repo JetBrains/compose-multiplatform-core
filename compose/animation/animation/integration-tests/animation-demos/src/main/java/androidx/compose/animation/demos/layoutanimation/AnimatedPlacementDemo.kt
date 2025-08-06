@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun AnimatedPlacementDemo() {
+fun NoriaContext.AnimatedPlacementDemo() {
     var alignment by remember { mutableStateOf(Alignment.TopStart) }
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -117,7 +117,7 @@ class AnimatedPlacementModifier(val scope: CoroutineScope) : OnPlacedModifier, L
 }
 
 @Composable
-fun AnimatedChildAlignment(alignment: Alignment) {
+fun NoriaContext.AnimatedChildAlignment(alignment: Alignment) {
     Box(Modifier.fillMaxSize().padding(4.dp).border(1.dp, Color.Red)) {
         Box(
             modifier =

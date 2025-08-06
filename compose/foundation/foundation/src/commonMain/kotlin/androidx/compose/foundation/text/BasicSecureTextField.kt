@@ -61,6 +61,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
+import noria.NoriaContext
 
 /**
  * BasicSecureTextField is specifically designed for password entry fields and is a preconfigured
@@ -119,7 +120,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+fun NoriaContext.BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -309,7 +310,7 @@ private const val DefaultObfuscationCharacter: Char = '\u2022'
  * composables inside [content].
  */
 @Composable
-private fun DisableCutCopy(content: @Composable () -> Unit) {
+private fun NoriaContext.DisableCutCopy(content: @Composable NoriaContext.() -> Unit) {
     val currentToolbar = LocalTextToolbar.current
     val copyDisabledToolbar =
         remember(currentToolbar) {
@@ -337,7 +338,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
 }
 
 /** Whether the underlying platform allows the reveal last typed behavior. */
-@Composable internal expect fun platformAllowsRevealLastTyped(): Boolean
+@Composable internal expect fun NoriaContext.platformAllowsRevealLastTyped(): Boolean
 
 @Deprecated(
     message = "Please use the overload that takes in readOnly parameter.",
@@ -345,7 +346,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+fun NoriaContext.BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -386,7 +387,7 @@ fun BasicSecureTextField(
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+fun NoriaContext.BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,

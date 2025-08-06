@@ -40,7 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun MultiDimensionalAnimationDemo() {
+fun NoriaContext.MultiDimensionalAnimationDemo() {
     var currentState by remember { mutableStateOf(AnimState.Collapsed) }
     val onClick = {
         // Cycle through states when clicked.

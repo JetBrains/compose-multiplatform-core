@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.takeOrElse
+import noria.NoriaContext
 
 /**
  * Creates a [DialogState] that is remembered across compositions.
@@ -40,7 +41,7 @@ import androidx.compose.ui.unit.takeOrElse
  * @param size the initial value for [DialogState.size]
  */
 @Composable
-fun rememberDialogState(
+fun NoriaContext.rememberDialogState(
     position: WindowPosition = WindowPosition(Alignment.Center),
     size: DpSize = DpSize(400.dp, 300.dp),
 ): DialogState = rememberSaveable(saver = DialogStateImpl.Saver(position)) {
@@ -75,7 +76,7 @@ fun DialogState(
 @Suppress("DEPRECATION")
 @Composable
 @Deprecated("Use rememberDialogState which accepts DpSize")
-fun rememberDialogState(
+fun NoriaContext.rememberDialogState(
     position: WindowPosition = WindowPosition(Alignment.Center),
     size: WindowSize,
 ): DialogState = rememberSaveable(saver = DialogStateImpl.Saver(position)) {
@@ -112,7 +113,7 @@ fun DialogState(
  * @param height the initial value for height of  [WindowState.size]
  */
 @Composable
-fun rememberDialogState(
+fun NoriaContext.rememberDialogState(
     position: WindowPosition = WindowPosition(Alignment.Center),
     width: Dp = 400.dp,
     height: Dp = 300.dp,

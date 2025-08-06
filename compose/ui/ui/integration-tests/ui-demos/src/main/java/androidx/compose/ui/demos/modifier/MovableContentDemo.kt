@@ -70,7 +70,7 @@ internal inline fun <reified T> findOwner(context: Context): T? {
 }
 
 @Composable
-fun MovableContentDemo() {
+fun NoriaContext.MovableContentDemo() {
     if (isArrEnabled) {
         val context = LocalContext.current
         val activity: Activity? = findOwner(context)
@@ -105,7 +105,7 @@ fun MovableContentDemo() {
 }
 
 @Composable
-private fun AlphaButton(frameRate: Float) {
+private fun NoriaContext.AlphaButton(frameRate: Float) {
     var targetAlpha by remember { mutableFloatStateOf(1f) }
     val alpha by
         animateFloatAsState(targetValue = targetAlpha, animationSpec = tween(durationMillis = 5000))

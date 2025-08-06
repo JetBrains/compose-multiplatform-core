@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 /**
  * Creates a [Notification] that is remembered across compositions.
@@ -28,7 +29,7 @@ import androidx.compose.runtime.remember
  * the user (with which icon and which sound)
  */
 @Composable
-fun rememberNotification(
+fun NoriaContext.rememberNotification(
     title: String,
     message: String,
     type: Notification.Type = Notification.Type.None

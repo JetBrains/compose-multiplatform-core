@@ -369,8 +369,8 @@ class AndroidTextContextMenuToolbarProviderTest {
     }
 
     private fun runTest(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
-        innerContent: @Composable () -> Unit = { Box(Modifier.fillMaxSize()) },
+        outerContent: @Composable (content: @Composable NoriaContext.() -> Unit) -> Unit = { it() },
+        innerContent: @Composable NoriaContext.() -> Unit = { Box(Modifier.fillMaxSize()) },
         testBlock: TestScope.() -> Unit,
     ) {
         val spyTextActionModeCallback = SpyTextActionModeCallback()

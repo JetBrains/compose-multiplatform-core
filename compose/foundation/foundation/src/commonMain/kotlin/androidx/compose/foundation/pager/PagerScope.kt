@@ -16,10 +16,12 @@
 
 package androidx.compose.foundation.pager
 
+import noria.NoriaContext
+
 /**
  * Receiver scope for [Pager]. Note: This is empty now, but we may add new members in the future if
  * needed.
  */
-sealed interface PagerScope
+sealed interface PagerScope : NoriaContext
 
 internal object PagerScopeImpl : PagerScope

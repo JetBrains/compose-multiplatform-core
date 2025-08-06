@@ -75,7 +75,7 @@ private val shapeForSharedElement = RoundedCornerShape(16.dp)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun SharedElementInLazyStaggeredGridDemo() {
+fun NoriaContext.SharedElementInLazyStaggeredGridDemo() {
     var selectedCat by remember { mutableStateOf<Cat?>(null) }
     val state = rememberLazyStaggeredGridState(0)
     SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
@@ -199,7 +199,7 @@ fun SharedTransitionScope.CatDetails(
 
 @SuppressLint("UnnecessaryLambdaCreation")
 @Composable
-fun CatContent(cat: Cat, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun NoriaContext.CatContent(cat: Cat, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(modifier = modifier.clickable { onClick() }) {
         Image(
             painter = painterResource(id = cat.image),

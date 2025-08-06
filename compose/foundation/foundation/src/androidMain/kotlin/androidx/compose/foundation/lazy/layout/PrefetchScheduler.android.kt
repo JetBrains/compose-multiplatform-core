@@ -34,7 +34,7 @@ import kotlin.math.max
 @Suppress("DEPRECATION") // b/420551535
 @ExperimentalFoundationApi
 @Composable
-internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
+internal actual fun NoriaContext.rememberDefaultPrefetchScheduler(): PrefetchScheduler {
     return if (RobolectricImpl != null) {
         RobolectricImpl
     } else {

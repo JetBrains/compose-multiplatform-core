@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SimpleLayoutDemo() {
+fun NoriaContext.SimpleLayoutDemo() {
     val lightGrey = Color(0xFFCFD8DC)
     Column {
         Text(text = "Row", fontSize = 48.sp)
@@ -117,12 +117,12 @@ fun SimpleLayoutDemo() {
 }
 
 @Composable
-private fun PurpleSquare(modifier: Modifier = Modifier) {
+private fun NoriaContext.PurpleSquare(modifier: Modifier = Modifier) {
     Box(modifier.size(48.dp).background(Color(0xFF6200EE)))
 }
 
 @Composable
-private fun CyanSquare(modifier: Modifier = Modifier) {
+private fun NoriaContext.CyanSquare(modifier: Modifier = Modifier) {
     Box(modifier.size(24.dp).background(Color(0xFF03DAC6)))
 }
 

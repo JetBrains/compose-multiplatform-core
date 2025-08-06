@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Enables text selection for its direct or indirect children.
@@ -54,7 +55,7 @@ import kotlinx.coroutines.launch
  * @sample androidx.compose.foundation.samples.SelectionSample
  */
 @Composable
-fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.SelectionContainer(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     var selection by remember { mutableStateOf<Selection?>(null) }
     SelectionContainer(
         modifier = modifier,
@@ -71,7 +72,7 @@ fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () ->
  * @sample androidx.compose.foundation.samples.DisableSelectionSample
  */
 @Composable
-fun DisableSelection(content: @Composable () -> Unit) {
+fun NoriaContext.DisableSelection(content: @Composable NoriaContext.() -> Unit) {
     CompositionLocalProvider(LocalSelectionRegistrar provides null, content = content)
 }
 
@@ -83,14 +84,14 @@ fun DisableSelection(content: @Composable () -> Unit) {
  */
 @Suppress("ComposableLambdaParameterNaming")
 @Composable
-internal fun SelectionContainer(
+internal fun NoriaContext.SelectionContainer(
     /** A [Modifier] for SelectionContainer. */
     modifier: Modifier = Modifier,
     /** Current Selection status. */
     selection: Selection?,
     /** A function containing customized behaviour when selection changes. */
     onSelectionChange: (Selection?) -> Unit,
-    children: @Composable () -> Unit,
+    children: @Composable NoriaContext.() -> Unit,
 ) {
     val registrarImpl =
         rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() }

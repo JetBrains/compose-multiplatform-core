@@ -39,7 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun InfiniteAnimationDemo() {
+fun NoriaContext.InfiniteAnimationDemo() {
     var alpha by remember { mutableFloatStateOf(1f) }
     LaunchedEffect(Unit) {
         animate(

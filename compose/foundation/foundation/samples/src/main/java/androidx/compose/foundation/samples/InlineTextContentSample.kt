@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.em
 
 @Sampled
 @Composable
-fun InlineTextContentSample() {
+fun NoriaContext.InlineTextContentSample() {
     val myId = "inlineContent"
     val text = buildAnnotatedString {
         append("Hello")

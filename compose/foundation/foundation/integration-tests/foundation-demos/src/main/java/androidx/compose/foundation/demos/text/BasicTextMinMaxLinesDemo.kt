@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun BasicTextMinMaxLinesDemo() {
+fun NoriaContext.BasicTextMinMaxLinesDemo() {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         TagLine("maxLines == line count")
         TextWithMinMaxLines("Line 1\nLine 2", maxLines = 2)
@@ -98,7 +98,7 @@ fun BasicTextMinMaxLinesDemo() {
 }
 
 @Composable
-private fun TextWithMinMaxLines(
+private fun NoriaContext.TextWithMinMaxLines(
     text: AnnotatedString,
     minLines: Int = 1,
     maxLines: Int = Int.MAX_VALUE,
@@ -112,7 +112,7 @@ private fun TextWithMinMaxLines(
 }
 
 @Composable
-private fun TextWithMinMaxLines(
+private fun NoriaContext.TextWithMinMaxLines(
     text: String = "",
     minLines: Int = 1,
     maxLines: Int = Int.MAX_VALUE,

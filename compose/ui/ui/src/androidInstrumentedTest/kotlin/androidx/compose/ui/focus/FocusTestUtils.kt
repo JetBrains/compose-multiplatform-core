@@ -69,7 +69,7 @@ internal fun ComposeContentTestRule.setFocusableContent(
  * dimensions.
  */
 @Composable
-internal fun FocusableBox(
+internal fun NoriaContext.FocusableBox(
     isFocused: MutableState<Boolean>,
     x: Int,
     y: Int,
@@ -125,7 +125,7 @@ fun FocusableView(context: Context): View {
 }
 
 @Composable
-fun FocusableComponent(tag: String? = null, modifier: Modifier = Modifier) {
+fun NoriaContext.FocusableComponent(tag: String? = null, modifier: Modifier = Modifier) {
     Box(modifier.then(if (tag != null) Modifier.testTag(tag) else Modifier).size(50.dp).focusable())
 }
 

@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun CombinedClickableDemo() {
+fun NoriaContext.CombinedClickableDemo() {
     var clicks by remember { mutableIntStateOf(0) }
     var doubleClicks by remember { mutableIntStateOf(0) }
     var longClicks by remember { mutableIntStateOf(0) }
@@ -73,7 +73,7 @@ fun CombinedClickableDemo() {
 }
 
 @Composable
-private fun CombinedClickableBox(
+private fun NoriaContext.CombinedClickableBox(
     onClick: () -> Unit,
     onDoubleClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -93,7 +93,7 @@ private fun CombinedClickableBox(
 }
 
 @Composable
-private fun CombinedClickableButton(
+private fun NoriaContext.CombinedClickableButton(
     onClick: () -> Unit,
     onDoubleClick: () -> Unit,
     onLongClick: () -> Unit,

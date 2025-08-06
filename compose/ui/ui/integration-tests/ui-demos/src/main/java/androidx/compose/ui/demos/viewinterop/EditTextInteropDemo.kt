@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun EditTextInteropDemo() {
+fun NoriaContext.EditTextInteropDemo() {
     Column {
         Row(horizontalArrangement = SpaceEvenly, verticalAlignment = CenterVertically) {
             Text("TextField in Compose:")

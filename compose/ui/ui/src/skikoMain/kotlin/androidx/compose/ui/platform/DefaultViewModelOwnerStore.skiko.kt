@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModelStoreOwner
+import noria.NoriaContext
 
 /**
  * Internal helper to provide [ViewModelStoreOwner] from Compose UI module.
@@ -33,5 +34,5 @@ internal val LocalInternalViewModelStoreOwner = staticCompositionLocalOf<ViewMod
 
 @InternalComposeApi
 @Composable
-fun findComposeDefaultViewModelStoreOwner(): ViewModelStoreOwner? =
+fun NoriaContext.findComposeDefaultViewModelStoreOwner(): ViewModelStoreOwner? =
     LocalInternalViewModelStoreOwner.current

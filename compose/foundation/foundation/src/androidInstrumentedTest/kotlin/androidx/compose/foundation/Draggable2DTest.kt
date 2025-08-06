@@ -848,7 +848,7 @@ class Draggable2DTest {
         }
     }
 
-    private fun setDraggable2DContent(draggable2DFactory: @Composable () -> Modifier) {
+    private fun setDraggable2DContent(draggable2DFactory: @Composable NoriaContext.() -> Modifier) {
         rule.setContent {
             Box {
                 val draggable2D = draggable2DFactory()

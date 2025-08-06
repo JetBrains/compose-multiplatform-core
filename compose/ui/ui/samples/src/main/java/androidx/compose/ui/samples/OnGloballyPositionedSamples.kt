@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun OnGloballyPositioned() {
+fun NoriaContext.OnGloballyPositioned() {
     Column(
         Modifier.onGloballyPositioned { coordinates ->
             // This will be the size of the Column.

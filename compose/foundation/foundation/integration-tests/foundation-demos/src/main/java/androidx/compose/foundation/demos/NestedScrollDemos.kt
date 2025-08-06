@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun NestedScrollDemo() {
+fun NoriaContext.NestedScrollDemo() {
     Column(
         Modifier.fillMaxSize()
             .background(Color.Red)
@@ -62,7 +62,7 @@ fun NestedScrollDemo() {
 }
 
 @Composable
-private fun OuterLvl1(outerOuterIndex: Int) {
+private fun NoriaContext.OuterLvl1(outerOuterIndex: Int) {
     LazyColumn(
         modifier =
             Modifier.fillMaxSize()
@@ -82,7 +82,7 @@ private fun OuterLvl1(outerOuterIndex: Int) {
 }
 
 @Composable
-private fun InnerColumn(outerOuterIndex: Int, outerIndex: Int) {
+private fun NoriaContext.InnerColumn(outerOuterIndex: Int, outerIndex: Int) {
     Column(
         Modifier.fillMaxSize()
             .border(3.dp, Color.Blue)
@@ -110,7 +110,7 @@ private fun InnerColumn(outerOuterIndex: Int, outerIndex: Int) {
 }
 
 @Composable
-fun NestedScrollConnectionSample() {
+fun NoriaContext.NestedScrollConnectionSample() {
     var availableOffset by remember { mutableStateOf(Offset.Zero) }
 
     val nestedScrollConnection = remember {
@@ -149,7 +149,7 @@ fun NestedScrollConnectionSample() {
 }
 
 @Composable
-fun SimpleColumnNestedScrollSample() {
+fun NoriaContext.SimpleColumnNestedScrollSample() {
     val scrollState = rememberScrollState()
 
     Column(
@@ -165,7 +165,7 @@ fun SimpleColumnNestedScrollSample() {
 }
 
 @Composable
-fun SimpleColumn(label: String) {
+fun NoriaContext.SimpleColumn(label: String) {
     Column(
         Modifier.fillMaxWidth()
             .height(200.dp)

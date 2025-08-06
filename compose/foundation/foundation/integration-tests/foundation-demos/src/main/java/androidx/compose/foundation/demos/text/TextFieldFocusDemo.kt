@@ -104,17 +104,17 @@ private val keyIndicatorInstructionText =
         .replace("\n", "")
 
 @Composable
-fun TextFieldFocusDemo() {
+fun NoriaContext.TextFieldFocusDemo() {
     TextFieldFocusDemo(useBtf2 = false)
 }
 
 @Composable
-fun BasicTextFieldFocusDemo() {
+fun NoriaContext.BasicTextFieldFocusDemo() {
     TextFieldFocusDemo(useBtf2 = true)
 }
 
 @Composable
-private fun TextFieldFocusDemo(useBtf2: Boolean) {
+private fun NoriaContext.TextFieldFocusDemo(useBtf2: Boolean) {
     val keys = remember { mutableStateListOf<KeyState>() }
 
     val onKeyDown: (KeyEvent) -> Unit = { event ->
@@ -177,7 +177,7 @@ private fun TextFieldFocusDemo(useBtf2: Boolean) {
 }
 
 @Composable
-private fun SingleLineToggle(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?) {
+private fun NoriaContext.SingleLineToggle(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("Single-line")
         Switch(checked, onCheckedChange)
@@ -186,7 +186,7 @@ private fun SingleLineToggle(checked: Boolean, onCheckedChange: ((Boolean) -> Un
 }
 
 @Composable
-private fun DemoTextField(
+private fun NoriaContext.DemoTextField(
     initText: String,
     multiLine: Boolean,
     useBtf2: Boolean,
@@ -239,7 +239,7 @@ private data class KeyState(
 )
 
 @Composable
-private fun KeyPressList(keys: List<KeyState>) {
+private fun NoriaContext.KeyPressList(keys: List<KeyState>) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().border(1.dp, Color.LightGray, RoundedCornerShape(4.dp)),

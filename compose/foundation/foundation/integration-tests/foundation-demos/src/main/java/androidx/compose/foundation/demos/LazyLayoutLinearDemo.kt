@@ -69,7 +69,7 @@ import androidx.compose.ui.util.fastRoundToInt
 
 @Preview
 @Composable
-fun LinearLazyLayoutDemo() {
+fun NoriaContext.LinearLazyLayoutDemo() {
     val itemsCount = remember { mutableIntStateOf(10) }
     val verticalOrientation = remember { mutableStateOf(true) }
     val verticalArrangementState = remember { mutableStateOf(Arrangement.Top) }
@@ -105,7 +105,7 @@ fun LinearLazyLayoutDemo() {
 }
 
 @Composable
-private fun ItemCounter(itemCount: MutableIntState) {
+private fun NoriaContext.ItemCounter(itemCount: MutableIntState) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
@@ -141,7 +141,7 @@ private fun ItemCounter(itemCount: MutableIntState) {
 }
 
 @Composable
-private fun OrientationSwitcher(orientationState: MutableState<Boolean>) {
+private fun NoriaContext.OrientationSwitcher(orientationState: MutableState<Boolean>) {
     SwitcherButton(
         text = if (orientationState.value) "Vertical" else "Horizontal",
         onClick = { orientationState.value = !orientationState.value },
@@ -149,7 +149,7 @@ private fun OrientationSwitcher(orientationState: MutableState<Boolean>) {
 }
 
 @Composable
-private fun VerticalArrangementSwitcher(arrangementState: MutableState<Arrangement.Vertical>) {
+private fun NoriaContext.VerticalArrangementSwitcher(arrangementState: MutableState<Arrangement.Vertical>) {
     val arrangements: List<Arrangement.Vertical> =
         listOf(
             Arrangement.Top,
@@ -170,7 +170,7 @@ private fun VerticalArrangementSwitcher(arrangementState: MutableState<Arrangeme
 }
 
 @Composable
-private fun HorizontalArrangementSwitcher(arrangementState: MutableState<Arrangement.Horizontal>) {
+private fun NoriaContext.HorizontalArrangementSwitcher(arrangementState: MutableState<Arrangement.Horizontal>) {
     val arrangements: List<Arrangement.Horizontal> =
         listOf(
             Arrangement.Start,
@@ -191,12 +191,12 @@ private fun HorizontalArrangementSwitcher(arrangementState: MutableState<Arrange
 }
 
 @Composable
-private fun SwitcherButton(text: String, onClick: () -> Unit) {
+private fun NoriaContext.SwitcherButton(text: String, onClick: () -> Unit) {
     Button(modifier = Modifier.padding(6.dp), onClick = onClick, content = { Text(text) })
 }
 
 @Composable
-fun LinearLazyLayout(
+fun NoriaContext.LinearLazyLayout(
     state: LinearLazyLayoutState,
     itemCount: Int,
     modifier: Modifier = Modifier,
@@ -580,7 +580,7 @@ internal interface OrientationAware {
 }
 
 @Composable
-private fun rememberLinearLazyLayoutMeasurePolicy(
+private fun NoriaContext.rememberLinearLazyLayoutMeasurePolicy(
     state: LinearLazyLayoutState,
     verticalArrangement: Arrangement.Vertical,
     horizontalArrangement: Arrangement.Horizontal,
@@ -595,6 +595,6 @@ private fun rememberLinearLazyLayoutMeasurePolicy(
 }
 
 @Composable
-fun rememberLinearLazyLayoutState(isVertical: Boolean, itemCount: Int): LinearLazyLayoutState {
+fun NoriaContext.rememberLinearLazyLayoutState(isVertical: Boolean, itemCount: Int): LinearLazyLayoutState {
     return remember(isVertical, itemCount) { LinearLazyLayoutState(isVertical, itemCount) }
 }

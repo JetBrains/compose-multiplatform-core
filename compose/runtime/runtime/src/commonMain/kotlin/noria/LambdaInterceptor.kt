@@ -23,49 +23,56 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 interface LambdaInterceptor {
 
-  companion object : LambdaInterceptor {
-    val compositionLocal = staticCompositionLocalOf<LambdaInterceptor> { LambdaInterceptor }
+    companion object : LambdaInterceptor {
+        val compositionLocal = staticCompositionLocalOf<LambdaInterceptor> { LambdaInterceptor }
 
-    override fun <T> execute(id: ID, invalidate: (reason: Any?) -> Unit, block: () -> T): T =
-      block()
+        override fun <T> execute(id: ID, invalidate: (reason: Any?) -> Unit, block: () -> T): T =
+            block()
 
-    override fun destroy(id: ID, f: () -> Unit) =
-      f()
-  }
-
-  fun <T> execute(id: ID, invalidate: (reason: Any?) -> Unit, block: () -> T): T
-
-  fun destroy(id: ID, f: () -> Unit)
-
-  operator fun plus(rhs: LambdaInterceptor): LambdaInterceptor = let { lhs ->
-    object : LambdaInterceptor {
-      override fun <T> execute(id: ID, invalidate: (reason: Any?) -> Unit, block: () -> T): T =
-        rhs.run {
-          execute(id, invalidate, block = {
-            lhs.run {
-              execute(id, invalidate, block)
-            }
-          })
-        }
-
-      override fun destroy(id: ID, f: () -> Unit) {
-        rhs.run {
-          destroy(id) {
-            lhs.run {
-              destroy(id, f)
-            }
-          }
-        }
-      }
+        override fun destroy(id: ID, f: () -> Unit) =
+            f()
     }
-  }
+
+    fun <T> execute(id: ID, invalidate: (reason: Any?) -> Unit, block: () -> T): T
+
+    fun destroy(id: ID, f: () -> Unit)
+
+    operator fun plus(rhs: LambdaInterceptor): LambdaInterceptor = let { lhs ->
+        object : LambdaInterceptor {
+            override fun <T> execute(
+                id: ID,
+                invalidate: (reason: Any?) -> Unit,
+                block: () -> T
+            ): T =
+                rhs.run {
+                    execute(id, invalidate, block = {
+                        lhs.run {
+                            execute(id, invalidate, block)
+                        }
+                    })
+                }
+
+            override fun destroy(id: ID, f: () -> Unit) {
+                rhs.run {
+                    destroy(id) {
+                        lhs.run {
+                            destroy(id, f)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
-fun NoriaContext.withLambdaInterceptor(lambdaInterceptor: LambdaInterceptor, body: @Composable NoriaContext.() -> Unit) {
-  val currentInterceptor = LambdaInterceptor.compositionLocal.current
-  val composition = remember { currentInterceptor + lambdaInterceptor }
-  return CompositionLocalProvider(LambdaInterceptor.compositionLocal provides composition) {
-    body()
-  }
+fun NoriaContext.withLambdaInterceptor(
+    lambdaInterceptor: LambdaInterceptor,
+    body: @Composable NoriaContext.() -> Unit
+) {
+    val currentInterceptor = LambdaInterceptor.compositionLocal.current
+    val composition = remember { currentInterceptor + lambdaInterceptor }
+    CompositionLocalProvider(LambdaInterceptor.compositionLocal provides composition) {
+        body()
+    }
 }

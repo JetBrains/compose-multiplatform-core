@@ -544,7 +544,7 @@ class SnapFlingBehaviorTest {
 
 @Suppress("Deprecation")
 @Composable
-private fun VelocityEffect(
+private fun NoriaContext.VelocityEffect(
     testFlingBehavior: FlingBehavior,
     velocity: Float,
     onSettlingDistanceUpdated: (Float) -> Unit = {},
@@ -603,7 +603,7 @@ private const val MinOffset = -200f
 private const val MaxOffset = 300f
 
 @Composable
-private fun rememberSnapFlingBehavior(
+private fun NoriaContext.rememberSnapFlingBehavior(
     snapLayoutInfoProvider: SnapLayoutInfoProvider,
     highVelocityApproachSpec: DecayAnimationSpec<Float>,
     snapAnimationSpec: AnimationSpec<Float>,

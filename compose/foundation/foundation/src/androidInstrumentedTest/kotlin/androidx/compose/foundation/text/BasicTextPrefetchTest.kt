@@ -245,7 +245,7 @@ class BasicTextPrefetchTest {
 
     companion object {
         @Composable
-        private fun ProvidePrefetchScheduler(executor: Executor, content: @Composable () -> Unit) {
+        private fun ProvidePrefetchScheduler(executor: Executor, content: @Composable NoriaContext.() -> Unit) {
             CompositionLocalProvider(
                 LocalBackgroundTextMeasurementExecutor provides executor,
                 content,

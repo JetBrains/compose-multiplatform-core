@@ -46,11 +46,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.util.fastForEach
+import noria.NoriaContext
 
 @Composable
-internal fun ProvideDefaultTextContextMenuToolbar(
+internal fun NoriaContext.ProvideDefaultTextContextMenuToolbar(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ProvidePlatformTextContextMenuToolbar(
         modifier = modifier,
@@ -63,7 +64,7 @@ internal fun ProvideDefaultTextContextMenuToolbar(
 }
 
 @Composable
-internal fun ProvidePlatformTextContextMenuToolbar(
+internal fun NoriaContext.ProvidePlatformTextContextMenuToolbar(
     modifier: Modifier,
     providableCompositionLocal: ProvidableCompositionLocal<TextContextMenuProvider?>,
     contextMenu:
@@ -73,7 +74,7 @@ internal fun ProvidePlatformTextContextMenuToolbar(
         dataProvider: TextContextMenuDataProvider,
         anchorLayoutCoordinates: () -> LayoutCoordinates,
     ) -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     var layoutCoordinates: LayoutCoordinates? by remember {
         mutableStateOf(null, neverEqualPolicy())
@@ -96,13 +97,13 @@ internal fun ProvidePlatformTextContextMenuToolbar(
 }
 
 @Composable
-internal fun defaultTextContextMenuToolbar(): BasicTextContextMenuProvider =
+internal fun NoriaContext.defaultTextContextMenuToolbar(): BasicTextContextMenuProvider =
     basicTextContextMenuProvider { session, dataProvider, anchorLayoutCoordinates ->
         OpenContextMenuToolbar(session, dataProvider, anchorLayoutCoordinates)
     }
 
 @Composable
-private fun OpenContextMenuToolbar(
+private fun NoriaContext.OpenContextMenuToolbar(
     session: TextContextMenuSession,
     dataProvider: TextContextMenuDataProvider,
     anchorLayoutCoordinates: () -> LayoutCoordinates,

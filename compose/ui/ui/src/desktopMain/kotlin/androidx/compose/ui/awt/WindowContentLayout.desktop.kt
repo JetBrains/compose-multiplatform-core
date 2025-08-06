@@ -25,14 +25,15 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.window.LocalWindow
+import noria.NoriaContext
 
 /**
  * Base layout for full-window Compose content.
  */
 @Composable
-internal fun WindowContentLayout(
+internal fun NoriaContext.WindowContentLayout(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val window = requireNotNull(LocalWindow.current)
     Layout(

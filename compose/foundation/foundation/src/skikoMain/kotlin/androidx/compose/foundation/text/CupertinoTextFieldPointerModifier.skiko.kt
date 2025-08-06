@@ -39,9 +39,10 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import noria.NoriaContext
 
 @Composable
-internal fun Modifier.cupertinoTextFieldPointer(
+internal fun NoriaContext.cupertinoTextFieldPointer(
     manager: TextFieldSelectionManager,
     enabled: Boolean,
     interactionSource: MutableInteractionSource?,
@@ -61,12 +62,12 @@ internal fun Modifier.cupertinoTextFieldPointer(
             offsetMapping,
             manager
         )
-        this
+        Modifier
             .then(tapHandlerModifier)
             .then(longPressHandlerModifier)
             .pointerHoverIcon(PointerIcon.Text)
     } else {
-        this
+        Modifier
             .selectionGestureInput(
                 mouseSelectionObserver = manager.mouseSelectionObserver,
                 textDragObserver = manager.touchSelectionObserver,
@@ -74,12 +75,12 @@ internal fun Modifier.cupertinoTextFieldPointer(
             .pointerHoverIcon(PointerIcon.Text)
     }
 } else {
-    this
+    Modifier
 }
 
 @Composable
 @OptIn(InternalFoundationTextApi::class)
-private fun getTapHandlerModifier(
+private fun NoriaContext.getTapHandlerModifier(
     interactionSource: MutableInteractionSource?,
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
@@ -174,7 +175,7 @@ private fun getTapHandlerModifier(
  * @return A modifier that handles long press and drag gestures.
  */
 @Composable
-private fun getLongPressHandlerModifier(
+private fun NoriaContext.getLongPressHandlerModifier(
     state: LegacyTextFieldState,
     offsetMapping: OffsetMapping,
     manager: TextFieldSelectionManager,

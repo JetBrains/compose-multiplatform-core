@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.dp
 
 /** An xev-inspired input debugger that will display all input */
 @Composable
-fun InputDebuggerDemo() {
+fun NoriaContext.InputDebuggerDemo() {
     var pointerEventInfoId by rememberSaveable { mutableIntStateOf(0) }
     val inputEventInfos = remember { mutableStateListOf<InputEventInfo>() }
     // TODO: Add UI to change pointer event pass
@@ -127,7 +127,7 @@ fun InputDebuggerDemo() {
 }
 
 @Composable
-private fun currentIsInTouchMode(): Boolean {
+private fun NoriaContext.currentIsInTouchMode(): Boolean {
     val view = LocalView.current
     var isInTouchMode by remember { mutableStateOf(view.isInTouchMode) }
     DisposableEffect(view) {

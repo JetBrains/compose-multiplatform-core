@@ -810,7 +810,7 @@ private inline fun ViewGroup.assertUnsupported(testName: String, test: ViewGroup
 }
 
 @Composable
-private fun ScrollableAndNonScrollable(vertical: Boolean) {
+private fun NoriaContext.ScrollableAndNonScrollable(vertical: Boolean) {
     @Composable
     fun layout(size: Dp, content: @Composable (Modifier) -> Unit) {
         if (vertical) {

@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun ResizeComposeViewDemo() {
+fun NoriaContext.ResizeComposeViewDemo() {
     var size by remember { mutableStateOf(IntSize(0, 0)) }
     Box(
         Modifier.fillMaxSize().pointerInput(Unit) {

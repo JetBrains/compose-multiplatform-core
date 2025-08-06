@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-export COMPOSE_CUSTOM_VERSION=0.0.0-SNAPSHOT
-./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=desktop
-./gradlew :mpp:fleet:publishMavenPublicationToMavenLocal -Pcompose.platforms=desktop
+./gradlew :mpp:publishComposeJbToMavenLocal \
+:fleet:lifecycle:lifecycle-all-desktop:publishToMavenLocal \
+:fleet:compose:runtime:runtime-all-desktop:publishToMavenLocal \
+:fleet:compose:ui:ui-all-desktop:publishToMavenLocal \
+-Pcompose.platforms=desktop \
+-Pjetbrains.publication.libraries=COMPOSE,SAVEDSTATE,LIFECYCLE
+

@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun InfiniteTransitionDemo() {
+fun NoriaContext.InfiniteTransitionDemo() {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -61,7 +61,7 @@ fun InfiniteTransitionDemo() {
 }
 
 @Composable
-fun InfinitePulsingHeart() {
+fun NoriaContext.InfinitePulsingHeart() {
     val infiniteTransition = rememberInfiniteTransition()
 
     val scale by
@@ -92,7 +92,7 @@ fun InfinitePulsingHeart() {
 }
 
 @Composable
-fun InfiniteProgress() {
+fun NoriaContext.InfiniteProgress() {
     val infiniteTransition = rememberInfiniteTransition()
     Row {
         infiniteTransition.PulsingDot(StartOffset(0))

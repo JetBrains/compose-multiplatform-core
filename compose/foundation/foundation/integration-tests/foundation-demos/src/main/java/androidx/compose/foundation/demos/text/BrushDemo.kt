@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun TextBrushDemo() {
+fun NoriaContext.TextBrushDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Sample")
@@ -98,7 +98,7 @@ fun TextBrushDemo() {
 }
 
 @Composable
-fun BrushDemo() {
+fun NoriaContext.BrushDemo() {
     Text(
         "Brush is awesome\nBrush is awesome\nBrush is awesome",
         style =
@@ -110,7 +110,7 @@ fun BrushDemo() {
 }
 
 @Composable
-fun BrushGraphicalEmoji() {
+fun NoriaContext.BrushGraphicalEmoji() {
     Text(
         "\uD83D\uDEF3\uD83D\uDD2E\uD83E\uDDED\uD83E\uDD5D\uD83E\uDD8C\uD83D\uDE0D",
         style =
@@ -122,7 +122,7 @@ fun BrushGraphicalEmoji() {
 }
 
 @Composable
-fun SingleLineSpanBrush() {
+fun NoriaContext.SingleLineSpanBrush() {
     val infiniteTransition = rememberInfiniteTransition()
     val start by
         infiniteTransition.animateFloat(
@@ -156,7 +156,7 @@ fun SingleLineSpanBrush() {
 }
 
 @Composable
-fun MultiLineSpanBrush() {
+fun NoriaContext.MultiLineSpanBrush() {
     Text(
         buildAnnotatedString {
             append("Brush is aweso")
@@ -174,7 +174,7 @@ fun MultiLineSpanBrush() {
 }
 
 @Composable
-fun MultiParagraphBrush() {
+fun NoriaContext.MultiParagraphBrush() {
     Text(
         buildAnnotatedString {
             withStyle(ParagraphStyle(textAlign = TextAlign.Right)) {
@@ -199,7 +199,7 @@ fun MultiParagraphBrush() {
 }
 
 @Composable
-fun AnimatedBrush() {
+fun NoriaContext.AnimatedBrush() {
     val infiniteTransition = rememberInfiniteTransition()
     val radius by
         infiniteTransition.animateFloat(
@@ -227,7 +227,7 @@ fun AnimatedBrush() {
 }
 
 @Composable
-fun ShadowAndBrush() {
+fun NoriaContext.ShadowAndBrush() {
     Text(
         "Brush is awesome",
         style =
@@ -240,7 +240,7 @@ fun ShadowAndBrush() {
 }
 
 @Composable
-fun TextFieldBrush() {
+fun NoriaContext.TextFieldBrush() {
     var text by remember { mutableStateOf("Brush is awesome") }
     TextField(
         value = text,

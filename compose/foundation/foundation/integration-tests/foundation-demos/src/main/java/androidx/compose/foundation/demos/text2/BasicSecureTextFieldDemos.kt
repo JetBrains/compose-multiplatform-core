@@ -55,7 +55,7 @@ import androidx.core.text.isDigitsOnly
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BasicSecureTextFieldDemos() {
+fun NoriaContext.BasicSecureTextFieldDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         val clipboardManager = LocalClipboardManager.current
         Button(onClick = { clipboardManager.setText(AnnotatedString("\uD801\uDC37")) }) {
@@ -84,7 +84,7 @@ fun BasicSecureTextFieldDemos() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
+fun NoriaContext.BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
     val state = remember { TextFieldState() }
     BasicSecureTextField(
         state = state,
@@ -95,7 +95,7 @@ fun BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
+fun NoriaContext.ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
     val maskState = rememberTextFieldState("\u2022")
     val passwordState = rememberTextFieldState("hunter2")
     Column {
@@ -133,7 +133,7 @@ fun ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NumberPasswordDemo() {
+fun NoriaContext.NumberPasswordDemo() {
     val state = remember { TextFieldState() }
     BasicSecureTextField(
         state = state,
@@ -150,7 +150,7 @@ fun NumberPasswordDemo() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PasswordToggleVisibilityDemo() {
+fun NoriaContext.PasswordToggleVisibilityDemo() {
     val state = remember { TextFieldState() }
     var visible by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

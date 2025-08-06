@@ -70,6 +70,7 @@ import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import javax.swing.JButton
+import noria.NoriaContext
 
 @Composable
 fun WindowScope.Content(
@@ -309,7 +310,7 @@ fun WindowScope.Content(
 }
 
 @Composable
-fun PopupSample(displayed: Boolean, onDismiss: () -> Unit) {
+fun NoriaContext.PopupSample(displayed: Boolean, onDismiss: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -333,7 +334,7 @@ fun PopupSample(displayed: Boolean, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun PopupContent(onDismiss: () -> Unit) {
+fun NoriaContext.PopupContent(onDismiss: () -> Unit) {
     Box(
         Modifier.size(300.dp, 150.dp).background(color = Color(65, 65, 65)),
         contentAlignment = Alignment.Center
@@ -347,7 +348,7 @@ fun PopupContent(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun DialogContent(modifier: Modifier = Modifier, amount: MutableState<Int>, onClose: () -> Unit) {
+fun NoriaContext.DialogContent(modifier: Modifier = Modifier, amount: MutableState<Int>, onClose: () -> Unit) {
     Box(
         modifier.background(color = Color(55, 55, 55)).padding(10.dp),
         contentAlignment = Alignment.Center
@@ -365,7 +366,7 @@ fun DialogContent(modifier: Modifier = Modifier, amount: MutableState<Int>, onCl
 }
 
 @Composable
-fun WindowContent(amount: MutableState<Int>, onClose: () -> Unit) {
+fun NoriaContext.WindowContent(amount: MutableState<Int>, onClose: () -> Unit) {
     DialogContent(
         modifier = Modifier.fillMaxSize(),
         amount, onClose
@@ -373,7 +374,7 @@ fun WindowContent(amount: MutableState<Int>, onClose: () -> Unit) {
 }
 
 @Composable
-fun Button(
+fun NoriaContext.Button(
     text: String = "",
     onClick: () -> Unit = {},
     color: Color = Color(10, 162, 232),
@@ -403,7 +404,7 @@ fun Button(
 }
 
 @Composable
-fun TextBox(text: String = "", modifier: Modifier = Modifier.height(30.dp)) {
+fun NoriaContext.TextBox(text: String = "", modifier: Modifier = Modifier.height(30.dp)) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -469,7 +470,7 @@ fun ContextMenu() {
 }
 
 @Composable
-fun TextFieldWithSuggestions() {
+fun NoriaContext.TextFieldWithSuggestions() {
     Surface(
         color = Color(255, 255, 255, 40),
         shape = RoundedCornerShape(4.dp)
@@ -507,7 +508,7 @@ fun TextFieldWithSuggestions() {
 }
 
 @Composable
-fun CheckBox(text: String, state: MutableState<Boolean>) {
+fun NoriaContext.CheckBox(text: String, state: MutableState<Boolean>) {
     Row {
         Box(
             modifier = Modifier.height(35.dp),
@@ -527,7 +528,7 @@ fun CheckBox(text: String, state: MutableState<Boolean>) {
 }
 
 @Composable
-fun <T> RadioButton(text: String, value: T, state: MutableState<T>) {
+fun <T> NoriaContext.RadioButton(text: String, value: T, state: MutableState<T>) {
     Row(
         modifier = Modifier.height(35.dp).padding(start = 20.dp, bottom = 5.dp),
     ) {
@@ -543,7 +544,7 @@ fun <T> RadioButton(text: String, value: T, state: MutableState<T>) {
 }
 
 @Composable
-fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
+fun NoriaContext.SwingActionButton(text: String, action: (() -> Unit)? = null) {
     SwingPanel(
         background = Color(55, 55, 55),
         modifier = Modifier.size(200.dp, 35.dp),
@@ -559,7 +560,7 @@ fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
 }
 
 @Composable
-fun SecondaryWindow(onCloseRequest: () -> Unit) = Window(
+fun NoriaContext.SecondaryWindow(onCloseRequest: () -> Unit) = Window(
     onCloseRequest = onCloseRequest,
     state = rememberWindowState(size = DpSize(400.dp, 200.dp)),
     undecorated = AppState.undecorated.value,

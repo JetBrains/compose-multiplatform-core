@@ -99,6 +99,6 @@ class PreviewActivityTest {
 
 @Suppress("unused")
 @Composable
-fun MainBlock() {
+fun NoriaContext.MainBlock() {
     Button(onClick = {}) { Text("Hello") }
 }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import noria.NoriaContext
 
 /**
  * Schedule an effect to run when the [Lifecycle] receives a specific [Lifecycle.Event].
@@ -49,7 +50,7 @@ import androidx.lifecycle.LifecycleOwner
  * @throws IllegalArgumentException if attempting to listen for [Lifecycle.Event.ON_DESTROY]
  */
 @Composable
-public fun LifecycleEventEffect(
+public fun NoriaContext.LifecycleEventEffect(
     event: Lifecycle.Event,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     onEvent: () -> Unit
@@ -123,7 +124,7 @@ public fun LifecycleEventEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleStartEffect(
+public fun NoriaContext.LifecycleStartEffect(
     key1: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
@@ -180,7 +181,7 @@ public fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleStartEffect(
+public fun NoriaContext.LifecycleStartEffect(
     key1: Any?,
     key2: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
@@ -242,7 +243,7 @@ public fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleStartEffect(
+public fun NoriaContext.LifecycleStartEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
@@ -302,7 +303,7 @@ public fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleStartEffect(
+public fun NoriaContext.LifecycleStartEffect(
     vararg keys: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
@@ -328,13 +329,13 @@ private const val LifecycleStartEffectNoParamError =
 @Deprecated(LifecycleStartEffectNoParamError, level = DeprecationLevel.ERROR)
 @Composable
 @Suppress("UNUSED_PARAMETER")
-public fun LifecycleStartEffect(
+public fun NoriaContext.LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
 ): Unit = error(LifecycleStartEffectNoParamError)
 
 @Composable
-private fun LifecycleStartEffectImpl(
+private fun NoriaContext.LifecycleStartEffectImpl(
     lifecycleOwner: LifecycleOwner,
     scope: LifecycleStartStopEffectScope,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
@@ -441,7 +442,7 @@ public class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : 
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleResumeEffect(
+public fun NoriaContext.LifecycleResumeEffect(
     key1: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
@@ -499,7 +500,7 @@ public fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleResumeEffect(
+public fun NoriaContext.LifecycleResumeEffect(
     key1: Any?,
     key2: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
@@ -562,7 +563,7 @@ public fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleResumeEffect(
+public fun NoriaContext.LifecycleResumeEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
@@ -623,7 +624,7 @@ public fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-public fun LifecycleResumeEffect(
+public fun NoriaContext.LifecycleResumeEffect(
     vararg keys: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
@@ -651,13 +652,13 @@ private const val LifecycleResumeEffectNoParamError =
 @Deprecated(LifecycleResumeEffectNoParamError, level = DeprecationLevel.ERROR)
 @Composable
 @Suppress("UNUSED_PARAMETER")
-public fun LifecycleResumeEffect(
+public fun NoriaContext.LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
 ): Unit = error(LifecycleResumeEffectNoParamError)
 
 @Composable
-private fun LifecycleResumeEffectImpl(
+private fun NoriaContext.LifecycleResumeEffectImpl(
     lifecycleOwner: LifecycleOwner,
     scope: LifecycleResumePauseEffectScope,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult

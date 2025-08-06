@@ -30,7 +30,7 @@ import androidx.compose.ui.window.Popup
 
 @Sampled
 @Composable
-fun PopupSample() {
+fun NoriaContext.PopupSample() {
     Box {
         val popupWidth = 200.dp
         val popupHeight = 50.dp

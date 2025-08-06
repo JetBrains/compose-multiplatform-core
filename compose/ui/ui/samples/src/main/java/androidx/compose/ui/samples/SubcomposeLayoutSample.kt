@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.IntSize
 
 @Sampled
 @Composable
-fun SubcomposeLayoutSample(
+fun NoriaContext.SubcomposeLayoutSample(
     mainContent: @Composable () -> Unit,
     dependentContent: @Composable (IntSize) -> Unit,
 ) {

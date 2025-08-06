@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import noria.NoriaContext
 
 /**
  * Provides [SaveableStateHolder] to be used with the lazy layout items. This allows to save the
@@ -37,7 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
  * TransactionTooLargeException.
  */
 @Composable
-internal fun LazySaveableStateHolderProvider(content: @Composable (SaveableStateHolder) -> Unit) {
+internal fun NoriaContext.LazySaveableStateHolderProvider(content: @Composable NoriaContext.(SaveableStateHolder) -> Unit) {
     val currentRegistry = LocalSaveableStateRegistry.current
     val wrappedHolder = rememberSaveableStateHolder()
     val holder =
@@ -72,8 +73,8 @@ private class LazySaveableStateHolder(
     }
 
     @Composable
-    override fun SaveableStateProvider(key: Any, content: @Composable () -> Unit) {
-        wrappedHolder.SaveableStateProvider(key, content)
+    override fun NoriaContext.SaveableStateProvider(key: Any, content: @Composable NoriaContext.() -> Unit) {
+        wrappedHolder.run { SaveableStateProvider(key, content) }
         DisposableEffect(key) {
             previouslyComposedKeys -= key
             onDispose { previouslyComposedKeys += key }

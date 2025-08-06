@@ -22,10 +22,11 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import noria.NoriaContext
 
 internal typealias PlaceholderRange = AnnotatedString.Range<Placeholder>
 
-internal typealias InlineContentRange = AnnotatedString.Range<@Composable (String) -> Unit>
+internal typealias InlineContentRange = AnnotatedString.Range<@Composable NoriaContext.(String) -> Unit>
 
 /**
  * Attempts to match AnnotatedString placeholders with passed [InlineTextContent]
@@ -43,7 +44,7 @@ internal fun AnnotatedString.resolveInlineContent(
     val inlineContentAnnotations = getStringAnnotations(INLINE_CONTENT_TAG, 0, text.length)
 
     val placeholders = mutableListOf<AnnotatedString.Range<Placeholder>>()
-    val inlineComposables = mutableListOf<AnnotatedString.Range<@Composable (String) -> Unit>>()
+    val inlineComposables = mutableListOf<AnnotatedString.Range<@Composable NoriaContext.(String) -> Unit>>()
     inlineContentAnnotations.fastForEach { annotation ->
         inlineContent[annotation.item]?.let { inlineTextContent ->
             placeholders.add(
@@ -65,7 +66,7 @@ internal fun AnnotatedString.hasInlineContent(): Boolean =
     hasStringAnnotations(INLINE_CONTENT_TAG, 0, text.length)
 
 @Composable
-internal fun InlineChildren(text: AnnotatedString, inlineContents: List<InlineContentRange>) {
+internal fun NoriaContext.InlineChildren(text: AnnotatedString, inlineContents: List<InlineContentRange>) {
     inlineContents.fastForEach { (content, start, end) ->
         Layout(content = { content(text.subSequence(start, end).text) }) { children, constrains ->
             val placeables = children.fastMap { it.measure(constrains) }

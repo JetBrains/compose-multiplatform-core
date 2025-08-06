@@ -20,7 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import noria.NoriaContext
 
 @Composable
-internal actual fun findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? =
+internal actual fun NoriaContext.findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? =
     LocalView.current.findViewTreeViewModelStoreOwner()

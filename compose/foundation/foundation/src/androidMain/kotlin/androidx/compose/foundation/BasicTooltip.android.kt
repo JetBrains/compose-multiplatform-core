@@ -20,11 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.PopupPositionProvider
+import noria.NoriaContext
 
 internal actual object BasicTooltipStrings {
-    @Composable actual fun label(): String = stringResource(R.string.tooltip_label)
+    @Composable actual fun NoriaContext.label(): String = stringResource(R.string.tooltip_label)
 
-    @Composable actual fun description(): String = stringResource(R.string.tooltip_description)
+    @Composable actual fun NoriaContext.description(): String = stringResource(R.string.tooltip_description)
 }
 
 /**
@@ -53,12 +54,12 @@ internal actual object BasicTooltipStrings {
 @JvmName("BasicTooltipBox")
 fun BasicTooltipBoxAndroid(
     positionProvider: PopupPositionProvider,
-    tooltip: @Composable () -> Unit,
+    tooltip: @Composable NoriaContext.() -> Unit,
     state: BasicTooltipState,
     modifier: Modifier = Modifier,
     focusable: Boolean = true,
     enableUserInput: Boolean = true,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     BasicTooltipBox(
         positionProvider = positionProvider,

@@ -44,7 +44,7 @@ internal class PainterResourcesDemoActivity : ComponentActivity() {
 }
 
 @Composable
-fun PainterResourcesDemo() {
+fun NoriaContext.PainterResourcesDemo() {
     // A resource that switches between day and night mode
     val painter = painterResource(id = R.drawable.ic_painterresource)
     val vector = ImageVector.Companion.vectorResource(id = R.drawable.ic_painterresource)

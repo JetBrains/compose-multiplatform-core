@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun LazyColumnDragAndDropDemo() {
+fun NoriaContext.LazyColumnDragAndDropDemo() {
     var list by remember { mutableStateOf(List(50) { it }) }
 
     val listState = rememberLazyListState()
@@ -85,7 +85,7 @@ fun LazyColumnDragAndDropDemo() {
 }
 
 @Composable
-fun rememberDragDropState(lazyListState: LazyListState, onMove: (Int, Int) -> Unit): DragDropState {
+fun NoriaContext.rememberDragDropState(lazyListState: LazyListState, onMove: (Int, Int) -> Unit): DragDropState {
     val scope = rememberCoroutineScope()
     val state =
         remember(lazyListState) {

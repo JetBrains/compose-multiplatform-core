@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun ScaleEnterExitDemo() {
+fun NoriaContext.ScaleEnterExitDemo() {
     Column {
         var showRed by remember { mutableStateOf(true) }
         var showYellow by remember { mutableStateOf(true) }

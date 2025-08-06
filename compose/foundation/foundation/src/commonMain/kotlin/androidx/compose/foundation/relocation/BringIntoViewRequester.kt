@@ -30,7 +30,6 @@ import androidx.compose.ui.relocation.bringIntoView
 import kotlin.js.JsName
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
-import noria.foundation.ScrollKind
 
 /**
  * Can be used to send [bringIntoView] requests. Pass it as a parameter to
@@ -58,11 +57,7 @@ sealed interface BringIntoViewRequester {
      * @sample androidx.compose.foundation.samples.BringIntoViewSample
      * @sample androidx.compose.foundation.samples.BringPartOfComposableIntoViewSample
      */
-    suspend fun bringIntoView(
-        rect: Rect? = null,
-        xAxisKind: ScrollKind = ScrollKind.Smallest,
-        yAxisKind: ScrollKind = ScrollKind.Smallest,
-    )
+    suspend fun bringIntoView(rect: Rect? = null)
 }
 
 /**
@@ -103,7 +98,7 @@ fun Modifier.bringIntoViewRequester(bringIntoViewRequester: BringIntoViewRequest
 private class BringIntoViewRequesterImpl : BringIntoViewRequester {
     val nodes = mutableVectorOf<BringIntoViewRequesterNode>()
 
-    override suspend fun bringIntoView(rect: Rect?, xAxisKind: ScrollKind, yAxisKind: ScrollKind) {
+    override suspend fun bringIntoView(rect: Rect?) {
         nodes.forEach { it.bringIntoView { rect } }
     }
 }

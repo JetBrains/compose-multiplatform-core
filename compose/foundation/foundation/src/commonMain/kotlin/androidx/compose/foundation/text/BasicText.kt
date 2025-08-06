@@ -59,6 +59,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMapIndexedNotNull
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.floor
+import noria.NoriaContext
 
 /**
  * Basic element that displays text and provides semantics / accessibility information. Typically
@@ -89,7 +90,7 @@ import kotlin.math.floor
  *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
  */
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -186,7 +187,7 @@ fun BasicText(
  *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
  */
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -305,7 +306,7 @@ fun BasicText(
  */
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -346,7 +347,7 @@ fun BasicText(
  */
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -374,7 +375,7 @@ fun BasicText(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -397,7 +398,7 @@ fun BasicText(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -422,7 +423,7 @@ fun BasicText(
 
 @Deprecated("Maintained for binary compat", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -435,7 +436,7 @@ fun BasicText(
 
 @Deprecated("Maintained for binary compat", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicText(
+fun NoriaContext.BasicText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -628,7 +629,7 @@ private fun Modifier.textModifier(
 }
 
 @Composable
-private fun LayoutWithLinksAndInlineContent(
+private fun NoriaContext.LayoutWithLinksAndInlineContent(
     modifier: Modifier,
     text: AnnotatedString,
     onTextLayout: ((TextLayoutResult) -> Unit)?,
@@ -685,7 +686,7 @@ private fun LayoutWithLinksAndInlineContent(
 
     Layout(
         content = {
-            textScope?.LinksComposables()
+            textScope?.run { LinksComposables() }
             inlineComposables?.let { InlineChildren(text = text, inlineContents = it) }
         },
         modifier =

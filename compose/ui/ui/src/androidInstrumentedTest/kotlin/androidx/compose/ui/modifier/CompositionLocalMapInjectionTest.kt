@@ -301,7 +301,7 @@ class ConsumeInAttachNode :
 // compose UI would have inlined into their function body. See b/275067189 for more details.
 @UiComposable
 @Composable
-inline fun OldLayoutSkippableUpdate(
+inline fun NoriaContext.OldLayoutSkippableUpdate(
     content: @Composable @UiComposable () -> Unit,
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy,
@@ -361,11 +361,11 @@ private val EmptyBoxMeasurePolicy = MeasurePolicy { _, constraints ->
 }
 
 @Composable
-fun OldBoxSkippableUpdate(modifier: Modifier = Modifier) {
+fun NoriaContext.OldBoxSkippableUpdate(modifier: Modifier = Modifier) {
     OldLayoutSkippableUpdate({}, modifier, EmptyBoxMeasurePolicy)
 }
 
 @Composable
-fun OldBox(modifier: Modifier = Modifier) {
+fun NoriaContext.OldBox(modifier: Modifier = Modifier) {
     OldLayout(modifier, EmptyBoxMeasurePolicy)
 }

@@ -73,7 +73,7 @@ import androidx.compose.ui.zIndex
 
 @Preview
 @Composable
-fun SwitchBetweenCollapsedAndExpanded() {
+fun NoriaContext.SwitchBetweenCollapsedAndExpanded() {
     var showExpandedCard by remember { mutableStateOf(false) }
     Box(
         Modifier.clickable(
@@ -90,7 +90,7 @@ fun SwitchBetweenCollapsedAndExpanded() {
 }
 
 @Composable
-fun HomePage(sharedTransitionScope: SharedTransitionScope, showCard: Boolean) {
+fun NoriaContext.HomePage(sharedTransitionScope: SharedTransitionScope, showCard: Boolean) {
     with(sharedTransitionScope) {
         Box(Modifier.fillMaxSize().background(Color.White)) {
             Column {
@@ -195,7 +195,7 @@ fun HomePage(sharedTransitionScope: SharedTransitionScope, showCard: Boolean) {
 }
 
 @Composable
-fun Cluster() {
+fun NoriaContext.Cluster() {
     Text(
         text = "Lorem ipsum",
         Modifier.padding(top = 20.dp, bottom = 10.dp, start = 20.dp),
@@ -225,7 +225,7 @@ fun Cluster() {
 }
 
 @Composable
-fun ExpandedCard(sharedTransitionScope: SharedTransitionScope, visible: Boolean) {
+fun NoriaContext.ExpandedCard(sharedTransitionScope: SharedTransitionScope, visible: Boolean) {
     with(sharedTransitionScope) {
         AnimatedVisibility(
             visible = visible,

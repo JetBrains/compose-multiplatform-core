@@ -36,37 +36,37 @@ import kotlinx.serialization.encoding.Encoder
 
 @Sampled
 @Composable
-fun RememberSaveable() {
+fun NoriaContext.RememberSaveable() {
     val list = rememberSaveable { mutableListOf<Int>() }
 }
 
 @Sampled
 @Composable
-fun RememberSaveableWithMutableState() {
+fun NoriaContext.RememberSaveableWithMutableState() {
     var value by rememberSaveable { mutableStateOf(({ "value" })()) }
 }
 
 @Sampled
 @Composable
-fun RememberSaveableCustomSaver() {
+fun NoriaContext.RememberSaveableCustomSaver() {
     val holder = rememberSaveable(saver = HolderSaver) { Holder(0) }
 }
 
 @Sampled
 @Composable
-fun RememberSaveableWithMutableStateAndCustomSaver() {
+fun NoriaContext.RememberSaveableWithMutableStateAndCustomSaver() {
     val holder = rememberSaveable(stateSaver = HolderSaver) { mutableStateOf(Holder(0)) }
 }
 
 @Sampled
 @Composable
-fun RememberSaveableWithSerializer() {
+fun NoriaContext.RememberSaveableWithSerializer() {
     val holder = rememberSerializable(serializer = HolderSerializer) { Holder(0) }
 }
 
 @Sampled
 @Composable
-fun RememberSaveableWithSerializerAndMutableState() {
+fun NoriaContext.RememberSaveableWithSerializerAndMutableState() {
     val holder =
         rememberSerializable(stateSerializer = HolderSerializer) { mutableStateOf(Holder(0)) }
 }

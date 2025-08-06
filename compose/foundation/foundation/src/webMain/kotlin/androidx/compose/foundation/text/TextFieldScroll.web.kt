@@ -22,10 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import noria.NoriaContext
 
 @ExperimentalFoundationApi
 @Composable
-internal actual fun rememberTextFieldOverscrollEffect(): OverscrollEffect? = null
+internal actual fun NoriaContext.rememberTextFieldOverscrollEffect(): OverscrollEffect? = null
 
 internal actual fun Modifier.textFieldScroll(
     scrollerPosition: TextFieldScrollerPosition,

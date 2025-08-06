@@ -85,7 +85,7 @@ class GroupSizeTests : BaseComposeTest() {
         name: String,
         noMoreGroupsThan: Int,
         noMoreSlotsThan: Int,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         var compositionData: CompositionData? = null
         compose {
@@ -141,7 +141,7 @@ private fun findMarkerGroup(compositionData: CompositionData): CompositionGroup 
         ?.firstOrNull() ?: error("Could not find marker")
 }
 
-@Composable private inline fun Marker(content: @Composable () -> Unit) = content()
+@Composable private inline fun Marker(content: @Composable NoriaContext.() -> Unit) = content()
 
 // left unused for debugging. This is useful for debugging differences in the slot table
 @Suppress("unused")

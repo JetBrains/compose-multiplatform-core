@@ -19,6 +19,7 @@ package androidx.compose.ui.backhandler
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlinx.coroutines.flow.Flow
+import noria.NoriaContext
 
 /**
  * An effect for handling predictive system back gestures.
@@ -50,7 +51,7 @@ import kotlinx.coroutines.flow.Flow
  */
 @ExperimentalComposeUiApi
 @Composable
-expect fun PredictiveBackHandler(
+expect fun NoriaContext.PredictiveBackHandler(
     enabled: Boolean = true,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 )
@@ -69,4 +70,4 @@ expect fun PredictiveBackHandler(
  */
 @ExperimentalComposeUiApi
 @Composable
-expect fun BackHandler(enabled: Boolean = true, onBack: () -> Unit)
+expect fun NoriaContext.BackHandler(enabled: Boolean = true, onBack: () -> Unit)

@@ -26,7 +26,7 @@ import androidx.compose.ui.viewinterop.AndroidViewBinding
 
 @Sampled
 @Composable
-fun AndroidViewBindingSample() {
+fun NoriaContext.AndroidViewBindingSample() {
     // Inflates and composes sample_layout.xml and changes the color of the `second` View.
     // The `second` View is part of sample_layout.xml.
     AndroidViewBinding(SampleLayoutBinding::inflate) { second.setBackgroundColor(Color.GRAY) }
@@ -34,7 +34,7 @@ fun AndroidViewBindingSample() {
 
 @Sampled
 @Composable
-fun AndroidViewBindingReusableSample() {
+fun NoriaContext.AndroidViewBindingReusableSample() {
     @Composable
     fun MyButton(label: String, action: () -> Unit, modifier: Modifier = Modifier) {
         AndroidViewBinding(

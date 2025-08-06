@@ -250,7 +250,7 @@ fun <T : View> AndroidView(
 }
 
 @Composable
-private fun <T : View> createAndroidViewNodeFactory(factory: (Context) -> T): () -> LayoutNode {
+private fun <T : View> NoriaContext.createAndroidViewNodeFactory(factory: (Context) -> T): () -> LayoutNode {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val context = LocalContext.current
     val parentReference = rememberCompositionContext()

@@ -471,7 +471,7 @@ class PausableCompositionInstrumentedTests {
 }
 
 @Composable
-fun DisposableEffectWrapper(onComposed: () -> Unit, onApplied: () -> Unit) {
+fun NoriaContext.DisposableEffectWrapper(onComposed: () -> Unit, onApplied: () -> Unit) {
     onComposed()
     DisposableEffect(Unit) {
         onApplied()
@@ -480,7 +480,7 @@ fun DisposableEffectWrapper(onComposed: () -> Unit, onApplied: () -> Unit) {
 }
 
 @Composable
-fun RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
+fun NoriaContext.RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
     onComposed()
     val a = remember {
         onRemembered()
@@ -490,6 +490,6 @@ fun RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
 }
 
 @Composable
-fun LayoutWrapper(modifier: Modifier) {
+fun NoriaContext.LayoutWrapper(modifier: Modifier) {
     Layout(modifier) { measurables, constraints -> layout(10, 10) {} }
 }

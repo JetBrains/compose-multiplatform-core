@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.sp
 
 /** Simple demonstration of subscribing to pressure changes. */
 @Composable
-fun DetectTapPressureGesturesDemo() {
+fun NoriaContext.DetectTapPressureGesturesDemo() {
     val pressureBoxTextSize = 28.sp
 
     Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {

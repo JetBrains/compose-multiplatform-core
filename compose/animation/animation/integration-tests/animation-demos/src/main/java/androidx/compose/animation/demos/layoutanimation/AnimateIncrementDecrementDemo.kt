@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun AnimateIncrementDecrementDemo() {
+fun NoriaContext.AnimateIncrementDecrementDemo() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AnimateIncrementDecrementSample()
     }

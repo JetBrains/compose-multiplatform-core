@@ -128,13 +128,13 @@ class ComposableStateFlowValueDetectorTest : LintDetectorTest() {
                     testFlow.value
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     stateFlow.value
                     testFlow.value
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -154,7 +154,7 @@ class ComposableStateFlowValueDetectorTest : LintDetectorTest() {
                         testFlow.value
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         stateFlow.value
                         testFlow.value
                     }

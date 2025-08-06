@@ -163,7 +163,7 @@ class InputMethodInterceptor(private val rule: ComposeContentTestRule) {
      * This is just a convenience method for calling `rule.setContent` and then calling this class's
      * [Content] method yourself.
      */
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         rule.setContent { Content(content) }
     }
 
@@ -174,7 +174,7 @@ class InputMethodInterceptor(private val rule: ComposeContentTestRule) {
      */
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    fun Content(content: @Composable () -> Unit) {
+    fun Content(content: @Composable NoriaContext.() -> Unit) {
         InterceptPlatformTextInput(interceptor, content)
     }
 

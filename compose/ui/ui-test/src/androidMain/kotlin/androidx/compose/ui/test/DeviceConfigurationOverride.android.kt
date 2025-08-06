@@ -268,7 +268,7 @@ fun DeviceConfigurationOverride.Companion.WindowInsets(
  * to the given [configuration].
  */
 @Composable
-private fun OverriddenConfiguration(configuration: Configuration, content: @Composable () -> Unit) {
+private fun NoriaContext.OverriddenConfiguration(configuration: Configuration, content: @Composable () -> Unit) {
     // We don't override the theme, but we do want to override the configuration and this seems
     // convenient to do so
     val newContext =

@@ -154,7 +154,7 @@ private fun emailOffsetTranslator(text: String) =
 
 @Preview
 @Composable
-fun VisualTransformationDemo() {
+fun NoriaContext.VisualTransformationDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Capitalization")
@@ -216,7 +216,7 @@ fun VisualTransformationDemo() {
 }
 
 @Composable
-private fun VariousEditLine(
+private fun NoriaContext.VariousEditLine(
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     onValueChange: (String, String) -> String = { _, new -> new },
@@ -238,7 +238,7 @@ private fun VariousEditLine(
 }
 
 @Composable
-private fun HintEditText(content: @Composable () -> Unit) {
+private fun NoriaContext.HintEditText(content: @Composable NoriaContext.() -> Unit) {
     val state = rememberSaveable { mutableStateOf("") }
 
     Box(demoTextFieldModifiers) {
@@ -255,7 +255,7 @@ private fun HintEditText(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun InteractionSourceTextField() {
+private fun NoriaContext.InteractionSourceTextField() {
     val state =
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     val interactionSource = remember { MutableInteractionSource() }

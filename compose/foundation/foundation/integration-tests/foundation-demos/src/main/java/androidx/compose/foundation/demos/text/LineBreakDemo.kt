@@ -58,7 +58,7 @@ private val demoText = "This is an example text\n今日は自由が丘で焼き�
 private val presetNameStyle = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp)
 
 @Composable
-fun TextLineBreakDemo() {
+fun NoriaContext.TextLineBreakDemo() {
     var selectedFontSize by remember { mutableFloatStateOf(16f) }
 
     Column(modifier = Modifier.fillMaxSize()) {

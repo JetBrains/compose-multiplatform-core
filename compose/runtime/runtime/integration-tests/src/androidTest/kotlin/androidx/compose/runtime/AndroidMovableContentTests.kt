@@ -81,7 +81,7 @@ class AndroidMovableContentTests : BaseComposeTest() {
 }
 
 @Composable
-fun Container(content: @Composable () -> Unit) {
+fun NoriaContext.Container(content: @Composable NoriaContext.() -> Unit) {
     content()
 }
 

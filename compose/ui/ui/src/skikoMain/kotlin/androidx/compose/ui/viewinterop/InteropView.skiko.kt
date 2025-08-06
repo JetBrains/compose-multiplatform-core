@@ -34,6 +34,7 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.DefaultUiApplier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import noria.NoriaContext
 
 internal val NoOp: Any.() -> Unit = {}
 
@@ -101,7 +102,7 @@ internal abstract class TypedInteropViewHolder<T : InteropView>(
  * @see [AndroidView.android.kt:createAndroidViewNodeFactory]
  */
 @Composable
-private fun <T : InteropView> createInteropViewLayoutNodeFactory(
+private fun <T : InteropView> NoriaContext.createInteropViewLayoutNodeFactory(
     factory: (compositeKeyHashCode: CompositeKeyHashCode) -> TypedInteropViewHolder<T>
 ): () -> LayoutNode {
     val compositeKeyHash = currentCompositeKeyHashCode
@@ -120,7 +121,7 @@ private fun <T : InteropView> createInteropViewLayoutNodeFactory(
  */
 @Composable
 @UiComposable
-internal fun <T : InteropView> InteropView(
+internal fun <T : InteropView> NoriaContext.InteropView(
     factory: (compositeKeyHashCode: CompositeKeyHashCode) -> TypedInteropViewHolder<T>,
     modifier: Modifier,
     onReset: ((T) -> Unit)? = null,

@@ -18,6 +18,7 @@ package androidx.compose.foundation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import noria.NoriaContext
 
 /**
  * Returns whether the operating system is in dark theme.
@@ -34,6 +35,6 @@ import androidx.compose.runtime.ReadOnlyComposable
  * @sample androidx.compose.foundation.samples.DarkThemeSample
  * @return `true` if the system is considered to be in 'dark theme'.
  */
-@Composable @ReadOnlyComposable fun isSystemInDarkTheme() = _isSystemInDarkTheme()
+@Composable @ReadOnlyComposable fun NoriaContext.isSystemInDarkTheme() = _isSystemInDarkTheme()
 
-@Composable @ReadOnlyComposable internal expect fun _isSystemInDarkTheme(): Boolean
+@Composable @ReadOnlyComposable internal expect fun NoriaContext._isSystemInDarkTheme(): Boolean

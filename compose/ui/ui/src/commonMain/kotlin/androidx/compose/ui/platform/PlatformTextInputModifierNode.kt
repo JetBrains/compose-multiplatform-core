@@ -35,6 +35,7 @@ import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.node.requireOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import noria.NoriaContext
 
 /**
  * A modifier node that can connect to the platform's text input IME system. To initiate a text
@@ -150,9 +151,9 @@ suspend fun PlatformTextInputModifierNode.establishTextInputSession(
  */
 @ExperimentalComposeUiApi
 @Composable
-fun InterceptPlatformTextInput(
+fun NoriaContext.InterceptPlatformTextInput(
     interceptor: PlatformTextInputInterceptor,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val parent = LocalChainedPlatformTextInputInterceptor.current
     // We don't need to worry about explicitly cancelling the input session if the parent changes:

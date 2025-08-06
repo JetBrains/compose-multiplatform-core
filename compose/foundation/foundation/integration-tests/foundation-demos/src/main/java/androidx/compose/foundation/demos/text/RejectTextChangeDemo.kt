@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun RejectTextChangeDemo() {
+fun NoriaContext.RejectTextChangeDemo() {
     LazyColumn {
         item {
             TagLine(tag = "don't set if non number is added")
@@ -44,7 +44,7 @@ fun RejectTextChangeDemo() {
 }
 
 @Composable
-private fun RejectNonDigits() {
+private fun NoriaContext.RejectNonDigits() {
     val state = rememberSaveable { mutableStateOf("") }
     BasicTextField(
         modifier = demoTextFieldModifiers,
@@ -60,7 +60,7 @@ private fun RejectNonDigits() {
 }
 
 @Composable
-private fun RejectComposition() {
+private fun NoriaContext.RejectComposition() {
     val state = rememberSaveable { mutableStateOf(({ "" })()) }
     BasicTextField(
         modifier = demoTextFieldModifiers,

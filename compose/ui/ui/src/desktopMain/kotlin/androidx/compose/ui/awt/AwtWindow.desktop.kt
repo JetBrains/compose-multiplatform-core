@@ -28,6 +28,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.skiko.MainUIDispatcher
 import java.awt.Window
+import noria.NoriaContext
 
 /**
  * Compose [Window] obtained from [create]. The [create] block will be called exactly once to
@@ -56,7 +57,7 @@ import java.awt.Window
  */
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun <T : Window> AwtWindow(
+fun <T : Window> NoriaContext.AwtWindow(
     visible: Boolean = true,
     create: () -> T,
     dispose: (T) -> Unit,

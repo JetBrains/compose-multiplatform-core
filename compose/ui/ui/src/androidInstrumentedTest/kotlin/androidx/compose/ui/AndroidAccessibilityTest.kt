@@ -5848,7 +5848,7 @@ class AndroidAccessibilityTest {
  * children reasonably. Useful for Semantics hierarchy testing
  */
 @Composable
-private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         if (measurables.isEmpty()) {
             layout(constraints.minWidth, constraints.minHeight) {}
@@ -5877,7 +5877,7 @@ private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable
  * [SemanticsNode.children].
  */
 @Composable
-private fun SimpleSubcomposeLayout(
+private fun NoriaContext.SimpleSubcomposeLayout(
     modifier: Modifier = Modifier,
     contentOne: @Composable () -> Unit,
     positionOne: Offset,
@@ -5909,7 +5909,7 @@ private fun SimpleSubcomposeLayout(
  * bottom bar position, and all the content in between.
  */
 @Composable
-fun ScaffoldedSubcomposeLayout(
+fun NoriaContext.ScaffoldedSubcomposeLayout(
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit,
     content: @Composable () -> Unit,

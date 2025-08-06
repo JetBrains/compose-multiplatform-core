@@ -17,9 +17,11 @@
 package noria.ui.core
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.UiComposable
 import noria.*
 
 @Composable
-fun NoriaContext.boundary(builder: @Composable NoriaContext.() -> Unit) {
+@UiComposable
+fun NoriaContext.boundary(builder: @Composable @UiComposable NoriaContext.() -> Unit) {
     builder()
 }

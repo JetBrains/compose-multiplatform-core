@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.packFloats
+import noria.NoriaContext
 
 /** Default identifier for the root group if a Vector graphic */
 const val RootGroupName = "VectorRootGroup"
@@ -73,7 +74,7 @@ const val RootGroupName = "VectorRootGroup"
 )
 @Composable
 @ComposableOpenTarget(-1)
-fun rememberVectorPainter(
+fun NoriaContext.rememberVectorPainter(
     defaultWidth: Dp,
     defaultHeight: Dp,
     viewportWidth: Float = Float.NaN,
@@ -117,7 +118,7 @@ fun rememberVectorPainter(
  */
 @Composable
 @ComposableOpenTarget(-1)
-fun rememberVectorPainter(
+fun NoriaContext.rememberVectorPainter(
     defaultWidth: Dp,
     defaultHeight: Dp,
     viewportWidth: Float = Float.NaN,
@@ -167,7 +168,7 @@ fun rememberVectorPainter(
  * @param [image] ImageVector used to create a vector graphic sub-composition
  */
 @Composable
-fun rememberVectorPainter(image: ImageVector): VectorPainter {
+fun NoriaContext.rememberVectorPainter(image: ImageVector): VectorPainter {
     val density = LocalDensity.current
     val key = packFloats(image.genId.toFloat(), density.density)
     return remember(key) {
@@ -426,7 +427,7 @@ internal fun GroupComponent.createGroupComponent(currentGroup: VectorGroup): Gro
  *   node names. The values are [VectorConfig] for that node.
  */
 @Composable
-fun RenderVectorGroup(group: VectorGroup, configs: Map<String, VectorConfig> = emptyMap()) {
+fun NoriaContext.RenderVectorGroup(group: VectorGroup, configs: Map<String, VectorConfig> = emptyMap()) {
     for (vectorNode in group) {
         if (vectorNode is VectorPath) {
             val config = configs[vectorNode.name] ?: object : VectorConfig {}

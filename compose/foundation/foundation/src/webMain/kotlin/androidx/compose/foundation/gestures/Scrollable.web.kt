@@ -21,6 +21,7 @@ import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
     DefaultFlingBehavior(
@@ -28,7 +29,7 @@ internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavi
     )
 
 @Composable
-internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
+internal actual fun NoriaContext.rememberPlatformDefaultFlingBehavior(): FlingBehavior {
     val flingSpec = rememberSplineBasedDecay<Float>()
     return remember(flingSpec) {
         DefaultFlingBehavior(flingSpec)

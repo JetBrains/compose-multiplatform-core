@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun FocusGroupDemo() {
+fun NoriaContext.FocusGroupDemo() {
     Column {
         Text(
             """

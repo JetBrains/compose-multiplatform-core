@@ -24,6 +24,7 @@ import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import noria.NoriaContext
 
 /** Receiver scope for use with [produceState]. */
 public interface ProduceStateScope<T> : MutableState<T>, CoroutineScope {
@@ -72,7 +73,7 @@ private class ProduceStateScopeImpl<T>(
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-public fun <T> produceState(
+public fun <T> NoriaContext.produceState(
     initialValue: T,
     producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
@@ -101,7 +102,7 @@ public fun <T> produceState(
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-public fun <T> produceState(
+public fun <T> NoriaContext.produceState(
     initialValue: T,
     key1: Any?,
     producer: suspend ProduceStateScope<T>.() -> Unit,
@@ -131,7 +132,7 @@ public fun <T> produceState(
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-public fun <T> produceState(
+public fun <T> NoriaContext.produceState(
     initialValue: T,
     key1: Any?,
     key2: Any?,
@@ -162,7 +163,7 @@ public fun <T> produceState(
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-public fun <T> produceState(
+public fun <T> NoriaContext.produceState(
     initialValue: T,
     key1: Any?,
     key2: Any?,
@@ -194,7 +195,7 @@ public fun <T> produceState(
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-public fun <T> produceState(
+public fun <T> NoriaContext.produceState(
     initialValue: T,
     vararg keys: Any?,
     producer: suspend ProduceStateScope<T>.() -> Unit,

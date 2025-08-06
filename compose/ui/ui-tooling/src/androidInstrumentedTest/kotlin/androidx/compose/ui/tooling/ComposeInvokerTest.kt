@@ -18,6 +18,7 @@ package androidx.compose.ui.tooling
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentComposer
+import noria.NoriaContext
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -119,21 +120,21 @@ class ComposeInvokerTest {
 
 class MyTestComposables {
 
-    @Composable fun MyWorkingComposable() {}
+    @Composable fun NoriaContext.MyWorkingComposable() {}
 
     @Composable
-    fun MyThrowExceptionComposable() {
+    fun NoriaContext.MyThrowExceptionComposable() {
         throw Exception("An Exception")
     }
 }
 
 class MyTestComposableWithBooleanPreviewParams {
 
-    @Composable fun TestContent() {}
+    @Composable fun NoriaContext.TestContent() {}
 
     @Preview
     @Composable
-    private fun TestContent(
+    private fun NoriaContext.TestContent(
         @PreviewParameter(TestContentParameterProviderBoolean::class)
         @Suppress("UNUSED_PARAMETER")
         valueParameter: Boolean
@@ -146,11 +147,11 @@ class MyTestComposableWithBooleanPreviewParams {
 
 class MyTestComposableWithIntPreviewParams {
 
-    @Composable fun TestContent() {}
+    @Composable fun NoriaContext.TestContent() {}
 
     @Preview
     @Composable
-    private fun TestContent(
+    private fun NoriaContext.TestContent(
         @PreviewParameter(TestContentParameterProviderInt::class)
         @Suppress("UNUSED_PARAMETER")
         valueParameter: Int
@@ -164,7 +165,7 @@ class MyTestComposableWithIntPreviewParams {
 class MyTestComposableWithClassTypePreviewParams {
     @Preview(showBackground = true)
     @Composable
-    private fun TestRadius(
+    private fun NoriaContext.TestRadius(
         @PreviewParameter(CornerRadiusParamProvider::class)
         @Suppress("UNUSED_PARAMETER")
         radius: CornerRadius

@@ -42,13 +42,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Preview
 @Composable
-fun SimpleComposablePreview() {
+fun NoriaContext.SimpleComposablePreview() {
     Surface(color = Color.Red) { Text("Hello world") }
 }
 
 @Preview
 @Composable
-private fun PrivateSimpleComposablePreview() {
+private fun NoriaContext.PrivateSimpleComposablePreview() {
     Surface(color = Color.Red) { Text("Private Hello world") }
 }
 
@@ -56,14 +56,14 @@ data class Data(val name: String = "123")
 
 @Preview
 @Composable
-fun DefaultParametersPreview1(a: Data = Data()) {
+fun NoriaContext.DefaultParametersPreview1(a: Data = Data()) {
     if (a.name != "123") throw IllegalArgumentException("Unexpected default value")
     Text("Default parameter  ${a.name}")
 }
 
 @Preview
 @Composable
-fun DefaultParametersPreview2(a: Int = 3, b: Data = Data()) {
+fun NoriaContext.DefaultParametersPreview2(a: Int = 3, b: Data = Data()) {
     if (a != 3) throw IllegalArgumentException("Unexpected default value")
     if (b.name != "123") throw IllegalArgumentException("Unexpected default value")
     Text("Default parameter  $a ${b.name}")
@@ -71,7 +71,7 @@ fun DefaultParametersPreview2(a: Int = 3, b: Data = Data()) {
 
 @Preview
 @Composable
-fun DefaultParametersPreview3(a: () -> Int = { 4 }, b: Int = 3, c: Data = Data()) {
+fun NoriaContext.DefaultParametersPreview3(a: () -> Int = { 4 }, b: Int = 3, c: Data = Data()) {
     if (a() != 4) throw IllegalArgumentException("Unexpected default value")
     if (b != 3) throw IllegalArgumentException("Unexpected default value")
     if (c.name != "123") throw IllegalArgumentException("Unexpected default value")
@@ -80,7 +80,7 @@ fun DefaultParametersPreview3(a: () -> Int = { 4 }, b: Int = 3, c: Data = Data()
 
 @Preview
 @Composable
-fun DefaultParametersPreview4(a: String = "Hello", b: Color = Color.White) {
+fun NoriaContext.DefaultParametersPreview4(a: String = "Hello", b: Color = Color.White) {
     if (a != "Hello") throw IllegalArgumentException("Unexpected default value")
     if (b != Color.White) throw IllegalArgumentException("Unexpected default value")
     Text("Default parameter  $a $b")
@@ -88,7 +88,7 @@ fun DefaultParametersPreview4(a: String = "Hello", b: Color = Color.White) {
 
 @Preview
 @Composable
-private fun LifecyclePreview() {
+private fun NoriaContext.LifecyclePreview() {
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     if (lifecycleState != Lifecycle.State.RESUMED)
         throw IllegalArgumentException("Lifecycle state is not resumed. $lifecycleState")
@@ -97,7 +97,7 @@ private fun LifecyclePreview() {
 
 @Preview
 @Composable
-private fun SaveableStateRegistryPreview() {
+private fun NoriaContext.SaveableStateRegistryPreview() {
     if (LocalSaveableStateRegistry.current == null)
         throw IllegalArgumentException("SaveableStateRegistry is not provided")
     Text("SaveableStateRegistry preview")
@@ -105,7 +105,7 @@ private fun SaveableStateRegistryPreview() {
 
 @Preview
 @Composable
-private fun OnBackPressedDispatcherPreview() {
+private fun NoriaContext.OnBackPressedDispatcherPreview() {
     if (LocalOnBackPressedDispatcherOwner.current == null)
         throw IllegalArgumentException("OnBackPressedDispatcher is not provided")
     Text("OnBackPressedDispatcher preview")
@@ -113,7 +113,7 @@ private fun OnBackPressedDispatcherPreview() {
 
 @Preview
 @Composable
-private fun ActivityResultRegistryPreview() {
+private fun NoriaContext.ActivityResultRegistryPreview() {
     if (LocalActivityResultRegistryOwner.current == null)
         throw IllegalArgumentException("ActivityResultRegistry is not provided")
     Text("ActivityResultRegistry preview")
@@ -121,7 +121,7 @@ private fun ActivityResultRegistryPreview() {
 
 @Preview
 @Composable
-fun ViewModelPreview(model: TestViewModel = viewModel()) {
+fun NoriaContext.ViewModelPreview(model: TestViewModel = viewModel()) {
     val count by model.counterLiveData.observeAsState(0)
     Column { Button(onClick = { model.increaseCounter() }) { Text("Clicks: $count") } }
 }
@@ -147,7 +147,7 @@ fun Multipreview() {
 @PreviewLightDark
 @PreviewScreenSizes
 @Composable
-fun MultiPreviews() {
+fun NoriaContext.MultiPreviews() {
     Text("MultiPreviews test")
 }
 
@@ -157,7 +157,7 @@ class TestContentParameterProviderBoolean : PreviewParameterProvider<Boolean> {
 
 @Preview
 @Composable
-fun PreviewParametersComposablePreview(
+fun NoriaContext.PreviewParametersComposablePreview(
     @PreviewParameter(TestContentParameterProviderBoolean::class) valueParameter: Boolean
 ) {
     Text(valueParameter.toString())
@@ -169,7 +169,7 @@ class TestContentParameterProviderCornerRadius : PreviewParameterProvider<Corner
 
 @Preview
 @Composable
-fun TestCornerRadius(
+fun NoriaContext.TestCornerRadius(
     @PreviewParameter(TestContentParameterProviderCornerRadius::class) radius: CornerRadius
 ) {
     Text(radius.toString())

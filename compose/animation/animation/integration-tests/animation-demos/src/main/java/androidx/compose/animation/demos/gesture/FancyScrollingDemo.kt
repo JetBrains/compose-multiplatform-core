@@ -49,7 +49,7 @@ const val DEBUG = false
 
 @Preview
 @Composable
-fun FancyScrollingDemo() {
+fun NoriaContext.FancyScrollingDemo() {
     Column {
         Text("<== Scroll horizontally ==>", fontSize = 20.sp, modifier = Modifier.padding(40.dp))
         val animScroll = remember { Animatable(0f) }

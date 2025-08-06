@@ -191,7 +191,7 @@ class DragGestureDetectorWhileMovingUIToPopupTest {
         onDragCancel: () -> Unit = {},
         onDrag: () -> Unit = {},
         onDragEnd: () -> Unit = {},
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         val movableContent = remember { movableContentOf(content) }
         var showPopup by remember { mutableStateOf(false) }

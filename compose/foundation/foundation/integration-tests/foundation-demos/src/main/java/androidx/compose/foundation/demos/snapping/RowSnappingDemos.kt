@@ -56,7 +56,7 @@ val RowSnappingDemos =
 
 /** Snapping happens to the next item and items have the same size */
 @Composable
-private fun SinglePageSnapping() {
+private fun NoriaContext.SinglePageSnapping() {
     val scrollState = rememberScrollState()
     val layoutSizeState = remember { mutableStateOf(IntSize.Zero) }
     val layoutInfoProvider =
@@ -69,7 +69,7 @@ private fun SinglePageSnapping() {
 
 /** Snapping happens after a decay animation. Items have the same size. */
 @Composable
-private fun DecayedSnappingDemo() {
+private fun NoriaContext.DecayedSnappingDemo() {
     val scrollState = rememberScrollState()
     val layoutSizeState = remember { mutableStateOf(IntSize.Zero) }
     val layoutInfoProvider =
@@ -80,7 +80,7 @@ private fun DecayedSnappingDemo() {
 
 /** Snapping happens to at max one view port item's worth distance. */
 @Composable
-private fun ViewPortBasedSnappingDemo() {
+private fun NoriaContext.ViewPortBasedSnappingDemo() {
     val scrollState = rememberScrollState()
     val layoutSizeState = remember { mutableStateOf(IntSize.Zero) }
     val layoutInfoProvider =
@@ -92,7 +92,7 @@ private fun ViewPortBasedSnappingDemo() {
 }
 
 @Composable
-private fun RowSnappingMainLayout(
+private fun NoriaContext.RowSnappingMainLayout(
     snapFlingBehavior: FlingBehavior,
     scrollState: ScrollState,
     onLayoutSizeChanged: (IntSize) -> Unit,
@@ -118,7 +118,7 @@ private fun RowSnappingMainLayout(
 }
 
 @Composable
-private fun RowSnappingItem(position: Int) {
+private fun NoriaContext.RowSnappingItem(position: Int) {
     Box(
         modifier =
             Modifier.fillMaxHeight()
@@ -136,7 +136,7 @@ private fun RowSnappingItem(position: Int) {
 }
 
 @Composable
-private fun rememberRowSnapLayoutInfoProvider(
+private fun NoriaContext.rememberRowSnapLayoutInfoProvider(
     scrollState: ScrollState,
     layoutSize: () -> Float,
 ): SnapLayoutInfoProvider {
@@ -151,7 +151,7 @@ private fun rememberRowSnapLayoutInfoProvider(
 }
 
 @Composable
-private fun rememberNextItemSnappingLayoutInfoProvider(
+private fun NoriaContext.rememberNextItemSnappingLayoutInfoProvider(
     scrollState: ScrollState,
     layoutSize: () -> Float,
 ): SnapLayoutInfoProvider {
@@ -170,7 +170,7 @@ private fun rememberNextItemSnappingLayoutInfoProvider(
 }
 
 @Composable
-private fun rememberViewPortSnapLayoutInfoProvider(
+private fun NoriaContext.rememberViewPortSnapLayoutInfoProvider(
     scrollState: ScrollState,
     layoutSize: () -> Float,
 ): SnapLayoutInfoProvider {
@@ -190,7 +190,7 @@ private fun rememberViewPortSnapLayoutInfoProvider(
 }
 
 @Composable
-private fun rememberScrollStateLayoutInfoProvider(
+private fun NoriaContext.rememberScrollStateLayoutInfoProvider(
     scrollState: ScrollState,
     layoutSize: () -> Float,
 ): SnapLayoutInfoProvider {

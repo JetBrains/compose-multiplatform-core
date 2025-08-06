@@ -25,7 +25,7 @@ import kotlin.math.min
 
 @Sampled
 @Composable
-fun AlignmentLineSample() {
+fun NoriaContext.AlignmentLineSample() {
     // Create a horizontal alignment line. Note it is not common for alignment lines to be created
     // in the scope of one composable, since they are usually used across more than one function.
     // We use ::min as merging strategy, which means that the parent will have the minimum of

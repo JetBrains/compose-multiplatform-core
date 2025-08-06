@@ -20,6 +20,7 @@ package androidx.compose.foundation.lazy.layout
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 /**
  * Remembers the platform-specific implementation for scheduling lazy layout item prefetch
@@ -27,7 +28,7 @@ import androidx.compose.runtime.Composable
  */
 @ExperimentalFoundationApi
 @Composable
-internal expect fun rememberDefaultPrefetchScheduler(): PrefetchScheduler
+internal expect fun NoriaContext.rememberDefaultPrefetchScheduler(): PrefetchScheduler
 
 /**
  * Implementations of this interface accept prefetch requests via [schedulePrefetch] and decide when

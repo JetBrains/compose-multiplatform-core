@@ -633,17 +633,17 @@ class CompositionAndDerivedStateTests {
 }
 
 @Composable
-private fun DisplayItem(name: String, state: State<Int>) {
+private fun NoriaContext.DisplayItem(name: String, state: State<Int>) {
     Text("$name = ${state.value}")
 }
 
 @Composable
-private fun DisplayIndirect(name: String, state: State<Int>) {
+private fun NoriaContext.DisplayIndirect(name: String, state: State<Int>) {
     DisplayItem(name, state)
 }
 
 @Composable
-private fun Display(vararg names: Pair<String, State<Int>>) {
+private fun NoriaContext.Display(vararg names: Pair<String, State<Int>>) {
     for ((name, state) in names) {
         DisplayIndirect(name, state)
     }

@@ -1254,7 +1254,7 @@ internal fun SemanticsNodeInteraction.assertTestPropertyEquals(value: String) =
 @Stable private class Counter(var count: Int)
 
 @Composable
-private fun CountingLayout(modifier: Modifier, counter: Counter) {
+private fun NoriaContext.CountingLayout(modifier: Modifier, counter: Counter) {
     Layout(
         modifier = modifier,
         content = {},
@@ -1273,7 +1273,7 @@ private fun CountingLayout(modifier: Modifier, counter: Counter) {
  * children reasonably. Useful for Semantics hierarchy testing
  */
 @Composable
-private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         if (measurables.isEmpty()) {
             layout(constraints.minWidth, constraints.minHeight) {}
@@ -1302,7 +1302,7 @@ private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable
  * [SemanticsNode.children].
  */
 @Composable
-private fun SimpleSubcomposeLayout(
+private fun NoriaContext.SimpleSubcomposeLayout(
     modifier: Modifier = Modifier,
     contentOne: @Composable () -> Unit,
     positionOne: Offset,

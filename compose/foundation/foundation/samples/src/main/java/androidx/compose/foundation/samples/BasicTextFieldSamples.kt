@@ -88,7 +88,7 @@ import kotlinx.coroutines.flow.debounce
 
 @Sampled
 @Composable
-fun BasicTextFieldSample() {
+fun NoriaContext.BasicTextFieldSample() {
     var value by
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     BasicTextField(
@@ -103,7 +103,7 @@ fun BasicTextFieldSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldWithStringSample() {
+fun NoriaContext.BasicTextFieldWithStringSample() {
     var value by rememberSaveable { mutableStateOf("initial value") }
     BasicTextField(
         value = value,
@@ -117,7 +117,7 @@ fun BasicTextFieldWithStringSample() {
 
 @Sampled
 @Composable
-fun PlaceholderBasicTextFieldSample() {
+fun NoriaContext.PlaceholderBasicTextFieldSample() {
     var value by rememberSaveable { mutableStateOf("initial value") }
     Box {
         BasicTextField(value = value, onValueChange = { value = it })
@@ -129,7 +129,7 @@ fun PlaceholderBasicTextFieldSample() {
 
 @Sampled
 @Composable
-fun TextFieldWithIconSample() {
+fun NoriaContext.TextFieldWithIconSample() {
     var value by rememberSaveable { mutableStateOf("initial value") }
     BasicTextField(
         value = value,
@@ -153,7 +153,7 @@ fun TextFieldWithIconSample() {
 
 @Sampled
 @Composable
-fun CreditCardSample() {
+fun NoriaContext.CreditCardSample() {
     /** The offset translator used for credit card input field */
     val creditCardOffsetTranslator =
         object : OffsetMapping {
@@ -311,7 +311,7 @@ fun BasicTextFieldStateEditSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldCustomInputTransformationSample() {
+fun NoriaContext.BasicTextFieldCustomInputTransformationSample() {
     // Demonstrates how to create a custom and relatively complex InputTransformation.
     val state = remember { TextFieldState() }
     BasicTextField(
@@ -355,7 +355,7 @@ fun BasicTextFieldCustomInputTransformationSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldOutputTransformationSample() {
+fun NoriaContext.BasicTextFieldOutputTransformationSample() {
     @Stable
     data class PhoneNumberOutputTransformation(private val pad: Boolean) : OutputTransformation {
         override fun TextFieldBuffer.transformOutput() {
@@ -388,7 +388,7 @@ fun BasicTextFieldOutputTransformationSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldAnnotatedOutputTransformationSample() {
+fun NoriaContext.BasicTextFieldAnnotatedOutputTransformationSample() {
     val state = rememberTextFieldState()
     BasicTextField(
         state,
@@ -414,7 +414,7 @@ fun BasicTextFieldAnnotatedOutputTransformationSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldInputTransformationByValueReplaceSample() {
+fun NoriaContext.BasicTextFieldInputTransformationByValueReplaceSample() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state,
@@ -428,7 +428,7 @@ fun BasicTextFieldInputTransformationByValueReplaceSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldInputTransformationByValueChooseSample() {
+fun NoriaContext.BasicTextFieldInputTransformationByValueChooseSample() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state,
@@ -461,7 +461,7 @@ fun BasicTextFieldInputTransformationChainingSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldChangeIterationSample() {
+fun NoriaContext.BasicTextFieldChangeIterationSample() {
     // Print a log message every time the text is changed.
     BasicTextField(
         state = rememberTextFieldState(),
@@ -476,7 +476,7 @@ fun BasicTextFieldChangeIterationSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldChangeReverseIterationSample() {
+fun NoriaContext.BasicTextFieldChangeReverseIterationSample() {
     // Make a text field behave in "insert mode" – inserted text overwrites the text ahead of it
     // instead of being inserted.
     BasicTextField(
@@ -530,7 +530,7 @@ fun BasicTextFieldTextValuesSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldUndoSample() {
+fun NoriaContext.BasicTextFieldUndoSample() {
     val state = rememberTextFieldState()
 
     Column(Modifier.padding(8.dp)) {
@@ -570,7 +570,7 @@ fun BasicTextFieldUndoSample() {
 
 @Sampled
 @Composable
-fun BasicTextFieldDecoratorSample() {
+fun NoriaContext.BasicTextFieldDecoratorSample() {
     // Demonstrates how to use the decorator API on BasicTextField
     val state = rememberTextFieldState("Hello, World!")
     BasicTextField(
@@ -595,7 +595,7 @@ fun BasicTextFieldDecoratorSample() {
 @Suppress("UNUSED_VARIABLE")
 @Sampled
 @Composable
-fun TextFieldStateApplyOutputTransformation() {
+fun NoriaContext.TextFieldStateApplyOutputTransformation() {
     val state = TextFieldState("Hello, World")
     val outputTransformation = OutputTransformation { insert(0, "> ") }
 

@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.PlatformTextInputSession
+import noria.NoriaContext
 
 /**
  * Installs a custom [PlatformTextInputSession] implementation to run when
@@ -35,9 +36,9 @@ import androidx.compose.ui.platform.PlatformTextInputSession
 @Deprecated("Use InterceptPlatformTextInput instead")
 @ExperimentalTestApi
 @Composable
-fun PlatformTextInputMethodTestOverride(
+fun NoriaContext.PlatformTextInputMethodTestOverride(
     sessionHandler: PlatformTextInputSession,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     InterceptPlatformTextInput(
         interceptor = { request, _ ->

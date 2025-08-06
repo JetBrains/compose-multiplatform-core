@@ -37,7 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SharedElementExplorationDemo() {
+fun NoriaContext.SharedElementExplorationDemo() {
     val A = remember {
         movableContentWithReceiverOf<SceneScope, Modifier> { modifier ->
             Box(

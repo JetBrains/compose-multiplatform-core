@@ -36,15 +36,16 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.Duration
+import noria.NoriaContext
 
 @Composable
-internal fun OffsetToFocusedRect(
+internal fun NoriaContext.OffsetToFocusedRect(
     insets: PlatformInsets,
     getFocusedRect: () -> Rect?,
     size: IntSize?,
     animationDuration: Duration,
     animationCompletion: () -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     var currentOffset by remember { mutableStateOf(IntOffset.Zero) }
     var startOffset by remember { mutableStateOf(IntOffset.Zero) }

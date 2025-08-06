@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun PathEasingSample() {
+fun NoriaContext.PathEasingSample() {
     // Creates a custom PathEasing curve and applies it to an animation
     var toggled by remember { mutableStateOf(true) }
     val pathForAnimation = remember {

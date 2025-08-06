@@ -28,7 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 
 @Composable
-fun BasicTextFieldLongTextDemo() {
+fun NoriaContext.BasicTextFieldLongTextDemo() {
     val text = remember { TextFieldState(generateString(charCount = 100_000)) }
 
     Column(Modifier.imePadding()) {

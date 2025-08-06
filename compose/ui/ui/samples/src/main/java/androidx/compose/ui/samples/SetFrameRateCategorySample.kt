@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SetFrameRateCategorySample() {
+fun NoriaContext.SetFrameRateCategorySample() {
     var targetAlpha by remember { mutableFloatStateOf(1f) }
     val context = LocalContext.current
     val activity: Activity? = findOwner(context)

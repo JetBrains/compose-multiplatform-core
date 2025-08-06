@@ -36,7 +36,7 @@ import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.unit.Constraints
 
 @Composable
-internal fun RectListDebugger(modifier: Modifier = Modifier) {
+internal fun NoriaContext.RectListDebugger(modifier: Modifier = Modifier) {
     Layout(modifier.then(RectListDebuggerModifierElement), EmptyFillMeasurePolicy)
 }
 

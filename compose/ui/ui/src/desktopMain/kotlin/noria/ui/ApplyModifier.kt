@@ -35,7 +35,7 @@ import noria.NoriaContext
 @Composable
 fun NoriaContext.withModifier(modifier: Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(
-        content = { content() },
+        content = content,
         measurePolicy = WrapperMeasurePolicy,
         modifier = modifier
     )
@@ -73,7 +73,6 @@ private object WrapperMeasurePolicy : MeasurePolicy {
             boxHeight = max(boxHeight, placeable.height)
         }
 
-        // Specify the size of the Box and position its children.
         return layout(boxWidth, boxHeight) {
             placeables.forEach { placeable ->
                 placeable as Placeable

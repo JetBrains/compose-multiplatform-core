@@ -80,7 +80,7 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
                     // project("compose:ui") -> lifecycle-runtime-compose:2.8.4 -> compose.runtime:runtime:1.6.11
                     // project("compose:ui") -> project("compose:runtime")
                     // project("compose:runtime") should override compose.runtime:runtime:1.6.11 by default
-                    "9999.0.0-SNAPSHOT"
+                    "0.0.0-SNAPSHOT"
                 }
             Version.parseOrNull(versionValue)
                 ?: throw GradleException(

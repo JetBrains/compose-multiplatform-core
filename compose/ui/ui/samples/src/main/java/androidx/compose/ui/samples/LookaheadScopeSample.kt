@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalAnimatableApi::class)
 @Sampled
 @Composable
-fun approachLayoutSample() {
+fun NoriaContext.approachLayoutSample() {
     // Creates a custom modifier that animates the constraints and measures child with the
     // animated constraints. This modifier is built on top of `Modifier.approachLayout` to approach
     // th destination size determined by the lookahead pass. A resize animation will be kicked off
@@ -123,7 +123,7 @@ fun approachLayoutSample() {
 @OptIn(ExperimentalAnimatableApi::class)
 @Sampled
 @Composable
-fun LookaheadLayoutCoordinatesSample() {
+fun NoriaContext.LookaheadLayoutCoordinatesSample() {
     /**
      * Creates a custom implementation of ApproachLayoutModifierNode to approach the placement of
      * the layout using an animation.
@@ -235,7 +235,7 @@ fun LookaheadLayoutCoordinatesSample() {
 
 @Sampled
 @Composable
-fun animateContentSizeAfterLookaheadPass() {
+fun NoriaContext.animateContentSizeAfterLookaheadPass() {
     var sizeAnim by remember { mutableStateOf<Animatable<IntSize, AnimationVector2D>?>(null) }
     var lookaheadSize by remember { mutableStateOf<IntSize?>(null) }
     val coroutineScope = rememberCoroutineScope()

@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun ScaleUniformSample() {
+fun NoriaContext.ScaleUniformSample() {
     Box(Modifier.scale(2f).size(100.dp, 100.dp))
 }
 
 @Sampled
 @Composable
-fun ScaleNonUniformSample() {
+fun NoriaContext.ScaleNonUniformSample() {
     Box(Modifier.scale(scaleX = 2f, scaleY = 3f).size(100.dp, 100.dp))
 }

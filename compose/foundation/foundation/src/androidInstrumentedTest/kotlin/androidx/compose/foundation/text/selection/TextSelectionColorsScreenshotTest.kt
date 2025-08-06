@@ -146,7 +146,7 @@ class TextSelectionColorsScreenshotTest {
 }
 
 @Composable
-private fun TextTestContent(textSelectionColors: TextSelectionColors) {
+private fun NoriaContext.TextTestContent(textSelectionColors: TextSelectionColors) {
     CompositionLocalProvider(LocalTextSelectionColors provides textSelectionColors) {
         Row(Modifier.testTag(Tag), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             // Manually draw selection handles as we cannot screenshot the ones drawn in the popup
@@ -160,7 +160,7 @@ private fun TextTestContent(textSelectionColors: TextSelectionColors) {
 }
 
 @Composable
-private fun TextFieldTestContent(textSelectionColors: TextSelectionColors) {
+private fun NoriaContext.TextFieldTestContent(textSelectionColors: TextSelectionColors) {
     CompositionLocalProvider(LocalTextSelectionColors provides textSelectionColors) {
         Box(Modifier.testTag(Tag)) { BasicTextField(value = TextFieldText, onValueChange = {}) }
     }

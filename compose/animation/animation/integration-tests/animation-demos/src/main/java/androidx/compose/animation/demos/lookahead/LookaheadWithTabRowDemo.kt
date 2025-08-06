@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithTabRowDemo() {
+fun NoriaContext.LookaheadWithTabRowDemo() {
     LookaheadScope {
         val isWide by
             produceState(false) {
@@ -81,7 +81,7 @@ fun LookaheadWithTabRowDemo() {
 }
 
 @Composable
-fun FancyTabs() {
+fun NoriaContext.FancyTabs() {
     var state by remember { mutableIntStateOf(0) }
     val titles = listOf("TAB 1", "TAB 2", "TAB 3")
     Column {
@@ -99,7 +99,7 @@ fun FancyTabs() {
 }
 
 @Composable
-fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
+fun NoriaContext.FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
     Tab(selected, onClick) {
         Column(
             Modifier.padding(10.dp).height(50.dp),
@@ -120,7 +120,7 @@ fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
 }
 
 @Composable
-fun ScrollingTextTabs() {
+fun NoriaContext.ScrollingTextTabs() {
     var state by remember { mutableIntStateOf(0) }
     val titles =
         listOf(
@@ -156,7 +156,7 @@ fun ScrollingTextTabs() {
 }
 
 @Composable
-fun ScrollingFancyIndicatorContainerTabs() {
+fun NoriaContext.ScrollingFancyIndicatorContainerTabs() {
     var state by remember { mutableIntStateOf(0) }
     val titles =
         listOf(
@@ -193,7 +193,7 @@ fun ScrollingFancyIndicatorContainerTabs() {
 }
 
 @Composable
-fun FancyIndicator(color: Color, modifier: Modifier = Modifier) {
+fun NoriaContext.FancyIndicator(color: Color, modifier: Modifier = Modifier) {
     // Draws a rounded rectangular with border around the Tab, with a 5.dp padding from the edges
     // Color is passed in as a parameter [color]
     Box(

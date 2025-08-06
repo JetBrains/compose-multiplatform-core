@@ -84,13 +84,13 @@ enum class CheckBoxState {
 
 @Preview(name = "CheckBox + Scaffold")
 @Composable
-fun TransitionWithScaffoldPreview() {
+fun NoriaContext.TransitionWithScaffoldPreview() {
     Scaffold { TransitionPreview() }
 }
 
 @Preview(name = "All unsupported and transition animations")
 @Composable
-fun AllAnimations() {
+fun NoriaContext.AllAnimations() {
     AnimatedContentPreview()
     TransitionPreview()
     AnimateAsStatePreview()
@@ -103,7 +103,7 @@ fun AllAnimations() {
 
 @Preview(name = "Animations are ordered")
 @Composable
-fun AnimationOrder() {
+fun NoriaContext.AnimationOrder() {
     val selected by remember { mutableStateOf(false) }
     updateTransition(
         if (selected) CheckBoxState.Selected else CheckBoxState.Unselected,
@@ -122,7 +122,7 @@ fun AnimationOrder() {
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-fun AnimatedContentPreview() {
+fun NoriaContext.AnimatedContentPreview() {
     Row {
         var count by remember { mutableStateOf(0) }
         Button(onClick = { count++ }) { Text("Add") }
@@ -135,7 +135,7 @@ fun AnimatedContentPreview() {
 
 @Preview
 @Composable
-fun NullAnimatedContentPreview() {
+fun NoriaContext.NullAnimatedContentPreview() {
     Row {
         AnimatedContent(targetState = null, label = "AnimatedContent") { targetCount ->
             // Make sure to use `targetCount`, not `count`.
@@ -146,7 +146,7 @@ fun NullAnimatedContentPreview() {
 
 @Preview
 @Composable
-fun AnimatedContentAndTransitionPreview() {
+fun NoriaContext.AnimatedContentAndTransitionPreview() {
     AnimatedContentPreview()
     TransitionPreview()
 }
@@ -154,7 +154,7 @@ fun AnimatedContentAndTransitionPreview() {
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-fun AnimatedContentExtensionPreview() {
+fun NoriaContext.AnimatedContentExtensionPreview() {
     val editable by remember { mutableStateOf(CheckBoxState.Unselected) }
     val transition = updateTransition(targetState = editable, label = "transition.AV")
     transition.AnimatedContent { Text(text = "State: $it") }
@@ -162,7 +162,7 @@ fun AnimatedContentExtensionPreview() {
 
 @Preview
 @Composable
-fun AnimatedVisibilityPreview() {
+fun NoriaContext.AnimatedVisibilityPreview() {
     val editable by remember { mutableStateOf(true) }
     AnimatedVisibility(label = "My Animated Visibility", visible = editable) { Text(text = "Edit") }
 }
@@ -170,7 +170,7 @@ fun AnimatedVisibilityPreview() {
 @OptIn(ExperimentalAnimationApi::class)
 @Preview(name = "transition.AnimatedVisibility")
 @Composable
-fun TransitionAnimatedVisibilityPreview() {
+fun NoriaContext.TransitionAnimatedVisibilityPreview() {
     val editable by remember { mutableStateOf(CheckBoxState.Unselected) }
     val transition = updateTransition(targetState = editable, label = "transition.AV")
     transition.AnimatedVisibility(visible = { it == CheckBoxState.Selected }) {
@@ -180,7 +180,7 @@ fun TransitionAnimatedVisibilityPreview() {
 
 @Preview
 @Composable
-fun TransitionPreview() {
+fun NoriaContext.TransitionPreview() {
     val (selected, onSelected) = remember { mutableStateOf(false) }
     val transition =
         updateTransition(
@@ -209,7 +209,7 @@ fun TransitionPreview() {
 
 @Preview
 @Composable
-fun NullTransitionPreview() {
+fun NoriaContext.NullTransitionPreview() {
     val transition = updateTransition<Boolean?>(null, label = "checkBoxAnim")
 
     transition.animateDp(
@@ -225,7 +225,7 @@ fun NullTransitionPreview() {
 
 @Preview
 @Composable
-fun AnimateAsStatePreview() {
+fun NoriaContext.AnimateAsStatePreview() {
     var showMenu by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf("Hello") }
 
@@ -250,7 +250,7 @@ fun AnimateAsStatePreview() {
 
 @Preview
 @Composable
-fun AnimateAsStateWithLabelsPreview() {
+fun NoriaContext.AnimateAsStateWithLabelsPreview() {
     var showMenu by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf("Hello") }
 
@@ -276,7 +276,7 @@ fun AnimateAsStateWithLabelsPreview() {
 
 @Preview
 @Composable
-fun NullAnimateAsStatePreview() {
+fun NoriaContext.NullAnimateAsStatePreview() {
     val offset by
         animateValueAsState(targetValue = null, Utils.nullableFloatConverter, label = "Nullable")
 
@@ -285,7 +285,7 @@ fun NullAnimateAsStatePreview() {
 
 @Preview
 @Composable
-fun CrossFadePreview() {
+fun NoriaContext.CrossFadePreview() {
     var currentPage by remember { mutableStateOf("A") }
     Row {
         Button(
@@ -311,7 +311,7 @@ fun CrossFadePreview() {
 
 @Preview
 @Composable
-fun CrossFadeWithLabelPreview() {
+fun NoriaContext.CrossFadeWithLabelPreview() {
     var currentPage by remember { mutableStateOf("A") }
     Row {
         Button(
@@ -337,7 +337,7 @@ fun CrossFadeWithLabelPreview() {
 
 @Preview
 @Composable
-fun AnimateContentSizePreview() {
+fun NoriaContext.AnimateContentSizePreview() {
     var message by remember { mutableStateOf("Hello") }
     Row {
         var count by remember { mutableStateOf(0) }
@@ -355,14 +355,14 @@ fun AnimateContentSizePreview() {
 
 @Preview
 @Composable
-fun AnimateContentSizeAndTransitionPreview() {
+fun NoriaContext.AnimateContentSizeAndTransitionPreview() {
     AnimateContentSizePreview()
     TransitionPreview()
 }
 
 @Preview
 @Composable
-fun TargetBasedAnimationPreview() {
+fun NoriaContext.TargetBasedAnimationPreview() {
     val anim = remember {
         TargetBasedAnimation(
             animationSpec = tween(200),
@@ -385,14 +385,14 @@ fun TargetBasedAnimationPreview() {
 
 @Preview
 @Composable
-fun TargetBasedAndTransitionPreview() {
+fun NoriaContext.TargetBasedAndTransitionPreview() {
     TargetBasedAnimationPreview()
     TransitionPreview()
 }
 
 @Preview
 @Composable
-fun DecayAnimationPreview() {
+fun NoriaContext.DecayAnimationPreview() {
     val anim = remember {
         DecayAnimation(animationSpec = FloatExponentialDecaySpec(), initialValue = 200f)
     }
@@ -410,14 +410,14 @@ fun DecayAnimationPreview() {
 
 @Preview
 @Composable
-fun DecayAndTransitionPreview() {
+fun NoriaContext.DecayAndTransitionPreview() {
     DecayAnimationPreview()
     TransitionPreview()
 }
 
 @Preview
 @Composable
-fun InfiniteTransitionPreview() {
+fun NoriaContext.InfiniteTransitionPreview() {
     val infiniteTransition = rememberInfiniteTransition()
     Row {
         infiniteTransition.PulsingDot(StartOffset(0))
@@ -428,7 +428,7 @@ fun InfiniteTransitionPreview() {
 
 @Preview
 @Composable
-fun InfiniteAndTransitionPreview() {
+fun NoriaContext.InfiniteAndTransitionPreview() {
     InfiniteTransitionPreview()
     TransitionPreview()
 }
@@ -454,7 +454,7 @@ fun InfiniteTransition.PulsingDot(startOffset: StartOffset) {
 
 @Preview
 @Composable
-fun MaterialPreview() {
+fun NoriaContext.MaterialPreview() {
     val state = remember { mutableStateOf(ToggleableState.On) }.value
     TriStateCheckbox(state, {})
 }

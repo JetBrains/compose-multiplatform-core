@@ -72,7 +72,7 @@ val SnapPositionDemos =
     )
 
 @Composable
-private fun HorizontalCarrouselDemoWithCustomSnapPosition() {
+private fun NoriaContext.HorizontalCarrouselDemoWithCustomSnapPosition() {
     val pagerState = rememberPagerState { PagesCount }
 
     val snapPosition = remember {
@@ -120,7 +120,7 @@ private fun HorizontalCarrouselDemoWithCustomSnapPosition() {
 }
 
 @Composable
-private fun HorizontalCarrouselDemoAlwaysCentered() {
+private fun NoriaContext.HorizontalCarrouselDemoAlwaysCentered() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -148,7 +148,7 @@ private fun HorizontalCarrouselDemoAlwaysCentered() {
 }
 
 @Composable
-private fun HorizontalCarrouselDemo(snapPosition: SnapPosition = SnapPosition.Start) {
+private fun NoriaContext.HorizontalCarrouselDemo(snapPosition: SnapPosition = SnapPosition.Start) {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -166,7 +166,7 @@ private fun HorizontalCarrouselDemo(snapPosition: SnapPosition = SnapPosition.St
 }
 
 @Composable
-private fun VerticalCarrouselDemo() {
+private fun NoriaContext.VerticalCarrouselDemo() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -182,7 +182,7 @@ private fun VerticalCarrouselDemo() {
 }
 
 @Composable
-private fun HorizontalCustomPageSizeDemo() {
+private fun NoriaContext.HorizontalCustomPageSizeDemo() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -199,7 +199,7 @@ private fun HorizontalCustomPageSizeDemo() {
 }
 
 @Composable
-private fun HorizontalCustomPageSizeWithCustomMaxScrollDemo() {
+private fun NoriaContext.HorizontalCustomPageSizeWithCustomMaxScrollDemo() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -221,7 +221,7 @@ private fun HorizontalCustomPageSizeWithCustomMaxScrollDemo() {
 }
 
 @Composable
-private fun CarrouselItem(index: Int, fillOrientation: Orientation, onClick: (Int) -> Unit = {}) {
+private fun NoriaContext.CarrouselItem(index: Int, fillOrientation: Orientation, onClick: (Int) -> Unit = {}) {
     val fillAxisModifier =
         if (fillOrientation == Orientation.Vertical)
             Modifier.focusable().fillMaxWidth().height(256.dp)

@@ -51,7 +51,7 @@ interface AnimatedVisibilityScope
 interface AnimatedContentScope: AnimatedVisibilityScope
 
 @Composable
-fun <S> AnimatedContent(
+fun <S> NoriaContext.AnimatedContent(
     targetState: S,
     contentKey: (targetState: S) -> Any? = { it },
     content: @Composable AnimatedContentScope.(targetState: S) -> Unit
@@ -142,7 +142,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun SharedTransitionScope(
+fun NoriaContext.SharedTransitionScope(
     content: @Composable SharedTransitionScope.(Modifier) -> Unit
 ) {
     // Do Nothing
@@ -166,7 +166,7 @@ interface SharedTransitionScope {
 }
 
 @Composable
-fun SharedTransitionLayout(
+fun NoriaContext.SharedTransitionLayout(
     modifier: Modifier = Modifier,
     content: @Composable SharedTransitionScope.() -> Unit
 ) {}
@@ -251,7 +251,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun LazyColumn(
+fun NoriaContext.LazyColumn(
     modifier: Modifier = Modifier,
     content: LazyListScope.() -> Unit,
 ) {}
@@ -658,7 +658,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope {
         // Do nothing
     }
@@ -692,7 +692,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope { sharedModifier ->
         // Do nothing
     }
@@ -726,7 +726,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope {
         // Remember call should cause no issue
         val myValue = remember { 100 }
@@ -735,7 +735,7 @@ fun Test() {
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                 """
@@ -773,14 +773,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope { sharedModifier ->
         MyLayoutComposable()
     }
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                 """
@@ -818,14 +818,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope {
         MyLayoutComposable(modifier = Modifier.size(100))
     }
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
 
@@ -866,7 +866,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope {
         MyLayoutComposable()
         MyNotComposable()
@@ -876,18 +876,18 @@ fun Test() {
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
 
 // Composable that doesn't take a Modifier (not a layout)
 @Composable
-fun UtilityComposable() {
+fun NoriaContext.UtilityComposable() {
 
 }
 
 @Composable
-fun MyNotCompliantComposable(sizeModifier: Modifier = Modifier) {
+fun NoriaContext.MyNotCompliantComposable(sizeModifier: Modifier = Modifier) {
 
 }
 
@@ -923,14 +923,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionScope {
         MyLayoutComposable(it)
     }
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                 """
@@ -958,7 +958,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionLayout {
         AnimatedContent(
             true,
@@ -1041,7 +1041,7 @@ fun Test() {
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                     """
@@ -1099,7 +1099,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionLayout {
         AnimatedContent(
             true,
@@ -1136,7 +1136,7 @@ fun Test() {
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                     """
@@ -1165,7 +1165,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 @Composable
-fun Test() {
+fun NoriaContext.Test() {
     SharedTransitionLayout {
         AnimatedContent(
             true,
@@ -1227,7 +1227,7 @@ fun Test() {
 }
 
 @Composable
-fun MyLayoutComposable(modifier: Modifier = Modifier) {
+fun NoriaContext.MyLayoutComposable(modifier: Modifier = Modifier) {
     // Do Nothing
 }
                     """

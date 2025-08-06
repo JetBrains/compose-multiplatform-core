@@ -97,7 +97,7 @@ import kotlinx.coroutines.flow.collect
 
 @Sampled
 @Composable
-fun HorizontalTransitionSample() {
+fun NoriaContext.HorizontalTransitionSample() {
     var visible by remember { mutableStateOf(true) }
     AnimatedVisibility(
         visible = visible,
@@ -122,7 +122,7 @@ fun HorizontalTransitionSample() {
 
 @Sampled
 @Composable
-fun SlideTransition() {
+fun NoriaContext.SlideTransition() {
     var visible by remember { mutableStateOf(true) }
     AnimatedVisibility(
         visible = visible,
@@ -149,7 +149,7 @@ fun SlideTransition() {
 
 @Sampled
 @Composable
-fun FadeTransition() {
+fun NoriaContext.FadeTransition() {
     var visible by remember { mutableStateOf(true) }
     AnimatedVisibility(
         visible = visible,
@@ -172,7 +172,7 @@ fun FadeTransition() {
 @OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
-fun FullyLoadedTransition() {
+fun NoriaContext.FullyLoadedTransition() {
     var visible by remember { mutableStateOf(true) }
     AnimatedVisibility(
         visible = visible,
@@ -198,7 +198,7 @@ fun FullyLoadedTransition() {
 @OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
-fun AnimatedVisibilityWithBooleanVisibleParamNoReceiver() {
+fun NoriaContext.AnimatedVisibilityWithBooleanVisibleParamNoReceiver() {
     var visible by remember { mutableStateOf(true) }
     Box(modifier = Modifier.clickable { visible = !visible }) {
         AnimatedVisibility(
@@ -255,7 +255,7 @@ fun ColumnScope.AnimatedFloatingActionButton() {
 
 @Sampled
 @Composable
-fun SlideInOutSample() {
+fun NoriaContext.SlideInOutSample() {
     var visible by remember { mutableStateOf(true) }
     AnimatedVisibility(
         visible,
@@ -283,7 +283,7 @@ fun SlideInOutSample() {
 
 @Sampled
 @Composable
-fun ExpandShrinkVerticallySample() {
+fun NoriaContext.ExpandShrinkVerticallySample() {
     var visible by remember { mutableStateOf(true) }
 
     AnimatedVisibility(
@@ -301,7 +301,7 @@ fun ExpandShrinkVerticallySample() {
 
 @Sampled
 @Composable
-fun ExpandInShrinkOutSample() {
+fun NoriaContext.ExpandInShrinkOutSample() {
     var visible by remember { mutableStateOf(true) }
 
     AnimatedVisibility(
@@ -338,7 +338,7 @@ fun ExpandInShrinkOutSample() {
 
 @Sampled
 @Composable
-fun ColumnAnimatedVisibilitySample() {
+fun NoriaContext.ColumnAnimatedVisibilitySample() {
     var itemIndex by remember { mutableStateOf(0) }
     val colors = listOf(Color.Red, Color.Green, Color.Blue)
     Column(Modifier.fillMaxWidth().clickable { itemIndex = (itemIndex + 1) % colors.size }) {
@@ -354,7 +354,7 @@ fun ColumnAnimatedVisibilitySample() {
 
 @Sampled
 @Composable
-fun AVScopeAnimateEnterExit() {
+fun NoriaContext.AVScopeAnimateEnterExit() {
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun AnimatedVisibilityScope.Item(modifier: Modifier, backgroundColor: Color) {
@@ -523,7 +523,7 @@ fun AddAnimatedVisibilityToGenericTransitionSample() {
 
 @Sampled
 @Composable
-fun AnimatedVisibilityLazyColumnSample() {
+fun NoriaContext.AnimatedVisibilityLazyColumnSample() {
     val turquoiseColors =
         listOf(
             Color(0xff07688C),
@@ -635,7 +635,7 @@ fun AnimatedVisibilityLazyColumnSample() {
 
 @Sampled
 @Composable
-fun AVColumnScopeWithMutableTransitionState() {
+fun NoriaContext.AVColumnScopeWithMutableTransitionState() {
     var visible by remember { mutableStateOf(true) }
     val colors = remember { listOf(Color(0xff2a9d8f), Color(0xffe9c46a), Color(0xfff4a261)) }
     Column {
@@ -665,7 +665,7 @@ fun AVColumnScopeWithMutableTransitionState() {
 
 @Sampled
 @Composable
-fun AnimateEnterExitPartialContent() {
+fun NoriaContext.AnimateEnterExitPartialContent() {
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun FullScreenNotification(visible: Boolean) {
@@ -694,7 +694,7 @@ fun AnimateEnterExitPartialContent() {
 @Sampled
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun ScaledEnterExit() {
+fun NoriaContext.ScaledEnterExit() {
     Column {
         var showRed by remember { mutableStateOf(true) }
         var showGreen by remember { mutableStateOf(true) }

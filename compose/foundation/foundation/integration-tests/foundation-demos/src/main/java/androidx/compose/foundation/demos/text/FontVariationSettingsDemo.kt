@@ -56,7 +56,7 @@ val DEMO_CASES =
 @OptIn(ExperimentalFoundationApi::class)
 @Preview
 @Composable
-fun FontVariationSettingsDemo() {
+fun NoriaContext.FontVariationSettingsDemo() {
     if (Build.VERSION.SDK_INT < 26) {
         Text("Variable fonts are only supported on API 26+")
     }
@@ -93,7 +93,7 @@ fun FontVariationSettingsDemo() {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun DeviceNamedFontFamilyFont(familyName: String, axes: FontVariation.Settings) {
+fun NoriaContext.DeviceNamedFontFamilyFont(familyName: String, axes: FontVariation.Settings) {
     Column(Modifier.fillMaxWidth()) {
         val deviceFonts =
             remember(familyName, axes) {

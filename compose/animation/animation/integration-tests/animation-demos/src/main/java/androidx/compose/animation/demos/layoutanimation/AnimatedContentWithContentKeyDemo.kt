@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.sp
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AnimatedContentWithContentKeyDemo() {
+fun NoriaContext.AnimatedContentWithContentKeyDemo() {
     val model: ScreenModel = remember { ScreenModel() }
     val transition = updateTransition(model.target)
     Box {

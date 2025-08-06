@@ -37,7 +37,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun Scrollable2DSample() {
+fun NoriaContext.Scrollable2DSample() {
     // actual composable state that we will show on UI and update in `Scrollable`
     val offset = remember { mutableStateOf(Offset.Zero) }
     Box(

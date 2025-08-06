@@ -50,6 +50,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 private const val DEBUG_CLASS = "AndroidLegacyPlatformTextInputServiceAdapter"
 
@@ -61,7 +62,7 @@ private const val DEBUG_CLASS = "AndroidLegacyPlatformTextInputServiceAdapter"
 internal var inputMethodManagerFactory: (View) -> InputMethodManager = ::InputMethodManagerImpl
 
 @Composable
-internal actual fun legacyTextInputServiceAdapterAndService():
+internal actual fun NoriaContext.legacyTextInputServiceAdapterAndService():
     Pair<LegacyPlatformTextInputServiceAdapter, TextInputService> {
     val adapter = remember { AndroidLegacyPlatformTextInputServiceAdapter() }
     val service = remember { TextInputService(adapter) }

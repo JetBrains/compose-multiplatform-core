@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.unit.IntSize
+import noria.NoriaContext
 
 /** Provides information about the Window that is hosting this compose hierarchy. */
 @Stable
@@ -55,7 +56,7 @@ interface WindowInfo {
 }
 
 @Composable
-internal fun WindowFocusObserver(onWindowFocusChanged: (isWindowFocused: Boolean) -> Unit) {
+internal fun NoriaContext.WindowFocusObserver(onWindowFocusChanged: (isWindowFocused: Boolean) -> Unit) {
     val windowInfo = LocalWindowInfo.current
     val callback = rememberUpdatedState(onWindowFocusChanged)
     LaunchedEffect(windowInfo) {

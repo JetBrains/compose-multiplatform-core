@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun SpanStyleSample() {
+fun NoriaContext.SpanStyleSample() {
     Text(
         fontSize = 16.sp,
         text =
@@ -41,7 +41,7 @@ fun SpanStyleSample() {
 
 @Sampled
 @Composable
-fun SpanStyleBrushSample() {
+fun NoriaContext.SpanStyleBrushSample() {
     val brushColors = listOf(Color.Red, Color.Blue, Color.Green, Color.Yellow)
     Text(
         fontSize = 16.sp,

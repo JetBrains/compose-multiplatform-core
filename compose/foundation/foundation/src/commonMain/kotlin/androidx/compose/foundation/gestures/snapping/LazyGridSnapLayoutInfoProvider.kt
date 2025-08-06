@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.absoluteValue
 import kotlin.math.sign
+import noria.NoriaContext
 
 /**
  * A [SnapLayoutInfoProvider] for LazyGrids.
@@ -109,7 +110,7 @@ fun SnapLayoutInfoProvider(
  *   within the viewport.
  */
 @Composable
-fun rememberSnapFlingBehavior(
+fun NoriaContext.rememberSnapFlingBehavior(
     lazyGridState: LazyGridState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): FlingBehavior {

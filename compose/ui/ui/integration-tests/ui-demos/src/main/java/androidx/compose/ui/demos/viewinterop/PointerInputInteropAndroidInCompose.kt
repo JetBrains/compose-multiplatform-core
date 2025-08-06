@@ -89,7 +89,7 @@ val AndroidInComposeDemos =
     )
 
 @Composable
-private fun FourAndroidTapInCompose() {
+private fun NoriaContext.FourAndroidTapInCompose() {
     Column {
         Text("Demonstrates that pointer locations are dispatched to Android correctly.")
         Text(
@@ -122,7 +122,7 @@ private fun FourAndroidTapInCompose() {
 }
 
 @Composable
-private fun AndroidTapInComposeTap() {
+private fun NoriaContext.AndroidTapInComposeTap() {
     var theView: View? = null
 
     val onTap: (Offset) -> Unit = { theView?.setBackgroundColor(Color.BLUE) }
@@ -175,7 +175,7 @@ private fun randomViewColor(): Int {
 }
 
 @Composable
-private fun AndroidTapInComposeWithComposeSibling() {
+private fun NoriaContext.AndroidTapInComposeWithComposeSibling() {
     var theView: View?
 
     var backgroundColorForPureComposeBox by remember { mutableStateOf(randomComposeColor()) }
@@ -244,7 +244,7 @@ private fun AndroidTapInComposeWithComposeSibling() {
 }
 
 @Composable
-private fun AndroidTapInComposeScroll() {
+private fun NoriaContext.AndroidTapInComposeScroll() {
     Column {
         Text(
             "Demonstrates that pointer input interop is working correctly when tappable things in" +
@@ -287,7 +287,7 @@ private fun AndroidTapInComposeScroll() {
 }
 
 @Composable
-private fun AndroidScrollInComposeScrollDifferentOrientation() {
+private fun NoriaContext.AndroidScrollInComposeScrollDifferentOrientation() {
     Column {
         Text(
             "Demonstrates correct \"scroll orientation\" locking when something scrollable in " +
@@ -315,7 +315,7 @@ private fun AndroidScrollInComposeScrollDifferentOrientation() {
 }
 
 @Composable
-private fun AndroidScrollInComposeScrollSameOrientation() {
+private fun NoriaContext.AndroidScrollInComposeScrollSameOrientation() {
     Column {
         Text(
             "Supposed to demonstrate correct nested scrolling when something scrollable in " +
@@ -349,7 +349,7 @@ private fun AndroidScrollInComposeScrollSameOrientation() {
 }
 
 @Composable
-private fun TwoAndroidScrollViewsInCompose() {
+private fun NoriaContext.TwoAndroidScrollViewsInCompose() {
     Column {
         Text(
             "Below are two Android Scrollviews that are nested in two different children of " +
@@ -374,7 +374,7 @@ private fun TwoAndroidScrollViewsInCompose() {
 }
 
 @Composable
-private fun PointerInteropFilterDemo() {
+private fun NoriaContext.PointerInteropFilterDemo() {
 
     val motionEventString: MutableState<String> = remember { mutableStateOf("Touch here!") }
 
@@ -399,7 +399,7 @@ private fun PointerInteropFilterDemo() {
 
 @Preview
 @Composable
-fun SharingEventWithSiblingOfParent() {
+fun NoriaContext.SharingEventWithSiblingOfParent() {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             "Search \"SHARING\" in Logcat to see events (Cyan box is child to parent that " +
@@ -446,12 +446,12 @@ fun SharingEventWithSiblingOfParent() {
 }
 
 @Composable
-fun ClickableSurface(modifier: Modifier = Modifier) {
+fun NoriaContext.ClickableSurface(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize().clickable { Log.d("SHARING", "onClick") })
 }
 
 @Composable
-fun MyView(color: Int, modifier: Modifier = Modifier) {
+fun NoriaContext.MyView(color: Int, modifier: Modifier = Modifier) {
     AndroidView(
         modifier = modifier.fillMaxSize(0.5f),
         factory = { context -> View(context).apply { setBackgroundColor(color) } },

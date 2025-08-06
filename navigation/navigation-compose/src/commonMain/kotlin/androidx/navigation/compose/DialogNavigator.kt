@@ -25,6 +25,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import androidx.navigation.compose.DialogNavigator.Destination
+import noria.NoriaContext
 
 /**
  * Navigator that navigates through [Composable]s that will be hosted within a [Dialog]. Every
@@ -79,7 +80,7 @@ public class DialogNavigator() : Navigator<Destination>(NAME) {
     public class Destination(
         navigator: DialogNavigator,
         internal val dialogProperties: DialogProperties = DialogProperties(),
-        internal val content: @Composable (NavBackStackEntry) -> Unit
+        internal val content: @Composable NoriaContext.(NavBackStackEntry) -> Unit
     ) : NavDestination(navigator), FloatingWindow
 
     internal companion object {

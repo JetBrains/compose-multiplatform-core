@@ -60,7 +60,7 @@ private enum class ScrollableType {
 
 @Preview(showBackground = true)
 @Composable
-fun TextFieldsInScrollableDemo() {
+fun NoriaContext.TextFieldsInScrollableDemo() {
     var scrollableType by remember { mutableStateOf(ScrollableType.values().first()) }
 
     Column(Modifier.windowInsetsPadding(WindowInsets.ime)) {
@@ -96,7 +96,7 @@ fun TextFieldsInScrollableDemo() {
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldInScrollableColumn() {
+private fun NoriaContext.TextFieldInScrollableColumn() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         repeat(50) { index -> DemoTextField(index) }
     }
@@ -104,18 +104,18 @@ private fun TextFieldInScrollableColumn() {
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldInLazyColumn() {
+private fun NoriaContext.TextFieldInLazyColumn() {
     LazyColumn { items(50) { index -> DemoTextField(index) } }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun EditTextsInScrollView() {
+private fun NoriaContext.EditTextsInScrollView() {
     AndroidView(::EditTextsInScrollableView, modifier = Modifier.fillMaxSize())
 }
 
 @Composable
-private fun DemoTextField(index: Int) {
+private fun NoriaContext.DemoTextField(index: Int) {
     var text by rememberSaveable { mutableStateOf("") }
     TextField(
         value = text,

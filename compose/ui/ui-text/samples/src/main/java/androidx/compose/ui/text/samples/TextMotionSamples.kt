@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextMotion
  */
 @Sampled
 @Composable
-fun TextMotionSample() {
+fun NoriaContext.TextMotionSample() {
     val infiniteTransition = rememberInfiniteTransition()
     val scale by
         infiniteTransition.animateFloat(

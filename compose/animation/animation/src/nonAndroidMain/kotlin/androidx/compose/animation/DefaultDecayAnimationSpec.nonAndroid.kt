@@ -21,9 +21,10 @@ package androidx.compose.animation
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.runtime.Composable
 import kotlin.jvm.JvmName
+import noria.NoriaContext
 
 @Composable
 @Deprecated("Replace with rememberSplineBasedDecay<Float>")
-public actual fun defaultDecayAnimationSpec(): DecayAnimationSpec<Float> {
+public actual fun NoriaContext.defaultDecayAnimationSpec(): DecayAnimationSpec<Float> {
     return rememberSplineBasedDecay()
 }

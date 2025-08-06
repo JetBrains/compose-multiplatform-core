@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
+import noria.NoriaContext
 
 /** The annotation tag used by inline content. */
 internal const val INLINE_CONTENT_TAG = "androidx.compose.foundation.text.inlineContent"
@@ -81,5 +82,5 @@ class InlineTextContent(
      * The composable to be inserted into the text layout. The string parameter passed to it will
      * the alternateText given to [appendInlineContent].
      */
-    val children: @Composable (String) -> Unit,
+    val children: @Composable NoriaContext.(String) -> Unit,
 )

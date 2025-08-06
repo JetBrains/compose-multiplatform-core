@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithLazyColumn() {
+fun NoriaContext.LookaheadWithLazyColumn() {
     LookaheadScope {
         LazyColumn {
             items(10, key = { it }) {

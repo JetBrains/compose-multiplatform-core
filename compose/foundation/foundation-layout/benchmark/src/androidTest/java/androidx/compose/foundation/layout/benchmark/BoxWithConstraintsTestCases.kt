@@ -113,7 +113,7 @@ class CompositionLocalAppTestCase : LayeredComposeTestCase(), ToggleableTestCase
 }
 
 @Composable
-private fun App(width: Dp) {
+private fun NoriaContext.App(width: Dp) {
     val gridColumns = width.value.toInt() / 150
     if (width > 800.dp) {
         TabletScreen(gridColumns)
@@ -123,7 +123,7 @@ private fun App(width: Dp) {
 }
 
 @Composable
-private fun PhoneScreen(gridColumns: Int) {
+private fun NoriaContext.PhoneScreen(gridColumns: Int) {
     Column {
         Grid(gridColumns, Modifier.weight(1f))
         var selectedItem by remember { mutableStateOf(0) }
@@ -143,7 +143,7 @@ private fun PhoneScreen(gridColumns: Int) {
 }
 
 @Composable
-private fun TabletScreen(gridColumns: Int) {
+private fun NoriaContext.TabletScreen(gridColumns: Int) {
     Row {
         var selectedItem by remember { mutableStateOf(0) }
         val items = listOf("Home", "Search", "Settings")
@@ -163,7 +163,7 @@ private fun TabletScreen(gridColumns: Int) {
 }
 
 @Composable
-private fun Grid(gridColumns: Int, modifier: Modifier = Modifier) {
+private fun NoriaContext.Grid(gridColumns: Int, modifier: Modifier = Modifier) {
     LazyVerticalGrid(modifier = modifier, columns = GridCells.Fixed(gridColumns)) {
         items(100) {
             Text(

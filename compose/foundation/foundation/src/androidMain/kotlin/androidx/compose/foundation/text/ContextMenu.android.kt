@@ -47,9 +47,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
@@ -75,10 +75,10 @@ internal actual fun ContextMenuArea(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier =
@@ -134,7 +134,7 @@ internal actual fun ContextMenuArea(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composable () -> Unit) {
+internal actual fun NoriaContext.ContextMenuArea(manager: SelectionManager, content: @Composable NoriaContext.() -> Unit) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {

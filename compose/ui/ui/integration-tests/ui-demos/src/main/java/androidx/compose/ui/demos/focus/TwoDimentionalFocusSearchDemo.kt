@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TwoDimensionalFocusSearchDemo() {
+fun NoriaContext.TwoDimensionalFocusSearchDemo() {
     Column {
         Text("Use DPad/Arrow keys to move focus:")
         Box(Modifier.padding(10.dp).size(330.dp, 280.dp)) {
@@ -80,7 +80,7 @@ fun TwoDimensionalFocusSearchDemo() {
 }
 
 @Composable
-private fun FocusableBox(
+private fun NoriaContext.FocusableBox(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {

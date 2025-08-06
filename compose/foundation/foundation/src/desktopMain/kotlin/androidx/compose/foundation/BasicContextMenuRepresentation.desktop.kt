@@ -36,6 +36,7 @@ import javax.swing.JPopupMenu
 import javax.swing.SwingUtilities
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
+import noria.NoriaContext
 
 /**
  * Representation of a context menu that is suitable for light themes of the application.
@@ -69,7 +70,7 @@ class DefaultContextMenuRepresentation(
 ) : ContextMenuRepresentation {
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
+    override fun NoriaContext.Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val status = state.status
         if (status is ContextMenuState.Status.Open) {
             val session = remember(state) {
@@ -140,7 +141,7 @@ class JPopupContextMenuRepresentation(
     },
 ) : ContextMenuRepresentation {
     @Composable
-    override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
+    override fun NoriaContext.Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val isOpen = state.status is ContextMenuState.Status.Open
         if (isOpen) {
             val menu = remember {

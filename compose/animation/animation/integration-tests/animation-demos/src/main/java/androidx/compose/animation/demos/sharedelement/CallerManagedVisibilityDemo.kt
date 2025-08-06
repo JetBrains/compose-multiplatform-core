@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun SharedElementWithCallerManagedVisibility() {
+fun NoriaContext.SharedElementWithCallerManagedVisibility() {
     var selectFirst by remember { mutableStateOf(true) }
     val key = remember { Any() }
     SharedTransitionLayout(

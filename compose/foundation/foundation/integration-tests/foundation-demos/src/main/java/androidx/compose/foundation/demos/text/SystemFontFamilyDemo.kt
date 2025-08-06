@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun SystemFontFamilyDemo() {
+fun NoriaContext.SystemFontFamilyDemo() {
     LazyColumn {
         item {
             TagLine(tag = "FontFamily.Default")
@@ -57,7 +57,7 @@ fun SystemFontFamilyDemo() {
 
 @Preview
 @Composable
-fun SystemFontFamilyDemoItem(fontFamily: FontFamily) {
+fun NoriaContext.SystemFontFamilyDemoItem(fontFamily: FontFamily) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Upright", fontFamily = fontFamily)

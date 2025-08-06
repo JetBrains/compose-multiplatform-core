@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple demo that shows off how [detectTransformGestures] automatically pans and zooms. */
 @Composable
-fun DragAndScaleGestureFilterDemo() {
+fun NoriaContext.DragAndScaleGestureFilterDemo() {
     val size = remember { mutableStateOf(200.dp) }
     val offset = remember { mutableStateOf(Offset.Zero) }
 

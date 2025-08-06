@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.util.fastForEach
+import noria.NoriaContext
 
 /**
  * [Crossfade] allows to switch between two layouts with a crossfade animation.
@@ -47,12 +48,12 @@ import androidx.compose.ui.util.fastForEach
  */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-public fun <T> Crossfade(
+public fun <T> NoriaContext.Crossfade(
     targetState: T,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     label: String = "Crossfade",
-    content: @Composable (T) -> Unit,
+    content: @Composable NoriaContext.(T) -> Unit,
 ) {
     val transition = updateTransition(targetState, label)
     transition.Crossfade(modifier, animationSpec, content = content)
@@ -61,11 +62,11 @@ public fun <T> Crossfade(
 @Deprecated("Crossfade API now has a new label parameter added.", level = DeprecationLevel.HIDDEN)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-public fun <T> Crossfade(
+public fun <T> NoriaContext.Crossfade(
     targetState: T,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
-    content: @Composable (T) -> Unit,
+    content: @Composable NoriaContext.(T) -> Unit,
 ) {
     val transition = updateTransition(targetState)
     transition.Crossfade(modifier, animationSpec, content = content)
@@ -99,10 +100,10 @@ public fun <T> Transition<T>.Crossfade(
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     contentKey: (targetState: T) -> Any? = { it },
-    content: @Composable (targetState: T) -> Unit,
+    content: @Composable NoriaContext.(targetState: T) -> Unit,
 ) {
     val currentlyVisible = remember { mutableStateListOf<T>().apply { add(currentState) } }
-    val contentMap = remember { mutableScatterMapOf<T, @Composable () -> Unit>() }
+    val contentMap = remember { mutableScatterMapOf<T, @Composable NoriaContext.() -> Unit>() }
     if (currentState == targetState) {
         // If not animating, just display the current state
         if (currentlyVisible.size != 1 || currentlyVisible[0] != targetState) {
@@ -127,12 +128,12 @@ public fun <T> Transition<T>.Crossfade(
                     animateFloat(transitionSpec = { animationSpec }) {
                         if (it == stateForContent) 1f else 0f
                     }
-                Box(Modifier.graphicsLayer { this.alpha = alpha }) { content(stateForContent) }
+                NoriaContext.Box(Modifier.graphicsLayer { this.alpha = alpha }) { content(stateForContent) }
             }
         }
     }
 
-    Box(modifier) {
-        currentlyVisible.fastForEach { key(contentKey(it)) { contentMap[it]?.invoke() } }
+    NoriaContext.Box(modifier) {
+        currentlyVisible.fastForEach { key(contentKey(it)) { contentMap[it]?.invoke(this) } }
     }
 }

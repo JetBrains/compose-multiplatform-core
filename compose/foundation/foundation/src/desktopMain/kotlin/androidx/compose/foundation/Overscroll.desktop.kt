@@ -18,9 +18,10 @@ package androidx.compose.foundation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalAccessorScope
+import noria.NoriaContext
 
 @Composable
-internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? =
+internal actual fun NoriaContext.rememberPlatformOverscrollEffect(): OverscrollEffect? =
     null
 
 internal actual fun CompositionLocalAccessorScope.defaultOverscrollFactory(): OverscrollFactory? =

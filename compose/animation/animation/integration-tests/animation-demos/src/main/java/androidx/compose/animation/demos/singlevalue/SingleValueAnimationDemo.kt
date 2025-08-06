@@ -35,7 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun SingleValueAnimationDemo() {
+fun NoriaContext.SingleValueAnimationDemo() {
     val enabled = remember { mutableStateOf(true) }
     val alpha: Float by animateFloatAsState(if (enabled.value) 1f else 0.5f)
     val color by

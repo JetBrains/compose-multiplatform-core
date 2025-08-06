@@ -65,7 +65,7 @@ import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
 
 @Composable
-fun CraneDemo() {
+fun NoriaContext.CraneDemo() {
     val progressProvider = remember { ProgressProviderImpl(false) }
     val avatar = remember {
         movableContentWithReceiverOf<SceneScope> {

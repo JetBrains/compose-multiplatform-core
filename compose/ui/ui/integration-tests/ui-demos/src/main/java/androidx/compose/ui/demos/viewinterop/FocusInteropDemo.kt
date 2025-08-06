@@ -28,7 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun FocusInteropDemo() {
+fun NoriaContext.FocusInteropDemo() {
     Row {
         Column {
             Button(onClick = {}) { Text("1") }

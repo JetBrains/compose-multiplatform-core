@@ -31,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 @Composable
-fun NavigationRailUsage() {
+fun NoriaContext.NavigationRailUsage() {
     var selectedItem by remember { mutableStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.Search, Icons.Filled.Settings)

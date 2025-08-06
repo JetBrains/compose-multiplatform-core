@@ -92,7 +92,7 @@ internal abstract class AbstractSelectionContainerTest {
 
     protected fun createSelectionContainer(
         isRtl: Boolean = false,
-        content: (@Composable () -> Unit)? = null,
+        content: (@Composable NoriaContext.() -> Unit)? = null,
     ) {
         val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
         rule.setContent {
@@ -132,7 +132,7 @@ internal abstract class AbstractSelectionContainerTest {
     protected fun TestButton(
         modifier: Modifier = Modifier,
         onClick: () -> Unit,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         Box(
             modifier.clickable(onClick = onClick), // It marks this node as focusable
@@ -144,7 +144,7 @@ internal abstract class AbstractSelectionContainerTest {
 }
 
 @Composable
-fun TestParent(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.TestParent(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         val placeables = measurables.map { measurable -> measurable.measure(constraints) }
 

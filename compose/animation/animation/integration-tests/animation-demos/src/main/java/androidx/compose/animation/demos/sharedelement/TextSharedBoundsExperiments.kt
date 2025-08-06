@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.sp
  */
 @Preview
 @Composable
-fun TextSharedBoundsExperiments() {
+fun NoriaContext.TextSharedBoundsExperiments() {
     var isHorizontal by remember { mutableStateOf(true) }
     SharedTransitionLayout(
         Modifier.clickable(

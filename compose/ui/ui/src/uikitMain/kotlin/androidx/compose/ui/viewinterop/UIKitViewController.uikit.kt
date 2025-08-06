@@ -19,6 +19,7 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.uikit.LocalUIViewController
+import noria.NoriaContext
 import platform.UIKit.UIViewController
 
 /**
@@ -45,7 +46,7 @@ import platform.UIKit.UIViewController
  * @see UIKitInteropProperties
  */
 @Composable
-fun <T : UIViewController> UIKitViewController(
+fun <T : UIViewController> NoriaContext.UIKitViewController(
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOp,

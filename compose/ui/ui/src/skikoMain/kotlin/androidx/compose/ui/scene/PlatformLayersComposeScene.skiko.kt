@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
+import noria.NoriaContext
 
 /**
  * Constructs a single-layer [ComposeScene] using the specified parameters. It utilizes
@@ -156,7 +157,7 @@ private class PlatformLayersComposeSceneImpl(
         mainOwner.invalidatePositionOnScreen()
     }
 
-    override fun createComposition(content: @Composable () -> Unit): Composition {
+    override fun createComposition(content: @Composable NoriaContext.() -> Unit): Composition {
         return mainOwner.setContent(
             compositionContext,
             { compositionLocalContext },

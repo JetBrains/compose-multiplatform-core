@@ -33,10 +33,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import kotlinx.coroutines.CoroutineScope
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun rememberStaggeredGridMeasurePolicy(
+internal fun NoriaContext.rememberStaggeredGridMeasurePolicy(
     state: LazyStaggeredGridState,
     itemProviderLambda: () -> LazyStaggeredGridItemProvider,
     contentPadding: PaddingValues,

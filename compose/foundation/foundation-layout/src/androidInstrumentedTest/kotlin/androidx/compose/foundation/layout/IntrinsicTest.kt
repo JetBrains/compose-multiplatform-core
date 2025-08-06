@@ -796,7 +796,7 @@ class IntrinsicTest : LayoutTest() {
 }
 
 @Composable
-private fun FixedIntrinsicsBox(
+private fun NoriaContext.FixedIntrinsicsBox(
     modifier: Modifier = Modifier,
     minIntrinsicWidth: Dp,
     width: Dp,

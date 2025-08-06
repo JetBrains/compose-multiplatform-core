@@ -189,7 +189,7 @@ class TwoDimensionalFocusTraversalInitialFocusTest(param: Param) {
 }
 
 @Composable
-private fun FocusableBox(
+private fun NoriaContext.FocusableBox(
     isFocused: MutableState<Boolean> = mutableStateOf(false),
     focusRequester: FocusRequester? = null,
     deactivated: Boolean = false,

@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun KeyboardTypeDemo() {
+fun NoriaContext.KeyboardTypeDemo() {
     LazyColumn {
         item { Item(KeyboardType.Text) }
         item { Item(KeyboardType.Ascii) }
@@ -46,13 +46,13 @@ fun KeyboardTypeDemo() {
 }
 
 @Composable
-private fun Item(keyboardType: KeyboardType) {
+private fun NoriaContext.Item(keyboardType: KeyboardType) {
     TagLine(tag = "Keyboard Type: $keyboardType")
     EditLine(keyboardType = keyboardType)
 }
 
 @Composable
-private fun HintLocaleDemo(localeList: LocaleList) {
+private fun NoriaContext.HintLocaleDemo(localeList: LocaleList) {
     Column {
         TagLine(tag = "Hints IME Locale: $localeList")
 

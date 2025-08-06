@@ -23,9 +23,10 @@ import androidx.compose.foundation.lazy.layout.estimatedLazyScrollOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.CollectionInfo
+import noria.NoriaContext
 
 @Composable
-internal fun rememberLazyGridSemanticState(
+internal fun NoriaContext.rememberLazyGridSemanticState(
     state: LazyGridState,
     reverseScrolling: Boolean,
 ): LazyLayoutSemanticState =

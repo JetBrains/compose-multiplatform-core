@@ -28,6 +28,6 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SimpleAspectRatio() {
+fun NoriaContext.SimpleAspectRatio() {
     Box(Modifier.width(100.dp).aspectRatio(2f).background(Color.Green))
 }

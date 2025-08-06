@@ -84,7 +84,7 @@ class PagerCrossAxisTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     @Composable
-    private fun InfiniteAxisRootComposable(content: @Composable () -> Unit) {
+    private fun InfiniteAxisRootComposable(content: @Composable NoriaContext.() -> Unit) {
         if (vertical) {
             Row(Modifier.horizontalScroll(rememberScrollState())) { content() }
         } else {

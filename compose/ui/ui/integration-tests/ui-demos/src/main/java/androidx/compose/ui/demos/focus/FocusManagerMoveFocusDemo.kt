@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun FocusManagerMoveFocusDemo() {
+fun NoriaContext.FocusManagerMoveFocusDemo() {
     val focusManager = LocalFocusManager.current
     Column {
         Text(
@@ -131,7 +131,7 @@ fun FocusManagerMoveFocusDemo() {
 }
 
 @Composable
-private fun FocusableText(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.FocusableText(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(Black) }
     val focusRequester = remember { FocusRequester() }
     Text(

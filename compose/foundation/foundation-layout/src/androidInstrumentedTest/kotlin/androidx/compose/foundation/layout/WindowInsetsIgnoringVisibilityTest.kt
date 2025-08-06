@@ -274,7 +274,7 @@ class WindowInsetsIgnoringVisibilityTest {
 
     private fun setContent(
         initialInsets: WindowInsetsCompat? = null,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         rule.setContent {
             AndroidView(

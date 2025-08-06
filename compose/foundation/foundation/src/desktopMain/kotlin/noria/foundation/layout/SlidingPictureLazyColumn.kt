@@ -16,6 +16,8 @@
 
 package noria.foundation.layout
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import noria.Cell
@@ -24,7 +26,7 @@ import noria.NoriaContext
 
 data class SlideAnimation(val toggledIndices: IntRange, val slideProgress: State<Float>, val isExpansion: Boolean)
 
-fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, spacing: Int): @Composable NoriaContext.(size: Int, nth: ClosureContext.(Int) -> Row) -> (Int) -> ItemVerticalPosition = { size, nth ->
+fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, state: LazyListState, contentPadding: PaddingValues, spacing: Int): @Composable NoriaContext.(size: Int, nth: ClosureContext.(Int) -> Row) -> (Int) -> ItemVerticalPosition = { size, nth ->
   // TODO
-  approximatingLazyColumn(count = size, spacing = spacing, nth = nth)
+  approximatingLazyColumn(size, state, contentPadding, spacing = spacing, nth = nth)
 }

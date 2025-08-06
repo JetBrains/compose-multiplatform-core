@@ -25,6 +25,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import noria.NoriaContext
 
 internal interface LazyStaggeredGridItemProvider : LazyLayoutItemProvider {
     val spanProvider: LazyStaggeredGridSpanProvider
@@ -32,7 +33,7 @@ internal interface LazyStaggeredGridItemProvider : LazyLayoutItemProvider {
 }
 
 @Composable
-internal fun rememberStaggeredGridItemProviderLambda(
+internal fun NoriaContext.rememberStaggeredGridItemProviderLambda(
     state: LazyStaggeredGridState,
     content: LazyStaggeredGridScope.() -> Unit,
 ): () -> LazyStaggeredGridItemProvider {
@@ -73,7 +74,7 @@ private class LazyStaggeredGridItemProviderImpl(
     override fun getContentType(index: Int): Any? = intervalContent.getContentType(index)
 
     @Composable
-    override fun Item(index: Int, key: Any) {
+    override fun NoriaContext.Item(index: Int, key: Any) {
         LazyLayoutPinnableItem(key, index, state.pinnedItems) {
             intervalContent.withInterval(index) { localIndex, content ->
                 content.item(LazyStaggeredGridItemScopeImpl, localIndex)

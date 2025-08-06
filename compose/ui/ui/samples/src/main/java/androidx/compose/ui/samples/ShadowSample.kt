@@ -30,18 +30,18 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun ShadowSample() {
+fun NoriaContext.ShadowSample() {
     Box(Modifier.shadow(12.dp, RectangleShape).size(100.dp, 100.dp))
 }
 
 @Sampled
 @Composable
-fun DropShadowSample() {
+fun NoriaContext.DropShadowSample() {
     Box(Modifier.size(100.dp, 100.dp).dropShadow(RectangleShape, Shadow(12.dp)))
 }
 
 @Sampled
 @Composable
-fun InnerShadowSample() {
+fun NoriaContext.InnerShadowSample() {
     Box(Modifier.size(100.dp, 100.dp).innerShadow(RectangleShape, Shadow(12.dp)))
 }

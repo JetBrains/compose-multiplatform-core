@@ -193,7 +193,7 @@ actual class DialogProperties(
  * @param content The content to be displayed inside the dialog.
  */
 @Composable
-actual fun Dialog(
+actual fun NoriaContext.Dialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties,
     content: @Composable () -> Unit,
@@ -663,7 +663,7 @@ private class DialogWrapper(
 }
 
 @Composable
-private fun DialogLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.DialogLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         var maxWidth = 0
         var maxHeight = 0

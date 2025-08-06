@@ -62,7 +62,7 @@ import androidx.navigation.compose.rememberNavController
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
-fun AutofillNavigation() {
+fun NoriaContext.AutofillNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "home") {
         composable("home") { HomeScreen(navController) }
@@ -76,7 +76,7 @@ fun AutofillNavigation() {
 
 /** Home screen that the sample app will land on. */
 @Composable
-fun HomeScreen(navController: NavController) {
+fun NoriaContext.HomeScreen(navController: NavController) {
     Scaffold(
         content = { padding ->
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -151,7 +151,7 @@ fun HomeScreen(navController: NavController) {
 
 /** Submitted screen that all registration routes will lead to. */
 @Composable
-fun SubmittedScreen(navController: NavController) {
+fun NoriaContext.SubmittedScreen(navController: NavController) {
     Scaffold(
         content = { padding ->
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -185,7 +185,7 @@ fun SubmittedScreen(navController: NavController) {
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun NoriaContext.RegisterScreen(navController: NavController) {
     TwoButtonNavigationScaffold(navController, null, "home", content = { RegisterScreenContent() })
 }
 
@@ -195,14 +195,14 @@ fun RegisterScreen(navController: NavController) {
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun NoriaContext.LoginScreen(navController: NavController) {
     TwoButtonNavigationScaffold(navController, "home", "submit", content = { LoginScreenContent() })
 }
 
 /** Registration screen that has content in between two autofillable components. */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScrollingRegisterScreen(navController: NavController) {
+fun NoriaContext.ScrollingRegisterScreen(navController: NavController) {
     TwoButtonNavigationScaffold(
         navController,
         null,
@@ -214,7 +214,7 @@ fun ScrollingRegisterScreen(navController: NavController) {
 /** Registration screen that has autofillable components followed by scrolling content. */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterThenScrollScreen(navController: NavController) {
+fun NoriaContext.RegisterThenScrollScreen(navController: NavController) {
     TwoButtonNavigationScaffold(
         navController,
         null,
@@ -229,7 +229,7 @@ fun RegisterThenScrollScreen(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterScreenContent() {
+fun NoriaContext.RegisterScreenContent() {
     var showPassword by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -259,7 +259,7 @@ fun RegisterScreenContent() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginScreenContent() {
+fun NoriaContext.LoginScreenContent() {
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -279,7 +279,7 @@ fun LoginScreenContent() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScrollingRegisterScreenContent() {
+fun NoriaContext.ScrollingRegisterScreenContent() {
     val scrollState = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
@@ -303,7 +303,7 @@ fun ScrollingRegisterScreenContent() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegisterThenScrollScreenContent() {
+fun NoriaContext.RegisterThenScrollScreenContent() {
     val scrollState = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
@@ -330,7 +330,7 @@ fun RegisterThenScrollScreenContent() {
 // ============================================================================================
 
 @Composable
-fun NavigationDemoTextField(
+fun NoriaContext.NavigationDemoTextField(
     modifier: Modifier = Modifier,
     state: TextFieldState = remember { TextFieldState() },
     contentType: ContentType,
@@ -348,7 +348,7 @@ fun NavigationDemoTextField(
 
 /** Template scaffold for the navigation demo with two buttons: forward and backwards. */
 @Composable
-fun TwoButtonNavigationScaffold(
+fun NoriaContext.TwoButtonNavigationScaffold(
     navController: NavController,
     forwardRoute: String? = null,
     backwardRoute: String,

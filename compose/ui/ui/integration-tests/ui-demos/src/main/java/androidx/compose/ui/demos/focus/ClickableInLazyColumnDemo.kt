@@ -25,7 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun ClickableInLazyColumnDemo() {
+fun NoriaContext.ClickableInLazyColumnDemo() {
     LazyColumn {
         items(20000) { index ->
             Row(horizontalArrangement = Arrangement.SpaceEvenly) {

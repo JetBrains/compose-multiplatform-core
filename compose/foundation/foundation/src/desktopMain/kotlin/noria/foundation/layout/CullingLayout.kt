@@ -35,9 +35,10 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntRect
+import noria.NoriaContext
 
 @Composable
-fun CullingLayout(
+fun NoriaContext.CullingLayout(
     modifier: Modifier = Modifier,
     measurePolicy: CullingLayoutMeasureScope.(Constraints) -> MeasureResult,
 ) {
@@ -52,14 +53,14 @@ fun CullingLayout(
                 width: Int,
                 height: Int,
                 alignmentLines: Map<AlignmentLine, Int>,
-                content: @Composable (visibleBounds: IntRect) -> Unit
+                content: @Composable NoriaContext.(visibleBounds: IntRect) -> Unit
             ): MeasureResult {
                 return this@SubcomposeLayout.layout(width, height, alignmentLines) {
                     //if (DEBUG) println("[CullingLayout] Placing inside subcomposition")
                     if (visibleBounds?.isEmpty == false) {
                         this@SubcomposeLayout.subcompose(Unit) {
                             //if (DEBUG) println("[CullingLayout] Composing content with visibleBounds $visibleBounds")
-                            content.invoke(visibleBounds!!)
+                            content.invoke(this@CullingLayout, visibleBounds!!)
                         }.forEach {
                             it.measure(constraints).place(0, 0)
                         }
@@ -76,7 +77,7 @@ interface CullingLayoutMeasureScope : MeasureScope {
         width: Int,
         height: Int,
         alignmentLines: Map<AlignmentLine, Int> = emptyMap(),
-        content: @Composable (visibleBounds: IntRect) -> Unit
+        content: @Composable NoriaContext.(visibleBounds: IntRect) -> Unit
     ): MeasureResult
 }
 

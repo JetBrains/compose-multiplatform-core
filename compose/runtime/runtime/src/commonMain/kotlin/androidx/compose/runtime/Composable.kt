@@ -40,13 +40,13 @@ package androidx.compose.runtime
     AnnotationTarget.FUNCTION,
 
     // type declarations
-    // var foo: @Composable () -> Unit = { ... }
+    // var foo: @Composable NoriaContext.() -> Unit = { ... }
     // parameter types
-    // foo: @Composable () -> Unit
+    // foo: @Composable NoriaContext.() -> Unit
     AnnotationTarget.TYPE,
 
     // composable types inside of type signatures
-    // foo: (@Composable () -> Unit) -> Unit
+    // foo: (@Composable NoriaContext.() -> Unit) -> Unit
     AnnotationTarget.TYPE_PARAMETER,
 
     // composable property getters and setters

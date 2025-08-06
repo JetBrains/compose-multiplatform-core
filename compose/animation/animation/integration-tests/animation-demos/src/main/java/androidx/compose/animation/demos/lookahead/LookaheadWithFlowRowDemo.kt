@@ -59,7 +59,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LookaheadWithFlowRowDemo() {
+fun NoriaContext.LookaheadWithFlowRowDemo() {
     Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         var isHorizontal by remember { mutableStateOf(true) }
 
@@ -138,7 +138,7 @@ fun LookaheadWithFlowRowDemo() {
 @OptIn(ExperimentalLayoutApi::class)
 @Preview
 @Composable
-fun NestedFlowRowDemo() {
+fun NoriaContext.NestedFlowRowDemo() {
     LookaheadScope {
         FlowRow(
             modifier = Modifier.fillMaxSize(),

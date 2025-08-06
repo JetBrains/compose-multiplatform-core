@@ -1751,7 +1751,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
         endPadding: Dp = 0.dp,
         content: LazyListScope.() -> Unit,
     ) {
-        val container: @Composable (@Composable () -> Unit) -> Unit =
+        val container: @Composable (@Composable NoriaContext.() -> Unit) -> Unit =
             if (isInLookaheadScope) {
                 { LookaheadScope { it() } }
             } else {

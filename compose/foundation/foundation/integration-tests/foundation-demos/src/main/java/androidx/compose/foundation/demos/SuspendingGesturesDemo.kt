@@ -108,7 +108,7 @@ fun anotherRandomHue(hue: Float): Float {
 
 /** Gesture detector for tap, double-tap, and long-press. */
 @Composable
-fun CoroutineTapDemo() {
+fun NoriaContext.CoroutineTapDemo() {
     var tapHue by remember { mutableFloatStateOf(randomHue()) }
     var longPressHue by remember { mutableFloatStateOf(randomHue()) }
     var doubleTapHue by remember { mutableFloatStateOf(randomHue()) }
@@ -205,7 +205,7 @@ fun CoroutineTapDemo() {
 }
 
 @Composable
-fun TouchSlopDragGestures() {
+fun NoriaContext.TouchSlopDragGestures() {
     Column {
         var width by remember { mutableFloatStateOf(0f) }
         Box(
@@ -271,7 +271,7 @@ fun TouchSlopDragGestures() {
 }
 
 @Composable
-fun OrientationLockDragGestures() {
+fun NoriaContext.OrientationLockDragGestures() {
     var size by remember { mutableStateOf(IntSize.Zero) }
     var offsetX by remember { mutableStateOf(0.dp) }
     var offsetY by remember { mutableStateOf(0.dp) }
@@ -315,7 +315,7 @@ fun OrientationLockDragGestures() {
 }
 
 @Composable
-fun Drag2DGestures() {
+fun NoriaContext.Drag2DGestures() {
     var size by remember { mutableStateOf(IntSize.Zero) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -345,7 +345,7 @@ fun Drag2DGestures() {
 }
 
 @Composable
-fun MultitouchArea(
+fun NoriaContext.MultitouchArea(
     text: String,
     gestureDetector:
         suspend PointerInputScope.(
@@ -418,7 +418,7 @@ fun MultitouchArea(
  * zoom, and rotate once touch slop has been reached.
  */
 @Composable
-fun MultitouchGestureDetector() {
+fun NoriaContext.MultitouchGestureDetector() {
     MultitouchArea("Zoom, Pan, and Rotate") {
         detectTransformGestures(panZoomLock = false, onGesture = it)
     }
@@ -430,14 +430,14 @@ fun MultitouchGestureDetector() {
  * unless the rotation passes touch slop first.
  */
 @Composable
-fun MultitouchLockGestureDetector() {
+fun NoriaContext.MultitouchLockGestureDetector() {
     MultitouchArea("Zoom, Pan, and Rotate Locking to Zoom") {
         detectTransformGestures(panZoomLock = true, onGesture = it)
     }
 }
 
 @Composable
-fun PointerTypeInput() {
+fun NoriaContext.PointerTypeInput() {
     var pointerType by remember { mutableStateOf<PointerType?>(null) }
     Box(
         Modifier.pointerInput(Unit) {

@@ -88,8 +88,8 @@ private object ViewHelper {
 }
 
 @Composable
-private inline fun LayoutLike(
-    content: @Composable () -> Unit,
+private inline fun NoriaContext.LayoutLike(
+    content: @Composable NoriaContext.() -> Unit,
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy,
 ) {
@@ -155,7 +155,7 @@ private object SpacerMeasurePolicy : MeasurePolicy {
 }
 
 @Composable
-private fun SpacerLike(modifier: Modifier) {
+private fun NoriaContext.SpacerLike(modifier: Modifier) {
     LayoutLike(measurePolicy = SpacerMeasurePolicy, modifier = modifier)
 }
 
@@ -165,7 +165,7 @@ private object ColumnScopeInstance : ColumnScope
 
 // A stable version of Column used for group size tests
 @Composable
-private inline fun ColumnLike(
+private inline fun NoriaContext.ColumnLike(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
@@ -184,7 +184,7 @@ private object DefaultColumnRowMeasurePolicy : MeasurePolicy {
 }
 
 @Composable
-private fun columnMeasurePolicy(
+private fun NoriaContext.columnMeasurePolicy(
     verticalArrangement: Arrangement.Vertical,
     horizontalAlignment: Alignment.Horizontal,
 ) =
@@ -304,7 +304,7 @@ private val LocalSelectionRegistrar =
     staticCompositionLocalOf<SelectionRegistrar?> { DefaultSelectionRegister }
 
 @Composable
-private fun TextLike(
+private fun NoriaContext.TextLike(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
@@ -354,7 +354,7 @@ private fun TextLike(
 /** This composable adds no internal overhead, to isolate material text details */
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun EmptyBasicTextLikeComposable(
+private fun NoriaContext.EmptyBasicTextLikeComposable(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -369,7 +369,7 @@ private fun CompositionTestScope.slotExpect(
     name: String,
     noMoreGroupsThan: Int,
     noMoreSlotsThan: Int,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     var compositionData: CompositionData? = null
     compose {
@@ -449,7 +449,7 @@ private class TextSelectionColors(val handleColor: Color, val backgroundColor: C
 private val LocalTextSelectionColors = staticCompositionLocalOf { TextSelectionColors.Default }
 
 @Composable
-private fun BasicTextLike(
+private fun NoriaContext.BasicTextLike(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -527,7 +527,7 @@ private fun BasicTextLike(
 // and interactions and focus just on the wrapper pattern used by Checkbox
 
 @Composable
-private fun CheckboxLike(
+private fun NoriaContext.CheckboxLike(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
@@ -555,7 +555,7 @@ private fun ToggleableState(value: Boolean) = if (value) ToggleableState.On else
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun TriStateCheckboxLike(
+private fun NoriaContext.TriStateCheckboxLike(
     state: ToggleableState,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -566,7 +566,7 @@ private fun TriStateCheckboxLike(
 
 @Suppress("UNUSED_EXPRESSION")
 @Composable
-private fun CheckboxImplLike(enabled: Boolean, value: ToggleableState, modifier: Modifier) {
+private fun NoriaContext.CheckboxImplLike(enabled: Boolean, value: ToggleableState, modifier: Modifier) {
     CanvasLike(modifier) {
         enabled
         value
@@ -577,13 +577,13 @@ private interface DrawScope
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun CanvasLike(modifier: Modifier, onDraw: DrawScope.() -> Unit) = SpacerLike(modifier)
+private fun NoriaContext.CanvasLike(modifier: Modifier, onDraw: DrawScope.() -> Unit) = SpacerLike(modifier)
 
 // Utility functions for the tests
 
 @Composable
 @ExplicitGroupsComposable
-private inline fun Marker(content: @Composable () -> Unit) {
+private inline fun Marker(content: @Composable NoriaContext.() -> Unit) {
     currentComposer.startReplaceGroup(MarkerGroup)
     content()
     currentComposer.endReplaceGroup()

@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
+import noria.NoriaContext
 
 /**
  * Analogue of [Layout] which allows to subcompose the actual content during the measuring stage for
@@ -87,7 +88,7 @@ import androidx.compose.ui.util.fastForEach
  * @param measurePolicy Measure policy which provides ability to subcompose during the measuring.
  */
 @Composable
-fun SubcomposeLayout(
+fun NoriaContext.SubcomposeLayout(
     modifier: Modifier = Modifier,
     measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
 ) {
@@ -119,13 +120,48 @@ fun SubcomposeLayout(
  */
 @Composable
 @UiComposable
-fun SubcomposeLayout(
+fun NoriaContext.SubcomposeLayout(
     state: SubcomposeLayoutState,
     modifier: Modifier = Modifier,
     measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
 ) {
+    SubcomposeLayout(
+        rememberCompositionContext(),
+        modifier = modifier,
+        state = state,
+        measurePolicy = measurePolicy,
+    )
+}
+
+/**
+ * Analogue of [Layout] which allows to subcompose the actual content during the measuring stage for
+ * example to use the values calculated during the measurement as params for the composition of the
+ * children.
+ *
+ * Possible use cases:
+ * * You need to know the constraints passed by the parent during the composition and can't solve
+ *   your use case with just custom [Layout] or [LayoutModifier]. See
+ *   [androidx.compose.foundation.layout.BoxWithConstraints].
+ * * You want to use the size of one child during the composition of the second child.
+ * * You want to compose your items lazily based on the available size. For example you have a list
+ *   of 100 items and instead of composing all of them you only compose the ones which are currently
+ *   visible(say 5 of them) and compose next items when the component is scrolled.
+ *
+ * @sample androidx.compose.ui.samples.SubcomposeLayoutSample
+ * @param state the state object to be used by the layout.
+ * @param modifier [Modifier] to apply for the layout.
+ * @param measurePolicy Measure policy which provides ability to subcompose during the measuring.
+ */
+@Composable
+@UiComposable
+fun NoriaContext.SubcomposeLayout(
+    compositionContext: CompositionContext,
+    modifier: Modifier = Modifier,
+    state: SubcomposeLayoutState = remember { SubcomposeLayoutState() },
+    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
+)
+{
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
-    val compositionContext = rememberCompositionContext()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
     ReusableComposeNode<LayoutNode, Applier<Any>>(
@@ -165,7 +201,7 @@ interface SubcomposeMeasureScope : MeasureScope {
      *   subtree emitted from [content] is dependent on incoming constraints, consider using
      *   constraints received from the lookahead pass for both passes.
      */
-    fun subcompose(slotId: Any?, content: @Composable () -> Unit): List<Measurable>
+    fun subcompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit): List<Measurable>
 }
 
 /**
@@ -233,7 +269,7 @@ class SubcomposeLayoutState(private val slotReusePolicy: SubcomposeSlotReusePoli
      * @param content the composable content which defines the slot.
      * @return [PrecomposedSlotHandle] instance which allows you to dispose the content.
      */
-    fun precompose(slotId: Any?, content: @Composable () -> Unit): PrecomposedSlotHandle =
+    fun precompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit): PrecomposedSlotHandle =
         state.precompose(slotId, content)
 
     /**
@@ -249,7 +285,7 @@ class SubcomposeLayoutState(private val slotReusePolicy: SubcomposeSlotReusePoli
      */
     fun createPausedPrecomposition(
         slotId: Any?,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ): PausedPrecomposition = state.precomposePaused(slotId, content)
 
     internal fun forceRecomposeChildren() = state.forceRecomposeChildren()
@@ -567,7 +603,7 @@ internal class LayoutNodeSubcompositionsState(
         disposeCurrentNodes()
     }
 
-    fun subcompose(slotId: Any?, content: @Composable () -> Unit): List<Measurable> {
+    fun subcompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit): List<Measurable> {
         makeSureStateIsConsistent()
         val layoutState = root.layoutState
         checkPrecondition(
@@ -619,7 +655,7 @@ internal class LayoutNodeSubcompositionsState(
         node: LayoutNode,
         slotId: Any?,
         pausable: Boolean,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         val nodeState = nodeToNodeState.getOrPut(node) { NodeState(slotId, {}) }
         val contentChanged = nodeState.content !== content
@@ -675,7 +711,7 @@ internal class LayoutNodeSubcompositionsState(
                     }
                 nodeState.composition = composition
                 val content = nodeState.content
-                val composable: @Composable () -> Unit =
+                val composable: @Composable NoriaContext.() -> Unit =
                     if (outOfFrameExecutor != null) {
                         nodeState.composedWithReusableContentHost = false
                         content
@@ -957,12 +993,12 @@ internal class LayoutNodeSubcompositionsState(
             "- adding a size modifier to the component, in order to fast return the queried " +
             "intrinsic measurement."
 
-    fun precompose(slotId: Any?, content: @Composable () -> Unit): PrecomposedSlotHandle {
+    fun precompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit): PrecomposedSlotHandle {
         precompose(slotId, content, pausable = false)
         return createPrecomposedSlotHandle(slotId)
     }
 
-    private fun precompose(slotId: Any?, content: @Composable () -> Unit, pausable: Boolean) {
+    private fun precompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit, pausable: Boolean) {
         if (!root.isAttached) {
             return
         }
@@ -1105,7 +1141,7 @@ internal class LayoutNodeSubcompositionsState(
         }
     }
 
-    fun precomposePaused(slotId: Any?, content: @Composable () -> Unit): PausedPrecomposition {
+    fun precomposePaused(slotId: Any?, content: @Composable NoriaContext.() -> Unit): PausedPrecomposition {
         if (!root.isAttached) {
             return object : PausedPrecompositionImpl {
                 override val isComplete: Boolean = true
@@ -1202,7 +1238,7 @@ internal class LayoutNodeSubcompositionsState(
 
     private class NodeState(
         var slotId: Any?,
-        var content: @Composable () -> Unit,
+        var content: @Composable NoriaContext.() -> Unit,
         var composition: ReusableComposition? = null,
     ) {
         var forceRecompose = false
@@ -1227,7 +1263,7 @@ internal class LayoutNodeSubcompositionsState(
                 root.layoutState == LayoutState.LookaheadLayingOut ||
                     root.layoutState == LayoutState.LookaheadMeasuring
 
-        override fun subcompose(slotId: Any?, content: @Composable () -> Unit) =
+        override fun subcompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit) =
             this@LayoutNodeSubcompositionsState.subcompose(slotId, content)
 
         override fun layout(
@@ -1271,7 +1307,7 @@ internal class LayoutNodeSubcompositionsState(
          * that happened in the lookahead pass. If [slotId] was not subcomposed in the lookahead
          * pass, [subcompose] will return an [emptyList].
          */
-        override fun subcompose(slotId: Any?, content: @Composable () -> Unit): List<Measurable> {
+        override fun subcompose(slotId: Any?, content: @Composable NoriaContext.() -> Unit): List<Measurable> {
             val nodeInSlot = slotIdToNode[slotId]
             if (nodeInSlot != null && root.foldedChildren.indexOf(nodeInSlot) < currentIndex) {
                 // Check that the node has been composed in lookahead. Otherwise, we need to
@@ -1285,7 +1321,7 @@ internal class LayoutNodeSubcompositionsState(
 
     private fun approachSubcompose(
         slotId: Any?,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ): List<Measurable> {
         requirePrecondition(approachComposedSlotIds.size >= currentApproachIndex) {
             "Error: currentApproachIndex cannot be greater than the size of the" +

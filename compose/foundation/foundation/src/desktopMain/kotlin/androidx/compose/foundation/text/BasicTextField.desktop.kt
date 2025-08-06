@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import noria.NoriaContext
 
 /**
  * Basic composable that enables users to edit text via hardware or software keyboard, but
@@ -124,7 +125,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 @ExperimentalFoundationApi
 @Suppress("DuplicatedCode")
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -140,7 +141,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
     scrollState: TextFieldScrollState
 ) {
@@ -275,7 +276,7 @@ fun BasicTextField(
 @ExperimentalFoundationApi
 @Suppress("DuplicatedCode")
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -291,7 +292,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
     scrollState: TextFieldScrollState
 ) {

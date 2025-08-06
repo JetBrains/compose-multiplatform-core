@@ -48,7 +48,7 @@ private data class ElementOf<T : Modifier.Node>(val factory: () -> T) : Modifier
 }
 
 @Composable
-internal fun ReverseMeasureLayout(modifier: Modifier, vararg contents: @Composable () -> Unit) =
+internal fun NoriaContext.ReverseMeasureLayout(modifier: Modifier, vararg contents: @Composable () -> Unit) =
     SubcomposeLayout(modifier) { constraints ->
         var layoutWidth = constraints.minWidth
         var layoutHeight = constraints.minHeight

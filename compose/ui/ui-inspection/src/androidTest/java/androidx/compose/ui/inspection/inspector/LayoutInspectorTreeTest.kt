@@ -1329,7 +1329,7 @@ internal fun Inspectable(
 }
 
 @Composable
-fun InlineParameters(size: Dp, fontSize: TextUnit) {
+fun NoriaContext.InlineParameters(size: Dp, fontSize: TextUnit) {
     Text("$size $fontSize")
 }
 

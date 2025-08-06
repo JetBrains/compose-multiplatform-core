@@ -62,10 +62,11 @@ import androidx.compose.ui.util.fastAll
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun Pager(
+internal fun NoriaContext.Pager(
     /** Modifier to be applied for the inner layout */
     modifier: Modifier,
     /** State controlling the scroll position */
@@ -207,7 +208,7 @@ internal class PagerLazyLayoutItemProvider(
         get() = intervalContent.itemCount
 
     @Composable
-    override fun Item(index: Int, key: Any) {
+    override fun NoriaContext.Item(index: Int, key: Any) {
         LazyLayoutPinnableItem(key, index, state.pinnedPages) {
             intervalContent.withInterval(index) { localIndex, content ->
                 content.item(pagerScopeImpl, localIndex)
@@ -251,7 +252,7 @@ internal class PagerIntervalContent(
 ) : LazyLayoutIntervalContent.Interval
 
 @Composable
-private fun rememberPagerItemProviderLambda(
+private fun NoriaContext.rememberPagerItemProviderLambda(
     state: PagerState,
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
     key: ((index: Int) -> Any)?,

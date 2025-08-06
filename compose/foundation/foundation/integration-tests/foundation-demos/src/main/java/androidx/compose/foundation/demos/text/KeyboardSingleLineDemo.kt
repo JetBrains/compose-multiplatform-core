@@ -101,7 +101,7 @@ private val ImeOptionsList =
 
 @Preview
 @Composable
-fun ImeSingleLineDemo() {
+fun NoriaContext.ImeSingleLineDemo() {
     LazyColumn {
         items(ImeOptionsList) {
             TagLine(tag = "${it.name}")
@@ -111,7 +111,7 @@ fun ImeSingleLineDemo() {
 }
 
 @Composable
-private fun MyTextField(data: ImeOptionsData) {
+private fun NoriaContext.MyTextField(data: ImeOptionsData) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val state =
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }

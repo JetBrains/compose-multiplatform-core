@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.verticalScrollAxisRange
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
+import noria.NoriaContext
 
 /**
  * Create and [remember] the [ScrollState] based on the currently appropriate scroll configuration
@@ -66,7 +67,7 @@ import androidx.compose.ui.util.fastRoundToInt
  * @param initial initial scroller position to start with
  */
 @Composable
-fun rememberScrollState(initial: Int = 0): ScrollState {
+fun NoriaContext.rememberScrollState(initial: Int = 0): ScrollState {
     return rememberSaveable(saver = ScrollState.Saver) { ScrollState(initial = initial) }
 }
 

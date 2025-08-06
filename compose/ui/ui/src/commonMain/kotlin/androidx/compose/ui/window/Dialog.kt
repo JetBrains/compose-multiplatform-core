@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import noria.NoriaContext
 
 /**
  * Properties used to customize the behavior of a [Dialog].
@@ -61,8 +62,8 @@ expect class DialogProperties(
  * @param content The content to be displayed inside the dialog.
  */
 @Composable
-expect fun Dialog(
+expect fun NoriaContext.Dialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 )

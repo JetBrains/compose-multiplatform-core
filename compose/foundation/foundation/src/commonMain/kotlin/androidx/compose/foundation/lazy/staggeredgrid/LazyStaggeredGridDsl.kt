@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /**
  * Vertical staggered grid layout that composes and lays out only items currently visible on screen.
@@ -67,7 +68,7 @@ import androidx.compose.ui.unit.dp
  *   single one.
  */
 @Composable
-fun LazyVerticalStaggeredGrid(
+fun NoriaContext.LazyVerticalStaggeredGrid(
     columns: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -75,7 +76,7 @@ fun LazyVerticalStaggeredGrid(
     reverseLayout: Boolean = false,
     verticalItemSpacing: Dp = 0.dp,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyStaggeredGridScope.() -> Unit,
@@ -98,7 +99,7 @@ fun LazyVerticalStaggeredGrid(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyVerticalStaggeredGrid(
+fun NoriaContext.LazyVerticalStaggeredGrid(
     columns: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -106,7 +107,7 @@ fun LazyVerticalStaggeredGrid(
     reverseLayout: Boolean = false,
     verticalItemSpacing: Dp = 0.dp,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
@@ -127,7 +128,7 @@ fun LazyVerticalStaggeredGrid(
 
 /** calculates sizes for columns used in staggered grid measure */
 @Composable
-private fun rememberColumnSlots(
+private fun NoriaContext.rememberColumnSlots(
     columns: StaggeredGridCells,
     horizontalArrangement: Arrangement.Horizontal,
     contentPadding: PaddingValues,
@@ -188,7 +189,7 @@ private fun rememberColumnSlots(
  *   single one.
  */
 @Composable
-fun LazyHorizontalStaggeredGrid(
+fun NoriaContext.LazyHorizontalStaggeredGrid(
     rows: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -196,7 +197,7 @@ fun LazyHorizontalStaggeredGrid(
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
     horizontalItemSpacing: Dp = 0.dp,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyStaggeredGridScope.() -> Unit,
@@ -219,7 +220,7 @@ fun LazyHorizontalStaggeredGrid(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyHorizontalStaggeredGrid(
+fun NoriaContext.LazyHorizontalStaggeredGrid(
     rows: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -227,7 +228,7 @@ fun LazyHorizontalStaggeredGrid(
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
     horizontalItemSpacing: Dp = 0.dp,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
@@ -248,7 +249,7 @@ fun LazyHorizontalStaggeredGrid(
 
 /** calculates sizes for rows used in staggered grid measure */
 @Composable
-private fun rememberRowSlots(
+private fun NoriaContext.rememberRowSlots(
     rows: StaggeredGridCells,
     verticalArrangement: Arrangement.Vertical,
     contentPadding: PaddingValues,

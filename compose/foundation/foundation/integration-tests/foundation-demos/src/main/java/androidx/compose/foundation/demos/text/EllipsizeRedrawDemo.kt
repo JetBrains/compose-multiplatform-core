@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun EllipsizeRedrawDemo() {
+fun NoriaContext.EllipsizeRedrawDemo() {
     val transition = rememberInfiniteTransition("padding")
     val padding = transition.animateFloat(0f, 50f, infiniteRepeatable(tween(10000)))
     Box(

@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.offset
 
 @Sampled
 @Composable
-fun LayoutUsage(content: @Composable () -> Unit) {
+fun NoriaContext.LayoutUsage(content: @Composable () -> Unit) {
     // We build a layout that will occupy twice as much space as its children,
     // and will position them to be bottom right aligned.
     Layout(content) { measurables, constraints ->
@@ -83,7 +83,7 @@ fun LayoutUsage(content: @Composable () -> Unit) {
 
 @Sampled
 @Composable
-fun LayoutWithProvidedIntrinsicsUsage(content: @Composable () -> Unit) {
+fun NoriaContext.LayoutWithProvidedIntrinsicsUsage(content: @Composable () -> Unit) {
     // We build a layout that will occupy twice as much space as its children,
     // and will position them to be bottom right aligned.
     val measurePolicy =
@@ -155,7 +155,7 @@ fun LayoutWithProvidedIntrinsicsUsage(content: @Composable () -> Unit) {
 
 @Sampled
 @Composable
-fun LayoutTagChildrenUsage(header: @Composable () -> Unit, footer: @Composable () -> Unit) {
+fun NoriaContext.LayoutTagChildrenUsage(header: @Composable () -> Unit, footer: @Composable () -> Unit) {
     Layout({
         // Here the Containers are only needed to apply the modifiers. You could use the
         // modifier on header and footer directly if they are composables accepting modifiers.
@@ -179,7 +179,7 @@ fun LayoutTagChildrenUsage(header: @Composable () -> Unit, footer: @Composable (
 
 @Sampled
 @Composable
-fun LayoutModifierSample() {
+fun NoriaContext.LayoutModifierSample() {
     val verticalPadding =
         object : LayoutModifier {
             override fun MeasureScope.measure(
@@ -201,7 +201,7 @@ fun LayoutModifierSample() {
 
 @Sampled
 @Composable
-fun LayoutModifierNodeSample() {
+fun NoriaContext.LayoutModifierNodeSample() {
     class VerticalPadding(var padding: Dp) : LayoutModifierNode, Modifier.Node() {
         override fun MeasureScope.measure(
             measurable: Measurable,
@@ -234,7 +234,7 @@ fun LayoutModifierNodeSample() {
 
 @Sampled
 @Composable
-fun ConvenienceLayoutModifierSample() {
+fun NoriaContext.ConvenienceLayoutModifierSample() {
     Box(
         Modifier.background(Color.Gray).layout { measurable, constraints ->
             // an example modifier that adds 50 pixels of vertical padding.
@@ -251,7 +251,7 @@ fun ConvenienceLayoutModifierSample() {
 
 @Sampled
 @Composable
-fun LayoutWithMultipleContentsUsage(
+fun NoriaContext.LayoutWithMultipleContentsUsage(
     content1: @Composable () -> Unit,
     content2: @Composable () -> Unit,
 ) {

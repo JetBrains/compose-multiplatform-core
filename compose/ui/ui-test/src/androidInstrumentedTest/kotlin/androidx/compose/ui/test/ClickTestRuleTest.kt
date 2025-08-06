@@ -44,7 +44,7 @@ class ClickCounterActivity : ComponentActivity() {
 class EmptyActivity : ComponentActivity()
 
 @Composable
-fun Counter() {
+fun NoriaContext.Counter() {
     var counter by remember { mutableStateOf(0) }
     Column {
         Button(onClick = { counter++ }) { Text("Increment counter") }

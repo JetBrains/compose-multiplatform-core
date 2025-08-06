@@ -23,6 +23,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.uikit.LocalKeyboardOverlapHeight
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /**
  * Composition local for SafeArea of ComposeUIViewController
@@ -37,17 +38,17 @@ val LocalSafeArea = staticCompositionLocalOf { PlatformInsets.Zero }
 val LocalLayoutMargins = staticCompositionLocalOf { PlatformInsets.Zero }
 
 private object SafeAreaInsetsConfig : InsetsConfig {
-    override val safeInsets: PlatformInsets
+    override val NoriaContext.safeInsets: PlatformInsets
         @Composable get() = LocalSafeArea.current
 
-    override val ime: PlatformInsets
+    override val NoriaContext.ime: PlatformInsets
         @Composable get() = PlatformInsets(bottom = LocalKeyboardOverlapHeight.current)
 
     @Composable
-    override fun excludeInsets(
+    override fun NoriaContext.excludeInsets(
         safeInsets: Boolean,
         ime: Boolean,
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     ) {
         val safeArea = LocalSafeArea.current
         val layoutMargins = LocalLayoutMargins.current

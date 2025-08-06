@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-private fun TextItem(text: String, color: Color) {
+private fun NoriaContext.TextItem(text: String, color: Color) {
     Row {
         Box(Modifier.size(25.dp).background(color))
         Spacer(Modifier.width(5.dp))
@@ -49,7 +49,7 @@ private fun TextItem(text: String, color: Color) {
 }
 
 @Composable
-private fun DrawEvents(events: List<Pair<PointerEventType, Any>>) {
+private fun NoriaContext.DrawEvents(events: List<Pair<PointerEventType, Any>>) {
     for (i in events.lastIndex downTo 0) {
         val (type, value) = events[i]
 
@@ -70,7 +70,7 @@ private fun DrawEvents(events: List<Pair<PointerEventType, Any>>) {
 
 /** Demo to show the event types that are sent */
 @Composable
-fun EventTypesDemo() {
+fun NoriaContext.EventTypesDemo() {
     val innerPointerEvents = remember { mutableStateListOf<Pair<PointerEventType, Any>>() }
     val outerPointerEvents = remember { mutableStateListOf<Pair<PointerEventType, Any>>() }
     Box(

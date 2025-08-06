@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun SharedElementDemos() {
+fun NoriaContext.SharedElementDemos() {
     var selectedTab by remember { mutableIntStateOf(0) }
     val list =
         listOf<Pair<String, @Composable () -> Unit>>(
@@ -93,25 +93,25 @@ fun SharedElementDemos() {
 
 @Preview
 @Composable
-fun SharedElementWithMovableContent() {
+fun NoriaContext.SharedElementWithMovableContent() {
     SharedElementWithMovableContentSample()
 }
 
 @Preview
 @Composable
-fun SharedElementInAnimatedVisibilityWithFABRenderedInOverlay() {
+fun NoriaContext.SharedElementInAnimatedVisibilityWithFABRenderedInOverlay() {
     SharedElementWithFABInOverlaySample()
 }
 
 @Preview
 @Composable
-fun SharedElementInAnimatedContent() {
+fun NoriaContext.SharedElementInAnimatedContent() {
     SharedElementInAnimatedContentSample()
 }
 
 @Preview
 @Composable
-fun ScaleContentTransition() {
+fun NoriaContext.ScaleContentTransition() {
     val someText =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent fringilla" +
             " mollis efficitur. Maecenas sit amet urna eu urna blandit suscipit efficitur" +

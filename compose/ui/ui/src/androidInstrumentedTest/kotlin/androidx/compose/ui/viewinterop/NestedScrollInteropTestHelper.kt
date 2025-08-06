@@ -261,14 +261,14 @@ internal class RecyclerViewConsumptionTracker {
 }
 
 @Composable
-internal fun NestedScrollInteropTestApp(modifier: Modifier = Modifier, content: (Context) -> View) {
+internal fun NoriaContext.NestedScrollInteropTestApp(modifier: Modifier = Modifier, content: (Context) -> View) {
     Box(modifier.fillMaxSize().testTag(OuterBoxLayout)) {
         AndroidView(content, modifier = Modifier.testTag(AndroidViewContainer))
     }
 }
 
 @Composable
-internal fun NestedScrollDeepNested(
+internal fun NoriaContext.NestedScrollDeepNested(
     modifier: Modifier,
     enabled: Boolean,
     connection: NestedScrollConnection? = null,
@@ -291,7 +291,7 @@ internal fun NestedScrollDeepNested(
 }
 
 @Composable
-internal fun ComposeInViewWithNestedScrollInterop() {
+internal fun NoriaContext.ComposeInViewWithNestedScrollInterop() {
     LazyColumn(
         modifier =
             Modifier.nestedScroll(rememberNestedScrollInteropConnection()).testTag(MainTestList)
@@ -310,7 +310,7 @@ internal fun ComposeInViewWithNestedScrollInterop() {
 
 @RequiresApi(Build.VERSION_CODES.M)
 @Composable
-internal fun NestedScrollInteropWithView(
+internal fun NoriaContext.NestedScrollInteropWithView(
     modifier: Modifier = Modifier,
     enabled: Boolean,
     recyclerViewConsumptionTracker: RecyclerViewConsumptionTracker,
@@ -364,7 +364,7 @@ internal fun ActivityScenario<*>.createActivityWithComposeContent(
 }
 
 @Composable
-internal fun RecyclerViewAndroidView(interopEnabled: Boolean) {
+internal fun NoriaContext.RecyclerViewAndroidView(interopEnabled: Boolean) {
     AndroidView(
         factory = { context ->
             LayoutInflater.from(context)

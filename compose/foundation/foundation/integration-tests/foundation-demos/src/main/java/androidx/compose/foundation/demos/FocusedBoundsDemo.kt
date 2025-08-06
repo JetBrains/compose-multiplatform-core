@@ -82,7 +82,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @Preview
 @Composable
-fun FocusedBoundsDemo() {
+fun NoriaContext.FocusedBoundsDemo() {
     // This demo demonstrates multiple observers with two separate observers:
     // 1. A pair of eyeballs that look at the focused child.
     FocusedBoundsObserver(
@@ -119,7 +119,7 @@ fun FocusedBoundsDemo() {
 }
 
 @Composable
-private fun FocusableDemoContent() {
+private fun NoriaContext.FocusableDemoContent() {
     Column(verticalArrangement = spacedBy(4.dp)) {
         val focusManager = LocalFocusManager.current
         Button(onClick = { focusManager.clearFocus() }) { Text("Clear focus") }
@@ -151,13 +151,13 @@ private class FocusableAndroidViewDemo(context: Context) : LinearLayout(context)
         addView(composeView)
     }
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         composeView.setContent(content)
     }
 }
 
 @Composable
-private fun FocusedBoundsObserver(modifier: Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.FocusedBoundsObserver(modifier: Modifier, content: @Composable NoriaContext.() -> Unit) {
     var coordinates: LayoutCoordinates? by remember { mutableStateOf(null) }
     var focusedBounds: LayoutCoordinates? by remember { mutableStateOf(null) }
     var myBounds by remember { mutableStateOf(Rect.Zero) }
@@ -202,7 +202,7 @@ private fun FocusedBoundsObserver(modifier: Modifier, content: @Composable () ->
 }
 
 @Composable
-private fun Eyeball(focalPoint: Offset, parentBounds: Rect) {
+private fun NoriaContext.Eyeball(focalPoint: Offset, parentBounds: Rect) {
     var myCenter by remember { mutableStateOf(Offset.Unspecified) }
     var mySize by remember { mutableStateOf(Size.Unspecified) }
     val targetPoint =

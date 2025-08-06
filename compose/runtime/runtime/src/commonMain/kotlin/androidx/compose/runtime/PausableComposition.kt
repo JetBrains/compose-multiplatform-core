@@ -37,6 +37,7 @@ import androidx.compose.runtime.internal.RememberEventDispatcher
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 import kotlin.math.min
+import noria.NoriaContext
 
 /**
  * A [PausableComposition] is a sub-composition that can be composed incrementally as it supports
@@ -74,7 +75,7 @@ public sealed interface PausableComposition : ReusableComposition {
      * @see Composition.setContent
      * @see ReusableComposition.setContentWithReuse
      */
-    public fun setPausableContent(content: @Composable () -> Unit): PausedComposition
+    public fun setPausableContent(content: @Composable NoriaContext.() -> Unit): PausedComposition
 
     /**
      * Set the content of a reusable composition. A [PausedComposition] that is currently paused. No
@@ -86,7 +87,7 @@ public sealed interface PausableComposition : ReusableComposition {
      * @see Composition.setContent
      * @see ReusableComposition.setContentWithReuse
      */
-    public fun setPausableContentWithReuse(content: @Composable () -> Unit): PausedComposition
+    public fun setPausableContentWithReuse(content: @Composable NoriaContext.() -> Unit): PausedComposition
 }
 
 /** The callback type used in [PausedComposition.resume]. */
@@ -204,7 +205,7 @@ internal class PausedCompositionImpl(
     val context: CompositionContext,
     val composer: ComposerImpl,
     abandonSet: MutableSet<RememberObserver>,
-    val content: @Composable () -> Unit,
+    val content: @Composable NoriaContext.() -> Unit,
     val reusable: Boolean,
     val applier: Applier<*>,
     val lock: SynchronizedObject,

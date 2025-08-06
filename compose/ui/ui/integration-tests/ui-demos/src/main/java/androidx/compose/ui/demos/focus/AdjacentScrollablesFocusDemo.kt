@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun AdjacentScrollablesFocusDemo() {
+fun NoriaContext.AdjacentScrollablesFocusDemo() {
     Column {
         Text(
             """
@@ -56,7 +56,7 @@ fun AdjacentScrollablesFocusDemo() {
 
 // This is a list where every third item is focusable.
 @Composable
-private fun ScrollableList(name: String) {
+private fun NoriaContext.ScrollableList(name: String) {
     Text(text = name)
     var color by remember { mutableStateOf(Color.Black) }
     Column(
@@ -72,7 +72,7 @@ private fun ScrollableList(name: String) {
 }
 
 @Composable
-private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.FocusableBox(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(Color.White) }
     Text(
         text = text,
@@ -89,7 +89,7 @@ private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NonFocusableBox(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.NonFocusableBox(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         fontSize = 50.sp,

@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ShadowsDemo() {
+fun NoriaContext.ShadowsDemo() {
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -71,7 +71,7 @@ fun ShadowsDemo() {
 }
 
 @Composable
-private fun InnerShadowDemo() {
+private fun NoriaContext.InnerShadowDemo() {
     Box(
         Modifier.height(70.dp)
             .width(180.dp)
@@ -90,7 +90,7 @@ private fun InnerShadowDemo() {
 }
 
 @Composable
-private fun OuterShadowDemo() {
+private fun NoriaContext.OuterShadowDemo() {
     Box(
         Modifier.height(70.dp)
             .width(180.dp)
@@ -109,7 +109,7 @@ private fun OuterShadowDemo() {
 }
 
 @Composable
-private fun NeumorphismDemo() {
+private fun NoriaContext.NeumorphismDemo() {
     val buttonShape = RoundedCornerShape(24.dp)
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Box(
@@ -170,7 +170,7 @@ private fun NeumorphismDemo() {
 }
 
 @Composable
-private fun CustomShapeShadowDemo() {
+private fun NoriaContext.CustomShapeShadowDemo() {
     val starShape =
         object : Shape {
 

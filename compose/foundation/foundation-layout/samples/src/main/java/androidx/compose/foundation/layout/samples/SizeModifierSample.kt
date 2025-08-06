@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SimpleRequiredSizeModifier() {
+fun NoriaContext.SimpleRequiredSizeModifier() {
     // The result is a 50.dp x 50.dp red box centered in a 100.dp x 100.dp space.
     // Note that although a previous modifier asked it to be 100.dp x 100.dp, this
     // will not be respected. They would be respected if size was used instead of requiredSize.
@@ -53,7 +53,7 @@ fun SimpleRequiredSizeModifier() {
 
 @Sampled
 @Composable
-fun SimpleRequiredWidthModifier() {
+fun NoriaContext.SimpleRequiredWidthModifier() {
     // The result is a 50.dp x 50.dp magenta box centered in a 100.dp x 100.dp space.
     // Note that although a previous modifier asked it to be 100.dp width, this
     // will not be respected. They would be respected if width was used instead of requiredWidth.
@@ -67,7 +67,7 @@ fun SimpleRequiredWidthModifier() {
 
 @Sampled
 @Composable
-fun SimpleRequiredHeightModifier() {
+fun NoriaContext.SimpleRequiredHeightModifier() {
     // The result is a 50.dp x 50.dp blue box centered in a 100.dp x 100.dp space.
     // Note that although a previous modifier asked it to be 100.dp height, this
     // will not be respected. They would be respected if height was used instead of requiredHeight.
@@ -78,31 +78,31 @@ fun SimpleRequiredHeightModifier() {
 
 @Sampled
 @Composable
-fun SimpleSizeModifier() {
+fun NoriaContext.SimpleSizeModifier() {
     Box { Box(Modifier.size(100.dp, 100.dp).background(Color.Red)) }
 }
 
 @Sampled
 @Composable
-fun SimpleSizeModifierWithDpSize() {
+fun NoriaContext.SimpleSizeModifierWithDpSize() {
     Box { Box(Modifier.size(DpSize(100.dp, 100.dp)).background(Color.Red)) }
 }
 
 @Sampled
 @Composable
-fun SimpleWidthModifier() {
+fun NoriaContext.SimpleWidthModifier() {
     Box { Box(Modifier.width(100.dp).aspectRatio(1f).background(Color.Magenta)) }
 }
 
 @Sampled
 @Composable
-fun SimpleHeightModifier() {
+fun NoriaContext.SimpleHeightModifier() {
     Box { Box(Modifier.height(100.dp).aspectRatio(1f).background(Color.Blue)) }
 }
 
 @Sampled
 @Composable
-fun SimpleFillWidthModifier() {
+fun NoriaContext.SimpleFillWidthModifier() {
     Box(Modifier.fillMaxWidth().background(Color.Red), contentAlignment = Alignment.Center) {
         Box(Modifier.size(100.dp).background(color = Color.Magenta))
     }
@@ -110,7 +110,7 @@ fun SimpleFillWidthModifier() {
 
 @Sampled
 @Composable
-fun FillHalfWidthModifier() {
+fun NoriaContext.FillHalfWidthModifier() {
     Box(Modifier.requiredSize(100.dp).background(Color.Red), contentAlignment = Alignment.Center) {
         // The inner Box will be (50.dp x 30.dp).
         Box(
@@ -123,7 +123,7 @@ fun FillHalfWidthModifier() {
 
 @Sampled
 @Composable
-fun SimpleFillHeightModifier() {
+fun NoriaContext.SimpleFillHeightModifier() {
     Box(Modifier.fillMaxHeight().background(Color.Red), contentAlignment = Alignment.Center) {
         Box(Modifier.size(100.dp).background(color = Color.Magenta))
     }
@@ -131,7 +131,7 @@ fun SimpleFillHeightModifier() {
 
 @Sampled
 @Composable
-fun FillHalfHeightModifier() {
+fun NoriaContext.FillHalfHeightModifier() {
     Box(Modifier.requiredSize(100.dp).background(Color.Red), contentAlignment = Alignment.Center) {
         // The inner Box will be (30.dp x 50.dp).
         Box(Modifier.requiredWidth(30.dp).fillMaxHeight(0.5f).background(color = Color.Magenta))
@@ -140,7 +140,7 @@ fun FillHalfHeightModifier() {
 
 @Sampled
 @Composable
-fun SimpleFillModifier() {
+fun NoriaContext.SimpleFillModifier() {
     Box(Modifier.fillMaxSize().background(Color.Red), contentAlignment = Alignment.Center) {
         Box(Modifier.size(100.dp).background(color = Color.Magenta))
     }
@@ -148,7 +148,7 @@ fun SimpleFillModifier() {
 
 @Sampled
 @Composable
-fun FillHalfSizeModifier() {
+fun NoriaContext.FillHalfSizeModifier() {
     Box(Modifier.requiredSize(100.dp).background(Color.Red), contentAlignment = Alignment.Center) {
         // The inner Box will be (50.dp x 50.dp).
         Box(Modifier.requiredWidth(30.dp).fillMaxSize(0.5f).background(color = Color.Magenta))
@@ -157,7 +157,7 @@ fun FillHalfSizeModifier() {
 
 @Sampled
 @Composable
-fun SimpleWrapContentAlignedModifier() {
+fun NoriaContext.SimpleWrapContentAlignedModifier() {
     // Here the result will be a 20.dp x 20.dp blue box top-centered in a 40.dp x 40.dp space.
     // Because of the sizeIn modifier, if wrapContentSize did not exist, the blue rectangle
     // would actually be 40.dp x 40.dp to satisfy the min size set by the modifier. However,
@@ -174,7 +174,7 @@ fun SimpleWrapContentAlignedModifier() {
 
 @Sampled
 @Composable
-fun SimpleWrapContentVerticallyAlignedModifier() {
+fun NoriaContext.SimpleWrapContentVerticallyAlignedModifier() {
     // Here the result will be a 50.dp x 20.dp blue box centered vertically in a 50.dp x 50.dp
     // space. Because of the size modifier, if wrapContentHeight did not exist,
     // the blue rectangle would actually be 50.dp x 50.dp to satisfy the size set by the modifier.
@@ -191,7 +191,7 @@ fun SimpleWrapContentVerticallyAlignedModifier() {
 
 @Sampled
 @Composable
-fun SimpleWrapContentHorizontallyAlignedModifier() {
+fun NoriaContext.SimpleWrapContentHorizontallyAlignedModifier() {
     // Here the result will be a 20.dp x 50.dp blue box centered vertically in a 50.dp x 50.dp
     // space. Because of the size modifier, if wrapContentWidth did not exist,
     // the blue rectangle would actually be 50.dp x 50.dp to satisfy the size set by the modifier.
@@ -209,7 +209,7 @@ fun SimpleWrapContentHorizontallyAlignedModifier() {
 
 @Sampled
 @Composable
-fun DefaultMinSizeSample() {
+fun NoriaContext.DefaultMinSizeSample() {
     @Composable
     fun DefaultMinBox(modifier: Modifier = Modifier) {
         Box(modifier.defaultMinSize(minWidth = 100.dp, minHeight = 100.dp).background(Color.Blue))

@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun FocusableSample() {
+fun NoriaContext.FocusableSample() {
     var color by remember { mutableStateOf(Black) }
     Box(
         Modifier.border(2.dp, color)
@@ -68,7 +68,7 @@ fun FocusableSample() {
 
 @Sampled
 @Composable
-fun FocusableSampleUsingLowerLevelFocusTarget() {
+fun NoriaContext.FocusableSampleUsingLowerLevelFocusTarget() {
     var color by remember { mutableStateOf(Black) }
     Box(
         Modifier.border(2.dp, color)
@@ -80,7 +80,7 @@ fun FocusableSampleUsingLowerLevelFocusTarget() {
 
 @Sampled
 @Composable
-fun CaptureFocusSample() {
+fun NoriaContext.CaptureFocusSample() {
     val focusRequester = remember { FocusRequester() }
     var value by remember { mutableStateOf("apple") }
     var borderColor by remember { mutableStateOf(Transparent) }
@@ -101,7 +101,7 @@ fun CaptureFocusSample() {
 
 @Sampled
 @Composable
-fun RestoreFocusSample() {
+fun NoriaContext.RestoreFocusSample() {
     val focusRequester = remember { FocusRequester() }
     LazyRow(
         Modifier.focusRequester(focusRequester).focusProperties {
@@ -118,7 +118,7 @@ fun RestoreFocusSample() {
 
 @Sampled
 @Composable
-fun FocusRestorerSample() {
+fun NoriaContext.FocusRestorerSample() {
     LazyRow(Modifier.focusRestorer()) {
         item { Button(onClick = {}) { Text("1") } }
         item { Button(onClick = {}) { Text("2") } }
@@ -129,7 +129,7 @@ fun FocusRestorerSample() {
 
 @Sampled
 @Composable
-fun FocusRestorerCustomFallbackSample() {
+fun NoriaContext.FocusRestorerCustomFallbackSample() {
     val focusRequester = remember { FocusRequester() }
     LazyRow(
         // If restoration fails, focus would fallback to the item associated with focusRequester.
@@ -146,7 +146,7 @@ fun FocusRestorerCustomFallbackSample() {
 
 @Sampled
 @Composable
-fun RequestFocusSample() {
+fun NoriaContext.RequestFocusSample() {
     val focusRequester = remember { FocusRequester() }
     var color by remember { mutableStateOf(Black) }
     Box(
@@ -162,7 +162,7 @@ fun RequestFocusSample() {
 
 @Sampled
 @Composable
-fun ClearFocusSample() {
+fun NoriaContext.ClearFocusSample() {
     val focusManager = LocalFocusManager.current
     Column(Modifier.clickable { focusManager.clearFocus() }) {
         Box(Modifier.focusable().size(100.dp))
@@ -173,7 +173,7 @@ fun ClearFocusSample() {
 
 @Sampled
 @Composable
-fun MoveFocusSample() {
+fun NoriaContext.MoveFocusSample() {
     val focusManager = LocalFocusManager.current
     Column {
         Row {
@@ -193,7 +193,7 @@ fun MoveFocusSample() {
 
 @Sampled
 @Composable
-fun CreateFocusRequesterRefsSample() {
+fun NoriaContext.CreateFocusRequesterRefsSample() {
     val (item1, item2, item3, item4) = remember { FocusRequester.createRefs() }
     Column {
         Box(Modifier.focusRequester(item1).focusable())
@@ -205,7 +205,7 @@ fun CreateFocusRequesterRefsSample() {
 
 @Sampled
 @Composable
-fun CustomFocusOrderSample() {
+fun NoriaContext.CustomFocusOrderSample() {
     Column(Modifier.fillMaxSize(), Arrangement.SpaceEvenly) {
         val (item1, item2, item3, item4) = remember { FocusRequester.createRefs() }
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
@@ -253,7 +253,7 @@ fun CustomFocusOrderSample() {
 
 @Sampled
 @Composable
-fun FocusPropertiesSample() {
+fun NoriaContext.FocusPropertiesSample() {
     Column {
         // Always focusable.
         Box(modifier = Modifier.focusProperties { canFocus = true }.focusTarget())
@@ -269,7 +269,7 @@ fun FocusPropertiesSample() {
 
 @Sampled
 @Composable
-fun CancelFocusMoveSample() {
+fun NoriaContext.CancelFocusMoveSample() {
     // If Box 2 is focused, pressing Up will not take focus to Box 1,
     // But pressing Down will move focus to Box 3.
     Column {
@@ -284,7 +284,7 @@ fun CancelFocusMoveSample() {
 
 @Sampled
 @Composable
-fun CustomFocusEnterSample() {
+fun NoriaContext.CustomFocusEnterSample() {
     // If the row is focused, performing a moveFocus(Enter) will move focus to item2.
     val item2 = remember { FocusRequester() }
     Row(Modifier.focusProperties { onEnter = { item2.requestFocus() } }.focusable()) {
@@ -296,7 +296,7 @@ fun CustomFocusEnterSample() {
 
 @Sampled
 @Composable
-fun CustomFocusExitSample() {
+fun NoriaContext.CustomFocusExitSample() {
     // If one of the boxes in Row1 is focused, performing a moveFocus(Exit)
     // will move focus to the specified next item instead of moving focus to row1.
     val nextItem = remember { FocusRequester() }

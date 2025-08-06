@@ -53,6 +53,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import noria.NoriaContext
 
 /**
  * [FlowRow] is a layout that fills items from left to right (ltr) in LTR layouts or right to left
@@ -88,7 +89,7 @@ import kotlin.math.min
 @Deprecated("The overflow parameter has been deprecated")
 @Composable
 @ExperimentalLayoutApi
-fun FlowRow(
+fun NoriaContext.FlowRow(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -108,9 +109,9 @@ fun FlowRow(
             maxLines,
             overflowState,
         )
-    val list: List<@Composable () -> Unit> =
+    val list: List<@Composable NoriaContext.() -> Unit> =
         remember(overflow, content, maxLines) {
-            val mutableList: MutableList<@Composable () -> Unit> = mutableListOf()
+            val mutableList: MutableList<@Composable NoriaContext.() -> Unit> = mutableListOf()
             mutableList.add { FlowRowScopeInstance.content() }
             overflow.addOverflowComposables(overflowState, mutableList)
             mutableList
@@ -151,7 +152,7 @@ fun FlowRow(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FlowRow(
+fun NoriaContext.FlowRow(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -202,7 +203,7 @@ fun FlowRow(
 @Deprecated("The overflow parameter has been deprecated")
 @Composable
 @ExperimentalLayoutApi
-fun FlowColumn(
+fun NoriaContext.FlowColumn(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
@@ -222,9 +223,9 @@ fun FlowColumn(
             maxLines,
             overflowState,
         )
-    val list: List<@Composable () -> Unit> =
+    val list: List<@Composable NoriaContext.() -> Unit> =
         remember(overflow, content, maxLines) {
-            val mutableList: MutableList<@Composable () -> Unit> = mutableListOf()
+            val mutableList: MutableList<@Composable NoriaContext.() -> Unit> = mutableListOf()
             mutableList.add { FlowColumnScopeInstance.content() }
             overflow.addOverflowComposables(overflowState, mutableList)
             mutableList
@@ -260,7 +261,7 @@ fun FlowColumn(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FlowColumn(
+fun NoriaContext.FlowColumn(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
@@ -433,7 +434,7 @@ internal class FillCrossAxisSizeElement(val fraction: Float) :
 @OptIn(ExperimentalLayoutApi::class)
 @PublishedApi
 @Composable
-internal fun rowMeasurementHelper(
+internal fun NoriaContext.rowMeasurementHelper(
     horizontalArrangement: Arrangement.Horizontal,
     verticalArrangement: Arrangement.Vertical,
     maxItemsInMainAxis: Int,
@@ -461,7 +462,7 @@ internal fun rowMeasurementHelper(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun rowMeasurementMultiContentHelper(
+internal fun NoriaContext.rowMeasurementMultiContentHelper(
     horizontalArrangement: Arrangement.Horizontal,
     verticalArrangement: Arrangement.Vertical,
     itemVerticalAlignment: Alignment.Vertical,
@@ -494,7 +495,7 @@ internal fun rowMeasurementMultiContentHelper(
 @OptIn(ExperimentalLayoutApi::class)
 @PublishedApi
 @Composable
-internal fun columnMeasurementHelper(
+internal fun NoriaContext.columnMeasurementHelper(
     verticalArrangement: Arrangement.Vertical,
     horizontalArrangement: Arrangement.Horizontal,
     maxItemsInMainAxis: Int,
@@ -519,7 +520,7 @@ internal fun columnMeasurementHelper(
 }
 
 @Composable
-internal fun columnMeasurementMultiContentHelper(
+internal fun NoriaContext.columnMeasurementMultiContentHelper(
     verticalArrangement: Arrangement.Vertical,
     horizontalArrangement: Arrangement.Horizontal,
     itemHorizontalAlignment: Alignment.Horizontal,

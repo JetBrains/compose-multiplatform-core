@@ -22,11 +22,11 @@ import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.TextPreparedSelectionState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
 import androidx.compose.ui.text.input.EditCommand
@@ -125,57 +125,63 @@ internal class TextFieldKeyInput(
                 KeyCommand.END -> moveCursorToEnd()
                 KeyCommand.DELETE_PREV_CHAR ->
                     deleteIfSelectedOr {
-                            val precedingCodePointIndex = getPrecedingCodePointOrEmojiStartIndex()
-                            if (precedingCodePointIndex == NoCharacterFound) {
-                                return@deleteIfSelectedOr null
-                            }
-                            DeleteSurroundingTextCommand(selection.end - precedingCodePointIndex, 0)
+                        val precedingCodePointIndex = getPrecedingCodePointOrEmojiStartIndex()
+                        if (precedingCodePointIndex == NoCharacterFound) {
+                            return@deleteIfSelectedOr null
                         }
+                        DeleteSurroundingTextCommand(selection.end - precedingCodePointIndex, 0)
+                    }
                         ?.apply()
+
                 KeyCommand.DELETE_NEXT_CHAR -> {
                     // Note that some software keyboards, such as Samsungs, go through this code
                     // path instead of making calls on the InputConnection directly.
                     deleteIfSelectedOr {
-                            val nextCharacterIndex = getNextCharacterIndex()
-                            // If there's no next character, it means the cursor is at the end of
-                            // the
-                            // text, and this should be a no-op. See b/199919707.
-                            if (nextCharacterIndex != NoCharacterFound) {
-                                DeleteSurroundingTextCommand(0, nextCharacterIndex - selection.end)
-                            } else {
-                                null
-                            }
+                        val nextCharacterIndex = getNextCharacterIndex()
+                        // If there's no next character, it means the cursor is at the end of
+                        // the
+                        // text, and this should be a no-op. See b/199919707.
+                        if (nextCharacterIndex != NoCharacterFound) {
+                            DeleteSurroundingTextCommand(0, nextCharacterIndex - selection.end)
+                        } else {
+                            null
                         }
+                    }
                         ?.apply()
                 }
+
                 KeyCommand.DELETE_PREV_WORD ->
                     deleteIfSelectedOr {
-                            getPreviousWordOffset()?.let {
-                                DeleteSurroundingTextCommand(selection.end - it, 0)
-                            }
+                        getPreviousWordOffset()?.let {
+                            DeleteSurroundingTextCommand(selection.end - it, 0)
                         }
+                    }
                         ?.apply()
+
                 KeyCommand.DELETE_NEXT_WORD ->
                     deleteIfSelectedOr {
-                            getNextWordOffset()?.let {
-                                DeleteSurroundingTextCommand(0, it - selection.end)
-                            }
+                        getNextWordOffset()?.let {
+                            DeleteSurroundingTextCommand(0, it - selection.end)
                         }
+                    }
                         ?.apply()
+
                 KeyCommand.DELETE_FROM_LINE_START ->
                     deleteIfSelectedOr {
-                            getLineStartByOffset()?.let {
-                                DeleteSurroundingTextCommand(selection.end - it, 0)
-                            }
+                        getLineStartByOffset()?.let {
+                            DeleteSurroundingTextCommand(selection.end - it, 0)
                         }
+                    }
                         ?.apply()
+
                 KeyCommand.DELETE_TO_LINE_END ->
                     deleteIfSelectedOr {
-                            getLineEndByOffset()?.let {
-                                DeleteSurroundingTextCommand(0, it - selection.end)
-                            }
+                        getLineEndByOffset()?.let {
+                            DeleteSurroundingTextCommand(0, it - selection.end)
                         }
+                    }
                         ?.apply()
+
                 KeyCommand.NEW_LINE ->
                     if (!singleLine) {
                         CommitTextCommand("\n", 1).apply()
@@ -183,12 +189,14 @@ internal class TextFieldKeyInput(
                         consumed =
                             this@TextFieldKeyInput.state.onImeActionPerformedWithResult(imeAction)
                     }
+
                 KeyCommand.TAB ->
                     if (!singleLine) {
                         CommitTextCommand("\t", 1).apply()
                     } else {
                         consumed = false // let propagate to focus system
                     }
+
                 KeyCommand.SELECT_ALL -> selectAll()
                 KeyCommand.SELECT_LEFT_CHAR -> moveCursorLeft().selectMovement()
                 KeyCommand.SELECT_RIGHT_CHAR -> moveCursorRight().selectMovement()
@@ -211,12 +219,15 @@ internal class TextFieldKeyInput(
                     undoManager?.makeSnapshot(value)
                     undoManager?.undo()?.let { this@TextFieldKeyInput.onValueChange(it) }
                 }
+
                 KeyCommand.REDO -> {
                     undoManager?.redo()?.let { this@TextFieldKeyInput.onValueChange(it) }
                 }
+
                 KeyCommand.CHARACTER_PALETTE -> {
                     showCharacterPalette()
                 }
+
                 KeyCommand.CENTER -> {} // No-op, this is handled by TextFieldFocusModifier.
             }
         }
@@ -235,7 +246,7 @@ internal class TextFieldKeyInput(
         block(preparedSelection)
         if (
             preparedSelection.selection != value.selection ||
-                preparedSelection.annotatedString != value.annotatedString
+            preparedSelection.annotatedString != value.annotatedString
         ) {
             onValueChange(preparedSelection.value)
         }
@@ -252,22 +263,24 @@ internal fun Modifier.textFieldKeyInput(
     offsetMapping: OffsetMapping,
     undoManager: UndoManager,
     imeAction: ImeAction,
-) = composed {
-    val preparedSelectionState = remember { TextPreparedSelectionState() }
-    val keyCombiner = remember { DeadKeyCombiner() }
-    val processor =
-        TextFieldKeyInput(
-            state = state,
-            selectionManager = manager,
-            value = value,
-            editable = editable,
-            singleLine = singleLine,
-            offsetMapping = offsetMapping,
-            preparedSelectionState = preparedSelectionState,
-            undoManager = undoManager,
-            keyCombiner = keyCombiner,
-            onValueChange = onValueChange,
-            imeAction = imeAction,
-        )
-    Modifier.onKeyEvent(processor::process)
+) = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val preparedSelectionState = remember { TextPreparedSelectionState() }
+        val keyCombiner = remember { DeadKeyCombiner() }
+        val processor =
+            TextFieldKeyInput(
+                state = state,
+                selectionManager = manager,
+                value = value,
+                editable = editable,
+                singleLine = singleLine,
+                offsetMapping = offsetMapping,
+                preparedSelectionState = preparedSelectionState,
+                undoManager = undoManager,
+                keyCombiner = keyCombiner,
+                onValueChange = onValueChange,
+                imeAction = imeAction,
+            )
+        Modifier.onKeyEvent(processor::process)
+    }
 }

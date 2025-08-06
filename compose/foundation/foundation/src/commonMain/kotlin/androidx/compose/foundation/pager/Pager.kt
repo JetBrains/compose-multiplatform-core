@@ -57,6 +57,7 @@ import kotlin.math.sign
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * A Pager that scrolls horizontally. Pages are lazily placed in accordance to the available
@@ -110,7 +111,7 @@ import kotlinx.coroutines.launch
  * Please refer to the samples to learn how to use this API.
  */
 @Composable
-fun HorizontalPager(
+fun NoriaContext.HorizontalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -118,12 +119,12 @@ fun HorizontalPager(
     beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     pageSpacing: Dp = 0.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.run { flingBehavior(state = state) },
     userScrollEnabled: Boolean = true,
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
     pageNestedScrollConnection: NestedScrollConnection =
-        PagerDefaults.pageNestedScrollConnection(state, Orientation.Horizontal),
+        PagerDefaults.run { pageNestedScrollConnection(state, Orientation.Horizontal) },
     snapPosition: SnapPosition = SnapPosition.Start,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
@@ -151,7 +152,7 @@ fun HorizontalPager(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun HorizontalPager(
+fun NoriaContext.HorizontalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -159,12 +160,12 @@ fun HorizontalPager(
     beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     pageSpacing: Dp = 0.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.run { flingBehavior(state = state) },
     userScrollEnabled: Boolean = true,
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
     pageNestedScrollConnection: NestedScrollConnection =
-        PagerDefaults.pageNestedScrollConnection(state, Orientation.Horizontal),
+        PagerDefaults.run { pageNestedScrollConnection(state, Orientation.Horizontal) },
     snapPosition: SnapPosition = SnapPosition.Start,
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
 ) {
@@ -240,7 +241,7 @@ fun HorizontalPager(
  * Please refer to the sample to learn how to use this API.
  */
 @Composable
-fun VerticalPager(
+fun NoriaContext.VerticalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -248,12 +249,12 @@ fun VerticalPager(
     beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     pageSpacing: Dp = 0.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.run { flingBehavior(state = state) },
     userScrollEnabled: Boolean = true,
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
     pageNestedScrollConnection: NestedScrollConnection =
-        PagerDefaults.pageNestedScrollConnection(state, Orientation.Vertical),
+        PagerDefaults.run { pageNestedScrollConnection(state, Orientation.Vertical) },
     snapPosition: SnapPosition = SnapPosition.Start,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
@@ -281,7 +282,7 @@ fun VerticalPager(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun VerticalPager(
+fun NoriaContext.VerticalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -289,12 +290,12 @@ fun VerticalPager(
     beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     pageSpacing: Dp = 0.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.run { flingBehavior(state = state) },
     userScrollEnabled: Boolean = true,
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
     pageNestedScrollConnection: NestedScrollConnection =
-        PagerDefaults.pageNestedScrollConnection(state, Orientation.Vertical),
+        PagerDefaults.run { pageNestedScrollConnection(state, Orientation.Vertical) },
     snapPosition: SnapPosition = SnapPosition.Start,
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
 ) {
@@ -371,7 +372,7 @@ object PagerDefaults {
      * velocity, the Pager will use [snapAnimationSpec] + [snapAnimationSpec] in a similar fashion.
      */
     @Composable
-    fun flingBehavior(
+    fun NoriaContext.flingBehavior(
         state: PagerState,
         pagerSnapDistance: PagerSnapDistance = PagerSnapDistance.atMost(1),
         decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay(),
@@ -427,7 +428,7 @@ object PagerDefaults {
      *   direction the nested scroll connection will operate and react on.
      */
     @Composable
-    fun pageNestedScrollConnection(
+    fun NoriaContext.pageNestedScrollConnection(
         state: PagerState,
         orientation: Orientation,
     ): NestedScrollConnection {

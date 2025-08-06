@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun PointerIconSample() {
+fun NoriaContext.PointerIconSample() {
     Column(Modifier.pointerHoverIcon(PointerIcon.Crosshair)) {
         SelectionContainer {
             Column {
@@ -53,7 +53,7 @@ fun PointerIconSample() {
 
 @Sampled
 @Composable
-fun StylusHoverIconSample() {
+fun NoriaContext.StylusHoverIconSample() {
     Box(
         Modifier.requiredSize(200.dp)
             .border(BorderStroke(2.dp, SolidColor(Color.Red)))

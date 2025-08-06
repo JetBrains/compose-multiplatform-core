@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LookaheadLayoutWithAlignmentLinesDemo() {
+fun NoriaContext.LookaheadLayoutWithAlignmentLinesDemo() {
     val helloWorld = createHelloWorld()
     Column(
         Modifier.fillMaxSize().padding(top = 100.dp),

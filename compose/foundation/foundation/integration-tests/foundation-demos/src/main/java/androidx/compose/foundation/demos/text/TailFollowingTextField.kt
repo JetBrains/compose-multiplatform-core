@@ -35,7 +35,7 @@ import kotlin.math.min
 
 @Preview
 @Composable
-fun TailFollowingTextFieldDemo() {
+fun NoriaContext.TailFollowingTextFieldDemo() {
     Column {
         val hstate = rememberSaveable { mutableStateOf("abc def ghi jkl mno pqr stu vwx yz") }
         HorizontalTailFollowingTextField(
@@ -58,7 +58,7 @@ fun TailFollowingTextFieldDemo() {
 }
 
 @Composable
-private fun HorizontalTailFollowingTextField(
+private fun NoriaContext.HorizontalTailFollowingTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier,
@@ -88,7 +88,7 @@ private fun HorizontalTailFollowingTextField(
 }
 
 @Composable
-private fun VerticalTailFollowintTextField(
+private fun NoriaContext.VerticalTailFollowintTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier,

@@ -16,6 +16,8 @@
 
 package androidx.compose.runtime
 
+import noria.NoriaContext
+
 /**
  * Remember the value produced by [calculation]. [calculation] will only be evaluated during the
  * composition. Recomposition will always return the value produced by composition.
@@ -139,7 +141,10 @@ public inline fun <T> key(
  * @param content the composable children that are recyclable.
  */
 @Composable
-public inline fun ReusableContent(key: Any?, content: @Composable () -> Unit) {
+public inline fun NoriaContext.ReusableContent(
+    key: Any?,
+    content: @Composable NoriaContext.() -> Unit
+) {
     currentComposer.startReusableGroup(reuseKey, key)
     content()
     currentComposer.endReusableGroup()
@@ -160,9 +165,9 @@ public inline fun ReusableContent(key: Any?, content: @Composable () -> Unit) {
  */
 @Composable
 @ExplicitGroupsComposable
-public inline fun ReusableContentHost(
+public inline fun NoriaContext.ReusableContentHost(
     active: Boolean,
-    crossinline content: @Composable () -> Unit,
+    crossinline content: @Composable NoriaContext.() -> Unit,
 ) {
     currentComposer.startReusableGroup(reuseKey, active)
     val activeChanged = currentComposer.changed(active)
@@ -189,7 +194,7 @@ public val currentComposer: Composer
  * Runtime
  */
 @InternalComposeApi
-public val currentCompositionContext: CompositionContext
+public val NoriaContext.currentCompositionContext: CompositionContext
     @TestOnly
     @ReadOnlyComposable
     @Composable
@@ -199,7 +204,7 @@ public val currentCompositionContext: CompositionContext
  * Returns an object which can be used to invalidate the current scope at this point in composition.
  * This object can be used to manually cause recompositions.
  */
-public val currentRecomposeScope: RecomposeScope
+public val NoriaContext.currentRecomposeScope: RecomposeScope
     @ReadOnlyComposable
     @OptIn(InternalComposeApi::class)
     @Composable
@@ -216,7 +221,7 @@ public val currentRecomposeScope: RecomposeScope
  * needed if another composition is not a subcomposition of the current one.
  */
 @OptIn(InternalComposeApi::class)
-public val currentCompositionLocalContext: CompositionLocalContext
+public val NoriaContext.currentCompositionLocalContext: CompositionLocalContext
     @Composable
     get() = CompositionLocalContext(currentComposer.buildContext().getCompositionLocalScope())
 
@@ -235,7 +240,7 @@ public val currentCompositionLocalContext: CompositionLocalContext
     ReplaceWith("currentCompositeKeyHashCode"),
 )
 @Suppress("DEPRECATION")
-public val currentCompositeKeyHash: Int
+public val NoriaContext.currentCompositeKeyHash: Int
     @Composable
     @ExplicitGroupsComposable
     @OptIn(InternalComposeApi::class)
@@ -251,7 +256,7 @@ public val currentCompositeKeyHash: Int
  * higher precision does, however, afford more confidence in the assumption that an arbitrarily
  * sized composition hierarchy will not experience two unrelated groups having the same key hash.
  */
-public val currentCompositeKeyHashCode: CompositeKeyHashCode
+public val NoriaContext.currentCompositeKeyHashCode: CompositeKeyHashCode
     @Composable
     @ExplicitGroupsComposable
     @OptIn(InternalComposeApi::class)
@@ -276,7 +281,7 @@ public val currentCompositeKeyHashCode: CompositeKeyHashCode
 // it is okay to use.
 @Suppress("NONREADONLY_CALL_IN_READONLY_COMPOSABLE", "UnnecessaryLambdaCreation")
 @Composable
-public inline fun <T : Any, reified E : Applier<*>> ComposeNode(
+public inline fun <T : Any, reified E : Applier<*>> NoriaContext.ComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
 ) {
@@ -310,7 +315,7 @@ public inline fun <T : Any, reified E : Applier<*>> ComposeNode(
 // it is okay to use.
 @Suppress("NONREADONLY_CALL_IN_READONLY_COMPOSABLE", "UnnecessaryLambdaCreation")
 @Composable
-public inline fun <T : Any, reified E : Applier<*>> ReusableComposeNode(
+public inline fun <T : Any, reified E : Applier<*>> NoriaContext.ReusableComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
 ) {
@@ -346,10 +351,10 @@ public inline fun <T : Any, reified E : Applier<*>> ReusableComposeNode(
 // it is okay to use.
 @Suppress("NONREADONLY_CALL_IN_READONLY_COMPOSABLE")
 @Composable
-public inline fun <T : Any?, reified E : Applier<*>> ComposeNode(
+public inline fun <T : Any?, reified E : Applier<*>> NoriaContext.ComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startNode()
@@ -384,10 +389,10 @@ public inline fun <T : Any?, reified E : Applier<*>> ComposeNode(
 // it is okay to use.
 @Suppress("NONREADONLY_CALL_IN_READONLY_COMPOSABLE")
 @Composable
-public inline fun <T : Any?, reified E : Applier<*>> ReusableComposeNode(
+public inline fun <T : Any?, reified E : Applier<*>> NoriaContext.ReusableComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startReusableNode()
@@ -426,11 +431,11 @@ public inline fun <T : Any?, reified E : Applier<*>> ReusableComposeNode(
  */
 @Composable
 @ExplicitGroupsComposable
-public inline fun <T, reified E : Applier<*>> ComposeNode(
+public inline fun <T, reified E : Applier<*>> NoriaContext.ComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
     noinline skippableUpdate: @Composable SkippableUpdater<T>.() -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startNode()
@@ -472,11 +477,11 @@ public inline fun <T, reified E : Applier<*>> ComposeNode(
  */
 @Composable
 @ExplicitGroupsComposable
-public inline fun <T, reified E : Applier<*>> ReusableComposeNode(
+public inline fun <T, reified E : Applier<*>> NoriaContext.ReusableComposeNode(
     noinline factory: () -> T,
     update: @DisallowComposableCalls Updater<T>.() -> Unit,
     noinline skippableUpdate: @Composable SkippableUpdater<T>.() -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (currentComposer.applier !is E) invalidApplier()
     currentComposer.startReusableNode()
@@ -493,7 +498,8 @@ public inline fun <T, reified E : Applier<*>> ReusableComposeNode(
     currentComposer.endNode()
 }
 
-@PublishedApi internal fun invalidApplier(): Unit = error("Invalid applier")
+@PublishedApi
+internal fun invalidApplier(): Unit = error("Invalid applier")
 
 /**
  * An Effect to construct a [CompositionContext] at the current point of composition. This can be
@@ -503,6 +509,6 @@ public inline fun <T, reified E : Applier<*>> ReusableComposeNode(
  */
 @OptIn(InternalComposeApi::class)
 @Composable
-public fun rememberCompositionContext(): CompositionContext {
+public fun NoriaContext.rememberCompositionContext(): CompositionContext {
     return currentComposer.buildContext()
 }

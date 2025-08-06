@@ -38,7 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
  */
 @Preview
 @Composable
-fun DrawingDemo() {
+fun NoriaContext.DrawingDemo() {
     val start = remember { mutableStateOf(Offset(0f, 0f)) }
     val end = remember { mutableStateOf(Offset(0f, 0f)) }
     Canvas(

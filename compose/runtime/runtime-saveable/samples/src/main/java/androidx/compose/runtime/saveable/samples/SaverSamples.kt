@@ -26,7 +26,7 @@ import androidx.compose.runtime.saveable.mapSaver
 
 @Sampled
 @Composable
-fun CustomSaverSample() {
+fun NoriaContext.CustomSaverSample() {
     data class Holder(var value: Int)
 
     // this Saver implementation converts Holder object which we don't know how to save
@@ -36,7 +36,7 @@ fun CustomSaverSample() {
 
 @Sampled
 @Composable
-fun ListSaverSample() {
+fun NoriaContext.ListSaverSample() {
     data class Size(val x: Int, val y: Int)
 
     val sizeSaver =
@@ -45,7 +45,7 @@ fun ListSaverSample() {
 
 @Sampled
 @Composable
-fun MapSaverSample() {
+fun NoriaContext.MapSaverSample() {
     data class User(val name: String, val age: Int)
 
     val userSaver = run {

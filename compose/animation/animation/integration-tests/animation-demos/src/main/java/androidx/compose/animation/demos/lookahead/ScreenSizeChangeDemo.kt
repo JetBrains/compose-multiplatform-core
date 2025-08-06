@@ -69,7 +69,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ScreenSizeChangeDemo() {
+fun NoriaContext.ScreenSizeChangeDemo() {
     // A surface container using the 'background' color from the theme
     var state by remember { mutableStateOf(DisplayState.Tablet) }
     Box(
@@ -141,7 +141,7 @@ fun SceneScope.Details(modifier: Modifier) {
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun Root(state: DisplayState) {
+fun NoriaContext.Root(state: DisplayState) {
     SceneHost {
         Row(
             Modifier.animateBounds(
@@ -166,7 +166,7 @@ fun Root(state: DisplayState) {
 }
 
 @Composable
-fun Greeting(name: String) {
+fun NoriaContext.Greeting(name: String) {
     Text(text = "Hello $name!")
 }
 
@@ -225,7 +225,7 @@ val MessageList =
     )
 
 @Composable
-fun SearchBar() {
+fun NoriaContext.SearchBar() {
     Surface(shape = RoundedCornerShape(40), modifier = Modifier.fillMaxWidth().height(50.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -243,7 +243,7 @@ fun SearchBar() {
 }
 
 @Composable
-fun Header(data: MessageData) {
+fun NoriaContext.Header(data: MessageData) {
     Row(Modifier.height(60.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.padding(10.dp).size(35.dp).background(Color(0xffffddee), CircleShape))
         Column(Modifier.weight(1f)) {
@@ -385,7 +385,7 @@ fun SceneScope.NavRail(state: DisplayState) {
 }
 
 @Composable
-fun Item(state: DisplayState, icon: ImageVector, text: String, color: Color = Color.Transparent) {
+fun NoriaContext.Item(state: DisplayState, icon: ImageVector, text: String, color: Color = Color.Transparent) {
     Row(
         Modifier.height(50.dp)
             .fillMaxWidth()

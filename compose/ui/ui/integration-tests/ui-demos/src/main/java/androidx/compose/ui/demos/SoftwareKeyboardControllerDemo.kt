@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SoftwareKeyboardControllerDemo() {
+fun NoriaContext.SoftwareKeyboardControllerDemo() {
     Column(Modifier.padding(16.dp)) {
         var isHidden by remember { mutableStateOf(true) }
 

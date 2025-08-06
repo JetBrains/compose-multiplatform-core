@@ -20,22 +20,23 @@ import androidx.compose.foundation.text.input.internal.selection.TextFieldSelect
 import androidx.compose.foundation.text.selection.SelectionManager
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = CommonContextMenuArea(manager, content)
 
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = CommonContextMenuArea(selectionState, enabled, content)
 
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: SelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = CommonContextMenuArea(manager, content)

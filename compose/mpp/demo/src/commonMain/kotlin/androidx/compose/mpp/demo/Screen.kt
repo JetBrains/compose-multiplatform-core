@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 sealed interface Screen {
     val title: String
@@ -59,7 +60,7 @@ sealed interface Screen {
     class Example(
         override val title: String,
         val backgroundColor: Color? = null,
-        val content: @Composable () -> Unit
+        val content: @Composable NoriaContext.() -> Unit
     ) : Screen {
 
         @Composable
@@ -131,7 +132,7 @@ private fun ExampleScaffold(
     title: String,
     back: () -> Unit,
     backgroundColor: Color?,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     Scaffold(
         /*

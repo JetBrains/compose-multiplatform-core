@@ -3125,7 +3125,7 @@ internal fun IntegerSubject.isEqualTo(expected: Int, tolerance: Int) {
 }
 
 internal fun ComposeContentTestRule.setContentWithTestViewConfiguration(
-    composable: @Composable () -> Unit
+    composable: @Composable NoriaContext.() -> Unit
 ) {
     this.setContent { WithTouchSlop(TestTouchSlop, composable) }
 }

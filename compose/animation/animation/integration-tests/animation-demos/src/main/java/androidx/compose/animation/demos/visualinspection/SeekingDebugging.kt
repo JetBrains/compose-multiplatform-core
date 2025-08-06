@@ -66,7 +66,7 @@ import kotlin.math.abs
 
 @Preview
 @Composable
-fun SeekingDemo() {
+fun NoriaContext.SeekingDemo() {
     val transition = updateTransition(true)
 
     var entering by remember { mutableStateOf(true) }

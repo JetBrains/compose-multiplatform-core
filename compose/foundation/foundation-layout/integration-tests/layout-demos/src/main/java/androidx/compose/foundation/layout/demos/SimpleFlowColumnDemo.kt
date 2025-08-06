@@ -28,7 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun SimpleFlowColumnDemo() {
+fun NoriaContext.SimpleFlowColumnDemo() {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         SimpleFlowColumn()
         SimpleFlowColumnMaxLinesWithSeeMore()

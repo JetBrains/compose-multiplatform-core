@@ -225,7 +225,7 @@ class ModifierLocalProviderConsumerOrderTest {
 
 /** This is extracted out so that it can be skipped. */
 @Composable
-fun ConsumeLocal(
+fun NoriaContext.ConsumeLocal(
     modifierLocal: ProvidableModifierLocal<String>,
     consumerValue: MutableState<String>,
 ) {

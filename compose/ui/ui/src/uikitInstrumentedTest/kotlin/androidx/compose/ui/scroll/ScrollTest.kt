@@ -851,7 +851,7 @@ internal class ScrollTest {
 }
 
 @Composable
-private fun VerticalUIKitScrollInsideVerticalScroll(
+private fun NoriaContext.VerticalUIKitScrollInsideVerticalScroll(
     state: ScrollState,
     screenSize: DpSize,
     density: Density,
@@ -908,7 +908,7 @@ private fun VerticalUIKitScrollInsideVerticalScroll(
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-private fun VerticalScrollWithHorizontalUIKitScroll(
+private fun NoriaContext.VerticalScrollWithHorizontalUIKitScroll(
     state: ScrollState,
     screenSize: DpSize,
     topContentHeight: Dp,
@@ -953,7 +953,7 @@ private fun VerticalScrollWithHorizontalUIKitScroll(
 }
 
 @Composable
-private fun HorizontalScrollContent(
+private fun NoriaContext.HorizontalScrollContent(
     itemSize: Dp,
     itemCount: Int = 20,
     lazyRowState: LazyListState,

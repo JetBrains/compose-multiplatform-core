@@ -53,7 +53,7 @@ import kotlin.math.roundToInt
 @Suppress("SetTextI18n")
 @Sampled
 @Composable
-fun AndroidViewSample() {
+fun NoriaContext.AndroidViewSample() {
     // Compose a TextView.
     AndroidView({ context -> TextView(context).apply { text = "This is a TextView" } })
     // Compose a View and update its size based on state. Note the modifiers.
@@ -66,7 +66,7 @@ fun AndroidViewSample() {
 @Suppress("UNUSED_ANONYMOUS_PARAMETER")
 @Sampled
 @Composable
-fun AndroidViewWithReleaseSample() {
+fun NoriaContext.AndroidViewWithReleaseSample() {
     // Compose a View that needs to be cleaned up when removed from the UI
     class LifecycleAwareView(context: Context) : View(context) {
         var lifecycle: Lifecycle? = null
@@ -93,7 +93,7 @@ fun AndroidViewWithReleaseSample() {
 
 @Sampled
 @Composable
-fun ReusableAndroidViewInLazyColumnSample() {
+fun NoriaContext.ReusableAndroidViewInLazyColumnSample() {
     val urls =
         listOf(
             "https://developer.android.com/jetpack/compose",
@@ -128,7 +128,7 @@ fun ReusableAndroidViewInLazyColumnSample() {
 
 @Sampled
 @Composable
-fun AndroidDrawableInDrawScopeSample() {
+fun NoriaContext.AndroidDrawableInDrawScopeSample() {
     val drawable = LocalContext.current.getDrawable(R.drawable.sample_drawable)
     Box(
         modifier =

@@ -242,7 +242,7 @@ class SelectionHandlesTest {
             .isTrue()
     }
 
-    private fun setContent(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    private fun setContent(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
         rule.setContent {
             Box(
                 modifier = modifier.fillMaxSize().background(backgroundColor),

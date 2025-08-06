@@ -72,7 +72,7 @@ private const val PhoneUri = "tel:+123456789"
 
 @SuppressLint("NullAnnotationGroup")
 @Composable
-fun Hyperlinks() {
+fun NoriaContext.Hyperlinks() {
     Column(
         modifier =
             Modifier.wrapContentWidth(Alignment.CenterHorizontally)
@@ -357,7 +357,7 @@ private class AnnotatedStringSaver(private val linkInteractionListener: LinkInte
 }
 
 @Composable
-private fun Sample(title: String, content: @Composable () -> Unit) {
+private fun NoriaContext.Sample(title: String, content: @Composable NoriaContext.() -> Unit) {
     Column(Modifier.fillMaxWidth().border(2.dp, Color.Black).padding(8.dp)) {
         Text(title, Modifier.align(Alignment.CenterHorizontally), fontWeight = FontWeight.Bold)
         content()

@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
-fun BringNestedIntoViewDemo() {
+fun NoriaContext.BringNestedIntoViewDemo() {
     Column {
         val rows = 3
         val columns = 3
@@ -65,7 +65,7 @@ fun BringNestedIntoViewDemo() {
 }
 
 @Composable
-private fun ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
+private fun NoriaContext.ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
     Column(
         Modifier.border(3.dp, Color.Blue).size(200.dp, 250.dp).verticalScroll(rememberScrollState())
     ) {
@@ -95,7 +95,7 @@ private fun ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoVi
 }
 
 @Composable
-private fun ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
+private fun NoriaContext.ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
     val coroutineScope = rememberCoroutineScope()
     Column {
         repeat(rows) { row ->
@@ -113,7 +113,7 @@ private fun ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewR
 }
 
 @Composable
-private fun TextCircle(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.TextCircle(text: String, modifier: Modifier = Modifier) {
     Box(modifier.aspectRatio(1f).background(Color.Red, shape = CircleShape)) {
         Text(text = text, color = Color.White, modifier = Modifier.align(Alignment.Center))
     }

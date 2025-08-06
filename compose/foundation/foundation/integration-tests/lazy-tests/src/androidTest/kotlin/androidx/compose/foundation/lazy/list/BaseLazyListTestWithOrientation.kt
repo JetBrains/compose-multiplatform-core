@@ -220,7 +220,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
 }
 
 @Composable
-private fun LazyColumn(
+private fun NoriaContext.LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -250,7 +250,7 @@ private fun LazyColumn(
 }
 
 @Composable
-private fun LazyRow(
+private fun NoriaContext.LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),

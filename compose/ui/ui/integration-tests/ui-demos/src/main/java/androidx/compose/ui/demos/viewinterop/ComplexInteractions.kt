@@ -54,7 +54,7 @@ val ComplexTouchInterop =
     )
 
 @Composable
-fun ComposeInAndroidInComposeEtcTargetingDemo() {
+fun NoriaContext.ComposeInAndroidInComposeEtcTargetingDemo() {
     val context = LocalContext.current
     Column {
         Text(
@@ -102,7 +102,7 @@ fun ComposeInAndroidInComposeEtcTargetingDemo() {
 }
 
 @Composable
-private fun ColorButton() {
+private fun NoriaContext.ColorButton() {
     val state = remember { mutableStateOf(false) }
     val color =
         if (state.value) {

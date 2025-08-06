@@ -20,9 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
+internal actual fun NoriaContext.ProvideDefaultPlatformTextContextMenuProviders(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     // TODO: https://youtrack.jetbrains.com/issue/CMP-7819
 }

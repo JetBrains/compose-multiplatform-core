@@ -30,7 +30,7 @@ typealias Item = Int
 @Suppress("unused")
 @Sampled
 @Composable
-fun MovableContentColumnRowSample(content: @Composable () -> Unit, vertical: Boolean) {
+fun NoriaContext.MovableContentColumnRowSample(content: @Composable NoriaContext.() -> Unit, vertical: Boolean) {
     val movableContent = remember(content) { movableContentOf(content) }
 
     if (vertical) {
@@ -43,8 +43,8 @@ fun MovableContentColumnRowSample(content: @Composable () -> Unit, vertical: Boo
 @Suppress("unused")
 @Sampled
 @Composable
-fun MovableContentMultiColumnSample(items: List<Item>) {
-    val itemMap = remember { mutableMapOf<Item, @Composable () -> Unit>() }
+fun NoriaContext.MovableContentMultiColumnSample(items: List<Item>) {
+    val itemMap = remember { mutableMapOf<Item, @Composable NoriaContext.() -> Unit>() }
     val movableItems =
         items.map { item -> itemMap.getOrPut(item) { movableContentOf { ItemView(item) } } }
 

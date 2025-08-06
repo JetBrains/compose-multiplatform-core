@@ -37,6 +37,7 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.SwingUtilities
 import kotlin.math.max
+import noria.NoriaContext
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SkikoRenderDelegate
 
@@ -108,7 +109,7 @@ internal abstract class DesktopComposeSceneLayer(
         isClosed = true
     }
 
-    final override fun setContent(content: @Composable () -> Unit) {
+    final override fun setContent(content: @Composable NoriaContext.() -> Unit) {
         mediator?.setContent(content)
     }
 

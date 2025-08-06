@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun ModifierUsageSample() {
+fun NoriaContext.ModifierUsageSample() {
     Text(
         "Hello, World!",
         Modifier.padding(16.dp) // Outer padding; outside background
@@ -72,7 +72,7 @@ fun ModifierUsageSample() {
 
 @Sampled
 @Composable
-fun ModifierFactorySample() {
+fun NoriaContext.ModifierFactorySample() {
     class FancyModifier(val level: Float) : Modifier.Element
 
     fun Modifier.fancy(level: Float) = this.then(FancyModifier(level))
@@ -84,7 +84,7 @@ fun ModifierFactorySample() {
 
 @Sampled
 @Composable
-fun ModifierParameterSample() {
+fun NoriaContext.ModifierParameterSample() {
     @Composable
     fun PaddedColumn(modifier: Modifier = Modifier) {
         Column(modifier.padding(10.dp)) {
@@ -95,7 +95,7 @@ fun ModifierParameterSample() {
 
 @Sampled
 @Composable
-fun SubcomponentModifierSample() {
+fun NoriaContext.SubcomponentModifierSample() {
     @Composable
     fun ButtonBar(
         onOk: () -> Unit,
@@ -112,7 +112,7 @@ fun SubcomponentModifierSample() {
 
 @Sampled
 @Composable
-fun DelegatedNodeSampleExplicit() {
+fun NoriaContext.DelegatedNodeSampleExplicit() {
     class TapGestureNode(var onTap: () -> Unit) : PointerInputModifierNode, Modifier.Node() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
@@ -159,7 +159,7 @@ fun DelegatedNodeSampleExplicit() {
 
 @Sampled
 @Composable
-fun DelegatedNodeSampleImplicit() {
+fun NoriaContext.DelegatedNodeSampleImplicit() {
     class TapGestureNode(var onTap: () -> Unit) : PointerInputModifierNode, Modifier.Node() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
@@ -197,7 +197,7 @@ fun DelegatedNodeSampleImplicit() {
 
 @Sampled
 @Composable
-fun LazyDelegationExample() {
+fun NoriaContext.LazyDelegationExample() {
     class ExpensivePositionHandlingOnPointerEvents : PointerInputModifierNode, DelegatingNode() {
 
         val globalAwareNode =
@@ -303,7 +303,7 @@ fun DelegateInAttachSample() {
 
 @Sampled
 @Composable
-fun ModifierNodeElementSample() {
+fun NoriaContext.ModifierNodeElementSample() {
     class Circle(var color: Color) : DrawModifierNode, Modifier.Node() {
         override fun ContentDrawScope.draw() {
             drawCircle(color)
@@ -327,7 +327,7 @@ fun ModifierNodeElementSample() {
 @Suppress("LocalVariableName")
 @Sampled
 @Composable
-fun SemanticsModifierNodeSample() {
+fun NoriaContext.SemanticsModifierNodeSample() {
     class HeadingNode : SemanticsModifierNode, Modifier.Node() {
         override fun SemanticsPropertyReceiver.applySemantics() {
             heading()
@@ -357,7 +357,7 @@ fun SemanticsModifierNodeSample() {
 @ExperimentalComposeUiApi
 @Sampled
 @Composable
-fun PointerInputModifierNodeSample() {
+fun NoriaContext.PointerInputModifierNodeSample() {
     class OnPointerEventNode(var callback: (PointerEvent) -> Unit) :
         PointerInputModifierNode, Modifier.Node() {
         override fun onPointerEvent(
@@ -395,7 +395,7 @@ fun PointerInputModifierNodeSample() {
 
 @Sampled
 @Composable
-fun LayoutAwareModifierNodeSample() {
+fun NoriaContext.LayoutAwareModifierNodeSample() {
     class SizeLoggerNode(var id: String) : LayoutAwareModifierNode, Modifier.Node() {
         override fun onRemeasured(size: IntSize) {
             println("The size of $id was $size")
@@ -420,7 +420,7 @@ fun LayoutAwareModifierNodeSample() {
 
 @Sampled
 @Composable
-fun GlobalPositionAwareModifierNodeSample() {
+fun NoriaContext.GlobalPositionAwareModifierNodeSample() {
     class PositionLoggerNode(var id: String) : GlobalPositionAwareModifierNode, Modifier.Node() {
         override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
             // This will be the size of the Layout.
@@ -454,7 +454,7 @@ fun GlobalPositionAwareModifierNodeSample() {
 
 @Sampled
 @Composable
-fun JustReadingOrProvidingModifierLocalNodeSample() {
+fun NoriaContext.JustReadingOrProvidingModifierLocalNodeSample() {
     class Logger {
         fun log(string: String) {
             println(string)
@@ -506,7 +506,7 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
 
 @Sampled
 @Composable
-fun ModifierNodeResetSample() {
+fun NoriaContext.ModifierNodeResetSample() {
     class SelectableNode : Modifier.Node() {
         var selected by mutableStateOf(false)
 
@@ -522,7 +522,7 @@ fun ModifierNodeResetSample() {
 
 @Sampled
 @Composable
-fun ModifierNodeCoroutineScopeSample() {
+fun NoriaContext.ModifierNodeCoroutineScopeSample() {
     class AnimatedNode : Modifier.Node() {
         val animatable = Animatable(0f)
 

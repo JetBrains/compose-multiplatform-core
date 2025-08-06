@@ -24,6 +24,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.SavedStateConfiguration.Companion.DEFAULT
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
+import noria.NoriaContext
 
 /**
  * Remember the value produced by [init], and persist it across activity or process recreation using
@@ -47,7 +48,7 @@ import kotlinx.serialization.serializer
  * @see rememberSerializable
  */
 @Composable
-public inline fun <reified T : Any> rememberSerializable(
+public inline fun <reified T : Any> NoriaContext.rememberSerializable(
     vararg inputs: Any?,
     configuration: SavedStateConfiguration = DEFAULT,
     noinline init: () -> T,
@@ -86,7 +87,7 @@ public inline fun <reified T : Any> rememberSerializable(
  * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithSerializer
  */
 @Composable
-public fun <T : Any> rememberSerializable(
+public fun <T : Any> NoriaContext.rememberSerializable(
     vararg inputs: Any?,
     serializer: KSerializer<T>,
     configuration: SavedStateConfiguration = DEFAULT,
@@ -120,7 +121,7 @@ public fun <T : Any> rememberSerializable(
  * @see rememberSerializable
  */
 @Composable
-public inline fun <reified T : Any> rememberSerializable(
+public inline fun <reified T : Any> NoriaContext.rememberSerializable(
     vararg inputs: Any?,
     configuration: SavedStateConfiguration = DEFAULT,
     noinline init: () -> MutableState<T>,
@@ -156,7 +157,7 @@ public inline fun <reified T : Any> rememberSerializable(
  * @sample androidx.compose.runtime.saveable.samples.RememberSaveableWithSerializerAndMutableState
  */
 @Composable
-public fun <T : Any> rememberSerializable(
+public fun <T : Any> NoriaContext.rememberSerializable(
     vararg inputs: Any?,
     stateSerializer: KSerializer<T>,
     configuration: SavedStateConfiguration = DEFAULT,

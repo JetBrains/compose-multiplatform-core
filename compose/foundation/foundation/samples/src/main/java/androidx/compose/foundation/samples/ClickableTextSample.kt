@@ -43,7 +43,7 @@ fun ClickableText() {
 
 @Sampled
 @Composable
-fun LongClickableText(
+fun NoriaContext.LongClickableText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,

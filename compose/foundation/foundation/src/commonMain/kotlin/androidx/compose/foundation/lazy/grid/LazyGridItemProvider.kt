@@ -26,6 +26,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import noria.NoriaContext
 
 @Suppress("PrimitiveInCollection")
 internal interface LazyGridItemProvider : LazyLayoutItemProvider {
@@ -35,7 +36,7 @@ internal interface LazyGridItemProvider : LazyLayoutItemProvider {
 }
 
 @Composable
-internal fun rememberLazyGridItemProviderLambda(
+internal fun NoriaContext.rememberLazyGridItemProviderLambda(
     state: LazyGridState,
     content: LazyGridScope.() -> Unit,
 ): () -> LazyGridItemProvider {
@@ -77,7 +78,7 @@ private class LazyGridItemProviderImpl(
         get() = intervalContent.headerIndexes
 
     @Composable
-    override fun Item(index: Int, key: Any) {
+    override fun NoriaContext.Item(index: Int, key: Any) {
         LazyLayoutPinnableItem(key, index, state.pinnedItems) {
             intervalContent.withInterval(index) { localIndex, content ->
                 content.item(LazyGridItemScopeImpl, localIndex)

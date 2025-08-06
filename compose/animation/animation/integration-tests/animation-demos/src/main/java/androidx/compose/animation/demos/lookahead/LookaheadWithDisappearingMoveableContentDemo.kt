@@ -58,7 +58,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun LookaheadWithDisappearingMovableContentDemo() {
+fun NoriaContext.LookaheadWithDisappearingMovableContentDemo() {
     LookaheadScope {
         val isCompact by
             produceState(initialValue = false) {
@@ -101,7 +101,7 @@ fun LookaheadWithDisappearingMovableContentDemo() {
 }
 
 @Composable
-fun MyIcon(visible: Boolean, modifier: Modifier = Modifier) {
+fun NoriaContext.MyIcon(visible: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible,
         enter = fadeIn(),
@@ -113,14 +113,14 @@ fun MyIcon(visible: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun Title(visible: Boolean, modifier: Modifier = Modifier) {
+fun NoriaContext.Title(visible: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(visible, enter = fadeIn(), exit = fadeOut(), modifier = modifier) {
         Text("Text", modifier, fontSize = 30.sp)
     }
 }
 
 @Composable
-fun Details(visible: Boolean, modifier: Modifier = Modifier) {
+fun NoriaContext.Details(visible: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible,
         enter = fadeIn(),

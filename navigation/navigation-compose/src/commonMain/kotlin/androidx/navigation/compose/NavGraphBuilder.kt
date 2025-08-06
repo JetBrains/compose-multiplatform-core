@@ -33,6 +33,7 @@ import androidx.navigation.get
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import noria.NoriaContext
 
 /**
  * Add the [Composable] to the [NavGraphBuilder]
@@ -662,7 +663,7 @@ public fun NavGraphBuilder.dialog(
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
     dialogProperties: DialogProperties = DialogProperties(),
-    content: @Composable (NavBackStackEntry) -> Unit
+    content: @Composable NoriaContext.(NavBackStackEntry) -> Unit
 ) {
     destination(
         DialogNavigatorDestinationBuilder(

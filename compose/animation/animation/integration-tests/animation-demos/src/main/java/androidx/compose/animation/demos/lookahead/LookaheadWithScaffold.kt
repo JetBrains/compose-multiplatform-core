@@ -82,7 +82,7 @@ private val colors =
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithScaffold() {
+fun NoriaContext.LookaheadWithScaffold() {
     val hasPadding by
         produceState(initialValue = true) {
             while (true) {
@@ -125,7 +125,7 @@ fun LookaheadWithScaffold() {
 }
 
 @Composable
-fun SimpleScaffoldWithTopBar() {
+fun NoriaContext.SimpleScaffoldWithTopBar() {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(
@@ -160,7 +160,7 @@ fun SimpleScaffoldWithTopBar() {
 }
 
 @Composable
-fun ScaffoldWithBottomBarAndCutout() {
+fun NoriaContext.ScaffoldWithBottomBarAndCutout() {
     val scaffoldState = rememberScaffoldState()
 
     // Consider negative values to mean 'cut corner' and positive values to mean 'round corner'
@@ -228,7 +228,7 @@ fun ScaffoldWithBottomBarAndCutout() {
 }
 
 @Composable
-fun ScaffoldWithSimpleSnackbar() {
+fun NoriaContext.ScaffoldWithSimpleSnackbar() {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(
@@ -255,7 +255,7 @@ fun ScaffoldWithSimpleSnackbar() {
 }
 
 @Composable
-fun ScaffoldWithCustomSnackbar() {
+fun NoriaContext.ScaffoldWithCustomSnackbar() {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(

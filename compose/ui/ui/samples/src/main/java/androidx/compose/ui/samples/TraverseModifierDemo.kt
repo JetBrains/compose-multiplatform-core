@@ -265,7 +265,7 @@ fun traverseDescendantsDemo() {
  */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TraverseModifierDemo() {
+fun NoriaContext.TraverseModifierDemo() {
 
     // Normally, you probably don't want to maintain a reference to your Traversable Node. However,
     // we do here, so you can see what happens when you make calls from different nodes and see

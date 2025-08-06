@@ -175,7 +175,7 @@ class BaseTextFieldDefaultWidthTest {
 }
 
 @Composable
-private fun DefaultWidthTextField(
+private fun NoriaContext.DefaultWidthTextField(
     text: String,
     fontSize: TextUnit,
     modifier: Modifier,

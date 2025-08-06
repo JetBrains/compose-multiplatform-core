@@ -22,13 +22,14 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import kotlin.math.max
+import noria.NoriaContext
 
 /**
  * Selection is transparent in terms of measurement and layout and passes the same constraints to
  * the children.
  */
 @Composable
-internal fun SimpleLayout(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun NoriaContext.SimpleLayout(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         var width = 0
         var height = 0

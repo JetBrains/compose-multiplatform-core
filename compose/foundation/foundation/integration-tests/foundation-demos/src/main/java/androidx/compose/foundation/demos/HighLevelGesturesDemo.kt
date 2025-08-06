@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun HighLevelGesturesDemo() {
+fun NoriaContext.HighLevelGesturesDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         DraggableSample()
         Spacer(Modifier.height(50.dp))

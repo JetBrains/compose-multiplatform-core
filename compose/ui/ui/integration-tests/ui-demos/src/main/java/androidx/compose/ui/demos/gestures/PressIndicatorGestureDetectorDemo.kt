@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectTapGestures] demo for indication. */
 @Composable
-fun PressIndicatorGestureFilterDemo() {
+fun NoriaContext.PressIndicatorGestureFilterDemo() {
     val pressed = remember { mutableStateOf(false) }
 
     val onStart: (Offset) -> Unit = { pressed.value = true }

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import kotlin.jvm.JvmInline
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 //TODO: remove this file
 // when this will be in JB fork
@@ -46,9 +47,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun CommonContextMenuArea(
+internal fun NoriaContext.CommonContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
@@ -74,10 +75,10 @@ internal fun CommonContextMenuArea(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun CommonContextMenuArea(
+internal fun NoriaContext.CommonContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier =
@@ -127,7 +128,7 @@ internal fun CommonContextMenuArea(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun CommonContextMenuArea(manager: SelectionManager, content: @Composable () -> Unit) {
+internal fun NoriaContext.CommonContextMenuArea(manager: SelectionManager, content: @Composable NoriaContext.() -> Unit) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {

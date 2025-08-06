@@ -20,11 +20,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuDropdownProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import noria.NoriaContext
 
 @Composable
-internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
+internal actual fun NoriaContext.ProvideDefaultPlatformTextContextMenuProviders(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val dropdownDefined = LocalTextContextMenuDropdownProvider.current != null
     if (!dropdownDefined) {

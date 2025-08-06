@@ -5733,13 +5733,13 @@ private val TestHorizontalLine = HorizontalAlignmentLine(::min)
 private val TestVerticalLine = VerticalAlignmentLine(::min)
 
 @Composable
-private fun BaselineTestLayout(
+private fun NoriaContext.BaselineTestLayout(
     width: Dp,
     height: Dp,
     baseline: Dp,
     modifier: Modifier,
     horizontalLine: HorizontalAlignmentLine = TestHorizontalLine,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     Layout(
         content = content,
@@ -5761,7 +5761,7 @@ private fun BaselineTestLayout(
 
 // Center composable function is deprected whereas FlexTest tests heavily depend on it.
 @Composable
-private fun Center(content: @Composable () -> Unit) {
+private fun NoriaContext.Center(content: @Composable NoriaContext.() -> Unit) {
     Layout(content) { measurables, constraints ->
         val measurable = measurables.firstOrNull()
         // The child cannot be larger than our max constraints, but we ignore min constraints.

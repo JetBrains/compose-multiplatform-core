@@ -47,7 +47,7 @@ private val text = loremIpsum(wordCount = 50)
 private val modifier = Modifier.background(textBackgroundColor)
 
 @Composable
-fun SelectionPopupDemo() {
+fun NoriaContext.SelectionPopupDemo() {
     Box(modifier = Modifier.fillMaxSize().background(boxColor)) {
         Popup(alignment = Alignment.Center) {
             Column(

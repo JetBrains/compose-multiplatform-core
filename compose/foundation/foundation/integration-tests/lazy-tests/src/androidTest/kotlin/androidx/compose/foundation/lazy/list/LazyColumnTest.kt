@@ -623,12 +623,12 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
     }
 
     @Composable
-    private fun LazyRowWrapped(content: @Composable () -> Unit) {
+    private fun LazyRowWrapped(content: @Composable NoriaContext.() -> Unit) {
         LazyRow { items(count = 1) { content() } }
     }
 
     private fun ComposeContentTestRule.setContentWithTestViewConfiguration(
-        composable: @Composable () -> Unit
+        composable: @Composable NoriaContext.() -> Unit
     ) {
         this.setContent {
             if (useLookaheadScope) {

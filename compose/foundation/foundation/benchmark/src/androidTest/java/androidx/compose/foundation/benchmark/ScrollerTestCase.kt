@@ -99,7 +99,7 @@ class MouseWheelScrollerTestCase() : LayeredComposeTestCase(), ToggleableTestCas
 }
 
 @Composable
-private fun ColorStripes(step: Int, modifier: Modifier) {
+private fun NoriaContext.ColorStripes(step: Int, modifier: Modifier) {
     Column(modifier) {
         for (green in 0..0xFF step step) {
             ColorStripe(0xFF, green, 0)
@@ -123,7 +123,7 @@ private fun ColorStripes(step: Int, modifier: Modifier) {
 }
 
 @Composable
-private fun ColorStripe(red: Int, green: Int, blue: Int) {
+private fun NoriaContext.ColorStripe(red: Int, green: Int, blue: Int) {
     Canvas(Modifier.size(45.dp, 5.dp)) { drawRect(Color(red = red, green = green, blue = blue)) }
 }
 

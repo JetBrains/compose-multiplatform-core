@@ -60,7 +60,7 @@ fun CustomTreeComposition() {
     }
 
     // A function like the following could be created to create a composition provided a root Node.
-    fun Node.setContent(parent: CompositionContext, content: @Composable () -> Unit): Composition {
+    fun Node.setContent(parent: CompositionContext, content: @Composable NoriaContext.() -> Unit): Composition {
         return Composition(NodeApplier(this), parent).apply { setContent(content) }
     }
 
@@ -81,7 +81,7 @@ fun CustomTreeComposition() {
     }
 
     @Composable
-    fun Group(content: @Composable () -> Unit) {
+    fun Group(content: @Composable NoriaContext.() -> Unit) {
         ComposeNode<GroupNode, NodeApplier>(::GroupNode, {}, content)
     }
 

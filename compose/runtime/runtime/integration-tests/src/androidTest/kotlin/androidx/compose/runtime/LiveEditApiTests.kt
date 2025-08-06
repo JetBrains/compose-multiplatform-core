@@ -383,7 +383,7 @@ const val someFunctionKey = -1580285603 // Extracted from .class file
 var someFunctionInvoked = 0
 
 @Composable
-fun SomeFunction(a: Int) {
+fun NoriaContext.SomeFunction(a: Int) {
     Text("a = $a, someData = ${someData.value}")
     NestedContent()
     someFunctionInvoked++
@@ -393,7 +393,7 @@ const val nestedContentKey = 1771808426 // Extracted from .class file
 var nestedContentInvoked = 0
 
 @Composable
-fun NestedContent() {
+fun NoriaContext.NestedContent() {
     Text("Some nested content: ${someData.value}")
     nestedContentInvoked++
 }
@@ -413,7 +413,7 @@ var nonRestartWrapperInvoked = 0
 
 @Composable
 @NonRestartableComposable
-fun NonRestartWrapper(block: @Composable () -> Unit) {
+fun NonRestartWrapper(block: @Composable NoriaContext.() -> Unit) {
     Text("Before")
     block()
     Text("After")
@@ -424,7 +424,7 @@ const val restartableWrapperKey = -153795690 // Extracted from .class file
 var restartWrapperInvoked = 0
 
 @Composable
-fun RestartableWrapper(block: @Composable () -> Unit) {
+fun NoriaContext.RestartableWrapper(block: @Composable NoriaContext.() -> Unit) {
     Text("Before")
     block()
     Text("After")
@@ -442,23 +442,23 @@ fun ReadOnly() {
 
 // Test functions
 @Composable
-fun TestSimple() {
+fun NoriaContext.TestSimple() {
     Text("This is some text")
     SomeFunction(21)
 }
 
 @Composable
-fun TestNonRestartable() {
+fun NoriaContext.TestNonRestartable() {
     NonRestartable()
 }
 
 @Composable
-fun TestReadOnly() {
+fun NoriaContext.TestReadOnly() {
     ReadOnly()
 }
 
 @Composable
-fun TestReadOnlyNested() {
+fun NoriaContext.TestReadOnlyNested() {
     RestartableWrapper { ReadOnly() }
 }
 
@@ -466,7 +466,7 @@ private const val errorKey = -0x3d6d007a // Extracted from .class file
 private var errorInvoked = 0
 
 @Composable
-fun TestError(shouldThrow: () -> Boolean = { true }) {
+fun NoriaContext.TestError(shouldThrow: () -> Boolean = { true }) {
     errorInvoked++
 
     if (shouldThrow()) {
@@ -478,7 +478,7 @@ private const val effectErrorKey = -0x43852062 // Extracted from .class file
 private var effectErrorInvoked = 0
 
 @Composable
-fun TestEffectError(shouldThrow: () -> Boolean = { true }) {
+fun NoriaContext.TestEffectError(shouldThrow: () -> Boolean = { true }) {
     effectErrorInvoked++
 
     SideEffect {
@@ -491,7 +491,7 @@ fun TestEffectError(shouldThrow: () -> Boolean = { true }) {
 private var textInvoked = 0
 
 @Composable
-fun TestTextWError(text: String, shouldThrow: () -> Boolean = { true }) {
+fun NoriaContext.TestTextWError(text: String, shouldThrow: () -> Boolean = { true }) {
     textInvoked++
 
     Text(text)

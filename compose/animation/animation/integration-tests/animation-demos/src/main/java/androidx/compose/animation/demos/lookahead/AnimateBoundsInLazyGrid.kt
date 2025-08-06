@@ -43,7 +43,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun AnimateBoundsInLazyGrid() {
+fun NoriaContext.AnimateBoundsInLazyGrid() {
     val width by
         produceState(300.dp) {
             while (true) {

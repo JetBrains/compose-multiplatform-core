@@ -64,7 +64,7 @@ import kotlin.random.Random
 private val padding = 50.dp
 
 @Composable
-fun ExpandedTouchBoundsDemo() {
+fun NoriaContext.ExpandedTouchBoundsDemo() {
     LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
         item {
             Text(

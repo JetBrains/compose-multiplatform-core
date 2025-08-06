@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun UpdateFrameRateDemo() {
+fun NoriaContext.UpdateFrameRateDemo() {
     if (isArrEnabled) {
         val context = LocalContext.current
         val activity: Activity? = findOwner(context)

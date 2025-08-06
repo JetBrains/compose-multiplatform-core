@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun TextAccessibilityDemo() {
+fun NoriaContext.TextAccessibilityDemo() {
     Column {
         TagLine("Text to speech with different locales.")
         Text(

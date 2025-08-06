@@ -92,6 +92,7 @@ import javax.swing.UIManager
 import javax.swing.WindowConstants
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import noria.NoriaContext
 import org.jetbrains.skiko.hostOs
 
 val globalClicks = mutableStateOf(0)
@@ -200,7 +201,7 @@ fun actionButton(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun JPopupTextMenuProvider(owner: Component, content: @Composable () -> Unit) {
+fun NoriaContext.JPopupTextMenuProvider(owner: Component, content: @Composable NoriaContext.() -> Unit) {
     val localization = LocalLocalization.current
     CompositionLocalProvider(
         LocalTextContextMenu provides JPopupTextMenu(owner) { textManager, items ->
@@ -233,16 +234,16 @@ fun JPopupTextMenuProvider(owner: Component, content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CustomTextMenuProvider(content: @Composable () -> Unit) {
+fun NoriaContext.CustomTextMenuProvider(content: @Composable NoriaContext.() -> Unit) {
     val textMenu = LocalTextContextMenu.current
     val uriHandler = LocalUriHandler.current
     CompositionLocalProvider(
         LocalTextContextMenu provides object : TextContextMenu {
             @Composable
-            override fun Area(
+            override fun NoriaContext.Area(
                 textManager: TextContextMenu.TextManager,
                 state: ContextMenuState,
-                content: @Composable () -> Unit
+                content: @Composable NoriaContext.() -> Unit
             ) {
                 ContextMenuDataProvider({
                     val shortText = textManager.selectedText.crop()
@@ -291,7 +292,7 @@ private fun circleIcon(color: java.awt.Color) = object : Icon {
 }
 
 @Composable
-fun ComposeContent(background: Color = Color.White) {
+fun NoriaContext.ComposeContent(background: Color = Color.White) {
     val rememberClicks = remember { mutableStateOf(0) }
     val rememberSaveableClicks = rememberSaveable { mutableStateOf(0) }
     Box(
@@ -380,7 +381,7 @@ fun ComposableColoredPanel(color: Color): Component {
 }
 
 @Composable
-fun Counter(text: String, counter: MutableState<Int>) {
+fun NoriaContext.Counter(text: String, counter: MutableState<Int>) {
     Surface(
         modifier = Modifier.size(130.dp, 130.dp),
         color = Color(180, 180, 180),

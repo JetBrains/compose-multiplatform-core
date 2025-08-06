@@ -24,11 +24,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 
 @Composable
-internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? =
+internal actual fun NoriaContext.rememberPlatformOverscrollEffect(): OverscrollEffect? =
     rememberOverscrollEffect(applyClip = false)
 
 @Composable
-internal fun rememberOverscrollEffect(applyClip: Boolean): OverscrollEffect {
+internal fun NoriaContext.rememberOverscrollEffect(applyClip: Boolean): OverscrollEffect {
     val density = LocalDensity.current.density
 
     return remember(density) {

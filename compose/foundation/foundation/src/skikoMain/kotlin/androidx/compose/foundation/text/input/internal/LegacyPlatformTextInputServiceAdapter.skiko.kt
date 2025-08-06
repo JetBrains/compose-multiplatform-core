@@ -39,11 +39,12 @@ import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
 import kotlinx.coroutines.Job
+import noria.NoriaContext
 
 // TODO remove after https://youtrack.jetbrains.com/issue/COMPOSE-740/Implement-BasicTextField2
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal actual fun legacyTextInputServiceAdapterAndService():
+internal actual fun NoriaContext.legacyTextInputServiceAdapterAndService():
     Pair<LegacyPlatformTextInputServiceAdapter, TextInputService> {
     return remember {
         val adapter = object : LegacyPlatformTextInputServiceAdapter() {

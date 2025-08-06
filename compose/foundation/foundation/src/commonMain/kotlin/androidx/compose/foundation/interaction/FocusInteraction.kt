@@ -22,6 +22,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.collect
+import noria.NoriaContext
 
 // An interface, not a sealed class, to allow adding new types here in a safe way (and not break
 // exhaustive when clauses)
@@ -63,7 +64,7 @@ interface FocusInteraction : Interaction {
 @Composable
 fun InteractionSource.collectIsFocusedAsState(): State<Boolean> {
     val isFocused = remember { mutableStateOf(false) }
-    LaunchedEffect(this) {
+    NoriaContext.LaunchedEffect(this) {
         val focusInteractions = mutableListOf<FocusInteraction.Focus>()
         interactions.collect { interaction ->
             when (interaction) {

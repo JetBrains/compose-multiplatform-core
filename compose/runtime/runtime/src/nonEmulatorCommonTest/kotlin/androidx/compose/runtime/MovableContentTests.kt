@@ -496,7 +496,7 @@ class MovableContentTests {
 
         val tree = buildTree(6)
 
-        val contents = mutableMapOf<Node?, @Composable () -> Unit>()
+        val contents = mutableMapOf<Node?, @Composable NoriaContext.() -> Unit>()
         tree.forEach { node ->
             contents[node] = movableContentOf {
                 Marker(node.value)
@@ -784,7 +784,7 @@ class MovableContentTests {
         var someValue by mutableStateOf(0)
         val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
-        val parent = movableContentOf<@Composable () -> Unit> { child -> Wrap { child() } }
+        val parent = movableContentOf<@Composable NoriaContext.() -> Unit> { child -> Wrap { child() } }
 
         val child = movableContentOf {
             Text("Local = ${local.current}")
@@ -1335,8 +1335,8 @@ class MovableContentTests {
     fun movableContentOfTheSameFunctionShouldHaveStableKeys() = compositionTest {
         val hashList1 = mutableListOf<CompositeKeyHashCode>()
         val hashList2 = mutableListOf<CompositeKeyHashCode>()
-        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHashCode) }
-        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHashCode) }
+        val composable1: @Composable NoriaContext.() -> Unit = { hashList1.add(currentCompositeKeyHashCode) }
+        val composable2: @Composable NoriaContext.() -> Unit = { hashList2.add(currentCompositeKeyHashCode) }
         val movableContent1A = movableContentOf(composable1)
         val movableContent1B = movableContentOf(composable1)
         val movableContent2A = movableContentOf(composable2)
@@ -1810,7 +1810,7 @@ class MovableContentTests {
 }
 
 @Composable
-private fun Row(content: @Composable () -> Unit) {
+private fun NoriaContext.Row(content: @Composable NoriaContext.() -> Unit) {
     ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Row" } }, update = {}) {
         content()
     }
@@ -1821,7 +1821,7 @@ private fun MockViewValidator.Row(block: MockViewValidator.() -> Unit) {
 }
 
 @Composable
-private fun Column(content: @Composable () -> Unit) {
+private fun NoriaContext.Column(content: @Composable NoriaContext.() -> Unit) {
     ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Column" } }, update = {}) {
         content()
     }
@@ -1834,7 +1834,7 @@ private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
 }
 
 @Composable
-private fun Text(text: String) {
+private fun NoriaContext.Text(text: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Text" } },
         update = { set(text) { attributes["text"] = it } },
@@ -1847,7 +1847,7 @@ private fun MockViewValidator.Text(text: String) {
 }
 
 @Composable
-private fun Marker() {
+private fun NoriaContext.Marker() {
     ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Marker" } }, update = {})
 }
 
@@ -1856,7 +1856,7 @@ private fun MockViewValidator.Marker() {
 }
 
 @Composable
-private fun Marker(value: Int) {
+private fun NoriaContext.Marker(value: Int) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Marker" } },
         update = { set(value) { attributes["value"] = it } },
@@ -1864,7 +1864,7 @@ private fun Marker(value: Int) {
 }
 
 @Composable
-private fun Stack(isHorizontal: Boolean, block: @Composable () -> Unit) {
+private fun NoriaContext.Stack(isHorizontal: Boolean, block: @Composable NoriaContext.() -> Unit) {
     if (isHorizontal) {
         Column(block)
     } else {
@@ -1881,7 +1881,7 @@ private fun MockViewValidator.Stack(isHorizontal: Boolean, block: MockViewValida
 }
 
 @Composable
-private fun DisplayInt(value: State<Int>) {
+private fun NoriaContext.DisplayInt(value: State<Int>) {
     Text("value=${value.value}")
 }
 
@@ -1895,7 +1895,7 @@ private fun MockViewValidator.Marker(value: Int) {
 }
 
 @Composable
-private fun Subcompose(content: @Composable () -> Unit) {
+private fun NoriaContext.Subcompose(content: @Composable NoriaContext.() -> Unit) {
     val host = View().also { it.name = "SubcomposeHost" }
     ComposeNode<View, ViewApplier>(factory = { host }, update = {})
     val parent = rememberCompositionContext()
@@ -1905,7 +1905,7 @@ private fun Subcompose(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun DeferredSubcompose(content: @Composable () -> Unit) {
+private fun NoriaContext.DeferredSubcompose(content: @Composable NoriaContext.() -> Unit) {
     val host = View().also { it.name = "DeferredSubcompose" }
     ComposeNode<View, ViewApplier>(factory = { host }, update = {})
     val parent = rememberCompositionContext()

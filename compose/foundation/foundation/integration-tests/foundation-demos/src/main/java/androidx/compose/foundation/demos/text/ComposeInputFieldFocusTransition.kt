@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun TextFieldFocusTransition() {
+fun NoriaContext.TextFieldFocusTransition() {
     val focusRequesters = remember { List(6) { FocusRequester() } }
 
     LazyColumn {
@@ -51,7 +51,7 @@ fun TextFieldFocusTransition() {
 }
 
 @Composable
-private fun TextFieldWithFocusRequesters(
+private fun NoriaContext.TextFieldWithFocusRequesters(
     focusRequester: FocusRequester,
     nextFocusRequester: FocusRequester,
 ) {

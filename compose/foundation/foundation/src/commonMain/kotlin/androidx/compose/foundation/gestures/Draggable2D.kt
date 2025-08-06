@@ -32,6 +32,7 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Velocity
 import kotlinx.coroutines.coroutineScope
+import noria.NoriaContext
 
 /**
  * State of Draggable2D. Allows for granular control of how deltas are consumed by the user as well
@@ -104,7 +105,7 @@ fun Draggable2DState(onDelta: (Offset) -> Unit): Draggable2DState = DefaultDragg
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
 @Composable
-fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
+fun NoriaContext.rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
     val onDeltaState = rememberUpdatedState(onDelta)
     return remember { Draggable2DState { onDeltaState.value.invoke(it) } }
 }

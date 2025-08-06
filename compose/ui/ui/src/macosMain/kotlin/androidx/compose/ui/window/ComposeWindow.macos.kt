@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import noria.NoriaContext
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -66,7 +67,7 @@ import platform.AppKit.NSWindowStyleMaskResizable
 import platform.AppKit.NSWindowStyleMaskTitled
 import platform.Foundation.NSMakeRect
 
-interface WindowScope {
+interface WindowScope : NoriaContext {
     /**
      * [NSWindow] that was created inside [androidx.compose.ui.window.Window]
      */
@@ -218,7 +219,7 @@ private class ComposeWindow(
         scene.density = Density(window.backingScaleFactor.toFloat())
         scene.setContent {
             CompositionLocalProvider(
-                LocalLifecycleOwner provides this
+                LocalLifecycleOwner provides this@ComposeWindow
             ) {
                 content()
             }

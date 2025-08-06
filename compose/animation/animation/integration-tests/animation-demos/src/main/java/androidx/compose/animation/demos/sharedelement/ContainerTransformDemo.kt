@@ -76,7 +76,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun ContainerTransformDemo(model: MyModel = remember { MyModel().apply { selected = items[1] } }) {
+fun NoriaContext.ContainerTransformDemo(model: MyModel = remember { MyModel().apply { selected = items[1] } }) {
     BackHandler { model.selected = null }
     SharedTransitionLayout {
         AnimatedContent(
@@ -105,7 +105,7 @@ fun ContainerTransformDemo(model: MyModel = remember { MyModel().apply { selecte
 }
 
 @Composable
-fun Details(
+fun NoriaContext.Details(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     kitty: Kitty,
@@ -204,7 +204,7 @@ fun Details(
 }
 
 @Composable
-fun DetailView(
+fun NoriaContext.DetailView(
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     model: MyModel,
@@ -264,7 +264,7 @@ fun DetailView(
 }
 
 @Composable
-fun GridView(
+fun NoriaContext.GridView(
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     model: MyModel,
@@ -313,7 +313,7 @@ class MyModel {
 }
 
 @Composable
-fun KittyItem(
+fun NoriaContext.KittyItem(
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     kitty: Kitty,

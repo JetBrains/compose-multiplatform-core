@@ -162,7 +162,7 @@ class ScrollableTest {
 
     private lateinit var scope: CoroutineScope
 
-    private fun ComposeContentTestRule.setContentAndGetScope(content: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setContentAndGetScope(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             val actualScope = rememberCoroutineScope()
             SideEffect { scope = actualScope }
@@ -3359,7 +3359,7 @@ class ScrollableTest {
         }
     }
 
-    private fun setScrollableContent(scrollableModifierFactory: @Composable () -> Modifier) {
+    private fun setScrollableContent(scrollableModifierFactory: @Composable NoriaContext.() -> Modifier) {
         rule.setContentAndGetScope {
             Box {
                 val scrollable = scrollableModifierFactory()

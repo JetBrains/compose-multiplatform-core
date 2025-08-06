@@ -231,7 +231,7 @@ private data class TraceResult(
     val markers: MutableIntObjectMap<CompositeKeyHashCode>,
 )
 
-private fun CompositionTestScope.composeTrace(content: @Composable () -> Unit): TraceResult {
+private fun CompositionTestScope.composeTrace(content: @Composable NoriaContext.() -> Unit): TraceResult {
     hashTrace = mutableListOf()
     markerToHash = MutableIntObjectMap()
     compose(content)
@@ -261,12 +261,12 @@ private fun CompositionTestScope.retraceConsistentWith(
     }
 }
 
-private fun CompositionTestScope.expectUniqueHashCodes(content: @Composable () -> Unit) =
+private fun CompositionTestScope.expectUniqueHashCodes(content: @Composable NoriaContext.() -> Unit) =
     expectHashCodes(duplicateCount = 0, content)
 
 private fun CompositionTestScope.expectHashCodes(
     duplicateCount: Int,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ): IntObjectMap<CompositeKeyHashCode> {
     val (hashCodes, markers) = composeTrace(content)
     val uniqueCodes = hashCodes.distinct()
@@ -317,7 +317,7 @@ private fun IntObjectMap<CompositeKeyHashCode>.mergedWith(
 }
 
 @Composable
-private fun A(marker: Int = remember { newMarker() }) {
+private fun NoriaContext.A(marker: Int = remember { newMarker() }) {
     hashTraceRecomposeState.value
     val hash = currentCompositeKeyHashCode
     hashTrace.add(hash)
@@ -325,14 +325,14 @@ private fun A(marker: Int = remember { newMarker() }) {
 }
 
 @Composable
-private fun B() {
+private fun NoriaContext.B() {
     A()
     A()
     A()
 }
 
 @Composable
-private fun C(condition: Boolean) {
+private fun NoriaContext.C(condition: Boolean) {
     val one = remember { newMarker() }
     val two = remember { newMarker() }
     val three = remember { newMarker() }

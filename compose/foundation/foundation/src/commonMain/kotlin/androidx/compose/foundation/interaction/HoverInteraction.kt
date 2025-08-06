@@ -22,6 +22,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.collect
+import noria.NoriaContext
 
 // An interface, not a sealed class, to allow adding new types here in a safe way (and not break
 // exhaustive when clauses)
@@ -63,7 +64,7 @@ interface HoverInteraction : Interaction {
 @Composable
 fun InteractionSource.collectIsHoveredAsState(): State<Boolean> {
     val isHovered = remember { mutableStateOf(false) }
-    LaunchedEffect(this) {
+    NoriaContext.LaunchedEffect(this) {
         val hoverInteractions = mutableListOf<HoverInteraction.Enter>()
         interactions.collect { interaction ->
             when (interaction) {

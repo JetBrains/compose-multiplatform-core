@@ -53,7 +53,7 @@ val SnappingDemos =
     )
 
 @Composable
-internal fun SnappingDemoMainLayout(
+internal fun NoriaContext.SnappingDemoMainLayout(
     lazyListState: LazyListState,
     flingBehavior: FlingBehavior,
     contentPaddingValues: PaddingValues = PaddingValues(8.dp),
@@ -75,7 +75,7 @@ internal fun SnappingDemoMainLayout(
 }
 
 @Composable
-internal fun DefaultSnapDemoItem(position: Int) {
+internal fun NoriaContext.DefaultSnapDemoItem(position: Int) {
     Box(
         modifier =
             Modifier.width(200.dp)
@@ -93,7 +93,7 @@ internal fun DefaultSnapDemoItem(position: Int) {
 }
 
 @Composable
-internal fun ResizableSnapDemoItem(width: Dp, height: Dp, position: Int) {
+internal fun NoriaContext.ResizableSnapDemoItem(width: Dp, height: Dp, position: Int) {
     Box(
         modifier =
             Modifier.width(width)

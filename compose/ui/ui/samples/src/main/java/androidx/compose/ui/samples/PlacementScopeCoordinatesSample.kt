@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.round
 
 @Sampled
 @Composable
-fun PlacementScopeCoordinatesSample() {
+fun NoriaContext.PlacementScopeCoordinatesSample() {
     // Layout so that the first item consumes to half of the width of the screen, if possible.
     // The remainder of the layouts are positioned horizontally in the remaining space.
     @Composable

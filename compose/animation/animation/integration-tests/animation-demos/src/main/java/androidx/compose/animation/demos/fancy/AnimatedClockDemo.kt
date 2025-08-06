@@ -62,7 +62,7 @@ private class Time(hours: State<Int>, minutes: State<Int>, seconds: State<Int>) 
 
 @Preview
 @Composable
-fun AnimatedClockDemo() {
+fun NoriaContext.AnimatedClockDemo() {
     val calendar = remember { Calendar.getInstance() }
     val seconds = remember { mutableIntStateOf(calendar[Calendar.SECOND]) }
     val minutes = remember { mutableIntStateOf(calendar[Calendar.MINUTE]) }

@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectDragGesturesAfterLongPress] demo. */
 @Composable
-fun LongPressDragGestureFilterDemo() {
+fun NoriaContext.LongPressDragGestureFilterDemo() {
 
     val offset = remember { mutableStateOf(Offset.Zero) }
     val color = remember { mutableStateOf(Grey) }

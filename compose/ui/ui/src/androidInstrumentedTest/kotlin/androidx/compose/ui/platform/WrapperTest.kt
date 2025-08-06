@@ -41,7 +41,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @Composable
-private fun Wrapper(body: @Composable () -> Unit) {
+private fun NoriaContext.Wrapper(body: @Composable () -> Unit) {
     body()
 }
 

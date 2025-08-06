@@ -477,7 +477,7 @@ private fun espressoSwipe(
 }
 
 @Composable
-fun TestComposeDraggable(
+fun NoriaContext.TestComposeDraggable(
     twoDimensional: Boolean = false,
     onDragStopped: (velocity: Velocity) -> Unit,
 ) {

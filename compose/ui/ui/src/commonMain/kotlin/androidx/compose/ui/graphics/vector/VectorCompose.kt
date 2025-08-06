@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import noria.NoriaContext
 
 /**
  * Defines a group of [Path]s and other [Group]s inside a [VectorPainter]. This is not a regular UI
@@ -44,7 +45,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
  */
 @Composable
 @VectorComposable
-fun Group(
+fun NoriaContext.Group(
     name: String = DefaultGroupName,
     rotation: Float = DefaultRotation,
     pivotX: Float = DefaultPivotX,
@@ -97,7 +98,7 @@ fun Group(
  */
 @Composable
 @VectorComposable
-fun Path(
+fun NoriaContext.Path(
     pathData: List<PathNode>,
     pathFillType: PathFillType = DefaultFillType,
     name: String = DefaultPathName,

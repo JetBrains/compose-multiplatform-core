@@ -40,7 +40,7 @@ import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun LazyColumnDemo() {
+fun NoriaContext.LazyColumnDemo() {
     if (isArrEnabled) {
         val context = LocalContext.current
         val activity: Activity? = findOwner(context)
@@ -68,7 +68,7 @@ fun LazyColumnDemo() {
 }
 
 @Composable
-private fun AlphaButton(frameRate: Float) {
+private fun NoriaContext.AlphaButton(frameRate: Float) {
     var targetAlpha by remember { mutableFloatStateOf(1f) }
     val alpha by
         animateFloatAsState(targetValue = targetAlpha, animationSpec = tween(durationMillis = 5000))

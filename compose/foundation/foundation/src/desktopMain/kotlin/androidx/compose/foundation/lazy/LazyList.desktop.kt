@@ -17,5 +17,6 @@
 package androidx.compose.foundation.lazy
 
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
-@Composable internal actual fun defaultLazyListBeyondBoundsItemCount(): Int = 0
+@Composable internal actual fun NoriaContext.defaultLazyListBeyondBoundsItemCount(): Int = 0

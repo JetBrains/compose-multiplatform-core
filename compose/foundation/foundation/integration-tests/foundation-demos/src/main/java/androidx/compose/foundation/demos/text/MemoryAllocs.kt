@@ -44,7 +44,7 @@ private val style = TextStyle.Default
  * Emulate recompose when string loads
  */
 @Composable
-fun MemoryAllocsSetText() {
+fun NoriaContext.MemoryAllocsSetText() {
     Column {
         Preamble(
             """
@@ -65,7 +65,7 @@ fun MemoryAllocsSetText() {
  * Emulate calling text when string loads
  */
 @Composable
-fun MemoryAllocsIfNotEmptyText() {
+fun NoriaContext.MemoryAllocsIfNotEmptyText() {
     Column {
         Preamble(
             """
@@ -82,7 +82,7 @@ fun MemoryAllocsIfNotEmptyText() {
 }
 
 @Composable
-fun MemoryAllocsLazyList() {
+fun NoriaContext.MemoryAllocsLazyList() {
     val states = produceLazyListReuseDriver()
     Column {
         Preamble(
@@ -97,7 +97,7 @@ fun MemoryAllocsLazyList() {
 }
 
 @Composable
-fun Preamble(sourceCode: String) {
+fun NoriaContext.Preamble(sourceCode: String) {
     Text("Run in memory profiler to emulate text behavior during observable loads")
     Text(
         text = sourceCode,
@@ -111,14 +111,14 @@ fun Preamble(sourceCode: String) {
 }
 
 @Composable
-fun IfNotEmptyText(text: State<String>) {
+fun NoriaContext.IfNotEmptyText(text: State<String>) {
     if (text.value.isNotEmpty()) {
         Text(text.value, style = style)
     }
 }
 
 @Composable
-fun LazyListReuse(active: State<Pair<Boolean, Int>>) {
+fun NoriaContext.LazyListReuse(active: State<Pair<Boolean, Int>>) {
     // this emulates what a LazyList does during reuse
     ReusableContentHost(active.value.first) {
         ReusableContent(active.value.second) {
@@ -128,12 +128,12 @@ fun LazyListReuse(active: State<Pair<Boolean, Int>>) {
 }
 
 @Composable
-private fun SetText(text: State<String>) {
+private fun NoriaContext.SetText(text: State<String>) {
     Text(text.value, style = style)
 }
 
 @Composable
-private fun textToggler(): State<String> =
+private fun NoriaContext.textToggler(): State<String> =
     produceState("") {
         while (true) {
             withFrameMillis {
@@ -148,7 +148,7 @@ private fun textToggler(): State<String> =
     }
 
 @Composable
-fun produceLazyListReuseDriver(): State<Pair<Boolean, Int>> =
+fun NoriaContext.produceLazyListReuseDriver(): State<Pair<Boolean, Int>> =
     produceState(false to 0) {
         while (true) {
             withFrameMillis {

@@ -561,7 +561,7 @@ class ScrollableFocusableInteractionTest(
         rule.runOnIdle { assertThat(scrollState.value).isEqualTo(100) }
     }
 
-    private fun ComposeContentTestRule.setContentForTest(composable: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setContentForTest(composable: @Composable NoriaContext.() -> Unit) {
         setContent {
             focusManager = LocalFocusManager.current
             composable()
@@ -569,7 +569,7 @@ class ScrollableFocusableInteractionTest(
     }
 
     @Composable
-    private fun ScrollableRowOrColumn(size: Dp, content: @Composable () -> Unit) {
+    private fun ScrollableRowOrColumn(size: Dp, content: @Composable NoriaContext.() -> Unit) {
         val modifier = Modifier.testTag(scrollableAreaTag).size(size).border(2.toDp(), Color.Black)
 
         when (orientation) {
@@ -600,7 +600,7 @@ class ScrollableFocusableInteractionTest(
 
     /** Places a spacer before or after [content], depending on [reverseScrolling]. */
     @Composable
-    fun WithSpacerBefore(size: Dp, content: @Composable () -> Unit) {
+    fun WithSpacerBefore(size: Dp, content: @Composable NoriaContext.() -> Unit) {
         if (!reverseScrolling) {
             Spacer(Modifier.size(size))
         }

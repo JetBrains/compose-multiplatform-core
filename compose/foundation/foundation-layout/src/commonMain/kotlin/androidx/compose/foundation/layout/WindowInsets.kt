@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.js.JsName
+import noria.NoriaContext
 
 /**
  * A representation of window insets that tracks access to enable recomposition, relayout, and
@@ -55,6 +56,20 @@ interface WindowInsets {
     fun getBottom(density: Density): Int
 
     companion object
+
+    /**
+     * Convert a [WindowInsets] to a [PaddingValues] and uses [LocalDensity] for DP to pixel conversion.
+     * [PaddingValues] can be passed to some containers to pad internal content so that it doesn't
+     * overlap the insets when fully scrolled. Ensure that the insets are
+     * [consumed][consumeWindowInsets] after the padding is applied if insets are to be used further
+     * down the hierarchy.
+     *
+     * @sample androidx.compose.foundation.layout.samples.paddingValuesSample
+     */
+    @ReadOnlyComposable
+    @Composable
+    fun NoriaContext.asPaddingValues(): PaddingValues =
+        InsetsPaddingValues(this@WindowInsets, LocalDensity.current)
 }
 
 /**
@@ -207,19 +222,6 @@ fun WindowInsets.add(insets: WindowInsets): WindowInsets = AddedInsets(this, ins
  * example, to have a [WindowInsets] at the bottom of the screen, pass [WindowInsetsSides.Bottom].
  */
 fun WindowInsets.only(sides: WindowInsetsSides): WindowInsets = LimitInsets(this, sides)
-
-/**
- * Convert a [WindowInsets] to a [PaddingValues] and uses [LocalDensity] for DP to pixel conversion.
- * [PaddingValues] can be passed to some containers to pad internal content so that it doesn't
- * overlap the insets when fully scrolled. Ensure that the insets are
- * [consumed][consumeWindowInsets] after the padding is applied if insets are to be used further
- * down the hierarchy.
- *
- * @sample androidx.compose.foundation.layout.samples.paddingValuesSample
- */
-@ReadOnlyComposable
-@Composable
-fun WindowInsets.asPaddingValues(): PaddingValues = InsetsPaddingValues(this, LocalDensity.current)
 
 /**
  * Convert a [WindowInsets] to a [PaddingValues] and uses [density] for DP to pixel conversion.

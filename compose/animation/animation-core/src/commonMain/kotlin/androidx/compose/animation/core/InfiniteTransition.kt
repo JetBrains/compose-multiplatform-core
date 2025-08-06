@@ -30,6 +30,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.flow.first
+import noria.NoriaContext
 
 /**
  * Creates a [InfiniteTransition] that runs infinite child animations. Child animations can be added
@@ -42,9 +43,9 @@ import kotlinx.coroutines.flow.first
  * @sample androidx.compose.animation.core.samples.InfiniteTransitionSample
  */
 @Composable
-public fun rememberInfiniteTransition(label: String = "InfiniteTransition"): InfiniteTransition {
+public fun NoriaContext.rememberInfiniteTransition(label: String = "InfiniteTransition"): InfiniteTransition {
     val infiniteTransition = remember { InfiniteTransition(label) }
-    infiniteTransition.run()
+    infiniteTransition.run { run() }
     return infiniteTransition
 }
 
@@ -162,7 +163,7 @@ public class InfiniteTransition internal constructor(public val label: String) {
 
     @Suppress("ComposableNaming")
     @Composable
-    internal fun run() {
+    internal fun NoriaContext.run() {
         val toolingOverride = remember { mutableStateOf<State<Long>?>(null) }
         if (isRunning || refreshChildNeeded) {
             LaunchedEffect(this) {
@@ -248,7 +249,7 @@ public fun <T, V : AnimationVector> InfiniteTransition.animateValue(
         TransitionAnimationState(initialValue, targetValue, typeConverter, animationSpec, label)
     }
 
-    SideEffect {
+    NoriaContext.SideEffect {
         if (
             initialValue != transitionAnimation.initialValue ||
                 targetValue != transitionAnimation.targetValue
@@ -261,7 +262,7 @@ public fun <T, V : AnimationVector> InfiniteTransition.animateValue(
         }
     }
 
-    DisposableEffect(transitionAnimation) {
+    NoriaContext.DisposableEffect(transitionAnimation) {
         addAnimation(transitionAnimation)
         onDispose { removeAnimation(transitionAnimation) }
     }
@@ -301,7 +302,7 @@ public fun InfiniteTransition.animateFloat(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun rememberInfiniteTransition(): InfiniteTransition {
+public fun NoriaContext.rememberInfiniteTransition(): InfiniteTransition {
     return rememberInfiniteTransition("InfiniteTransition")
 }
 

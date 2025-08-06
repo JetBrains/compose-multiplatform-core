@@ -154,7 +154,7 @@ class CompositionInstanceTests {
 }
 
 @Composable
-internal fun TestSubcomposition(content: @Composable () -> Unit) {
+internal fun NoriaContext.TestSubcomposition(content: @Composable NoriaContext.() -> Unit) {
     val parentRef = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     DisposableEffect(parentRef) {
@@ -171,6 +171,6 @@ internal fun TestSubcomposition(content: @Composable () -> Unit) {
     }
 }
 
-private fun callSetContent(composition: Composition, content: @Composable () -> Unit) {
+private fun callSetContent(composition: Composition, content: @Composable NoriaContext.() -> Unit) {
     composition.setContent(content)
 }

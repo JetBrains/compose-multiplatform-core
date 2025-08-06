@@ -90,7 +90,7 @@ abstract class AbstractInteropDemoFragment(val interopOn: Boolean) :
 }
 
 @Composable
-fun ItemRow(index: Int, state: LazyListState) {
+fun NoriaContext.ItemRow(index: Int, state: LazyListState) {
     DisposableEffect(Unit) {
         println("ItemRow $index composed")
 

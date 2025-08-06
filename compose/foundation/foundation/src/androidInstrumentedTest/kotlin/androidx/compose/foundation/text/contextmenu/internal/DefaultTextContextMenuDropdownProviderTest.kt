@@ -397,8 +397,8 @@ class DefaultTextContextMenuDropdownProviderTest {
      * @param testBlock actions and assertions to run after the content is set
      */
     private fun runTest(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
-        innerContent: @Composable () -> Unit = { Box(Modifier.fillMaxSize()) },
+        outerContent: @Composable (content: @Composable NoriaContext.() -> Unit) -> Unit = { it() },
+        innerContent: @Composable NoriaContext.() -> Unit = { Box(Modifier.fillMaxSize()) },
         testBlock: TestScope.() -> Unit,
     ) {
         lateinit var provider: TextContextMenuProvider

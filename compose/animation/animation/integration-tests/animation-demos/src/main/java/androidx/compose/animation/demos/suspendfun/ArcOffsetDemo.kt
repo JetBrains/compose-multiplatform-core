@@ -58,7 +58,7 @@ import kotlinx.coroutines.flow.collectLatest
 @OptIn(ExperimentalAnimationSpecApi::class)
 @Preview
 @Composable
-fun ArcOffsetDemo() {
+fun NoriaContext.ArcOffsetDemo() {
     val animOffset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
     val points = remember { mutableStateListOf<Offset>() }
     val target = remember { MutableStateFlow(Offset.Unspecified) }

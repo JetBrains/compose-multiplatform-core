@@ -62,7 +62,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipboardDemo() {
+fun NoriaContext.ClipboardDemo() {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
@@ -146,7 +146,7 @@ fun ClipboardDemo() {
 }
 
 @Composable
-fun UriImage(uri: Uri, modifier: Modifier = Modifier) {
+fun NoriaContext.UriImage(uri: Uri, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val imageBitmap by
         produceState<ImageBitmap?>(null, uri) {
@@ -159,7 +159,7 @@ fun UriImage(uri: Uri, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ImagePlaceholder() {
+fun NoriaContext.ImagePlaceholder() {
     Box(
         modifier =
             Modifier.size(200.dp).drawBehind {

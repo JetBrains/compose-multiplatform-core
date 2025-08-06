@@ -39,7 +39,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun LookaheadWithAnimateItem() {
+fun NoriaContext.LookaheadWithAnimateItem() {
     val visible by
         produceState(true) {
             while (true) {

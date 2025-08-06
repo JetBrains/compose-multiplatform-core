@@ -148,7 +148,7 @@ internal fun ProvideAndroidCompositionLocals(
 
 @Stable
 @Composable
-private fun obtainResourceIdCache(context: Context): ResourceIdCache {
+private fun NoriaContext.obtainResourceIdCache(context: Context): ResourceIdCache {
     val resourceIdCache = remember { ResourceIdCache() }
     val callbacks = remember {
         object : ComponentCallbacks2 {
@@ -175,7 +175,7 @@ private fun obtainResourceIdCache(context: Context): ResourceIdCache {
 
 @Stable
 @Composable
-private fun obtainImageVectorCache(
+private fun NoriaContext.obtainImageVectorCache(
     context: Context,
     configuration: Configuration?,
 ): ImageVectorCache {

@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SimpleNavigationWithSaveableStateSample() {
+fun NoriaContext.SimpleNavigationWithSaveableStateSample() {
     @Composable
     fun <T : Any> Navigation(
         currentScreen: T,
@@ -73,18 +73,18 @@ fun SimpleNavigationWithSaveableStateSample() {
 }
 
 @Composable
-fun Screen1() {
+fun NoriaContext.Screen1() {
     var counter by rememberSaveable { mutableStateOf(0) }
     Button(onClick = { counter++ }) { Text("Counter=$counter on Screen1") }
 }
 
 @Composable
-fun Screen2() {
+fun NoriaContext.Screen2() {
     Text("Screen2")
 }
 
 @Composable
-fun Button(modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
+fun NoriaContext.Button(modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable NoriaContext.() -> Unit) {
     Box(
         modifier
             .clickable(onClick = onClick)

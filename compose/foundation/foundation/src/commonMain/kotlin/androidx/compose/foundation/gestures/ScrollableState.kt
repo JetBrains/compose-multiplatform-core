@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.coroutineScope
+import noria.NoriaContext
 
 /**
  * An object representing something that can be scrolled. This interface is implemented by states of
@@ -157,7 +158,7 @@ fun ScrollableState(consumeScrollDelta: (Float) -> Float): ScrollableState {
  *   amount of delta consumed
  */
 @Composable
-fun rememberScrollableState(consumeScrollDelta: (Float) -> Float): ScrollableState {
+fun NoriaContext.rememberScrollableState(consumeScrollDelta: (Float) -> Float): ScrollableState {
     val lambdaState = rememberUpdatedState(consumeScrollDelta)
     return remember { ScrollableState { lambdaState.value.invoke(it) } }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import noria.NoriaContext
 
 /**
  * This class represents platform insets.
@@ -93,34 +94,34 @@ internal fun lerp(start: PlatformInsets, stop: PlatformInsets, fraction: Float) 
 internal interface InsetsConfig {
 
     // TODO: Add more granular control. Look at Android's [WindowInsetsCompat]
-    val safeInsets: PlatformInsets
+    val NoriaContext.safeInsets: PlatformInsets
         @Composable get
 
-    val ime: PlatformInsets
+    val NoriaContext.ime: PlatformInsets
         @Composable get
 
     // Don't make it public, it should be implementation details for creating new root layout nodes.
     // TODO: Ensure encapsulation and proper control flow during refactoring [Owner]s
     @Composable
-    fun excludeInsets(
+    fun NoriaContext.excludeInsets(
         safeInsets: Boolean,
         ime: Boolean,
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     )
 }
 
 internal object ZeroInsetsConfig : InsetsConfig {
-    override val safeInsets: PlatformInsets
+    override val NoriaContext.safeInsets: PlatformInsets
         @Composable get() = PlatformInsets.Zero
 
-    override val ime: PlatformInsets
+    override val NoriaContext.ime: PlatformInsets
         @Composable get() = PlatformInsets.Zero
 
     @Composable
-    override fun excludeInsets(
+    override fun NoriaContext.excludeInsets(
         safeInsets: Boolean,
         ime: Boolean,
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     ) {
         content()
     }

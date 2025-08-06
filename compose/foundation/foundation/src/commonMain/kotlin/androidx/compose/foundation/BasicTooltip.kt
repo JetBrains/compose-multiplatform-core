@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import noria.NoriaContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -71,14 +72,14 @@ import kotlinx.coroutines.withTimeout
  */
 @Composable
 @ExperimentalFoundationApi
-fun BasicTooltipBox(
+fun NoriaContext.BasicTooltipBox(
     positionProvider: PopupPositionProvider,
-    tooltip: @Composable () -> Unit,
+    tooltip: @Composable NoriaContext.() -> Unit,
     state: BasicTooltipState,
     modifier: Modifier = Modifier,
     focusable: Boolean = true,
     enableUserInput: Boolean = true,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     Box {
@@ -105,14 +106,14 @@ fun BasicTooltipBox(
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-private fun WrappedAnchor(
+private fun NoriaContext.WrappedAnchor(
     enableUserInput: Boolean,
     state: BasicTooltipState,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val longPressLabel = BasicTooltipStrings.label()
+    val longPressLabel = BasicTooltipStrings.run { label() }
     Box(
         modifier =
             modifier
@@ -125,14 +126,14 @@ private fun WrappedAnchor(
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-private fun TooltipPopup(
+private fun NoriaContext.TooltipPopup(
     positionProvider: PopupPositionProvider,
     state: BasicTooltipState,
     scope: CoroutineScope,
     focusable: Boolean,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
-    val tooltipDescription = BasicTooltipStrings.description()
+    val tooltipDescription = BasicTooltipStrings.run { description() }
     Popup(
         popupPositionProvider = positionProvider,
         onDismissRequest = {
@@ -239,7 +240,7 @@ private fun Modifier.anchorSemantics(
  */
 @Composable
 @ExperimentalFoundationApi
-fun rememberBasicTooltipState(
+fun NoriaContext.rememberBasicTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
     mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
@@ -384,7 +385,7 @@ object BasicTooltipDefaults {
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 internal expect object BasicTooltipStrings {
-    @Composable fun label(): String
+    @Composable fun NoriaContext.label(): String
 
-    @Composable fun description(): String
+    @Composable fun NoriaContext.description(): String
 }

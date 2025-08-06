@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MultiButtonsWithLoggingUsingOnClick() {
+fun NoriaContext.MultiButtonsWithLoggingUsingOnClick() {
     var output by remember { mutableStateOf("") }
 
     val context = LocalContext.current
@@ -70,7 +70,7 @@ fun MultiButtonsWithLoggingUsingOnClick() {
 }
 
 @Composable
-fun MultiButtonsWithLoggingUsingPointerInput() {
+fun NoriaContext.MultiButtonsWithLoggingUsingPointerInput() {
     var output by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize()) {

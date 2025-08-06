@@ -29,9 +29,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -44,29 +44,31 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
         return this
     }
 
-    return composed {
-        val density = LocalDensity.current
-        var magnifierSize by remember { mutableStateOf(IntSize.Zero) }
+    return noriaComposed { noriaContext ->
+        noriaContext.run {
+            val density = LocalDensity.current
+            var magnifierSize by remember { mutableStateOf(IntSize.Zero) }
 
-        val color = LocalTextSelectionColors.current
+            val color = LocalTextSelectionColors.current
 
-        magnifier(
-            sourceCenter = {
-                // Don't animate position as it is automatically animated by the framework
-                calculateSelectionMagnifierCenterIOS(
-                    manager = manager,
-                    magnifierSize = magnifierSize,
-                    density = density.density
-                )
-            },
-            onSizeChanged = { size ->
-                magnifierSize = with(density) {
-                    IntSize(size.width.roundToPx(), size.height.roundToPx())
-                }
-            },
-            color = color.handleColor, // align magnifier border color with selection handleColor
-            platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
-        )
+            magnifier(
+                sourceCenter = {
+                    // Don't animate position as it is automatically animated by the framework
+                    calculateSelectionMagnifierCenterIOS(
+                        manager = manager,
+                        magnifierSize = magnifierSize,
+                        density = density.density
+                    )
+                },
+                onSizeChanged = { size ->
+                    magnifierSize = with(density) {
+                        IntSize(size.width.roundToPx(), size.height.roundToPx())
+                    }
+                },
+                color = color.handleColor, // align magnifier border color with selection handleColor
+                platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+            )
+        }
     }
 }
 
@@ -172,7 +174,12 @@ internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
     return isSelectionHandleIsVisible(isStartHandle, handleOffset, handleHeight, visibleBounds)
 }
 
-internal fun isSelectionHandleIsVisible(isStartHandle: Boolean, position: Offset, height: Float, visibleBounds: Rect): Boolean {
+internal fun isSelectionHandleIsVisible(
+    isStartHandle: Boolean,
+    position: Offset,
+    height: Float,
+    visibleBounds: Rect
+): Boolean {
     val containsHorizontal = position.x in visibleBounds.left..visibleBounds.right
     val heightTolerance = height * HeightToleranceFactor
     val toleratedY =
@@ -215,7 +222,11 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     with(manager) {
         separator()
         textFieldSuspendItem(TextContextMenuKeys.CutKey, enabled = canCut()) { cut() }
-        textFieldSuspendItem(TextContextMenuKeys.CopyKey, enabled = canCopy()) { copy(cancelSelection = false) }
+        textFieldSuspendItem(TextContextMenuKeys.CopyKey, enabled = canCopy()) {
+            copy(
+                cancelSelection = false
+            )
+        }
         textFieldSuspendItem(TextContextMenuKeys.PasteKey, enabled = canPaste()) { paste() }
         textFieldItem(TextContextMenuKeys.SelectAllKey, enabled = canSelectAll()) { selectAll() }
         separator()

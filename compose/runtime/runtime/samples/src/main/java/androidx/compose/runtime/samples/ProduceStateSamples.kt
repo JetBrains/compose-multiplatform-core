@@ -48,7 +48,7 @@ private sealed class UiState<out T> {
 
 @Sampled
 @Composable
-fun ProduceState(viewModel: ProduceStateSampleViewModel) {
+fun NoriaContext.ProduceState(viewModel: ProduceStateSampleViewModel) {
     val uiState by
         produceState<UiState<List<Person>>>(UiState.Loading, viewModel) {
             viewModel.people.map { UiState.Data(it) }.collect { value = it }
@@ -68,7 +68,7 @@ fun ProduceState(viewModel: ProduceStateSampleViewModel) {
 @Suppress("UNUSED_VARIABLE")
 @Sampled
 @Composable
-fun ProduceStateAwaitDispose(viewModel: ProduceStateSampleViewModel) {
+fun NoriaContext.ProduceStateAwaitDispose(viewModel: ProduceStateSampleViewModel) {
     val currentPerson by
         produceState<Person?>(null, viewModel) {
             val disposable = viewModel.registerPersonObserver { person -> value = person }

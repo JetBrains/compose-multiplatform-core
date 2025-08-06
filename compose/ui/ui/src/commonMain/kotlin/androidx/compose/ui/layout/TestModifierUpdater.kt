@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetCompositeKeyHash
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetMeasurePolicy
 import androidx.compose.ui.node.LayoutNode
+import noria.NoriaContext
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Deprecated(
@@ -46,7 +47,7 @@ class TestModifierUpdater internal constructor(private val node: LayoutNode) {
 /*@VisibleForTesting*/
 @Composable
 @Suppress("DEPRECATION_ERROR")
-fun TestModifierUpdaterLayout(onAttached: (TestModifierUpdater) -> Unit) {
+fun NoriaContext.TestModifierUpdaterLayout(onAttached: (TestModifierUpdater) -> Unit) {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val measurePolicy = MeasurePolicy { _, constraints ->
         layout(constraints.maxWidth, constraints.maxHeight) {}

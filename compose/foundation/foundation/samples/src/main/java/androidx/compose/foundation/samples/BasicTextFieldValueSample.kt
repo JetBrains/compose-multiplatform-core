@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 
 @Sampled
 @Composable
-fun BasicTextFieldWithValueOnValueChangeSample() {
+fun NoriaContext.BasicTextFieldWithValueOnValueChangeSample() {
     var text by remember { mutableStateOf("") }
     // A reference implementation that demonstrates how to create a TextField with the legacy
     // state hoisting design around `BasicTextField(TextFieldState)`
@@ -44,7 +44,7 @@ fun BasicTextFieldWithValueOnValueChangeSample() {
 }
 
 @Composable
-private fun StringTextField(
+private fun NoriaContext.StringTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,

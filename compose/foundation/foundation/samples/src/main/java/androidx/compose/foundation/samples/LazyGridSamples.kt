@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun LazyVerticalGridSample() {
+fun NoriaContext.LazyVerticalGridSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -77,7 +77,7 @@ fun LazyVerticalGridSample() {
 
 @Sampled
 @Composable
-fun LazyVerticalGridSpanSample() {
+fun NoriaContext.LazyVerticalGridSpanSample() {
     val sections = (0 until 25).toList().chunked(5)
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -104,7 +104,7 @@ fun LazyVerticalGridSpanSample() {
 
 @Sampled
 @Composable
-fun LazyHorizontalGridSample() {
+fun NoriaContext.LazyHorizontalGridSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -127,7 +127,7 @@ fun LazyHorizontalGridSample() {
 
 @Sampled
 @Composable
-fun LazyHorizontalGridSpanSample() {
+fun NoriaContext.LazyHorizontalGridSpanSample() {
     val sections = (0 until 25).toList().chunked(5)
     LazyHorizontalGrid(
         rows = GridCells.Fixed(3),
@@ -154,7 +154,7 @@ fun LazyHorizontalGridSpanSample() {
 
 @Sampled
 @Composable
-fun UsingGridScrollPositionForSideEffectSample() {
+fun NoriaContext.UsingGridScrollPositionForSideEffectSample() {
     val gridState = rememberLazyGridState()
     LaunchedEffect(gridState) {
         snapshotFlow { gridState.firstVisibleItemIndex }
@@ -166,7 +166,7 @@ fun UsingGridScrollPositionForSideEffectSample() {
 
 @Sampled
 @Composable
-fun UsingGridScrollPositionInCompositionSample() {
+fun NoriaContext.UsingGridScrollPositionInCompositionSample() {
     val gridState = rememberLazyGridState()
     val isAtTop by remember {
         derivedStateOf {
@@ -180,7 +180,7 @@ fun UsingGridScrollPositionInCompositionSample() {
 
 @Sampled
 @Composable
-fun UsingGridLayoutInfoForSideEffectSample() {
+fun NoriaContext.UsingGridLayoutInfoForSideEffectSample() {
     val gridState = rememberLazyGridState()
     LaunchedEffect(gridState) {
         snapshotFlow { gridState.layoutInfo.totalItemsCount }
@@ -192,7 +192,7 @@ fun UsingGridLayoutInfoForSideEffectSample() {
 
 @Sampled
 @Composable
-fun GridAnimateItemSample() {
+fun NoriaContext.GridAnimateItemSample() {
     var list by remember { mutableStateOf(listOf("A", "B", "C")) }
     Column {
         Button(onClick = { list = list + "D" }) { Text("Add new item") }

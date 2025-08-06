@@ -19,9 +19,10 @@ package androidx.compose.foundation.lazy
 import androidx.compose.foundation.lazy.layout.LazyLayoutSemanticState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 @Composable
-internal fun rememberLazyListSemanticState(
+internal fun NoriaContext.rememberLazyListSemanticState(
     state: LazyListState,
     isVertical: Boolean,
 ): LazyLayoutSemanticState {

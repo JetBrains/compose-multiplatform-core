@@ -673,7 +673,7 @@ class CompositionRegistrationObserverTest {
         handle.dispose()
     }
 
-    private fun setContent(content: @Composable () -> Unit) {
+    private fun setContent(content: @Composable NoriaContext.() -> Unit) {
         composeTestRule.setContent {
             content()
             @OptIn(InternalComposeApi::class)

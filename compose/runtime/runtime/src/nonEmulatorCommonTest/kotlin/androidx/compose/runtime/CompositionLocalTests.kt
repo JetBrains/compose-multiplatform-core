@@ -794,7 +794,7 @@ class CompositionLocalTests {
 val cacheLocal = staticCompositionLocalOf { "Unset" }
 
 @Composable
-fun CacheInvalidate(state: State<Int>) {
+fun NoriaContext.CacheInvalidate(state: State<Int>) {
     Text("${state.value}")
     Text(cacheLocal.current)
     CacheInvalidateSet {
@@ -805,7 +805,7 @@ fun CacheInvalidate(state: State<Int>) {
 }
 
 @Composable
-fun CacheInvalidateSet(content: @Composable () -> Unit) {
+fun NoriaContext.CacheInvalidateSet(content: @Composable NoriaContext.() -> Unit) {
     CompositionLocalProvider(cacheLocal provides "Set") { content() }
 }
 

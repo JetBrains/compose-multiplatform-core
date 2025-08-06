@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import kotlinx.coroutines.channels.Channel
+import noria.NoriaContext
 
 /**
  * Creates a layout with both the [content] and [contextMenu]. [content] is always shown. The
@@ -52,7 +53,7 @@ import kotlinx.coroutines.channels.Channel
  */
 // TODO(grantapher) Consider making public.
 @Composable
-internal fun ProvideBasicTextContextMenu(
+internal fun NoriaContext.ProvideBasicTextContextMenu(
     providableCompositionLocal: ProvidableCompositionLocal<TextContextMenuProvider?>,
     contextMenu:
         @Composable
@@ -61,13 +62,13 @@ internal fun ProvideBasicTextContextMenu(
             dataProvider: TextContextMenuDataProvider,
             anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     ProvideBasicTextContextMenu(Modifier, providableCompositionLocal, contextMenu, content)
 }
 
 @Composable
-internal fun ProvideBasicTextContextMenu(
+internal fun NoriaContext.ProvideBasicTextContextMenu(
     modifier: Modifier,
     providableCompositionLocal: ProvidableCompositionLocal<TextContextMenuProvider?>,
     contextMenu:
@@ -77,7 +78,7 @@ internal fun ProvideBasicTextContextMenu(
             dataProvider: TextContextMenuDataProvider,
             anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     var layoutCoordinates: LayoutCoordinates? by remember {
         mutableStateOf(null, neverEqualPolicy())
@@ -96,7 +97,7 @@ internal fun ProvideBasicTextContextMenu(
 }
 
 @Composable
-internal fun basicTextContextMenuProvider(
+internal fun NoriaContext.basicTextContextMenuProvider(
     contextMenu:
         @Composable
         (

@@ -79,7 +79,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "WackyInput"
 
 @Composable
-fun PlatformTextInputAdapterDemo() {
+fun NoriaContext.PlatformTextInputAdapterDemo() {
     val textFieldState = remember { WackyTextState("") }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row {
@@ -126,7 +126,7 @@ fun PlatformTextInputAdapterDemo() {
 }
 
 @Composable
-fun WackyTextField(state: WackyTextState, modifier: Modifier) {
+fun NoriaContext.WackyTextField(state: WackyTextState, modifier: Modifier) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
     var textLayoutResult: TextLayoutResult? by remember { mutableStateOf(null) }

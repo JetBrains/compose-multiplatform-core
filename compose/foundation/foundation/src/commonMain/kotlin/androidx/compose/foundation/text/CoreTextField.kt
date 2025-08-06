@@ -45,7 +45,6 @@ import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
 import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
-import androidx.compose.foundation.text.selection.selectionGestureInput
 import androidx.compose.foundation.text.selection.textFieldMagnifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -121,6 +120,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Base composable that enables users to edit text via hardware or software keyboard.
@@ -187,7 +187,7 @@ import kotlinx.coroutines.launch
  *   innerTextField exactly once.
  */
 @Composable
-internal fun CoreTextField(
+internal fun NoriaContext.CoreTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -204,7 +204,7 @@ internal fun CoreTextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     @Suppress("ComposableLambdaParameterPosition")
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
     textScrollerPosition: TextFieldScrollerPosition? = null,
 ) {
@@ -382,7 +382,7 @@ internal fun CoreTextField(
         }
     }
 
-    val pointerModifier = Modifier.textFieldPointer(
+    val pointerModifier = textFieldPointerModifier(
         manager, enabled, interactionSource, state, focusRequester, readOnly, offsetMapping
     )
 
@@ -656,10 +656,10 @@ internal fun CoreTextField(
 }
 
 @Composable
-private fun CoreTextFieldRootBox(
+private fun NoriaContext.CoreTextFieldRootBox(
     modifier: Modifier,
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     Box(modifier, propagateMinConstraints = true) { ContextMenuArea(manager, content) }
 }
@@ -1013,7 +1013,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
 }
 
 @Composable
-private fun SelectionToolbarAndHandles(manager: TextFieldSelectionManager, show: Boolean) {
+private fun NoriaContext.SelectionToolbarAndHandles(manager: TextFieldSelectionManager, show: Boolean) {
     with(manager) {
         if (show) {
             // Check whether text layout result became stale. A stale text layout might be
@@ -1060,7 +1060,7 @@ private fun SelectionToolbarAndHandles(manager: TextFieldSelectionManager, show:
 }
 
 @Composable
-internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
+internal fun NoriaContext.TextFieldCursorHandle(manager: TextFieldSelectionManager) {
     if (manager.state?.showCursorHandle == true && manager.transformedText?.isNotEmpty() == true) {
         val observer = remember(manager) { manager.cursorDragObserver() }
         val position = manager.getCursorPosition(LocalDensity.current)
@@ -1093,7 +1093,7 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
 }
 
 @Composable
-internal expect fun CursorHandle(
+internal expect fun NoriaContext.CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
     minTouchTargetSize: DpSize = DpSize.Unspecified,

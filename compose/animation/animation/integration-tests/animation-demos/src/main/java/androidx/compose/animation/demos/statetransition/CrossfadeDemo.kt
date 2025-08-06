@@ -40,7 +40,7 @@ import kotlin.random.Random
 
 @Preview
 @Composable
-fun CrossfadeDemo() {
+fun NoriaContext.CrossfadeDemo() {
     var current by rememberSaveable { mutableIntStateOf(0) }
     Column {
         Row {

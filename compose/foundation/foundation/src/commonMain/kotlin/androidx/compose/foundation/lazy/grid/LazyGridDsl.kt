@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /**
  * A lazy vertical grid layout. It composes only visible rows of the grid.
@@ -64,7 +65,7 @@ import androidx.compose.ui.unit.dp
  * @param content the [LazyGridScope] which describes the content
  */
 @Composable
-fun LazyVerticalGrid(
+fun NoriaContext.LazyVerticalGrid(
     columns: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -73,7 +74,7 @@ fun LazyVerticalGrid(
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyGridScope.() -> Unit,
@@ -96,7 +97,7 @@ fun LazyVerticalGrid(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyVerticalGrid(
+fun NoriaContext.LazyVerticalGrid(
     columns: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -105,7 +106,7 @@ fun LazyVerticalGrid(
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyGridScope.() -> Unit,
 ) {
@@ -153,7 +154,7 @@ fun LazyVerticalGrid(
  * @param content the [LazyGridScope] which describes the content
  */
 @Composable
-fun LazyHorizontalGrid(
+fun NoriaContext.LazyHorizontalGrid(
     rows: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -162,7 +163,7 @@ fun LazyHorizontalGrid(
     horizontalArrangement: Arrangement.Horizontal =
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyGridScope.() -> Unit,
@@ -185,7 +186,7 @@ fun LazyHorizontalGrid(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyHorizontalGrid(
+fun NoriaContext.LazyHorizontalGrid(
     rows: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -194,7 +195,7 @@ fun LazyHorizontalGrid(
     horizontalArrangement: Arrangement.Horizontal =
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyGridScope.() -> Unit,
 ) {
@@ -215,7 +216,7 @@ fun LazyHorizontalGrid(
 
 /** Returns prefix sums of column widths. */
 @Composable
-private fun rememberColumnWidthSums(
+private fun NoriaContext.rememberColumnWidthSums(
     columns: GridCells,
     horizontalArrangement: Arrangement.Horizontal,
 ) =
@@ -242,7 +243,7 @@ private fun rememberColumnWidthSums(
 
 /** Returns prefix sums of row heights. */
 @Composable
-private fun rememberRowHeightSums(rows: GridCells, verticalArrangement: Arrangement.Vertical) =
+private fun NoriaContext.rememberRowHeightSums(rows: GridCells, verticalArrangement: Arrangement.Vertical) =
     remember<LazyGridSlotsProvider>(rows, verticalArrangement) {
         GridSlotCache { constraints ->
             requirePrecondition(constraints.maxHeight != Constraints.Infinity) {

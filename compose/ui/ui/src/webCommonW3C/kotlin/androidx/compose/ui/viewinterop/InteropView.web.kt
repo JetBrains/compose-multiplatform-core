@@ -25,7 +25,7 @@ actual typealias InteropView = Any
 internal actual class InteropViewGroup(val htmlElement: HTMLElement)
 
 @Composable
-internal fun <T : HTMLElement> InternalWebElementView(
+internal fun <T : HTMLElement> NoriaContext.InternalWebElementView(
     factory: () -> T,
     modifier: Modifier,
     update: (T) -> Unit,

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastForEach
 import kotlin.jvm.JvmName
+import noria.NoriaContext
 
 /**
  * [Layout] is the main core component for layout. It can be used to measure and position zero or
@@ -73,8 +74,8 @@ import kotlin.jvm.JvmName
 @Suppress("ComposableLambdaParameterPosition")
 @UiComposable
 @Composable
-inline fun Layout(
-    content: @Composable @UiComposable () -> Unit,
+inline fun NoriaContext.Layout(
+    content: @Composable @UiComposable NoriaContext.() -> Unit,
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy,
 ) {
@@ -119,7 +120,7 @@ inline fun Layout(
 @Suppress("NOTHING_TO_INLINE")
 @Composable
 @UiComposable
-inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
+inline fun NoriaContext.Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
@@ -159,8 +160,8 @@ inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
 @UiComposable
 @Composable
-inline fun Layout(
-    contents: List<@Composable @UiComposable () -> Unit>,
+inline fun NoriaContext.Layout(
+    contents: List<@Composable @UiComposable NoriaContext.() -> Unit>,
     modifier: Modifier = Modifier,
     measurePolicy: MultiContentMeasurePolicy,
 ) {
@@ -173,8 +174,8 @@ inline fun Layout(
 
 @PublishedApi
 internal fun combineAsVirtualLayouts(
-    contents: List<@Composable @UiComposable () -> Unit>
-): @Composable @UiComposable () -> Unit = {
+    contents: List<@Composable @UiComposable NoriaContext.() -> Unit>
+): @Composable @UiComposable NoriaContext.() -> Unit = {
     contents.fastForEach { content ->
         val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
@@ -195,7 +196,7 @@ internal fun combineAsVirtualLayouts(
 internal fun materializerOf(
     modifier: Modifier
 ): @Composable SkippableUpdater<ComposeUiNode>.() -> Unit = {
-    val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
+    val compositeKeyHash = NoriaContext.currentCompositeKeyHashCode.hashCode()
     val materialized = currentComposer.materialize(modifier)
     update {
         set(materialized, SetModifier)
@@ -217,7 +218,7 @@ internal fun materializerOf(
 internal fun materializerOfWithCompositionLocalInjection(
     modifier: Modifier
 ): @Composable SkippableUpdater<ComposeUiNode>.() -> Unit = {
-    val compositeKeyHash = currentCompositeKeyHash.hashCode()
+    val compositeKeyHash = NoriaContext.currentCompositeKeyHash.hashCode()
     val materialized = currentComposer.materializeWithCompositionLocalInjectionInternal(modifier)
     update {
         set(materialized, SetModifier)
@@ -232,9 +233,9 @@ internal fun materializerOfWithCompositionLocalInjection(
     "This API is unsafe for UI performance at scale - using it incorrectly will lead " +
         "to exponential performance issues. This API should be avoided whenever possible."
 )
-fun MultiMeasureLayout(
+fun NoriaContext.MultiMeasureLayout(
     modifier: Modifier = Modifier,
-    content: @Composable @UiComposable () -> Unit,
+    content: @Composable @UiComposable NoriaContext.() -> Unit,
     measurePolicy: MeasurePolicy,
 ) {
     val compositeKeyHash = currentCompositeKeyHash.hashCode()

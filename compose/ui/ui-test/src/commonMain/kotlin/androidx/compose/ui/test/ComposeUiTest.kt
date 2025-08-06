@@ -25,6 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
+import noria.NoriaContext
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test
@@ -189,7 +190,7 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
      * @throws IllegalStateException if called more than once per test, or if the implementation
      *   doesn't have access to a host to set content in.
      */
-    fun setContent(composable: @Composable () -> Unit)
+    fun setContent(composable: @Composable NoriaContext.() -> Unit)
 }
 
 /**

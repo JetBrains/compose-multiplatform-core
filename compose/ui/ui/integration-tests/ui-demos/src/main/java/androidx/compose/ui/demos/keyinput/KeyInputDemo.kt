@@ -41,7 +41,7 @@ import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
-fun KeyInputDemo() {
+fun NoriaContext.KeyInputDemo() {
     Column(verticalArrangement = Arrangement.SpaceEvenly) {
         CenteredRow {
             Text("Click on any item to bring it into focus. \nThen type using a hardware keyboard.")
@@ -53,7 +53,7 @@ fun KeyInputDemo() {
 }
 
 @Composable
-private fun FocusableText(text: MutableState<String>) {
+private fun NoriaContext.FocusableText(text: MutableState<String>) {
     var color by remember { mutableStateOf(Color.Black) }
     val focusRequester = remember { FocusRequester() }
     Text(
@@ -77,7 +77,7 @@ private fun FocusableText(text: MutableState<String>) {
 }
 
 @Composable
-private fun CenteredRow(content: @Composable RowScope.() -> Unit) {
+private fun NoriaContext.CenteredRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,

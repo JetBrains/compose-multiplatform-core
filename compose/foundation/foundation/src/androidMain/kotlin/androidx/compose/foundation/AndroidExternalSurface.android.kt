@@ -185,7 +185,7 @@ private class AndroidExternalSurfaceState(scope: CoroutineScope) :
 }
 
 @Composable
-private fun rememberAndroidExternalSurfaceState(): AndroidExternalSurfaceState {
+private fun NoriaContext.rememberAndroidExternalSurfaceState(): AndroidExternalSurfaceState {
     val scope = rememberCoroutineScope()
     return remember { AndroidExternalSurfaceState(scope) }
 }
@@ -265,7 +265,7 @@ value class AndroidExternalSurfaceZOrder private constructor(val zOrder: Int) {
  * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  */
 @Composable
-fun AndroidExternalSurface(
+fun NoriaContext.AndroidExternalSurface(
     modifier: Modifier = Modifier,
     isOpaque: Boolean = true,
     surfaceSize: IntSize = IntSize.Zero,
@@ -368,7 +368,7 @@ private class AndroidEmbeddedExternalSurfaceState(scope: CoroutineScope) :
 }
 
 @Composable
-private fun rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExternalSurfaceState {
+private fun NoriaContext.rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExternalSurfaceState {
     val scope = rememberCoroutineScope()
     return remember { AndroidEmbeddedExternalSurfaceState(scope) }
 }
@@ -424,7 +424,7 @@ private fun rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExtern
  * @sample androidx.compose.foundation.samples.AndroidEmbeddedExternalSurfaceColors
  */
 @Composable
-fun AndroidEmbeddedExternalSurface(
+fun NoriaContext.AndroidEmbeddedExternalSurface(
     modifier: Modifier = Modifier,
     isOpaque: Boolean = true,
     surfaceSize: IntSize = IntSize.Zero,

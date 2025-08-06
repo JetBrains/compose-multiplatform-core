@@ -29,7 +29,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun EmojiCompatDemo() {
+fun NoriaContext.EmojiCompatDemo() {
     val emoji14MeltingFace = "\uD83E\uDEE0"
     val emoji13WomanFeedingBaby = "\uD83D\uDC69\uD83C\uDFFE\u200D\uD83C\uDF7C"
     val emoji13DisguisedFace = "\uD83E\uDD78"

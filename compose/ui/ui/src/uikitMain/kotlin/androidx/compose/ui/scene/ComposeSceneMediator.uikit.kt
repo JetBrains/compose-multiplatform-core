@@ -79,7 +79,6 @@ import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toPlatformInsets
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
-import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ApplicationForegroundStateListener
@@ -98,6 +97,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import noria.NoriaContext
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -519,14 +519,16 @@ internal class ComposeSceneMediator(
         } ?: lastFocusedRect
     }
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         _overlayView.runOnceOnAppeared {
             focusedViewsList?.addAndFocus(userInputView)
 
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
                     FocusAboveKeyboardIfNeeded {
-                        interopContainer.TrackInteropPlacementContainer(content = content)
+                        interopContainer.run {
+                            TrackInteropPlacementContainer(content = content)
+                        }
                     }
                 }
             }
@@ -582,7 +584,7 @@ internal class ComposeSceneMediator(
     private var layoutMargins by mutableStateOf(PlatformInsets.Zero)
 
     @Composable
-    private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
+    private fun NoriaContext.ProvideComposeSceneMediatorCompositionLocals(content: @Composable NoriaContext.() -> Unit) =
         CompositionLocalProvider(
             LocalInteropContainer provides interopContainer,
             LocalKeyboardOverlapHeight provides keyboardOverlapHeight,
@@ -593,7 +595,7 @@ internal class ComposeSceneMediator(
         )
 
     @Composable
-    private fun FocusAboveKeyboardIfNeeded(content: @Composable () -> Unit) {
+    private fun NoriaContext.FocusAboveKeyboardIfNeeded(content: @Composable NoriaContext.() -> Unit) {
         if (onFocusBehavior == OnFocusBehavior.FocusableAboveKeyboard) {
             OffsetToFocusedRect(
                 insets = PlatformInsets(bottom = keyboardOverlapHeight),

@@ -77,6 +77,7 @@ import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /** A bridge class between user interaction to the text field selection. */
 internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
@@ -1298,7 +1299,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
 }
 
 @Composable
-internal fun TextFieldSelectionHandle(
+internal fun NoriaContext.TextFieldSelectionHandle(
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,
     manager: TextFieldSelectionManager,

@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowColumn() {
+fun NoriaContext.SimpleFlowColumn() {
 
     Text(
         modifier =
@@ -89,7 +89,7 @@ fun SimpleFlowColumn() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowColumnMaxLinesWithSeeMore() {
+fun NoriaContext.SimpleFlowColumnMaxLinesWithSeeMore() {
     val totalCount = 20
     var maxLines by remember { mutableStateOf(2) }
 
@@ -131,7 +131,7 @@ fun SimpleFlowColumnMaxLinesWithSeeMore() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SimpleFlowColumnWithMaxWidth() {
+fun NoriaContext.SimpleFlowColumnWithMaxWidth() {
     var initialWidth = 200.dp // Reversed from initialHeight
     var width by remember { mutableStateOf(initialWidth) } // Reversed from height
 
@@ -175,7 +175,7 @@ fun SimpleFlowColumnWithMaxWidth() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowColumnMaxLinesDynamicSeeMore() {
+fun NoriaContext.SimpleFlowColumnMaxLinesDynamicSeeMore() {
     val totalCount = 20
     var maxLines by remember { mutableStateOf(2) }
 
@@ -232,7 +232,7 @@ fun SimpleFlowColumnMaxLinesDynamicSeeMore() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun SimpleFlowColumn_EqualWidth() {
+fun NoriaContext.SimpleFlowColumn_EqualWidth() {
     FlowColumn(
         Modifier.padding(20.dp)
             .wrapContentHeight(align = Alignment.Top)

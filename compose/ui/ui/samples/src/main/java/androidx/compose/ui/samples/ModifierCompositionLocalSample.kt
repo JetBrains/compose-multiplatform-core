@@ -34,7 +34,7 @@ import androidx.compose.ui.platform.InspectorInfo
 
 @Sampled
 @Composable
-fun CompositionLocalConsumingModifierSample() {
+fun NoriaContext.CompositionLocalConsumingModifierSample() {
     val localBackgroundColor = compositionLocalOf { Color.White }
     class BackgroundColor :
         Modifier.Node(), DrawModifierNode, CompositionLocalConsumerModifierNode {
@@ -64,7 +64,7 @@ fun CompositionLocalConsumingModifierSample() {
 
 @Sampled
 @Composable
-fun CompositionLocalConsumingModifierObserverNodeSample() {
+fun NoriaContext.CompositionLocalConsumingModifierObserverNodeSample() {
     val LocalValue = compositionLocalOf { "abc123" }
     class ValueObserverModifierNode :
         Modifier.Node(), CompositionLocalConsumerModifierNode, ObserverModifierNode {

@@ -1280,7 +1280,7 @@ class DraggableTest {
         rule.runOnIdle { assertThat(innerDeltas).isGreaterThan(previousInnerDeltas) }
     }
 
-    private fun setDraggableContent(draggableFactory: @Composable () -> Modifier) {
+    private fun setDraggableContent(draggableFactory: @Composable NoriaContext.() -> Modifier) {
         rule.setContent {
             Box {
                 val draggable = draggableFactory()

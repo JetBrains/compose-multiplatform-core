@@ -53,7 +53,7 @@ internal inline fun <reified T> findOwner(context: Context): T? {
 
 @Sampled
 @Composable
-fun SetFrameRateSample() {
+fun NoriaContext.SetFrameRateSample() {
     var targetAlpha by remember { mutableFloatStateOf(1f) }
     val context = LocalContext.current
     val activity: Activity? = findOwner(context)

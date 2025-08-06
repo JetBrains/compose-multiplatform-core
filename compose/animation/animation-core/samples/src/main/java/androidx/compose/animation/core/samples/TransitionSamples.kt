@@ -79,7 +79,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun GestureAnimationSample() {
+fun NoriaContext.GestureAnimationSample() {
     // enum class ComponentState { Pressed, Released }
     var useRed by remember { mutableStateOf(false) }
     var toState by remember { mutableStateOf(ComponentState.Released) }
@@ -171,7 +171,7 @@ private enum class ButtonStatus {
 
 @Sampled
 @Composable
-fun AnimateFloatSample() {
+fun NoriaContext.AnimateFloatSample() {
     // enum class ButtonStatus {Initial, Pressed, Released}
     @Composable
     fun AnimateAlphaAndScale(modifier: Modifier, transition: Transition<ButtonStatus>) {
@@ -273,7 +273,7 @@ enum class LikedStates {
 
 @Sampled
 @Composable
-fun DoubleTapToLikeSample() {
+fun NoriaContext.DoubleTapToLikeSample() {
     // enum class LikedStates { Initial, Liked, Disappeared }
     @Composable
     fun doubleTapToLike() {
@@ -442,7 +442,7 @@ enum class DialerState {
 @Sampled
 @OptIn(ExperimentalTransitionApi::class)
 @Composable
-fun TransitionStateIsIdleSample() {
+fun NoriaContext.TransitionStateIsIdleSample() {
     @Composable
     fun SelectableItem(selectedState: MutableTransitionState<Boolean>) {
         val transition = rememberTransition(selectedState)
@@ -490,7 +490,7 @@ enum class BoxSize {
 
 @Sampled
 @Composable
-fun SeekingAnimationSample() {
+fun NoriaContext.SeekingAnimationSample() {
     Column {
         val seekingState = remember { SeekableTransitionState(BoxSize.Small) }
         val scope = rememberCoroutineScope()

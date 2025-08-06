@@ -22,9 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Velocity
+import noria.NoriaContext
 
 @Composable
-internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? =
+internal actual fun NoriaContext.rememberPlatformOverscrollEffect(): OverscrollEffect? =
     JSOverscrollEffect()
 
 internal actual fun CompositionLocalAccessorScope.defaultOverscrollFactory(): OverscrollFactory? =

@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 val ModifierLocalColor = modifierLocalOf { "Unspecified" }
 
 @Composable
-fun CommunicatingModifierDemo() {
+fun NoriaContext.CommunicatingModifierDemo() {
     val scaffoldState = rememberScaffoldState()
 
     fun Modifier.clickToRead() = composed {

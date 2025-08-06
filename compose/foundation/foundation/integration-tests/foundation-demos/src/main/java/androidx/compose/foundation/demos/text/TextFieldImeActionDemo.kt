@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun ImeActionDemo() {
+fun NoriaContext.ImeActionDemo() {
     LazyColumn {
         item { Item(ImeAction.None) }
         item { Item(ImeAction.Default) }
@@ -37,7 +37,7 @@ fun ImeActionDemo() {
 }
 
 @Composable
-private fun Item(imeAction: ImeAction) {
+private fun NoriaContext.Item(imeAction: ImeAction) {
     TagLine(tag = "Ime Action: $imeAction")
     EditLine(imeAction = imeAction)
 }

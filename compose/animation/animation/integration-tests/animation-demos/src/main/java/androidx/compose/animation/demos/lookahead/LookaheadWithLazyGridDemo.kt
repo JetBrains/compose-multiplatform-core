@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun LookaheadWithLazyGridDemo() {
+fun NoriaContext.LookaheadWithLazyGridDemo() {
     LookaheadScope {
         var visible by remember { mutableStateOf(false) }
         LazyVerticalGrid(columns = GridCells.Fixed(3), contentPadding = PaddingValues(5.dp)) {
@@ -76,7 +76,7 @@ fun LookaheadWithLazyGridDemo() {
 
 @Preview
 @Composable
-fun LookaheadSmallerThanApproach() {
+fun NoriaContext.LookaheadSmallerThanApproach() {
     LookaheadScope {
         LazyVerticalGrid(
             GridCells.Fixed(2),
@@ -101,7 +101,7 @@ fun LookaheadSmallerThanApproach() {
 @SuppressLint("PrimitiveInCollection")
 @Preview
 @Composable
-fun ShuffleLazyGridWithItemAnimationAndLookaheadAnimation() {
+fun NoriaContext.ShuffleLazyGridWithItemAnimationAndLookaheadAnimation() {
     var list by remember {
         mutableStateOf<List<Int>>(mutableListOf<Int>().apply { repeat(20) { add(it) } })
     }

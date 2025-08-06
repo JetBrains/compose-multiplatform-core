@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 
 @Composable
-internal fun TextWithMetrics(
+internal fun NoriaContext.TextWithMetrics(
     text: AnnotatedString,
     style: TextStyle,
     maxLines: Int,
@@ -69,7 +69,7 @@ internal fun TextWithMetrics(
 }
 
 @Composable
-internal fun TextFieldWithMetrics(
+internal fun NoriaContext.TextFieldWithMetrics(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     style: TextStyle,

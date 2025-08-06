@@ -69,7 +69,7 @@ import androidx.compose.ui.window.PopupProperties
 
 // TODO(grantapher) Consider making public.
 @Composable
-internal fun ProvideDefaultTextContextMenuDropdown(content: @Composable () -> Unit) {
+internal fun NoriaContext.ProvideDefaultTextContextMenuDropdown(content: @Composable NoriaContext.() -> Unit) {
     ProvideBasicTextContextMenu(
         providableCompositionLocal = LocalTextContextMenuDropdownProvider,
         contextMenu = { session, dataProvider, anchorLayoutCoordinates ->
@@ -80,9 +80,9 @@ internal fun ProvideDefaultTextContextMenuDropdown(content: @Composable () -> Un
 }
 
 @Composable
-internal fun ProvideDefaultTextContextMenuDropdown(
+internal fun NoriaContext.ProvideDefaultTextContextMenuDropdown(
     modifier: Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     ProvideBasicTextContextMenu(
         modifier = modifier,
@@ -95,7 +95,7 @@ internal fun ProvideDefaultTextContextMenuDropdown(
 }
 
 @Composable
-internal fun defaultTextContextMenuDropdown(): BasicTextContextMenuProvider =
+internal fun NoriaContext.defaultTextContextMenuDropdown(): BasicTextContextMenuProvider =
     basicTextContextMenuProvider { session, dataProvider, anchorLayoutCoordinates ->
         OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
     }
@@ -103,7 +103,7 @@ internal fun defaultTextContextMenuDropdown(): BasicTextContextMenuProvider =
 private val DefaultPopupProperties = PopupProperties(focusable = true)
 
 @Composable
-private fun OpenContextMenu(
+private fun NoriaContext.OpenContextMenu(
     session: TextContextMenuSession,
     dataProvider: TextContextMenuDataProvider,
     anchorLayoutCoordinates: () -> LayoutCoordinates,
@@ -128,7 +128,7 @@ private fun OpenContextMenu(
 }
 
 @Composable
-private fun DefaultTextContextMenuDropdown(
+private fun NoriaContext.DefaultTextContextMenuDropdown(
     session: TextContextMenuSession,
     data: TextContextMenuData,
 ) {
@@ -164,7 +164,7 @@ private fun DefaultTextContextMenuDropdown(
 
 // Lift of relevant M3 Icon parts.
 @Composable
-private fun IconBox(@DrawableRes resId: Int, tint: Color) {
+private fun NoriaContext.IconBox(@DrawableRes resId: Int, tint: Color) {
     val context = LocalContext.current
     val drawableResourceId =
         remember(context, resId) {

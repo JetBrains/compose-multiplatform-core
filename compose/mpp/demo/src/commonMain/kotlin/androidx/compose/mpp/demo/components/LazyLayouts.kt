@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
+import noria.NoriaContext
 
 val LazyLayouts = Screen.Selection(
     "LazyLayouts",
@@ -50,7 +51,7 @@ val LazyLayouts = Screen.Selection(
 )
 
 @Composable
-private fun ExampleLazyColumn() {
+private fun NoriaContext.ExampleLazyColumn() {
     val state = rememberLazyListState()
     LaunchedEffect(Unit) {
         while (true) {
@@ -72,7 +73,7 @@ private fun ExampleLazyColumn() {
 }
 
 @Composable
-private fun ExampleLazyGrid() {
+private fun NoriaContext.ExampleLazyGrid() {
     LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize()) {
         items(100) {
             Box(
@@ -87,7 +88,7 @@ private fun ExampleLazyGrid() {
 private data class StaggeredGridItem(val color: Color, val height: Dp)
 
 @Composable
-private fun ExampleStaggeredGrid() {
+private fun NoriaContext.ExampleStaggeredGrid() {
     val items: List<StaggeredGridItem> = remember {
         List(100) {
             StaggeredGridItem(color = Color(Random.nextInt()), height = Random.nextInt(100, 200).dp)
@@ -105,7 +106,7 @@ private fun ExampleStaggeredGrid() {
 }
 
 @Composable
-private fun ExampleTwoDirectionsAndRTL() {
+private fun NoriaContext.ExampleTwoDirectionsAndRTL() {
     val colors = listOf(
         Color.Black,
         Color.LightGray,

@@ -77,7 +77,7 @@ private fun countGroupsAndSlots(table: CompositionData, tables: Set<CompositionD
 }
 
 @Composable
-private fun CountGroupsAndSlots(content: @Composable () -> Unit) {
+private fun NoriaContext.CountGroupsAndSlots(content: @Composable NoriaContext.() -> Unit) {
     val data = currentComposer.compositionData
     currentComposer.disableSourceInformation()
     CompositionLocalProvider(LocalInspectionTables provides compositionTables, content = content)
@@ -128,7 +128,7 @@ abstract class ComposeBenchmarkBase {
     // DO NOT MAKE OPT-IN!
     @ExperimentalCoroutinesApi
     @ExperimentalTestApi
-    suspend fun TestScope.measureCompose(block: @Composable () -> Unit) = coroutineScope {
+    suspend fun TestScope.measureCompose(block: @Composable NoriaContext.() -> Unit) = coroutineScope {
         val recomposer = Recomposer(coroutineContext)
 
         try {
@@ -151,7 +151,7 @@ abstract class ComposeBenchmarkBase {
 
     @ExperimentalCoroutinesApi
     @ExperimentalTestApi
-    suspend fun TestScope.measureComposeFocused(block: @Composable () -> Unit) = coroutineScope {
+    suspend fun TestScope.measureComposeFocused(block: @Composable NoriaContext.() -> Unit) = coroutineScope {
         val recomposer = Recomposer(coroutineContext)
 
         try {
@@ -253,11 +253,11 @@ fun ControlledComposition.performRecompose(
 }
 
 class RecomposeReceiver {
-    var composeCb: @Composable () -> Unit = @Composable {}
+    var composeCb: @Composable NoriaContext.() -> Unit = @Composable {}
     var updateModelCb: () -> Unit = {}
     var resetCb: () -> Unit = {}
 
-    fun compose(block: @Composable () -> Unit) {
+    fun compose(block: @Composable NoriaContext.() -> Unit) {
         composeCb = block
     }
 

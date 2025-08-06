@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun BoxWithConstraintsSample() {
+fun NoriaContext.BoxWithConstraintsSample() {
     BoxWithConstraints {
         val rectangleHeight = 100.dp
         if (maxHeight < rectangleHeight * 2) {

@@ -67,7 +67,7 @@ internal fun Activity.uiThread(block: () -> Unit) {
     }
 }
 
-internal fun ComponentActivity.show(block: @Composable () -> Unit) {
+internal fun ComponentActivity.show(block: @Composable NoriaContext.() -> Unit) {
     uiThread {
         Snapshot.sendApplyNotifications()
         setContent(content = block)
@@ -91,11 +91,11 @@ abstract class BaseComposeTest {
     val activity
         get() = activityRule.activity
 
-    fun compose(composable: @Composable () -> Unit) = ComposeTester(activity, composable)
+    fun compose(composable: @Composable NoriaContext.() -> Unit) = ComposeTester(activity, composable)
 
     @Composable
     @Suppress("UNUSED_PARAMETER")
-    fun subCompose(block: @Composable () -> Unit) {
+    fun subCompose(block: @Composable NoriaContext.() -> Unit) {
         //        val reference = rememberCompositionContext()
         //        remember {
         //            Composition(
@@ -110,7 +110,7 @@ abstract class BaseComposeTest {
     }
 }
 
-class ComposeTester(val activity: ComponentActivity, val composable: @Composable () -> Unit) {
+class ComposeTester(val activity: ComponentActivity, val composable: @Composable NoriaContext.() -> Unit) {
     inner class ActiveTest(val activity: Activity) {
         fun then(block: ActiveTest.(activity: Activity) -> Unit): ActiveTest {
             activity.waitForAFrame()
@@ -124,7 +124,7 @@ class ComposeTester(val activity: ComponentActivity, val composable: @Composable
         }
     }
 
-    private fun initialComposition(composable: @Composable () -> Unit) {
+    private fun initialComposition(composable: @Composable NoriaContext.() -> Unit) {
         activity.show { CompositionLocalProvider(LocalContext provides activity) { composable() } }
     }
 

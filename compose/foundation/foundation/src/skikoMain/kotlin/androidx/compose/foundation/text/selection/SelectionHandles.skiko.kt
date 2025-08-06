@@ -19,16 +19,16 @@ package androidx.compose.foundation.text.selection
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.Handle
-import androidx.compose.foundation.text.textFieldPointer
+import androidx.compose.foundation.text.textFieldPointerModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.ResolvedTextDirection
@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import noria.NoriaContext
 
 /**
  * Clickable padding of handler
@@ -56,14 +57,14 @@ private val THICKNESS = 2.dp
  * [SelectionHandle] is used for drawing selection handlers on all non-android platforms
  * if a certain set of touch-based events happened.
  * The logic of when that happened is out of scope of [SelectionHandle], this is something that
- * basically implementations of [Modifier.textFieldPointer] are in charge of.
+ * basically implementations of [textFieldPointerModifier] are in charge of.
  * De-facto on any platform, these handles won't be shown on mouse events.
  * That said, one can see them while selecting text on iOS and mobile web targets.
  *
  * [SelectionHandle] was initially designed as iOS entity but later was commonized as is.
  */
 @Composable
-internal actual fun SelectionHandle(
+internal actual fun NoriaContext.SelectionHandle(
     offsetProvider: OffsetProvider,
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,
@@ -106,7 +107,7 @@ internal actual fun SelectionHandle(
 }
 
 @Composable
-internal fun SelectionHandleIcon(
+internal fun NoriaContext.SelectionHandleIcon(
     modifier: Modifier,
     iconVisible: () -> Boolean,
     lineHeight: Float,
@@ -128,43 +129,45 @@ internal fun Modifier.drawSelectionHandle(
     iconVisible: () -> Boolean,
     lineHeight: Float,
     isLeft: Boolean
-): Modifier = composed {
-    val density = LocalDensity.current
-    val paddingPx = with(density) { PADDING.toPx() }
-    val radiusPx = with(density) { RADIUS.toPx() }
-    val thicknessPx = with(density) { THICKNESS.toPx() }
-    val handleColor = LocalTextSelectionColors.current.handleColor
-    this.drawWithCache {
-        onDrawWithContent {
-            drawContent()
-            if (!iconVisible()) return@onDrawWithContent
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val density = LocalDensity.current
+        val paddingPx = with(density) { PADDING.toPx() }
+        val radiusPx = with(density) { RADIUS.toPx() }
+        val thicknessPx = with(density) { THICKNESS.toPx() }
+        val handleColor = LocalTextSelectionColors.current.handleColor
+        this@noriaComposed.drawWithCache {
+            onDrawWithContent {
+                drawContent()
+                if (!iconVisible()) return@onDrawWithContent
 
-            // vertical line
-            drawRect(
-                color = handleColor,
-                topLeft = Offset(
-                    x = paddingPx + radiusPx - thicknessPx / 2,
-                    y = if (isLeft) paddingPx + radiusPx else 0f
-                ),
-                size = Size(thicknessPx, lineHeight + radiusPx)
-            )
-            // handle circle
-            drawCircle(
-                color = handleColor,
-                radius = radiusPx,
-                center = center.copy(
-                    y = if (isLeft) paddingPx + radiusPx else lineHeight + radiusPx
+                // vertical line
+                drawRect(
+                    color = handleColor,
+                    topLeft = Offset(
+                        x = paddingPx + radiusPx - thicknessPx / 2,
+                        y = if (isLeft) paddingPx + radiusPx else 0f
+                    ),
+                    size = Size(thicknessPx, lineHeight + radiusPx)
                 )
-            )
+                // handle circle
+                drawCircle(
+                    color = handleColor,
+                    radius = radiusPx,
+                    center = center.copy(
+                        y = if (isLeft) paddingPx + radiusPx else lineHeight + radiusPx
+                    )
+                )
+            }
         }
     }
 }
 
 @Composable
-internal fun HandlePopup(
+internal fun NoriaContext.HandlePopup(
     positionProvider: OffsetProvider,
     handleReferencePoint: Alignment,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val popupPositionProvider = remember(handleReferencePoint, positionProvider) {
         HandlePositionProvider(handleReferencePoint, positionProvider)

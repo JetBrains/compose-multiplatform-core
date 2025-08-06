@@ -50,7 +50,7 @@ import kotlin.random.Random
  */
 @Suppress("SpellCheckingInspection")
 @Composable
-fun HorizontalScrollersInVerticalScrollersUsage() {
+fun NoriaContext.HorizontalScrollersInVerticalScrollersUsage() {
     Column {
         Text("Demonstrates scroll orientation locking.")
         Text(

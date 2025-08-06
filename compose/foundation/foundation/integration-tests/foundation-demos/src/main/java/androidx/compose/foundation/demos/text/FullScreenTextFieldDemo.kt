@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 
 /** Demonstrates b/237190748. */
 @Composable
-fun FullScreenTextFieldDemo() {
+fun NoriaContext.FullScreenTextFieldDemo() {
     var value by remember { mutableStateOf(loremIpsum()) }
     TextField(
         value,

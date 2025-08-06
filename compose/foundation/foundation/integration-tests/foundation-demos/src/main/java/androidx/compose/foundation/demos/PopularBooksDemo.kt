@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun PopularBooksDemo() {
+fun NoriaContext.PopularBooksDemo() {
     MaterialTheme {
         var comparator by remember { mutableStateOf(TitleComparator) }
         Column {

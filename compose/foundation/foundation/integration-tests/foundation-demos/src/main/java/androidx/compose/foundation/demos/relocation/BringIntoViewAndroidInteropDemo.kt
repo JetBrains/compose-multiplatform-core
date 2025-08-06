@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 
 // TODO(b/216652644) This demo is currently broken.
 @Composable
-fun BringIntoViewAndroidInteropDemo() {
+fun NoriaContext.BringIntoViewAndroidInteropDemo() {
     Column {
         Text(
             "This is a Compose vertical scrollable, with an Android scrollable inside it, with a " +
@@ -92,7 +92,7 @@ private class AndroidScrollable(context: Context) : HorizontalScrollView(context
         addView(composeView, LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
     }
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         composeView.setContent(content)
     }
 }

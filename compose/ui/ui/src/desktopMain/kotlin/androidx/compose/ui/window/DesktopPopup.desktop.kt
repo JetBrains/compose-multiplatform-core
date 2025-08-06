@@ -33,12 +33,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import kotlin.math.roundToInt
+import noria.NoriaContext
 
 /**
  * Returns a remembered value of the mouse cursor position or null if cursor is not inside a scene.
  */
 @Composable
-private fun rememberCursorPosition(): Offset? {
+private fun NoriaContext.rememberCursorPosition(): Offset? {
     // TODO: Migrate to [LocalComposeSceneContext]
     @Suppress("DEPRECATION")
     val scene = LocalComposeScene.current
@@ -54,7 +55,7 @@ private fun rememberCursorPosition(): Offset? {
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun rememberCursorPositionProvider(
+fun NoriaContext.rememberCursorPositionProvider(
     offset: DpOffset = DpOffset.Zero,
     alignment: Alignment = Alignment.BottomEnd,
     windowMargin: Dp = 4.dp
@@ -96,7 +97,7 @@ fun rememberCursorPositionProvider(
  */
 @ExperimentalComposeUiApi
 @Composable
-fun rememberPopupPositionProviderAtPosition(
+fun NoriaContext.rememberPopupPositionProviderAtPosition(
     positionPx: Offset,
     offset: DpOffset = DpOffset.Zero,
     alignment: Alignment = Alignment.BottomEnd,
@@ -179,7 +180,7 @@ class PopupPositionProviderAtPosition(
  * @param offset [DpOffset] to be added to the position of the popup.
  */
 @Composable
-fun rememberComponentRectPositionProvider(
+fun NoriaContext.rememberComponentRectPositionProvider(
     anchor: Alignment = Alignment.BottomCenter,
     alignment: Alignment = Alignment.BottomCenter,
     offset: DpOffset = DpOffset.Zero

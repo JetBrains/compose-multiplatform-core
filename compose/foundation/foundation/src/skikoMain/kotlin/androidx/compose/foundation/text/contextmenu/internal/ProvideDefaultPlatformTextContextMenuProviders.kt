@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.contextmenu.internal
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import noria.NoriaContext
 
 
 //TODO: remove this file
@@ -25,7 +26,7 @@ import androidx.compose.ui.Modifier
 // https://android.googlesource.com/platform/frameworks/support/+/d8bc9d81dffa35162626e45ee68d4a7e271c6ada
 
 @Composable
-internal expect fun ProvideDefaultPlatformTextContextMenuProviders(
+internal expect fun NoriaContext.ProvideDefaultPlatformTextContextMenuProviders(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 )

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SpacerExample() {
+fun NoriaContext.SpacerExample() {
     Row {
         Box(Modifier.size(100.dp).background(Color.Red))
         Spacer(Modifier.width(20.dp))

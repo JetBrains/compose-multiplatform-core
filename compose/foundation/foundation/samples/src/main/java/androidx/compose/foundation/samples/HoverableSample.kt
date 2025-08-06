@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun HoverableSample() {
+fun NoriaContext.HoverableSample() {
     // MutableInteractionSource to track changes of the component's interactions (like "hovered")
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()

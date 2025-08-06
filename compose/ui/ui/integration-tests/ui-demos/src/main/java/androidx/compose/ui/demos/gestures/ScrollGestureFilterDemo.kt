@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple demo that shows off ScrollGestureFilter. */
 @Composable
-fun ScrollGestureFilterDemo() {
+fun NoriaContext.ScrollGestureFilterDemo() {
     Column {
         Text("Demonstrates scroll orientation locking")
         Text(
@@ -60,7 +60,7 @@ fun ScrollGestureFilterDemo() {
 }
 
 @Composable
-fun ScrollableBox(
+fun NoriaContext.ScrollableBox(
     size: Dp,
     orientation: Orientation,
     activeColor: Color,

@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun TypefaceDemo() {
+fun NoriaContext.TypefaceDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Android Typeface")
@@ -40,13 +40,13 @@ fun TypefaceDemo() {
 }
 
 @Composable
-fun AndroidTypefaceDemo() {
+fun NoriaContext.AndroidTypefaceDemo() {
     val fontFamily = FontFamily(Typeface(android.graphics.Typeface.DEFAULT_BOLD))
     Text("Hello World", style = TextStyle(fontFamily = fontFamily))
 }
 
 @Composable
-fun FontFamilyFromAndroidTypeface() {
+fun NoriaContext.FontFamilyFromAndroidTypeface() {
     val fontFamily = FontFamily(android.graphics.Typeface.MONOSPACE)
     Text("Hello World", style = TextStyle(fontFamily = fontFamily))
 }

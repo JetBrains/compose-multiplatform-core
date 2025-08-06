@@ -48,7 +48,7 @@ val LazyGridSnappingDemos =
  * as a reference point.
  */
 @Composable
-private fun GridSingleItemSnapping() {
+private fun NoriaContext.GridSingleItemSnapping() {
     val lazyGridState = rememberLazyGridState()
     val snappingLayout = remember(lazyGridState) { SnapLayoutInfoProvider(lazyGridState) }
     val flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider = snappingLayout)
@@ -56,7 +56,7 @@ private fun GridSingleItemSnapping() {
 }
 
 @Composable
-private fun GridSnappingDemoMainLayout(flingBehavior: FlingBehavior, lazyGridState: LazyGridState) {
+private fun NoriaContext.GridSnappingDemoMainLayout(flingBehavior: FlingBehavior, lazyGridState: LazyGridState) {
     Box(
         modifier =
             Modifier.fillMaxSize().drawWithContent {
@@ -77,7 +77,7 @@ private fun GridSnappingDemoMainLayout(flingBehavior: FlingBehavior, lazyGridSta
 }
 
 @Composable
-private fun GridSinglePageSnappingItem(position: Int) {
+private fun NoriaContext.GridSinglePageSnappingItem(position: Int) {
     Box(
         modifier =
             Modifier.size(100.dp).padding(4.dp).background(Color.Gray).drawWithContent {

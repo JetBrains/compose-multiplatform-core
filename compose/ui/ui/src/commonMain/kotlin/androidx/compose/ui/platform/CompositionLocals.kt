@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.LifecycleOwner
+import noria.NoriaContext
 
 /** The CompositionLocal to provide communication with platform accessibility service. */
 val LocalAccessibilityManager = staticCompositionLocalOf<AccessibilityManager?> { null }
@@ -208,10 +209,10 @@ val LocalCursorBlinkEnabled: ProvidableCompositionLocal<Boolean> = staticComposi
 
 @ExperimentalComposeUiApi
 @Composable
-internal fun ProvideCommonCompositionLocals(
+internal fun NoriaContext.ProvideCommonCompositionLocals(
     owner: Owner,
     uriHandler: UriHandler,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     CompositionLocalProvider(
         LocalAccessibilityManager provides owner.accessibilityManager,

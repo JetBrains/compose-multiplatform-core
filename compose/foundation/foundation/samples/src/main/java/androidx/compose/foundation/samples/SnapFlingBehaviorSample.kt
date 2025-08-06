@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun SnapFlingBehaviorSimpleSample() {
+fun NoriaContext.SnapFlingBehaviorSimpleSample() {
     val state = rememberLazyListState()
 
     LazyRow(
@@ -63,7 +63,7 @@ fun SnapFlingBehaviorSimpleSample() {
 
 @Sampled
 @Composable
-fun SnapFlingBehaviorCustomizedSample() {
+fun NoriaContext.SnapFlingBehaviorCustomizedSample() {
     val state = rememberLazyListState()
 
     // If you'd like to customize either the snap behavior or the layout provider
@@ -90,7 +90,7 @@ fun SnapFlingBehaviorCustomizedSample() {
 
 @Sampled
 @Composable
-fun SnapFlingBehaviorSnapPosition() {
+fun NoriaContext.SnapFlingBehaviorSnapPosition() {
     val state = rememberLazyListState()
     val density = LocalDensity.current
 

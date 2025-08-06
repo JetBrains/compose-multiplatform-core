@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun CustomFocusOrderDemo() {
+fun NoriaContext.CustomFocusOrderDemo() {
     Column {
         Row { Text("Use the arrow keys to move focus left/right/up/down.") }
         Column(Modifier.fillMaxSize(), SpaceEvenly) {
@@ -102,7 +102,7 @@ fun CustomFocusOrderDemo() {
 }
 
 @Composable
-private fun FocusableText(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.FocusableText(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(Black) }
     val focusRequester = remember { FocusRequester() }
     Text(

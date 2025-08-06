@@ -312,7 +312,7 @@ class ComposedModifierTest {
 }
 
 @Composable
-private fun ModifiedComposable(modifier: Modifier, onComposed: (Modifier) -> Unit) {
+private fun NoriaContext.ModifiedComposable(modifier: Modifier, onComposed: (Modifier) -> Unit) {
     SideEffect {
         // Use the modifier parameter so that compiler optimizations don't ignore it
         onComposed(modifier)

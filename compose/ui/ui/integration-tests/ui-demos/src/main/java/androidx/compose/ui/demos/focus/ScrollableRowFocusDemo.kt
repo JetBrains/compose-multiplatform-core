@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ScrollableRowFocusDemo() {
+fun NoriaContext.ScrollableRowFocusDemo() {
     Column {
         Text("Use the dpad or arrow keys to move focus")
         Row(Modifier.horizontalScroll(rememberScrollState())) {
@@ -50,7 +50,7 @@ fun ScrollableRowFocusDemo() {
 }
 
 @Composable
-private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.FocusableBox(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(White) }
     Text(
         text = text,

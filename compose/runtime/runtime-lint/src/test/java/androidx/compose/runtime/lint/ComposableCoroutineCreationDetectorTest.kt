@@ -267,14 +267,14 @@ class ComposableCoroutineCreationDetectorTest : LintDetectorTest() {
                     flowOf(Unit).launchIn(CoroutineScope)
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     CoroutineScope.async {}
                     CoroutineScope.launch {}
                     flowOf(Unit).launchIn(CoroutineScope)
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -297,7 +297,7 @@ class ComposableCoroutineCreationDetectorTest : LintDetectorTest() {
                         flowOf(Unit).launchIn(CoroutineScope)
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         CoroutineScope.async {}
                         CoroutineScope.launch {}
                         flowOf(Unit).launchIn(CoroutineScope)

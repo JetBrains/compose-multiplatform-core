@@ -38,10 +38,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import noria.NoriaContext
 
 // Copy from compose/ui/ui/samples/src/main/java/androidx/compose/ui/samples/NestedScrollSamples.kt
 @Composable
-fun NestedScrollExample() {
+fun NoriaContext.NestedScrollExample() {
     // here we use LazyColumn that has build-in nested scroll, but we want to act like a
     // parent for this LazyColumn and participate in its nested scroll.
     // Let's make a collapsing toolbar for LazyColumn

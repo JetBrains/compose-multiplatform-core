@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * Applies [DeviceConfigurationOverride] to the [content] under test to apply some configuration
@@ -35,9 +36,9 @@ import androidx.compose.ui.unit.LayoutDirection
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideLayoutDirectionSample
  */
 @Composable
-fun DeviceConfigurationOverride(
+fun NoriaContext.DeviceConfigurationOverride(
     override: DeviceConfigurationOverride,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) = override.Override(content)
 
 /**
@@ -59,7 +60,7 @@ fun interface DeviceConfigurationOverride {
     // with the naming.
     @Suppress("ComposableLambdaParameterNaming")
     @Composable
-    fun Override(contentUnderTest: @Composable () -> Unit)
+    fun Override(contentUnderTest: @Composable NoriaContext.() -> Unit)
 
     companion object
 }

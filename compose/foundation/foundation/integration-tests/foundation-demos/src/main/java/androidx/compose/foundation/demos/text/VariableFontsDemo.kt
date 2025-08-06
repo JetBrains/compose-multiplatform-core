@@ -61,7 +61,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalFoundationApi::class)
 @Preview
 @Composable
-fun VariableFontsDemo() {
+fun NoriaContext.VariableFontsDemo() {
     if (Build.VERSION.SDK_INT < 26) {
         Text("Variable fonts are only supported on API 26+")
     }
@@ -117,7 +117,7 @@ fun VariableFontsDemo() {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun AssetFont(weight: Int, italic: Boolean) {
+fun NoriaContext.AssetFont(weight: Int, italic: Boolean) {
     Column(Modifier.fillMaxWidth()) {
         val context = LocalContext.current
         val assetFonts =
@@ -146,7 +146,7 @@ fun AssetFont(weight: Int, italic: Boolean) {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun FileFont(weight: Int, italic: Boolean) {
+fun NoriaContext.FileFont(weight: Int, italic: Boolean) {
     val context = LocalContext.current
     val filePath = remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) { filePath.value = mkTempFont(context).path }
@@ -211,7 +211,7 @@ fun ParcelFileDescriptorFont(weight: Int, italic: Boolean) {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun DeviceNamedFontFamilyFont(weight: Int, italic: Boolean) {
+fun NoriaContext.DeviceNamedFontFamilyFont(weight: Int, italic: Boolean) {
     Column(Modifier.fillMaxWidth()) {
         val deviceFonts =
             remember(weight, italic) {
@@ -257,7 +257,7 @@ fun DeviceNamedFontFamilyFont(weight: Int, italic: Boolean) {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun ResourceFont(weight: Int, italic: Boolean) {
+fun NoriaContext.ResourceFont(weight: Int, italic: Boolean) {
     Column(Modifier.fillMaxWidth()) {
         val resourceFonts =
             remember(weight, italic) {

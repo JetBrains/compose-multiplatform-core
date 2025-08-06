@@ -47,7 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 
 /** Demo to show the state of buttons and meta keys */
 @Composable
-fun ButtonMetaStateDemo() {
+fun NoriaContext.ButtonMetaStateDemo() {
     var control by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
     var shift by remember { mutableStateOf(false) }

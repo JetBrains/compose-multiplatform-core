@@ -16,16 +16,30 @@
 
 package noria.foundation.layout
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import noria.ClosureContext
 import noria.NoriaContext
 
 @Composable
-fun NoriaContext.eagerCompleteExpensiveColumn(size: Int,
-                                              overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
-                                              spacing: Int,
-                                              nth: ClosureContext.(Int) -> Row
+fun NoriaContext.eagerCompleteExpensiveColumn(
+    size: Int,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
+    spacing: Int,
+    nth: ClosureContext.(Int) -> Row,
 ): (Int) -> ItemVerticalPosition {
-  // TODO
-  return approximatingLazyColumn(size, overscrollPolicy, spacing, nth = nth)
+    // TODO
+    return approximatingLazyColumn(
+        size,
+        state,
+        contentPadding,
+        overscrollPolicy,
+        spacing,
+        nth = nth
+    )
 }

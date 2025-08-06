@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
 @Composable
-fun FocusInDialogDemo() {
+fun NoriaContext.FocusInDialogDemo() {
     var showDialog by remember { mutableStateOf(false) }
     var mainText by remember { mutableStateOf(TextFieldValue("Enter Value")) }
     var dialogText by remember { mutableStateOf(TextFieldValue("Enter Value")) }
@@ -67,7 +67,7 @@ fun FocusInDialogDemo() {
 }
 
 @Composable
-private fun FocusStatus() {
+private fun NoriaContext.FocusStatus() {
     val windowInfo = LocalWindowInfo.current
     Text("Status: Window ${if (windowInfo.isWindowFocused) "is" else "is not"} focused.")
 }

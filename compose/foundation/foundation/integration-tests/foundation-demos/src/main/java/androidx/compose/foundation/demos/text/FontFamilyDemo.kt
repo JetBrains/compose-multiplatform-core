@@ -51,7 +51,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun FontFamilyDemo() {
+fun NoriaContext.FontFamilyDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Async font loading")
@@ -63,7 +63,7 @@ fun FontFamilyDemo() {
 @Preview
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun AsyncFontFamilyDemo() {
+fun NoriaContext.AsyncFontFamilyDemo() {
 
     var recreateFontFamily by remember { mutableIntStateOf(0) }
     var showW800 by remember { mutableStateOf(false) }

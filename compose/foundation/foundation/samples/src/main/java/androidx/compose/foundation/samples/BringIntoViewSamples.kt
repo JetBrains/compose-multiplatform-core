@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun BringIntoViewSample() {
+fun NoriaContext.BringIntoViewSample() {
     Row(Modifier.horizontalScroll(rememberScrollState())) {
         repeat(100) {
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -71,7 +71,7 @@ fun BringIntoViewSample() {
 
 @Sampled
 @Composable
-fun BringPartOfComposableIntoViewSample() {
+fun NoriaContext.BringPartOfComposableIntoViewSample() {
     with(LocalDensity.current) {
         val bringIntoViewRequester = remember { BringIntoViewRequester() }
         val coroutineScope = rememberCoroutineScope()

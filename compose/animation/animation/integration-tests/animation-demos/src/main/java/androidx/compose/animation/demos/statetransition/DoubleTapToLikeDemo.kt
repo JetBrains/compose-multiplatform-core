@@ -50,7 +50,7 @@ private enum class LikedStates {
 
 @Preview
 @Composable
-fun DoubleTapToLikeDemo() {
+fun NoriaContext.DoubleTapToLikeDemo() {
 
     // Creates a transition state that starts in [Disappeared] State
     var transitionState by remember {

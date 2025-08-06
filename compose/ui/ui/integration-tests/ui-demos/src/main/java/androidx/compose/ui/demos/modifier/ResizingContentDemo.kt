@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ResizingContentDemo() {
+fun NoriaContext.ResizingContentDemo() {
     if (isArrEnabled) {
         val context = LocalContext.current
         val activity: Activity? = findOwner(context)
@@ -64,7 +64,7 @@ fun ResizingContentDemo() {
 }
 
 @Composable
-fun ResizingButtons(frameRate: Float) {
+fun NoriaContext.ResizingButtons(frameRate: Float) {
     var expanded by remember { mutableStateOf(false) }
     val size by
         animateDpAsState(

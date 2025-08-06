@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BottomSheetScaffoldUsage() {
+fun NoriaContext.BottomSheetScaffoldUsage() {
     BottomSheetScaffold(
         sheetContent = { Text("sheetContent") },
         content = { Text("content") }

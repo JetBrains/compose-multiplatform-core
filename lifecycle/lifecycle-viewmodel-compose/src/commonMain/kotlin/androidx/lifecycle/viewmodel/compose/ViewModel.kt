@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
+import noria.NoriaContext
 
 /**
  * Returns an existing [ViewModel] or creates a new one in the given owner (usually, a fragment or
@@ -52,7 +53,7 @@ import kotlin.reflect.KClass
  */
 @Suppress("MissingJvmstatic")
 @Composable
-public inline fun <reified VM : ViewModel> viewModel(
+public inline fun <reified VM : ViewModel> NoriaContext.viewModel(
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
@@ -89,7 +90,7 @@ public inline fun <reified VM : ViewModel> viewModel(
  */
 @Suppress("MissingJvmstatic")
 @Composable
-public fun <VM : ViewModel> viewModel(
+public fun <VM : ViewModel> NoriaContext.viewModel(
     modelClass: KClass<VM>,
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
@@ -123,7 +124,7 @@ public fun <VM : ViewModel> viewModel(
  * @sample androidx.lifecycle.viewmodel.compose.samples.CreationExtrasViewModelInitializer
  */
 @Composable
-public inline fun <reified VM : ViewModel> viewModel(
+public inline fun <reified VM : ViewModel> NoriaContext.viewModel(
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"

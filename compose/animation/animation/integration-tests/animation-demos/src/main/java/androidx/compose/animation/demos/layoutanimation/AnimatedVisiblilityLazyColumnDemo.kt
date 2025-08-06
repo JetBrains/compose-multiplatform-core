@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun AnimatedVisibilityLazyColumnDemo() {
+fun NoriaContext.AnimatedVisibilityLazyColumnDemo() {
     Column {
         val model = remember { MyModel() }
         Row(Modifier.fillMaxWidth()) {

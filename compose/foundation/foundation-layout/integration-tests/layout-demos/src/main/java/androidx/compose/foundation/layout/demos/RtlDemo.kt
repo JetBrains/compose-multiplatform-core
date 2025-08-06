@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun RtlDemo() {
+fun NoriaContext.RtlDemo() {
     Column(verticalArrangement = Arrangement.SpaceEvenly) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Text("RTL")
@@ -87,7 +87,7 @@ fun RtlDemo() {
 }
 
 @Composable
-private fun TestPlacementInLimitedSpace() {
+private fun NoriaContext.TestPlacementInLimitedSpace() {
     Row(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.padding(12.dp).size(56.dp).background(Color.Yellow)) {
             IconButton( // adds minimumTouchTargetSize
@@ -101,7 +101,7 @@ private fun TestPlacementInLimitedSpace() {
 }
 
 @Composable
-fun StackExample() {
+fun NoriaContext.StackExample() {
     Box(Modifier.fillMaxSize().background(Color.LightGray)) {
         Box(Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
             Box(boxSize.then(Modifier.background(Color.Red))) {}
@@ -118,7 +118,7 @@ fun StackExample() {
 private val boxSize = Modifier.size(50.dp, 20.dp)
 
 @Composable
-private fun TestRow() {
+private fun NoriaContext.TestRow() {
     Row {
         Box(boxSize.background(color = Color.Red)) {}
         Box(boxSize.background(color = Color.Green)) {}
@@ -132,7 +132,7 @@ private fun TestRow() {
 }
 
 @Composable
-private fun TestRowWithModifier() {
+private fun NoriaContext.TestRowWithModifier() {
     Row {
         Box(boxSize.background(Color.Red)) {}
         Box(boxSize.background(Color.Green)) {}
@@ -148,7 +148,7 @@ private fun TestRowWithModifier() {
 }
 
 @Composable
-private fun TestText() {
+private fun NoriaContext.TestText() {
     Column {
         Text("Text.")
         Text("Text filling max width.", Modifier.fillMaxWidth())
@@ -160,7 +160,7 @@ private fun TestText() {
 }
 
 @Composable
-private fun TestSiblings() {
+private fun NoriaContext.TestSiblings() {
     Column {
         Box(boxSize.background(color = Color.Red).alignBy { p -> p.measuredWidth }) {}
         Box(boxSize.background(color = Color.Green).alignBy { p -> p.measuredWidth / 2 }) {}
@@ -169,7 +169,7 @@ private fun TestSiblings() {
 }
 
 @Composable
-private fun CustomLayout(rtlSupport: Boolean) {
+private fun NoriaContext.CustomLayout(rtlSupport: Boolean) {
     Layout(
         content = {
             Box(boxSize.background(color = Color.Red)) {}
@@ -195,7 +195,7 @@ private fun CustomLayout(rtlSupport: Boolean) {
 }
 
 @Composable
-private fun LayoutWithConstraints(text: String) {
+private fun NoriaContext.LayoutWithConstraints(text: String) {
     BoxWithConstraints {
         val w = maxWidth / 3
         val color =

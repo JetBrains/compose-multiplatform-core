@@ -21,7 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 
 @Composable
-fun ImageUsage() {
+fun NoriaContext.ImageUsage() {
     Image(
         painterResource("androidx/compose/desktop/example/star.svg"),
         contentDescription = "Star"

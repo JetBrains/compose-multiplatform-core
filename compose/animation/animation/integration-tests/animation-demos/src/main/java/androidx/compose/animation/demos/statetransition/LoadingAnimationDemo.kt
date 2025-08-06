@@ -54,7 +54,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun LoadingAnimationDemo() {
+fun NoriaContext.LoadingAnimationDemo() {
     val isLoading = remember { mutableStateOf(true) }
     Box(Modifier.fillMaxSize().background(BackgroundColor).clickable { isLoading.value = false }) {
         ActualContent()
@@ -68,7 +68,7 @@ fun LoadingAnimationDemo() {
 }
 
 @Composable
-fun ActualContent() {
+fun NoriaContext.ActualContent() {
     Column(Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp)) {
         Surface(shape = RoundedCornerShape(10.dp)) {
             val painter = painterResource(R.drawable.yt_profile)
@@ -107,7 +107,7 @@ val GradientColor: Color = Color(0xff173d6e)
 val BackgroundColor: Color = Color(0xffdbe5ef)
 
 @Composable
-fun LoadingOverlay(isLoading: State<Boolean>) {
+fun NoriaContext.LoadingOverlay(isLoading: State<Boolean>) {
     val fraction = remember { Animatable(0f) }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {

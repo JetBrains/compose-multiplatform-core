@@ -22,6 +22,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.collect
+import noria.NoriaContext
 
 // An interface, not a sealed class, to allow adding new types here in a safe way (and not break
 // exhaustive when clauses)
@@ -77,7 +78,7 @@ interface DragInteraction : Interaction {
 @Composable
 fun InteractionSource.collectIsDraggedAsState(): State<Boolean> {
     val isDragged = remember { mutableStateOf(false) }
-    LaunchedEffect(this) {
+    NoriaContext.LaunchedEffect(this) {
         val dragInteractions = mutableListOf<DragInteraction.Start>()
         interactions.collect { interaction ->
             when (interaction) {

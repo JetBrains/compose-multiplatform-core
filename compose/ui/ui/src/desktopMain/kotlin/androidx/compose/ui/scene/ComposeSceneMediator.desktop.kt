@@ -90,6 +90,7 @@ import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
+import noria.NoriaContext
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -531,15 +532,17 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         // If we call it before attaching, everything probably will be fine,
         // but the first composition will be useless, as we set density=1
         // (we don't know the real density if we have unattached component)
         runOnceComponentAttached {
             catchExceptions {
                 scene.setContent {
-                    interopContainer {
-                        content()
+                    interopContainer.run {
+                        invoke {
+                            content()
+                        }
                     }
                 }
             }

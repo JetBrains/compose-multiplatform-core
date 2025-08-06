@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SimpleBox() {
+fun NoriaContext.SimpleBox() {
     Box {
         Box(Modifier.fillMaxSize().background(Color.Cyan))
         Box(

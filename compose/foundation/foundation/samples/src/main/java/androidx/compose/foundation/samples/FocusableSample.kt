@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun FocusableSample() {
+fun NoriaContext.FocusableSample() {
     // initialize focus reference to be able to request focus programmatically
     val focusRequester = remember { FocusRequester() }
     // MutableInteractionSource to track changes of the component's interactions (like "focused")
@@ -70,7 +70,7 @@ fun FocusableSample() {
 
 @Sampled
 @Composable
-fun FocusGroupSample() {
+fun NoriaContext.FocusGroupSample() {
     Row {
         Column(Modifier.focusGroup()) {
             Button({}) { Text("Row1 Col1") }
@@ -87,7 +87,7 @@ fun FocusGroupSample() {
 
 @Sampled
 @Composable
-fun FocusableFocusGroupSample() {
+fun NoriaContext.FocusableFocusGroupSample() {
     val interactionSource = remember { MutableInteractionSource() }
     LazyRow(
         Modifier.focusable(interactionSource = interactionSource)

@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun TextStyleSample() {
+fun NoriaContext.TextStyleSample() {
     Text(
         text = "Demo Text",
         style =
@@ -50,7 +50,7 @@ fun TextStyleSample() {
 
 @Sampled
 @Composable
-fun TextStyleBrushSample() {
+fun NoriaContext.TextStyleBrushSample() {
     Text(
         text = "Demo Text",
         style =

@@ -21,7 +21,6 @@ import androidx.compose.foundation.PointerMatcher
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -32,6 +31,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.util.fastAll
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -141,7 +141,7 @@ fun Modifier.onDrag(
     onDragCancel: () -> Unit = {},
     onDragEnd: () -> Unit = {},
     onDrag: (Offset) -> Unit
-): Modifier = composed(
+): Modifier = noriaComposed(
     inspectorInfo = {
         name = "onDrag"
         properties["enabled"] = enabled
@@ -151,23 +151,25 @@ fun Modifier.onDrag(
         properties["onDragEnd"] = onDragEnd
         properties["onDrag"] = onDrag
     },
-    factory = {
-        if (!enabled) return@composed Modifier
+    factory = { noriaContext ->
+        noriaContext.run {
+            if (!enabled) return@noriaComposed Modifier
 
-        val matcherState by rememberUpdatedState(matcher)
-        val onDragState by rememberUpdatedState(onDrag)
-        val onDragStartState by rememberUpdatedState(onDragStart)
-        val onDragEndState by rememberUpdatedState(onDragEnd)
-        val onDragCancelState by rememberUpdatedState(onDragCancel)
+            val matcherState by rememberUpdatedState(matcher)
+            val onDragState by rememberUpdatedState(onDrag)
+            val onDragStartState by rememberUpdatedState(onDragStart)
+            val onDragEndState by rememberUpdatedState(onDragEnd)
+            val onDragCancelState by rememberUpdatedState(onDragCancel)
 
-        Modifier.pointerInput(Unit) {
-            detectDragGestures(
-                matcher = { matcherState.matches(it) },
-                onDragStart = { onDragStartState(it) },
-                onDrag = { onDragState(it) },
-                onDragEnd = { onDragEndState() },
-                onDragCancel = { onDragCancelState() }
-            )
+            Modifier.pointerInput(Unit) {
+                detectDragGestures(
+                    matcher = { matcherState.matches(it) },
+                    onDragStart = { onDragStartState(it) },
+                    onDrag = { onDragState(it) },
+                    onDragEnd = { onDragEndState() },
+                    onDragCancel = { onDragCancelState() }
+                )
+            }
         }
     }
 )

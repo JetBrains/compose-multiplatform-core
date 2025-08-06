@@ -29,10 +29,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.noriaComposed
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 private val UnspecifiedAnimationVector2D = AnimationVector2D(Float.NaN, Float.NaN)
 
@@ -61,9 +62,11 @@ internal val MagnifierSpringSpec = SpringSpec(visibilityThreshold = OffsetDispla
 internal fun Modifier.animatedSelectionMagnifier(
     magnifierCenter: () -> Offset,
     platformMagnifier: (animatedCenter: () -> Offset) -> Modifier,
-): Modifier = composed {
-    val animatedCenter by rememberAnimatedMagnifierPosition(targetCalculation = magnifierCenter)
-    return@composed platformMagnifier { animatedCenter }
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val animatedCenter by rememberAnimatedMagnifierPosition(targetCalculation = magnifierCenter)
+        return@noriaComposed platformMagnifier { animatedCenter }
+    }
 }
 
 /**
@@ -71,7 +74,7 @@ internal fun Modifier.animatedSelectionMagnifier(
  * any time the result of [targetCalculation] changes due to any state values it reads change.
  */
 @Composable
-private fun rememberAnimatedMagnifierPosition(targetCalculation: () -> Offset): State<Offset> {
+private fun NoriaContext.rememberAnimatedMagnifierPosition(targetCalculation: () -> Offset): State<Offset> {
     val targetValue by remember { derivedStateOf(targetCalculation) }
     val animatable = remember {
         // Can't use Offset.VectorConverter because we need to handle Unspecified specially.

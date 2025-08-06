@@ -18,6 +18,7 @@ package androidx.compose.runtime.internal
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
+import noria.NoriaContext
 
 internal expect fun invokeComposable(composer: Composer, composable: @Composable () -> Unit)
 

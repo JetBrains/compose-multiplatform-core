@@ -21,11 +21,11 @@ import androidx.compose.foundation.samples.DragAndDropNestedSample
 import androidx.compose.runtime.Composable
 
 @Composable
-fun DragAndDropMultiAppDemo() {
+fun NoriaContext.DragAndDropMultiAppDemo() {
     DragAndDropMultiAppSample()
 }
 
 @Composable
-fun DragAndDropNestedDemo() {
+fun NoriaContext.DragAndDropNestedDemo() {
     DragAndDropNestedSample()
 }

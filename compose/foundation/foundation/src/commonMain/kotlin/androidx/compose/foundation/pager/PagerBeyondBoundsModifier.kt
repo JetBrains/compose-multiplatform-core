@@ -18,9 +18,10 @@ package androidx.compose.foundation.pager
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 @Composable
-internal fun rememberPagerBeyondBoundsState(
+internal fun NoriaContext.rememberPagerBeyondBoundsState(
     state: PagerState,
     beyondViewportPageCount: Int,
 ): LazyLayoutBeyondBoundsState {

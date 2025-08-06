@@ -57,7 +57,7 @@ val PointerIconDemos =
 
 @Preview
 @Composable
-fun PointerIconPartialOverlapDemo() {
+fun NoriaContext.PointerIconPartialOverlapDemo() {
     Box(
         modifier =
             Modifier.fillMaxSize()
@@ -80,7 +80,7 @@ fun PointerIconPartialOverlapDemo() {
 
 @Preview
 @Composable
-fun PointerIconFullOverlapDemo() {
+fun NoriaContext.PointerIconFullOverlapDemo() {
     Box(
         modifier =
             Modifier.fillMaxSize()
@@ -102,7 +102,7 @@ fun PointerIconFullOverlapDemo() {
 
 @Preview
 @Composable
-fun PointerIconNonOverlappingParentsDemo() {
+fun NoriaContext.PointerIconNonOverlappingParentsDemo() {
     Box(
         modifier = Modifier.requiredSize(200.dp).border(BorderStroke(2.dp, SolidColor(Color.Red)))
     ) {
@@ -132,7 +132,7 @@ fun PointerIconNonOverlappingParentsDemo() {
 
 @Preview
 @Composable
-fun PointerIconOverlappingSiblingsDemo() {
+fun NoriaContext.PointerIconOverlappingSiblingsDemo() {
     Box(
         modifier = Modifier.requiredSize(200.dp).border(BorderStroke(2.dp, SolidColor(Color.Red)))
     ) {
@@ -160,7 +160,7 @@ fun PointerIconOverlappingSiblingsDemo() {
 
 @Preview
 @Composable
-fun PointerIconMultiLayeredNestingDemo() {
+fun NoriaContext.PointerIconMultiLayeredNestingDemo() {
     Box(
         modifier =
             Modifier.requiredSize(200.dp)
@@ -192,7 +192,7 @@ fun PointerIconMultiLayeredNestingDemo() {
 
 @Preview
 @Composable
-fun PointerIconChildNotFullyOverlappedByParentDemo() {
+fun NoriaContext.PointerIconChildNotFullyOverlappedByParentDemo() {
     Box(modifier = Modifier.fillMaxSize().border(BorderStroke(2.dp, SolidColor(Color.Yellow)))) {
         Text(text = "expected default arrow")
         Box(

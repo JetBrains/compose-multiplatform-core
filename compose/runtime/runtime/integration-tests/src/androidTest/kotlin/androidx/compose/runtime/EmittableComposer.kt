@@ -23,7 +23,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun TextView(id: Int = 0, text: String = "", onClickListener: View.OnClickListener? = null) {
+fun NoriaContext.TextView(id: Int = 0, text: String = "", onClickListener: View.OnClickListener? = null) {
     AndroidView(factory = { TextView(it) }) { view ->
         view.id = id
         view.text = text
@@ -33,7 +33,7 @@ fun TextView(id: Int = 0, text: String = "", onClickListener: View.OnClickListen
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun Button(id: Int = 0, text: String = "", onClickListener: View.OnClickListener? = null) {
+fun NoriaContext.Button(id: Int = 0, text: String = "", onClickListener: View.OnClickListener? = null) {
     AndroidView(factory = { Button(it) }) { view ->
         view.id = id
         view.text = text
@@ -43,9 +43,9 @@ fun Button(id: Int = 0, text: String = "", onClickListener: View.OnClickListener
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun LinearLayout(
+fun NoriaContext.LinearLayout(
     id: Int = 0,
     orientation: Int = LinearLayout.VERTICAL,
     onClickListener: View.OnClickListener? = null,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {}

@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun TouchModeDemo() {
+fun NoriaContext.TouchModeDemo() {
     val inputManager = LocalInputModeManager.current
     Column(verticalArrangement = Arrangement.SpaceEvenly) {
         Text(

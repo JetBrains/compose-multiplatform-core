@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
+import noria.NoriaContext
 
 /**
  * Returns a new decorated function that will invoke the given [block] if the [lifecycleOwner]'s
@@ -41,7 +42,7 @@ import androidx.lifecycle.LifecycleOwner
  */
 @CheckResult
 @Composable
-private fun dropUnlessStateIsAtLeast(
+private fun NoriaContext.dropUnlessStateIsAtLeast(
     state: State,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
@@ -72,7 +73,7 @@ private fun dropUnlessStateIsAtLeast(
  */
 @CheckResult
 @Composable
-public fun dropUnlessStarted(
+public fun NoriaContext.dropUnlessStarted(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.STARTED, lifecycleOwner, block)
@@ -94,7 +95,7 @@ public fun dropUnlessStarted(
  */
 @CheckResult
 @Composable
-public fun dropUnlessResumed(
+public fun NoriaContext.dropUnlessResumed(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.RESUMED, lifecycleOwner, block)

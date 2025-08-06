@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.compositionLocalOf
 import androidx.lifecycle.ViewModelStoreOwner
+import noria.NoriaContext
 
 /** The CompositionLocal containing the current [ViewModelStoreOwner]. */
 public object LocalViewModelStoreOwner {
@@ -32,7 +33,7 @@ public object LocalViewModelStoreOwner {
      * [androidx.compose.ui.platform.LocalView].
      */
     public val current: ViewModelStoreOwner?
-        @Composable get() = LocalViewModelStoreOwner.current ?: findViewTreeViewModelStoreOwner()
+        @Composable get() = NoriaContext.run { LocalViewModelStoreOwner.current ?: findViewTreeViewModelStoreOwner() }
 
     /**
      * Associates a [LocalViewModelStoreOwner] key to a value in a call to
@@ -45,4 +46,4 @@ public object LocalViewModelStoreOwner {
     }
 }
 
-@Composable internal expect fun findViewTreeViewModelStoreOwner(): ViewModelStoreOwner?
+@Composable internal expect fun NoriaContext.findViewTreeViewModelStoreOwner(): ViewModelStoreOwner?

@@ -38,7 +38,7 @@ interface NoriaContext : ClosureContext {
     val <T> CompositionLocal<T>.current: T
         @ReadOnlyComposable
         @Composable
-        get() = this.current
+        get() = this@NoriaContext.current
 
     companion object : NoriaContext
 }
@@ -144,7 +144,7 @@ fun NoriaContext.lambda(
 }
 
 @Composable
-fun NoriaContext.wrap(
+public fun NoriaContext.wrap(
     body: @Composable NoriaContext.() -> Unit,
     wrap: @Composable NoriaContext.(@Composable NoriaContext.() -> Unit) -> Unit,
 ) {

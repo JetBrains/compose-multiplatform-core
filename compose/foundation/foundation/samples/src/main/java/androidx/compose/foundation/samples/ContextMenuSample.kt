@@ -32,7 +32,7 @@ private data object ClearKeyDataObject
 
 @Sampled
 @Composable
-fun AppendComponentsToTextContextMenu() {
+fun NoriaContext.AppendComponentsToTextContextMenu() {
     val textFieldState = rememberTextFieldState()
     BasicTextField(
         state = textFieldState,
@@ -50,7 +50,7 @@ fun AppendComponentsToTextContextMenu() {
 
 @Sampled
 @Composable
-fun AddFilterToTextContextMenu() {
+fun NoriaContext.AddFilterToTextContextMenu() {
     val textFieldState = rememberTextFieldState()
     BasicTextField(
         state = textFieldState,
@@ -63,7 +63,7 @@ fun AddFilterToTextContextMenu() {
 
 @Sampled
 @Composable
-fun AppendItemToTextContextMenuAndroid() {
+fun NoriaContext.AppendItemToTextContextMenuAndroid() {
     val textFieldState = rememberTextFieldState()
     val label = stringResource(R.string.context_menu_clear)
     BasicTextField(
@@ -86,7 +86,7 @@ fun AppendItemToTextContextMenuAndroid() {
 
 @Sampled
 @Composable
-fun FilterProcessTextItemsInTextContextMenu() {
+fun NoriaContext.FilterProcessTextItemsInTextContextMenu() {
     val textFieldState = rememberTextFieldState()
     BasicTextField(
         state = textFieldState,

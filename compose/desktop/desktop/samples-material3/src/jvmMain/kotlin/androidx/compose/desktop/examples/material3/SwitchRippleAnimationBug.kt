@@ -22,7 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 
 @Composable
-fun SwitchRippleAnimationBug() {
+fun NoriaContext.SwitchRippleAnimationBug() {
     // Issue https://github.com/JetBrains/compose-multiplatform/issues/3064
     val state = remember { mutableStateOf(true) }
     Switch(state.value, { state.value = it })

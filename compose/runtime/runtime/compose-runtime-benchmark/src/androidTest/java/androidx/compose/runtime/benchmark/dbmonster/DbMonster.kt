@@ -73,7 +73,7 @@ class DatabaseList(n: Int, val random: Random) {
 }
 
 @Composable
-fun QueryColumn(query: Query) {
+fun NoriaContext.QueryColumn(query: Query) {
     // TODO: we could do some conditional styling here which would make the test better
     Column(Modifier.fillMaxHeight()) {
         Text(text = "${query.elapsed}")
@@ -82,7 +82,7 @@ fun QueryColumn(query: Query) {
 }
 
 @Composable
-fun DatabaseRow(db: Database) {
+fun NoriaContext.DatabaseRow(db: Database) {
     println(db)
     val columns = 5
     val topQueries = db.topQueries(columns)

@@ -45,7 +45,7 @@ internal val CursorHandleHeight = 25.dp
 internal val CursorHandleWidth = CursorHandleHeight * 2f / (1 + Sqrt2)
 
 @Composable
-internal actual fun CursorHandle(
+internal actual fun NoriaContext.CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
     minTouchTargetSize: DpSize,

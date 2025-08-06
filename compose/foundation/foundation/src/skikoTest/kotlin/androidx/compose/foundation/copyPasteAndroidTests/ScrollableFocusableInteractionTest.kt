@@ -630,7 +630,7 @@ class ScrollableFocusableInteractionTest {
     }
 
     private fun SkikoComposeUiTest.setContentForTest(
-        composable: @Composable () -> Unit
+        composable: @Composable NoriaContext.() -> Unit
     ) {
         setContent {
             focusManager = LocalFocusManager.current
@@ -641,7 +641,7 @@ class ScrollableFocusableInteractionTest {
     @Composable
     private fun ScrollableRowOrColumn(
         size: Dp,
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     ) {
         val modifier = Modifier
             .testTag(scrollableAreaTag)
@@ -674,7 +674,7 @@ class ScrollableFocusableInteractionTest {
      * Places a spacer before or after [content], depending on [reverseScrolling].
      */
     @Composable
-    fun WithSpacerBefore(size: Dp, content: @Composable () -> Unit) {
+    fun WithSpacerBefore(size: Dp, content: @Composable NoriaContext.() -> Unit) {
         if (!reverseScrolling!!) {
             Spacer(Modifier.size(size))
         }

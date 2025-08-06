@@ -25,6 +25,7 @@ import androidx.navigation.NavType
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import noria.NoriaContext
 
 /** DSL for constructing a new [DialogNavigator.Destination] */
 @NavDestinationDsl
@@ -33,7 +34,7 @@ public class DialogNavigatorDestinationBuilder :
 
     private val dialogNavigator: DialogNavigator
     private val dialogProperties: DialogProperties
-    private val content: @Composable (NavBackStackEntry) -> Unit
+    private val content: @Composable NoriaContext.(NavBackStackEntry) -> Unit
 
     /**
      * DSL for constructing a new [DialogNavigator.Destination]
@@ -48,7 +49,7 @@ public class DialogNavigatorDestinationBuilder :
         navigator: DialogNavigator,
         route: String,
         dialogProperties: DialogProperties,
-        content: @Composable (NavBackStackEntry) -> Unit
+        content: @Composable NoriaContext.(NavBackStackEntry) -> Unit
     ) : super(navigator, route) {
         this.dialogNavigator = navigator
         this.dialogProperties = dialogProperties
@@ -71,7 +72,7 @@ public class DialogNavigatorDestinationBuilder :
         route: KClass<*>,
         typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>,
         dialogProperties: DialogProperties,
-        content: @Composable (NavBackStackEntry) -> Unit
+        content: @Composable NoriaContext.(NavBackStackEntry) -> Unit
     ) : super(navigator, route, typeMap) {
         this.dialogNavigator = navigator
         this.dialogProperties = dialogProperties

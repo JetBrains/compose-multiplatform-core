@@ -45,6 +45,7 @@ import androidx.compose.ui.util.fastMaxBy
 import androidx.compose.ui.util.fastSumBy
 import androidx.compose.ui.util.fastZip
 import androidx.compose.ui.util.lerp
+import noria.NoriaContext
 
 internal const val RepeatCountInfinite = -1
 
@@ -52,7 +53,7 @@ internal sealed class Animator {
     abstract val totalDuration: Int
 
     @Composable
-    fun createVectorConfig(
+    fun NoriaContext.createVectorConfig(
         transition: Transition<Boolean>,
         overallDuration: Int,
     ): StateVectorConfig {
@@ -61,7 +62,7 @@ internal sealed class Animator {
     }
 
     @Composable
-    fun Configure(
+    fun NoriaContext.Configure(
         transition: Transition<Boolean>,
         config: StateVectorConfig,
         overallDuration: Int,
@@ -74,7 +75,7 @@ internal sealed class Animator {
             }
         propertyValuesMap.forEach { propertyName, values ->
             values.timestamps.sortBy { it.timeMillis }
-            val state = values.createState(transition, propertyName, overallDuration)
+            val state = values.run { createState(transition, propertyName, overallDuration) }
             @Suppress("UNCHECKED_CAST")
             when (propertyName) {
                 "rotation" -> config.rotationState = state as State<Float>
@@ -142,7 +143,7 @@ internal sealed class PropertyValues<T> {
     val timestamps = mutableListOf<Timestamp<T>>()
 
     @Composable
-    abstract fun createState(
+    abstract fun NoriaContext.createState(
         transition: Transition<Boolean>,
         propertyName: String,
         overallDuration: Int,
@@ -166,7 +167,7 @@ internal sealed class PropertyValues<T> {
 private class FloatPropertyValues : PropertyValues<Float>() {
 
     @Composable
-    override fun createState(
+    override fun NoriaContext.createState(
         transition: Transition<Boolean>,
         propertyName: String,
         overallDuration: Int,
@@ -194,7 +195,7 @@ private class FloatPropertyValues : PropertyValues<Float>() {
 private class ColorPropertyValues : PropertyValues<Color>() {
 
     @Composable
-    override fun createState(
+    override fun NoriaContext.createState(
         transition: Transition<Boolean>,
         propertyName: String,
         overallDuration: Int,
@@ -222,7 +223,7 @@ private class ColorPropertyValues : PropertyValues<Color>() {
 private class PathPropertyValues : PropertyValues<List<PathNode>>() {
 
     @Composable
-    override fun createState(
+    override fun NoriaContext.createState(
         transition: Transition<Boolean>,
         propertyName: String,
         overallDuration: Int,

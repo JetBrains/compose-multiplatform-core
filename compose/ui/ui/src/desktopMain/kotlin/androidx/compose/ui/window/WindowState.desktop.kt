@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.takeOrElse
+import noria.NoriaContext
 
 /**
  * Creates a [WindowState] that is remembered across compositions.
@@ -41,7 +42,7 @@ import androidx.compose.ui.unit.takeOrElse
  * @param size the initial value for [WindowState.size]
  */
 @Composable
-fun rememberWindowState(
+fun NoriaContext.rememberWindowState(
     placement: WindowPlacement = WindowPlacement.Floating,
     isMinimized: Boolean = false,
     position: WindowPosition = WindowPosition.PlatformDefault,
@@ -69,7 +70,7 @@ fun rememberWindowState(
 @Suppress("DEPRECATION")
 @Composable
 @Deprecated("Use rememberWindowState which accepts DpSize")
-fun rememberWindowState(
+fun NoriaContext.rememberWindowState(
     placement: WindowPlacement = WindowPlacement.Floating,
     isMinimized: Boolean = false,
     position: WindowPosition = WindowPosition.PlatformDefault,
@@ -96,7 +97,7 @@ fun rememberWindowState(
  * @param height the initial value for height of  [WindowState.size]
  */
 @Composable
-fun rememberWindowState(
+fun NoriaContext.rememberWindowState(
     placement: WindowPlacement = WindowPlacement.Floating,
     isMinimized: Boolean = false,
     position: WindowPosition = WindowPosition.PlatformDefault,

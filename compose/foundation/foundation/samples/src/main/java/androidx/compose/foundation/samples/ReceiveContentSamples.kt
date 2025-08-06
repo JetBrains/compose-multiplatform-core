@@ -44,7 +44,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 @OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
-fun ReceiveContentBasicSample() {
+fun NoriaContext.ReceiveContentBasicSample() {
     val state = rememberTextFieldState()
     var images by remember { mutableStateOf<List<ImageBitmap>>(emptyList()) }
     Column {
@@ -74,7 +74,7 @@ fun ReceiveContentBasicSample() {
 @OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
-fun ReceiveContentFullSample() {
+fun NoriaContext.ReceiveContentFullSample() {
     val state = rememberTextFieldState()
     var images by remember { mutableStateOf<List<ImageBitmap>>(emptyList()) }
     var dragging by remember { mutableStateOf(false) }

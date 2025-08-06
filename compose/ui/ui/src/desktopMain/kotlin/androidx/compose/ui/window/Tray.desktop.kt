@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import noria.NoriaContext
 
 // In fact, this size doesn't affect anything on Windows/Linux, because they request what they
 // need, and not what we provide. It only affects macOs. This size will be scaled in asAwtImage to
@@ -157,7 +158,7 @@ fun ApplicationScope.Tray(
  * Creates a [WindowState] that is remembered across compositions.
  */
 @Composable
-fun rememberTrayState() = remember {
+fun NoriaContext.rememberTrayState() = remember {
     TrayState()
 }
 

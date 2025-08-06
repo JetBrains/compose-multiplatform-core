@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SampleScrollingTooltipScreen() {
+fun NoriaContext.SampleScrollingTooltipScreen() {
     Scaffold(
         topBar = {
             TopAppBar(

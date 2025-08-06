@@ -25,7 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun ContextualFlowRowDemo() {
+fun NoriaContext.ContextualFlowRowDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         ContextualFlowRowMaxLineDynamicSeeMore()
         ContextualFlowRow_ItemPosition()

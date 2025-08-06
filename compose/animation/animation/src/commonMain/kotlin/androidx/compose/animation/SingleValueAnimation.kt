@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import noria.NoriaContext
 
 /**
  * Fire-and-forget animation function for [Color]. This Composable function is overloaded for
@@ -54,7 +55,7 @@ import androidx.compose.ui.unit.Dp
  * @param finishedListener An optional listener to get notified when the animation is finished.
  */
 @Composable
-public fun animateColorAsState(
+public fun NoriaContext.animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
     label: String = "ColorAnimation",
@@ -76,7 +77,7 @@ public fun animateColorAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateColorAsState(
+public fun NoriaContext.animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
     finishedListener: ((Color) -> Unit)? = null,

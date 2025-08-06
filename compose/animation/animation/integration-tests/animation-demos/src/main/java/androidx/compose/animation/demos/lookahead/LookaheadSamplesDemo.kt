@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun LookaheadSamplesDemo() {
+fun NoriaContext.LookaheadSamplesDemo() {
     Column {
         ApproachLayoutSample0()
         LookaheadLayoutCoordinatesSample()

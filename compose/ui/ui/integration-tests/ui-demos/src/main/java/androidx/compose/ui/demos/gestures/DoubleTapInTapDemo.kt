@@ -36,7 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DoubleTapInTapDemo() {
+fun NoriaContext.DoubleTapInTapDemo() {
     val defaultColor = Grey
 
     val innerColor = remember { mutableStateOf(defaultColor) }

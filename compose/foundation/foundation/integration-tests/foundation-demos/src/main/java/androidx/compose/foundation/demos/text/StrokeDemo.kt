@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun TextStrokeDemo() {
+fun NoriaContext.TextStrokeDemo() {
     var dashInterval by remember { mutableFloatStateOf(2f) }
     var stroke by remember {
         mutableStateOf(

@@ -42,7 +42,7 @@ private var expandedHeightInit = false
 private var usePlatformDefaultWidthInit = false
 
 @Composable
-fun DialogDemo() {
+fun NoriaContext.DialogDemo() {
     val roundedRectangleShape = RoundedCornerShape(percent = 15)
     var shape by remember { mutableStateOf(RectangleShape) }
     var elevation by remember { mutableStateOf(8.dp) }

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ViewConfiguration
 import kotlinx.coroutines.flow.collect
+import noria.NoriaContext
 
 // An interface, not a sealed class, to allow adding new types here in a safe way (and not break
 // exhaustive when clauses)
@@ -80,7 +81,7 @@ interface PressInteraction : Interaction {
 @Composable
 fun InteractionSource.collectIsPressedAsState(): State<Boolean> {
     val isPressed = remember { mutableStateOf(false) }
-    LaunchedEffect(this) {
+    NoriaContext.LaunchedEffect(this) {
         val pressInteractions = mutableListOf<PressInteraction.Press>()
         interactions.collect { interaction ->
             when (interaction) {

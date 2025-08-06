@@ -32,6 +32,7 @@ import androidx.compose.ui.layout.SubcomposeMeasureScope
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /**
  * [ContextualFlowRow] is a specialized version of the [FlowRow] layout. It is designed to enable
@@ -67,7 +68,7 @@ import androidx.compose.ui.unit.dp
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @Composable
 @ExperimentalLayoutApi
-fun ContextualFlowRow(
+fun NoriaContext.ContextualFlowRow(
     itemCount: Int,
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
@@ -79,9 +80,9 @@ fun ContextualFlowRow(
     content: @Composable ContextualFlowRowScope.(index: Int) -> Unit,
 ) {
     val overflowState = remember(overflow) { overflow.createOverflowState() }
-    val list: List<@Composable () -> Unit> =
+    val list: List<@Composable NoriaContext.() -> Unit> =
         remember(overflow) {
-            val mutableList: MutableList<@Composable () -> Unit> = mutableListOf()
+            val mutableList: MutableList<@Composable NoriaContext.() -> Unit> = mutableListOf()
             overflow.addOverflowComposables(overflowState, mutableList)
             mutableList
         }
@@ -142,7 +143,7 @@ fun ContextualFlowRow(
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @Composable
 @ExperimentalLayoutApi
-fun ContextualFlowColumn(
+fun NoriaContext.ContextualFlowColumn(
     itemCount: Int,
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -154,9 +155,9 @@ fun ContextualFlowColumn(
     content: @Composable ContextualFlowColumnScope.(index: Int) -> Unit,
 ) {
     val overflowState = remember(overflow) { overflow.createOverflowState() }
-    val list: List<@Composable () -> Unit> =
+    val list: List<@Composable NoriaContext.() -> Unit> =
         remember(overflow) {
-            val mutableList: MutableList<@Composable () -> Unit> = mutableListOf()
+            val mutableList: MutableList<@Composable NoriaContext.() -> Unit> = mutableListOf()
             overflow.addOverflowComposables(overflowState, mutableList)
             mutableList
         }
@@ -372,7 +373,7 @@ internal class ContextualFlowColumnOverflowScopeImpl(private val state: FlowLayo
     ContextualFlowColumnOverflowScope
 
 @Composable
-internal fun contextualRowMeasurementHelper(
+internal fun NoriaContext.contextualRowMeasurementHelper(
     horizontalArrangement: Arrangement.Horizontal,
     verticalArrangement: Arrangement.Vertical,
     itemVerticalAlignment: Alignment.Vertical,
@@ -380,8 +381,8 @@ internal fun contextualRowMeasurementHelper(
     maxLines: Int,
     overflowState: FlowLayoutOverflowState,
     itemCount: Int,
-    overflowComposables: List<@Composable () -> Unit>,
-    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
+    overflowComposables: List<@Composable NoriaContext.() -> Unit>,
+    getComposable: @Composable NoriaContext.(index: Int, info: FlowLineInfo) -> Unit,
 ): (SubcomposeMeasureScope, Constraints) -> MeasureResult {
     return remember(
         horizontalArrangement,
@@ -412,7 +413,7 @@ internal fun contextualRowMeasurementHelper(
 }
 
 @Composable
-internal fun contextualColumnMeasureHelper(
+internal fun NoriaContext.contextualColumnMeasureHelper(
     verticalArrangement: Arrangement.Vertical,
     horizontalArrangement: Arrangement.Horizontal,
     itemHorizontalAlignment: Alignment.Horizontal,
@@ -420,8 +421,8 @@ internal fun contextualColumnMeasureHelper(
     maxLines: Int,
     overflowState: FlowLayoutOverflowState,
     itemCount: Int,
-    overflowComposables: List<@Composable () -> Unit>,
-    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
+    overflowComposables: List<@Composable NoriaContext.() -> Unit>,
+    getComposable: @Composable NoriaContext.(index: Int, info: FlowLineInfo) -> Unit,
 ): (SubcomposeMeasureScope, Constraints) -> MeasureResult {
     return remember(
         verticalArrangement,
@@ -464,8 +465,8 @@ private data class FlowMeasureLazyPolicy(
     private val maxLines: Int,
     private val maxItemsInMainAxis: Int,
     private val overflow: FlowLayoutOverflowState,
-    private val overflowComposables: List<@Composable () -> Unit>,
-    private val getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
+    private val overflowComposables: List<@Composable NoriaContext.() -> Unit>,
+    private val getComposable: @Composable NoriaContext.(index: Int, info: FlowLineInfo) -> Unit,
 ) : FlowLineMeasurePolicy {
 
     fun getMeasurePolicy(): (SubcomposeMeasureScope, Constraints) -> MeasureResult {

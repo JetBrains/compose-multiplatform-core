@@ -16,6 +16,8 @@
 
 package androidx.compose.runtime
 
+import noria.NoriaContext
+
 /**
  * Compose passes data through the composition tree explicitly through means of parameters to
  * composable functions. This is often times the simplest and best way to have data flow through the
@@ -71,8 +73,8 @@ public sealed class CompositionLocal<T>(defaultFactory: () -> T) {
      * @sample androidx.compose.runtime.samples.consumeCompositionLocal
      */
     @OptIn(InternalComposeApi::class)
-    public inline val current: T
-        @ReadOnlyComposable @Composable get() = currentComposer.consume(this)
+    public inline val NoriaContext.current: T
+        @ReadOnlyComposable @Composable get() = currentComposer.consume(this@CompositionLocal)
 }
 
 /**
@@ -369,9 +371,9 @@ internal constructor(internal val compositionLocals: PersistentCompositionLocalM
 @Composable
 @OptIn(InternalComposeApi::class)
 @NonSkippableComposable
-public fun CompositionLocalProvider(
+public fun NoriaContext.CompositionLocalProvider(
     vararg values: ProvidedValue<*>,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     currentComposer.startProviders(values)
     content()
@@ -392,7 +394,7 @@ public fun CompositionLocalProvider(
 @Composable
 @OptIn(InternalComposeApi::class)
 @NonSkippableComposable
-public fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composable () -> Unit) {
+public fun NoriaContext.CompositionLocalProvider(value: ProvidedValue<*>, content: @Composable NoriaContext.() -> Unit) {
     currentComposer.startProvider(value)
     content()
     currentComposer.endProvider()
@@ -410,9 +412,9 @@ public fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composabl
  * @see staticCompositionLocalOf
  */
 @Composable
-public fun CompositionLocalProvider(
+public fun NoriaContext.CompositionLocalProvider(
     context: CompositionLocalContext,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     CompositionLocalProvider(
         *context.compositionLocals.map { it.value.toProvided(it.key) }.toTypedArray(),

@@ -63,7 +63,7 @@ import noria.NoriaContext
  * @param content The content of the [Box].
  */
 @Composable
-inline fun Box(
+inline fun NoriaContext.Box(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,
@@ -104,7 +104,7 @@ internal fun maybeCachedBoxMeasurePolicy(
 
 @PublishedApi
 @Composable
-internal fun rememberBoxMeasurePolicy(
+internal fun NoriaContext.rememberBoxMeasurePolicy(
     alignment: Alignment,
     propagateMinConstraints: Boolean,
 ): MeasurePolicy =
@@ -231,7 +231,7 @@ private fun Placeable.PlacementScope.placeInBox(
  * @param modifier The modifier to be applied to the layout.
  */
 @Composable
-fun Box(modifier: Modifier) {
+fun NoriaContext.Box(modifier: Modifier) {
     Layout(measurePolicy = EmptyBoxMeasurePolicy, modifier = modifier)
 }
 

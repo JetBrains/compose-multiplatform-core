@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 
 /** Demonstration of how various press/tap gesture interact together in a nested fashion. */
 @Composable
-fun NestedPressingDemo() {
+fun NoriaContext.NestedPressingDemo() {
     Column {
         Text(
             "Demonstrates correct behavior of a nested set of regions that each respond with " +
@@ -57,7 +57,7 @@ fun NestedPressingDemo() {
 }
 
 @Composable
-private fun PressableContainer(
+private fun NoriaContext.PressableContainer(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit = {},
 ) {

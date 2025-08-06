@@ -96,7 +96,7 @@ private val dialogDemos =
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TextFieldsInDialogDemo() {
+fun NoriaContext.TextFieldsInDialogDemo() {
     val listState = rememberLazyListState()
     val (currentDemoIndex, setDemoIndex) = rememberSaveable { mutableIntStateOf(-1) }
 
@@ -121,13 +121,13 @@ fun TextFieldsInDialogDemo() {
 }
 
 @Composable
-private fun SingleTextFieldDialog() {
+private fun NoriaContext.SingleTextFieldDialog() {
     var text by remember { mutableStateOf("") }
     TextField(text, onValueChange = { text = it })
 }
 
 @Composable
-private fun AutoFocusTextFieldDialog() {
+private fun NoriaContext.AutoFocusTextFieldDialog() {
     var text by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 

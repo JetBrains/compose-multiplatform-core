@@ -180,7 +180,7 @@ class WebInteropTest : OnCanvasTests {
 }
 
 @Composable
-internal fun TestInteropView(modifier: Modifier, id: String) {
+internal fun NoriaContext.TestInteropView(modifier: Modifier, id: String) {
     WebElementView(
         modifier = modifier,
         factory = {

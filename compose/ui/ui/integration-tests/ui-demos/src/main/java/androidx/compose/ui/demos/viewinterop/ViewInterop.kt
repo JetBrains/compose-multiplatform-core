@@ -54,7 +54,7 @@ import androidx.compose.ui.viewinterop.AndroidViewBinding
 
 @SuppressLint("ResourceType")
 @Composable
-fun ViewInteropDemo() {
+fun NoriaContext.ViewInteropDemo() {
     Column {
         // This is a collection of multiple ways to include Android Views in Compose UI hierarchies
         // and Compose in Android ViewGroups. Note that these APIs are subject to change.

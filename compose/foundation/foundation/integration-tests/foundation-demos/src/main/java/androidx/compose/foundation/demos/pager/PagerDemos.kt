@@ -73,20 +73,20 @@ val PagerDemos =
     )
 
 @Composable
-private fun VerticalPagerDemo() {
+private fun NoriaContext.VerticalPagerDemo() {
     val pagerState = rememberPagerState { PagesCount }
     VerticalPager(modifier = Modifier.fillMaxSize(), state = pagerState) { PagerItem(it) }
 }
 
 @Composable
-internal fun HorizontalPagerDemo() {
+internal fun NoriaContext.HorizontalPagerDemo() {
     val pagerState = rememberPagerState { PagesCount }
 
     HorizontalPager(modifier = Modifier.fillMaxSize(), state = pagerState) { PagerItem(it) }
 }
 
 @Composable
-internal fun PagerItem(index: Int) {
+internal fun NoriaContext.PagerItem(index: Int) {
     Box(
         modifier =
             Modifier.focusable()
@@ -101,7 +101,7 @@ internal fun PagerItem(index: Int) {
 }
 
 @Composable
-internal fun PagerControls(modifier: Modifier = Modifier, pagerState: PagerState) {
+internal fun NoriaContext.PagerControls(modifier: Modifier = Modifier, pagerState: PagerState) {
     val animationScope = rememberCoroutineScope()
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Button(onClick = { animationScope.launch { pagerState.animateScrollToPage(0) } }) {

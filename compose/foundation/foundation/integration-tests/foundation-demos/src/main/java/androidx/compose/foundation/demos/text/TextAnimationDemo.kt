@@ -59,7 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun TextAnimationDemo() {
+fun NoriaContext.TextAnimationDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Scale Animation")
@@ -77,7 +77,7 @@ fun TextAnimationDemo() {
 }
 
 @Composable
-fun TextColorAnimation() {
+fun NoriaContext.TextColorAnimation() {
     val anim = rememberInfiniteTransition("slow animation")
     val color: State<Color> =
         anim.animateColor(
@@ -145,13 +145,13 @@ class TextMotionState(initialTextStyle: TextStyle) {
 }
 
 @Composable
-fun rememberTextMotionState(): TextMotionState {
+fun NoriaContext.rememberTextMotionState(): TextMotionState {
     val textStyle = LocalTextStyle.current
     return remember(textStyle) { TextMotionState(textStyle) }
 }
 
 @Composable
-fun TextScaleAnimation() {
+fun NoriaContext.TextScaleAnimation() {
     val textMotionState = rememberTextMotionState()
 
     textMotionState.TextMotionPanel()
@@ -178,7 +178,7 @@ fun TextScaleAnimation() {
 }
 
 @Composable
-fun TextTranslationAnimation() {
+fun NoriaContext.TextTranslationAnimation() {
     val textMotionState = rememberTextMotionState()
 
     textMotionState.TextMotionPanel()
@@ -205,7 +205,7 @@ fun TextTranslationAnimation() {
 }
 
 @Composable
-fun TextRotationAnimation() {
+fun NoriaContext.TextRotationAnimation() {
     val textMotionState = rememberTextMotionState()
 
     val infiniteTransition = rememberInfiniteTransition()

@@ -77,6 +77,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 // TODO: Can we use rootKey for this since all compositions will have an eventual Recomposer parent?
 private inline val RecomposerCompoundHashKey
@@ -416,7 +417,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     private class HotReloadable(private val composition: CompositionImpl) {
-        private var composable: @Composable () -> Unit = composition.composable
+        private var composable: @Composable NoriaContext.() -> Unit = composition.composable
 
         fun clearContent() {
             if (composition.isRoot) {
@@ -1212,7 +1213,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 
     internal override fun composeInitial(
         composition: ControlledComposition,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         val composerWasComposing = composition.isComposing
 
@@ -1270,7 +1271,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     internal override fun composeInitialPaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ): ScatterSet<RecomposeScopeImpl> {
         return try {
             composition.pausable(shouldPause) {

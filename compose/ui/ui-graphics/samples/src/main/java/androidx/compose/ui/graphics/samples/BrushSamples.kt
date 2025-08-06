@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun GradientBrushSample() {
+fun NoriaContext.GradientBrushSample() {
     Column(modifier = Modifier.fillMaxSize().wrapContentSize()) {
 
         // Create a linear gradient that shows red in the top left corner
@@ -167,7 +167,7 @@ fun SweepGradientSample() {
 
 @Sampled
 @Composable
-fun CompositeShaderSample() {
+fun NoriaContext.CompositeShaderSample() {
     Box(
         modifier =
             Modifier.size(120.dp).drawWithCache {

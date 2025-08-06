@@ -81,7 +81,7 @@ internal class ActivityWithFlagSecure : TestActivity() {
 
 /** A Container Box implementation used for selection children and handle layout */
 @Composable
-internal fun SimpleContainer(
+internal fun NoriaContext.SimpleContainer(
     modifier: Modifier = Modifier,
     width: Dp? = null,
     height: Dp? = null,

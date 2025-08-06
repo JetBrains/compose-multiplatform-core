@@ -19,14 +19,15 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
+import noria.NoriaContext
 import platform.UIKit.UIViewController
 
-fun ComposeUIViewController(content: @Composable () -> Unit): UIViewController =
+fun ComposeUIViewController(content: @Composable NoriaContext.() -> Unit): UIViewController =
     ComposeUIViewController(configure = {}, content = content)
 
 fun ComposeUIViewController(
     configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): UIViewController = ComposeHostingViewController(
     configuration = ComposeUIViewControllerConfiguration().apply(configure),
     content = content,

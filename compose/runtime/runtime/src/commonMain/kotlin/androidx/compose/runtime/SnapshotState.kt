@@ -37,6 +37,7 @@ import androidx.compose.runtime.snapshots.withCurrent
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KProperty
+import noria.NoriaContext
 
 /**
  * Return a new [MutableState] initialized with the passed in [value]
@@ -332,5 +333,5 @@ public fun <T> mutableStateSetOf(vararg elements: T): SnapshotStateSet<T> =
  * By using [rememberUpdatedState] a composable function can update these operations in progress.
  */
 @Composable
-public fun <T> rememberUpdatedState(newValue: T): State<T> =
+public fun <T> NoriaContext.rememberUpdatedState(newValue: T): State<T> =
     remember { mutableStateOf(newValue) }.apply { value = newValue }

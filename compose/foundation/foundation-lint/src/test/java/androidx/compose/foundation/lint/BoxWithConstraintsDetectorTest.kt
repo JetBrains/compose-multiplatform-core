@@ -262,7 +262,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                 import androidx.compose.runtime.Composable
 
                 @Composable
-                fun Foo(content: @Composable ()->Unit) {}
+                fun Foo(content: @Composable NoriaContext.()->Unit) {}
                 @Composable
                 fun Bar() {}
 
@@ -346,7 +346,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                 @Composable
                 fun BoxWithConstraintsScope.ComposableFunc() { constraints.minWidth }
                 @Composable
-                fun Foo(content: @Composable ()->Unit) {}
+                fun Foo(content: @Composable NoriaContext.()->Unit) {}
                 val BoxWithConstraintsScope.prop: Int
                     get() = 0
 

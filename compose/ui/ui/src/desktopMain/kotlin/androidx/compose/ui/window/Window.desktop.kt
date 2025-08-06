@@ -21,11 +21,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
-import java.awt.Window
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.util.setPositionSafely
+import androidx.compose.ui.util.setSizeSafely
 import javax.swing.JMenuBar
 import noria.ClosureContext
 import noria.NoriaContext
@@ -103,7 +107,7 @@ import noria.ui.core.WindowData
  */
 @ExperimentalComposeUiApi
 @Composable
-fun Window(
+fun NoriaContext.Window(
     onCloseRequest: () -> Unit,
     initialSize: DpSize = DpSize.Unspecified,
     initialPosition: WindowPosition = WindowPosition.PlatformDefault,
@@ -120,7 +124,7 @@ fun Window(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    appearance: Appearance = LocalAppearance.current,
+    systemTheme: SystemTheme = LocalSystemTheme.current,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     onLayout: ClosureContext.(WindowData) -> Unit = {},
@@ -128,10 +132,10 @@ fun Window(
 ) {
     SwingWindow(
         onCloseRequest = onCloseRequest,
-        state = state,
         visible = visible,
         title = title,
-        icon = icon,
+        icon = null,
+        backgroundColor = backgroundColor,
         decoration = decoration,
         transparent = transparent,
         resizable = resizable,
@@ -140,7 +144,12 @@ fun Window(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        init = { },
+        init = {
+            it.setSizeSafely(initialSize, WindowPlacement.Floating)
+            it.setPositionSafely(initialPosition, WindowPlacement.Floating) {
+                WindowLocationTracker.getCascadeLocationFor(it)
+            }
+        },
         content = content,
     )
 }
@@ -444,7 +453,7 @@ fun Window(
  * Note the block will also be run once right after the [create] block completes.
  *
  * Window is needed for creating window's that still can't be created with
- * the default Compose function [androidx.compose.ui.window.Window]
+ * the default Compose function [Window]
  *
  * @param visible Whether the window is visible to the user.
  * If `false`:
@@ -475,7 +484,7 @@ fun Window(
     )
 )
 @Composable
-fun Window(
+fun NoriaContext.Window(
     visible: Boolean = true,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
@@ -499,7 +508,7 @@ fun Window(
  * Receiver scope which is used by [androidx.compose.ui.window.Window].
  */
 @Stable
-interface FrameWindowScope : WindowScope, NoriaContext {
+interface FrameWindowScope : WindowScope {
     /**
      * [ComposeWindow] that was created inside [androidx.compose.ui.window.Window].
      */

@@ -53,7 +53,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.core.text.isDigitsOnly
 
 @Composable
-fun BasicTextFieldInputTransformationDemos() {
+fun NoriaContext.BasicTextFieldInputTransformationDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine(tag = "allCaps")
         FilterDemo(filter = InputTransformation.allCaps(Locale.current))
@@ -98,7 +98,7 @@ fun BasicTextFieldInputTransformationDemos() {
 }
 
 @Composable
-private fun DigitsOnlyDemo() {
+private fun NoriaContext.DigitsOnlyDemo() {
     FilterDemo(
         filter =
             object : InputTransformation {
@@ -114,7 +114,7 @@ private fun DigitsOnlyDemo() {
 }
 
 @Composable
-private fun AdditiveInputTransformationDemo() {
+private fun NoriaContext.AdditiveInputTransformationDemo() {
     FilterDemo(
         filter = {
             changes.forEachChange { range, originalRange ->
@@ -128,13 +128,13 @@ private fun AdditiveInputTransformationDemo() {
 }
 
 @Composable
-private fun FilterDemo(filter: InputTransformation) {
+private fun NoriaContext.FilterDemo(filter: InputTransformation) {
     val state = remember { TextFieldState() }
     BasicTextField(state = state, inputTransformation = filter, modifier = demoTextFieldModifiers)
 }
 
 @Composable
-private fun ChangeFilterDemo() {
+private fun NoriaContext.ChangeFilterDemo() {
     var filter: InputTransformation? by remember { mutableStateOf(null) }
     val state = remember { TextFieldState() }
 

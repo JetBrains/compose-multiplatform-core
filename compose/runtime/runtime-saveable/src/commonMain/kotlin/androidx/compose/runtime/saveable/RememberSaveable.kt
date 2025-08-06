@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.runtime.toString
+import noria.NoriaContext
 
 /**
  * Remember the value produced by [init].
@@ -72,7 +73,7 @@ import androidx.compose.runtime.toString
             "See https://r.android.com/3610053 for details."
 )
 @Composable
-public fun <T : Any> rememberSaveable(
+public fun <T : Any> NoriaContext.rememberSaveable(
     vararg inputs: Any?,
     saver: Saver<T, out Any> = autoSaver(),
     key: String? = null,
@@ -133,7 +134,7 @@ public fun <T : Any> rememberSaveable(
  * @param init A factory function to create the initial value of this state
  */
 @Composable
-public fun <T : Any> rememberSaveable(vararg inputs: Any?, init: () -> T): T {
+public fun <T : Any> NoriaContext.rememberSaveable(vararg inputs: Any?, init: () -> T): T {
     // TODO(mgalhardo): We're planning to support both `autoSaver` and `serializer` in this base
     //  variant, where neither is explicitly passed. To avoid potential method signature conflicts,
     //  we're not using default parameters for `saver`.
@@ -174,7 +175,7 @@ public fun <T : Any> rememberSaveable(vararg inputs: Any?, init: () -> T): T {
  * @param init A factory function to create the initial value of this state
  */
 @Composable
-public fun <T : Any> rememberSaveable(
+public fun <T : Any> NoriaContext.rememberSaveable(
     vararg inputs: Any?,
     saver: Saver<T, out Any>,
     init: () -> T,
@@ -202,7 +203,7 @@ public fun <T : Any> rememberSaveable(
  * @param init A factory function to create the initial value of this state
  */
 @Composable
-public fun <T> rememberSaveable(
+public fun <T> NoriaContext.rememberSaveable(
     vararg inputs: Any?,
     stateSaver: Saver<T, out Any>,
     init: () -> MutableState<T>,
@@ -241,7 +242,7 @@ public fun <T> rememberSaveable(
             "See https://r.android.com/3610053 for details."
 )
 @Composable
-public fun <T> rememberSaveable(
+public fun <T> NoriaContext.rememberSaveable(
     vararg inputs: Any?,
     stateSaver: Saver<T, out Any>,
     key: String? = null,

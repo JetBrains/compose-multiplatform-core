@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import kotlinx.coroutines.channels.Channel
+import noria.NoriaContext
 
 /**
  * When [UpdateEffect] enters the composition it will call [update] and will capture all state
@@ -34,7 +35,7 @@ import kotlinx.coroutines.channels.Channel
  * [update] always be called in UI thread.
  */
 @Composable
-internal fun UpdateEffect(update: () -> Unit) {
+internal fun NoriaContext.UpdateEffect(update: () -> Unit) {
     val tasks = remember { Channel<() -> Unit>(Channel.RENDEZVOUS) }
     val currentUpdate by rememberUpdatedState(update)
 

@@ -59,13 +59,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import noria.NoriaContext
 
 // Design of basic representation is from Material specs:
 // https://material.io/design/interaction/states.html#hover
 // https://material.io/components/menus#specs
 
 @Composable
-internal fun DefaultOpenContextMenu(
+internal fun NoriaContext.DefaultOpenContextMenu(
     session: TextContextMenuSession,
     components: List<TextContextMenuComponent>,
     popupPositionProvider: PopupPositionProvider,
@@ -132,7 +133,7 @@ internal fun DefaultOpenContextMenu(
 }
 
 @Composable
-private fun MenuSeparator(color: Color) {
+private fun NoriaContext.MenuSeparator(color: Color) {
     Box(
         modifier =
             Modifier.padding(vertical = 8.dp)
@@ -143,7 +144,7 @@ private fun MenuSeparator(color: Color) {
 }
 
 @Composable
-private fun MenuItemContent(
+private fun NoriaContext.MenuItemContent(
     itemHoverColor: Color,
     onClick: () -> Unit,
     content: @Composable RowScope.() -> Unit

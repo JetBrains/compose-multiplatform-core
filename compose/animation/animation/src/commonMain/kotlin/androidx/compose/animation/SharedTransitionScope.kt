@@ -72,12 +72,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * [SharedTransitionLayout] creates a layout and a [SharedTransitionScope] for the child layouts in
@@ -93,7 +95,7 @@ import kotlinx.coroutines.launch
  */
 @ExperimentalSharedTransitionApi
 @Composable
-public fun SharedTransitionLayout(
+public fun NoriaContext.SharedTransitionLayout(
     modifier: Modifier = Modifier,
     content: @Composable SharedTransitionScope.() -> Unit,
 ) {
@@ -119,25 +121,25 @@ public fun SharedTransitionLayout(
  */
 @ExperimentalSharedTransitionApi
 @Composable
-public fun SharedTransitionScope(content: @Composable SharedTransitionScope.(Modifier) -> Unit) {
+public fun NoriaContext.SharedTransitionScope(content: @Composable SharedTransitionScope.(Modifier) -> Unit) {
     LookaheadScope {
         val coroutineScope = rememberCoroutineScope()
         val sharedScope = remember { SharedTransitionScopeImpl(this, coroutineScope) }
         sharedScope.content(
             Modifier.layout { measurable, constraints ->
-                    val p = measurable.measure(constraints)
-                    layout(p.width, p.height) {
-                        val coords = coordinates
-                        if (coords != null) {
-                            if (!isLookingAhead) {
-                                sharedScope.root = coords
-                            } else {
-                                sharedScope.nullableLookaheadRoot = coords
-                            }
+                val p = measurable.measure(constraints)
+                layout(p.width, p.height) {
+                    val coords = coordinates
+                    if (coords != null) {
+                        if (!isLookingAhead) {
+                            sharedScope.root = coords
+                        } else {
+                            sharedScope.nullableLookaheadRoot = coords
                         }
-                        p.place(0, 0)
                     }
+                    p.place(0, 0)
                 }
+            }
                 .drawWithContent {
                     drawContent()
                     sharedScope.drawInOverlay(this)
@@ -613,7 +615,8 @@ public interface SharedTransitionScope : LookaheadScope {
     public fun OverlayClip(clipShape: Shape): OverlayClip
 
     /** Creates and remembers a [SharedContentState] with a given [key]. */
-    @Composable public fun rememberSharedContentState(key: Any): SharedContentState
+    @Composable
+    public fun NoriaContext.rememberSharedContentState(key: Any): SharedContentState
 
     /**
      * [SharedContentState] is designed to allow access of the properties of
@@ -664,7 +667,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     SharedTransitionScope, LookaheadScope by lookaheadScope {
     companion object {
         private val SharedTransitionObserver by
-            lazy(LazyThreadSafetyMode.NONE) { SnapshotStateObserver { it() }.also { it.start() } }
+        lazy(LazyThreadSafetyMode.NONE) { SnapshotStateObserver { it() }.also { it.start() } }
     }
 
     internal var disposed: Boolean = false
@@ -723,43 +726,45 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         clipInOverlayDuringTransition: OverlayClip,
     ) =
         this.sharedBoundsImpl(
-                sharedContentState,
-                animatedVisibilityScope.transition,
-                visible = { it == EnterExitState.Visible },
-                boundsTransform,
-                placeHolderSize = placeHolderSize,
-                renderInOverlayDuringTransition = renderInOverlayDuringTransition,
-                zIndexInOverlay = zIndexInOverlay,
-                clipInOverlayDuringTransition = clipInOverlayDuringTransition,
-                renderOnlyWhenVisible = false,
-            )
-            .composed {
-                animatedVisibilityScope.transition
-                    .createModifier(
-                        enter = enter,
-                        exit = exit,
-                        // Since we don't know if a match is found when this is composed,
-                        // we have to defer the decision to enable or disable content
-                        // scaling until later in the frame. This later time could be
-                        // later in the composition, or during measurement/placement from
-                        // subcomposition.
-                        isEnabled = { sharedContentState.isMatchFound },
-                        label = "enter/exit for ${sharedContentState.key}",
-                    )
-                    .then(
-                        if (resizeMode is ScaleToBoundsImpl) {
-                            Modifier.createContentScaleModifier(resizeMode) {
-                                // Since we don't know if a match is found when this is composed,
-                                // we have to defer the decision to enable or disable content
-                                // scaling until later in the frame. This later time could be
-                                // later in the composition, or during measurement/placement from
-                                // subcomposition.
-                                sharedContentState.isMatchFound
+            sharedContentState,
+            animatedVisibilityScope.transition,
+            visible = { it == EnterExitState.Visible },
+            boundsTransform,
+            placeHolderSize = placeHolderSize,
+            renderInOverlayDuringTransition = renderInOverlayDuringTransition,
+            zIndexInOverlay = zIndexInOverlay,
+            clipInOverlayDuringTransition = clipInOverlayDuringTransition,
+            renderOnlyWhenVisible = false,
+        )
+            .noriaComposed { noriaContext ->
+                noriaContext.run {
+                    animatedVisibilityScope.transition
+                        .createModifier(
+                            enter = enter,
+                            exit = exit,
+                            // Since we don't know if a match is found when this is composed,
+                            // we have to defer the decision to enable or disable content
+                            // scaling until later in the frame. This later time could be
+                            // later in the composition, or during measurement/placement from
+                            // subcomposition.
+                            isEnabled = { sharedContentState.isMatchFound },
+                            label = "enter/exit for ${sharedContentState.key}",
+                        )
+                        .then(
+                            if (resizeMode is ScaleToBoundsImpl) {
+                                Modifier.createContentScaleModifier(resizeMode) {
+                                    // Since we don't know if a match is found when this is composed,
+                                    // we have to defer the decision to enable or disable content
+                                    // scaling until later in the frame. This later time could be
+                                    // later in the composition, or during measurement/placement from
+                                    // subcomposition.
+                                    sharedContentState.isMatchFound
+                                }
+                            } else {
+                                Modifier
                             }
-                        } else {
-                            Modifier
-                        }
-                    )
+                        )
+                }
             }
 
     override fun Modifier.sharedElementWithCallerManagedVisibility(
@@ -871,7 +876,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     override fun OverlayClip(clipShape: Shape): OverlayClip = ShapeBasedClip(clipShape)
 
     @Composable
-    override fun rememberSharedContentState(key: Any): SharedContentState =
+    override fun NoriaContext.rememberSharedContentState(key: Any): SharedContentState =
         remember(key) { SharedContentState(key) }
 
     /** ******** Impl details below **************** */
@@ -931,23 +936,23 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                 val transitionState =
                                     remember { MutableTransitionState(initialState = targetState) }
                                         .also { it.targetState = targetState }
-                                rememberTransition(transitionState)
+                                NoriaContext.rememberTransition(transitionState)
                             }
                         val animation =
                             key(isTransitionActive) {
                                 boundsTransition.createDeferredAnimation(Rect.VectorConverter)
                             }
                         remember(boundsTransition) {
-                                BoundsAnimation(
-                                    this@SharedTransitionScopeImpl,
-                                    boundsTransition,
-                                    animation,
-                                    boundsTransform,
-                                )
-                            }
+                            BoundsAnimation(
+                                this@SharedTransitionScopeImpl,
+                                boundsTransition,
+                                animation,
+                                boundsTransform,
+                            )
+                        }
                             .also { it.updateAnimation(animation, boundsTransform) }
                     }
-                rememberSharedElementState(
+                NoriaContext.rememberSharedElementState(
                     sharedElement = sharedElement,
                     boundsAnimation = boundsAnimation,
                     placeHolderSize = placeHolderSize,
@@ -963,7 +968,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     }
 
     @Composable
-    private fun rememberSharedElementState(
+    private fun NoriaContext.rememberSharedElementState(
         sharedElement: SharedElement,
         boundsAnimation: BoundsAnimation,
         placeHolderSize: PlaceHolderSize,
@@ -974,17 +979,17 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         renderInOverlayDuringTransition: Boolean,
     ): SharedElementInternalState =
         remember {
-                SharedElementInternalState(
-                    sharedElement,
-                    boundsAnimation,
-                    placeHolderSize,
-                    renderOnlyWhenVisible = renderOnlyWhenVisible,
-                    userState = sharedContentState,
-                    overlayClip = clipInOverlayDuringTransition,
-                    zIndex = zIndexInOverlay,
-                    renderInOverlayDuringTransition = renderInOverlayDuringTransition,
-                )
-            }
+            SharedElementInternalState(
+                sharedElement,
+                boundsAnimation,
+                placeHolderSize,
+                renderOnlyWhenVisible = renderOnlyWhenVisible,
+                userState = sharedContentState,
+                overlayClip = clipInOverlayDuringTransition,
+                zIndex = zIndexInOverlay,
+                renderInOverlayDuringTransition = renderInOverlayDuringTransition,
+            )
+        }
             .also {
                 sharedContentState.internalState = it
                 // Update the properties if any of them changes
@@ -1201,4 +1206,5 @@ private val cachedScaleToBoundsImplMap =
 internal class ScaleToBoundsImpl(val contentScale: ContentScale, val alignment: Alignment) :
     ResizeMode
 
-@ExperimentalSharedTransitionApi private object RemeasureImpl : ResizeMode
+@ExperimentalSharedTransitionApi
+private object RemeasureImpl : ResizeMode

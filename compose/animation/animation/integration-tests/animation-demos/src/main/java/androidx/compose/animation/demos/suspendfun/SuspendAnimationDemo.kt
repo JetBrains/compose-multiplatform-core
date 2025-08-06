@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun SuspendAnimationDemo() {
+fun NoriaContext.SuspendAnimationDemo() {
     // Pulling from sample code
     AnimatableAnimateToGenericsType()
 }

@@ -25,7 +25,7 @@ val compositionCount = AtomicInteger(0)
 
 @Preview
 @Composable
-fun CounterPreview() {
+fun NoriaContext.CounterPreview() {
     Text("Composed")
     compositionCount.incrementAndGet()
 }

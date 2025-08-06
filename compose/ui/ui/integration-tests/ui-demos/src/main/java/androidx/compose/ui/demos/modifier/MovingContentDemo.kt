@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MovingContentDemo() {
+fun NoriaContext.MovingContentDemo() {
     if (isArrEnabled) {
         val context = LocalContext.current
         val activity: Activity? = findOwner(context)

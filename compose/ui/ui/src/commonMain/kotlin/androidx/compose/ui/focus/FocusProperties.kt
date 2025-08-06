@@ -238,7 +238,8 @@ sealed interface FocusEnterExitScope {
 }
 
 internal class CancelIndicatingFocusBoundaryScope(
-    override val requestedFocusDirection: FocusDirection
+    override val requestedFocusDirection: FocusDirection,
+    override val isAutomatic: Boolean,
 ) : FocusEnterExitScope {
     var isCanceled = false
         private set

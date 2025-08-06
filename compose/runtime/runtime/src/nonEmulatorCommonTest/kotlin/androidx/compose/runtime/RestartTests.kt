@@ -211,14 +211,14 @@ class RestartTests {
 }
 
 @Composable
-fun RestartGroup(content: @Composable () -> Unit) {
+fun NoriaContext.RestartGroup(content: @Composable NoriaContext.() -> Unit) {
     content()
 }
 
 @Suppress("unused") inline fun MockViewValidator.RestartGroup(block: () -> Unit) = block()
 
 @Composable
-fun Repeat(count: Int, block: @Composable (index: Int) -> Unit) {
+fun NoriaContext.Repeat(count: Int, block: @Composable (index: Int) -> Unit) {
     for (i in 0 until count) {
         block(i)
     }
@@ -228,7 +228,7 @@ fun Repeat(count: Int, block: @Composable (index: Int) -> Unit) {
 inline fun MockViewValidator.Repeat(count: Int, block: (index: Int) -> Unit) = repeat(count, block)
 
 @Composable
-fun RestartAndSkipTest(count: Int, data: State<Int>) {
+fun NoriaContext.RestartAndSkipTest(count: Int, data: State<Int>) {
     RestartAndSkipTest_UseCount(count, data)
 }
 
@@ -240,7 +240,7 @@ fun MockViewValidator.RestartAndSkipTest(count: Int, data: State<Int>) {
 private var useCountCalled = 0
 
 @Composable
-fun RestartAndSkipTest_UseCount(count: Int, data: State<Int>) {
+fun NoriaContext.RestartAndSkipTest_UseCount(count: Int, data: State<Int>) {
     Text("Data: ${data.value}, Count: $count")
     useCountCalled++
     RestartAndSkipTest_UseCount2(count)
@@ -249,7 +249,7 @@ fun RestartAndSkipTest_UseCount(count: Int, data: State<Int>) {
 private var useCount2Called = 0
 
 @Composable
-fun RestartAndSkipTest_UseCount2(count: Int) {
+fun NoriaContext.RestartAndSkipTest_UseCount2(count: Int) {
     Text("Count: $count")
     useCount2Called++
 }

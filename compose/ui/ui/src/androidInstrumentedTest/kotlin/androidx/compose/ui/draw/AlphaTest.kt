@@ -212,7 +212,7 @@ class AlphaTest {
 }
 
 @Composable
-fun Row(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.Row(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints) }
         var width = 0

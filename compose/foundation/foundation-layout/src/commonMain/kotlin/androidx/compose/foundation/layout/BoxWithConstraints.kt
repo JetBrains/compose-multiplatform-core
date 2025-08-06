@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * A composable that defines its own content according to the available space, based on the incoming
@@ -54,7 +55,7 @@ import androidx.compose.ui.unit.LayoutDirection
  */
 @Composable
 @UiComposable
-fun BoxWithConstraints(
+fun NoriaContext.BoxWithConstraints(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,

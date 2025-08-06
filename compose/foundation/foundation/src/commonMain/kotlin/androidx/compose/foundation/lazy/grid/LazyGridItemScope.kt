@@ -23,11 +23,12 @@ import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
+import noria.NoriaContext
 
 /** Receiver scope being used by the item content parameter of [LazyVerticalGrid]. */
 @Stable
 @LazyGridScopeMarker
-sealed interface LazyGridItemScope {
+sealed interface LazyGridItemScope : NoriaContext {
     /**
      * This modifier animates the item appearance (fade in), disappearance (fade out) and placement
      * changes (such as an item reordering).

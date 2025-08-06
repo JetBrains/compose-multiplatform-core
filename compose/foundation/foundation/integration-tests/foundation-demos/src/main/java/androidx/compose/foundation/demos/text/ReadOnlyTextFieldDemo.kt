@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ReadOnlyTextFieldDemo() {
+fun NoriaContext.ReadOnlyTextFieldDemo() {
     var readOnly by remember { mutableStateOf(true) }
     var text by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current

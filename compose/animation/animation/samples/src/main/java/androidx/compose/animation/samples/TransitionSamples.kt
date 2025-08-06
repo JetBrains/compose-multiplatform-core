@@ -60,7 +60,7 @@ private enum class ComponentState {
 
 @Sampled
 @Composable
-fun GestureAnimationSample() {
+fun NoriaContext.GestureAnimationSample() {
     // enum class ComponentState { Pressed, Released }
     var useRed by remember { mutableStateOf(false) }
     var toState by remember { mutableStateOf(ComponentState.Released) }
@@ -137,7 +137,7 @@ fun GestureAnimationSample() {
 
 @Sampled
 @Composable
-fun InfiniteTransitionSample() {
+fun NoriaContext.InfiniteTransitionSample() {
     @Composable
     fun InfinitelyPulsingHeart() {
         // Creates an [InfiniteTransition] instance for managing child animations.

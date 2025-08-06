@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.PopupPositionProvider
+import noria.NoriaContext
 
 internal val HandleWidth = 25.dp
 internal val HandleHeight = 25.dp
@@ -73,7 +74,7 @@ internal enum class SelectionHandleAnchor {
 }
 
 @Composable
-internal expect fun SelectionHandle(
+internal expect fun NoriaContext.SelectionHandle(
     offsetProvider: OffsetProvider,
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,

@@ -71,7 +71,7 @@ private val Rainbow =
     }
 
 @Composable
-fun MinTouchTargetTextSelection() {
+fun NoriaContext.MinTouchTargetTextSelection() {
     Column(Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 8.dp)) {
         Text(
             buildAnnotatedString {
@@ -124,14 +124,14 @@ fun MinTouchTargetTextSelection() {
 }
 
 @Composable
-private fun OverrideMinimumTouchTarget(size: DpSize, content: @Composable () -> Unit) {
+private fun NoriaContext.OverrideMinimumTouchTarget(size: DpSize, content: @Composable NoriaContext.() -> Unit) {
     val viewConfiguration = LocalViewConfiguration.current
     val viewConfigurationOverride = DelegatedViewConfiguration(viewConfiguration, size)
     CompositionLocalProvider(LocalViewConfiguration provides viewConfigurationOverride, content)
 }
 
 @Composable
-private fun MinTouchTargetInTextSelection() {
+private fun NoriaContext.MinTouchTargetInTextSelection() {
     val minimumTouchTarget = LocalViewConfiguration.current.minimumTouchTargetSize
     SelectionContainer(
         Modifier.border(1.dp, Red)

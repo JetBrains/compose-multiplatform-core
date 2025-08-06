@@ -547,7 +547,7 @@ class OnGlobalLayoutListenerTest {
  * modifier clear.
  */
 @Composable
-private fun PlaceTwoLayoutsApartVert(
+private fun NoriaContext.PlaceTwoLayoutsApartVert(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {

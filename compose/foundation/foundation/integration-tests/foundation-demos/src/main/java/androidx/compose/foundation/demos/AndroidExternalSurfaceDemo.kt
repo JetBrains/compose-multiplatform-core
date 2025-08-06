@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AndroidExternalSurfaceDemo() {
+fun NoriaContext.AndroidExternalSurfaceDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Text("AndroidExternalSurface:")
         AndroidExternalSurfaceColors()

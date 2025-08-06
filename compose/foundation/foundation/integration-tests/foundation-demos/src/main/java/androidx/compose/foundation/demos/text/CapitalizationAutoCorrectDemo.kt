@@ -77,7 +77,7 @@ private val KeyboardOptionsList =
 
 @Preview
 @Composable
-fun CapitalizationAutoCorrectDemo() {
+fun NoriaContext.CapitalizationAutoCorrectDemo() {
     LazyColumn {
         items(KeyboardOptionsList) { data ->
             TagLine(tag = data.name)
@@ -87,7 +87,7 @@ fun CapitalizationAutoCorrectDemo() {
 }
 
 @Composable
-private fun MyTextField(data: ImeOptionsData) {
+private fun NoriaContext.MyTextField(data: ImeOptionsData) {
     var state by
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     val keyboardController = LocalSoftwareKeyboardController.current

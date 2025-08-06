@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
 @Preview(showBackground = true)
 @Sampled
 @Composable
-fun BasicMarqueeSample() {
+fun NoriaContext.BasicMarqueeSample() {
     // Marquee only animates when the content doesn't fit in the max width.
     Column(Modifier.width(30.dp)) { Text("hello world", Modifier.basicMarquee()) }
 }
@@ -58,7 +58,7 @@ fun BasicMarqueeSample() {
 @Preview(showBackground = true)
 @Sampled
 @Composable
-fun BasicFocusableMarqueeSample() {
+fun NoriaContext.BasicFocusableMarqueeSample() {
     val focusRequester = remember { FocusRequester() }
 
     // Marquee only animates when the content doesn't fit in the max width.
@@ -76,7 +76,7 @@ fun BasicFocusableMarqueeSample() {
 @Preview(showBackground = true)
 @Sampled
 @Composable
-fun BasicMarqueeWithFadedEdgesSample() {
+fun NoriaContext.BasicMarqueeWithFadedEdgesSample() {
     val edgeWidth = 32.dp
     fun ContentDrawScope.drawFadedEdge(leftEdge: Boolean) {
         val edgeWidthPx = edgeWidth.toPx()

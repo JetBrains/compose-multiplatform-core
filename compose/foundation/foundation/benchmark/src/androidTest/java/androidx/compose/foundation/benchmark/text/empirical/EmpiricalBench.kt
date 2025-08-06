@@ -54,22 +54,22 @@ abstract class EmpiricalBench<S> where S : ToggleableTestCase, S : LayeredCompos
 }
 
 @Composable
-fun Subject(text: String, style: TextStyle) {
+fun NoriaContext.Subject(text: String, style: TextStyle) {
     Text(text, style = style)
 }
 
 @Composable
-fun Subject(text: String, modifier: Modifier, style: TextStyle) {
+fun NoriaContext.Subject(text: String, modifier: Modifier, style: TextStyle) {
     Text(text, modifier, style = style)
 }
 
 @Composable
-fun Subject(text: AnnotatedString, style: TextStyle) {
+fun NoriaContext.Subject(text: AnnotatedString, style: TextStyle) {
     Text(text, style = style)
 }
 
 @Composable
-fun Subject(
+fun NoriaContext.Subject(
     text: AnnotatedString,
     style: TextStyle,
     inlineContent: Map<String, InlineTextContent>,

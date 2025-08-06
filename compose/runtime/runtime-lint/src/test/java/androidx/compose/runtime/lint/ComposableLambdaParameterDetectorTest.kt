@@ -50,7 +50,7 @@ class ComposableLambdaParameterDetectorTest : LintDetectorTest() {
                 import androidx.compose.runtime.Composable
 
                 @Composable
-                fun Button(foo: Int, text: @Composable () -> Unit) {
+                fun Button(foo: Int, text: @Composable NoriaContext.() -> Unit) {
 
                 }
             """
@@ -62,7 +62,7 @@ class ComposableLambdaParameterDetectorTest : LintDetectorTest() {
             .expect(
                 """
 src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter should be named content [ComposableLambdaParameterNaming]
-                fun Button(foo: Int, text: @Composable () -> Unit) {
+                fun Button(foo: Int, text: @Composable NoriaContext.() -> Unit) {
                                      ~~~~
 0 errors, 1 warnings
             """
@@ -71,8 +71,8 @@ src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter shou
                 """
 Fix for src/androidx/compose/ui/foo/test.kt line 7: Rename text to content:
 @@ -7 +7
--                 fun Button(foo: Int, text: @Composable () -> Unit) {
-+                 fun Button(foo: Int, content: @Composable () -> Unit) {
+-                 fun Button(foo: Int, text: @Composable NoriaContext.() -> Unit) {
++                 fun Button(foo: Int, content: @Composable NoriaContext.() -> Unit) {
             """
             )
     }
@@ -88,7 +88,7 @@ Fix for src/androidx/compose/ui/foo/test.kt line 7: Rename text to content:
                 import androidx.compose.runtime.Composable
 
                 @Composable
-                fun Button(content: @Composable () -> Unit, foo: Int) {
+                fun Button(content: @Composable NoriaContext.() -> Unit, foo: Int) {
 
                 }
             """
@@ -100,7 +100,7 @@ Fix for src/androidx/compose/ui/foo/test.kt line 7: Rename text to content:
             .expect(
                 """
 src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter should be the last parameter so it can be used as a trailing lambda [ComposableLambdaParameterPosition]
-                fun Button(content: @Composable () -> Unit, foo: Int) {
+                fun Button(content: @Composable NoriaContext.() -> Unit, foo: Int) {
                            ~~~~~~~
 0 errors, 1 warnings
             """
@@ -118,7 +118,7 @@ src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter shou
                 import androidx.compose.runtime.Composable
 
                 @Composable
-                fun Button(text: @Composable () -> Unit, foo: Int) {
+                fun Button(text: @Composable NoriaContext.() -> Unit, foo: Int) {
 
                 }
             """
@@ -130,10 +130,10 @@ src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter shou
             .expect(
                 """
 src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter should be named content [ComposableLambdaParameterNaming]
-                fun Button(text: @Composable () -> Unit, foo: Int) {
+                fun Button(text: @Composable NoriaContext.() -> Unit, foo: Int) {
                            ~~~~
 src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter should be the last parameter so it can be used as a trailing lambda [ComposableLambdaParameterPosition]
-                fun Button(text: @Composable () -> Unit, foo: Int) {
+                fun Button(text: @Composable NoriaContext.() -> Unit, foo: Int) {
                            ~~~~
 0 errors, 2 warnings
             """
@@ -142,8 +142,8 @@ src/androidx/compose/ui/foo/test.kt:7: Warning: Composable lambda parameter shou
                 """
 Fix for src/androidx/compose/ui/foo/test.kt line 7: Rename text to content:
 @@ -7 +7
--                 fun Button(text: @Composable () -> Unit, foo: Int) {
-+                 fun Button(content: @Composable () -> Unit, foo: Int) {
+-                 fun Button(text: @Composable NoriaContext.() -> Unit, foo: Int) {
++                 fun Button(content: @Composable NoriaContext.() -> Unit, foo: Int) {
             """
             )
     }
@@ -198,7 +198,7 @@ Fix for src/androidx/compose/ui/foo/Foo.kt line 9: Rename text to content:
                 import androidx.compose.runtime.Composable
 
                 @Composable
-                fun Button(text: @Composable () -> Unit, icon: @Composable () -> Unit, foo: Int) {
+                fun Button(text: @Composable NoriaContext.() -> Unit, icon: @Composable NoriaContext.() -> Unit, foo: Int) {
 
                 }
             """
@@ -227,7 +227,7 @@ Fix for src/androidx/compose/ui/foo/Foo.kt line 9: Rename text to content:
 
                 @Composable
                 fun Button2(
-                    text: (@Composable () -> Unit)?,
+                    text: (@Composable NoriaContext.() -> Unit)?,
                     foo: Int
                 ) {}
             """
@@ -242,13 +242,13 @@ src/androidx/compose/ui/foo/test.kt:8: Warning: Composable lambda parameter shou
                     text: @Composable (() -> Unit)?,
                     ~~~~
 src/androidx/compose/ui/foo/test.kt:14: Warning: Composable lambda parameter should be named content [ComposableLambdaParameterNaming]
-                    text: (@Composable () -> Unit)?,
+                    text: (@Composable NoriaContext.() -> Unit)?,
                     ~~~~
 src/androidx/compose/ui/foo/test.kt:8: Warning: Composable lambda parameter should be the last parameter so it can be used as a trailing lambda [ComposableLambdaParameterPosition]
                     text: @Composable (() -> Unit)?,
                     ~~~~
 src/androidx/compose/ui/foo/test.kt:14: Warning: Composable lambda parameter should be the last parameter so it can be used as a trailing lambda [ComposableLambdaParameterPosition]
-                    text: (@Composable () -> Unit)?,
+                    text: (@Composable NoriaContext.() -> Unit)?,
                     ~~~~
 0 errors, 4 warnings
             """
@@ -261,8 +261,8 @@ Fix for src/androidx/compose/ui/foo/test.kt line 8: Rename text to content:
 +                     content: @Composable (() -> Unit)?,
 Fix for src/androidx/compose/ui/foo/test.kt line 14: Rename text to content:
 @@ -14 +14
--                     text: (@Composable () -> Unit)?,
-+                     content: (@Composable () -> Unit)?,
+-                     text: (@Composable NoriaContext.() -> Unit)?,
++                     content: (@Composable NoriaContext.() -> Unit)?,
             """
             )
     }

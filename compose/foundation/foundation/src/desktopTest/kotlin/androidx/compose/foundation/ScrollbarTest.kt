@@ -1428,7 +1428,7 @@ class ScrollbarTest {
     }
 
     @Composable
-    private fun withTestEnvironment(content: @Composable () -> Unit) = CompositionLocalProvider(
+    private fun withTestEnvironment(content: @Composable NoriaContext.() -> Unit) = CompositionLocalProvider(
         LocalScrollbarStyle provides ScrollbarStyle(
             minimalHeight = 16.dp,
             thickness = 8.dp,
@@ -1448,7 +1448,7 @@ class ScrollbarTest {
         // 1. Be marked as `@Theory`
         // 2. Take a ScrollbarImpl argument
         // 3. Set the argument as the ScrollbarImplLocal, typically via
-        //    ComposeContentTestRule.setContent(ScrollbarImpl, @Composable () -> Unit)
+        //    ComposeContentTestRule.setContent(ScrollbarImpl, @Composable NoriaContext.() -> Unit)
         // Tests that should only run on the new implementation should just be marked with `@Test`
         // as usual.
 
@@ -1686,7 +1686,7 @@ private val ScrollbarProviderLocal = compositionLocalOf<ScrollbarProvider>{ NewS
 
 private fun ComposeContentTestRule.setContent(
     scrollbarProvider: ScrollbarProvider,
-    composable: @Composable () -> Unit
+    composable: @Composable NoriaContext.() -> Unit
 ){
     setContent {
         CompositionLocalProvider(ScrollbarProviderLocal provides scrollbarProvider){

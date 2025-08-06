@@ -143,7 +143,7 @@ class LayerTouchTransformTest {
 }
 
 @Composable
-fun SimpleLayout(modifier: Modifier, content: @Composable () -> Unit = {}) {
+fun NoriaContext.SimpleLayout(modifier: Modifier, content: @Composable () -> Unit = {}) {
     Layout(content, modifier) { measurables, constraints ->
         val childConstraints = constraints.copyMaxDimensions()
         val placeables = measurables.map { it.measure(childConstraints) }

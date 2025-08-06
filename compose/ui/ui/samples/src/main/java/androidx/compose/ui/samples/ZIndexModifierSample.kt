@@ -25,7 +25,7 @@ import androidx.compose.ui.zIndex
 
 @Sampled
 @Composable
-fun ZIndexModifierSample() {
+fun NoriaContext.ZIndexModifierSample() {
     Box {
         Text("Drawn second", Modifier.zIndex(1f))
         Text("Drawn first")

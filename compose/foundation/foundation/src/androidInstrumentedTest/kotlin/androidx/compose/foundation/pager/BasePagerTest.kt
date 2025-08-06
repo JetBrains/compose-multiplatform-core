@@ -132,10 +132,10 @@ open class BasePagerTest(private val config: ParamConfig) :
         beyondViewportPageCount: Int = config.beyondViewportPageCount,
         pageSize: () -> PageSize = { PageSize.Fill },
         userScrollEnabled: Boolean = true,
-        overscrollEffect: @Composable () -> OverscrollEffect? = { rememberOverscrollEffect() },
+        overscrollEffect: @Composable NoriaContext.() -> OverscrollEffect? = { rememberOverscrollEffect() },
         snappingPage: PagerSnapDistance = PagerSnapDistance.atMost(1),
         nestedScrollConnection: NestedScrollConnection = object : NestedScrollConnection {},
-        additionalContent: @Composable () -> Unit = {},
+        additionalContent: @Composable NoriaContext.() -> Unit = {},
         contentPadding: PaddingValues = config.mainAxisContentPadding,
         pageSpacing: Dp = config.pageSpacing,
         reverseLayout: Boolean = config.reverseLayout,
@@ -415,7 +415,7 @@ open class BasePagerTest(private val config: ParamConfig) :
 }
 
 @Composable
-internal fun ConfigurableLookaheadScope(useLookahead: Boolean, content: @Composable () -> Unit) {
+internal fun NoriaContext.ConfigurableLookaheadScope(useLookahead: Boolean, content: @Composable NoriaContext.() -> Unit) {
     if (useLookahead) {
         LookaheadScope { content() }
     } else {

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun PaddingModifier() {
+fun NoriaContext.PaddingModifier() {
     Box(Modifier.background(color = Color.Gray)) {
         Box(
             Modifier.padding(start = 20.dp, top = 30.dp, end = 20.dp, bottom = 30.dp)
@@ -42,7 +42,7 @@ fun PaddingModifier() {
 
 @Sampled
 @Composable
-fun SymmetricPaddingModifier() {
+fun NoriaContext.SymmetricPaddingModifier() {
     Box(Modifier.background(color = Color.Gray)) {
         Box(
             Modifier.padding(horizontal = 20.dp, vertical = 30.dp)
@@ -54,7 +54,7 @@ fun SymmetricPaddingModifier() {
 
 @Sampled
 @Composable
-fun PaddingAllModifier() {
+fun NoriaContext.PaddingAllModifier() {
     Box(Modifier.background(color = Color.Gray)) {
         Box(Modifier.padding(all = 20.dp).size(50.dp).background(Color.Blue))
     }
@@ -62,7 +62,7 @@ fun PaddingAllModifier() {
 
 @Sampled
 @Composable
-fun PaddingValuesModifier() {
+fun NoriaContext.PaddingValuesModifier() {
     val innerPadding = PaddingValues(top = 10.dp, start = 15.dp)
     Box(Modifier.background(color = Color.Gray)) {
         Box(Modifier.padding(innerPadding).size(50.dp).background(Color.Blue))
@@ -71,7 +71,7 @@ fun PaddingValuesModifier() {
 
 @Sampled
 @Composable
-fun AbsolutePaddingModifier() {
+fun NoriaContext.AbsolutePaddingModifier() {
     Box(Modifier.background(color = Color.Gray)) {
         Box(
             Modifier.absolutePadding(left = 20.dp, top = 30.dp, right = 20.dp, bottom = 30.dp)

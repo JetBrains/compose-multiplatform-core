@@ -68,6 +68,14 @@ interface PointerIcon {
 
         @NoriaOnly val RowResize = pointerIconRowResize
 
+        @NoriaOnly val NResize = pointerIconNResize
+
+        @NoriaOnly val EResize = pointerIconEResize
+
+        @NoriaOnly val SResize = pointerIconSResize
+
+        @NoriaOnly val WResize = pointerIconWResize
+
         @NoriaOnly val NeResize = pointerIconNeResize
 
         @NoriaOnly val NwResize = pointerIconNwResize
@@ -75,6 +83,14 @@ interface PointerIcon {
         @NoriaOnly val SeResize = pointerIconSeResize
 
         @NoriaOnly val SwResize = pointerIconSwResize
+
+        @NoriaOnly val NSResize = pointerIconNSResize
+
+        @NoriaOnly val EWResize = pointerIconEWResize
+
+        @NoriaOnly val NeSwResize = pointerIconNeSwResize
+
+        @NoriaOnly val NwSeResize = pointerIconNwSeResize
     }
 }
 
@@ -87,11 +103,18 @@ internal expect val pointerIconMove: PointerIcon
 internal expect val pointerIconWait: PointerIcon
 internal expect val pointerIconColResize: PointerIcon
 internal expect val pointerIconRowResize: PointerIcon
-
+internal expect val pointerIconNResize: PointerIcon
+internal expect val pointerIconEResize: PointerIcon
+internal expect val pointerIconSResize: PointerIcon
+internal expect val pointerIconWResize: PointerIcon
 internal expect val pointerIconNeResize: PointerIcon
 internal expect val pointerIconNwResize: PointerIcon
 internal expect val pointerIconSeResize: PointerIcon
 internal expect val pointerIconSwResize: PointerIcon
+internal expect val pointerIconNSResize: PointerIcon
+internal expect val pointerIconEWResize: PointerIcon
+internal expect val pointerIconNeSwResize: PointerIcon
+internal expect val pointerIconNwSeResize: PointerIcon
 
 internal interface PointerIconService {
     fun getIcon(): PointerIcon

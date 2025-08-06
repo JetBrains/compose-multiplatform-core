@@ -38,7 +38,7 @@ class AndroidInstrumentedMovableContentTests {
 
         rule.setContent {
             val innerState by remember { mutableStateOf(false) }
-            var content: (@Composable () -> Unit)? by remember { mutableStateOf(null) }
+            var content: (@Composable NoriaContext.() -> Unit)? by remember { mutableStateOf(null) }
             val movableContent = remember { movableContentOf { content?.invoke() } }
             BoxWithConstraints {
                 if (!extractContent) {
@@ -83,14 +83,14 @@ object InvalidationLocation {
 
     var page by mutableStateOf(0)
 
-    val entries = mutableStateListOf<@Composable () -> Unit>()
+    val entries = mutableStateListOf<@Composable NoriaContext.() -> Unit>()
 
     fun togglePage() {
         page = (page + 1) % 2
     }
 
     @Composable
-    fun Entry(content: @Composable () -> Unit) {
+    fun Entry(content: @Composable NoriaContext.() -> Unit) {
         DisposableEffect(content) {
             entries += content
             onDispose { entries -= content }

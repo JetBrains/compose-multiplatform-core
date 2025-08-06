@@ -66,7 +66,7 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.math.roundToInt
 
 @Composable
-fun ScreenCoordinatesDemo(navigateBack: () -> Unit) {
+fun NoriaContext.ScreenCoordinatesDemo(navigateBack: () -> Unit) {
     var lastPointerPositionInScreen: Offset by remember { mutableStateOf(Offset.Unspecified) }
     var pointerDown by remember { mutableStateOf(false) }
     var useMatrixToConvertToScreenCoordinates by remember { mutableStateOf(false) }

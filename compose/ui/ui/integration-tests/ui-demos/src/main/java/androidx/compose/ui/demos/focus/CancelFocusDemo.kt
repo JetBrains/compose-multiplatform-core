@@ -42,7 +42,7 @@ import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CancelFocusDemo() {
+fun NoriaContext.CancelFocusDemo() {
     Column { Text("Use the arrow keys to move focus left/right/up/down.") }
     Column(Modifier.fillMaxSize(), SpaceEvenly) {
         var blockFocusMove by remember { mutableStateOf(false) }

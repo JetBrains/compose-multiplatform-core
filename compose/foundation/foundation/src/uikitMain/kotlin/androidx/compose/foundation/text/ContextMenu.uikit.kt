@@ -69,9 +69,9 @@ import platform.CoreGraphics.CGRectMake
  * Context menu area for [BasicTextField] (with [TextFieldValue] argument).
  */
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         // The first time the menu is called up, the menu item provider contains a non-final set of
@@ -91,10 +91,10 @@ internal actual fun ContextMenuArea(
  * Context menu area for [BasicTextField] (with [TextFieldState] argument).
  */
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier = if (enabled) {
@@ -123,9 +123,9 @@ internal actual fun ContextMenuArea(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: SelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideNewContextMenuDefaultProviders(
@@ -142,10 +142,10 @@ internal actual fun ContextMenuArea(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ProvideNewContextMenuDefaultProviders(
+private fun NoriaContext.ProvideNewContextMenuDefaultProviders(
     menuDelay: Duration = 0.seconds,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val toolbarProvider = LocalTextContextMenuToolbarProvider.current
     val dropdownProvider = LocalTextContextMenuDropdownProvider.current
@@ -261,10 +261,10 @@ private class ContextMenuToolbarProvider(
 }
 
 @Composable
-private fun PlatformContextMenu(
+private fun NoriaContext.PlatformContextMenu(
     getState: () -> ContextMenuItemsState,
     enabled: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val layoutCoordinates: MutableState<LayoutCoordinates?> = remember {
         mutableStateOf(value = null, policy = neverEqualPolicy())

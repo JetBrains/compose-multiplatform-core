@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /**
  * Overflow Handling Options
@@ -63,8 +64,8 @@ private constructor(
     type: OverflowType,
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
-    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
+    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
@@ -76,10 +77,12 @@ private constructor(
 
     companion object {
         /** Display all content, even if there is not enough space in the specified bounds. */
-        @ExperimentalLayoutApi val Visible = FlowRowOverflow(OverflowType.Visible)
+        @ExperimentalLayoutApi
+        val Visible = FlowRowOverflow(OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @ExperimentalLayoutApi val Clip = FlowRowOverflow(OverflowType.Clip)
+        @ExperimentalLayoutApi
+        val Clip = FlowRowOverflow(OverflowType.Clip)
 
         /**
          * Registers an "expand indicator" composable for handling overflow in a [FlowRow].
@@ -94,12 +97,13 @@ private constructor(
          */
         @ExperimentalLayoutApi
         fun expandIndicator(content: @Composable FlowRowOverflowScope.() -> Unit): FlowRowOverflow {
-            val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                @Composable {
-                    val scope = FlowRowOverflowScopeImpl(state)
-                    scope.content()
+            val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                { state: FlowLayoutOverflowState ->
+                    @Composable {
+                        val scope = FlowRowOverflowScopeImpl(state)
+                        scope.content()
+                    }
                 }
-            }
             return FlowRowOverflow(OverflowType.ExpandIndicator, seeMoreGetter = seeMoreGetter)
         }
 
@@ -127,7 +131,7 @@ private constructor(
          */
         @ExperimentalLayoutApi
         @Composable
-        fun expandOrCollapseIndicator(
+        fun NoriaContext.expandOrCollapseIndicator(
             expandIndicator: @Composable FlowRowOverflowScope.() -> Unit,
             collapseIndicator: @Composable FlowRowOverflowScope.() -> Unit,
             minRowsToShowCollapse: Int = 1,
@@ -141,19 +145,21 @@ private constructor(
                 expandIndicator,
                 collapseIndicator,
             ) {
-                val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = FlowRowOverflowScopeImpl(state)
-                        scope.expandIndicator()
+                val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = FlowRowOverflowScopeImpl(state)
+                            scope.expandIndicator()
+                        }
                     }
-                }
 
-                val collapseGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = FlowRowOverflowScopeImpl(state)
-                        scope.collapseIndicator()
+                val collapseGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = FlowRowOverflowScopeImpl(state)
+                            scope.collapseIndicator()
+                        }
                     }
-                }
 
                 FlowRowOverflow(
                     OverflowType.ExpandOrCollapseIndicator,
@@ -192,8 +198,8 @@ private constructor(
     type: OverflowType,
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
-    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
+    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
@@ -210,7 +216,8 @@ private constructor(
         val Visible = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Visible)
 
         /** Clip the overflowing content to fix its container. */
-        @ExperimentalLayoutApi val Clip = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Clip)
+        @ExperimentalLayoutApi
+        val Clip = FlowColumnOverflow(FlowLayoutOverflow.OverflowType.Clip)
 
         /**
          * Registers an "expand indicator" composable for handling overflow in a [FlowColumn].
@@ -227,12 +234,13 @@ private constructor(
         fun expandIndicator(
             content: @Composable FlowColumnOverflowScope.() -> Unit
         ): FlowColumnOverflow {
-            val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                @Composable {
-                    val scope = FlowColumnOverflowScopeImpl(state)
-                    scope.content()
+            val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                { state: FlowLayoutOverflowState ->
+                    @Composable {
+                        val scope = FlowColumnOverflowScopeImpl(state)
+                        scope.content()
+                    }
                 }
-            }
             return FlowColumnOverflow(OverflowType.ExpandIndicator, seeMoreGetter = seeMoreGetter)
         }
 
@@ -260,7 +268,7 @@ private constructor(
          */
         @ExperimentalLayoutApi
         @Composable
-        fun expandOrCollapseIndicator(
+        fun NoriaContext.expandOrCollapseIndicator(
             expandIndicator: @Composable FlowColumnOverflowScope.() -> Unit,
             collapseIndicator: @Composable FlowColumnOverflowScope.() -> Unit,
             minColumnsToShowCollapse: Int = 1,
@@ -274,19 +282,21 @@ private constructor(
                 expandIndicator,
                 collapseIndicator,
             ) {
-                val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = FlowColumnOverflowScopeImpl(state)
-                        scope.expandIndicator()
+                val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = FlowColumnOverflowScopeImpl(state)
+                            scope.expandIndicator()
+                        }
                     }
-                }
 
-                val collapseGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = FlowColumnOverflowScopeImpl(state)
-                        scope.collapseIndicator()
+                val collapseGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = FlowColumnOverflowScopeImpl(state)
+                            scope.collapseIndicator()
+                        }
                     }
-                }
 
                 FlowColumnOverflow(
                     OverflowType.ExpandOrCollapseIndicator,
@@ -325,8 +335,8 @@ private constructor(
     type: OverflowType,
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
-    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
+    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
@@ -362,12 +372,13 @@ private constructor(
         fun expandIndicator(
             content: @Composable ContextualFlowRowOverflowScope.() -> Unit
         ): ContextualFlowRowOverflow {
-            val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                @Composable {
-                    val scope = ContextualFlowRowOverflowScopeImpl(state)
-                    scope.content()
+            val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                { state: FlowLayoutOverflowState ->
+                    @Composable {
+                        val scope = ContextualFlowRowOverflowScopeImpl(state)
+                        scope.content()
+                    }
                 }
-            }
             return ContextualFlowRowOverflow(
                 OverflowType.ExpandIndicator,
                 seeMoreGetter = seeMoreGetter,
@@ -398,7 +409,7 @@ private constructor(
          */
         @ExperimentalLayoutApi
         @Composable
-        fun expandOrCollapseIndicator(
+        fun NoriaContext.expandOrCollapseIndicator(
             expandIndicator: @Composable ContextualFlowRowOverflowScope.() -> Unit,
             collapseIndicator: @Composable ContextualFlowRowOverflowScope.() -> Unit,
             minRowsToShowCollapse: Int = 1,
@@ -412,19 +423,21 @@ private constructor(
                 expandIndicator,
                 collapseIndicator,
             ) {
-                val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = ContextualFlowRowOverflowScopeImpl(state)
-                        scope.expandIndicator()
+                val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = ContextualFlowRowOverflowScopeImpl(state)
+                            scope.expandIndicator()
+                        }
                     }
-                }
 
-                val collapseGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = ContextualFlowRowOverflowScopeImpl(state)
-                        scope.collapseIndicator()
+                val collapseGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = ContextualFlowRowOverflowScopeImpl(state)
+                            scope.collapseIndicator()
+                        }
                     }
-                }
 
                 ContextualFlowRowOverflow(
                     OverflowType.ExpandOrCollapseIndicator,
@@ -463,8 +476,8 @@ private constructor(
     type: OverflowType,
     minLinesToShowCollapse: Int = 0,
     minCrossAxisSizeToShowCollapse: Int = 0,
-    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
+    seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
+    collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
 ) :
     FlowLayoutOverflow(
         type,
@@ -500,12 +513,13 @@ private constructor(
         fun expandIndicator(
             content: @Composable ContextualFlowColumnOverflowScope.() -> Unit
         ): ContextualFlowColumnOverflow {
-            val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                @Composable {
-                    val scope = ContextualFlowColumnOverflowScopeImpl(state)
-                    scope.content()
+            val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                { state: FlowLayoutOverflowState ->
+                    @Composable {
+                        val scope = ContextualFlowColumnOverflowScopeImpl(state)
+                        scope.content()
+                    }
                 }
-            }
             return ContextualFlowColumnOverflow(
                 OverflowType.ExpandIndicator,
                 seeMoreGetter = seeMoreGetter,
@@ -536,7 +550,7 @@ private constructor(
          */
         @ExperimentalLayoutApi
         @Composable
-        fun expandOrCollapseIndicator(
+        fun NoriaContext.expandOrCollapseIndicator(
             expandIndicator: @Composable ContextualFlowColumnOverflowScope.() -> Unit,
             collapseIndicator: @Composable ContextualFlowColumnOverflowScope.() -> Unit,
             minColumnsToShowCollapse: Int = 1,
@@ -550,19 +564,21 @@ private constructor(
                 expandIndicator,
                 collapseIndicator,
             ) {
-                val seeMoreGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = ContextualFlowColumnOverflowScopeImpl(state)
-                        scope.expandIndicator()
+                val seeMoreGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = ContextualFlowColumnOverflowScopeImpl(state)
+                            scope.expandIndicator()
+                        }
                     }
-                }
 
-                val collapseGetter = { state: FlowLayoutOverflowState ->
-                    @Composable {
-                        val scope = ContextualFlowColumnOverflowScopeImpl(state)
-                        scope.collapseIndicator()
+                val collapseGetter: (FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit =
+                    { state: FlowLayoutOverflowState ->
+                        @Composable {
+                            val scope = ContextualFlowColumnOverflowScopeImpl(state)
+                            scope.collapseIndicator()
+                        }
                     }
-                }
 
                 ContextualFlowColumnOverflow(
                     OverflowType.ExpandOrCollapseIndicator,
@@ -595,15 +611,15 @@ sealed class FlowLayoutOverflow(
     internal val type: OverflowType,
     private val minLinesToShowCollapse: Int = 0,
     private val minCrossAxisSizeToShowCollapse: Int = 0,
-    private val seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
-    private val collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable () -> Unit)? = null,
+    private val seeMoreGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
+    private val collapseGetter: ((state: FlowLayoutOverflowState) -> @Composable NoriaContext.() -> Unit)? = null,
 ) {
     internal fun createOverflowState() =
         FlowLayoutOverflowState(type, minLinesToShowCollapse, minCrossAxisSizeToShowCollapse)
 
     internal fun addOverflowComposables(
         state: FlowLayoutOverflowState,
-        list: MutableList<@Composable () -> Unit>,
+        list: MutableList<@Composable NoriaContext.() -> Unit>,
     ) {
         val expandIndicator = seeMoreGetter?.let { getter -> getter(state) }
         val collapseIndicator = collapseGetter?.let { getter -> getter(state) }
@@ -614,6 +630,7 @@ sealed class FlowLayoutOverflow(
                 expandIndicator?.let { list.add(expandIndicator) }
                 collapseIndicator?.let { list.add(collapseIndicator) }
             }
+
             else -> {}
         }
     }
@@ -686,6 +703,7 @@ internal constructor(
     private var collapsePlaceable: Placeable? = null
     private var seeMoreSize: IntIntPair? = null
     private var collapseSize: IntIntPair? = null
+
     // for contextual flow row
     private var getOverflowMeasurable:
         ((isExpandable: Boolean, noOfItemsShown: Int) -> Measurable?)? =
@@ -705,12 +723,13 @@ internal constructor(
                 } else {
                     null
                 }
+
             FlowLayoutOverflow.OverflowType.ExpandOrCollapseIndicator -> {
                 if (hasNext) {
                     seeMoreSize
                 } else if (
                     lineIndex + 1 >= minLinesToShowCollapse &&
-                        totalCrossAxisSize >= minCrossAxisSizeToShowCollapse
+                    totalCrossAxisSize >= minCrossAxisSizeToShowCollapse
                 ) {
                     collapseSize
                 } else {
@@ -744,7 +763,7 @@ internal constructor(
                 } else {
                     if (
                         lineIndex >= (minLinesToShowCollapse - 1) &&
-                            totalCrossAxisSize >= (minCrossAxisSizeToShowCollapse)
+                        totalCrossAxisSize >= (minCrossAxisSizeToShowCollapse)
                     ) {
                         measurable =
                             getOverflowMeasurable?.invoke(/* isExpandable */ false, shownItemCount)

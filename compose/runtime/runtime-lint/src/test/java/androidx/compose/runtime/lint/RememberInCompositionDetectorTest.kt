@@ -289,7 +289,7 @@ class RememberInCompositionDetectorTest(private val definitionsStub: TestFile, t
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2(bar: Bar) {
@@ -327,7 +327,7 @@ class RememberInCompositionDetectorTest(private val definitionsStub: TestFile, t
                         val barImplValue = barImpl.value
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         test()
                         val foo = Foo()
                         val fooValue = foo.value
@@ -645,7 +645,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2(bar: Bar) {
@@ -719,7 +719,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                         }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val test = remember { test() }
                         val foo = remember { Foo() }
                         val fooValue = remember {

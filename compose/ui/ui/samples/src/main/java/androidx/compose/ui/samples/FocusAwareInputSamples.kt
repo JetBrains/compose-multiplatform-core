@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 @Suppress("UNUSED_ANONYMOUS_PARAMETER")
 @Sampled
 @Composable
-fun KeyEventSample() {
+fun NoriaContext.KeyEventSample() {
     // When the inner Box is focused, and the user presses a key, the key goes down the hierarchy
     // and then back up to the parent. At any stage you can stop the propagation by returning
     // true to indicate that you consumed the event.
@@ -81,7 +81,7 @@ fun KeyEventSample() {
 
 @Sampled
 @Composable
-fun KeyEventTypeSample() {
+fun NoriaContext.KeyEventTypeSample() {
     Box(
         Modifier.onKeyEvent {
                 when (it.type) {
@@ -98,7 +98,7 @@ fun KeyEventTypeSample() {
 
 @Sampled
 @Composable
-fun KeyEventIsAltPressedSample() {
+fun NoriaContext.KeyEventIsAltPressedSample() {
     Box(
         Modifier.onKeyEvent {
                 if (it.isAltPressed && it.key == Key.A) {
@@ -114,7 +114,7 @@ fun KeyEventIsAltPressedSample() {
 
 @Sampled
 @Composable
-fun KeyEventIsCtrlPressedSample() {
+fun NoriaContext.KeyEventIsCtrlPressedSample() {
     Box(
         Modifier.onKeyEvent {
                 if (it.isCtrlPressed && it.key == Key.A) {
@@ -130,7 +130,7 @@ fun KeyEventIsCtrlPressedSample() {
 
 @Sampled
 @Composable
-fun KeyEventIsMetaPressedSample() {
+fun NoriaContext.KeyEventIsMetaPressedSample() {
     Box(
         Modifier.onKeyEvent {
                 if (it.isMetaPressed && it.key == Key.A) {
@@ -146,7 +146,7 @@ fun KeyEventIsMetaPressedSample() {
 
 @Sampled
 @Composable
-fun KeyEventIsShiftPressedSample() {
+fun NoriaContext.KeyEventIsShiftPressedSample() {
     Box(
         Modifier.onKeyEvent {
                 if (it.isShiftPressed && it.key == Key.A) {
@@ -162,7 +162,7 @@ fun KeyEventIsShiftPressedSample() {
 
 @Sampled
 @Composable
-fun RotaryEventSample() {
+fun NoriaContext.RotaryEventSample() {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
@@ -191,7 +191,7 @@ fun RotaryEventSample() {
 
 @Sampled
 @Composable
-fun PreRotaryEventSample() {
+fun NoriaContext.PreRotaryEventSample() {
     MaterialTheme(colors = darkColors()) {
         val rowScrollState = rememberScrollState()
         val columnScrollState = rememberScrollState()

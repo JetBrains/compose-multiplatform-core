@@ -450,9 +450,9 @@ class RememberSaveableTest {
 }
 
 @Composable
-private fun WrapRegistry(
+private fun NoriaContext.WrapRegistry(
     wrap: (SaveableStateRegistry) -> SaveableStateRegistry,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val original = LocalSaveableStateRegistry.current!!
     val wrapped = remember(original, wrap) { wrap(original) }

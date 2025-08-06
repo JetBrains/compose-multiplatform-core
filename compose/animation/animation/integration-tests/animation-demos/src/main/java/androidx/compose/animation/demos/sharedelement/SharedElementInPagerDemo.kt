@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun SharedElementInPagerDemo() {
+fun NoriaContext.SharedElementInPagerDemo() {
     var selectedCat by remember { mutableStateOf<Cat?>(null) }
     val pagerState = rememberPagerState { listCats.size }
     SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {

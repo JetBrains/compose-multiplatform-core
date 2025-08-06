@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 private val LocalDecoration = compositionLocalOf { false }
 
 @Composable
-fun ScrollableDemos() {
+fun NoriaContext.ScrollableDemos() {
     var isDecorated by remember { mutableStateOf(false) }
     CompositionLocalProvider(value = LocalDecoration provides isDecorated) {
         LazyColumn(Modifier.padding(16.dp)) {
@@ -124,14 +124,14 @@ fun ScrollableDemos() {
 }
 
 @Composable
-fun ScrollableDemosRtl() {
+fun NoriaContext.ScrollableDemosRtl() {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ScrollableDemos()
     }
 }
 
 @Composable
-fun SingleLineHorizontalScrollableTextField() {
+fun NoriaContext.SingleLineHorizontalScrollableTextField() {
     val layoutDirection = LocalLayoutDirection.current
     val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
     val state =
@@ -146,7 +146,7 @@ fun SingleLineHorizontalScrollableTextField() {
 }
 
 @Composable
-fun SingleLineHorizontalScrollableTextFieldWithNewlines() {
+fun NoriaContext.SingleLineHorizontalScrollableTextFieldWithNewlines() {
     val layoutDirection = LocalLayoutDirection.current
     val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
     val state =
@@ -162,7 +162,7 @@ fun SingleLineHorizontalScrollableTextFieldWithNewlines() {
 }
 
 @Composable
-fun MultiLineVerticalScrollableTextField() {
+fun NoriaContext.MultiLineVerticalScrollableTextField() {
     val layoutDirection = LocalLayoutDirection.current
     val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
     val state =
@@ -177,7 +177,7 @@ fun MultiLineVerticalScrollableTextField() {
 }
 
 @Composable
-fun HoistedHorizontalScroll() {
+fun NoriaContext.HoistedHorizontalScroll() {
     val layoutDirection = LocalLayoutDirection.current
     val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
     val state =
@@ -202,7 +202,7 @@ fun HoistedHorizontalScroll() {
 }
 
 @Composable
-fun SharedHoistedScroll() {
+fun NoriaContext.SharedHoistedScroll() {
     val layoutDirection = LocalLayoutDirection.current
     val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
     val state1 =
@@ -237,7 +237,7 @@ fun SharedHoistedScroll() {
 }
 
 @Composable
-fun simpleDecoration(): TextFieldDecorator {
+fun NoriaContext.simpleDecoration(): TextFieldDecorator {
     return remember {
         TextFieldDecorator {
             val isDecorated = LocalDecoration.current

@@ -85,7 +85,7 @@ fun platformTextInputModifierNodeSample() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
-fun InterceptPlatformTextInputSample() {
+fun NoriaContext.InterceptPlatformTextInputSample() {
     var text by remember { mutableStateOf("") }
 
     InterceptPlatformTextInput(

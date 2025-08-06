@@ -23,6 +23,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.remember
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
+import noria.NoriaContext
 
 /**
  * Allows to save the state defined with [rememberSaveable] for the subtree before disposing it to
@@ -46,7 +47,7 @@ public interface SaveableStateHolder {
      *   Android you can only use types which can be stored inside the Bundle.
      * @param content the content for which [key] is associated.
      */
-    @Composable public fun SaveableStateProvider(key: Any, content: @Composable () -> Unit)
+    @Composable public fun NoriaContext.SaveableStateProvider(key: Any, content: @Composable NoriaContext.() -> Unit)
 
     /** Removes the saved state associated with the passed [key]. */
     public fun removeState(key: Any)
@@ -54,7 +55,7 @@ public interface SaveableStateHolder {
 
 /** Creates and remembers the instance of [SaveableStateHolder]. */
 @Composable
-public fun rememberSaveableStateHolder(): SaveableStateHolder =
+public fun NoriaContext.rememberSaveableStateHolder(): SaveableStateHolder =
     rememberSaveable(saver = SaveableStateHolderImpl.Saver) { SaveableStateHolderImpl() }
         .apply { parentSaveableStateRegistry = LocalSaveableStateRegistry.current }
 
@@ -68,7 +69,7 @@ private class SaveableStateHolderImpl(
     }
 
     @Composable
-    override fun SaveableStateProvider(key: Any, content: @Composable () -> Unit) {
+    override fun NoriaContext.SaveableStateProvider(key: Any, content: @Composable NoriaContext.() -> Unit) {
         ReusableContent(key) {
             val registry = remember {
                 require(canBeSaved(key)) {

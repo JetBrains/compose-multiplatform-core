@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalInterfaceOrientation
 import androidx.compose.ui.uikit.LocalKeyboardOverlapHeight
+import noria.NoriaContext
 
 private val ZeroInsets = WindowInsets(0, 0, 0, 0)
 
@@ -42,7 +43,7 @@ private fun PlatformInsets.toWindowInsets() = WindowInsets(
 private val WindowInsets.Companion.iosSafeArea: WindowInsets
     @Composable
     @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
-    get() = LocalSafeArea.current.toWindowInsets()
+    get() = NoriaContext.run { LocalSafeArea.current.toWindowInsets() }
 
 /**
  * This insets represents iOS layoutMargins.
@@ -50,14 +51,14 @@ private val WindowInsets.Companion.iosSafeArea: WindowInsets
 private val WindowInsets.Companion.layoutMargins: WindowInsets
     @Composable
     @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
-    get() = LocalLayoutMargins.current.toWindowInsets()
+    get() = NoriaContext.run { LocalLayoutMargins.current.toWindowInsets() }
 
 /**
  * An insets type representing the window of a caption bar.
  * It is useless for iOS.
  */
 actual val WindowInsets.Companion.captionBar: WindowInsets
-    get() = ZeroInsets
+    @Composable get() = ZeroInsets
 
 /**
  * This [WindowInsets] represents the area with the display cutout (e.g. for camera).
@@ -65,11 +66,13 @@ actual val WindowInsets.Companion.captionBar: WindowInsets
 actual val WindowInsets.Companion.displayCutout: WindowInsets
     @Composable
     @OptIn(InternalComposeUiApi::class)
-    get() = when (LocalInterfaceOrientation.current) {
-        InterfaceOrientation.Portrait -> iosSafeArea.only(WindowInsetsSides.Top)
-        InterfaceOrientation.PortraitUpsideDown -> iosSafeArea.only(WindowInsetsSides.Bottom)
-        InterfaceOrientation.LandscapeLeft -> iosSafeArea.only(WindowInsetsSides.Right)
-        InterfaceOrientation.LandscapeRight -> iosSafeArea.only(WindowInsetsSides.Left)
+    get() = NoriaContext.run {
+        when (LocalInterfaceOrientation.current) {
+            InterfaceOrientation.Portrait -> iosSafeArea.only(WindowInsetsSides.Top)
+            InterfaceOrientation.PortraitUpsideDown -> iosSafeArea.only(WindowInsetsSides.Bottom)
+            InterfaceOrientation.LandscapeLeft -> iosSafeArea.only(WindowInsetsSides.Right)
+            InterfaceOrientation.LandscapeRight -> iosSafeArea.only(WindowInsetsSides.Left)
+        }
     }
 
 /**
@@ -79,7 +82,7 @@ actual val WindowInsets.Companion.displayCutout: WindowInsets
 actual val WindowInsets.Companion.ime: WindowInsets
     @Composable
     @OptIn(InternalComposeUiApi::class)
-    get() = WindowInsets(bottom = LocalKeyboardOverlapHeight.current)
+    get() = NoriaContext.run { WindowInsets(bottom = LocalKeyboardOverlapHeight.current) }
 
 /**
  * These insets represent the space where system gestures have priority over application gestures.

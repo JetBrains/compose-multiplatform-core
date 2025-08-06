@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun VectorGraphicsDemo() {
+fun NoriaContext.VectorGraphicsDemo() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -72,7 +72,7 @@ fun VectorGraphicsDemo() {
 }
 
 @Composable
-private fun vectorShape(width: Dp, height: Dp): Painter =
+private fun NoriaContext.vectorShape(width: Dp, height: Dp): Painter =
     rememberVectorPainter(
         name = "vectorShape",
         defaultWidth = width,
@@ -118,7 +118,7 @@ private fun vectorShape(width: Dp, height: Dp): Painter =
     }
 
 @Composable
-private fun BackgroundPath(vectorWidth: Float, vectorHeight: Float) {
+private fun NoriaContext.BackgroundPath(vectorWidth: Float, vectorHeight: Float) {
     val background = PathData {
         horizontalLineTo(vectorWidth)
         verticalLineTo(vectorHeight)
@@ -141,7 +141,7 @@ private fun BackgroundPath(vectorWidth: Float, vectorHeight: Float) {
 }
 
 @Composable
-private fun Triangle() {
+private fun NoriaContext.Triangle() {
     val length = 150.0f
     Path(
         fill =
@@ -161,7 +161,7 @@ private fun Triangle() {
 }
 
 @Composable
-private fun TriangleWithOffsets() {
+private fun NoriaContext.TriangleWithOffsets() {
 
     val side1 = 150.0f
     val side2 = 150.0f
@@ -185,7 +185,7 @@ private fun TriangleWithOffsets() {
 }
 
 @Composable
-private fun StripePath(vectorWidth: Float, vectorHeight: Float) {
+private fun NoriaContext.StripePath(vectorWidth: Float, vectorHeight: Float) {
     val stripeDelegate = PathData { stripe(vectorWidth, vectorHeight, 10) }
 
     Path(stroke = SolidColor(Color.Blue), pathData = stripeDelegate)

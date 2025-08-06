@@ -358,7 +358,7 @@ class WindowInsetsSizeTest {
 
     private fun testInsetsSize(
         type: Int,
-        modifier: @Composable () -> Modifier,
+        modifier: @Composable NoriaContext.() -> Modifier,
         sentInsets: AndroidXInsets,
         layoutDirection: LayoutDirection,
         expected: (IntSize) -> IntSize,
@@ -423,7 +423,7 @@ class WindowInsetsSizeTest {
     }
 
     private fun setInsetContent(
-        sizeModifier: @Composable () -> Modifier,
+        sizeModifier: @Composable NoriaContext.() -> Modifier,
         layoutDirection: LayoutDirection,
     ): LayoutCoordinates {
         lateinit var coordinates: LayoutCoordinates

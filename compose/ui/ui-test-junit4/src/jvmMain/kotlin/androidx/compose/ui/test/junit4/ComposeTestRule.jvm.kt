@@ -27,6 +27,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
+import noria.NoriaContext
 import org.junit.rules.TestRule
 
 /**
@@ -251,7 +252,7 @@ interface ComposeContentTestRule : ComposeTestRule {
      *
      * @throws IllegalStateException if called more than once per test.
      */
-    fun setContent(composable: @Composable () -> Unit)
+    fun setContent(composable: @Composable NoriaContext.() -> Unit)
 }
 
 /**

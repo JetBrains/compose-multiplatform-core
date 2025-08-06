@@ -25,7 +25,7 @@ import androidx.compose.runtime.Composable
 
 @Sampled
 @Composable
-fun SelectionSample() {
+fun NoriaContext.SelectionSample() {
     SelectionContainer {
         Column {
             Text("Text 1")
@@ -37,7 +37,7 @@ fun SelectionSample() {
 
 @Sampled
 @Composable
-fun DisableSelectionSample() {
+fun NoriaContext.DisableSelectionSample() {
     SelectionContainer {
         Column {
             Text("Text 1")

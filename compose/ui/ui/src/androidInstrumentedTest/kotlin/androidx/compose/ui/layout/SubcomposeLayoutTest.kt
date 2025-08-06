@@ -4018,7 +4018,7 @@ fun ImageBitmap.assertCenterPixelColor(expectedColor: Color) {
 }
 
 @Composable
-private fun LayoutUsingAlignments(content: @Composable () -> Unit) {
+private fun NoriaContext.LayoutUsingAlignments(content: @Composable () -> Unit) {
     Layout(content) { measurables, constraints ->
         val placeable = measurables.first().measure(constraints)
         placeable[FirstBaseline]

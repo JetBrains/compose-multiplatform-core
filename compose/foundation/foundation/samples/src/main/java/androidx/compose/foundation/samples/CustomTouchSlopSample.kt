@@ -34,7 +34,7 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CustomTouchSlopSample() {
+fun NoriaContext.CustomTouchSlopSample() {
     val originalTouchSlop = LocalViewConfiguration.current.touchSlop
 
     CustomTouchSlopProvider(newTouchSlop = originalTouchSlop * 3) {
@@ -48,7 +48,7 @@ fun CustomTouchSlopSample() {
 }
 
 @Composable
-fun CustomTouchSlopProvider(newTouchSlop: Float, content: @Composable () -> Unit) {
+fun NoriaContext.CustomTouchSlopProvider(newTouchSlop: Float, content: @Composable NoriaContext.() -> Unit) {
     CompositionLocalProvider(
         LocalViewConfiguration provides
             CustomTouchSlopAngle(newTouchSlop, LocalViewConfiguration.current)
@@ -66,7 +66,7 @@ class CustomTouchSlopAngle(
 }
 
 @Composable
-fun LongListOfItems(originalTouchSlop: Float) {
+fun NoriaContext.LongListOfItems(originalTouchSlop: Float) {
     CustomTouchSlopProvider(newTouchSlop = originalTouchSlop / 3) {
         LazyRow {
             items(100) {

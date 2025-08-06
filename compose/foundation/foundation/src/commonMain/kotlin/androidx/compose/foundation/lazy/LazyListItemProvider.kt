@@ -26,6 +26,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import noria.NoriaContext
 
 internal interface LazyListItemProvider : LazyLayoutItemProvider {
     val keyIndexMap: LazyLayoutKeyIndexMap
@@ -36,7 +37,7 @@ internal interface LazyListItemProvider : LazyLayoutItemProvider {
 }
 
 @Composable
-internal fun rememberLazyListItemProviderLambda(
+internal fun NoriaContext.rememberLazyListItemProviderLambda(
     state: LazyListState,
     content: LazyListScope.() -> Unit,
 ): () -> LazyListItemProvider {
@@ -74,7 +75,7 @@ constructor(
         get() = intervalContent.itemCount
 
     @Composable
-    override fun Item(index: Int, key: Any) {
+    override fun NoriaContext.Item(index: Int, key: Any) {
         LazyLayoutPinnableItem(key, index, state.pinnedItems) {
             intervalContent.withInterval(index) { localIndex, content ->
                 content.item(itemScope, localIndex)

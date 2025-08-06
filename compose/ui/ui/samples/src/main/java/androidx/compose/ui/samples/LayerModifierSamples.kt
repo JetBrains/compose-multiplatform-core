@@ -34,13 +34,13 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun ChangeOpacity() {
+fun NoriaContext.ChangeOpacity() {
     Text("Hello World", Modifier.graphicsLayer(alpha = 0.5f, clip = true))
 }
 
 @Sampled
 @Composable
-fun AnimateFadeIn() {
+fun NoriaContext.AnimateFadeIn() {
     val animatedAlpha = remember { Animatable(0f) }
     Text(
         "Hello World",
@@ -54,7 +54,7 @@ fun AnimateFadeIn() {
 
 @Sampled
 @Composable
-fun CompositingStrategyModulateAlpha() {
+fun NoriaContext.CompositingStrategyModulateAlpha() {
     Canvas(
         modifier =
             Modifier.size(100.dp)

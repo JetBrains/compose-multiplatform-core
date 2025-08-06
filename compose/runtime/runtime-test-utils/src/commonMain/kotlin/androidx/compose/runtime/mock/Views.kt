@@ -26,14 +26,14 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 
 @Composable
-fun <T : Any> Repeated(of: Iterable<T>, block: @Composable (value: T) -> Unit) {
+fun <T : Any> NoriaContext.Repeated(of: Iterable<T>, block: @Composable (value: T) -> Unit) {
     for (value in of) {
         key(value) { block(value) }
     }
 }
 
 @Composable
-fun Linear(content: @Composable () -> Unit) {
+fun NoriaContext.Linear(content: @Composable NoriaContext.() -> Unit) {
     ReusableComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "linear" } },
         update = {},
@@ -43,7 +43,7 @@ fun Linear(content: @Composable () -> Unit) {
 }
 
 @Composable
-inline fun InlineLinear(content: @Composable () -> Unit) {
+inline fun NoriaContext.InlineLinear(content: @Composable NoriaContext.() -> Unit) {
     ReusableComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "linear" } },
         update = {},
@@ -53,12 +53,12 @@ inline fun InlineLinear(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun Linear(
+fun NoriaContext.Linear(
     onReuse: () -> Unit = {},
     onDeactivate: () -> Unit = {},
     onRelease: () -> Unit = {},
     onSet: () -> Unit = {},
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val currentOnReuse by rememberUpdatedState(onReuse)
     val currentOnDeactivate by rememberUpdatedState(onDeactivate)
@@ -90,7 +90,7 @@ fun Linear(
 }
 
 @Composable
-fun NonReusableLinear(content: @Composable () -> Unit) {
+fun NoriaContext.NonReusableLinear(content: @Composable NoriaContext.() -> Unit) {
     ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "linear" } }, update = {}) {
         content()
     }
@@ -106,7 +106,7 @@ fun Text(value: String) {
 }
 
 @Composable
-fun NonReusableText(value: String) {
+fun NoriaContext.NonReusableText(value: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "text" } },
         update = { set(value) { text = it } },
@@ -114,7 +114,7 @@ fun NonReusableText(value: String) {
 }
 
 @Composable
-fun Edit(value: String) {
+fun NoriaContext.Edit(value: String) {
     ReusableComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "edit" } },
         update = { set(value) { this.value = it } },
@@ -122,7 +122,7 @@ fun Edit(value: String) {
 }
 
 @Composable
-fun SelectBox(selected: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.SelectBox(selected: Boolean, content: @Composable NoriaContext.() -> Unit) {
     if (selected) {
         ReusableComposeNode<View, ViewApplier>(
             factory = { View().also { it.name = "box" } },

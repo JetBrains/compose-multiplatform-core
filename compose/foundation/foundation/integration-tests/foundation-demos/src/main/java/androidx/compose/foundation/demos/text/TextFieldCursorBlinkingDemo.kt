@@ -56,7 +56,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun TextFieldCursorBlinkingDemo() {
+fun NoriaContext.TextFieldCursorBlinkingDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         BasicText("Focus on any of the text fields below to observe cursor behavior.")
         BasicText("All fields are not editable, with a fixed selection position")
@@ -70,7 +70,7 @@ fun TextFieldCursorBlinkingDemo() {
 }
 
 @Composable
-private fun Item(title: String, content: @Composable () -> Unit) {
+private fun NoriaContext.Item(title: String, content: @Composable NoriaContext.() -> Unit) {
     Column {
         BasicText(
             title,
@@ -81,13 +81,13 @@ private fun Item(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun DefaultCursor() {
+private fun NoriaContext.DefaultCursor() {
     val textFieldValue = TextFieldValue(text = "Normal blink", selection = TextRange(3))
     BasicTextField(value = textFieldValue, modifier = demoTextFieldModifiers, onValueChange = {})
 }
 
 @Composable
-private fun ColorCursor() {
+private fun NoriaContext.ColorCursor() {
     val textFieldValue = TextFieldValue(text = "Red cursor", selection = TextRange(3))
     BasicTextField(
         value = textFieldValue,
@@ -106,7 +106,7 @@ private val Purple = Color(0xff7B4397)
 private val Rainbow = listOf(Orange, Yellow, Green, Blue, Purple, Red)
 
 @Composable
-private fun RainbowCursor() {
+private fun NoriaContext.RainbowCursor() {
     val textFieldValue = TextFieldValue(text = "Rainbow cursor", selection = TextRange(3))
 
     val color = remember { Animatable(Red) }
@@ -125,7 +125,7 @@ private fun RainbowCursor() {
 }
 
 @Composable
-private fun GradientCursor() {
+private fun NoriaContext.GradientCursor() {
     val textFieldValue = TextFieldValue(text = "Gradient cursor", selection = TextRange(3))
 
     BasicTextField(
@@ -137,7 +137,7 @@ private fun GradientCursor() {
 }
 
 @Composable
-fun TypingCursorNeverBlinks() {
+fun NoriaContext.TypingCursorNeverBlinks() {
     var text by remember { mutableStateOf("") }
     var animate by remember { mutableStateOf(false) }
     LaunchedEffect(animate) {
@@ -180,7 +180,7 @@ fun ChangingSelectionShowsCursor() {
 }
 
 @Composable
-fun CursorNotBlinkingInUnfocusedWindowDemo() {
+fun NoriaContext.CursorNotBlinkingInUnfocusedWindowDemo() {
     Column(Modifier.fillMaxSize()) {
         var text by remember { mutableStateOf("hello") }
         TextField(value = text, onValueChange = { text = it })

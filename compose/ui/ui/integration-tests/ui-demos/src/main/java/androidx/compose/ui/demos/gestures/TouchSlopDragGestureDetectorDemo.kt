@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectVerticalDragGestures] and [detectHorizontalDragGestures] demo. */
 @Composable
-fun DragGestureFilterDemo() {
+fun NoriaContext.DragGestureFilterDemo() {
 
     val verticalColor = Color(0xfff44336)
     val horizontalColor = Color(0xff2196f3)

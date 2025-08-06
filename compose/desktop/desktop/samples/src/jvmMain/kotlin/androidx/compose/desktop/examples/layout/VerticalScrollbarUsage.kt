@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 
 @Composable
-fun VerticalScrollbarUsage() = Box {
+fun NoriaContext.VerticalScrollbarUsage() = Box {
     val state = rememberLazyListState()
     val itemCount = 100000
     val heights = remember {

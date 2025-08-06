@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [awaitTouchSlopOrCancellation] demo. */
 @Composable
-fun DragSlopExceededGestureFilterDemo() {
+fun NoriaContext.DragSlopExceededGestureFilterDemo() {
 
     val verticalColor = Color(0xfff44336)
     val horizontalColor = Color(0xff2196f3)

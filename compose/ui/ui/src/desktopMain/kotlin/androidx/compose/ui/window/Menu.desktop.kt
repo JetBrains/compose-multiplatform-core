@@ -51,6 +51,7 @@ import javax.swing.JMenuBar
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
 import javax.swing.JRadioButtonMenuItem
+import noria.NoriaContext
 
 private val DefaultIconSize = Size(16f, 16f)
 
@@ -134,7 +135,7 @@ fun JMenu.setContent(
 /**
  * Receiver scope which is used by [JMenuBar.setContent] and [FrameWindowScope.MenuBar].
  */
-class MenuBarScope internal constructor() {
+class MenuBarScope internal constructor() : NoriaContext {
     /**
      * Adds menu to the menu bar
      *
@@ -174,7 +175,7 @@ class MenuBarScope internal constructor() {
     }
 }
 
-internal interface MenuScopeImpl {
+internal interface MenuScopeImpl : NoriaContext {
     @Composable
     fun Menu(
         text: String,
@@ -245,7 +246,7 @@ private class AwtMenuScope : MenuScopeImpl {
                 set(enabled, Menu::setEnabled)
             },
             content = {
-                val scope = MenuScope(this)
+                val scope = MenuScope(this@AwtMenuScope)
                 scope.content()
             }
         )
@@ -376,7 +377,7 @@ private class SwingMenuScope : MenuScopeImpl {
                 set(mnemonic, JMenu::setMnemonic)
             },
             content = {
-                val scope = MenuScope(this)
+                val scope = MenuScope(this@SwingMenuScope)
                 scope.content()
             }
         )
@@ -501,7 +502,7 @@ private class SwingMenuScope : MenuScopeImpl {
 /**
  * Receiver scope which is used by [Menu.setContent], [MenuBarScope.Menu], [Tray]
  */
-class MenuScope internal constructor(private val impl: MenuScopeImpl) {
+class MenuScope internal constructor(private val impl: MenuScopeImpl) : NoriaContext {
     /**
      * Adds sub menu to the menu
      *
@@ -784,7 +785,7 @@ private fun JMenuItem.setShortcut(shortcut: KeyShortcut?) {
 }
 
 @Composable
-private fun rememberAwtIcon(painter: Painter?): Icon? {
+private fun NoriaContext.rememberAwtIcon(painter: Painter?): Icon? {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
 
@@ -796,7 +797,7 @@ private fun rememberAwtIcon(painter: Painter?): Icon? {
 }
 
 @Composable
-private fun <R, V> rememberStateChanger(
+private fun <R, V> NoriaContext.rememberStateChanger(
     set: R.(V) -> Unit,
     get: R.() -> V
 ): ComposeState<R, V> = remember {

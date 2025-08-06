@@ -208,7 +208,7 @@ class ParentDataModifierTest {
 }
 
 @Composable
-fun SimpleDrawChild(drawLatch: CountDownLatch) {
+fun NoriaContext.SimpleDrawChild(drawLatch: CountDownLatch) {
     AtLeastSize(
         size = 10,
         modifier =

@@ -58,7 +58,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun PopupDemo() {
+fun NoriaContext.PopupDemo() {
     var exampleIndex by remember { mutableIntStateOf(0) }
     val totalExamples = 8
 
@@ -423,7 +423,7 @@ private fun ColumnScope.PopupInsideScroller() {
 }
 
 @Composable
-private fun PopupOnKeyboardUp() {
+private fun NoriaContext.PopupOnKeyboardUp() {
     Column {
         val widthSize = 190.dp
         val heightSize = 120.dp
@@ -446,7 +446,7 @@ private fun PopupOnKeyboardUp() {
 }
 
 @Composable
-private fun ClickableTextWithBackground(
+private fun NoriaContext.ClickableTextWithBackground(
     text: String,
     color: Color,
     onClick: (() -> Unit)? = null,
@@ -462,7 +462,7 @@ private fun ClickableTextWithBackground(
 }
 
 @Composable
-private fun EditLine(
+private fun NoriaContext.EditLine(
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,

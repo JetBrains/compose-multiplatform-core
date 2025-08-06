@@ -252,7 +252,7 @@ class TextLayoutTest {
 }
 
 @Composable
-private fun TestingText(
+private fun NoriaContext.TestingText(
     text: String,
     modifier: Modifier = Modifier,
     onTextLayout: (TextLayoutResult) -> Unit = {},

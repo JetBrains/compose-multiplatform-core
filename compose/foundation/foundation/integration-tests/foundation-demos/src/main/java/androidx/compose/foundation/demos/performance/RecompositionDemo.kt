@@ -53,7 +53,7 @@ import kotlinx.coroutines.launch
  */
 @Preview
 @Composable
-fun RecompositionDemo() {
+fun NoriaContext.RecompositionDemo() {
     Column() {
         Row(Modifier.padding(8.dp)) {
             Text("Empty Box")
@@ -81,7 +81,7 @@ val InitialDelay = 1000L
 
 /** This hierarchy consists of just a single, empty Box composable. */
 @Composable
-fun BoxElement() {
+fun NoriaContext.BoxElement() {
     var iteration by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     Box(
@@ -107,7 +107,7 @@ fun BoxElement() {
  * input when the element is tapped (separate from the ripple animation behavior).
  */
 @Composable
-fun NoRippleBoxElement() {
+fun NoriaContext.NoRippleBoxElement() {
     var iteration by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val interactionSource = remember { MutableInteractionSource() }
@@ -134,7 +134,7 @@ fun NoRippleBoxElement() {
  * of a Button is significantly different from other composables.
  */
 @Composable
-fun ButtonElement() {
+fun NoriaContext.ButtonElement() {
     var iteration by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     Button(

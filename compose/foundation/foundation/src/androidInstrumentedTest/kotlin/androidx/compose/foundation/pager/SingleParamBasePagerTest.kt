@@ -91,7 +91,7 @@ open class SingleParamBasePagerTest {
         userScrollEnabled: Boolean = true,
         snappingPage: PagerSnapDistance = PagerSnapDistance.atMost(1),
         nestedScrollConnection: NestedScrollConnection = object : NestedScrollConnection {},
-        additionalContent: @Composable () -> Unit = {},
+        additionalContent: @Composable NoriaContext.() -> Unit = {},
         contentPadding: PaddingValues = PaddingValues(0.dp),
         pageSpacing: Dp = 0.dp,
         reverseLayout: Boolean = false,

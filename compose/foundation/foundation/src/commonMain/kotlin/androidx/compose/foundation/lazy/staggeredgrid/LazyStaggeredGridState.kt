@@ -57,6 +57,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.ranges.IntRange
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Creates a [LazyStaggeredGridState] that is remembered across composition.
@@ -72,7 +73,7 @@ import kotlinx.coroutines.launch
  * @return created and memoized [LazyStaggeredGridState] with given parameters.
  */
 @Composable
-fun rememberLazyStaggeredGridState(
+fun NoriaContext.rememberLazyStaggeredGridState(
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyStaggeredGridState =

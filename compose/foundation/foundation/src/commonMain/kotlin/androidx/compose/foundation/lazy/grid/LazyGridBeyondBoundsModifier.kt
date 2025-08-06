@@ -20,9 +20,10 @@ import androidx.compose.foundation.gestures.snapping.singleAxisViewportSize
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 @Composable
-internal fun rememberLazyGridBeyondBoundsState(state: LazyGridState): LazyLayoutBeyondBoundsState {
+internal fun NoriaContext.rememberLazyGridBeyondBoundsState(state: LazyGridState): LazyLayoutBeyondBoundsState {
     return remember(state) { LazyGridBeyondBoundsState(state) }
 }
 

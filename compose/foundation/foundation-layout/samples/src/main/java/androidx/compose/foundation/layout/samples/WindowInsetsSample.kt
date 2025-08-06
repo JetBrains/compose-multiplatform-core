@@ -30,7 +30,7 @@ import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
 
 @Sampled
 @Composable
-fun FitInsideOutsideExample() {
+fun NoriaContext.FitInsideOutsideExample() {
     Box(Modifier.fillMaxSize()) {
         // Drawn behind the status bar
         Box(Modifier.fillMaxSize().fitOutside(StatusBars.current).background(Color.Blue))

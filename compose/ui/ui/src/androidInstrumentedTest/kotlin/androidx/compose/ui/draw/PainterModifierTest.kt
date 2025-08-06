@@ -813,7 +813,7 @@ private class TestPainter(val width: Float, val height: Float) : Painter() {
  * their child
  */
 @Composable
-fun NoMinSizeContainer(content: @Composable () -> Unit) {
+fun NoriaContext.NoMinSizeContainer(content: @Composable () -> Unit) {
     Layout(content) { measurables, constraints ->
         val loosenedConstraints = constraints.copy(minWidth = 0, minHeight = 0)
         val placeables = measurables.map { it.measure(loosenedConstraints) }
@@ -827,7 +827,7 @@ fun NoMinSizeContainer(content: @Composable () -> Unit) {
 
 /** Composable that is sized purely by the constraints given by its modifiers */
 @Composable
-fun NoIntrinsicSizeContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.NoIntrinsicSizeContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(content, modifier) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints) }
         val width = max(placeables.maxByOrNull { it.width }?.width ?: 0, constraints.minWidth)

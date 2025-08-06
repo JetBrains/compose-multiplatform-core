@@ -40,7 +40,6 @@ import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.LocalWindow
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
-import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
@@ -55,6 +54,7 @@ import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JDialog
+import noria.NoriaContext
 
 // TODO(demin): fix mouse hover after opening a dialog.
 //  When we open a modal dialog, ComposeLayer/mouseExited will
@@ -100,7 +100,7 @@ import javax.swing.JDialog
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SwingDialog(
+fun NoriaContext.SwingDialog(
     visible: Boolean = true,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
@@ -178,13 +178,13 @@ fun SwingDialog(
  */
 @ExperimentalComposeUiApi
 @Composable
-fun SwingDialog(
+fun NoriaContext.SwingDialog(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
-    decoration: WindowDecoration = WindowDecoration.SystemDefault,
+    decoration: WindowDecoration = WindowDecoration.Decorated,
     transparent: Boolean = false,
     resizable: Boolean = true,
     enabled: Boolean = true,
@@ -285,7 +285,7 @@ fun SwingDialog(
             updater.update {
                 set(currentTitle, dialog::setTitle)
                 set(currentIcon, dialog::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, dialog::setUndecoratedSafely)
+                set(currentDecoration is WindowDecoration.Undecorated, dialog::setUndecoratedSafely)
                 set(currentTransparent, dialog::isTransparent::set)
                 set(currentResizable, dialog::setResizable)
                 set(currentEnabled, dialog::setEnabled)

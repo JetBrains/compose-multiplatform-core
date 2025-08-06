@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
+import noria.NoriaContext
 import org.xml.sax.InputSource
 
 /**
@@ -52,7 +53,7 @@ import org.xml.sax.InputSource
 @Deprecated("Migrate to the Compose resources library. See https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-images-resources.html " +
     "If you need to load resources specificly from Java classpath, you should still use the new resource library and use a snippet from https://github.com/JetBrains/compose-multiplatform-core/pull/1457")
 @Composable
-fun painterResource(
+fun NoriaContext.painterResource(
     resourcePath: String
 ): Painter  = when (resourcePath.substringAfterLast(".")) {
     "svg" -> rememberSvgResource(resourcePath)
@@ -61,7 +62,7 @@ fun painterResource(
 }
 
 @Composable
-private fun rememberSvgResource(resourcePath: String): Painter {
+private fun NoriaContext.rememberSvgResource(resourcePath: String): Painter {
     val density = LocalDensity.current
     return remember(resourcePath, density) {
         useResource(resourcePath) {
@@ -71,7 +72,7 @@ private fun rememberSvgResource(resourcePath: String): Painter {
 }
 
 @Composable
-private fun rememberVectorXmlResource(resourcePath: String): Painter {
+private fun NoriaContext.rememberVectorXmlResource(resourcePath: String): Painter {
     val density = LocalDensity.current
     val image = remember(resourcePath, density) {
         useResource(resourcePath) {
@@ -82,7 +83,7 @@ private fun rememberVectorXmlResource(resourcePath: String): Painter {
 }
 
 @Composable
-private fun rememberBitmapResource(resourcePath: String): Painter {
+private fun NoriaContext.rememberBitmapResource(resourcePath: String): Painter {
     val image = remember(resourcePath) {
         useResource(resourcePath, ::loadImageBitmap)
     }

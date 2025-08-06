@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectTapGestures] demo. */
 @Composable
-fun DetectTapGesturesDemo() {
+fun NoriaContext.DetectTapGesturesDemo() {
     val color = remember { mutableStateOf(Colors.random()) }
 
     val onTap: (Offset) -> Unit = { color.value = color.value.anotherRandomColor() }

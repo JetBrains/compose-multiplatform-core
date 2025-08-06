@@ -63,6 +63,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
+import noria.NoriaContext
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
@@ -394,7 +395,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     // so by default SkikoComposeUiTest doesn't expect any IdlingResource
     protected open fun areAllResourcesIdle() = true
 
-    override fun setContent(composable: @Composable () -> Unit) {
+    override fun setContent(composable: @Composable NoriaContext.() -> Unit) {
         if (isOnUiThread()) {
             scene.setContent(content = composable)
         } else {
@@ -523,7 +524,7 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
         timeoutMillis: Long,
         condition: () -> Boolean
     )
-    actual fun setContent(composable: @Composable () -> Unit)
+    actual fun setContent(composable: @Composable NoriaContext.() -> Unit)
 }
 
 private const val FRAME_DELAY_MILLIS = 16L

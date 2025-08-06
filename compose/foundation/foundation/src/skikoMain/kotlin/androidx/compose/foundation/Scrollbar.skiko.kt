@@ -49,7 +49,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -58,6 +57,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Constraints
@@ -72,6 +72,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * [CompositionLocal] used to pass [ScrollbarStyle] down the tree.
@@ -140,7 +141,7 @@ fun defaultScrollbarStyle() = ScrollbarStyle(
     "adapter: androidx.compose.foundation.v2.ScrollbarAdapter)" +
     " instead")
 @Composable
-fun VerticalScrollbar(
+fun NoriaContext.VerticalScrollbar(
     @Suppress("DEPRECATION") adapter: ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean = false,
@@ -188,7 +189,7 @@ fun VerticalScrollbar(
 @Deprecated("Use HorizontalScrollbar(" +
     "adapter: androidx.compose.foundation.v2.ScrollbarAdapter) instead")
 @Composable
-fun HorizontalScrollbar(
+fun NoriaContext.HorizontalScrollbar(
     @Suppress("DEPRECATION") adapter: ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean = false,
@@ -205,7 +206,7 @@ fun HorizontalScrollbar(
 
 @Suppress("DEPRECATION")
 @Composable
-private fun OldScrollbar(
+private fun NoriaContext.OldScrollbar(
     oldAdapter: ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean,
@@ -254,7 +255,7 @@ private fun OldScrollbar(
  * [DragInteraction.Start] when this Scrollbar is being dragged.
  */
 @Composable
-fun VerticalScrollbar(
+fun NoriaContext.VerticalScrollbar(
     adapter: androidx.compose.foundation.v2.ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean = false,
@@ -301,7 +302,7 @@ fun VerticalScrollbar(
  * [DragInteraction.Start] when this Scrollbar is being dragged.
  */
 @Composable
-fun HorizontalScrollbar(
+fun NoriaContext.HorizontalScrollbar(
     adapter: androidx.compose.foundation.v2.ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean = false,
@@ -317,7 +318,7 @@ fun HorizontalScrollbar(
 )
 
 @Composable
-private fun NewScrollbar(
+private fun NoriaContext.NewScrollbar(
     newAdapter: androidx.compose.foundation.v2.ScrollbarAdapter,
     modifier: Modifier = Modifier,
     reverseLayout: Boolean,
@@ -347,7 +348,7 @@ private typealias NewScrollbarAdapterFactory<T> = (
  * implementations to use the same code.
  */
 @Composable
-internal fun <T> OldOrNewScrollbar(
+internal fun <T> NoriaContext.OldOrNewScrollbar(
     oldOrNewAdapter: T,
     // We need an adapter factory because we can't convert an old to a new
     // adapter until we have the track/container size
@@ -511,7 +512,7 @@ private fun androidx.compose.foundation.v2.ScrollbarAdapter.asOldAdapter(): Scro
 @JvmName("rememberScrollbarAdapter")
 @Suppress("DEPRECATION")
 @Composable
-fun rememberOldScrollbarAdapter(
+fun NoriaContext.rememberOldScrollbarAdapter(
     scrollState: ScrollState
 ): ScrollbarAdapter = remember(scrollState) {
     OldScrollbarAdapter(scrollState)
@@ -531,7 +532,7 @@ fun rememberOldScrollbarAdapter(
 @JvmName("rememberScrollbarAdapter")
 @Suppress("DEPRECATION")
 @Composable
-fun rememberOldScrollbarAdapter(
+fun NoriaContext.rememberOldScrollbarAdapter(
     scrollState: LazyListState,
 ): ScrollbarAdapter {
     return remember(scrollState) {
@@ -609,7 +610,7 @@ fun OldScrollbarAdapter(
  */
 @JvmName("rememberScrollbarAdapter2")
 @Composable
-fun rememberScrollbarAdapter(
+fun NoriaContext.rememberScrollbarAdapter(
     scrollState: ScrollState
 ): androidx.compose.foundation.v2.ScrollbarAdapter = remember(scrollState) {
     ScrollbarAdapter(scrollState)
@@ -621,7 +622,7 @@ fun rememberScrollbarAdapter(
  */
 @JvmName("rememberScrollbarAdapter2")
 @Composable
-fun rememberScrollbarAdapter(
+fun NoriaContext.rememberScrollbarAdapter(
     scrollState: LazyListState,
 ): androidx.compose.foundation.v2.ScrollbarAdapter = remember(scrollState) {
     ScrollbarAdapter(scrollState)
@@ -633,7 +634,7 @@ fun rememberScrollbarAdapter(
  */
 @JvmName("rememberScrollbarAdapter2")
 @Composable
-fun rememberScrollbarAdapter(
+fun NoriaContext.rememberScrollbarAdapter(
     scrollState: LazyGridState,
 ): androidx.compose.foundation.v2.ScrollbarAdapter = remember(scrollState) {
     ScrollbarAdapter(scrollState)
@@ -646,7 +647,7 @@ fun rememberScrollbarAdapter(
 @ExperimentalFoundationApi
 @JvmName("rememberScrollbarAdapter2")
 @Composable
-fun rememberScrollbarAdapter(
+fun NoriaContext.rememberScrollbarAdapter(
     scrollState: TextFieldScrollState,
 ): androidx.compose.foundation.v2.ScrollbarAdapter = remember(scrollState) {
     ScrollbarAdapter(scrollState)
@@ -835,29 +836,31 @@ private fun Modifier.scrollbarDrag(
     interactionSource: MutableInteractionSource,
     draggedInteraction: MutableState<DragInteraction.Start?>,
     sliderAdapter: SliderAdapter,
-): Modifier = composed {
-    val currentInteractionSource by rememberUpdatedState(interactionSource)
-    val currentDraggedInteraction by rememberUpdatedState(draggedInteraction)
-    val currentSliderAdapter by rememberUpdatedState(sliderAdapter)
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val currentInteractionSource by rememberUpdatedState(interactionSource)
+        val currentDraggedInteraction by rememberUpdatedState(draggedInteraction)
+        val currentSliderAdapter by rememberUpdatedState(sliderAdapter)
 
-    pointerInput(Unit) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            val interaction = DragInteraction.Start()
-            currentInteractionSource.tryEmit(interaction)
-            currentDraggedInteraction.value = interaction
-            currentSliderAdapter.onDragStarted()
-            val isSuccess = drag(down.id) { change ->
-                currentSliderAdapter.onDragDelta(change.positionChange())
-                change.consume()
+        pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                val interaction = DragInteraction.Start()
+                currentInteractionSource.tryEmit(interaction)
+                currentDraggedInteraction.value = interaction
+                currentSliderAdapter.onDragStarted()
+                val isSuccess = drag(down.id) { change ->
+                    currentSliderAdapter.onDragDelta(change.positionChange())
+                    change.consume()
+                }
+                val finishInteraction = if (isSuccess) {
+                    DragInteraction.Stop(interaction)
+                } else {
+                    DragInteraction.Cancel(interaction)
+                }
+                currentInteractionSource.tryEmit(finishInteraction)
+                currentDraggedInteraction.value = null
             }
-            val finishInteraction = if (isSuccess) {
-                DragInteraction.Stop(interaction)
-            } else {
-                DragInteraction.Cancel(interaction)
-            }
-            currentInteractionSource.tryEmit(finishInteraction)
-            currentDraggedInteraction.value = null
         }
     }
 }
@@ -866,16 +869,18 @@ private fun Modifier.scrollOnPressTrack(
     isVertical: Boolean,
     reverseLayout: Boolean,
     sliderAdapter: SliderAdapter,
-) = composed {
-    val coroutineScope = rememberCoroutineScope()
-    val scroller = remember(sliderAdapter, coroutineScope, reverseLayout) {
-        TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout)
-    }
-    Modifier.pointerInput(scroller) {
-        detectScrollViaTrackGestures(
-            isVertical = isVertical,
-            scroller = scroller
-        )
+) = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val coroutineScope = rememberCoroutineScope()
+        val scroller = remember(sliderAdapter, coroutineScope, reverseLayout) {
+            TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout)
+        }
+        Modifier.pointerInput(scroller) {
+            detectScrollViaTrackGestures(
+                isVertical = isVertical,
+                scroller = scroller
+            )
+        }
     }
 }
 

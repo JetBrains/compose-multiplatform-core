@@ -68,7 +68,7 @@ import androidx.compose.ui.unit.dp
  */
 @Preview
 @Composable
-fun AnimateBoundsOnFloatingToolbarDemo() {
+fun NoriaContext.AnimateBoundsOnFloatingToolbarDemo() {
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             val sampleText = remember { LoremIpsum().values.first() }

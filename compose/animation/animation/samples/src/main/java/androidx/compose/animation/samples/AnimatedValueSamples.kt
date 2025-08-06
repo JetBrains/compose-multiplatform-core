@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.Color
 
 @Sampled
 @Composable
-fun ColorAnimationSample() {
+fun NoriaContext.ColorAnimationSample() {
     @Composable
     fun ColorAnimation(primary: Boolean) {
         // Animates to primary or secondary color, depending on whether [primary] is true

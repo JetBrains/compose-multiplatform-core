@@ -18,6 +18,7 @@ package androidx.compose.foundation.text
 
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 @Composable
-internal actual fun rememberTextFieldOverscrollEffect(): OverscrollEffect? = null
+internal actual fun NoriaContext.rememberTextFieldOverscrollEffect(): OverscrollEffect? = null

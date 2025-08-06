@@ -69,6 +69,7 @@ import kotlin.math.sign
 import kotlin.ranges.IntRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Creates and remember a [PagerState] to be used with a [Pager]
@@ -83,7 +84,7 @@ import kotlinx.coroutines.launch
  * @param pageCount The amount of pages this Pager will have.
  */
 @Composable
-fun rememberPagerState(
+fun NoriaContext.rememberPagerState(
     initialPage: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) initialPageOffsetFraction: Float = 0f,
     pageCount: () -> Int,

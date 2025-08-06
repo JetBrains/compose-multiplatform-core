@@ -56,7 +56,7 @@ import androidx.compose.ui.window.Dialog
 
 @Sampled
 @Composable
-fun HandwritingDetectorSample() {
+fun NoriaContext.HandwritingDetectorSample() {
     var openDialog by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 

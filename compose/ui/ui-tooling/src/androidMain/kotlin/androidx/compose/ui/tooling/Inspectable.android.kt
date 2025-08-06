@@ -48,7 +48,7 @@ private class CompositionDataRecordImpl : CompositionDataRecord {
  *   composition of [content]
  */
 @Composable
-internal fun Inspectable(
+internal fun NoriaContext.Inspectable(
     compositionDataRecord: CompositionDataRecord,
     content: @Composable () -> Unit,
 ) {
@@ -69,7 +69,7 @@ internal fun Inspectable(
 @Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated("This method should not be used in application code and will be removed soon.")
 @Composable
-fun InInspectionModeOnly(content: @Composable () -> Unit) {
+fun NoriaContext.InInspectionModeOnly(content: @Composable () -> Unit) {
     if (LocalInspectionMode.current) {
         content()
     }

@@ -139,7 +139,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             webMain.dependsOn(nonJvmMain)
             uikitMain {
                 dependencies {
-                    implementation(project(":compose:ui:ui-uikit"))
+//                    implementation(project(":compose:ui:ui-uikit"))
                 }
             }
             jsMain {

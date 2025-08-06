@@ -31,6 +31,7 @@ import java.awt.Window
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
+import noria.NoriaContext
 
 /**
  * WindowDraggableArea is a component that allows you to drag the window using the mouse.
@@ -41,7 +42,7 @@ import java.awt.event.MouseMotionAdapter
 @Composable
 fun WindowScope.WindowDraggableArea(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit = {}
+    content: @Composable NoriaContext.() -> Unit = {}
 ) {
     val handler = remember { DragHandler(window) }
 

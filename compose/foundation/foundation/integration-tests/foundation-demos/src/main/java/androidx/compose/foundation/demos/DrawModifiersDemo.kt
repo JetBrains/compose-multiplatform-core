@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun DrawModifiersDemo() {
+fun NoriaContext.DrawModifiersDemo() {
     Row {
         Column(Modifier.weight(1f, true).padding(10.dp)) {
             BorderSample()

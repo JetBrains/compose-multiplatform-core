@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.RootNodeOwner
+import noria.NoriaContext
 
 /**
  * Composes the given composable into [RootNodeOwner]
@@ -39,7 +40,7 @@ import androidx.compose.ui.node.RootNodeOwner
 internal fun RootNodeOwner.setContent(
     parent: CompositionContext,
     getCompositionLocalContext: () -> CompositionLocalContext? = { null },
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): Composition {
     val composition = Composition(DefaultUiApplier(owner.root), parent)
     composition.setContent {
@@ -55,10 +56,10 @@ internal fun RootNodeOwner.setContent(
 }
 
 @Composable
-private fun CompositionLocalContext?.provide(content: @Composable () -> Unit) {
+private fun CompositionLocalContext?.provide(content: @Composable NoriaContext.() -> Unit) {
     if (this != null) {
-        CompositionLocalProvider(this, content = content)
+        NoriaContext.CompositionLocalProvider(this, content = content)
     } else {
-        content()
+        NoriaContext.content()
     }
 }

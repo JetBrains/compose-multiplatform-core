@@ -203,7 +203,7 @@ class ContextMenuAreaTest {
         contextMenuBuilderBlock: ContextMenuScope.() -> Unit = { testItem() },
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
-        content: @Composable () -> Unit = {},
+        content: @Composable NoriaContext.() -> Unit = {},
     ) {
         ContextMenuArea(
             state = state,

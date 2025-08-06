@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 /** Sample of using [TextAutoSize.StepBased] to auto-size text. */
 @Sampled
 @Composable
-fun TextAutoSizeBasicTextSample() {
+fun NoriaContext.TextAutoSizeBasicTextSample() {
     Box(modifier = Modifier.size(200.dp)) {
         // The text will find the biggest available font size that fits in the box.
         BasicText(text = "Hello World", autoSize = TextAutoSize.StepBased())

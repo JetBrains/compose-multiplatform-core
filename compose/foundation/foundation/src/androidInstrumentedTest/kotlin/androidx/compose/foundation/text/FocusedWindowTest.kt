@@ -30,7 +30,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
  * calls replaced with "rule.setContent".
  */
 interface FocusedWindowTest {
-    fun ComposeContentTestRule.setTextFieldTestContent(content: @Composable () -> Unit) {
+    fun ComposeContentTestRule.setTextFieldTestContent(content: @Composable NoriaContext.() -> Unit) {
         val focusedWindowInfo =
             object : WindowInfo {
                 override val isWindowFocused = true

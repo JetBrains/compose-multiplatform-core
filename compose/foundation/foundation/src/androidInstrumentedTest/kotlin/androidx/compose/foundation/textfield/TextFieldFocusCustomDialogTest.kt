@@ -91,7 +91,7 @@ class TextFieldFocusCustomDialogTest {
 
     private fun keyboardIsShown_whenFocusRequestedImmediately_fromEffect(
         runEffect: @Composable (body: () -> Unit) -> Unit,
-        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() },
+        wrapContent: @Composable (@Composable NoriaContext.() -> Unit) -> Unit = { it() },
     ) {
         val focusRequester = FocusRequester()
         val keyboardHelper = KeyboardHelper(rule)
@@ -131,7 +131,7 @@ class TextFieldFocusCustomDialogTest {
      * doesn't use DialogWindowProvider.
      */
     @Composable
-    private fun CustomDialog(content: @Composable () -> Unit) {
+    private fun CustomDialog(content: @Composable NoriaContext.() -> Unit) {
         val context = LocalContext.current
         val updatedContent by rememberUpdatedState(content)
         DisposableEffect(Unit) {
@@ -149,7 +149,7 @@ class TextFieldFocusCustomDialogTest {
             else -> error("No FragmentActivity found")
         }
 
-    class CustomDialogFragment(private val content: @Composable () -> Unit) : DialogFragment() {
+    class CustomDialogFragment(private val content: @Composable NoriaContext.() -> Unit) : DialogFragment() {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,

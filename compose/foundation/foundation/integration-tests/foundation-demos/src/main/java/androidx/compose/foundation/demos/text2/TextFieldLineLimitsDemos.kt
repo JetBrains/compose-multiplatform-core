@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 @Composable
-fun TextFieldLineLimitsDemos() {
+fun NoriaContext.TextFieldLineLimitsDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp)) {
         TagLine(tag = "Default")
         DefaultLineLimits()
@@ -54,7 +54,7 @@ fun TextFieldLineLimitsDemos() {
 }
 
 @Composable
-fun DefaultLineLimits() {
+fun NoriaContext.DefaultLineLimits() {
     Text("Default")
 
     BasicTextField(
@@ -66,7 +66,7 @@ fun DefaultLineLimits() {
 }
 
 @Composable
-fun SingleLineLimits() {
+fun NoriaContext.SingleLineLimits() {
     Text("Single Line")
 
     BasicTextField(
@@ -78,7 +78,7 @@ fun SingleLineLimits() {
 }
 
 @Composable
-fun MultiLineLimits() {
+fun NoriaContext.MultiLineLimits() {
     Text("Multi Line")
 
     var minLines by remember { mutableIntStateOf(2) }

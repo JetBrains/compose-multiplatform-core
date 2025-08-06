@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -45,6 +44,7 @@ import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidatePlacement
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Constraints
@@ -71,13 +71,15 @@ import androidx.compose.ui.util.fastRoundToInt
  */
 @Stable
 fun Modifier.windowInsetsPadding(insets: WindowInsets): Modifier =
-    composed(
+    noriaComposed(
         debugInspectorInfo {
             name = "windowInsetsPadding"
             properties["insets"] = insets
         }
-    ) {
-        remember(insets) { InsetsPaddingModifier(insets) }
+    ) { noriaContext ->
+        noriaContext.run {
+            remember(insets) { InsetsPaddingModifier(insets) }
+        }
     }
 
 /**
@@ -92,13 +94,15 @@ fun Modifier.windowInsetsPadding(insets: WindowInsets): Modifier =
  */
 @Stable
 fun Modifier.consumeWindowInsets(insets: WindowInsets): Modifier =
-    composed(
+    noriaComposed(
         debugInspectorInfo {
             name = "consumeWindowInsets"
             properties["insets"] = insets
         }
-    ) {
-        remember(insets) { UnionInsetsConsumingModifier(insets) }
+    ) { noriaContext ->
+        noriaContext.run {
+            remember(insets) { UnionInsetsConsumingModifier(insets) }
+        }
     }
 
 /**
@@ -116,13 +120,15 @@ fun Modifier.consumeWindowInsets(insets: WindowInsets): Modifier =
  */
 @Stable
 fun Modifier.consumeWindowInsets(paddingValues: PaddingValues): Modifier =
-    composed(
+    noriaComposed(
         debugInspectorInfo {
             name = "consumeWindowInsets"
             properties["paddingValues"] = paddingValues
         }
-    ) {
-        remember(paddingValues) { PaddingValuesConsumingModifier(paddingValues) }
+    ) { noriaContext ->
+        noriaContext.run {
+            remember(paddingValues) { PaddingValuesConsumingModifier(paddingValues) }
+        }
     }
 
 /**
@@ -133,13 +139,15 @@ fun Modifier.consumeWindowInsets(paddingValues: PaddingValues): Modifier =
  */
 @Stable
 fun Modifier.onConsumedWindowInsetsChanged(block: (consumedWindowInsets: WindowInsets) -> Unit) =
-    composed(
+    noriaComposed(
         debugInspectorInfo {
             name = "onConsumedWindowInsetsChanged"
             properties["block"] = block
         }
-    ) {
-        remember(block) { ConsumedInsetsModifier(block) }
+    ) { noriaContext ->
+        noriaContext.run {
+            remember(block) { ConsumedInsetsModifier(block) }
+        }
     }
 
 /**
@@ -576,9 +584,9 @@ private class RecalculateWindowInsetsModifierNode :
                         val oldValues = insets.value
                         if (
                             oldValues.left != left ||
-                                oldValues.top != top ||
-                                oldValues.right != right ||
-                                oldValues.bottom != bottom
+                            oldValues.top != top ||
+                            oldValues.right != right ||
+                            oldValues.bottom != bottom
                         ) {
                             insets.value = InsetsValues(left, top, right, bottom)
                         }

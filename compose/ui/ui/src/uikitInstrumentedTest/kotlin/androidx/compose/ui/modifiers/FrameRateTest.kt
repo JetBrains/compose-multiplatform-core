@@ -113,7 +113,7 @@ private fun checkEqual(expected: Double, actual: Double, absoluteTolerance: Doub
 
 
 @Composable
-private fun AlphaButton(frameRate: Float) {
+private fun NoriaContext.AlphaButton(frameRate: Float) {
     var targetAlpha by remember { mutableFloatStateOf(1f) }
     val alpha by animateFloatAsState(
         targetValue = targetAlpha,

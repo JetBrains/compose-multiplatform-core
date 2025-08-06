@@ -30,11 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import noria.NoriaContext
 
 @Composable
-internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
+internal actual fun NoriaContext.ProvideDefaultPlatformTextContextMenuProviders(
     modifier: Modifier,
-    content: @Composable (() -> Unit)
+    content: @Composable (NoriaContext.() -> Unit)
 ) {
     val dropdownDefined = LocalTextContextMenuDropdownProvider.current != null
     val toolbarDefined = LocalTextContextMenuToolbarProvider.current != null
@@ -56,7 +57,7 @@ internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
 
 /** Set up both default providers, sharing what can be between the two. */
 @Composable
-private fun ProvideBothDefaultProviders(modifier: Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.ProvideBothDefaultProviders(modifier: Modifier, content: @Composable NoriaContext.() -> Unit) {
     var layoutCoordinates by remember {
         // onGloballyPositioned may fire with the same LayoutCoordinates containing different
         // positioning data, so always trigger read observation when this is set.

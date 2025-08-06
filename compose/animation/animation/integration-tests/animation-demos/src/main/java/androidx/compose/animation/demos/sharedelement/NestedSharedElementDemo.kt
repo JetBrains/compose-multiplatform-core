@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun NestedSharedElementDemo() {
+fun NoriaContext.NestedSharedElementDemo() {
     // Transforming floating "tool bar" into a big edit icon.
     NestedSharedBoundsSample()
 }

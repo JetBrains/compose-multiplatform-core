@@ -31,6 +31,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.DialogNavigator.Destination
+import noria.NoriaContext
 
 /**
  * Show each [Destination] on the [DialogNavigator]'s back stack as a [Dialog].
@@ -38,7 +39,7 @@ import androidx.navigation.compose.DialogNavigator.Destination
  * Note that [NavHost] will call this for you; you do not need to call it manually.
  */
 @Composable
-public fun DialogHost(dialogNavigator: DialogNavigator) {
+public fun NoriaContext.DialogHost(dialogNavigator: DialogNavigator) {
     val saveableStateHolder = rememberSaveableStateHolder()
     val dialogBackStack by dialogNavigator.backStack.collectAsState()
     val visibleBackStack = rememberVisibleList(dialogBackStack)

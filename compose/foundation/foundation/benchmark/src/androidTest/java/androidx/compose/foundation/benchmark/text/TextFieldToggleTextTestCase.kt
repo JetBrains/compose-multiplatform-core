@@ -70,7 +70,7 @@ class TextFieldToggleTextTestCase(
     }
 
     @Composable
-    override fun ContentWrappers(content: @Composable () -> Unit) {
+    override fun ContentWrappers(content: @Composable NoriaContext.() -> Unit) {
         Column(modifier = Modifier.width(width).verticalScroll(rememberScrollState())) {
             CompositionLocalProvider(LocalTextInputService provides textInputService) { content() }
         }

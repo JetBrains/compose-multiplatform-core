@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Preview(widthDp = 200, heightDp = 400)
 @Composable
-fun LazyListChildFocusDemos() {
+fun NoriaContext.LazyListChildFocusDemos() {
     LazyColumn {
         stickyHeader { Text("Default Compose Behavior") }
         item { LazyRow { items(10) { FocusableBox() } } }
@@ -107,7 +107,7 @@ fun LazyListChildFocusDemos() {
 }
 
 @Composable
-private fun FocusableBox(
+private fun NoriaContext.FocusableBox(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {

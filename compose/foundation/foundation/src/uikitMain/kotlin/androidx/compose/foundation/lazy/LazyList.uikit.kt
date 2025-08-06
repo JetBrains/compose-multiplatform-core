@@ -28,7 +28,7 @@ private const val SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT = 3
 
 @OptIn(InternalComposeUiApi::class)
 @Composable
-internal actual fun defaultLazyListBeyondBoundsItemCount(): Int {
+internal actual fun NoriaContext.defaultLazyListBeyondBoundsItemCount(): Int {
     return if (LocalPlatformScreenReader.current.isActive) {
         SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT
     } else {

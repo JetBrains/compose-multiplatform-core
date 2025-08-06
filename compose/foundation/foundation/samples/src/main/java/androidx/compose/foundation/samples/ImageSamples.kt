@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun ImageSample() {
+fun NoriaContext.ImageSample() {
     val ImageBitmap = createTestImage()
     // Lays out and draws an image sized to the dimensions of the ImageBitmap
     Image(bitmap = ImageBitmap, contentDescription = "Localized description")
@@ -45,7 +45,7 @@ fun ImageSample() {
 
 @Sampled
 @Composable
-fun BitmapPainterSubsectionSample() {
+fun NoriaContext.BitmapPainterSubsectionSample() {
     val ImageBitmap = createTestImage()
     // Lays out and draws an image sized to the rectangular subsection of the ImageBitmap
     Image(
@@ -56,7 +56,7 @@ fun BitmapPainterSubsectionSample() {
 
 @Sampled
 @Composable
-fun BitmapPainterSample() {
+fun NoriaContext.BitmapPainterSample() {
     val customPainter = remember {
         object : Painter() {
 

@@ -28,7 +28,6 @@ import androidx.compose.foundation.text.selection.isPrecisePointer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -39,6 +38,7 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
@@ -230,22 +230,24 @@ internal actual fun SelectionRegistrar.makeSelectionModifier(
 private fun Modifier.selectionGestureInput(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: CupertinoTextDragObserver,
-): Modifier = composed {
-    // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-79) how we can rewrite this without `composed`?
-    val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
-    val currentTextDragObserver by rememberUpdatedState(textDragObserver)
-    this.pointerInput(Unit) {
-        val clicksCounter = ClicksCounter(viewConfiguration)
-        awaitEachGesture {
-            val down = awaitDown()
-            if (
-                down.isPrecisePointer &&
-                down.buttons.isPrimaryPressed &&
-                down.changes.fastAll { !it.isConsumed }
-            ) {
-                mouseSelection(currentMouseSelectionObserver, clicksCounter, down)
-            } else if (!down.isPrecisePointer) {
-                touchSelection(currentTextDragObserver, clicksCounter, down)
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-79) how we can rewrite this without `composed`?
+        val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
+        val currentTextDragObserver by rememberUpdatedState(textDragObserver)
+        this@noriaComposed.pointerInput(Unit) {
+            val clicksCounter = ClicksCounter(viewConfiguration)
+            awaitEachGesture {
+                val down = awaitDown()
+                if (
+                    down.isPrecisePointer &&
+                    down.buttons.isPrimaryPressed &&
+                    down.changes.fastAll { !it.isConsumed }
+                ) {
+                    mouseSelection(currentMouseSelectionObserver, clicksCounter, down)
+                } else if (!down.isPrecisePointer) {
+                    touchSelection(currentTextDragObserver, clicksCounter, down)
+                }
             }
         }
     }
@@ -261,11 +263,14 @@ private suspend fun AwaitPointerEventScope.touchSelection(
         val drag = awaitLongPressOrCancellation(firstDown.id)
         clicksCounter.update(firstDown)
         when (clicksCounter.clicks) {
-            1 -> { /* Should be ignored without drag */ }
+            1 -> { /* Should be ignored without drag */
+            }
+
             2 -> {
                 observer.onStart(firstDown.position, SelectionAdjustment.Word)
                 observer.onStop()
             }
+
             else -> {
                 observer.onStart(firstDown.position, SelectionAdjustment.Paragraph)
                 observer.onStop()
@@ -280,7 +285,9 @@ private suspend fun AwaitPointerEventScope.touchSelection(
                 }
             ) {
                 currentEvent.changes.fastForEach {
-                    if (it.changedToUp()) { it.consume() }
+                    if (it.changedToUp()) {
+                        it.consume()
+                    }
                 }
                 observer.onStop()
             } else {
@@ -325,7 +332,8 @@ private suspend fun AwaitPointerEventScope.mouseSelection(
             else -> SelectionAdjustment.Paragraph
         }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
+        val started =
+            observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             val shouldConsumeUp = drag(downChange.id) {
                 if (observer.onDrag(it.position, selectionAdjustment)) {

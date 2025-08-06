@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun TextOverflowClipSample() {
+fun NoriaContext.TextOverflowClipSample() {
     Text(
         text = "Hello ".repeat(2),
         modifier = Modifier.size(100.dp, 70.dp).background(Color.Cyan),
@@ -46,7 +46,7 @@ fun TextOverflowClipSample() {
 
 @Sampled
 @Composable
-fun TextOverflowEllipsisSample() {
+fun NoriaContext.TextOverflowEllipsisSample() {
     Text(
         text = "Hello ".repeat(2),
         modifier = Modifier.width(100.dp).background(Color.Cyan),
@@ -58,7 +58,7 @@ fun TextOverflowEllipsisSample() {
 
 @Sampled
 @Composable
-fun TextOverflowVisibleFixedSizeSample() {
+fun NoriaContext.TextOverflowVisibleFixedSizeSample() {
     val background = remember { mutableStateOf(Color.Cyan) }
     Box(modifier = Modifier.size(100.dp, 100.dp)) {
         Text(
@@ -80,7 +80,7 @@ fun TextOverflowVisibleFixedSizeSample() {
 
 @Sampled
 @Composable
-fun TextOverflowVisibleMinHeightSample() {
+fun NoriaContext.TextOverflowVisibleMinHeightSample() {
     val background = remember { mutableStateOf(Color.Cyan) }
     val count = remember { mutableStateOf(1) }
     Box(modifier = Modifier.size(100.dp, 100.dp)) {

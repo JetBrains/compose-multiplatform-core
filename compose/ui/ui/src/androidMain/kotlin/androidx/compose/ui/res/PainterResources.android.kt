@@ -54,7 +54,7 @@ import androidx.compose.ui.platform.LocalResources
  * @return [Painter] used for drawing the loaded resource
  */
 @Composable
-fun painterResource(@DrawableRes id: Int): Painter {
+fun NoriaContext.painterResource(@DrawableRes id: Int): Painter {
     val context = LocalContext.current
 
     val res = LocalResources.current
@@ -80,7 +80,7 @@ fun painterResource(@DrawableRes id: Int): Painter {
  * implementation it is invoked in.
  */
 @Composable
-private fun loadVectorResource(
+private fun NoriaContext.loadVectorResource(
     theme: Resources.Theme,
     res: Resources,
     id: Int,

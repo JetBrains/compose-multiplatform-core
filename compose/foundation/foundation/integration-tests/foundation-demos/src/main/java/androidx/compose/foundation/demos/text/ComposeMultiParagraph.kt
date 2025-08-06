@@ -33,7 +33,7 @@ val lorem = loremIpsum(wordCount = 14)
 
 @Preview
 @Composable
-fun MultiParagraphDemo() {
+fun NoriaContext.MultiParagraphDemo() {
     LazyColumn {
         item {
             TagLine(tag = "multiple paragraphs basic")
@@ -60,7 +60,7 @@ fun MultiParagraphDemo() {
 
 @Preview
 @Composable
-fun TextDemoParagraph() {
+fun NoriaContext.TextDemoParagraph() {
     val text1 = "paragraph1 paragraph1 paragraph1 paragraph1 paragraph1"
     val text2 = "paragraph2 paragraph2 paragraph2 paragraph2 paragraph2"
     Text(
@@ -75,7 +75,7 @@ fun TextDemoParagraph() {
 
 @Preview
 @Composable
-fun TextDemoParagraphTextAlign() {
+fun NoriaContext.TextDemoParagraphTextAlign() {
     val annotatedString = buildAnnotatedString {
         TextAlign.values().forEach { textAlign ->
             val str = List(4) { "TextAlign.$textAlign" }.joinToString(" ")
@@ -87,7 +87,7 @@ fun TextDemoParagraphTextAlign() {
 }
 
 @Composable
-fun TextDemoParagraphLineHeight() {
+fun NoriaContext.TextDemoParagraphLineHeight() {
     val text1 = "LineHeight=30sp: $lorem"
     val text2 = "LineHeight=40sp: $lorem"
     val text3 = "LineHeight=50sp: $lorem"
@@ -118,7 +118,7 @@ fun TextDemoParagraphLineHeight() {
 
 @Preview
 @Composable
-fun TextDemoParagraphIndent() {
+fun NoriaContext.TextDemoParagraphIndent() {
     val text1 = "TextIndent firstLine TextIndent firstLine TextIndent firstLine"
     val text2 = "TextIndent restLine TextIndent restLine TextIndent restLine"
 
@@ -137,7 +137,7 @@ fun TextDemoParagraphIndent() {
 }
 
 @Composable
-fun TextDemoParagraphTextDirection() {
+fun NoriaContext.TextDemoParagraphTextDirection() {
     val ltrText = "Hello World! Hello World! Hello World! Hello World! Hello World!"
     val rtlText = "مرحبا بالعالم مرحبا بالعالم مرحبا بالعالم مرحبا بالعالم مرحبا بالعالم"
     Text(

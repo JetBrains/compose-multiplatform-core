@@ -25,14 +25,14 @@ import androidx.lifecycle.LiveData
 
 @Sampled
 @Composable
-fun LiveDataSample(liveData: LiveData<String>) {
+fun NoriaContext.LiveDataSample(liveData: LiveData<String>) {
     val value: String? by liveData.observeAsState()
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun LiveDataWithInitialSample(liveData: LiveData<String>) {
+fun NoriaContext.LiveDataWithInitialSample(liveData: LiveData<String>) {
     val value: String by liveData.observeAsState("initial")
     Text("Value is $value")
 }

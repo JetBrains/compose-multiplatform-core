@@ -69,7 +69,7 @@ private val FontSize = 60.sp
 
 @Preview
 @Composable
-fun TextLineHeightDemo() {
+fun NoriaContext.TextLineHeightDemo() {
     Column(
         Modifier.verticalScroll(rememberScrollState())
             .background(TextMetricColors.Default.background)
@@ -122,7 +122,7 @@ fun TextLineHeightDemo() {
 }
 
 @Composable
-private fun LineHeightConfiguration(
+private fun NoriaContext.LineHeightConfiguration(
     lineHeightSp: MutableState<Float>,
     lineHeightEm: MutableState<Float>,
     lineHeightEnabled: MutableState<Boolean>,
@@ -177,7 +177,7 @@ private fun LineHeightConfiguration(
 }
 
 @Composable
-private fun LineHeightStyleConfiguration(
+private fun NoriaContext.LineHeightStyleConfiguration(
     lineHeightStyleEnabled: MutableState<Boolean>,
     lineHeightTrim: MutableState<Trim>,
     lineHeightAlignment: MutableState<LineHeightStyle.Alignment>,
@@ -200,7 +200,7 @@ private fun LineHeightStyleConfiguration(
 }
 
 @Composable
-private fun LineHeightAlignmentOptions(
+private fun NoriaContext.LineHeightAlignmentOptions(
     lineHeightAlignment: MutableState<LineHeightStyle.Alignment>,
     enabled: Boolean,
 ) {
@@ -237,7 +237,7 @@ private fun LineHeightAlignmentOptions(
 }
 
 @Composable
-private fun LineHeightTrimOptions(lineHeightTrim: MutableState<Trim>, enabled: Boolean) {
+private fun NoriaContext.LineHeightTrimOptions(lineHeightTrim: MutableState<Trim>, enabled: Boolean) {
     val options = listOf(Trim.Both, Trim.None, Trim.FirstLineTop, Trim.LastLineBottom)
 
     Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
@@ -265,7 +265,7 @@ private fun LineHeightTrimOptions(lineHeightTrim: MutableState<Trim>, enabled: B
 }
 
 @Composable
-private fun LineHeightModeOptions(
+private fun NoriaContext.LineHeightModeOptions(
     lineHeightMode: MutableState<LineHeightStyle.Mode>,
     enabled: Boolean,
 ) {
@@ -298,7 +298,7 @@ private fun LineHeightModeOptions(
 }
 
 @Composable
-private fun StringConfiguration(
+private fun NoriaContext.StringConfiguration(
     useSizeSpan: MutableState<Boolean>,
     singleLine: MutableState<Boolean>,
     useTallScript: MutableState<Boolean>,
@@ -316,7 +316,7 @@ private fun StringConfiguration(
 }
 
 @Composable
-private fun FontPaddingAndMaxLinesConfiguration(
+private fun NoriaContext.FontPaddingAndMaxLinesConfiguration(
     includeFontPadding: MutableState<Boolean>,
     applyMaxLines: MutableState<Boolean>,
     ellipsize: MutableState<Boolean>,
@@ -337,7 +337,7 @@ private fun FontPaddingAndMaxLinesConfiguration(
 }
 
 @Composable
-private fun SnappingSlider(
+private fun NoriaContext.SnappingSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -369,7 +369,7 @@ private fun SnappingSlider(
 
 @Suppress("DEPRECATION")
 @Composable
-private fun TextWithLineHeight(
+private fun NoriaContext.TextWithLineHeight(
     lineHeightEnabled: Boolean,
     lineHeightSp: Float,
     lineHeightEm: Float,

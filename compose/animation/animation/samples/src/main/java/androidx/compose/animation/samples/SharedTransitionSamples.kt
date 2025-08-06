@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Sampled
 @Composable
-fun NestedSharedBoundsSample() {
+fun NoriaContext.NestedSharedBoundsSample() {
     // Nested shared bounds sample.
     val selectionColor = Color(0xff3367ba)
     var expanded by remember { mutableStateOf(true) }
@@ -191,7 +191,7 @@ fun NestedSharedBoundsSample() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Sampled
 @Composable
-fun SharedElementWithMovableContentSample() {
+fun NoriaContext.SharedElementWithMovableContentSample() {
     var showThumbnail by remember { mutableStateOf(true) }
     val movableContent = remember {
         movableContentOf {
@@ -252,7 +252,7 @@ fun SharedElementWithMovableContentSample() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Sampled
 @Composable
-fun SharedElementWithFABInOverlaySample() {
+fun NoriaContext.SharedElementWithFABInOverlaySample() {
     // Create an Image that will be shared between the two shared elements.
     @Composable
     fun Cat(modifier: Modifier = Modifier) {

@@ -53,10 +53,11 @@ import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.selectableGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 @ExperimentalFoundationApi
 @Composable
-fun InteractiveList(
+fun NoriaContext.InteractiveList(
     state: InteractiveListState,
     nestedContent: @Composable (FocusRequester) -> Unit,
     modifier: Modifier = Modifier,
@@ -122,7 +123,7 @@ interface InteractiveListItemScope<T> : RowScope {
 }
 
 @Composable
-fun rememberInteractiveListState(itemCount: Int): InteractiveListState {
+fun NoriaContext.rememberInteractiveListState(itemCount: Int): InteractiveListState {
     return remember { InteractiveListState(itemCount) }.also { it.itemCount = itemCount }
 }
 

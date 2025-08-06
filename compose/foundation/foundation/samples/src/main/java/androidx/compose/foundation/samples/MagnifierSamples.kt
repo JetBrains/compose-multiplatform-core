@@ -36,7 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 
 @Sampled
 @Composable
-fun MagnifierSample() {
+fun NoriaContext.MagnifierSample() {
     // When the magnifier center position is Unspecified, it is hidden.
     // Hide the magnifier until a drag starts.
     var magnifierCenter by remember { mutableStateOf(Offset.Unspecified) }

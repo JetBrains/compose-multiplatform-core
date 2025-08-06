@@ -33,6 +33,7 @@ import platform.UIKit.UIViewController
 import androidx.compose.ui.viewinterop.UIKitView as UIKitView2
 import androidx.compose.ui.viewinterop.UIKitViewController as UIKitViewController2
 import androidx.compose.ui.semantics.semantics
+import noria.NoriaContext
 
 private val DefaultViewResize: UIView.(CValue<CGRect>) -> Unit = { rect -> this.setFrame(rect) }
 private val DefaultViewControllerResize: UIViewController.(CValue<CGRect>) -> Unit =
@@ -72,7 +73,7 @@ private val DefaultViewControllerResize: UIViewController.(CValue<CGRect>) -> Un
         "androidx.compose.ui.viewinterop.UIKitView", "androidx.compose.ui.viewinterop.UIKitInteropProperties")
 )
 @Composable
-fun <T : UIView> UIKitView(
+fun <T : UIView> NoriaContext.UIKitView(
     factory: () -> T,
     modifier: Modifier,
     update: (T) -> Unit = NoOp,
@@ -154,7 +155,7 @@ fun <T : UIView> UIKitView(
         "androidx.compose.ui.viewinterop.UIKitViewController", "androidx.compose.ui.viewinterop.UIKitInteropProperties")
 )
 @Composable
-fun <T : UIViewController> UIKitViewController(
+fun <T : UIViewController> NoriaContext.UIKitViewController(
     factory: () -> T,
     modifier: Modifier,
     update: (T) -> Unit = NoOp,

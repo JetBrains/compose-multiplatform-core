@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import noria.NoriaContext
 
 internal object WebContextMenuToolbarSpec {
     val ContainerHeight = 56.dp
@@ -81,7 +82,7 @@ internal object WebContextMenuToolbarSpec {
 private val DefaultPopupToolbarProperties = PopupProperties(focusable = false)
 
 @Composable
-internal fun WebContextMenuToolbarPopup(
+internal fun NoriaContext.WebContextMenuToolbarPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -97,7 +98,7 @@ internal fun WebContextMenuToolbarPopup(
 }
 
 @Composable
-internal fun WebContextMenuToolbarPopup(
+internal fun NoriaContext.WebContextMenuToolbarPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -114,7 +115,7 @@ internal fun WebContextMenuToolbarPopup(
 }
 
 @Composable
-internal fun WebContextMenuRowBuilder(
+internal fun NoriaContext.WebContextMenuRowBuilder(
     modifier: Modifier = Modifier,
     colors: ContextMenuColors = DefaultContextMenuColors,
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
@@ -134,7 +135,7 @@ internal fun WebContextMenuRowBuilder(
 }
 
 @Composable
-internal fun WebContextMenuRow(
+internal fun NoriaContext.WebContextMenuRow(
     colors: ContextMenuColors,
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
@@ -155,7 +156,7 @@ internal fun WebContextMenuRow(
 }
 
 @Composable
-internal fun WebContextMenuToolbarItem(
+internal fun NoriaContext.WebContextMenuToolbarItem(
     label: String,
     enabled: Boolean,
     colors: ContextMenuColors,

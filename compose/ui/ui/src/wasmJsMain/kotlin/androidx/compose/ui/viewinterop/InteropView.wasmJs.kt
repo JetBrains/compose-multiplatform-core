@@ -46,7 +46,7 @@ import org.w3c.dom.HTMLElement
  */
 @ExperimentalComposeUiApi
 @Composable
-fun <T : HTMLElement> WebElementView(
+fun <T : HTMLElement> NoriaContext.WebElementView(
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOp,

@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
+import noria.NoriaContext
 
 class App(
     private val initialScreenName: String? = null,
@@ -59,7 +60,7 @@ class App(
     }
 
     @Composable
-    private fun ScreenContent(screen: Screen, navController: NavController) {
+    private fun NoriaContext.ScreenContent(screen: Screen, navController: NavController) {
         val lifecycle = LocalLifecycleOwner.current.lifecycle
         val currentBackStack = remember(screen) { navController.currentBackStack.value }
         screen.Content(

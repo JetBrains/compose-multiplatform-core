@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRestorer
 
 @Composable
-fun FocusRestorationInLazyListDemo() {
+fun NoriaContext.FocusRestorationInLazyListDemo() {
     LazyColumn(Modifier.focusRestorer()) {
         items(count = 30) { rowIndex ->
             key(rowIndex) {

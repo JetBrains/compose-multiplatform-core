@@ -32,7 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 
 @Composable
-fun FocusRestorationDemo() {
+fun NoriaContext.FocusRestorationDemo() {
     Column {
         Text(
             """
@@ -73,6 +73,6 @@ fun FocusRestorationDemo() {
 }
 
 @Composable
-private fun Button(text: String) {
+private fun NoriaContext.Button(text: String) {
     Button(onClick = {}) { Text(text) }
 }

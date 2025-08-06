@@ -18,40 +18,24 @@ package noria.foundation.layout
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCompositionContext
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.ParentDataModifier
-import androidx.compose.ui.layout.SubcomposeLayoutState
-import androidx.compose.ui.layout.SubcomposeMeasureScope
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onPlaced
-import androidx.compose.ui.node.ComposeUiNode
-import androidx.compose.ui.node.LayoutNode
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import kotlin.math.roundToInt
@@ -137,7 +121,7 @@ fun NoriaContext.OverlayHost(
 }
 
 fun OverlayHostKey(): OverlayHostKey =
-    compositionLocalOf { error("Cannot provide a default for an noria.compose.extensions.OverlayHostKey") }
+    compositionLocalOf { error("Cannot provide a default for an OverlayHostKey") }
 
 typealias OverlayHostKey = ProvidableCompositionLocal<OverlayHostState>
 
@@ -199,36 +183,3 @@ fun Rect.roundToIntRect(): IntRect = IntRect(
     left = left.roundToInt(), top = top.roundToInt(), right = right.roundToInt(), bottom =
         bottom.roundToInt()
 )
-
-@Composable
-@UiComposable
-private fun SubcomposeLayout(
-    state: SubcomposeLayoutState = remember { SubcomposeLayoutState() },
-    compositionContext: CompositionContext = rememberCompositionContext(),
-    materializedModifier: Modifier = Modifier,
-    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
-) {
-    val density = LocalDensity.current
-    val layoutDirection = LocalLayoutDirection.current
-    val viewConfiguration = LocalViewConfiguration.current
-    ComposeNode<LayoutNode, Applier<Any>>(factory = LayoutNode.Constructor, update = {
-        set(state, state.setRoot)
-        set(compositionContext, state.setCompositionContext)
-        set(measurePolicy, state.setMeasurePolicy)
-        set(density, ComposeUiNode.SetDensity)
-        set(layoutDirection, ComposeUiNode.SetLayoutDirection)
-        set(viewConfiguration, ComposeUiNode.SetViewConfiguration)
-        set(materializedModifier, ComposeUiNode.SetModifier)
-    })
-    if (!currentComposer.skipping) {
-        SideEffect {
-            state.forceRecomposeChildren()
-        }
-    }
-    val stateHolder = rememberUpdatedState(state)
-    DisposableEffect(Unit) {
-        onDispose {
-            stateHolder.value.disposeCurrentNodes()
-        }
-    }
-}

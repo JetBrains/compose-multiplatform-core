@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
  */
 @Sampled
 @Composable
-fun DrawWithCacheModifierSample() {
+fun NoriaContext.DrawWithCacheModifierSample() {
     Box(
         Modifier.drawWithCache {
             val gradient =
@@ -73,7 +73,7 @@ fun DrawWithCacheModifierSample() {
  */
 @Sampled
 @Composable
-fun DrawWithCacheModifierStateParameterSample() {
+fun NoriaContext.DrawWithCacheModifierStateParameterSample() {
     val colors1 = listOf(Color.Red, Color.Blue)
     val colors2 = listOf(Color.Yellow, Color.Green)
     var toggle by remember { mutableStateOf(true) }
@@ -99,7 +99,7 @@ fun DrawWithCacheModifierStateParameterSample() {
  */
 @Sampled
 @Composable
-fun DrawWithCacheContentSample() {
+fun NoriaContext.DrawWithCacheContentSample() {
     val vectorPainter =
         rememberVectorPainter(24.dp, 24.dp, autoMirror = true) { viewportWidth, viewportHeight ->
             Path(
@@ -133,7 +133,7 @@ fun DrawWithCacheContentSample() {
 
 @Sampled
 @Composable
-fun DrawModifierNodeSample() {
+fun NoriaContext.DrawModifierNodeSample() {
     class CircleNode(var color: Color) : DrawModifierNode, Modifier.Node() {
         override fun ContentDrawScope.draw() {
             drawCircle(color)

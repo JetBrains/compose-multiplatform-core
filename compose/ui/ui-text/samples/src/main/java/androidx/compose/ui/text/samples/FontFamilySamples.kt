@@ -28,31 +28,31 @@ import androidx.compose.ui.text.font.FontWeight
 
 @Sampled
 @Composable
-fun FontFamilySansSerifSample() {
+fun NoriaContext.FontFamilySansSerifSample() {
     Text(text = "Demo Text sans-serif", fontFamily = FontFamily.SansSerif)
 }
 
 @Sampled
 @Composable
-fun FontFamilySerifSample() {
+fun NoriaContext.FontFamilySerifSample() {
     Text(text = "Demo Text serif", fontFamily = FontFamily.Serif)
 }
 
 @Sampled
 @Composable
-fun FontFamilyMonospaceSample() {
+fun NoriaContext.FontFamilyMonospaceSample() {
     Text(text = "Demo Text monospace", fontFamily = FontFamily.Monospace)
 }
 
 @Sampled
 @Composable
-fun FontFamilyCursiveSample() {
+fun NoriaContext.FontFamilyCursiveSample() {
     Text(text = "Demo Text cursive", fontFamily = FontFamily.Cursive)
 }
 
 @Sampled
 @Composable
-fun CustomFontFamilySample() {
+fun NoriaContext.CustomFontFamilySample() {
     val fontFamily =
         FontFamily(
             Font(
@@ -71,7 +71,7 @@ fun CustomFontFamilySample() {
 
 @Sampled
 @Composable
-fun FontFamilySynthesisSample() {
+fun NoriaContext.FontFamilySynthesisSample() {
     // The font family contains a single font, with normal weight
     val fontFamily = FontFamily(Font(resId = R.font.myfont, weight = FontWeight.Normal))
     // Configuring the Text composable to be bold

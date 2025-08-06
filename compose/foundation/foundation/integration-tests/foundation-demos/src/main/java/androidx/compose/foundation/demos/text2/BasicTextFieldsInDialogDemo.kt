@@ -102,7 +102,7 @@ private val dialogDemos =
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BasicTextFieldsInDialogDemo() {
+fun NoriaContext.BasicTextFieldsInDialogDemo() {
     val listState = rememberLazyListState()
     val (currentDemoIndex, setDemoIndex) = rememberSaveable { mutableIntStateOf(-1) }
 
@@ -127,13 +127,13 @@ fun BasicTextFieldsInDialogDemo() {
 }
 
 @Composable
-private fun SingleTextFieldDialog() {
+private fun NoriaContext.SingleTextFieldDialog() {
     val state = rememberTextFieldState()
     Surface { BasicTextField(state, decorator = materialTextFieldDecorator(state)) }
 }
 
 @Composable
-private fun AutoFocusTextFieldDialog() {
+private fun NoriaContext.AutoFocusTextFieldDialog() {
     val state = rememberTextFieldState()
     val focusRequester = remember { FocusRequester() }
 
@@ -150,7 +150,7 @@ private fun AutoFocusTextFieldDialog() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-internal fun materialTextFieldDecorator(
+internal fun NoriaContext.materialTextFieldDecorator(
     state: TextFieldState,
     enabled: Boolean = true,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,

@@ -40,7 +40,7 @@ import kotlin.math.roundToInt
 
 @ExperimentalFoundationApi
 @Composable
-internal actual fun rememberTextFieldOverscrollEffect(): OverscrollEffect? =
+internal actual fun NoriaContext.rememberTextFieldOverscrollEffect(): OverscrollEffect? =
     rememberOverscrollEffect(applyClip = true)
 
 internal actual fun Modifier.textFieldScroll(

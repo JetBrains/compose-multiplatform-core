@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun windowInsetsNestedScrollDemo() {
+fun NoriaContext.windowInsetsNestedScrollDemo() {
     LazyColumn(
         modifier =
             Modifier.fillMaxSize() // fill the window

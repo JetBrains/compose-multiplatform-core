@@ -37,7 +37,7 @@ import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
-fun FocusableDemo() {
+fun NoriaContext.FocusableDemo() {
     Column(verticalArrangement = Arrangement.SpaceEvenly) {
         CenteredRow { Text("Click on any focusable to bring it into focus:") }
         CenteredRow { FocusableText("Focusable 1") }
@@ -47,7 +47,7 @@ fun FocusableDemo() {
 }
 
 @Composable
-private fun FocusableText(text: String) {
+private fun NoriaContext.FocusableText(text: String) {
     var color by remember { mutableStateOf(Black) }
     val focusRequester = remember { FocusRequester() }
     Text(
@@ -62,7 +62,7 @@ private fun FocusableText(text: String) {
 }
 
 @Composable
-private fun CenteredRow(content: @Composable RowScope.() -> Unit) {
+private fun NoriaContext.CenteredRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,

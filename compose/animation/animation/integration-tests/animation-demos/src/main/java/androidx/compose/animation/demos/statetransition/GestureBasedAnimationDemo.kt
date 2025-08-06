@@ -22,6 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun GestureBasedAnimationDemo() {
+fun NoriaContext.GestureBasedAnimationDemo() {
     GestureAnimationSample()
 }

@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import noria.NoriaContext
 
 /** This value should reflect the default cache size for TextMeasurer. */
 private val DefaultCacheSize: Int = 8
@@ -39,7 +40,7 @@ private val DefaultCacheSize: Int = 8
  *   would miss the cache.
  */
 @Composable
-fun rememberTextMeasurer(cacheSize: Int = DefaultCacheSize): TextMeasurer {
+fun NoriaContext.rememberTextMeasurer(cacheSize: Int = DefaultCacheSize): TextMeasurer {
     val fontFamilyResolver = LocalFontFamilyResolver.current
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current

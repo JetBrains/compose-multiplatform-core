@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import noria.NoriaContext
 
 /**
  * This sets up a [Transition], and updates it with the target provided by [targetState]. When
@@ -85,9 +86,9 @@ import kotlinx.coroutines.sync.withLock
  * @see Transition.animateValue
  */
 @Composable
-public fun <T> updateTransition(targetState: T, label: String? = null): Transition<T> {
+public fun <T> NoriaContext.updateTransition(targetState: T, label: String? = null): Transition<T> {
     val transition = remember { Transition(targetState, label = label) }
-    transition.animateTo(targetState)
+    transition.run { animateTo(targetState) }
     DisposableEffect(transition) {
         onDispose {
             // Clean up on the way out, to ensure the observers are not stuck in an in-between
@@ -799,7 +800,7 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
  * @sample androidx.compose.animation.core.samples.DoubleTapToLikeSample
  */
 @Composable
-public fun <T> rememberTransition(
+public fun <T> NoriaContext.rememberTransition(
     transitionState: TransitionState<T>,
     label: String? = null,
 ): Transition<T> {
@@ -821,7 +822,7 @@ public fun <T> rememberTransition(
             }
         }
     } else {
-        transition.animateTo(transitionState.targetState)
+        transition.run { animateTo(transitionState.targetState) }
     }
     DisposableEffect(transition) {
         onDispose {
@@ -858,7 +859,7 @@ public fun <T> rememberTransition(
     replaceWith = ReplaceWith("rememberTransition(transitionState, label)"),
 )
 @Composable
-public fun <T> updateTransition(
+public fun <T> NoriaContext.updateTransition(
     transitionState: MutableTransitionState<T>,
     label: String? = null,
 ): Transition<T> {
@@ -1178,7 +1179,7 @@ internal constructor(
     // Transition.
     @Suppress("ComposableNaming")
     @Composable
-    internal fun animateTo(targetState: S) {
+    internal fun NoriaContext.animateTo(targetState: S) {
         if (!isSeeking) {
             updateTarget(targetState)
             // target != currentState adds the effect into the tree in the same frame as
@@ -1186,7 +1187,7 @@ internal constructor(
             val runFrameLoop by
                 remember(this) {
                     derivedStateOf {
-                        this.targetState != currentState || isRunning || updateChildrenNeeded
+                        this@Transition.targetState != currentState || isRunning || updateChildrenNeeded
                     }
                 }
             if (runFrameLoop) {
@@ -1738,7 +1739,7 @@ public fun <S, T, V : AnimationVector> Transition<S>.createDeferredAnimation(
     label: String = "DeferredAnimation",
 ): Transition<S>.DeferredAnimation<T, V> {
     val lazyAnim = remember(this) { DeferredAnimation(typeConverter, label) }
-    DisposableEffect(lazyAnim) { onDispose { removeAnimation(lazyAnim) } }
+    NoriaContext.DisposableEffect(lazyAnim) { onDispose { removeAnimation(lazyAnim) } }
     if (isSeeking) {
         lazyAnim.setupSeeking()
     }
@@ -1784,7 +1785,7 @@ internal fun <S, T> Transition<S>.createChildTransitionInternal(
             Transition(MutableTransitionState(initialState), this, "${this.label} > $childLabel")
         }
 
-    DisposableEffect(transition) {
+    NoriaContext.DisposableEffect(transition) {
         addTransition(transition)
         onDispose { removeTransition(transition) }
     }
@@ -1889,7 +1890,7 @@ internal fun <S, T, V : AnimationVector> Transition<S>.createTransitionAnimation
         }
     UpdateInitialAndTargetValues(transitionAnimation, initialValue, targetValue, animationSpec)
 
-    DisposableEffect(transitionAnimation) {
+    NoriaContext.DisposableEffect(transitionAnimation) {
         addAnimation(transitionAnimation)
         onDispose { removeAnimation(transitionAnimation) }
     }

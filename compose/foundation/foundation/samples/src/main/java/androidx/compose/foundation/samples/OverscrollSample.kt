@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun OverscrollSample() {
+fun NoriaContext.OverscrollSample() {
     // our custom offset overscroll that offset the element it is applied to when we hit the bound
     // on the scrollable container.
     class OffsetOverscrollEffect(val scope: CoroutineScope) : OverscrollEffect {
@@ -182,7 +182,7 @@ fun OverscrollSample() {
 
 @Sampled
 @Composable
-fun OverscrollWithDraggable_Before() {
+fun NoriaContext.OverscrollWithDraggable_Before() {
     var dragPosition by remember { mutableStateOf(0f) }
     val minPosition = -1000f
     val maxPosition = 1000f
@@ -202,7 +202,7 @@ fun OverscrollWithDraggable_Before() {
 
 @Sampled
 @Composable
-fun OverscrollWithDraggable_After() {
+fun NoriaContext.OverscrollWithDraggable_After() {
     var dragPosition by remember { mutableStateOf(0f) }
     val minPosition = -1000f
     val maxPosition = 1000f
@@ -262,7 +262,7 @@ fun OverscrollWithDraggable_After() {
 
 @Sampled
 @Composable
-fun OverscrollRenderedOnTopOfLazyListDecorations() {
+fun NoriaContext.OverscrollRenderedOnTopOfLazyListDecorations() {
     val items = remember { (1..100).toList() }
     val state = rememberLazyListState()
     val overscroll = rememberOverscrollEffect()

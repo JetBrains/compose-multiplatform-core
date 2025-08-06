@@ -55,7 +55,7 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.math.ceil
 
 @Composable
-internal actual fun SelectionHandle(
+internal actual fun NoriaContext.SelectionHandle(
     offsetProvider: OffsetProvider,
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,
@@ -213,10 +213,10 @@ internal fun CacheDrawScope.createHandleImage(radius: Float): ImageBitmap {
 }
 
 @Composable
-internal fun HandlePopup(
+internal fun NoriaContext.HandlePopup(
     positionProvider: OffsetProvider,
     handleReferencePoint: Alignment,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val popupPositionProvider =
         remember(handleReferencePoint, positionProvider) {

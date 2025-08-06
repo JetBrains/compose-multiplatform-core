@@ -74,7 +74,7 @@ class BasicTextMinSizeTest {
 }
 
 @Composable
-fun MinSizeChangeLayout(
+fun NoriaContext.MinSizeChangeLayout(
     isBig: () -> Boolean,
     onMeasure: (Int) -> Unit,
     content: @Composable @UiComposable () -> Unit,

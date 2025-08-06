@@ -26,53 +26,56 @@ import noria.impl.EffectCoroutineContextCompositionLocal
 import kotlin.coroutines.CoroutineContext
 
 val CallbackInterceptorCompositionLocal = staticCompositionLocalOf<CallbackInterceptor> {
-  CallbackInterceptor
+    CallbackInterceptor
 }
 
 interface CallbackInterceptor {
-  companion object : CallbackInterceptor {
-    override fun <T> execute(f: () -> T): T = f()
-  }
+    companion object : CallbackInterceptor {
+        override fun <T> execute(f: () -> T): T = f()
+    }
 
-  fun <T> execute(f: () -> T): T
+    fun <T> execute(f: () -> T): T
 
-  operator fun plus(rhs: CallbackInterceptor): CallbackInterceptor = let { lhs ->
-    object : CallbackInterceptor {
-      override fun <T> execute(f: () -> T): T =
-        rhs.execute {
-          lhs.execute {
-            f()
-          }
+    operator fun plus(rhs: CallbackInterceptor): CallbackInterceptor = let { lhs ->
+        object : CallbackInterceptor {
+            override fun <T> execute(f: () -> T): T =
+                rhs.execute {
+                    lhs.execute {
+                        f()
+                    }
+                }
         }
     }
-  }
 }
 
 @Composable
 @OptIn(ExperimentalStdlibApi::class)
-fun NoriaContext.withCallbackInterceptor(interceptor: CallbackInterceptor, body: @Composable NoriaContext.() -> Unit) {
-  val currentInterceptor = CallbackInterceptorCompositionLocal.current
-  val combinedCallbackInterceptor = remember { currentInterceptor + interceptor }
-  val effectsCoroutineContext = EffectCoroutineContextCompositionLocal.current
-  val combinedEffectCoroutineContext = remember {
-    val outerDispatcher = requireNotNull(effectsCoroutineContext[CoroutineDispatcher]) {
-      "A CoroutineDispatcher must be present on the CoroutineContext given via EffectCoroutineContextNoriaKey"
-    }
+public fun NoriaContext.withCallbackInterceptor(
+    interceptor: CallbackInterceptor,
+    body: @Composable NoriaContext.() -> Unit
+) {
+    val currentInterceptor = CallbackInterceptorCompositionLocal.current
+    val combinedCallbackInterceptor = remember { currentInterceptor + interceptor }
+    val effectsCoroutineContext = EffectCoroutineContextCompositionLocal.current
+    val combinedEffectCoroutineContext = remember {
+        val outerDispatcher = requireNotNull(effectsCoroutineContext[CoroutineDispatcher]) {
+            "A CoroutineDispatcher must be present on the CoroutineContext given via EffectCoroutineContextNoriaKey"
+        }
 
-    effectsCoroutineContext + object : CoroutineDispatcher() {
-      override fun dispatch(context: CoroutineContext, block: Runnable) {
-        outerDispatcher.dispatch(context, Runnable {
-          interceptor.execute {
-            block.run()
-          }
-        })
-      }
+        effectsCoroutineContext + object : CoroutineDispatcher() {
+            override fun dispatch(context: CoroutineContext, block: Runnable) {
+                outerDispatcher.dispatch(context, Runnable {
+                    interceptor.execute {
+                        block.run()
+                    }
+                })
+            }
+        }
     }
-  }
-  return CompositionLocalProvider(
-    CallbackInterceptorCompositionLocal provides combinedCallbackInterceptor,
-    EffectCoroutineContextCompositionLocal provides combinedEffectCoroutineContext
-  ) {
-    body()
-  }
+    return CompositionLocalProvider(
+        CallbackInterceptorCompositionLocal provides combinedCallbackInterceptor,
+        EffectCoroutineContextCompositionLocal provides combinedEffectCoroutineContext
+    ) {
+        body()
+    }
 }

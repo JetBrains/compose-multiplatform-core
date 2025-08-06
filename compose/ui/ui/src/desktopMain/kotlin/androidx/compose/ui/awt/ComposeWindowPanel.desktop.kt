@@ -33,6 +33,7 @@ import java.awt.Window
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
 import java.awt.event.MouseWheelListener
+import noria.NoriaContext
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
 /**
@@ -133,7 +134,7 @@ internal class ComposeWindowPanel(
         onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
         onKeyEvent: (KeyEvent) -> Boolean = { false },
         modifier: Modifier = Modifier,
-        content: @Composable () -> Unit
+        content: @Composable NoriaContext.() -> Unit
     ) {
         composeContainer.setKeyEventListeners(
             onPreviewKeyEvent = onPreviewKeyEvent,

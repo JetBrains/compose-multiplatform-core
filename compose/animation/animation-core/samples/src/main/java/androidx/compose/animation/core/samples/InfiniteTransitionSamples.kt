@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun InfiniteTransitionSample() {
+fun NoriaContext.InfiniteTransitionSample() {
     @Composable
     fun InfinitelyPulsingHeart() {
         // Creates an [InfiniteTransition] instance for managing child animations.
@@ -101,7 +101,7 @@ fun InfiniteTransitionSample() {
 
 @Sampled
 @Composable
-fun InfiniteTransitionAnimateValueSample() {
+fun NoriaContext.InfiniteTransitionAnimateValueSample() {
     // Creates an [InfiniteTransition] instance to run child animations.
     val infiniteTransition = rememberInfiniteTransition()
     // Infinitely animate a Dp offset from 0.dp to 100.dp

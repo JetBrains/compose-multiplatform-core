@@ -58,7 +58,7 @@ const val defaultText = "Line1\nLine2 text1 text2\nLine3"
 
 @Preview
 @Composable
-fun TextSelectionDemo() {
+fun NoriaContext.TextSelectionDemo() {
     LazyColumn(modifier = Modifier.padding(32.dp, 0.dp)) {
         item {
             Text(
@@ -136,7 +136,7 @@ fun TextSelectionDemo() {
 
 @Preview
 @Composable
-fun TextDemoSingleTextSelection() {
+fun NoriaContext.TextDemoSingleTextSelection() {
     OutlinedSelectionContainer {
         BasicText(
             style = TextStyle(fontSize = fontSize8),
@@ -148,7 +148,7 @@ fun TextDemoSingleTextSelection() {
 
 @Preview
 @Composable
-fun TextDemoMultiTextSelection() {
+fun NoriaContext.TextDemoMultiTextSelection() {
     val splitTexts = defaultText.split("\n")
     OutlinedSelectionContainer {
         Column {
@@ -165,7 +165,7 @@ fun TextDemoMultiTextSelection() {
 
 @Preview
 @Composable
-fun TextDemoSelection() {
+fun NoriaContext.TextDemoSelection() {
     val arabicSentence =
         "\nكلمة شين في قاموس المعاني الفوري مجال البحث مصطلحات المعجم الوسيط ،اللغة"
     OutlinedSelectionContainer {
@@ -211,7 +211,7 @@ fun TextDemoSelection() {
 
 @Preview
 @Composable
-fun TextDemoSelectionWithStringInput() {
+fun NoriaContext.TextDemoSelectionWithStringInput() {
     OutlinedSelectionContainer {
         Text(
             text = "$displayText    $displayTextChinese    $displayTextHindi",
@@ -226,7 +226,7 @@ fun TextDemoSelectionWithStringInput() {
 
 @Preview
 @Composable
-fun TextDemoSelection2DArrayVertical() {
+fun NoriaContext.TextDemoSelection2DArrayVertical() {
     var text = ""
     for (i in 1..3) {
         text = "$text$displayText" + "\n"
@@ -264,7 +264,7 @@ fun TextDemoSelection2DArrayVertical() {
 
 @Preview
 @Composable
-fun TextDemoSelectionEnableAndDisable() {
+fun NoriaContext.TextDemoSelectionEnableAndDisable() {
     val textSelectable = "This text is selectable."
     val textNotSelectable = "This text is not selectable."
     var textEditable by remember { mutableStateOf("This text is editable.") }
@@ -328,7 +328,7 @@ fun TextDemoSelectionEnableAndDisable() {
 }
 
 @Composable
-fun OutlinedSelectionContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun NoriaContext.OutlinedSelectionContainer(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     SelectionContainer(
         modifier = modifier.border(1.dp, Color.Green).padding(1.dp),
         content = content,
@@ -336,7 +336,7 @@ fun OutlinedSelectionContainer(modifier: Modifier = Modifier, content: @Composab
 }
 
 @Composable
-fun OutlinedDisableSelection(content: @Composable () -> Unit) {
+fun NoriaContext.OutlinedDisableSelection(content: @Composable NoriaContext.() -> Unit) {
     Box(Modifier.border(1.dp, Color.Red).padding(1.dp)) { DisableSelection(content) }
 }
 

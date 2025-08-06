@@ -17,32 +17,48 @@
 package noria.foundation.layout
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import noria.ClosureContext
 import noria.NoriaContext
-import noria.foundation.ScrollTarget
 
 @Composable
 fun NoriaContext.approximatingLazyColumn(
     count: Int,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
     spacing: Int = 0,
-    scrollTarget: ScrollTarget? = null,
     maxViewportHeight: Int = 0,
     startLayoutFromBottom: Boolean = false,
     nth: ClosureContext.(Int) -> Row
 ): (Int) -> ItemVerticalPosition {
-    val state = rememberLazyListState()
-    // TODO custom VerticalArrangement to respect overscrollPolicy
+    var maxSeenWidth by remember(state) { mutableStateOf(0.dp) }
+    // TODO custom VerticalArrangement to respect overscrollPolicy or translate it into an OverscrollEffect
     val verticalArrangement = if (spacing != 0) {
         Arrangement.spacedBy(LocalDensity.current.run { spacing.toDp() })
     } else {
         Arrangement.Top
     }
-    LazyColumn(verticalArrangement = verticalArrangement) {
+    LazyColumn(
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = startLayoutFromBottom,
+        verticalArrangement = verticalArrangement,
+    ) {
         items(
             count,
             key = { index -> nth(index).key },
@@ -50,7 +66,20 @@ fun NoriaContext.approximatingLazyColumn(
                 nth(index).heightKey.takeIf { it != Unit }
             }
         ) { index ->
-            nth(index).render(this@approximatingLazyColumn)
+            val density = LocalDensity.current
+            Box(
+                Modifier
+                    .onSizeChanged {
+                        val widthInDp = density.run { it.width.toDp() }
+                        if (widthInDp > maxSeenWidth) {
+                            maxSeenWidth = widthInDp
+                        }
+                    }
+                    .widthIn(min = maxSeenWidth),
+                propagateMinConstraints = true
+            ) {
+                nth(index).render(this@approximatingLazyColumn)
+            }
         }
     }
 

@@ -39,7 +39,7 @@ private fun nonComposableFunction() {}
 private fun nonComposableFunctionWithComposerParam(unused: Composer) {}
 
 @Composable
-private fun composableFunctionWithDefaults(
+private fun NoriaContext.composableFunctionWithDefaults(
     s1: String,
     s2: String,
     s3: String = "a",
@@ -55,7 +55,7 @@ private fun composableFunctionWithDefaults(
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun overloadedComposable(
+private fun NoriaContext.overloadedComposable(
     v1: String,
     v2: String,
     v3: String,
@@ -70,7 +70,7 @@ private fun overloadedComposable(
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun overloadedComposable(
+private fun NoriaContext.overloadedComposable(
     v1: String,
     v2: String,
     v3: String,
@@ -86,7 +86,7 @@ private fun overloadedComposable(
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun overloadedComposable(
+private fun NoriaContext.overloadedComposable(
     v1: String,
     v2: String,
     v3: String,
@@ -103,7 +103,7 @@ private fun overloadedComposable(
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun differentParametersTypes(
+private fun NoriaContext.differentParametersTypes(
     v1: String,
     v2: Any,
     v3: Int,
@@ -585,7 +585,7 @@ class ComposableMethodTest {
 
     private fun <T> executeWithComposer(block: (composer: Composer) -> T): T =
         runBlocking(TestFrameClock()) {
-            fun compose(recomposer: Recomposer, block: @Composable () -> Unit): Composition {
+            fun compose(recomposer: Recomposer, block: @Composable NoriaContext.() -> Unit): Composition {
                 return Composition(EmptyApplier(), recomposer).apply { setContent(block) }
             }
 

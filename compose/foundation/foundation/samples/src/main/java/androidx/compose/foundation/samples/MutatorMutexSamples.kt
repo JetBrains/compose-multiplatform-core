@@ -112,4 +112,4 @@ private suspend fun animate(from: Int, to: Int, onFrame: (position: Int) -> Unit
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun Button(onClick: () -> Unit, content: @Composable () -> Unit): Unit = TODO()
+private fun NoriaContext.Button(onClick: () -> Unit, content: @Composable NoriaContext.() -> Unit): Unit = TODO()

@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.round
+import noria.NoriaContext
 
 //TODO: remove this file
 // when this will be in JB fork
@@ -40,14 +41,14 @@ import androidx.compose.ui.unit.round
  * @param content The content that will have the context menu enabled.
  */
 @Composable
-internal fun ContextMenuArea(
+internal fun NoriaContext.ContextMenuArea(
     state: ContextMenuState,
     onDismiss: () -> Unit,
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onOpenGesture: () -> Unit = {},
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val finalModifier =
         if (enabled) {
@@ -70,7 +71,7 @@ internal fun ContextMenuArea(
 
 @VisibleForTesting
 @Composable
-internal fun ContextMenu(
+internal fun NoriaContext.ContextMenu(
     state: ContextMenuState,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,

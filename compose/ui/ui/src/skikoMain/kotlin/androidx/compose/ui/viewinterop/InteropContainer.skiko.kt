@@ -29,6 +29,7 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.OnUnplacedModifierNode
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.traverseDescendantsInDrawOrder
+import noria.NoriaContext
 
 /**
  * Providing interop container as composition local, so platofrm interop can use it to add
@@ -77,6 +78,21 @@ internal interface InteropContainer {
 //     * that something has changed.
 //     */
 //    fun onInteropViewLayoutChange(holder: InteropViewHolder)
+
+    /**
+     * Wrapper of Compose content that might contain interop views. It adds a helper modifier to root
+     * that allows traversing interop views in the tree with the right order.
+     *
+     * TODO: refactor to use a root node modifier instead of emitting an extra node
+     *      https://youtrack.jetbrains.com/issue/CMP-5896
+     */
+    @Composable
+    fun NoriaContext.TrackInteropPlacementContainer(content: @Composable NoriaContext.() -> Unit) {
+        OverlayLayout(
+            modifier = RootTrackInteropPlacementModifierElement { rootModifier = it },
+            content = content
+        )
+    }
 }
 
 /**
@@ -124,21 +140,6 @@ internal fun InteropContainer.interopComponentsSortedByDrawOrder(
     }
     check(remainingHolders.isEmpty()) { "Some interop view holders not found in interop container" }
     return result
-}
-
-/**
- * Wrapper of Compose content that might contain interop views. It adds a helper modifier to root
- * that allows traversing interop views in the tree with the right order.
- *
- * TODO: refactor to use a root node modifier instead of emitting an extra node
- *      https://youtrack.jetbrains.com/issue/CMP-5896
- */
-@Composable
-internal fun InteropContainer.TrackInteropPlacementContainer(content: @Composable () -> Unit) {
-    OverlayLayout(
-        modifier = RootTrackInteropPlacementModifierElement { rootModifier = it },
-        content = content
-    )
 }
 
 /**

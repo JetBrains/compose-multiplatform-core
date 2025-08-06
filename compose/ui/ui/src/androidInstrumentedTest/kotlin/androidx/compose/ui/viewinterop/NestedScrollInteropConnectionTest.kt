@@ -522,7 +522,7 @@ private const val VelocityRoundingErrorTolerance = 0
 private const val MainListTestTag = "MainListTestTag"
 
 @Composable
-private fun TestListWithNestedScroll(
+private fun NoriaContext.TestListWithNestedScroll(
     items: List<String>,
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
@@ -542,7 +542,7 @@ private fun TestListWithNestedScroll(
 }
 
 @Composable
-private fun TestItem(item: String) {
+private fun NoriaContext.TestItem(item: String) {
     Box(
         modifier = Modifier.padding(16.dp).height(56.dp).fillMaxWidth().testTag(item),
         contentAlignment = Alignment.Center,

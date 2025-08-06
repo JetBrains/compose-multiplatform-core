@@ -43,7 +43,7 @@ private val negativeTextIndent = TextIndent(-fontSize, -fontSize)
 
 @Preview
 @Composable
-fun EllipsizeWithLetterSpacing() {
+fun NoriaContext.EllipsizeWithLetterSpacing() {
     SelectionContainer() {
         Column(Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
             for (textIndent in arrayOf(TextIndent.None, positiveTextIndent, negativeTextIndent)) {
@@ -76,7 +76,7 @@ fun EllipsizeWithLetterSpacing() {
 }
 
 @Composable
-fun TextWithEllipsizeAndLetterSpacing(
+fun NoriaContext.TextWithEllipsizeAndLetterSpacing(
     text: String,
     maxLines: Int,
     textAlign: TextAlign,

@@ -46,7 +46,7 @@ fun observeUserSample() {
 
 @Sampled
 @Composable
-fun TwoInputsKeySample() {
+fun NoriaContext.TwoInputsKeySample() {
     for (element in elements) {
         val selected by key(element.id, parentId) { remember { mutableStateOf(false) } }
         ListItem(item = element, selected = selected)
@@ -55,7 +55,7 @@ fun TwoInputsKeySample() {
 
 @Sampled
 @Composable
-fun SimpleStateSample() {
+fun NoriaContext.SimpleStateSample() {
     val count = remember { mutableStateOf(0) }
 
     Text(text = "You clicked ${count.value} times")
@@ -64,7 +64,7 @@ fun SimpleStateSample() {
 
 @Sampled
 @Composable
-fun DestructuredStateSample() {
+fun NoriaContext.DestructuredStateSample() {
     val (count, setCount) = remember { mutableStateOf(0) }
 
     Text(text = "You clicked $count times")
@@ -73,7 +73,7 @@ fun DestructuredStateSample() {
 
 @Sampled
 @Composable
-fun DelegatedReadOnlyStateSample() {
+fun NoriaContext.DelegatedReadOnlyStateSample() {
     // Composable function that manages a subscription to a data source, returning it as State
     @Composable fun observeSampleData(): State<String> = TODO()
 
@@ -91,7 +91,7 @@ fun DelegatedReadOnlyStateSample() {
 @Suppress("ReplaceWithOperatorAssignment")
 @Sampled
 @Composable
-fun DelegatedStateSample() {
+fun NoriaContext.DelegatedStateSample() {
     var count by remember { mutableStateOf(0) }
 
     Text(text = "You clicked $count times")
@@ -120,7 +120,7 @@ private const val parentId = 0
 @Suppress("CanBeVal", "unused")
 @Sampled
 @Composable
-fun DerivedStateSample() {
+fun NoriaContext.DerivedStateSample() {
     @Composable
     fun CountDisplay(count: State<Int>) {
         Text("Count: ${count.value}")

@@ -29,7 +29,7 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.Constraints
 
 @Composable
-fun HeaderFooterLayout(
+fun NoriaContext.HeaderFooterLayout(
     header: @Composable () -> Unit,
     footer: @Composable () -> Unit,
     content: @Composable () -> Unit,
@@ -74,7 +74,7 @@ fun HeaderFooterLayout(
 }
 
 @Composable
-fun MultipleCollectTest() {
+fun NoriaContext.MultipleCollectTest() {
     val header =
         @Composable { Box(Modifier.fillMaxSize().background(Color(android.graphics.Color.GRAY))) }
     val footer =

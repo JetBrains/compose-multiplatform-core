@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun PaddingFromSample() {
+fun NoriaContext.PaddingFromSample() {
     // We want to have 30.sp distance from the top of the layout box to the baseline of the
     // first line of text.
     val distanceToBaseline = 30.sp
@@ -45,7 +45,7 @@ fun PaddingFromSample() {
 
 @Sampled
 @Composable
-fun PaddingFromBaselineSampleDp() {
+fun NoriaContext.PaddingFromBaselineSampleDp() {
     // We want to have 30.dp distance from the top of the layout box to the baseline of the
     // first line of text, and a 40.dp distance from the bottom of the layout box to the baseline
     // of the last line of text. Note it is good practice to specify these distances in sp for font
@@ -60,7 +60,7 @@ fun PaddingFromBaselineSampleDp() {
 
 @Sampled
 @Composable
-fun PaddingFromBaselineSampleTextUnit() {
+fun NoriaContext.PaddingFromBaselineSampleTextUnit() {
     // We want to have 30.sp distance from the top of the layout box to the baseline of the
     // first line of text, and a 40.sp distance from the bottom of the layout box to the baseline
     // of the last line of text.

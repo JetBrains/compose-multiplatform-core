@@ -24,7 +24,7 @@ import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 
 // TODO use ReusableContentHost directly after we fix b/309821523
 @Composable
-fun SubcompositionReusableContentHost(active: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.SubcompositionReusableContentHost(active: Boolean, content: @Composable () -> Unit) {
     SubcomposeLayout(remember { SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)) }) { constraints
         ->
         val placeable =

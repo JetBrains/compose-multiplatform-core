@@ -60,6 +60,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Creates a [LazyListState] that is remembered across compositions.
@@ -72,7 +73,7 @@ import kotlinx.coroutines.launch
  *   [LazyListState.firstVisibleItemScrollOffset]
  */
 @Composable
-fun rememberLazyListState(
+fun NoriaContext.rememberLazyListState(
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyListState {
@@ -95,7 +96,7 @@ fun rememberLazyListState(
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberLazyListState(
+fun NoriaContext.rememberLazyListState(
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,
     prefetchStrategy: LazyListPrefetchStrategy = remember { LazyListPrefetchStrategy() },
@@ -123,7 +124,7 @@ fun rememberLazyListState(
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberLazyListState(
+fun NoriaContext.rememberLazyListState(
     cacheWindow: LazyLayoutCacheWindow,
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,

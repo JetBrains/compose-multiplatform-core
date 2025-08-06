@@ -36,12 +36,12 @@ import androidx.compose.ui.unit.sp
 
 /** WARNING: Any modification of this *requires* a change to OffsetInformationTest */
 @Composable
-fun MyComposeTheme(content: @Composable () -> Unit) {
+fun NoriaContext.MyComposeTheme(content: @Composable () -> Unit) {
     content()
 }
 
 @Composable
-fun OffsetData() {
+fun NoriaContext.OffsetData() {
     MyComposeTheme {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
@@ -66,6 +66,6 @@ fun OffsetData() {
 }
 
 @Composable
-fun Greeting(name: String) {
+fun NoriaContext.Greeting(name: String) {
     Text(text = "Hello $name!")
 }

@@ -83,6 +83,7 @@ import kotlin.math.absoluteValue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 /**
  * Configure touch scrolling and flinging for the UI element in a single [Orientation].
@@ -541,7 +542,7 @@ object ScrollableDefaults {
     /** Create and remember default [FlingBehavior] that will represent natural fling curve. */
     // TODO: It should differ between platforms, move it under expect/actual
     @Composable
-    fun flingBehavior(): FlingBehavior = rememberPlatformDefaultFlingBehavior()
+    fun NoriaContext.flingBehavior(): FlingBehavior = rememberPlatformDefaultFlingBehavior()
 
     /**
      * Returns a remembered [OverscrollEffect] created from the current value of
@@ -558,7 +559,7 @@ object ScrollableDefaults {
             ),
     )
     @Composable
-    fun overscrollEffect(): OverscrollEffect {
+    fun NoriaContext.overscrollEffect(): OverscrollEffect {
         return rememberPlatformOverscrollEffect() ?: NoOpOverscrollEffect
     }
 
@@ -963,7 +964,7 @@ private val FlingBehavior.shouldBeTriggeredByMouseWheel
 internal expect fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior
 
 @Composable
-internal expect fun rememberPlatformDefaultFlingBehavior(): FlingBehavior
+internal expect fun NoriaContext.rememberPlatformDefaultFlingBehavior(): FlingBehavior
 
 internal class DefaultFlingBehavior(
     private var flingDecay: DecayAnimationSpec<Float>,

@@ -634,7 +634,7 @@ class WindowInsetsPaddingTest {
         expected: (Int, Int) -> Rect = { width, height ->
             Rect(10f, 11f, width - 12f, height - 13f)
         },
-        modifier: @Composable () -> Modifier,
+        modifier: @Composable NoriaContext.() -> Modifier,
     ) {
         val coordinates = setInsetContent(modifier)
 
@@ -1007,7 +1007,7 @@ class WindowInsetsPaddingTest {
         }
     }
 
-    private fun setInsetContent(insetsModifier: @Composable () -> Modifier): LayoutCoordinates {
+    private fun setInsetContent(insetsModifier: @Composable NoriaContext.() -> Modifier): LayoutCoordinates {
         lateinit var coordinates: LayoutCoordinates
 
         setContent {
@@ -1022,7 +1022,7 @@ class WindowInsetsPaddingTest {
         return coordinates
     }
 
-    private fun setContent(content: @Composable () -> Unit) {
+    private fun setContent(content: @Composable NoriaContext.() -> Unit) {
         rule.setContent {
             AndroidView(
                 factory = { context ->

@@ -426,7 +426,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
-    private fun SkikoComposeUiTest.setContentWithInitialFocus(content: @Composable () -> Unit) {
+    private fun SkikoComposeUiTest.setContentWithInitialFocus(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             focusManager = LocalFocusManager.current
             content()

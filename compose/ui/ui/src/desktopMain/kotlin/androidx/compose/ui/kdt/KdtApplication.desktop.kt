@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.input
+package androidx.compose.ui.kdt
 
-import androidx.compose.ui.semantics.SemanticsPropertyKey
-
-class Command(identifier: String) {
-    internal val actionSemanticsPropertyKey: SemanticsPropertyKey<Action> =
-        SemanticsPropertyKey(identifier)
-}
-
-
-object DefaultCommands {
-    val MoveUp = Command("MoveUp")
-    val MoveDown = Command("MoveDown")
-    val Toggle = Command("Toggle")
-    val Activate = Command("Activate")
-    val Confirm = Command("Confirm")
+interface KdtApplication {
+    val isActive: Boolean
+    val keyWindow: KdtWindow?
+    val mainWindow: KdtWindow?
+    suspend fun yieldActivationTo(other: KdtApplication): Boolean
+    // or
+    fun requestActivation(): Boolean
 }

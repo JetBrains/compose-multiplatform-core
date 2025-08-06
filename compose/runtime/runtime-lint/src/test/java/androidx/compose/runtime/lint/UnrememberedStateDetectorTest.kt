@@ -61,7 +61,7 @@ class UnrememberedStateDetectorTest : LintDetectorTest() {
                     val derived = derivedStateOf { foo.value }
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     val foo = mutableStateOf(0)
                     val bar = mutableStateListOf<Int>()
                     val baz = mutableStateMapOf<Int, Float>()
@@ -69,7 +69,7 @@ class UnrememberedStateDetectorTest : LintDetectorTest() {
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -95,7 +95,7 @@ class UnrememberedStateDetectorTest : LintDetectorTest() {
                         val derived = derivedStateOf { foo.value }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val foo = mutableStateOf(0)
                         val bar = mutableStateListOf<Int>()
                         val baz = mutableStateMapOf<Int, Float>()
@@ -255,7 +255,7 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                     val derived = remember { derivedStateOf { foo.value } }
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     val foo = remember { mutableStateOf(0) }
                     val bar = remember { mutableStateListOf<Int>() }
                     val baz = remember {
@@ -266,7 +266,7 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -301,7 +301,7 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                         val derived = remember { derivedStateOf { foo.value } }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val foo = remember { mutableStateOf(0) }
                         val bar = remember { mutableStateListOf<Int>() }
                         val baz = remember {
@@ -446,13 +446,13 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                     val bar = remember { makeMyState() }
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     val foo = makeMyState()
                     val bar = remember { makeMyState() }
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -472,7 +472,7 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                         val bar = remember { makeMyState() }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val foo = makeMyState()
                         val bar = remember { makeMyState() }
                     }
@@ -547,13 +547,13 @@ src/androidx/compose/runtime/foo/{.kt:56: Error: Creating a state object during 
                     val bar = remember { makeMyState() }
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     val foo = CustomState<Nothing>()
                     val bar = remember { makeMyState() }
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -573,7 +573,7 @@ src/androidx/compose/runtime/foo/{.kt:56: Error: Creating a state object during 
                         val bar = remember { makeMyState() }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val foo = CustomState<Nothing>()
                         val bar = remember { makeMyState() }
                     }
@@ -684,7 +684,7 @@ src/androidx/compose/runtime/foo/{.kt:53: Error: Creating a state object during 
                     }
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     val foo = object : MutableState<Nothing> {
                         override var value: Nothing
                             get() = throw UnsupportedOperationException()
@@ -704,7 +704,7 @@ src/androidx/compose/runtime/foo/{.kt:53: Error: Creating a state object during 
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -766,7 +766,7 @@ src/androidx/compose/runtime/foo/{.kt:53: Error: Creating a state object during 
                         }
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         val foo = object : MutableState<Nothing> {
                             override var value: Nothing
                                 get() = throw UnsupportedOperationException()

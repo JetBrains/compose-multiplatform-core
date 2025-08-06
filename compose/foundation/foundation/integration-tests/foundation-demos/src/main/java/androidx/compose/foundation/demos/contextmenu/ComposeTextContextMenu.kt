@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-internal fun TextContextMenusDemo() {
+internal fun NoriaContext.TextContextMenusDemo() {
     Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Column(
             modifier = Modifier.fillMaxSize().padding(start = 32.dp, end = 32.dp, bottom = 32.dp),
@@ -179,12 +179,12 @@ internal fun TextContextMenusDemo() {
 }
 
 @Composable
-private fun MyText(text: String) {
+private fun NoriaContext.MyText(text: String) {
     Text(text = text, modifier = Modifier.outline())
 }
 
 @Composable
-private fun MyTextFieldOne(
+private fun NoriaContext.MyTextFieldOne(
     initialText: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -218,7 +218,7 @@ private fun MyTextFieldOne(
 }
 
 @Composable
-private fun MyTextFieldTwo(
+private fun NoriaContext.MyTextFieldTwo(
     initialText: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -249,7 +249,7 @@ private fun MyTextFieldTwo(
 }
 
 @Composable
-private fun LabeledItem(label: String, content: @Composable () -> Unit) {
+private fun NoriaContext.LabeledItem(label: String, content: @Composable NoriaContext.() -> Unit) {
     Column(Modifier.fillMaxSize(), spacedBy(4.dp)) {
         Text(label, color = LocalContentColor.current.copy(alpha = 0.5f))
         content()

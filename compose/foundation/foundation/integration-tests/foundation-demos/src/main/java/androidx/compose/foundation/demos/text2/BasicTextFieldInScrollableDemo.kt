@@ -66,7 +66,7 @@ private enum class ScrollableType2 {
 
 @Preview(showBackground = true)
 @Composable
-fun BasicTextFieldInScrollableDemo() {
+fun NoriaContext.BasicTextFieldInScrollableDemo() {
     var scrollableType by remember { mutableStateOf(ScrollableType2.values().first()) }
 
     Column(Modifier.windowInsetsPadding(WindowInsets.ime)) {
@@ -126,7 +126,7 @@ fun BasicTextFieldInScrollableDemo() {
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldInScrollableColumn() {
+private fun NoriaContext.TextFieldInScrollableColumn() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         repeat(50) { index -> DemoTextField(index) }
     }
@@ -134,25 +134,25 @@ private fun TextFieldInScrollableColumn() {
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldInLazyColumn() {
+private fun NoriaContext.TextFieldInLazyColumn() {
     LazyColumn { items(50) { index -> DemoTextField(index) } }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun EditTextsInScrollView() {
+private fun NoriaContext.EditTextsInScrollView() {
     AndroidView(::EditTextsInScrollableView, modifier = Modifier.fillMaxSize())
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldInScrollView() {
+private fun NoriaContext.TextFieldInScrollView() {
     AndroidView(::TextFieldInScrollableView, modifier = Modifier.fillMaxSize())
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun EditTextsInScrollableColumn() {
+private fun NoriaContext.EditTextsInScrollableColumn() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         repeat(50) { index -> AndroidView(::DemoEditText) }
     }
@@ -160,7 +160,7 @@ private fun EditTextsInScrollableColumn() {
 
 @Preview(showBackground = true)
 @Composable
-private fun EditTextsInLazyColumn() {
+private fun NoriaContext.EditTextsInLazyColumn() {
     LazyColumn {
         items(50) { index ->
             val pinnableContainer = LocalPinnableContainer.current
@@ -184,7 +184,7 @@ private fun EditTextsInLazyColumn() {
 }
 
 @Composable
-private fun DemoTextField(index: Int) {
+private fun NoriaContext.DemoTextField(index: Int) {
     val state = rememberTextFieldState()
     Row {
         Text("$index", modifier = Modifier.padding(end = 8.dp))

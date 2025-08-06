@@ -74,7 +74,7 @@ private data class Message(val content: String, val isReceived: Boolean = true)
 
 @SuppressLint("NullAnnotationGroup")
 @Composable
-private fun SimpleChatPage() {
+private fun NoriaContext.SimpleChatPage() {
     val messages = remember { mutableStateListOf<Message>() }
     for (i in 1..40) {
         messages.add(Message("test msg $i", isReceived = i % 2 == 0))
@@ -113,7 +113,7 @@ private fun SimpleChatPage() {
 }
 
 @Composable
-private fun Conversation(messages: List<Message>, state: LazyListState) {
+private fun NoriaContext.Conversation(messages: List<Message>, state: LazyListState) {
     LazyColumn(
         modifier = Modifier.testTag("messages").fillMaxSize(),
         state = state,
@@ -124,7 +124,7 @@ private fun Conversation(messages: List<Message>, state: LazyListState) {
 }
 
 @Composable
-private fun MessageCard(message: Message) {
+private fun NoriaContext.MessageCard(message: Message) {
     Row {
         if (!message.isReceived) {
             Spacer(modifier = Modifier.weight(1.0f))
@@ -142,7 +142,7 @@ private fun MessageCard(message: Message) {
 }
 
 @Composable
-private fun MessageUpdater(onMessageAdded: (message: String, isReceived: Boolean) -> Unit) {
+private fun NoriaContext.MessageUpdater(onMessageAdded: (message: String, isReceived: Boolean) -> Unit) {
     Row {
         var text by remember { mutableStateOf("") }
 

@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithPopularBoxWithConstraintsUsage() {
+fun NoriaContext.LookaheadWithPopularBoxWithConstraintsUsage() {
     val padding by
         produceState(initialValue = 0.dp) {
             while (true) {
@@ -79,7 +79,7 @@ fun LookaheadWithPopularBoxWithConstraintsUsage() {
 }
 
 @Composable
-fun DetailsContent() {
+fun NoriaContext.DetailsContent() {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints {
@@ -94,7 +94,7 @@ fun DetailsContent() {
 }
 
 @Composable
-fun Content(containerHeight: Dp) {
+fun NoriaContext.Content(containerHeight: Dp) {
     Column {
         Spacer(modifier = Modifier.heightIn(8.dp))
         Column(modifier = Modifier.padding(10.dp)) {
@@ -111,7 +111,7 @@ fun Content(containerHeight: Dp) {
 }
 
 @Composable
-fun Property(label: String, value: String) {
+fun NoriaContext.Property(label: String, value: String) {
     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
         Divider()
         Text(
@@ -124,7 +124,7 @@ fun Property(label: String, value: String) {
 }
 
 @Composable
-fun Header(containerHeight: Dp) {
+fun NoriaContext.Header(containerHeight: Dp) {
     val height by animateDpAsState(containerHeight)
     Image(
         modifier = Modifier.heightIn(max = height / 2).fillMaxWidth(),

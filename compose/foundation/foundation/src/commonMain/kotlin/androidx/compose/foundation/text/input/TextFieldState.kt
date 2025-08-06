@@ -39,6 +39,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.coerceIn
 import androidx.compose.ui.text.style.TextDecoration
+import noria.NoriaContext
 
 /**
  * The editable text state of a text field, including both the [text] itself and position of the
@@ -654,7 +655,7 @@ internal constructor(
  *   after it's initialized, call methods on [TextFieldState].
  */
 @Composable
-fun rememberTextFieldState(
+fun NoriaContext.rememberTextFieldState(
     initialText: String = "",
     initialSelection: TextRange = TextRange(initialText.length),
 ): TextFieldState =

@@ -52,7 +52,7 @@ import kotlin.collections.set
 @SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
-fun MixedOldNewAutofillDemo() {
+fun NoriaContext.MixedOldNewAutofillDemo() {
     Column(modifier = Modifier.background(color = Color.Black)) {
         Text(
             text =

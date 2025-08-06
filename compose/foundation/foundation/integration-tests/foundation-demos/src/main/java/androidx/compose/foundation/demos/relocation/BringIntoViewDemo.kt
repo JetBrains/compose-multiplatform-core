@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
-fun BringIntoViewDemo() {
+fun NoriaContext.BringIntoViewDemo() {
     val greenRequester = remember { BringIntoViewRequester() }
     val redRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()

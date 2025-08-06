@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun LazyColumnSample() {
+fun NoriaContext.LazyColumnSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -73,7 +73,7 @@ fun LazyColumnSample() {
 
 @Sampled
 @Composable
-fun LazyRowSample() {
+fun NoriaContext.LazyRowSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -88,7 +88,7 @@ fun LazyRowSample() {
 
 @Sampled
 @Composable
-fun StickyHeaderListSample() {
+fun NoriaContext.StickyHeaderListSample() {
     val sections = listOf("A", "B", "C", "D", "E", "F", "G")
 
     LazyColumn(reverseLayout = true, contentPadding = PaddingValues(6.dp)) {
@@ -125,7 +125,7 @@ fun StickyHeaderGridSample() {
 
 @Sampled
 @Composable
-fun StickyHeaderHeaderIndexSample() {
+fun NoriaContext.StickyHeaderHeaderIndexSample() {
     /**
      * Checks if [index] is in the sticking position, that is, it's the first visible item and its
      * offset is equal to the content padding.
@@ -159,7 +159,7 @@ fun StickyHeaderHeaderIndexSample() {
 
 @Sampled
 @Composable
-fun AnimateItemSample() {
+fun NoriaContext.AnimateItemSample() {
     var list by remember { mutableStateOf(listOf("1", "2", "3")) }
     Column {
         Button(onClick = { list = list + "${list.count() + 1}" }) { Text("Add new item") }
@@ -170,7 +170,7 @@ fun AnimateItemSample() {
 
 @Sampled
 @Composable
-fun UsingListScrollPositionForSideEffectSample() {
+fun NoriaContext.UsingListScrollPositionForSideEffectSample() {
     val listState = rememberLazyListState()
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }
@@ -182,7 +182,7 @@ fun UsingListScrollPositionForSideEffectSample() {
 
 @Sampled
 @Composable
-fun UsingListScrollPositionInCompositionSample() {
+fun NoriaContext.UsingListScrollPositionInCompositionSample() {
     val listState = rememberLazyListState()
     val isAtTop by remember {
         derivedStateOf {
@@ -196,7 +196,7 @@ fun UsingListScrollPositionInCompositionSample() {
 
 @Sampled
 @Composable
-fun UsingListLayoutInfoForSideEffectSample() {
+fun NoriaContext.UsingListLayoutInfoForSideEffectSample() {
     val listState = rememberLazyListState()
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.totalItemsCount }

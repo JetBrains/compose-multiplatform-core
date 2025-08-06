@@ -31,7 +31,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.em
 
 @Composable
-fun TextWithInlineContentUsage() {
+fun NoriaContext.TextWithInlineContentUsage() {
     val myId = "inlineContent"
     val text = buildAnnotatedString {
         append("Hello")

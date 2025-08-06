@@ -108,23 +108,4 @@ interface Density : FontScaling {
         } else {
             DpSize.Unspecified
         }
-
-    fun DpOffset.toOffset(): Offset = if (isSpecified) {
-        Offset(x.toPx(), y.toPx())
-    } else {
-        Offset.Unspecified
-    }
-
-    fun Offset.toDpOffset(): DpOffset = if (isSpecified) {
-        DpOffset(x.toDp(), y.toDp())
-    } else {
-        DpOffset.Unspecified
-    }
-
-    fun Rect.toDpRect(): DpRect {
-        return DpRect(left = left.toDp(),
-            top = top.toDp(),
-            right = right.toDp(),
-            bottom = bottom.toDp())
-    }
 }

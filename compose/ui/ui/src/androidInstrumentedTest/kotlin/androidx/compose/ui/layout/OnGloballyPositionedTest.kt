@@ -1254,7 +1254,7 @@ class OnGloballyPositionedTest {
 }
 
 @Composable
-fun DelayedMeasure(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
+fun NoriaContext.DelayedMeasure(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
     Layout(content = content, modifier = modifier) { measurables, _ ->
         layout(size, size) {
             val newConstraints = Constraints(maxWidth = size, maxHeight = size)
@@ -1265,7 +1265,7 @@ fun DelayedMeasure(size: Int, modifier: Modifier = Modifier, content: @Composabl
 }
 
 @Composable
-internal fun Offset(sizeModel: State<Int>, content: @Composable () -> Unit) {
+internal fun NoriaContext.Offset(sizeModel: State<Int>, content: @Composable () -> Unit) {
     // simple copy of Padding which doesn't recompose when the size changes
     Layout(content) { measurables, constraints ->
         layout(constraints.maxWidth, constraints.maxHeight) {

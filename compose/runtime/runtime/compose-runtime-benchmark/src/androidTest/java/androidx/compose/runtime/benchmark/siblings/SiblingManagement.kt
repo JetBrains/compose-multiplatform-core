@@ -39,7 +39,7 @@ val blueStyle = TextStyle(color = Color.Blue)
 val magentaStyle = TextStyle(color = Color.Magenta)
 
 @Composable
-fun ItemRow(item: Item) {
+fun NoriaContext.ItemRow(item: Item) {
     // the complexity of this will influence the benchmark a lot because if
     // identity doesn't influence what the component looks like, it's not
     // very important to track it.
@@ -111,7 +111,7 @@ fun <T> List<T>.update(reorderType: ReorderType, random: Random, factory: (Int) 
 }
 
 @Composable
-fun SiblingManagement(identity: IdentityType, items: List<Item>) {
+fun NoriaContext.SiblingManagement(identity: IdentityType, items: List<Item>) {
     Column(Modifier.fillMaxHeight()) {
         when (identity) {
             IdentityType.Index -> {

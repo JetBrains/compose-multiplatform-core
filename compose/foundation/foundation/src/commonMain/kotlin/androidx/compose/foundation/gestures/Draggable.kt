@@ -55,6 +55,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * State of [draggable]. Allows for a granular control of how deltas are consumed by the user as
@@ -128,7 +129,7 @@ fun DraggableState(onDelta: (Float) -> Unit): DraggableState = DefaultDraggableS
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
 @Composable
-fun rememberDraggableState(onDelta: (Float) -> Unit): DraggableState {
+fun NoriaContext.rememberDraggableState(onDelta: (Float) -> Unit): DraggableState {
     val onDeltaState = rememberUpdatedState(onDelta)
     return remember { DraggableState { onDeltaState.value.invoke(it) } }
 }

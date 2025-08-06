@@ -55,7 +55,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun ComposeInCooperatingViewNestedScrollInteropSample() {
+fun NoriaContext.ComposeInCooperatingViewNestedScrollInteropSample() {
     val nestedSrollInterop = rememberNestedScrollInteropConnection()
     // Add the nested scroll connection to your top level @Composable element
     // using the nestedScroll modifier.
@@ -74,7 +74,7 @@ fun ComposeInCooperatingViewNestedScrollInteropSample() {
 
 @Sampled
 @Composable
-fun ViewInComposeNestedScrollInteropSample() {
+fun NoriaContext.ViewInComposeNestedScrollInteropSample() {
     Box(
         Modifier.fillMaxSize()
             .scrollable(
@@ -99,7 +99,7 @@ fun ViewInComposeNestedScrollInteropSample() {
 private val ToolbarHeight = 48.dp
 
 @Composable
-fun CollapsingToolbarComposeViewComposeNestedScrollInteropSample() {
+fun NoriaContext.CollapsingToolbarComposeViewComposeNestedScrollInteropSample() {
     val toolbarHeightPx = with(LocalDensity.current) { ToolbarHeight.roundToPx().toFloat() }
     val toolbarOffsetHeightPx = remember { mutableStateOf(0f) }
 
@@ -144,7 +144,7 @@ private fun AndroidViewWithCompose(context: Context): View {
 }
 
 @Composable
-private fun LazyColumnWithNestedScrollInteropEnabled() {
+private fun NoriaContext.LazyColumnWithNestedScrollInteropEnabled() {
     LazyColumn(
         modifier = Modifier.nestedScroll(rememberNestedScrollInteropConnection()),
         contentPadding = PaddingValues(top = ToolbarHeight),

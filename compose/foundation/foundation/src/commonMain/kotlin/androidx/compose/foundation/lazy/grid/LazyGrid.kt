@@ -53,10 +53,11 @@ import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import kotlinx.coroutines.CoroutineScope
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun LazyGrid(
+internal fun NoriaContext.LazyGrid(
     /** Modifier to be applied for the inner layout */
     modifier: Modifier = Modifier,
     /** State controlling the scroll position */
@@ -70,7 +71,7 @@ internal fun LazyGrid(
     /** The layout orientation of the grid */
     isVertical: Boolean,
     /** fling behavior to be used for flinging */
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     /** Whether scrolling via the user gestures is allowed. */
     userScrollEnabled: Boolean,
     /** The overscroll effect to render and dispatch events to */
@@ -154,7 +155,7 @@ internal class LazyGridSlots(val sizes: IntArray, val positions: IntArray)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun rememberLazyGridMeasurePolicy(
+private fun NoriaContext.rememberLazyGridMeasurePolicy(
     /** Items provider of the list. */
     itemProviderLambda: () -> LazyGridItemProvider,
     /** The state of the list. */

@@ -40,7 +40,7 @@ private const val text = "The quick brown fox jumps over the lazy dog"
 
 @Preview
 @Composable
-fun LetterSpacingDemo() {
+fun NoriaContext.LetterSpacingDemo() {
     Column(Modifier.padding(horizontal = 16.dp)) {
         var letterSpacing: Float by remember { mutableFloatStateOf(0.0f) }
         var fontSize: Float by remember { mutableFloatStateOf(12f) }
@@ -58,7 +58,7 @@ fun LetterSpacingDemo() {
 }
 
 @Composable
-fun AnnotatedText(letterSpacing: Float, fontSize: Float) {
+fun NoriaContext.AnnotatedText(letterSpacing: Float, fontSize: Float) {
     var textLayoutResult: TextLayoutResult? by remember { mutableStateOf(null) }
     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
         Text(

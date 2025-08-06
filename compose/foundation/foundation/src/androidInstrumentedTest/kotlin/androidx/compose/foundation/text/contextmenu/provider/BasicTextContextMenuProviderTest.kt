@@ -259,10 +259,10 @@ class BasicTextContextMenuProviderTest {
      * @param testBlock actions and assertions to run after the content is set
      */
     private fun runProviderTest(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit = { content ->
+        outerContent: @Composable (content: @Composable NoriaContext.() -> Unit) -> Unit = { content ->
             OuterBox(content = content)
         },
-        innerContent: @Composable () -> Unit = { InnerBox() },
+        innerContent: @Composable NoriaContext.() -> Unit = { InnerBox() },
         testBlock: TestScope.() -> Unit,
     ) {
         val testScope = TestScope()
@@ -329,12 +329,12 @@ private const val ContextMenuTag = "ContextMenu"
 
 @Composable
 @SuppressLint("ModifierParameter")
-private fun OuterBox(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable () -> Unit) {
+private fun OuterBox(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable NoriaContext.() -> Unit) {
     Box(modifier, Alignment.Center) { content() }
 }
 
 @Composable
-private fun InnerBox() {
+private fun NoriaContext.InnerBox() {
     Box(
         Modifier.background(Color.LightGray.copy(alpha = 0.3f))
             .sizeIn(minWidth = 200.dp, minHeight = 200.dp)
@@ -342,12 +342,12 @@ private fun InnerBox() {
 }
 
 @Composable
-private fun ProvideTestBasicTextContextMenu(
+private fun NoriaContext.ProvideTestBasicTextContextMenu(
     onContextMenuComposition:
         (
             session: TextContextMenuSession?, anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     ProvideBasicTextContextMenu(
         modifier = Modifier.testTag(AnchorLayoutTag),
@@ -361,7 +361,7 @@ private fun ProvideTestBasicTextContextMenu(
 }
 
 @Composable
-private fun TestContextMenu(
+private fun NoriaContext.TestContextMenu(
     session: TextContextMenuSession,
     dataProvider: TextContextMenuDataProvider,
 ) {

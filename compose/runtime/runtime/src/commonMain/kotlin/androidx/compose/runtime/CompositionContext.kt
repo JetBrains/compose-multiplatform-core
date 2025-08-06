@@ -20,6 +20,7 @@ import androidx.collection.ScatterSet
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.tooling.CompositionData
 import kotlin.coroutines.CoroutineContext
+import noria.NoriaContext
 
 private val EmptyPersistentCompositionLocalMap: PersistentCompositionLocalMap =
     persistentCompositionLocalHashMapOf()
@@ -53,13 +54,13 @@ public abstract class CompositionContext internal constructor() {
 
     internal abstract fun composeInitial(
         composition: ControlledComposition,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     )
 
     internal abstract fun composeInitialPaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ): ScatterSet<RecomposeScopeImpl>
 
     internal abstract fun recomposePaused(

@@ -87,7 +87,7 @@ class LazyListPinnableContainerTest(val useLookaheadScope: Boolean) {
     }
 
     private inline fun ComposeContentTestRule.setContentParameterized(
-        crossinline content: @Composable () -> Unit
+        crossinline content: @Composable NoriaContext.() -> Unit
     ) {
         setContent {
             if (useLookaheadScope) {

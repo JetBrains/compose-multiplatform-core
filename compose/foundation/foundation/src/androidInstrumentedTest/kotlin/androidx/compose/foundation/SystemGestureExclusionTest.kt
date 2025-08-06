@@ -198,7 +198,7 @@ class SystemGestureExclusionTest {
         }
     }
 
-    private fun setComposeContent(content: @Composable () -> Unit): View {
+    private fun setComposeContent(content: @Composable NoriaContext.() -> Unit): View {
         rule.setContent(content)
         return findAndroidComposeView(rule.activity.window.decorView as ViewGroup)!!
     }

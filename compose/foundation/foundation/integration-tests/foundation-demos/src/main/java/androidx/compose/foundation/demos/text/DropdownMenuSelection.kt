@@ -38,7 +38,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DropdownMenuSelection() {
+fun NoriaContext.DropdownMenuSelection() {
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -78,7 +78,7 @@ fun DropdownMenuSelection() {
 }
 
 @Composable
-private fun DropdownMenuInSelectionContainer() {
+private fun NoriaContext.DropdownMenuInSelectionContainer() {
     var expanded by remember { mutableStateOf(false) }
     Button(onClick = { expanded = true }) { Text("DropdownMenu in SelectionContainer") }
     SelectionContainer {
@@ -89,7 +89,7 @@ private fun DropdownMenuInSelectionContainer() {
 }
 
 @Composable
-private fun SelectionContainerInDropdownMenu() {
+private fun NoriaContext.SelectionContainerInDropdownMenu() {
     var expanded by remember { mutableStateOf(false) }
     Button(onClick = { expanded = true }) { Text("SelectionContainer in DropdownMenu") }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

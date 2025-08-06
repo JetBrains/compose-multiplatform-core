@@ -133,7 +133,7 @@ class PlacementReusableNodeTest {
  * onPlaced/onUnplaced callbacks are used to control their lifecycle in platform's views hierarchy.
  */
 @Composable
-private fun TestMultiplatformInteropView(
+private fun NoriaContext.TestMultiplatformInteropView(
     onAddedToPlatformHierarchy: () -> Unit,
     onRemovedFromPlatformHierarchy: () -> Unit,
     modifier: Modifier = Modifier,

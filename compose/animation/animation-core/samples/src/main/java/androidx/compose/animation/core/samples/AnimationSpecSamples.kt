@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun InfiniteProgressIndicator() {
+fun NoriaContext.InfiniteProgressIndicator() {
     // This is an infinite progress indicator with 3 pulsing dots that grow and shrink.
     @Composable
     fun Dot(scale: State<Float>) {

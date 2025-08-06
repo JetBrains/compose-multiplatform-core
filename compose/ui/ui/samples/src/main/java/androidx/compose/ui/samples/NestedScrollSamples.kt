@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun NestedScrollConnectionSample() {
+fun NoriaContext.NestedScrollConnectionSample() {
     // here we use LazyColumn that has build-in nested scroll, but we want to act like a
     // parent for this LazyColumn and participate in its nested scroll.
     // Let's make a collapsing toolbar for LazyColumn
@@ -97,7 +97,7 @@ fun NestedScrollConnectionSample() {
 
 @Sampled
 @Composable
-fun NestedScrollDispatcherSample() {
+fun NoriaContext.NestedScrollDispatcherSample() {
     // Let's take Modifier.draggable (which doesn't have nested scroll build in, unlike Modifier
     // .scrollable) and add nested scroll support our component that contains draggable
 

@@ -70,7 +70,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AnimateEnterExitDemo() {
+fun NoriaContext.AnimateEnterExitDemo() {
     Box {
         Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.size(40.dp))

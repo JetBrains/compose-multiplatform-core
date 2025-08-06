@@ -39,7 +39,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithAnimatedContentSize() {
+fun NoriaContext.LookaheadWithAnimatedContentSize() {
     val expanded by
         produceState(initialValue = true) {
             while (true) {

@@ -61,7 +61,7 @@ val LazyListSnappingDemos =
 
 /** Snapping happens to the next item and items have the same size */
 @Composable
-private fun SnapPosition(snapPosition: SnapPosition) {
+private fun NoriaContext.SnapPosition(snapPosition: SnapPosition) {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = rememberNextItemSnappingLayoutInfoProvider(lazyListState, snapPosition)
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -83,7 +83,7 @@ private fun SnapPosition(snapPosition: SnapPosition) {
 
 /** Snapping happens to the next item and items have the same size */
 @Composable
-private fun SameItemSizeDemo() {
+private fun NoriaContext.SameItemSizeDemo() {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = rememberNextItemSnappingLayoutInfoProvider(lazyListState)
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -95,7 +95,7 @@ private fun SameItemSizeDemo() {
 
 /** Snapping happens to the next item and items have the different sizes */
 @Composable
-private fun DifferentItemSizeDemo() {
+private fun NoriaContext.DifferentItemSizeDemo() {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = rememberNextItemSnappingLayoutInfoProvider(lazyListState)
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -107,7 +107,7 @@ private fun DifferentItemSizeDemo() {
 
 /** Snapping happens to the next item and items are larger than the view port */
 @Composable
-private fun LargeItemSizeDemo() {
+private fun NoriaContext.LargeItemSizeDemo() {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = rememberNextItemSnappingLayoutInfoProvider(lazyListState)
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -119,7 +119,7 @@ private fun LargeItemSizeDemo() {
 
 /** Snapping happens to the next item and list has content paddings */
 @Composable
-private fun DifferentContentPaddingDemo() {
+private fun NoriaContext.DifferentContentPaddingDemo() {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = remember(lazyListState) { SnapLayoutInfoProvider(lazyListState) }
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -135,7 +135,7 @@ private fun DifferentContentPaddingDemo() {
 
 /** Snapping happens after a decay animation and items have the same size */
 @Composable
-private fun DecayedSnappingDemo() {
+private fun NoriaContext.DecayedSnappingDemo() {
     val lazyListState = rememberLazyListState()
     val flingBehavior = rememberSnapFlingBehavior(lazyListState)
     SnappingDemoMainLayout(lazyListState = lazyListState, flingBehavior = flingBehavior) {
@@ -145,7 +145,7 @@ private fun DecayedSnappingDemo() {
 
 /** Snapping happens to at max one view port item's worth distance. */
 @Composable
-private fun ViewPortBasedSnappingDemo() {
+private fun NoriaContext.ViewPortBasedSnappingDemo() {
     val lazyListState = rememberLazyListState()
     val layoutInfoProvider = rememberViewPortSnappingLayoutInfoProvider(lazyListState)
     val flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
@@ -156,7 +156,7 @@ private fun ViewPortBasedSnappingDemo() {
 }
 
 @Composable
-private fun rememberNextItemSnappingLayoutInfoProvider(
+private fun NoriaContext.rememberNextItemSnappingLayoutInfoProvider(
     state: LazyListState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): SnapLayoutInfoProvider {
@@ -170,7 +170,7 @@ private fun rememberNextItemSnappingLayoutInfoProvider(
 }
 
 @Composable
-private fun rememberViewPortSnappingLayoutInfoProvider(
+private fun NoriaContext.rememberViewPortSnappingLayoutInfoProvider(
     state: LazyListState
 ): SnapLayoutInfoProvider {
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()

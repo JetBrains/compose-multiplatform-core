@@ -17,7 +17,14 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.awt.AwtWindow
+import androidx.compose.ui.node.Ref
+import androidx.compose.ui.util.UpdateEffect
 import java.awt.Window
+import kotlinx.coroutines.DelicateCoroutinesApi
+import noria.NoriaContext
 
 /**
  * Compose [Window] obtained from [create]. The [create] block will be called
@@ -52,20 +59,20 @@ import java.awt.Window
     )
 )
 @Composable
-fun <T : Window> AwtWindow(
+fun <T : Window> NoriaContext.AwtWindow(
     visible: Boolean,
     create: () -> T,
     dispose: (T) -> Unit,
     update: (T) -> Unit = {}
 ) {
-    androidx.compose.ui.awt.AwtWindow(visible, create, dispose, update)
+    AwtWindow(visible, create, dispose, update)
 }
 
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("unused")
 @Composable
-fun <T> AwtWindow(
+fun <T> NoriaContext.AwtWindow(
     create: () -> T,
     dispose: (T) -> Unit,
     update: (T) -> Unit = {}

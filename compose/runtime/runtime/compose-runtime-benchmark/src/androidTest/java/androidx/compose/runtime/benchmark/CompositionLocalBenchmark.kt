@@ -114,12 +114,12 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
 }
 
 @Composable
-fun DepthOf(count: Int, content: @Composable () -> Unit) {
+fun NoriaContext.DepthOf(count: Int, content: @Composable NoriaContext.() -> Unit) {
     if (count > 0) DepthOf(count - 1, content) else content()
 }
 
 @Composable
-fun NestedProviders(count: Int, content: @Composable () -> Unit) {
+fun NoriaContext.NestedProviders(count: Int, content: @Composable NoriaContext.() -> Unit) {
     if (count > 0) {
         CompositionLocalProvider(staticCompositionLocalOf { 0 } provides 0) {
             NestedProviders(count = count - 1, content)

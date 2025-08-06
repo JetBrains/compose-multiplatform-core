@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.round
 
 @Preview
 @Composable
-fun SpringChainDemo() {
+fun NoriaContext.SpringChainDemo() {
     var leader by remember { mutableStateOf(Offset(200f, 200f)) }
     Box(
         Modifier.fillMaxSize().pointerInput(Unit) {

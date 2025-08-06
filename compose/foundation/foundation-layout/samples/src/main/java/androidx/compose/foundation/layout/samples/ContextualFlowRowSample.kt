@@ -50,7 +50,7 @@ import kotlin.random.Random
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun ContextualFlowRowMaxLineDynamicSeeMore() {
+fun NoriaContext.ContextualFlowRowMaxLineDynamicSeeMore() {
     val totalCount = 300
     var maxLines by remember { mutableStateOf(2) }
 
@@ -105,7 +105,7 @@ fun ContextualFlowRowMaxLineDynamicSeeMore() {
 @OptIn(ExperimentalLayoutApi::class)
 @Sampled
 @Composable
-fun ContextualFlowRow_ItemPosition() {
+fun NoriaContext.ContextualFlowRow_ItemPosition() {
     Text("Ln: Line No\nPs: Position No. in Line", modifier = Modifier.padding(20.dp))
     ContextualFlowRow(
         modifier = Modifier.fillMaxWidth(1f).height(210.dp).padding(20.dp),
@@ -146,7 +146,7 @@ enum class MatchingColors(val index: Int, val color: Color) {
 }
 
 @Composable
-internal fun DynamicSeeMore(isHorizontal: Boolean, remainingItems: Int, onClick: () -> Unit) {
+internal fun NoriaContext.DynamicSeeMore(isHorizontal: Boolean, remainingItems: Int, onClick: () -> Unit) {
     Box(
         Modifier.clickable(onClick = onClick)
             .wrapContentWidth()

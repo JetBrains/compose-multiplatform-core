@@ -22,6 +22,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import kotlin.jvm.JvmInline
+import noria.NoriaContext
 
 /**
  * This class:
@@ -61,7 +62,7 @@ internal class LazyLayoutItemContentFactory(
     }
 
     /** Return cached item content lambda or creates a new lambda and puts it in the cache. */
-    fun getContent(index: Int, key: Any, contentType: Any?): @Composable () -> Unit {
+    fun getContent(index: Int, key: Any, contentType: Any?): @Composable NoriaContext.() -> Unit {
         val cached = lambdasCache[key]
         return if (cached != null && cached.index == index && cached.contentType == contentType) {
             cached.content
@@ -77,18 +78,18 @@ internal class LazyLayoutItemContentFactory(
         var index = index
             private set
 
-        private var _content: (@Composable () -> Unit)? = null
-        val content: (@Composable () -> Unit)
+        private var _content: (@Composable NoriaContext.() -> Unit)? = null
+        val content: (@Composable NoriaContext.() -> Unit)
             get() = _content ?: createContentLambda().also { _content = it }
 
-        private fun createContentLambda() =
+        private fun createContentLambda(): @Composable NoriaContext.() -> Unit =
             @Composable {
                 val itemProvider = itemProvider()
 
                 var index = index
                 if (index >= itemProvider.itemCount || itemProvider.getKey(index) != key) {
                     index = itemProvider.getIndex(key)
-                    if (index != -1) this.index = index
+                    if (index != -1) this@CachedItemContent.index = index
                 }
 
                 if (index != -1) {
@@ -110,20 +111,26 @@ internal class LazyLayoutItemContentFactory(
     }
 }
 
-@Stable @JvmInline private value class StableValue<T>(val value: T)
+@Stable
+@JvmInline
+private value class StableValue<T>(val value: T)
 
 /**
  * Hack around skippable functions to force skip SaveableStateProvider and Item block when nothing
  * changed. It allows us to skip heavy-weight composition local providers.
  */
 @Composable
-private fun SkippableItem(
+private fun NoriaContext.SkippableItem(
     itemProvider: LazyLayoutItemProvider,
     saveableStateHolder: StableValue<SaveableStateHolder>,
     index: Int,
     key: StableValue<Any>,
 ) {
-    saveableStateHolder.value.SaveableStateProvider(key.value) {
-        itemProvider.Item(index, key.value)
+    saveableStateHolder.value.run {
+        SaveableStateProvider(key.value) {
+            itemProvider.run {
+                Item(index, key.value)
+            }
+        }
     }
 }

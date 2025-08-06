@@ -24,11 +24,12 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutAnimateItemElement
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
+import noria.NoriaContext
 
 /** Receiver scope for itemContent in [LazyStaggeredGridScope.item] */
 @Stable
 @LazyStaggeredGridScopeMarker
-sealed interface LazyStaggeredGridItemScope {
+sealed interface LazyStaggeredGridItemScope : NoriaContext {
     /**
      * This modifier animates the item appearance (fade in), disappearance (fade out) and placement
      * changes (such as an item reordering).

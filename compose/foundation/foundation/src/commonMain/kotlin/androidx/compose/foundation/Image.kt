@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import noria.NoriaContext
 
 /**
  * A composable that lays out and draws a given [ImageBitmap]. This will attempt to size the
@@ -88,7 +89,7 @@ import androidx.compose.ui.semantics.semantics
         ),
 )
 @NonRestartableComposable
-fun Image(
+fun NoriaContext.Image(
     bitmap: ImageBitmap,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -145,7 +146,7 @@ fun Image(
  */
 @Composable
 @NonRestartableComposable
-fun Image(
+fun NoriaContext.Image(
     bitmap: ImageBitmap,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -191,7 +192,7 @@ fun Image(
  */
 @Composable
 @NonRestartableComposable
-fun Image(
+fun NoriaContext.Image(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -237,7 +238,7 @@ fun Image(
  * @param colorFilter Optional colorFilter to apply for the [Painter] when it is rendered onscreen
  */
 @Composable
-fun Image(
+fun NoriaContext.Image(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,

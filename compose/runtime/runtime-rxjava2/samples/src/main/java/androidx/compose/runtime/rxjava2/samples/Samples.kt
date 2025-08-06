@@ -29,35 +29,35 @@ import io.reactivex.Single
 
 @Sampled
 @Composable
-fun ObservableSample(observable: Observable<String>) {
+fun NoriaContext.ObservableSample(observable: Observable<String>) {
     val value: String by observable.subscribeAsState("initial")
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun FlowableSample(flowable: Flowable<String>) {
+fun NoriaContext.FlowableSample(flowable: Flowable<String>) {
     val value: String by flowable.subscribeAsState("initial")
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun SingleSample(single: Single<String>) {
+fun NoriaContext.SingleSample(single: Single<String>) {
     val value: String by single.subscribeAsState("initial")
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun MaybeSample(maybe: Maybe<String>) {
+fun NoriaContext.MaybeSample(maybe: Maybe<String>) {
     val value: String by maybe.subscribeAsState("initial")
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun CompletableSample(completable: Completable) {
+fun NoriaContext.CompletableSample(completable: Completable) {
     val completed by completable.subscribeAsState()
     Text("Completable is $completed")
 }

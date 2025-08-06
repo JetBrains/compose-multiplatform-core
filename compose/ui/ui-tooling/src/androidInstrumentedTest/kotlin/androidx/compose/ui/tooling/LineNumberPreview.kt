@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
  */
 @Preview
 @Composable
-fun LineNumberPreview() {
+fun NoriaContext.LineNumberPreview() {
     Surface(color = Color.Red) {
         Column {
             Text("Hello world1")

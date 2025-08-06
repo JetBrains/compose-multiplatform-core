@@ -36,7 +36,7 @@ import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CaptureFocusDemo() {
+fun NoriaContext.CaptureFocusDemo() {
     Column {
         Text(
             "This demo demonstrates how a component can capture focus when it is in an " +

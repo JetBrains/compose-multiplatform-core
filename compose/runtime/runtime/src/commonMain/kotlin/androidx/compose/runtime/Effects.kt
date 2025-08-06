@@ -29,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Schedule [effect] to run when the current composition completes successfully and applies changes.
@@ -49,7 +50,7 @@ import kotlinx.coroutines.launch
 @NonRestartableComposable
 @ExplicitGroupsComposable
 @OptIn(InternalComposeApi::class)
-public fun SideEffect(effect: () -> Unit) {
+public fun NoriaContext.SideEffect(effect: () -> Unit) {
     currentComposer.recordSideEffect(effect)
 }
 
@@ -148,7 +149,7 @@ public fun DisposableEffect(effect: DisposableEffectScope.() -> DisposableEffect
  */
 @Composable
 @NonRestartableComposable
-public fun DisposableEffect(
+public fun NoriaContext.DisposableEffect(
     key1: Any?,
     effect: DisposableEffectScope.() -> DisposableEffectResult,
 ) {
@@ -184,7 +185,7 @@ public fun DisposableEffect(
  */
 @Composable
 @NonRestartableComposable
-public fun DisposableEffect(
+public fun NoriaContext.DisposableEffect(
     key1: Any?,
     key2: Any?,
     effect: DisposableEffectScope.() -> DisposableEffectResult,
@@ -221,7 +222,7 @@ public fun DisposableEffect(
  */
 @Composable
 @NonRestartableComposable
-public fun DisposableEffect(
+public fun NoriaContext.DisposableEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
@@ -259,7 +260,7 @@ public fun DisposableEffect(
 @Composable
 @NonRestartableComposable
 @Suppress("ArrayReturn")
-public fun DisposableEffect(
+public fun NoriaContext.DisposableEffect(
     vararg keys: Any?,
     effect: DisposableEffectScope.() -> DisposableEffectResult,
 ) {
@@ -322,7 +323,7 @@ internal class LaunchedEffectImpl(
 @Deprecated(LaunchedEffectNoParamError, level = DeprecationLevel.ERROR)
 @Suppress("DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER")
 @Composable
-public fun LaunchedEffect(block: suspend CoroutineScope.() -> Unit): Unit =
+public fun NoriaContext.LaunchedEffect(block: suspend CoroutineScope.() -> Unit): Unit =
     error(LaunchedEffectNoParamError)
 
 /**
@@ -339,7 +340,7 @@ public fun LaunchedEffect(block: suspend CoroutineScope.() -> Unit): Unit =
 @Composable
 @NonRestartableComposable
 @OptIn(InternalComposeApi::class)
-public fun LaunchedEffect(key1: Any?, block: suspend CoroutineScope.() -> Unit) {
+public fun NoriaContext.LaunchedEffect(key1: Any?, block: suspend CoroutineScope.() -> Unit) {
     val applyContext = currentComposer.applyCoroutineContext
     remember(key1) { LaunchedEffectImpl(applyContext, block) }
 }
@@ -358,7 +359,7 @@ public fun LaunchedEffect(key1: Any?, block: suspend CoroutineScope.() -> Unit) 
 @Composable
 @NonRestartableComposable
 @OptIn(InternalComposeApi::class)
-public fun LaunchedEffect(key1: Any?, key2: Any?, block: suspend CoroutineScope.() -> Unit) {
+public fun NoriaContext.LaunchedEffect(key1: Any?, key2: Any?, block: suspend CoroutineScope.() -> Unit) {
     val applyContext = currentComposer.applyCoroutineContext
     remember(key1, key2) { LaunchedEffectImpl(applyContext, block) }
 }
@@ -377,7 +378,7 @@ public fun LaunchedEffect(key1: Any?, key2: Any?, block: suspend CoroutineScope.
 @Composable
 @NonRestartableComposable
 @OptIn(InternalComposeApi::class)
-public fun LaunchedEffect(
+public fun NoriaContext.LaunchedEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
@@ -405,7 +406,7 @@ private class LeftCompositionCancellationException :
 @NonRestartableComposable
 @Suppress("ArrayReturn")
 @OptIn(InternalComposeApi::class)
-public fun LaunchedEffect(vararg keys: Any?, block: suspend CoroutineScope.() -> Unit) {
+public fun NoriaContext.LaunchedEffect(vararg keys: Any?, block: suspend CoroutineScope.() -> Unit) {
     val applyContext = currentComposer.applyCoroutineContext
     remember(*keys) { LaunchedEffectImpl(applyContext, block) }
 }
@@ -600,7 +601,7 @@ internal fun createCompositionCoroutineScope(
  * jobs.
  */
 @Composable
-public inline fun rememberCoroutineScope(
+public inline fun NoriaContext.rememberCoroutineScope(
     crossinline getContext: @DisallowComposableCalls () -> CoroutineContext = {
         EmptyCoroutineContext
     }

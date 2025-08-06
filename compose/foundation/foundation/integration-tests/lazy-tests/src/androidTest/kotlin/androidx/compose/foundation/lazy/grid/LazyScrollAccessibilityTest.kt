@@ -307,7 +307,7 @@ class LazyScrollAccessibilityTest(private val config: TestConfig) :
      * [lambda][rememberLazyGridState]. All properties from [config] are applied. The viewport has
      * padding around it to make sure scroll distance doesn't include padding.
      */
-    private fun createScrollableContent(rememberLazyGridState: @Composable () -> LazyGridState) {
+    private fun createScrollableContent(rememberLazyGridState: @Composable NoriaContext.() -> LazyGridState) {
         rule.setContent {
             composeView = LocalView.current
 

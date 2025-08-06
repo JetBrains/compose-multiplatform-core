@@ -574,13 +574,13 @@ private fun RecomposeTestComponentsA(counter: Counter, triggers: Map<Int, Trigge
 
 @NonSkippableComposable
 @Composable
-private fun RecomposeTestComponentsB(counter: Counter, triggers: Map<Int, Trigger>, id: Int = 0) {
+private fun NoriaContext.RecomposeTestComponentsB(counter: Counter, triggers: Map<Int, Trigger>, id: Int = 0) {
     counter.inc("$id")
     triggers[id]?.subscribe()
     Text("$id")
 }
 
 @Composable
-internal fun Wrapper(content: @Composable () -> Unit) {
+internal fun NoriaContext.Wrapper(content: @Composable NoriaContext.() -> Unit) {
     content()
 }

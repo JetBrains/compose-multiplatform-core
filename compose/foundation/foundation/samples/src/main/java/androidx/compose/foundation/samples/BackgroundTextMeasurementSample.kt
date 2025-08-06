@@ -28,7 +28,7 @@ val DefaultTextMeasurementExecutor: Executor = Executors.newSingleThreadExecutor
 
 @Sampled
 @Composable
-fun BackgroundTextMeasurementSample() {
+fun NoriaContext.BackgroundTextMeasurementSample() {
     CompositionLocalProvider(
         LocalBackgroundTextMeasurementExecutor provides DefaultTextMeasurementExecutor
     ) {

@@ -288,12 +288,12 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
 }
 
 @Composable
-private fun Pixel(color: Color) {
+private fun NoriaContext.Pixel(color: Color) {
     Layout(modifier = Modifier.background(color)) { _, _ -> layout(1, 1) {} }
 }
 
 @Composable
-private fun NonRenderingText(
+private fun NoriaContext.NonRenderingText(
     text: String,
     textColor: Color = Color.Unspecified,
     textSize: Dp = Dp.Unspecified,
@@ -311,12 +311,12 @@ private fun NonRenderingText(
 }
 
 @Composable
-private fun MinimalBox(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.MinimalBox(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(content, modifier, MinimalBoxMeasurePolicy)
 }
 
 @Composable
-private fun MatryoshkaLayout(depth: Int, content: @Composable (depth: Int) -> Unit) {
+private fun NoriaContext.MatryoshkaLayout(depth: Int, content: @Composable (depth: Int) -> Unit) {
     if (depth <= 0) {
         content(0)
     } else {

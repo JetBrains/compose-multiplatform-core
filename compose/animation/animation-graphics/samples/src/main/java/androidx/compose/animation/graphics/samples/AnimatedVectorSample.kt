@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun AnimatedVectorSample() {
+fun NoriaContext.AnimatedVectorSample() {
 
     @OptIn(ExperimentalAnimationGraphicsApi::class)
     @Composable

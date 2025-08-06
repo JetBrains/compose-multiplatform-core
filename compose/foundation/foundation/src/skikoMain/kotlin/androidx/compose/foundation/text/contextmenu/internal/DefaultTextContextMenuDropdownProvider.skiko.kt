@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.PopupPositionProvider
+import noria.NoriaContext
 
 // TODO: This is (mostly) a copy of DefaultTextContextMenuDropdownProvider.android.kt;  we should
 //       move it to common and upstream
@@ -43,8 +44,8 @@ import androidx.compose.ui.window.PopupPositionProvider
 
 // TODO(grantapher) Consider making public.
 @Composable
-internal fun ProvideDefaultTextContextMenuDropdown(
-    content: @Composable () -> Unit
+internal fun NoriaContext.ProvideDefaultTextContextMenuDropdown(
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ProvideBasicTextContextMenu(
         providableCompositionLocal = LocalTextContextMenuDropdownProvider,
@@ -56,9 +57,9 @@ internal fun ProvideDefaultTextContextMenuDropdown(
 }
 
 @Composable
-internal fun ProvideDefaultTextContextMenuDropdown(
+internal fun NoriaContext.ProvideDefaultTextContextMenuDropdown(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ProvideBasicTextContextMenu(
         modifier = modifier,
@@ -71,13 +72,13 @@ internal fun ProvideDefaultTextContextMenuDropdown(
 }
 
 @Composable
-internal fun defaultTextContextMenuDropdown(): BasicTextContextMenuProvider =
+internal fun NoriaContext.defaultTextContextMenuDropdown(): BasicTextContextMenuProvider =
     basicTextContextMenuProvider { session, dataProvider, anchorLayoutCoordinates ->
         OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
     }
 
 @Composable
-private fun OpenContextMenu(
+private fun NoriaContext.OpenContextMenu(
     session: TextContextMenuSession,
     dataProvider: TextContextMenuDataProvider,
     anchorLayoutCoordinates: () -> LayoutCoordinates,

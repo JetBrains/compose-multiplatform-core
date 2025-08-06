@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.sp
  */
 @Preview
 @Composable
-fun TextReuseLayoutDemo() {
+fun NoriaContext.TextReuseLayoutDemo() {
     val colorAnimationSpec = remember {
         infiniteRepeatable(tween<Color>(3000), repeatMode = RepeatMode.Reverse)
     }

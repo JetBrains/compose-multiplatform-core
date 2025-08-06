@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DeclarativeGraphicsDemo() {
+fun NoriaContext.DeclarativeGraphicsDemo() {
     /**
      * Demo that shows how to leverage DrawScope to draw 4 rectangular quadrants inset by a given
      * dimension with a diamond drawn within each of the quadrants

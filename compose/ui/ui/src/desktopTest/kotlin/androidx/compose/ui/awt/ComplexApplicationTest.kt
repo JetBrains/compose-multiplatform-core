@@ -590,7 +590,7 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
 }
 
 @Composable
-fun Animations(isCircularEnabled: Boolean) = Row {
+fun NoriaContext.Animations(isCircularEnabled: Boolean) = Row {
     if (isCircularEnabled) {
         CircularProgressIndicator(Modifier.padding(10.dp))
     }
@@ -612,7 +612,7 @@ fun Animations(isCircularEnabled: Boolean) = Row {
 }
 
 @Composable
-private fun RightColumn(modifier: Modifier) = Box {
+private fun NoriaContext.RightColumn(modifier: Modifier) = Box {
     val state = rememberLazyListState()
     val itemCount = 100000
     val heights = remember {
@@ -634,7 +634,7 @@ private fun RightColumn(modifier: Modifier) = Box {
 }
 
 @Composable
-fun AppWindow() {
+fun NoriaContext.AppWindow() {
     Window(
         onCloseRequest = {},
         title = title,

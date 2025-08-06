@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import javax.swing.JLabel
 
 @Composable
-fun SwingPanelUsage() {
+fun NoriaContext.SwingPanelUsage() {
     SwingPanel(
         modifier = Modifier.size(200.dp, 39.dp),
         factory = {

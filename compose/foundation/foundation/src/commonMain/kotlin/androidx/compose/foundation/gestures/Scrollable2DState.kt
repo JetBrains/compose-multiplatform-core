@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.coroutineScope
+import noria.NoriaContext
 
 interface Scrollable2DState {
     /**
@@ -120,7 +121,7 @@ fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState
  *   amount of delta consumed
  */
 @Composable
-fun rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
+fun NoriaContext.rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
     val lambdaState = rememberUpdatedState(consumeScrollDelta)
     return remember { Scrollable2DState { lambdaState.value.invoke(it) } }
 }

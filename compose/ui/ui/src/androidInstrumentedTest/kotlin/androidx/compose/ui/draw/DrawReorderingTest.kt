@@ -947,7 +947,7 @@ class DrawReorderingTest {
 }
 
 @Composable
-private fun FixedSize(
+private fun NoriaContext.FixedSize(
     size: State<Int>,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit = {},

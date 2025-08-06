@@ -44,6 +44,7 @@ import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 /**
  * A [TargetedFlingBehavior] that performs snapping to a given position in a layout.
@@ -226,7 +227,7 @@ internal class SnapFlingBehavior(
  * @param snapLayoutInfoProvider The information about the layout that will do snapping
  */
 @Composable
-fun rememberSnapFlingBehavior(
+fun NoriaContext.rememberSnapFlingBehavior(
     snapLayoutInfoProvider: SnapLayoutInfoProvider
 ): TargetedFlingBehavior {
     val density = LocalDensity.current

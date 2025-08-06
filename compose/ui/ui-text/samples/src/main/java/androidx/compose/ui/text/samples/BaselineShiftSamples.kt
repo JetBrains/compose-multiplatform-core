@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun BaselineShiftSample() {
+fun NoriaContext.BaselineShiftSample() {
     Text(
         fontSize = 20.sp,
         text =
@@ -45,7 +45,7 @@ fun BaselineShiftSample() {
 
 @Sampled
 @Composable
-fun BaselineShiftAnnotatedStringSample() {
+fun NoriaContext.BaselineShiftAnnotatedStringSample() {
     val annotatedString = buildAnnotatedString {
         append("Text ")
         withStyle(SpanStyle(baselineShift = BaselineShift.Superscript)) { append("Demo") }

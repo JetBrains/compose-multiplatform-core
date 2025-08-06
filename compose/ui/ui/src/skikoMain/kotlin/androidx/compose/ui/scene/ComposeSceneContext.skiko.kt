@@ -25,6 +25,7 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * Represents a static [CompositionLocal] key for a [ComposeSceneContext] in Jetpack Compose.
@@ -38,7 +39,7 @@ internal val LocalComposeSceneContext = staticCompositionLocalOf<ComposeSceneCon
  */
 @Composable
 internal fun CompositionLocal<ComposeSceneContext?>.requireCurrent(): ComposeSceneContext {
-    return current ?: error("CompositionLocal LocalComposeSceneContext not provided")
+    return NoriaContext.current ?: error("CompositionLocal LocalComposeSceneContext not provided")
 }
 
 /**

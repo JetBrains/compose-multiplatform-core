@@ -25,8 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.unit.IntRect
 
 fun Modifier.overlay(
@@ -34,27 +34,29 @@ fun Modifier.overlay(
     zIndex: Int = 0,
     overlay: @Composable OverlayScope.() -> Unit,
 ): Modifier {
-    return composed {
-        val overlayHostState = key.current
-        val compositionContext = rememberCompositionContext()
-        val overlay = remember { OverlayState(compositionContext, overlay) }.apply {
-            this.compositionContext = compositionContext
-            this.content = overlay
-        }
-
-        DisposableEffect(overlay) {
-            overlayHostState.overlays += overlay
-            onDispose {
-                overlayHostState.overlays -= overlay
+    return noriaComposed { noriaContext ->
+        noriaContext.run {
+            val overlayHostState = key.current
+            val compositionContext = rememberCompositionContext()
+            val overlay = remember { OverlayState(compositionContext, overlay) }.apply {
+                this.compositionContext = compositionContext
+                this.content = overlay
             }
-        }
 
-        this.onGloballyPositioned { anchorCoordinates ->
-            overlayHostState.coordinates?.let {
-                overlay.anchorBounds = it.localBoundingBoxOf(
-                    anchorCoordinates, clipBounds =
-                        false
-                ).roundToIntRect()
+            DisposableEffect(overlay) {
+                overlayHostState.overlays += overlay
+                onDispose {
+                    overlayHostState.overlays -= overlay
+                }
+            }
+
+            this@noriaComposed.onGloballyPositioned { anchorCoordinates ->
+                overlayHostState.coordinates?.let {
+                    overlay.anchorBounds = it.localBoundingBoxOf(
+                        anchorCoordinates, clipBounds =
+                            false
+                    ).roundToIntRect()
+                }
             }
         }
     }

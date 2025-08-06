@@ -44,7 +44,7 @@ val PagerStateInteractions =
     )
 
 @Composable
-private fun StateDrivenPage() {
+private fun NoriaContext.StateDrivenPage() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -54,7 +54,7 @@ private fun StateDrivenPage() {
 }
 
 @Composable
-private fun StateDrivenPageWithMonitor() {
+private fun NoriaContext.StateDrivenPageWithMonitor() {
     val pagerState = rememberPagerState { PagesCount }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -65,7 +65,7 @@ private fun StateDrivenPageWithMonitor() {
 }
 
 @Composable
-private fun StateMonitoringPager() {
+private fun NoriaContext.StateMonitoringPager() {
     val pagerState = rememberPagerState { PagesCount }
     Column(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(modifier = Modifier.weight(0.8f), state = pagerState) { PagerItem(it) }
@@ -74,7 +74,7 @@ private fun StateMonitoringPager() {
 }
 
 @Composable
-private fun PageMonitor(modifier: Modifier, pagerState: PagerState) {
+private fun NoriaContext.PageMonitor(modifier: Modifier, pagerState: PagerState) {
     Column(modifier.fillMaxWidth()) {
         Text(text = "Current Page: ${pagerState.currentPage}")
         Text(text = "Target Page: ${pagerState.targetPage}")
@@ -86,7 +86,7 @@ private fun PageMonitor(modifier: Modifier, pagerState: PagerState) {
 }
 
 @Composable
-private fun StateMonitoringCustomPageSize() {
+private fun NoriaContext.StateMonitoringCustomPageSize() {
     val pagerState = rememberPagerState { PagesCount }
 
     val fling = PagerDefaults.flingBehavior(state = pagerState, PagerSnapDistance.atMost(3))

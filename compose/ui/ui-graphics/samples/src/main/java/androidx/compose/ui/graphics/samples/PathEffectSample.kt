@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun StampedPathEffectSample() {
+fun NoriaContext.StampedPathEffectSample() {
     val size = 20f
     val square =
         Path().apply {

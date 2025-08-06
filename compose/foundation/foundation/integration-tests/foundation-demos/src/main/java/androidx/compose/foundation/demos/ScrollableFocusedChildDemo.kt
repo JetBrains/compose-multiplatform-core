@@ -66,7 +66,7 @@ import kotlin.math.roundToInt
 
 @Preview(showBackground = true)
 @Composable
-fun ScrollableFocusedChildDemo() {
+fun NoriaContext.ScrollableFocusedChildDemo() {
     val resizableState = remember { ResizableState() }
     var reverseScrolling by remember { mutableStateOf(false) }
 
@@ -120,7 +120,7 @@ fun ScrollableFocusedChildDemo() {
 }
 
 @Composable
-fun FocusGrabber(modifier: Modifier = Modifier) {
+fun NoriaContext.FocusGrabber(modifier: Modifier = Modifier) {
     val focusRequester = remember { FocusRequester() }
     var hasFocus by remember { mutableStateOf(false) }
     Text(
@@ -155,7 +155,7 @@ private class ResizableState {
 
 @Suppress("NAME_SHADOWING")
 @Composable
-private fun Resizable(
+private fun NoriaContext.Resizable(
     state: ResizableState,
     modifier: Modifier,
     content: @Composable BoxScope.() -> Unit,
@@ -219,7 +219,7 @@ private fun Resizable(
 
 @Suppress("NAME_SHADOWING")
 @Composable
-private fun ResizeHandle(orientation: Orientation, onDrag: (Float) -> Unit) {
+private fun NoriaContext.ResizeHandle(orientation: Orientation, onDrag: (Float) -> Unit) {
     val dragState = rememberDraggableState(onDrag)
     val lineWidth = 24.dp
     val lineSpacing = 4.dp

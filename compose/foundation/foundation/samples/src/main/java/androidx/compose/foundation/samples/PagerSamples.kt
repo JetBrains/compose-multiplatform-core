@@ -65,7 +65,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun SimpleHorizontalPagerSample() {
+fun NoriaContext.SimpleHorizontalPagerSample() {
     // Creates a 1-pager/viewport horizontal pager with single page snapping
     val state = rememberPagerState { 10 }
     HorizontalPager(state = state, modifier = Modifier.fillMaxSize()) { page ->
@@ -81,7 +81,7 @@ fun SimpleHorizontalPagerSample() {
 
 @Sampled
 @Composable
-fun SimpleVerticalPagerSample() {
+fun NoriaContext.SimpleVerticalPagerSample() {
     // Creates a 1-pager/viewport vertical pager with single page snapping
     val state = rememberPagerState { 10 }
     VerticalPager(state = state, modifier = Modifier.fillMaxSize()) { page ->
@@ -97,7 +97,7 @@ fun SimpleVerticalPagerSample() {
 
 @Sampled
 @Composable
-fun PagerWithStateSample() {
+fun NoriaContext.PagerWithStateSample() {
     // You can use PagerState to define an initial page
     val state = rememberPagerState(initialPage = 5) { 10 }
     HorizontalPager(modifier = Modifier.fillMaxSize(), state = state) { page ->
@@ -113,7 +113,7 @@ fun PagerWithStateSample() {
 
 @Sampled
 @Composable
-fun PagerCustomAnimateScrollToPage() {
+fun NoriaContext.PagerCustomAnimateScrollToPage() {
     suspend fun PagerState.customAnimateScrollToPage(page: Int) {
         val preJumpPosition =
             if (page > currentPage) {
@@ -158,7 +158,7 @@ fun PagerCustomAnimateScrollToPage() {
 
 @Sampled
 @Composable
-fun CustomPageSizeSample() {
+fun NoriaContext.CustomPageSizeSample() {
 
     // [PageSize] should be defined as a top level constant in order to avoid unnecessary re-
     // creations.
@@ -191,7 +191,7 @@ fun CustomPageSizeSample() {
 
 @Sampled
 @Composable
-fun ObservingStateChangesInPagerStateSample() {
+fun NoriaContext.ObservingStateChangesInPagerStateSample() {
     val pagerState = rememberPagerState { 10 }
     Column(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(modifier = Modifier.weight(0.9f), state = pagerState) { page ->
@@ -214,7 +214,7 @@ fun ObservingStateChangesInPagerStateSample() {
 
 @Sampled
 @Composable
-fun AnimateScrollPageSample() {
+fun NoriaContext.AnimateScrollPageSample() {
     val state = rememberPagerState { 10 }
     val animationScope = rememberCoroutineScope()
     Column {
@@ -242,7 +242,7 @@ fun AnimateScrollPageSample() {
 
 @Sampled
 @Composable
-fun ScrollToPageSample() {
+fun NoriaContext.ScrollToPageSample() {
     val state = rememberPagerState { 10 }
     val scrollScope = rememberCoroutineScope()
     Column {
@@ -268,7 +268,7 @@ fun ScrollToPageSample() {
 
 @Sampled
 @Composable
-fun HorizontalPagerWithScrollableContent() {
+fun NoriaContext.HorizontalPagerWithScrollableContent() {
     // This is a sample using NestedScroll and Pager.
     // We use the toolbar offset changing example from
     // androidx.compose.ui.samples.NestedScrollConnectionSample
@@ -329,7 +329,7 @@ fun HorizontalPagerWithScrollableContent() {
 
 @Sampled
 @Composable
-fun UsingPagerLayoutInfoForSideEffectSample() {
+fun NoriaContext.UsingPagerLayoutInfoForSideEffectSample() {
     val pagerState = rememberPagerState() { 10 }
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.layoutInfo.visiblePagesInfo.firstOrNull() }
@@ -342,7 +342,7 @@ fun UsingPagerLayoutInfoForSideEffectSample() {
 @Preview
 @Sampled
 @Composable
-fun PagerCustomScrollUsingLazyLayoutScrollScopeSample() {
+fun NoriaContext.PagerCustomScrollUsingLazyLayoutScrollScopeSample() {
     suspend fun PagerState.customScroll(block: suspend LazyLayoutScrollScope.() -> Unit) = scroll {
         block.invoke(LazyLayoutScrollScope(this@customScroll, this))
     }

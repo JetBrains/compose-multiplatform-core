@@ -51,10 +51,11 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.trace
 import kotlinx.coroutines.CoroutineScope
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun LazyList(
+internal fun NoriaContext.LazyList(
     /** Modifier to be applied for the inner layout */
     modifier: Modifier,
     /** State controlling the scroll position */
@@ -158,7 +159,7 @@ internal fun LazyList(
 
 @ExperimentalFoundationApi
 @Composable
-private fun rememberLazyListMeasurePolicy(
+private fun NoriaContext.rememberLazyListMeasurePolicy(
     /** Items provider of the list. */
     itemProviderLambda: () -> LazyListItemProvider,
     /** The state of the list. */
@@ -420,4 +421,4 @@ private fun CacheWindowLogic.keepAroundItems(
     }
 }
 
-@Composable internal expect fun defaultLazyListBeyondBoundsItemCount(): Int
+@Composable internal expect fun NoriaContext.defaultLazyListBeyondBoundsItemCount(): Int

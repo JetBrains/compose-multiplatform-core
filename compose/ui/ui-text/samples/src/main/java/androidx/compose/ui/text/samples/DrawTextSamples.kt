@@ -54,7 +54,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun DrawTextSample() {
+fun NoriaContext.DrawTextSample() {
     val textMeasurer = rememberTextMeasurer()
 
     Canvas(Modifier.fillMaxSize()) { drawText(textMeasurer, "Hello, World!") }
@@ -62,7 +62,7 @@ fun DrawTextSample() {
 
 @Sampled
 @Composable
-fun DrawTextStyledSample() {
+fun NoriaContext.DrawTextStyledSample() {
     val textMeasurer = rememberTextMeasurer()
 
     Canvas(Modifier.fillMaxSize()) {
@@ -81,7 +81,7 @@ fun DrawTextStyledSample() {
 
 @Sampled
 @Composable
-fun DrawTextAnnotatedStringSample() {
+fun NoriaContext.DrawTextAnnotatedStringSample() {
     val textMeasurer = rememberTextMeasurer()
 
     Canvas(Modifier.fillMaxSize()) {
@@ -104,7 +104,7 @@ fun DrawTextAnnotatedStringSample() {
  */
 @Sampled
 @Composable
-fun DrawTextMeasureInLayoutSample() {
+fun NoriaContext.DrawTextMeasureInLayoutSample() {
     val textMeasurer = rememberTextMeasurer()
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
@@ -136,7 +136,7 @@ fun DrawTextMeasureInLayoutSample() {
  */
 @Sampled
 @Composable
-fun DrawTextDrawWithCacheSample() {
+fun NoriaContext.DrawTextDrawWithCacheSample() {
     // We can disable implicit caching since we will cache in DrawWithCache
     val textMeasurer = rememberTextMeasurer(cacheSize = 0)
     // Apply the current text style from theme, otherwise TextStyle.Default will be used.

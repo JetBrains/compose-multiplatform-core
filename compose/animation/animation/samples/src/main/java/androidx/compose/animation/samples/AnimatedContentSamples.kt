@@ -181,7 +181,7 @@ fun AnimatedContentTransitionSpecSample() {
 
 @Sampled
 @Composable
-fun TransitionExtensionAnimatedContentSample() {
+fun NoriaContext.TransitionExtensionAnimatedContentSample() {
     @Composable
     fun CollapsedCart() {
         /* Some content here */
@@ -274,7 +274,7 @@ fun TransitionExtensionAnimatedContentSample() {
 @Suppress("UNUSED_VARIABLE")
 @Sampled
 @Composable
-fun SlideIntoContainerSample() {
+fun NoriaContext.SlideIntoContainerSample() {
     // enum class NestedMenuState { Level1, Level2, Level3 }
     // This is an example of creating a transitionSpec for navigating in a nested menu. The goal
     // is to 1) establish a z-order for different levels of the menu, and 2) imply a spatial

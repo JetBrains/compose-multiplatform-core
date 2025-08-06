@@ -153,7 +153,7 @@ private val textAlignments =
 
 @Preview
 @Composable
-fun TextDemo() {
+fun NoriaContext.TextDemo() {
     LazyColumn {
         item {
             TagLine(tag = "color, fontSize, fontWeight and fontStyle")
@@ -236,7 +236,7 @@ fun TextDemo() {
 }
 
 @Composable
-fun TagLine(tag: String) {
+fun NoriaContext.TagLine(tag: String) {
     Text(
         style = TextStyle(fontSize = fontSize8),
         text =
@@ -250,7 +250,7 @@ fun TagLine(tag: String) {
 }
 
 @Composable
-fun SecondTagLine(tag: String) {
+fun NoriaContext.SecondTagLine(tag: String) {
     Text(
         text =
             buildAnnotatedString {
@@ -262,7 +262,7 @@ fun SecondTagLine(tag: String) {
 }
 
 @Composable
-fun TextDemoBasic() {
+fun NoriaContext.TextDemoBasic() {
     // This group of text composables show different color, fontSize, fontWeight and fontStyle in
     // English.
     Text(
@@ -305,12 +305,12 @@ fun TextDemoBasic() {
 }
 
 @Composable
-fun TextDemoComplexStyling() {
+fun NoriaContext.TextDemoComplexStyling() {
     TextStyleSample()
 }
 
 @Composable
-fun TextDemoLanguage() {
+fun NoriaContext.TextDemoLanguage() {
     // This group of text composables show different color, fontSize, fontWeight and fontStyle in
     // Chinese, Arabic, and Hindi.
     Text(
@@ -356,7 +356,7 @@ fun TextDemoLanguage() {
 }
 
 @Composable
-fun TextDemoFontFamily() {
+fun NoriaContext.TextDemoFontFamily() {
     // This group of text composables show different fontFamilies in English.
     Text(
         buildAnnotatedString {
@@ -376,7 +376,7 @@ fun TextDemoFontFamily() {
 }
 
 @Composable
-fun TextDemoFontFamilyDefaultValues() {
+fun NoriaContext.TextDemoFontFamilyDefaultValues() {
     // This group of text composables show the default font families in English.
     FontFamilySerifSample()
     FontFamilySansSerifSample()
@@ -385,7 +385,7 @@ fun TextDemoFontFamilyDefaultValues() {
 }
 
 @Composable
-fun TextDemoTextDecoration() {
+fun NoriaContext.TextDemoTextDecoration() {
     // This group of text composables show different decoration, decorationColor and
     // decorationStyle.
     TextDecorationLineThroughSample()
@@ -394,7 +394,7 @@ fun TextDemoTextDecoration() {
 }
 
 @Composable
-fun TextDemoLetterSpacing() {
+fun NoriaContext.TextDemoLetterSpacing() {
     // This group of text composables show different letterSpacing.
     Text(
         text =
@@ -408,12 +408,12 @@ fun TextDemoLetterSpacing() {
 }
 
 @Composable
-fun TextDemoBaselineShift() {
+fun NoriaContext.TextDemoBaselineShift() {
     BaselineShiftSample()
 }
 
 @Composable
-fun TextDemoHeight() {
+fun NoriaContext.TextDemoHeight() {
     // This group of text composables show different height.
     Row(Modifier.fillMaxWidth()) {
         Text(text = "$displayText\n$displayText   ", style = TextStyle(fontSize = fontSize8))
@@ -425,7 +425,7 @@ fun TextDemoHeight() {
 }
 
 @Composable
-fun TextDemoBackground() {
+fun NoriaContext.TextDemoBackground() {
     // This group of text composables show different background.
     Text(
         text =
@@ -445,7 +445,7 @@ fun TextDemoBackground() {
 }
 
 @Composable
-fun TextDemoLocale() {
+fun NoriaContext.TextDemoLocale() {
     // This group of text composables show different Locales of the same Unicode codepoint.
     val text = "\u82B1"
     Text(
@@ -466,7 +466,7 @@ fun TextDemoLocale() {
 }
 
 @Composable
-fun TextDemoTextAlign() {
+fun NoriaContext.TextDemoTextAlign() {
     // This group of text composables show different TextAligns: LEFT, RIGHT, CENTER, JUSTIFY, START
     // for
     // LTR and RTL, END for LTR and RTL.
@@ -541,7 +541,7 @@ fun TextDemoTextAlign() {
 }
 
 @Composable
-fun TextDemoSoftWrap() {
+fun NoriaContext.TextDemoSoftWrap() {
     // This group of text composables show difference between softWrap is true and false.
     var text = ""
     for (i in 1..10) {
@@ -556,7 +556,7 @@ fun TextDemoSoftWrap() {
 }
 
 @Composable
-fun TextDemoHyphens() {
+fun NoriaContext.TextDemoHyphens() {
     val text = "Transformation"
     val textStyleHyphensOn =
         TextStyle(fontSize = fontSize8, color = Color.Red, hyphens = Hyphens.Auto)
@@ -573,7 +573,7 @@ fun TextDemoHyphens() {
 }
 
 @Composable
-fun TextDemoShadowEffect() {
+fun NoriaContext.TextDemoShadowEffect() {
     val shadow = Shadow(Color(0xFFE0A0A0), Offset(5f, 5f), blurRadius = 5.0f)
     Text(
         style = TextStyle(fontSize = fontSize8),
@@ -586,7 +586,7 @@ fun TextDemoShadowEffect() {
 }
 
 @Composable
-fun TextDemoFontSizeScale() {
+fun NoriaContext.TextDemoFontSizeScale() {
     Text(
         style = TextStyle(fontSize = fontSize8),
         text =
@@ -602,13 +602,13 @@ fun TextDemoFontSizeScale() {
 }
 
 @Composable
-fun TextDemoParagraphStyling() {
+fun NoriaContext.TextDemoParagraphStyling() {
     ParagraphStyleSample()
     ParagraphStyleAnnotatedStringsSample()
 }
 
 @Composable
-fun TextDemoTextOverflow() {
+fun NoriaContext.TextDemoTextOverflow() {
     SecondTagLine(tag = "overflow = TextOverflow.Clip")
     TextOverflowClipSample()
     SecondTagLine(tag = "overflow = TextOverflow.Ellipsis")
@@ -621,7 +621,7 @@ fun TextDemoTextOverflow() {
 }
 
 @Composable
-fun TextOverflowVisibleInPopupDemo() {
+fun NoriaContext.TextOverflowVisibleInPopupDemo() {
     Popup(alignment = Alignment.Center, properties = PopupProperties(clippingEnabled = false)) {
         val text = "Line\n".repeat(10)
         Box(Modifier.background(Color.Magenta).size(100.dp)) {
@@ -632,7 +632,7 @@ fun TextOverflowVisibleInPopupDemo() {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun TextOverflowVisibleInDrawText() {
+fun NoriaContext.TextOverflowVisibleInDrawText() {
     val textMeasurer = rememberTextMeasurer()
     val text = "Line\n".repeat(10)
     Box(Modifier.fillMaxSize()) {
@@ -650,7 +650,7 @@ fun TextOverflowVisibleInDrawText() {
 }
 
 @Composable
-fun TextOverflowDemo() {
+fun NoriaContext.TextOverflowDemo() {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -826,7 +826,7 @@ private fun ColumnScope.TextOverflowDemo(
 }
 
 @Composable
-fun TextDemoInlineContent() {
+fun NoriaContext.TextDemoInlineContent() {
     val inlineContentId = "box"
     val inlineTextContent =
         InlineTextContent(
@@ -899,7 +899,7 @@ fun TextDemoInlineContent() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun EllipsizeDemo() {
+fun NoriaContext.EllipsizeDemo() {
     var softWrap by remember { mutableStateOf(true) }
     var ellipsis by remember { mutableStateOf(true) }
     var withSpans by remember { mutableStateOf(false) }
@@ -984,7 +984,7 @@ fun EllipsizeDemo() {
 }
 
 @Composable
-fun AutoSizeTextDemo() {
+fun NoriaContext.AutoSizeTextDemo() {
     val text = "This is a sample string!"
     Column(Modifier.fillMaxWidth()) {
         // This text will be sized according to default values of AutoSize.StepBased

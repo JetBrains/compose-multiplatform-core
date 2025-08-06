@@ -400,7 +400,7 @@ class FocusGroupTest {
         rule.runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
-    private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             focusManager = LocalFocusManager.current
             content()

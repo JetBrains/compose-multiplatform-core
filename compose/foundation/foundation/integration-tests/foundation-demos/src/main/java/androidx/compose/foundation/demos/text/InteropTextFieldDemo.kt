@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun InteropTextFieldDemo() {
+fun NoriaContext.InteropTextFieldDemo() {
     var firstTextField by remember { mutableStateOf("") }
     var secondTextField by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

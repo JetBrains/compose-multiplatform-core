@@ -40,7 +40,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun WindowInsetsDemo() {
+fun NoriaContext.WindowInsetsDemo() {
     val insets = WindowInsets.safeDrawing
     val density = LocalDensity.current
 

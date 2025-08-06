@@ -624,7 +624,7 @@ class LazyListFocusableInteractionTest(private val orientation: Orientation) {
         rule.onNodeWithTag("finalFocusable").assertIsFocused()
     }
 
-    private fun ComposeContentTestRule.setContentForTest(composable: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setContentForTest(composable: @Composable NoriaContext.() -> Unit) {
         setContent {
             scope = rememberCoroutineScope()
             focusManager = LocalFocusManager.current
@@ -647,7 +647,7 @@ class LazyListFocusableInteractionTest(private val orientation: Orientation) {
     }
 
     /** Places a spacer before [content]. */
-    private fun LazyListScope.WithSpacerBefore(size: Dp, content: @Composable () -> Unit) {
+    private fun LazyListScope.WithSpacerBefore(size: Dp, content: @Composable NoriaContext.() -> Unit) {
         item { Spacer(Modifier.size(size)) }
         item { content() }
     }

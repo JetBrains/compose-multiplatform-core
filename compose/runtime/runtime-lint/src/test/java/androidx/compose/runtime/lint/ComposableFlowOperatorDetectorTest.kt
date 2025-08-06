@@ -144,7 +144,7 @@ class ComposableFlowOperatorDetectorTest : LintDetectorTest() {
                         .drop(0)
                 }
 
-                val lambda2: @Composable () -> Unit = {
+                val lambda2: @Composable NoriaContext.() -> Unit = {
                     emptyFlow
                         .map { true }
                         .customOperator(true)
@@ -152,7 +152,7 @@ class ComposableFlowOperatorDetectorTest : LintDetectorTest() {
                 }
 
                 @Composable
-                fun LambdaParameter(content: @Composable () -> Unit) {}
+                fun LambdaParameter(content: @Composable NoriaContext.() -> Unit) {}
 
                 @Composable
                 fun Test2() {
@@ -178,7 +178,7 @@ class ComposableFlowOperatorDetectorTest : LintDetectorTest() {
                             .drop(0)
                     }
 
-                    val localLambda2: @Composable () -> Unit = {
+                    val localLambda2: @Composable NoriaContext.() -> Unit = {
                         emptyFlow
                             .map { true }
                             .customOperator(true)

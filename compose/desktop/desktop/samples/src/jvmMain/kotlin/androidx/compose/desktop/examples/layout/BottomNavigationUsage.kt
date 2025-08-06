@@ -21,7 +21,7 @@ import androidx.compose.material.BottomNavigationItem
 import androidx.compose.runtime.Composable
 
 @Composable
-fun BottomNavigationUsage() {
+fun NoriaContext.BottomNavigationUsage() {
     BottomNavigation {
         BottomNavigationItem(true, onClick = {}, icon = {})
         BottomNavigationItem(false, onClick = {}, icon = {})

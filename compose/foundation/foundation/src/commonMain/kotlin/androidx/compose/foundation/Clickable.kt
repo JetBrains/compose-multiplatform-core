@@ -64,6 +64,7 @@ import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.traverseAncestors
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -127,7 +128,7 @@ fun Modifier.clickable(
     role: Role? = null,
     onClick: () -> Unit,
 ) =
-    composed(
+    noriaComposed(
         inspectorInfo =
             debugInspectorInfo {
                 name = "clickable"
@@ -136,26 +137,28 @@ fun Modifier.clickable(
                 properties["role"] = role
                 properties["onClick"] = onClick
             }
-    ) {
-        val localIndication = LocalIndication.current
-        val interactionSource =
-            if (localIndication is IndicationNodeFactory) {
-                // We can fast path here as it will be created inside clickable lazily
-                null
-            } else {
-                // We need an interaction source to pass between the indication modifier and
-                // clickable, so
-                // by creating here we avoid another composed down the line
-                remember { MutableInteractionSource() }
-            }
-        Modifier.clickable(
-            enabled = enabled,
-            onClickLabel = onClickLabel,
-            onClick = onClick,
-            role = role,
-            indication = localIndication,
-            interactionSource = interactionSource,
-        )
+    ) { noriaContext ->
+        noriaContext.run {
+            val localIndication = LocalIndication.current
+            val interactionSource =
+                if (localIndication is IndicationNodeFactory) {
+                    // We can fast path here as it will be created inside clickable lazily
+                    null
+                } else {
+                    // We need an interaction source to pass between the indication modifier and
+                    // clickable, so
+                    // by creating here we avoid another composed down the line
+                    remember { MutableInteractionSource() }
+                }
+            Modifier.clickable(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onClick = onClick,
+                role = role,
+                indication = localIndication,
+                interactionSource = interactionSource,
+            )
+        }
     }
 
 /**
@@ -218,7 +221,7 @@ fun Modifier.clickable(
             )
         )
     } else {
-        composed(
+        noriaComposed(
             inspectorInfo =
                 debugInspectorInfo {
                     name = "clickable"
@@ -228,27 +231,29 @@ fun Modifier.clickable(
                     properties["interactionSource"] = interactionSource
                     properties["onClick"] = onClick
                 }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.clickable(
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                onClick = onClick,
-                role = role,
-                indication = localIndication,
-                interactionSource = intSource,
-            )
+        ) { noriaContext ->
+            noriaContext.run {
+                val localIndication = LocalIndication.current
+                val intSource =
+                    interactionSource
+                        ?: if (localIndication is IndicationNodeFactory) {
+                            // We can fast path here as it will be created inside clickable lazily
+                            null
+                        } else {
+                            // We need an interaction source to pass between the indication modifier and
+                            // clickable, so
+                            // by creating here we avoid another composed down the line
+                            remember { MutableInteractionSource() }
+                        }
+                Modifier.clickable(
+                    enabled = enabled,
+                    onClickLabel = onClickLabel,
+                    onClick = onClick,
+                    role = role,
+                    indication = localIndication,
+                    interactionSource = intSource,
+                )
+            }
         }
     }
 }
@@ -365,7 +370,7 @@ fun Modifier.combinedClickable(
     hapticFeedbackEnabled: Boolean = true,
     onClick: () -> Unit,
 ) =
-    composed(
+    noriaComposed(
         inspectorInfo =
             debugInspectorInfo {
                 name = "combinedClickable"
@@ -378,30 +383,32 @@ fun Modifier.combinedClickable(
                 properties["onLongClickLabel"] = onLongClickLabel
                 properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
             }
-    ) {
-        val localIndication = LocalIndication.current
-        val interactionSource =
-            if (localIndication is IndicationNodeFactory) {
-                // We can fast path here as it will be created inside clickable lazily
-                null
-            } else {
-                // We need an interaction source to pass between the indication modifier and
-                // clickable, so
-                // by creating here we avoid another composed down the line
-                remember { MutableInteractionSource() }
-            }
-        Modifier.combinedClickable(
-            enabled = enabled,
-            onClickLabel = onClickLabel,
-            onLongClickLabel = onLongClickLabel,
-            onLongClick = onLongClick,
-            onDoubleClick = onDoubleClick,
-            onClick = onClick,
-            role = role,
-            indication = localIndication,
-            interactionSource = interactionSource,
-            hapticFeedbackEnabled = hapticFeedbackEnabled,
-        )
+    ) { noriaContext ->
+        noriaContext.run {
+            val localIndication = LocalIndication.current
+            val interactionSource =
+                if (localIndication is IndicationNodeFactory) {
+                    // We can fast path here as it will be created inside clickable lazily
+                    null
+                } else {
+                    // We need an interaction source to pass between the indication modifier and
+                    // clickable, so
+                    // by creating here we avoid another composed down the line
+                    remember { MutableInteractionSource() }
+                }
+            Modifier.combinedClickable(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick,
+                role = role,
+                indication = localIndication,
+                interactionSource = interactionSource,
+                hapticFeedbackEnabled = hapticFeedbackEnabled,
+            )
+        }
     }
 
 /**
@@ -478,7 +485,7 @@ fun Modifier.combinedClickable(
             )
         )
     } else
-        composed(
+        noriaComposed(
             inspectorInfo =
                 debugInspectorInfo {
                     name = "combinedClickable"
@@ -491,31 +498,33 @@ fun Modifier.combinedClickable(
                     properties["onLongClickLabel"] = onLongClickLabel
                     properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
                 }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.combinedClickable(
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                onLongClickLabel = onLongClickLabel,
-                onLongClick = onLongClick,
-                onDoubleClick = onDoubleClick,
-                onClick = onClick,
-                role = role,
-                indication = localIndication,
-                interactionSource = intSource,
-                hapticFeedbackEnabled = hapticFeedbackEnabled,
-            )
+        ) { noriaContext ->
+            noriaContext.run {
+                val localIndication = LocalIndication.current
+                val intSource =
+                    interactionSource
+                        ?: if (localIndication is IndicationNodeFactory) {
+                            // We can fast path here as it will be created inside clickable lazily
+                            null
+                        } else {
+                            // We need an interaction source to pass between the indication modifier and
+                            // clickable, so
+                            // by creating here we avoid another composed down the line
+                            remember { MutableInteractionSource() }
+                        }
+                Modifier.combinedClickable(
+                    enabled = enabled,
+                    onClickLabel = onClickLabel,
+                    onLongClickLabel = onLongClickLabel,
+                    onLongClick = onLongClick,
+                    onDoubleClick = onDoubleClick,
+                    onClick = onClick,
+                    role = role,
+                    indication = localIndication,
+                    interactionSource = intSource,
+                    hapticFeedbackEnabled = hapticFeedbackEnabled,
+                )
+            }
         }
 }
 
@@ -529,7 +538,7 @@ fun Modifier.combinedClickable(
     onDoubleClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) =
-    composed(
+    noriaComposed(
         inspectorInfo =
             debugInspectorInfo {
                 name = "combinedClickable"
@@ -541,30 +550,32 @@ fun Modifier.combinedClickable(
                 properties["onLongClick"] = onLongClick
                 properties["onLongClickLabel"] = onLongClickLabel
             }
-    ) {
-        val localIndication = LocalIndication.current
-        val interactionSource =
-            if (localIndication is IndicationNodeFactory) {
-                // We can fast path here as it will be created inside clickable lazily
-                null
-            } else {
-                // We need an interaction source to pass between the indication modifier and
-                // clickable, so
-                // by creating here we avoid another composed down the line
-                remember { MutableInteractionSource() }
-            }
-        Modifier.combinedClickable(
-            enabled = enabled,
-            onClickLabel = onClickLabel,
-            onLongClickLabel = onLongClickLabel,
-            onLongClick = onLongClick,
-            onDoubleClick = onDoubleClick,
-            onClick = onClick,
-            role = role,
-            indication = localIndication,
-            interactionSource = interactionSource,
-            hapticFeedbackEnabled = true,
-        )
+    ) { noriaContext ->
+        noriaContext.run {
+            val localIndication = LocalIndication.current
+            val interactionSource =
+                if (localIndication is IndicationNodeFactory) {
+                    // We can fast path here as it will be created inside clickable lazily
+                    null
+                } else {
+                    // We need an interaction source to pass between the indication modifier and
+                    // clickable, so
+                    // by creating here we avoid another composed down the line
+                    remember { MutableInteractionSource() }
+                }
+            Modifier.combinedClickable(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick,
+                role = role,
+                indication = localIndication,
+                interactionSource = interactionSource,
+                hapticFeedbackEnabled = true,
+            )
+        }
     }
 
 /**
@@ -707,10 +718,12 @@ internal inline fun Modifier.clickableWithIndicationIfNeeded(
             // rare
             // code path and can only be hit from new callers.
             else ->
-                Modifier.composed {
-                    val newInteractionSource = remember { MutableInteractionSource() }
-                    Modifier.indication(newInteractionSource, indication)
-                        .then(createClickable(newInteractionSource, null))
+                Modifier.noriaComposed { noriaContext ->
+                    noriaContext.run {
+                        val newInteractionSource = remember { MutableInteractionSource() }
+                        Modifier.indication(newInteractionSource, indication)
+                            .then(createClickable(newInteractionSource, null))
+                    }
                 }
         }
     )
@@ -756,6 +769,7 @@ private val KeyEvent.isEnter: Boolean
             Key.Enter,
             Key.NumPadEnter,
             Key.Spacebar -> true
+
             else -> false
         }
 
@@ -1606,6 +1620,7 @@ internal abstract class AbstractClickableNode(
                 }
                 onClickKeyDownEvent(event) || wasInteractionHandled
             }
+
             enabled && event.isClick -> {
                 val press = currentKeyPressInteractions.remove(keyCode)
                 if (press != null) {
@@ -1621,6 +1636,7 @@ internal abstract class AbstractClickableNode(
                 // Only consume if we were previously pressed for this key event
                 press != null
             }
+
             else -> false
         }
     }

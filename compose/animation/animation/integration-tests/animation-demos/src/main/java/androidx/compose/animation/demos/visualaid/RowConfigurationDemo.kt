@@ -49,7 +49,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun RowConfigurationDemo() {
+fun NoriaContext.RowConfigurationDemo() {
     val width by
         produceState(250.dp) {
             // Skip the animations in tests.
@@ -74,7 +74,7 @@ fun RowConfigurationDemo() {
 }
 
 @Composable
-fun ResizableLayout(width: Dp) {
+fun NoriaContext.ResizableLayout(width: Dp) {
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Column(
             horizontalAlignment = Alignment.End,

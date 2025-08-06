@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.unit.Constraints
+import noria.NoriaContext
 
 /**
  * Component that represents an empty space layout, whose size can be defined using
@@ -35,7 +36,7 @@ import androidx.compose.ui.unit.Constraints
  */
 @Composable
 @NonRestartableComposable
-fun Spacer(modifier: Modifier) {
+fun NoriaContext.Spacer(modifier: Modifier) {
     Layout(measurePolicy = SpacerMeasurePolicy, modifier = modifier)
 }
 

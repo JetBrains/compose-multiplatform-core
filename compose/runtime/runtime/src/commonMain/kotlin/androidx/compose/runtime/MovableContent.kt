@@ -17,6 +17,7 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.annotation.RememberInComposition
+import noria.NoriaContext
 
 /**
  * Convert a lambda into one that moves the remembered state and nodes created in a previous call to
@@ -36,7 +37,7 @@ import androidx.compose.runtime.annotation.RememberInComposition
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
+public fun movableContentOf(content: @Composable NoriaContext.() -> Unit): @Composable NoriaContext.() -> Unit {
     val movableContent = MovableContent<Nothing?>({ content() })
     return { currentComposer.insertMovableContent(movableContent, null) }
 }
@@ -59,7 +60,7 @@ public fun movableContentOf(content: @Composable () -> Unit): @Composable () -> 
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> Unit {
+public fun <P> movableContentOf(content: @Composable NoriaContext.(P) -> Unit): @Composable NoriaContext.(P) -> Unit {
     val movableContent = MovableContent(content)
     return { currentComposer.insertMovableContent(movableContent, it) }
 }
@@ -83,8 +84,8 @@ public fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
 public fun <P1, P2> movableContentOf(
-    content: @Composable (P1, P2) -> Unit
-): @Composable (P1, P2) -> Unit {
+    content: @Composable NoriaContext.(P1, P2) -> Unit
+): @Composable NoriaContext.(P1, P2) -> Unit {
     val movableContent = MovableContent<Pair<P1, P2>> { content(it.first, it.second) }
     return { p1, p2 -> currentComposer.insertMovableContent(movableContent, p1 to p2) }
 }
@@ -108,8 +109,8 @@ public fun <P1, P2> movableContentOf(
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
 public fun <P1, P2, P3> movableContentOf(
-    content: @Composable (P1, P2, P3) -> Unit
-): @Composable (P1, P2, P3) -> Unit {
+    content: @Composable NoriaContext.(P1, P2, P3) -> Unit
+): @Composable NoriaContext.(P1, P2, P3) -> Unit {
     val movableContent =
         MovableContent<Triple<P1, P2, P3>> { content(it.first, it.second, it.third) }
     return { p1, p2, p3 ->
@@ -136,8 +137,8 @@ public fun <P1, P2, P3> movableContentOf(
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
 public fun <P1, P2, P3, P4> movableContentOf(
-    content: @Composable (P1, P2, P3, P4) -> Unit
-): @Composable (P1, P2, P3, P4) -> Unit {
+    content: @Composable NoriaContext.(P1, P2, P3, P4) -> Unit
+): @Composable NoriaContext.(P1, P2, P3, P4) -> Unit {
     val movableContent =
         MovableContent<Array<Any?>> { (p1, p2, p3, p4) ->
             @Suppress("UNCHECKED_CAST") // Types are guaranteed below.
@@ -166,7 +167,7 @@ public fun <P1, P2, P3, P4> movableContentOf(
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun <R> movableContentWithReceiverOf(
+public fun <R : NoriaContext> movableContentWithReceiverOf(
     content: @Composable R.() -> Unit
 ): @Composable R.() -> Unit {
     val movableContent = MovableContent<R>({ it.content() })
@@ -191,7 +192,7 @@ public fun <R> movableContentWithReceiverOf(
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun <R, P> movableContentWithReceiverOf(
+public fun <R : NoriaContext, P> movableContentWithReceiverOf(
     content: @Composable R.(P) -> Unit
 ): @Composable R.(P) -> Unit {
     val movableContent = MovableContent<Pair<R, P>>({ it.first.content(it.second) })
@@ -216,7 +217,7 @@ public fun <R, P> movableContentWithReceiverOf(
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun <R, P1, P2> movableContentWithReceiverOf(
+public fun <R : NoriaContext, P1, P2> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2) -> Unit
 ): @Composable R.(P1, P2) -> Unit {
     val movableContent = MovableContent<Triple<R, P1, P2>> { it.first.content(it.second, it.third) }
@@ -241,7 +242,7 @@ public fun <R, P1, P2> movableContentWithReceiverOf(
  */
 @OptIn(InternalComposeApi::class)
 @RememberInComposition
-public fun <R, P1, P2, P3> movableContentWithReceiverOf(
+public fun <R : NoriaContext, P1, P2, P3> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2, P3) -> Unit
 ): @Composable R.(P1, P2, P3) -> Unit {
     val movableContent =

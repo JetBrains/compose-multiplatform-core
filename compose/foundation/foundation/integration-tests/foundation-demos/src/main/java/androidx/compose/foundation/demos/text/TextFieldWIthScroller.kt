@@ -31,7 +31,7 @@ private val LongText = loremIpsum(wordCount = 32)
 
 @Preview
 @Composable
-fun ScrollableTextFieldDemo() {
+fun NoriaContext.ScrollableTextFieldDemo() {
     LazyColumn {
         item {
             TagLine("Multiline with 200.dp height")
@@ -46,7 +46,7 @@ fun ScrollableTextFieldDemo() {
 
 @Preview
 @Composable
-fun MultilineTextField() {
+fun NoriaContext.MultilineTextField() {
     val state = remember { mutableStateOf(LongText) }
     BasicTextField(
         value = state.value,
@@ -59,7 +59,7 @@ fun MultilineTextField() {
 
 @Preview
 @Composable
-fun SingleLineTextField() {
+fun NoriaContext.SingleLineTextField() {
     val state = remember { mutableStateOf(LongText) }
     BasicTextField(
         value = state.value,

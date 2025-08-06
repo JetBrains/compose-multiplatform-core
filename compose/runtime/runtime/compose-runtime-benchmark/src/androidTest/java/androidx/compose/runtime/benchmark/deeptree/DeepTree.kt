@@ -32,7 +32,7 @@ val magentaBackground = Modifier.background(color = Color.Magenta)
 val blackBackground = Modifier.background(color = Color.Black)
 
 @Composable
-fun Terminal(style: Int) {
+fun NoriaContext.Terminal(style: Int) {
     val background =
         when (style) {
             0 -> blueBackground
@@ -43,7 +43,7 @@ fun Terminal(style: Int) {
 }
 
 @Composable
-fun Stack(vertical: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.Stack(vertical: Boolean, content: @Composable NoriaContext.() -> Unit) {
     if (vertical) {
         Column(Modifier.fillMaxHeight()) { content() }
     } else {
@@ -65,7 +65,7 @@ fun Stack(vertical: Boolean, content: @Composable () -> Unit) {
  */
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun DeepTree(depth: Int, breadth: Int, wrap: Int, id: Int = 0) {
+fun NoriaContext.DeepTree(depth: Int, breadth: Int, wrap: Int, id: Int = 0) {
     //    if (wrap > 0) {
     //        Container {
     //            DeepTree(depth=depth, breadth=breadth, wrap=wrap - 1, id=id)

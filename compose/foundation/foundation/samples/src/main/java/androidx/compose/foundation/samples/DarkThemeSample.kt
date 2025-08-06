@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun DarkThemeSample() {
+fun NoriaContext.DarkThemeSample() {
     val dark = isSystemInDarkTheme()
     val color = if (dark) Color.White else Color.Black
     Box { Box(Modifier.size(50.dp).background(color = color)) }

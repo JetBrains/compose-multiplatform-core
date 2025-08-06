@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun DecorationBoxDemos() {
+fun NoriaContext.DecorationBoxDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp)) {
         TagLine(tag = "Simple Decoration w/ Label")
         SimpleDecorationWithLabel()
@@ -68,7 +68,7 @@ fun DecorationBoxDemos() {
 }
 
 @Composable
-fun SimpleDecorationWithLabel() {
+fun NoriaContext.SimpleDecorationWithLabel() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state = state,
@@ -85,7 +85,7 @@ fun SimpleDecorationWithLabel() {
 }
 
 @Composable
-fun OutlinedBasicTextField() {
+fun NoriaContext.OutlinedBasicTextField() {
     val state = remember { TextFieldState() }
     val cursorColor by TextFieldDefaults.outlinedTextFieldColors().cursorColor(isError = false)
     BasicTextField(
@@ -114,7 +114,7 @@ fun OutlinedBasicTextField() {
 }
 
 @Composable
-fun NoInnerTextField(modifier: Modifier = Modifier) {
+fun NoriaContext.NoInnerTextField(modifier: Modifier = Modifier) {
     val state = rememberTextFieldState()
     BasicTextField(
         state = state,

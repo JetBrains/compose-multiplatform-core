@@ -113,7 +113,7 @@ internal fun ComposeExecutionControl.doFramesUntilIdle() {
     } while (hasPendingChanges() || hasPendingMeasureOrLayout())
 }
 
-private fun ComposeBenchmarkRule.benchmarkCreateFor(content: @Composable () -> Unit) {
+private fun ComposeBenchmarkRule.benchmarkCreateFor(content: @Composable NoriaContext.() -> Unit) {
     createBenchmark { SubcomposeLayoutReuseTestCase(reusableSlots = 0, content) }
 }
 

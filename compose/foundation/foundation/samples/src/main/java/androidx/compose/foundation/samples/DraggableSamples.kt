@@ -37,7 +37,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun DraggableSample() {
+fun NoriaContext.DraggableSample() {
     // Draw a seekbar-like composable that has a black background
     // with a red square that moves along the 300.dp drag distance
     val max = 300.dp

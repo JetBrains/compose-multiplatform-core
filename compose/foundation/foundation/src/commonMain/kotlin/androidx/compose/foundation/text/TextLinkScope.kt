@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.min
+import noria.NoriaContext
 
 internal typealias LinkRange = AnnotatedString.Range<LinkAnnotation>
 
@@ -212,7 +213,7 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
      * to do any additional guarding inside this composable function.
      */
     @Composable
-    fun LinksComposables() {
+    fun NoriaContext.LinksComposables() {
         val uriHandler = LocalUriHandler.current
 
         val links = text.getLinkAnnotations(0, text.length)
@@ -313,7 +314,7 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
 
     /** Adds style annotations to [text]. */
     @Composable
-    private fun StyleAnnotation(vararg keys: Any?, block: TextAnnotatorScope.() -> Unit) {
+    private fun NoriaContext.StyleAnnotation(vararg keys: Any?, block: TextAnnotatorScope.() -> Unit) {
         DisposableEffect(block, *keys) {
             annotators += block
             onDispose { annotators -= block }

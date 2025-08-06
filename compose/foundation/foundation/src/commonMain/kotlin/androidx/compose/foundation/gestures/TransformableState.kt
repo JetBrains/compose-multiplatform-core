@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.coroutineScope
+import noria.NoriaContext
 
 /**
  * State of [transformable]. Allows for a granular control of how different gesture transformations
@@ -118,7 +119,7 @@ fun TransformableState(
  *   pan and degrees for rotation. Callers should update their state in this lambda.
  */
 @Composable
-fun rememberTransformableState(
+fun NoriaContext.rememberTransformableState(
     onTransformation: (zoomChange: Float, panChange: Offset, rotationChange: Float) -> Unit
 ): TransformableState {
     val lambdaState = rememberUpdatedState(onTransformation)

@@ -475,7 +475,7 @@ internal class BasicTextFieldImmIntegrationTest {
 }
 
 // sets the WindowInfo with isWindowFocused is true
-internal fun InputMethodInterceptor.setTextFieldTestContent(content: @Composable () -> Unit) {
+internal fun InputMethodInterceptor.setTextFieldTestContent(content: @Composable NoriaContext.() -> Unit) {
     val windowInfo =
         object : WindowInfo {
             override val isWindowFocused = true

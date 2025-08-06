@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun OffsetModifier() {
+fun NoriaContext.OffsetModifier() {
     // This text will be offset (10.dp, 20.dp) from the center of the available space. In the
     // right-to-left context, the offset will be (-10.dp, 20.dp).
     Text(
@@ -46,7 +46,7 @@ fun OffsetModifier() {
 
 @Sampled
 @Composable
-fun AbsoluteOffsetModifier() {
+fun NoriaContext.AbsoluteOffsetModifier() {
     // This text will be offset (10.dp, 20.dp) from the center of the available space.
     Text(
         "Layout offset modifier sample",
@@ -56,7 +56,7 @@ fun AbsoluteOffsetModifier() {
 
 @Sampled
 @Composable
-fun OffsetPxModifier() {
+fun NoriaContext.OffsetPxModifier() {
     // This text will be offset in steps of 10.dp from the top left of the available space in
     // left-to-right context, and from top right in right-to-left context.
     var offset by remember { mutableStateOf(0) }
@@ -68,7 +68,7 @@ fun OffsetPxModifier() {
 
 @Sampled
 @Composable
-fun AbsoluteOffsetPxModifier() {
+fun NoriaContext.AbsoluteOffsetPxModifier() {
     // This text will be offset in steps of 10.dp from the top left of the available space.
     var offset by remember { mutableStateOf(0) }
     Text(

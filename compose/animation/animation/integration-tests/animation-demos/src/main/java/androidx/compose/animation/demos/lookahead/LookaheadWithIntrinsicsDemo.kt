@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun LookaheadWithIntrinsicsDemo() {
+fun NoriaContext.LookaheadWithIntrinsicsDemo() {
     Column {
         LookaheadScope {
             var isWide by remember { mutableStateOf(true) }
@@ -88,7 +88,7 @@ fun LookaheadWithIntrinsicsDemo() {
 }
 
 @Composable
-fun MatchParentDividerForText() {
+fun NoriaContext.MatchParentDividerForText() {
     // Builds a layout containing two pieces of text separated by a divider, where the divider
     // is sized according to the height of the longest text.
     //
@@ -112,7 +112,7 @@ fun MatchParentDividerForText() {
 }
 
 @Composable
-fun SameWidthTextBoxes() {
+fun NoriaContext.SameWidthTextBoxes() {
     // Builds a layout containing three Text boxes having the same width as the widest one.
     //
     // Here width max intrinsic is adding a width premeasurement pass for the Column,
@@ -133,7 +133,7 @@ fun SameWidthTextBoxes() {
 }
 
 @Composable
-fun MatchParentDividerForAspectRatio() {
+fun NoriaContext.MatchParentDividerForAspectRatio() {
     // Builds a layout containing two aspectRatios separated by a divider, where the divider
     // is sized according to the height of the taller aspectRatio.
     //

@@ -26,7 +26,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
@@ -41,11 +40,13 @@ import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Indication represents visual effects that occur when certain interactions happens. For example:
@@ -79,7 +80,7 @@ interface Indication {
     @Suppress("DEPRECATION_ERROR")
     @Deprecated(RememberUpdatedInstanceDeprecationMessage, level = DeprecationLevel.ERROR)
     @Composable
-    fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance =
+    fun NoriaContext.rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance =
         NoIndicationInstance
 }
 
@@ -191,11 +192,13 @@ private fun Modifier.indicationImpl(
     }
     // In the future we might want to remove this as a forcing function to migrate away from the
     // error-deprecated rememberUpdatedInstance
-    return composed(
-        factory = {
-            @Suppress("DEPRECATION_ERROR")
-            val instance = indication.rememberUpdatedInstance(interactionSource)
-            remember(instance) { IndicationModifier(instance) }
+    return noriaComposed(
+        factory = { noriaContext ->
+            noriaContext.run {
+                @Suppress("DEPRECATION_ERROR")
+                val instance = indication.run { rememberUpdatedInstance(interactionSource) }
+                remember(instance) { IndicationModifier(instance) }
+            }
         },
         inspectorInfo =
             debugInspectorInfo {

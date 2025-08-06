@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformInsetsConfig
 import androidx.compose.ui.scene.ComposeSceneLayer
-import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
 import androidx.compose.ui.semantics.popup
 import androidx.compose.ui.semantics.semantics
@@ -51,6 +50,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
+import noria.NoriaContext
 
 /**
  * Properties used to customize the behavior of a [Popup].
@@ -144,6 +144,13 @@ actual class PopupProperties @ExperimentalComposeUiApi constructor(
         result = 31 * result + usePlatformInsets.hashCode()
         return result
     }
+
+    internal val NoriaContext.platformInsets: PlatformInsets
+        @Composable get() = if (usePlatformInsets) {
+            PlatformInsetsConfig.run { safeInsets }
+        } else {
+            PlatformInsets.Zero
+        }
 }
 
 /**
@@ -172,19 +179,21 @@ actual class PopupProperties @ExperimentalComposeUiApi constructor(
  */
 @Deprecated(
     "Replaced by Popup with properties parameter",
-    ReplaceWith("Popup(alignment, offset, onDismissRequest, " +
-        "androidx.compose.ui.window.PopupProperties(focusable = focusable), " +
-        "onPreviewKeyEvent, onKeyEvent, content)")
+    ReplaceWith(
+        "Popup(alignment, offset, onDismissRequest, " +
+            "androidx.compose.ui.window.PopupProperties(focusable = focusable), " +
+            "onPreviewKeyEvent, onKeyEvent, content)"
+    )
 )
 @Composable
-fun Popup(
+fun NoriaContext.Popup(
     alignment: Alignment = Alignment.TopStart,
     offset: IntOffset = IntOffset(0, 0),
     focusable: Boolean = false,
     onDismissRequest: (() -> Unit)? = null,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = Popup(
     alignment = alignment,
     offset = offset,
@@ -222,18 +231,20 @@ fun Popup(
  */
 @Deprecated(
     "Replaced by Popup with properties parameter",
-    ReplaceWith("Popup(popupPositionProvider, onDismissRequest, " +
-        "androidx.compose.ui.window.PopupProperties(focusable = focusable), " +
-        "onPreviewKeyEvent, onKeyEvent, content)")
+    ReplaceWith(
+        "Popup(popupPositionProvider, onDismissRequest, " +
+            "androidx.compose.ui.window.PopupProperties(focusable = focusable), " +
+            "onPreviewKeyEvent, onKeyEvent, content)"
+    )
 )
 @Composable
-fun Popup(
+fun NoriaContext.Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)? = null,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     focusable: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = Popup(
     popupPositionProvider = popupPositionProvider,
     onDismissRequest = onDismissRequest,
@@ -269,12 +280,12 @@ fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+actual fun NoriaContext.Popup(
     alignment: Alignment,
     offset: IntOffset,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): Unit = Popup(
     alignment = alignment,
     offset = offset,
@@ -298,11 +309,11 @@ actual fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+actual fun NoriaContext.Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): Unit = Popup(
     popupPositionProvider = popupPositionProvider,
     onDismissRequest = onDismissRequest,
@@ -341,14 +352,14 @@ actual fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-fun Popup(
+fun NoriaContext.Popup(
     alignment: Alignment = Alignment.TopStart,
     offset: IntOffset = IntOffset(0, 0),
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
     onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onKeyEvent: ((KeyEvent) -> Boolean)? = null,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val popupPositioner = remember(alignment, offset) {
         AlignmentOffsetPositionProvider(alignment, offset)
@@ -384,13 +395,13 @@ fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-fun Popup(
+fun NoriaContext.Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
     onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onKeyEvent: ((KeyEvent) -> Boolean)? = null,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     val currentOnKeyEvent by rememberUpdatedState(onKeyEvent)
@@ -434,14 +445,14 @@ fun Popup(
 }
 
 @Composable
-private fun PopupLayout(
+private fun NoriaContext.PopupLayout(
     popupPositionProvider: PopupPositionProvider,
     properties: PopupProperties,
     modifier: Modifier,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val currentContent by rememberUpdatedState(content)
     var layoutParentBoundsInWindow: IntRect? by remember { mutableStateOf(null) }
@@ -451,39 +462,37 @@ private fun PopupLayout(
     )
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
-    layer.Content {
-        val platformInsets = properties.platformInsets
-        val parentBoundsInWindow = layoutParentBoundsInWindow ?: return@Content
-        val containerSize = LocalWindowInfo.current.containerSize
-        val layoutDirection = LocalLayoutDirection.current
-        val measurePolicy = rememberPopupMeasurePolicy(
-            layer = layer,
-            popupPositionProvider = popupPositionProvider,
-            properties = properties,
-            containerSize = containerSize,
-            platformInsets = platformInsets,
-            layoutDirection = layoutDirection,
-            parentBoundsInWindow = parentBoundsInWindow
-        )
-        PlatformInsetsConfig.excludeInsets(
-            safeInsets = properties.usePlatformInsets,
-            ime = false,
-        ) {
-            Layout(
-                content = currentContent,
-                modifier = modifier,
-                measurePolicy = measurePolicy
+    layer.run {
+        Content {
+            val platformInsets = properties.run { platformInsets }
+            val parentBoundsInWindow = layoutParentBoundsInWindow ?: return@Content
+            val containerSize = LocalWindowInfo.current.containerSize
+            val layoutDirection = LocalLayoutDirection.current
+            val measurePolicy = rememberPopupMeasurePolicy(
+                layer = layer,
+                popupPositionProvider = popupPositionProvider,
+                properties = properties,
+                containerSize = containerSize,
+                platformInsets = platformInsets,
+                layoutDirection = layoutDirection,
+                parentBoundsInWindow = parentBoundsInWindow
             )
+            PlatformInsetsConfig.run {
+                excludeInsets(
+                    safeInsets = properties.usePlatformInsets,
+                    ime = false,
+                ) {
+                    Layout(
+                        content = currentContent,
+                        modifier = modifier,
+                        measurePolicy = measurePolicy
+                    )
+                }
+            }
         }
     }
 }
 
-private val PopupProperties.platformInsets: PlatformInsets
-    @Composable get() = if (usePlatformInsets) {
-        PlatformInsetsConfig.safeInsets
-    } else {
-        PlatformInsets.Zero
-    }
 
 private fun Modifier.parentBoundsInWindow(
     onBoundsChanged: (IntRect) -> Unit
@@ -496,7 +505,7 @@ private fun Modifier.parentBoundsInWindow(
 }
 
 @Composable
-private fun rememberPopupMeasurePolicy(
+private fun NoriaContext.rememberPopupMeasurePolicy(
     layer: ComposeSceneLayer,
     popupPositionProvider: PopupPositionProvider,
     properties: PopupProperties,
@@ -504,29 +513,38 @@ private fun rememberPopupMeasurePolicy(
     platformInsets: PlatformInsets,
     layoutDirection: LayoutDirection,
     parentBoundsInWindow: IntRect,
-) = remember(layer, popupPositionProvider, properties, containerSize, platformInsets, layoutDirection, parentBoundsInWindow) {
+) = remember(
+    layer,
+    popupPositionProvider,
+    properties,
+    containerSize,
+    platformInsets,
+    layoutDirection,
+    parentBoundsInWindow
+) {
     RootMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
-        val positionWithInsets = positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-            // Position provider works in coordinates without insets.
-            val boundsWithoutInsets = parentBoundsInWindow.translate(
-                -platformInsets.left.roundToPx(),
-                -platformInsets.top.roundToPx()
-            )
-            val positionInWindow = popupPositionProvider.calculatePosition(
-                anchorBounds = boundsWithoutInsets,
-                windowSize = sizeWithoutInsets,
-                layoutDirection = layoutDirection,
-                popupContentSize = contentSize
-            )
-            if (properties.clippingEnabled) {
-                clipPosition(positionInWindow, contentSize, sizeWithoutInsets)
-            } else {
-                positionInWindow
+        val positionWithInsets =
+            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                // Position provider works in coordinates without insets.
+                val boundsWithoutInsets = parentBoundsInWindow.translate(
+                    -platformInsets.left.roundToPx(),
+                    -platformInsets.top.roundToPx()
+                )
+                val positionInWindow = popupPositionProvider.calculatePosition(
+                    anchorBounds = boundsWithoutInsets,
+                    windowSize = sizeWithoutInsets,
+                    layoutDirection = layoutDirection,
+                    popupContentSize = contentSize
+                )
+                if (properties.clippingEnabled) {
+                    clipPosition(positionInWindow, contentSize, sizeWithoutInsets)
+                } else {
+                    positionInWindow
+                }
             }
-        }
         layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
         layer.calculateLocalPosition(positionWithInsets)
     }

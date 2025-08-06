@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TextOverflowedSelectionDemo() {
+fun NoriaContext.TextOverflowedSelectionDemo() {
     var overflow by remember { mutableStateOf(TextOverflow.Clip) }
     val context = LocalContext.current
     val clipboardManager =
@@ -171,7 +171,7 @@ fun ClipboardManager.read(): String {
 }
 
 @Composable
-private fun OverflowToggleText(
+private fun NoriaContext.OverflowToggleText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,

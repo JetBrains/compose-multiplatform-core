@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun ScreenTransitionDemo() {
+fun NoriaContext.ScreenTransitionDemo() {
     Column {
         Spacer(Modifier.size(40.dp))
         var targetScreen by remember { mutableStateOf(TestScreens.Screen1) }
@@ -130,21 +130,21 @@ enum class TestScreens {
 }
 
 @Composable
-fun Screen1() {
+fun NoriaContext.Screen1() {
     Box(modifier = Modifier.fillMaxSize().padding(30.dp).background(Color(0xffff6f69))) {
         Text("Screen 1", modifier = Modifier.align(Center))
     }
 }
 
 @Composable
-fun Screen2() {
+fun NoriaContext.Screen2() {
     Box(modifier = Modifier.fillMaxSize().padding(30.dp).background(Color(0xffffcc5c))) {
         Text("Screen 2", modifier = Modifier.align(Center))
     }
 }
 
 @Composable
-fun Screen3() {
+fun NoriaContext.Screen3() {
     Box(modifier = Modifier.fillMaxSize().padding(30.dp).background(Color(0xff2a9d84))) {
         Text("Screen 3", modifier = Modifier.align(Center))
     }

@@ -31,6 +31,7 @@ import java.awt.Container
 import java.awt.event.FocusEvent
 import javax.swing.JPanel
 import javax.swing.LayoutFocusTraversalPolicy
+import noria.NoriaContext
 
 val NoOpUpdate: Component.() -> Unit = {}
 
@@ -51,7 +52,7 @@ val NoOpUpdate: Component.() -> Unit = {}
  * @param update The callback to be invoked after the layout is inflated.
  */
 @Composable
-public fun <T : Component> SwingPanel(
+public fun <T : Component> NoriaContext.SwingPanel(
     background: Color = Color.White,
     factory: () -> T,
     modifier: Modifier = Modifier,

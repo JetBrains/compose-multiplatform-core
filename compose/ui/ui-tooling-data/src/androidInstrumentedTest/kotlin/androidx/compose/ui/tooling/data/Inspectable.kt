@@ -68,7 +68,7 @@ internal fun Inspectable(
  * in the composition when the composition is in inspection mode.
  */
 @Composable
-fun InInspectionModeOnly(content: @Composable () -> Unit) {
+fun NoriaContext.InInspectionModeOnly(content: @Composable () -> Unit) {
     if (LocalInspectionMode.current) {
         content()
     }

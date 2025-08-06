@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun BasicTextFieldMinMaxDemo() {
+fun NoriaContext.BasicTextFieldMinMaxDemo() {
     LazyColumn {
         item {
             TagLine("empty text, no maxLines")
@@ -105,7 +105,7 @@ fun BasicTextFieldMinMaxDemo() {
 }
 
 @Composable
-private fun TextFieldWithMinMaxLines(
+private fun NoriaContext.TextFieldWithMinMaxLines(
     str: String? = null,
     minLines: Int = 1,
     maxLines: Int = Int.MAX_VALUE,

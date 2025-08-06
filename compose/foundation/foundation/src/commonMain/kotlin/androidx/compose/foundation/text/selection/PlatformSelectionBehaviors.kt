@@ -19,6 +19,7 @@ package androidx.compose.foundation.text.selection
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.intl.LocaleList
+import noria.NoriaContext
 
 /** The interface for platform specific selection behaviors. */
 internal interface PlatformSelectionBehaviors {
@@ -63,7 +64,7 @@ internal enum class SelectedTextType {
 }
 
 @Composable
-internal expect fun rememberPlatformSelectionBehaviors(
+internal expect fun NoriaContext.rememberPlatformSelectionBehaviors(
     selectedTextType: SelectedTextType,
     localeList: LocaleList?,
 ): PlatformSelectionBehaviors?

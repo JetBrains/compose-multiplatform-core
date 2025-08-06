@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 /** Receiver scope which is used by [LazyColumn] and [LazyRow]. */
 @LazyScopeMarker
@@ -325,7 +326,7 @@ inline fun <T> LazyListScope.itemsIndexed(
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
 @Composable
-fun LazyRow(
+fun NoriaContext.LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -333,7 +334,7 @@ fun LazyRow(
     horizontalArrangement: Arrangement.Horizontal =
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyListScope.() -> Unit,
@@ -385,7 +386,7 @@ fun LazyRow(
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
 @Composable
-fun LazyColumn(
+fun NoriaContext.LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -393,7 +394,7 @@ fun LazyColumn(
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyListScope.() -> Unit,
@@ -415,7 +416,7 @@ fun LazyColumn(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyColumn(
+fun NoriaContext.LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -423,7 +424,7 @@ fun LazyColumn(
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
@@ -443,7 +444,7 @@ fun LazyColumn(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyColumn(
+fun NoriaContext.LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -451,7 +452,7 @@ fun LazyColumn(
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
@@ -469,7 +470,7 @@ fun LazyColumn(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyRow(
+fun NoriaContext.LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -477,7 +478,7 @@ fun LazyRow(
     horizontalArrangement: Arrangement.Horizontal =
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
@@ -497,7 +498,7 @@ fun LazyRow(
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyRow(
+fun NoriaContext.LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -505,7 +506,7 @@ fun LazyRow(
     horizontalArrangement: Arrangement.Horizontal =
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     content: LazyListScope.() -> Unit,
 ) {
     LazyRow(

@@ -29,9 +29,10 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextInputService
 import kotlinx.coroutines.Job
+import noria.NoriaContext
 
 @Composable
-internal expect fun legacyTextInputServiceAdapterAndService():
+internal expect fun NoriaContext.legacyTextInputServiceAdapterAndService():
     Pair<LegacyPlatformTextInputServiceAdapter, TextInputService>
 
 /**

@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun OnPlaced() {
+fun NoriaContext.OnPlaced() {
     fun Modifier.animatePlacement(): Modifier = composed {
         val scope = rememberCoroutineScope()
         var targetOffset by remember { mutableStateOf(IntOffset.Zero) }

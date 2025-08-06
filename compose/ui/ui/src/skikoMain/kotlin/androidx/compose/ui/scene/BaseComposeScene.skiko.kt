@@ -44,12 +44,8 @@ import androidx.compose.ui.platform.LocalPlatformScreenReader
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 /**
  * BaseComposeScene is an internal abstract class that implements the ComposeScene interface.
@@ -80,21 +76,6 @@ internal abstract class BaseComposeScene(
         ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
 
-    private val launchCommandJob = Job()
-    private val launchCommandChannel = Channel<LaunchCommand>(Channel.UNLIMITED)
-
-    private fun flushScheduledLaunches() {
-        launchCommandChannel.trySend(LaunchCommand.FlushLaunches)
-    }
-
-    init {
-        val launchCommandCoroutineScope =
-            CoroutineScope(coroutineContext + frameClock + launchCommandJob + Dispatchers.Default)
-        launchCommandCoroutineScope.launch {
-            launchEffects(launchCommandChannel)
-        }
-    }
-
     protected val compositionContext: CompositionContext
         get() = recomposer.compositionContext
 
@@ -104,22 +85,23 @@ internal abstract class BaseComposeScene(
         private set
 
     private var isInvalidationDisabled = false
-    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T = trace(traceTag) {
-        check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
-        isInvalidationDisabled = true
-        return try {
-            // Try to get see the up-to-date state before running block
-            // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
-            // in a different thread than this code.
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
-        } finally {
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            isInvalidationDisabled = false
-        }.also {
-            updateInvalidations()
+    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T =
+        trace(traceTag) {
+            check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
+            isInvalidationDisabled = true
+            return try {
+                // Try to get see the up-to-date state before running block
+                // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
+                // in a different thread than this code.
+                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
+                snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
+            } finally {
+                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
+                isInvalidationDisabled = false
+            }.also {
+                updateInvalidations()
+            }
         }
-    }
 
     @Volatile
     private var hasPendingDraws = true
@@ -150,12 +132,11 @@ internal abstract class BaseComposeScene(
 
         composition?.dispose()
         recomposer.cancel()
-        launchCommandJob.cancel()
     }
 
     override fun hasInvalidations(): Boolean = hasPendingDraws || recomposer.hasPendingWork
 
-    override fun setContent(content: @Composable () -> Unit) =
+    override fun setContent(content: @Composable NoriaContext.() -> Unit) =
         postponeInvalidation("BaseComposeScene:setContent") {
             check(!isClosed) { "setContent called after ComposeScene is closed" }
             inputHandler.onChangeContent()
@@ -165,23 +146,20 @@ internal abstract class BaseComposeScene(
          * before first recomposition. Otherwise, it can lead to double recomposition.
          */
             recomposer.performScheduledRecomposerTasks()
-        flushScheduledLaunches()
 
             composition?.dispose()
             composition = createComposition {
                 CompositionLocalProvider(
                     @Suppress("DEPRECATION")
-                    LocalComposeScene provides this,
+                    LocalComposeScene provides this@BaseComposeScene,
                     LocalComposeSceneContext provides composeSceneContext,
                     LocalPlatformScreenReader provides composeSceneContext.platformContext.screenReader,
-                    LocalLaunchCommandSendChannel provides launchCommandChannel,
                     content = content
                 )
             }
 
-        recomposer.performScheduledRecomposerTasks()
-        flushScheduledLaunches()
-    }
+            recomposer.performScheduledRecomposerTasks()
+        }
 
     override fun render(canvas: Canvas, nanoTime: Long) {
         // This is a no-op if the scene is closed, this situation can happen if the scene is
@@ -221,7 +199,6 @@ internal abstract class BaseComposeScene(
             // Actually draw
             snapshotInvalidationTracker.onDraw()
             draw(canvas)
-            flushScheduledLaunches()
         }
     }
 
@@ -284,11 +261,12 @@ internal abstract class BaseComposeScene(
         inputHandler.cancelPointerInput()
     }
 
-    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = postponeInvalidation("BaseComposeScene:sendKeyEvent") {
-        inputHandler.onKeyEvent(keyEvent).also {
-            recomposer.performScheduledEffects()
+    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
+        postponeInvalidation("BaseComposeScene:sendKeyEvent") {
+            inputHandler.onKeyEvent(keyEvent).also {
+                recomposer.performScheduledEffects()
+            }
         }
-    }
 
     override fun sendRotaryScrollEvent(
         verticalScrollPixels: Float,
@@ -318,7 +296,7 @@ internal abstract class BaseComposeScene(
         measureAndLayout()
     }
 
-    protected abstract fun createComposition(content: @Composable () -> Unit): Composition
+    protected abstract fun createComposition(content: @Composable NoriaContext.() -> Unit): Composition
 
     protected abstract fun processPointerInputEvent(event: PointerInputEvent): PointerEventResult
 

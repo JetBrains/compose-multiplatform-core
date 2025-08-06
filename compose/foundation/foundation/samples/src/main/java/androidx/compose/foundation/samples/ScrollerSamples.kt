@@ -53,7 +53,7 @@ private val colors =
 
 @Sampled
 @Composable
-fun HorizontalScrollSample() {
+fun NoriaContext.HorizontalScrollSample() {
     val scrollState = rememberScrollState()
     val gradient =
         Brush.horizontalGradient(
@@ -71,7 +71,7 @@ fun HorizontalScrollSample() {
 
 @Sampled
 @Composable
-fun VerticalScrollExample() {
+fun NoriaContext.VerticalScrollExample() {
     val scrollState = rememberScrollState()
     val gradient =
         Brush.verticalGradient(
@@ -90,7 +90,7 @@ fun VerticalScrollExample() {
 
 @Sampled
 @Composable
-fun ControlledScrollableRowSample() {
+fun NoriaContext.ControlledScrollableRowSample() {
     // Create ScrollState to own it and be able to control scroll behaviour of scrollable Row below
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -119,7 +119,7 @@ fun ControlledScrollableRowSample() {
 }
 
 @Composable
-private fun Square(index: Int) {
+private fun NoriaContext.Square(index: Int) {
     Box(
         Modifier.size(75.dp, 200.dp).background(colors[index % colors.size]),
         contentAlignment = Alignment.Center,
@@ -129,7 +129,7 @@ private fun Square(index: Int) {
 }
 
 @Composable
-private fun Button(onClick: () -> Unit, content: @Composable () -> Unit) {
+private fun NoriaContext.Button(onClick: () -> Unit, content: @Composable NoriaContext.() -> Unit) {
     Box(
         Modifier.padding(5.dp)
             .size(120.dp, 60.dp)

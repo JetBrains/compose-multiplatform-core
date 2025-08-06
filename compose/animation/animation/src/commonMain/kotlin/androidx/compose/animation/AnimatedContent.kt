@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMaxOfOrNull
+import noria.NoriaContext
 
 /**
  * [AnimatedContent] is a container that automatically animates its content when [targetState]
@@ -126,7 +127,7 @@ import androidx.compose.ui.util.fastMaxOfOrNull
  * @see AnimatedContentScope
  */
 @Composable
-public fun <S> AnimatedContent(
+public fun <S> NoriaContext.AnimatedContent(
     targetState: S,
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
@@ -555,7 +556,7 @@ internal constructor(
 
     @Suppress("ComposableModifierFactory", "ModifierFactoryExtensionFunction")
     @Composable
-    internal fun createSizeAnimationModifier(contentTransform: ContentTransform): Modifier {
+    internal fun NoriaContext.createSizeAnimationModifier(contentTransform: ContentTransform): Modifier {
         var shouldAnimateSize by remember(this) { mutableStateOf(false) }
         val sizeTransform = rememberUpdatedState(contentTransform.sizeTransform)
         if (transition.currentState == transition.targetState) {
@@ -581,7 +582,7 @@ internal constructor(
                 // Keep the SizeModifier in the chain and switch between active animating and
                 // passive
                 // observing based on sizeAnimation's value
-                SizeModifierElement(sizeAnimation, sizeTransform, this)
+                SizeModifierElement(sizeAnimation, sizeTransform, this@AnimatedContentTransitionScopeImpl)
             )
     }
 
@@ -772,108 +773,112 @@ public fun <S> Transition<S>.AnimatedContent(
     contentKey: (targetState: S) -> Any? = { it },
     content: @Composable() AnimatedContentScope.(targetState: S) -> Unit,
 ) {
-    val layoutDirection = LocalLayoutDirection.current
-    val rootScope =
-        remember(this) {
-            AnimatedContentTransitionScopeImpl(this, contentAlignment, layoutDirection)
-        }
-    // TODO: remove screen as soon as they are animated out
-    val currentlyVisible = remember(this) { mutableStateListOf(currentState) }
-    val contentMap = remember(this) { mutableScatterMapOf<S, @Composable() () -> Unit>() }
-    // This is needed for tooling because it could change currentState directly,
-    // as opposed to changing target only. When that happens we need to clear all the
-    // visible content and only display the content for the new current state and target state.
-    if (!currentlyVisible.contains(currentState)) {
-        currentlyVisible.clear()
-        currentlyVisible.add(currentState)
-    }
-    if (currentState == targetState) {
-        if (currentlyVisible.size != 1 || currentlyVisible[0] != currentState) {
+    NoriaContext.run {
+        val layoutDirection = LocalLayoutDirection.current
+        val rootScope =
+            remember(this) {
+                AnimatedContentTransitionScopeImpl(this@AnimatedContent, contentAlignment, layoutDirection)
+            }
+        // TODO: remove screen as soon as they are animated out
+        val currentlyVisible = remember(this) { mutableStateListOf(currentState) }
+        val contentMap = remember(this) { mutableScatterMapOf<S, @Composable() () -> Unit>() }
+        // This is needed for tooling because it could change currentState directly,
+        // as opposed to changing target only. When that happens we need to clear all the
+        // visible content and only display the content for the new current state and target state.
+        if (!currentlyVisible.contains(currentState)) {
             currentlyVisible.clear()
             currentlyVisible.add(currentState)
         }
-        if (contentMap.size != 1 || contentMap.containsKey(currentState)) {
+        if (currentState == targetState) {
+            if (currentlyVisible.size != 1 || currentlyVisible[0] != currentState) {
+                currentlyVisible.clear()
+                currentlyVisible.add(currentState)
+            }
+            if (contentMap.size != 1 || contentMap.containsKey(currentState)) {
+                contentMap.clear()
+            }
+            // TODO: Do we want to support changing contentAlignment amid animation?
+            rootScope.contentAlignment = contentAlignment
+            rootScope.layoutDirection = layoutDirection
+        }
+        // Currently visible list always keeps the targetState at the end of the list, unless it's
+        // already in the list in the case of interruption. This makes the composable associated with
+        // the targetState get placed last, so the target composable will be displayed on top of
+        // content associated with other states, unless zIndex is specified.
+        if (currentState != targetState && !currentlyVisible.contains(targetState)) {
+            // Replace the target with the same key if any
+            val id = currentlyVisible.indexOfFirst { contentKey(it) == contentKey(targetState) }
+            if (id == -1) {
+                currentlyVisible.add(targetState)
+            } else {
+                currentlyVisible[id] = targetState
+            }
+        }
+        if (!contentMap.containsKey(targetState) || !contentMap.containsKey(currentState)) {
             contentMap.clear()
-        }
-        // TODO: Do we want to support changing contentAlignment amid animation?
-        rootScope.contentAlignment = contentAlignment
-        rootScope.layoutDirection = layoutDirection
-    }
-    // Currently visible list always keeps the targetState at the end of the list, unless it's
-    // already in the list in the case of interruption. This makes the composable associated with
-    // the targetState get placed last, so the target composable will be displayed on top of
-    // content associated with other states, unless zIndex is specified.
-    if (currentState != targetState && !currentlyVisible.contains(targetState)) {
-        // Replace the target with the same key if any
-        val id = currentlyVisible.indexOfFirst { contentKey(it) == contentKey(targetState) }
-        if (id == -1) {
-            currentlyVisible.add(targetState)
-        } else {
-            currentlyVisible[id] = targetState
-        }
-    }
-    if (!contentMap.containsKey(targetState) || !contentMap.containsKey(currentState)) {
-        contentMap.clear()
-        currentlyVisible.fastForEach { stateForContent ->
-            contentMap[stateForContent] = {
-                val specOnEnter = remember { transitionSpec(rootScope) }
-                // NOTE: enter and exit for this AnimatedVisibility will be using different spec,
-                // naturally.
-                val exit =
-                    remember(segment.targetState == stateForContent) {
-                        if (segment.targetState == stateForContent) {
-                            ExitTransition.None
-                        } else {
-                            rootScope.transitionSpec().initialContentExit
+            currentlyVisible.fastForEach { stateForContent ->
+                contentMap[stateForContent] = {
+                    val specOnEnter = remember { transitionSpec(rootScope) }
+                    // NOTE: enter and exit for this AnimatedVisibility will be using different spec,
+                    // naturally.
+                    val exit =
+                        remember(segment.targetState == stateForContent) {
+                            if (segment.targetState == stateForContent) {
+                                ExitTransition.None
+                            } else {
+                                rootScope.transitionSpec().initialContentExit
+                            }
                         }
+                    val childData = remember {
+                        AnimatedContentTransitionScopeImpl.ChildData(stateForContent == targetState)
                     }
-                val childData = remember {
-                    AnimatedContentTransitionScopeImpl.ChildData(stateForContent == targetState)
-                }
-                // TODO: Will need a custom impl of this to: 1) get the signal for when
-                // the animation is finished, 2) get the target size properly
-                AnimatedEnterExitImpl(
-                    this,
-                    { it == stateForContent },
-                    enter = specOnEnter.targetContentEnter,
-                    exit = exit,
-                    modifier =
-                        Modifier.layout { measurable, constraints ->
+                    // TODO: Will need a custom impl of this to: 1) get the signal for when
+                    // the animation is finished, 2) get the target size properly
+                    AnimatedEnterExitImpl(
+                        this@AnimatedContent,
+                        { it == stateForContent },
+                        enter = specOnEnter.targetContentEnter,
+                        exit = exit,
+                        modifier =
+                            Modifier.layout { measurable, constraints ->
                                 val placeable = measurable.measure(constraints)
                                 layout(placeable.width, placeable.height) {
                                     placeable.place(0, 0, zIndex = specOnEnter.targetContentZIndex)
                                 }
                             }
-                            .then(childData.apply { isTarget = stateForContent == targetState }),
-                    shouldDisposeBlock = { currentState, targetState ->
-                        currentState == EnterExitState.PostExit &&
-                            targetState == EnterExitState.PostExit &&
-                            !exit.data.hold
-                    },
-                ) {
-                    // TODO: Should Transition.AnimatedVisibility have an end listener?
-                    DisposableEffect(this) {
-                        onDispose {
-                            currentlyVisible.remove(stateForContent)
-                            rootScope.targetSizeMap.remove(stateForContent)
+                                .then(childData.apply {
+                                    isTarget = stateForContent == targetState
+                                }),
+                        shouldDisposeBlock = { currentState, targetState ->
+                            currentState == EnterExitState.PostExit &&
+                                targetState == EnterExitState.PostExit &&
+                                !exit.data.hold
+                        },
+                    ) {
+                        // TODO: Should Transition.AnimatedVisibility have an end listener?
+                        DisposableEffect(this) {
+                            onDispose {
+                                currentlyVisible.remove(stateForContent)
+                                rootScope.targetSizeMap.remove(stateForContent)
+                            }
                         }
+                        rootScope.targetSizeMap[stateForContent] =
+                            (this as AnimatedVisibilityScopeImpl).targetSize
+                        with(remember { AnimatedContentScopeImpl(this) }) { content(stateForContent) }
                     }
-                    rootScope.targetSizeMap[stateForContent] =
-                        (this as AnimatedVisibilityScopeImpl).targetSize
-                    with(remember { AnimatedContentScopeImpl(this) }) { content(stateForContent) }
                 }
             }
         }
+        val contentTransform = remember(rootScope, segment) { transitionSpec(rootScope) }
+        val sizeModifier = rootScope.run { createSizeAnimationModifier(contentTransform) }
+        Layout(
+            modifier = modifier.then(sizeModifier),
+            content = {
+                currentlyVisible.fastForEach { key(contentKey(it)) { contentMap[it]?.invoke() } }
+            },
+            measurePolicy = remember { AnimatedContentMeasurePolicy(rootScope) },
+        )
     }
-    val contentTransform = remember(rootScope, segment) { transitionSpec(rootScope) }
-    val sizeModifier = rootScope.createSizeAnimationModifier(contentTransform)
-    Layout(
-        modifier = modifier.then(sizeModifier),
-        content = {
-            currentlyVisible.fastForEach { key(contentKey(it)) { contentMap[it]?.invoke() } }
-        },
-        measurePolicy = remember { AnimatedContentMeasurePolicy(rootScope) },
-    )
 }
 
 private class AnimatedContentMeasurePolicy(val rootScope: AnimatedContentTransitionScopeImpl<*>) :

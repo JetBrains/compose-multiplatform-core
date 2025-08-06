@@ -73,7 +73,7 @@ import kotlinx.coroutines.launch
 
 @Sampled
 @Composable
-fun AnimatableAnimateToGenericsType() {
+fun NoriaContext.AnimatableAnimateToGenericsType() {
     // Creates an `Animatable` to animate Offset and `remember` it.
     val animatedOffset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
 
@@ -231,7 +231,7 @@ fun AnimatableFadeIn() {
 @OptIn(ExperimentalAnimatableApi::class)
 @Sampled
 @Composable
-fun DeferredTargetAnimationSample() {
+fun NoriaContext.DeferredTargetAnimationSample() {
     // Creates a custom modifier that animates the constraints and measures child with the
     // animated constraints. This modifier is built on top of `Modifier.approachLayout` to approach
     // th destination size determined by the lookahead pass. A resize animation will be kicked off

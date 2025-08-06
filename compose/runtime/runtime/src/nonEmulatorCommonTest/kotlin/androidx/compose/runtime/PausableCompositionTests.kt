@@ -699,7 +699,7 @@ private inline fun report(message: String, block: () -> Unit) {
 }
 
 @Composable
-private fun A() {
+private fun NoriaContext.A() {
     report("A") {
         report("^z")
         val z = remember { 0 }
@@ -731,7 +731,7 @@ private fun MockViewValidator.A() {
 }
 
 @Composable
-private fun B(content: @Composable () -> Unit) {
+private fun NoriaContext.B(content: @Composable NoriaContext.() -> Unit) {
     report("B") {
         report("*Linear")
         Linear(content)
@@ -743,7 +743,7 @@ private fun MockViewValidator.B(content: MockViewValidator.() -> Unit) {
 }
 
 @Composable
-private fun C() {
+private fun NoriaContext.C() {
     report("C") {
         report("^x")
         val x = remember { 3 }
@@ -757,7 +757,7 @@ private fun MockViewValidator.C() {
 }
 
 @Composable
-private fun D() {
+private fun NoriaContext.D() {
     report("D") {
         Linear {
             report("D:1") {
@@ -798,7 +798,7 @@ fun PausableContentWorkflowScope.run(shouldPause: () -> Boolean = { true }) {
 
 class PausableContentWorkflowDriver(
     override val composition: PausableComposition,
-    private val content: @Composable () -> Unit,
+    private val content: @Composable NoriaContext.() -> Unit,
     private var host: View?,
     private var contentView: View?,
 ) : PausableContentWorkflowScope {
@@ -848,10 +848,10 @@ class PausableContentWorkflowDriver(
 }
 
 @Composable
-private fun PausableContent(
+private fun NoriaContext.PausableContent(
     workflow: suspend PausableContentWorkflowScope.() -> Unit = { run() },
     createApplier: (view: View) -> Applier<View> = { ViewApplier(it) },
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val host = View().also { it.name = "PausableContentHost" }
     val pausableContent = View().also { it.name = "PausableContent" }

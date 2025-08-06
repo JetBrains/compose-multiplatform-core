@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun LazyGridDragAndDropDemo() {
+fun NoriaContext.LazyGridDragAndDropDemo() {
     var list by remember { mutableStateOf(List(50) { it }) }
 
     val gridState = rememberLazyGridState()
@@ -97,7 +97,7 @@ fun LazyGridDragAndDropDemo() {
 }
 
 @Composable
-fun rememberGridDragDropState(
+fun NoriaContext.rememberGridDragDropState(
     gridState: LazyGridState,
     onMove: (Int, Int) -> Unit,
 ): GridDragDropState {

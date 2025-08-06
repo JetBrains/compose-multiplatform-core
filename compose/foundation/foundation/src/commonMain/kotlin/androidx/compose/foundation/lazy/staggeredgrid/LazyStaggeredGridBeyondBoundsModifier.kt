@@ -19,9 +19,10 @@ package androidx.compose.foundation.lazy.staggeredgrid
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 @Composable
-internal fun rememberLazyStaggeredGridBeyondBoundsState(
+internal fun NoriaContext.rememberLazyStaggeredGridBeyondBoundsState(
     state: LazyStaggeredGridState
 ): LazyLayoutBeyondBoundsState {
     return remember(state) { LazyStaggeredGridBeyondBoundsState(state) }

@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.em
 
 /** Demonstration of how various press/tap gesture interact together in a nested fashion. */
 @Composable
-fun PointerInputDuringSubComp() {
+fun NoriaContext.PointerInputDuringSubComp() {
     Column {
         Text(
             "Demonstrates that PointerInputFilters that are currently receiving pointer input " +

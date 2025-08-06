@@ -27,6 +27,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.LocalInputModeManager
 import kotlinx.coroutines.flow.flow
+import noria.NoriaContext
 
 internal actual fun platformIndication(indication: Indication?) =
     inputModeFilterIndication(indication)
@@ -82,13 +83,15 @@ internal class InputModeFilterIndication(
     private val original: Indication
 ) : Indication {
     @Composable
-    override fun rememberUpdatedInstance(
+    override fun NoriaContext.rememberUpdatedInstance(
         interactionSource: InteractionSource
     ): IndicationInstance {
         val inputModeManager = LocalInputModeManager.current
-        return super.rememberUpdatedInstance(
-            InputModeFilterInteractionSource(interactionSource, inputModeManager)
-        )
+        return original.run {
+            rememberUpdatedInstance(
+                InputModeFilterInteractionSource(interactionSource, inputModeManager)
+            )
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -109,8 +112,9 @@ private class InputModeFilterInteractionSource(
     original: InteractionSource,
     var inputModeManager: InputModeManager? = null
 ) : InteractionSource {
-    private val isKeyboardMode get() = inputModeManager == null ||
-        inputModeManager?.inputMode == InputMode.Keyboard
+    private val isKeyboardMode
+        get() = inputModeManager == null ||
+            inputModeManager?.inputMode == InputMode.Keyboard
 
     override val interactions = flow {
         // keep tracking counts to always send symmetric Focus/Unfocus
@@ -124,7 +128,8 @@ private class InputModeFilterInteractionSource(
                 // if it is already focused, we always show indication for simplicity
                 // (otherwise we have to generate multiple synthetic Unfocus)
                 if (actualFocusCount > 0 && sentFocusCount > 0 ||
-                    actualFocusCount == 0 && isKeyboardMode) {
+                    actualFocusCount == 0 && isKeyboardMode
+                ) {
                     when (it) {
                         is FocusInteraction.Focus -> sentFocusCount++
                         is FocusInteraction.Unfocus -> sentFocusCount--

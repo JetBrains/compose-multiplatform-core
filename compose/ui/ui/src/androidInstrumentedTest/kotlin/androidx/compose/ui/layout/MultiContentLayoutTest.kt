@@ -340,7 +340,7 @@ private fun MeasureScope.layoutAsRow(
 }
 
 @Composable
-private fun BoxWithIntrinsics(minWidth: Int, minHeight: Int, maxWidth: Int, maxHeight: Int) {
+private fun NoriaContext.BoxWithIntrinsics(minWidth: Int, minHeight: Int, maxWidth: Int, maxHeight: Int) {
     Layout(
         measurePolicy =
             object : MeasurePolicy {

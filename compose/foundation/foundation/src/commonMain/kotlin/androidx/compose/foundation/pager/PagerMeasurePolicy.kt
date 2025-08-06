@@ -38,10 +38,11 @@ import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.offset
 import kotlinx.coroutines.CoroutineScope
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun rememberPagerMeasurePolicy(
+internal fun NoriaContext.rememberPagerMeasurePolicy(
     itemProviderLambda: () -> PagerLazyLayoutItemProvider,
     state: PagerState,
     contentPadding: PaddingValues,

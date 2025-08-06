@@ -101,7 +101,7 @@ internal object ContextMenuSpec {
 private val DefaultPopupProperties = PopupProperties(focusable = true)
 
 @Composable
-internal fun ContextMenuPopup(
+internal fun NoriaContext.ContextMenuPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -118,7 +118,7 @@ internal fun ContextMenuPopup(
 
 @VisibleForTesting
 @Composable
-internal fun ContextMenuPopup(
+internal fun NoriaContext.ContextMenuPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -135,7 +135,7 @@ internal fun ContextMenuPopup(
 }
 
 @Composable
-internal fun ContextMenuColumnBuilder(
+internal fun NoriaContext.ContextMenuColumnBuilder(
     modifier: Modifier = Modifier,
     colors: ContextMenuColors = DefaultContextMenuColors,
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
@@ -152,7 +152,7 @@ internal fun ContextMenuColumnBuilder(
 
 @VisibleForTesting
 @Composable
-internal fun ContextMenuColumn(
+internal fun NoriaContext.ContextMenuColumn(
     colors: ContextMenuColors,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
@@ -176,7 +176,7 @@ internal fun ContextMenuColumn(
 @SuppressLint("ComposableLambdaParameterPosition")
 @VisibleForTesting
 @Composable
-internal fun ContextMenuItem(
+internal fun NoriaContext.ContextMenuItem(
     label: String,
     enabled: Boolean,
     colors: ContextMenuColors,
@@ -269,7 +269,7 @@ internal class ContextMenuScope internal constructor() {
      *   context menu should be dismissed.
      */
     fun item(
-        label: @Composable () -> String,
+        label: @Composable NoriaContext.() -> String,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
         /**
@@ -378,7 +378,7 @@ internal class ContextMenuColors(
 
 @VisibleForTesting
 @Composable
-internal fun computeContextMenuColors(
+internal fun NoriaContext.computeContextMenuColors(
     @StyleRes backgroundStyleId: Int = R.style.Widget_PopupMenu,
     @StyleRes foregroundStyleId: Int = R.style.TextAppearance_Widget_PopupMenu_Large,
 ): ContextMenuColors {

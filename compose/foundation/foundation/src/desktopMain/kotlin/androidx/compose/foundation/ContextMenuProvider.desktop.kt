@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.util.fastAll
+import noria.NoriaContext
 
 /**
  * Defines a container where context menu is available. Menu is triggered by right mouse clicks.
@@ -47,11 +48,11 @@ import androidx.compose.ui.util.fastAll
  * @param content The content of the [ContextMenuArea].
  */
 @Composable
-fun ContextMenuArea(
+fun NoriaContext.ContextMenuArea(
     items: () -> List<ContextMenuItem>,
     state: ContextMenuState = remember { ContextMenuState() },
     enabled: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ContextMenuArea(
         items = items,
@@ -76,17 +77,17 @@ fun ContextMenuArea(
  * @param content The content of the [ContextMenuArea].
  */
 @Composable
-internal fun ContextMenuArea(
+internal fun NoriaContext.ContextMenuArea(
     items: () -> List<ContextMenuItem>,
     state: ContextMenuState,
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val data = ContextMenuData(items, LocalContextMenuData.current)
 
     Box(modifier, propagateMinConstraints = true) {
         content()
-        LocalContextMenuRepresentation.current.Representation(state) { data.allItems }
+        LocalContextMenuRepresentation.current.run { Representation(state) { data.allItems } }
     }
 }
 
@@ -101,9 +102,9 @@ internal fun ContextMenuArea(
  * @see [[ContextMenuArea]]
  */
 @Composable
-fun ContextMenuDataProvider(
+fun NoriaContext.ContextMenuDataProvider(
     items: () -> List<ContextMenuItem>,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ContextMenuDataProvider(
         ContextMenuData(items, LocalContextMenuData.current),
@@ -112,9 +113,9 @@ fun ContextMenuDataProvider(
 }
 
 @Composable
-internal fun ContextMenuDataProvider(
+internal fun NoriaContext.ContextMenuDataProvider(
     data: ContextMenuData,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     CompositionLocalProvider(
         LocalContextMenuData provides data
@@ -301,10 +302,10 @@ interface ContextMenuRepresentation {
         "Use another overload that loads items only when they are needed",
         replaceWith = ReplaceWith("Representation(state, { items }")
     )
-    fun Representation(state: ContextMenuState, items: List<ContextMenuItem>) = Representation(state) { items }
+    fun NoriaContext.Representation(state: ContextMenuState, items: List<ContextMenuItem>) = Representation(state) { items }
 
     @Composable
-    fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>)
+    fun NoriaContext.Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>)
 }
 
 /**

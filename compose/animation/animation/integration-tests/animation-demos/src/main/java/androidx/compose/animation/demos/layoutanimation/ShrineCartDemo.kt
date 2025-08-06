@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun ShrineCartDemo() {
+fun NoriaContext.ShrineCartDemo() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         var cartState by remember { mutableStateOf(CartState.Collapsed) }
         // Creates a transition here to animate the corner shape and content.
@@ -135,7 +135,7 @@ fun ShrineCartDemo() {
 }
 
 @Composable
-fun CollapsedCart() {
+fun NoriaContext.CollapsedCart() {
     Row(
         Modifier.padding(start = 24.dp, top = 12.dp, bottom = 12.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -162,7 +162,7 @@ enum class CartState {
 }
 
 @Composable
-fun ExpandedCart() {
+fun NoriaContext.ExpandedCart() {
     Box(Modifier.fillMaxSize().background(ShrinePink100))
 }
 

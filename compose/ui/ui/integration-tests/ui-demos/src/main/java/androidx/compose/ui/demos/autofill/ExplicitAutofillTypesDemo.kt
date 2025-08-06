@@ -40,7 +40,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ExplicitAutofillTypesDemo() {
+fun NoriaContext.ExplicitAutofillTypesDemo() {
     var name by
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
     var email by
@@ -77,7 +77,7 @@ fun ExplicitAutofillTypesDemo() {
 }
 
 @Composable
-private fun Autofill(
+private fun NoriaContext.Autofill(
     autofillTypes: List<@Suppress("Deprecation") androidx.compose.ui.autofill.AutofillType>,
     onFill: ((String) -> Unit),
     content: @Composable BoxScope.() -> Unit,

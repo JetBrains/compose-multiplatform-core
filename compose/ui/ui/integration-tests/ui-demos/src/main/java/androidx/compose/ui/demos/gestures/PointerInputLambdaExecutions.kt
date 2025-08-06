@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 
 /** Shows how underlying lambdas are executed. */
 @Composable
-fun PointerInputLambdaExecutions() {
+fun NoriaContext.PointerInputLambdaExecutions() {
 
     var topBoxText by remember { mutableStateOf("Click button to see details") }
     var firstPointerInputLambdaExecutionCount by remember { mutableIntStateOf(0) }
@@ -129,7 +129,7 @@ fun PointerInputLambdaExecutions() {
  * separate external function to return the PointerInputEventHandler.
  */
 @Composable
-fun PointerInputLambdaExecutionsUsingExternalFunctions() {
+fun NoriaContext.PointerInputLambdaExecutionsUsingExternalFunctions() {
 
     var topBoxText by remember { mutableStateOf("Click button to see details") }
     var firstPointerInputLambdaExecutionCount by remember { mutableIntStateOf(0) }

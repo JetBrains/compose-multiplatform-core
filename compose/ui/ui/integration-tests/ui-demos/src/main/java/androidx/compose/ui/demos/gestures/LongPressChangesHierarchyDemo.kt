@@ -43,7 +43,7 @@ import androidx.compose.ui.window.Popup
  * Moves UI to a Popup on long press which changes the top-level Compose container.
  */
 @Composable
-fun ContainerMovesContentToPopupOnDrag(
+fun NoriaContext.ContainerMovesContentToPopupOnDrag(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -80,7 +80,7 @@ fun ContainerMovesContentToPopupOnDrag(
 
 @Preview
 @Composable
-fun LongPressChangesHierarchyDemo() {
+fun NoriaContext.LongPressChangesHierarchyDemo() {
     MaterialTheme {
         ContainerMovesContentToPopupOnDrag {
             AndroidView(factory = ::View, modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {

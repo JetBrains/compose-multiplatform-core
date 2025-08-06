@@ -78,7 +78,7 @@ class TransformableTest {
         isDebugInspectorInfoEnabled = false
     }
 
-    private fun SkikoComposeUiTest.setContentAndGetScope(content: @Composable () -> Unit) {
+    private fun SkikoComposeUiTest.setContentAndGetScope(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             val actualScope = rememberCoroutineScope()
             SideEffect { scope = actualScope }
@@ -618,7 +618,7 @@ class TransformableTest {
         }
     }
 
-    private fun SkikoComposeUiTest.setTransformableContent(getModifier: @Composable () -> Modifier) {
+    private fun SkikoComposeUiTest.setTransformableContent(getModifier: @Composable NoriaContext.() -> Modifier) {
         setContentAndGetScope {
             Box(Modifier.size(600.dp).testTag(TEST_TAG).then(getModifier()))
         }

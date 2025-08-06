@@ -286,7 +286,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
      * given [lambda][rememberScrollState]. All properties from [config] are applied. The viewport
      * has padding around it to make sure scroll distance doesn't include padding.
      */
-    private fun createScrollableContent(rememberScrollState: @Composable () -> ScrollState) {
+    private fun createScrollableContent(rememberScrollState: @Composable NoriaContext.() -> ScrollState) {
         rule.setContent {
             composeView = LocalView.current
             val content =

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.max
 import kotlin.math.min
+import noria.NoriaContext
 
 /**
  * Render [content] that is forced to have the given [size] without clipping.
@@ -40,10 +41,10 @@ import kotlin.math.min
  * [size] is met (as opposed to `Modifier.requiredSize` which will result in clipping).
  */
 @Composable
-internal fun DensityForcedSize(
+internal fun NoriaContext.DensityForcedSize(
     size: DpSize,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
         val measurables =

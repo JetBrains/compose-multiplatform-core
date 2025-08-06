@@ -36,7 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun OneDimensionalFocusSearchDemo() {
+fun NoriaContext.OneDimensionalFocusSearchDemo() {
     Column {
         Text("Use Tab/Shift+Tab to move focus:")
         Row(Modifier.focusableWithBorder()) {

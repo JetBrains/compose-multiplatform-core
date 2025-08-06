@@ -110,7 +110,7 @@ class PaddingTest : LayoutTest() {
     fun paddingAllAppliedToChild() =
         with(density) {
             val padding = 10.dp
-            testPaddingIsAppliedImplementation(padding) { child: @Composable () -> Unit ->
+            testPaddingIsAppliedImplementation(padding) { child: @Composable NoriaContext.() -> Unit ->
                 TestBox(modifier = Modifier.padding(padding), content = child)
             }
         }
@@ -125,7 +125,7 @@ class PaddingTest : LayoutTest() {
         with(density) {
             val padding = PaddingValues(start = 1.dp, top = 3.dp, end = 6.dp, bottom = 10.dp)
             testPaddingWithDifferentInsetsImplementation(1.dp, 3.dp, 6.dp, 10.dp) {
-                child: @Composable () -> Unit ->
+                child: @Composable NoriaContext.() -> Unit ->
                 TestBox(modifier = Modifier.padding(padding), content = child)
             }
         }
@@ -147,7 +147,7 @@ class PaddingTest : LayoutTest() {
             paddingTop,
             paddingRight,
             paddingBottom,
-        ) { child: @Composable () -> Unit ->
+        ) { child: @Composable NoriaContext.() -> Unit ->
             TestBox(modifier = padding, content = child)
         }
     }
@@ -163,7 +163,7 @@ class PaddingTest : LayoutTest() {
             val padding =
                 PaddingValues.Absolute(left = 1.dp, top = 3.dp, right = 6.dp, bottom = 10.dp)
             testPaddingWithDifferentInsetsImplementation(1.dp, 3.dp, 6.dp, 10.dp) {
-                child: @Composable () -> Unit ->
+                child: @Composable NoriaContext.() -> Unit ->
                 TestBox(modifier = Modifier.padding(padding), content = child)
             }
         }
@@ -178,7 +178,7 @@ class PaddingTest : LayoutTest() {
     fun insufficientSpaceAvailable() =
         with(density) {
             val padding = 30.dp
-            testPaddingWithInsufficientSpaceImplementation(padding) { child: @Composable () -> Unit
+            testPaddingWithInsufficientSpaceImplementation(padding) { child: @Composable NoriaContext.() -> Unit
                 ->
                 TestBox(modifier = Modifier.padding(padding), content = child)
             }
@@ -451,7 +451,7 @@ class PaddingTest : LayoutTest() {
 
     private fun testPaddingIsAppliedImplementation(
         padding: Dp,
-        paddingContainer: @Composable (@Composable () -> Unit) -> Unit,
+        paddingContainer: @Composable (@Composable NoriaContext.() -> Unit) -> Unit,
     ) =
         with(density) {
             val sizeDp = 50.dp
@@ -499,7 +499,7 @@ class PaddingTest : LayoutTest() {
         top: Dp,
         right: Dp,
         bottom: Dp,
-        paddingContainer: @Composable ((@Composable () -> Unit) -> Unit),
+        paddingContainer: @Composable ((@Composable NoriaContext.() -> Unit) -> Unit),
     ) =
         with(density) {
             val sizeDp = 50.dp
@@ -549,7 +549,7 @@ class PaddingTest : LayoutTest() {
 
     private fun testPaddingWithInsufficientSpaceImplementation(
         padding: Dp,
-        paddingContainer: @Composable (@Composable () -> Unit) -> Unit,
+        paddingContainer: @Composable (@Composable NoriaContext.() -> Unit) -> Unit,
     ) =
         with(density) {
             val sizeDp = 50.dp
@@ -593,7 +593,7 @@ class PaddingTest : LayoutTest() {
      * constraints it received.
      */
     @Composable
-    private fun TestBox(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    private fun TestBox(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
         Layout(content = content, modifier = modifier) { measurables, constraints ->
             require(measurables.size == 1) {
                 "TestBox received ${measurables.size} children; must have exactly 1"

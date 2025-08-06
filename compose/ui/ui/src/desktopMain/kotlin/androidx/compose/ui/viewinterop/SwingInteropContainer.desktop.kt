@@ -23,6 +23,7 @@ import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.util.fastForEach
 import java.awt.Component
 import javax.swing.SwingUtilities.isEventDispatchThread
+import noria.NoriaContext
 import org.jetbrains.skiko.ClipRectangle
 
 /**
@@ -269,9 +270,9 @@ internal class SwingInteropContainer(
         requireNotNull(interopComponents[component]) as ClipRectangle
 
     @Composable
-    operator fun invoke(content: @Composable () -> Unit) {
+    operator fun NoriaContext.invoke(content: @Composable NoriaContext.() -> Unit) {
         CompositionLocalProvider(
-            LocalInteropContainer provides this,
+            LocalInteropContainer provides this@SwingInteropContainer,
         ) {
             TrackInteropPlacementContainer(
                 content = content

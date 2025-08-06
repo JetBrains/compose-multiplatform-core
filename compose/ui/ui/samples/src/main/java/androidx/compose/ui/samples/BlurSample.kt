@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun BlurSample() {
+fun NoriaContext.BlurSample() {
     Box(
         Modifier.size(300.dp)
             // Blur content allowing the result to extend beyond the bounds of the original content
@@ -44,7 +44,7 @@ fun BlurSample() {
 
 @Sampled
 @Composable
-fun ImageBlurSample() {
+fun NoriaContext.ImageBlurSample() {
     Image(
         painter = painterResource(R.drawable.circus),
         contentDescription = "sample blurred image",

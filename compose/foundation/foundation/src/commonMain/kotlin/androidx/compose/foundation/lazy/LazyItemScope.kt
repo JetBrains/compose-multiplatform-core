@@ -26,12 +26,13 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import noria.NoriaContext
 
 /** Receiver scope being used by the item content parameter of LazyColumn/Row. */
 @Stable
 @LazyScopeMarker
 @JvmDefaultWithCompatibility
-interface LazyItemScope {
+interface LazyItemScope : NoriaContext {
     /**
      * Have the content fill the [Constraints.maxWidth] and [Constraints.maxHeight] of the parent
      * measurement constraints by setting the [minimum width][Constraints.minWidth] to be equal to

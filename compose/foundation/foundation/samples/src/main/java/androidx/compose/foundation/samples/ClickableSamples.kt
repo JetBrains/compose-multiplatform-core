@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 
 @Sampled
 @Composable
-fun ClickableSample() {
+fun NoriaContext.ClickableSample() {
     val count = remember { mutableStateOf(0) }
     // content that you want to make clickable
     Text(text = count.value.toString(), modifier = Modifier.clickable { count.value += 1 })

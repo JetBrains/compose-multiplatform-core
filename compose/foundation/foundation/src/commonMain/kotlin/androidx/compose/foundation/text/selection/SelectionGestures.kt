@@ -25,7 +25,6 @@ import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
@@ -41,6 +40,7 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
@@ -105,22 +105,24 @@ internal fun Modifier.updateSelectionTouchMode(updateTouchMode: (Boolean) -> Uni
 internal fun Modifier.selectionGestureInput(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver,
-): Modifier = composed {
-    // TODO(https://youtrack.jetbrains.com/issue/CMP-79) how we can rewrite this without `composed`?
-    val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
-    val currentTextDragObserver by rememberUpdatedState(textDragObserver)
-    this.pointerInput(Unit) {
-        val clicksCounter = ClicksCounter(viewConfiguration)
-        awaitEachGesture {
-            val down = awaitDown()
-            if (
-                down.isPrecisePointer &&
-                down.buttons.isPrimaryPressed &&
-                down.changes.fastAll { !it.isConsumed }
-            ) {
-                mouseSelection(currentMouseSelectionObserver, clicksCounter, down)
-            } else if (!down.isPrecisePointer) {
-                touchSelection(currentTextDragObserver, down)
+): Modifier = noriaComposed { noriaContext ->
+    noriaContext.run {
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-79) how we can rewrite this without `composed`?
+        val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
+        val currentTextDragObserver by rememberUpdatedState(textDragObserver)
+        this@noriaComposed.pointerInput(Unit) {
+            val clicksCounter = ClicksCounter(viewConfiguration)
+            awaitEachGesture {
+                val down = awaitDown()
+                if (
+                    down.isPrecisePointer &&
+                    down.buttons.isPrimaryPressed &&
+                    down.changes.fastAll { !it.isConsumed }
+                ) {
+                    mouseSelection(currentMouseSelectionObserver, clicksCounter, down)
+                } else if (!down.isPrecisePointer) {
+                    touchSelection(currentTextDragObserver, down)
+                }
             }
         }
     }
@@ -221,8 +223,8 @@ internal suspend fun PointerInputScope.selectionGesturePointerInputBtf2(
         val isPrecise = downEvent.isPrecisePointer
         if (
             isPrecise &&
-                downEvent.buttons.isPrimaryPressed &&
-                downEvent.changes.fastAll { !it.isConsumed }
+            downEvent.buttons.isPrimaryPressed &&
+            downEvent.changes.fastAll { !it.isConsumed }
         ) {
             mouseSelectionBtf2(mouseSelectionObserver, clicksCounter, downEvent)
         } else if (!isPrecise) {

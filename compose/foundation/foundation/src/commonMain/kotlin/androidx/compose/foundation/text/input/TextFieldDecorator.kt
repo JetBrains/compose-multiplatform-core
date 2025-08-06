@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 /**
  * Composable interface that allows to add decorations around text field, such as icon, placeholder,
@@ -36,5 +37,5 @@ fun interface TextFieldDecorator {
     // with the naming.
     @Suppress("ComposableLambdaParameterNaming")
     @Composable
-    fun Decoration(innerTextField: @Composable () -> Unit)
+    fun NoriaContext.Decoration(innerTextField: @Composable NoriaContext.() -> Unit)
 }

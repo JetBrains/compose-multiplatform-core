@@ -17,8 +17,9 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 // TODO https://youtrack.jetbrains.com/issue/CMP-8484
 
 @Composable
-internal actual fun platformAllowsRevealLastTyped(): Boolean = false
+internal actual fun NoriaContext.platformAllowsRevealLastTyped(): Boolean = false

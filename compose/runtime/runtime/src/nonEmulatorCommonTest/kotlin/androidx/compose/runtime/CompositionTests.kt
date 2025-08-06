@@ -75,7 +75,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
-@Composable fun Container(content: @Composable () -> Unit) = content()
+@Composable fun Container(content: @Composable NoriaContext.() -> Unit) = content()
 
 @Stable
 @OptIn(InternalComposeApi::class)
@@ -2906,7 +2906,7 @@ class CompositionTests {
         }
 
         @Composable
-        fun Wrapper(content: @Composable () -> Unit) {
+        fun Wrapper(content: @Composable NoriaContext.() -> Unit) {
             content()
         }
 
@@ -3397,7 +3397,7 @@ class CompositionTests {
     @Test
     fun testModificationsPropagateToSubcomposition() = compositionTest {
         var value by mutableStateOf(0)
-        val content: MutableState<@Composable () -> Unit> = mutableStateOf({})
+        val content: MutableState<@Composable NoriaContext.() -> Unit> = mutableStateOf({})
         @Suppress("VARIABLE_WITH_REDUNDANT_INITIALIZER") var subCompositionOccurred = false
 
         @Composable
@@ -4895,7 +4895,7 @@ class CompositionTests {
 class SomeUnstableClass(val a: Any = "abc")
 
 @Composable
-fun test_CM1_RetFun(condition: Boolean) {
+fun NoriaContext.test_CM1_RetFun(condition: Boolean) {
     Text("Root - before")
     M1 {
         Text("M1 - before")
@@ -4914,7 +4914,7 @@ fun MockViewValidator.test_CM1_RetFun(condition: Boolean) {
 }
 
 @Composable
-fun test_CM1_CCM1_RetFun(condition: Boolean) {
+fun NoriaContext.test_CM1_CCM1_RetFun(condition: Boolean) {
     Text("Root - before")
     M1 {
         Text("M1 - begin")
@@ -4945,7 +4945,7 @@ fun MockViewValidator.test_CM1_CCM1_RetFun(condition: Boolean) {
 var functionInstance: () -> Int = { 0 }
 
 @Composable
-fun updateInstance(newInstance: () -> Int) {
+fun NoriaContext.updateInstance(newInstance: () -> Int) {
     functionInstance = newInstance
 }
 
@@ -4967,7 +4967,7 @@ fun Defaults(a: Int = 1, b: Int = 2, c: Int = 3, d: Int = calculateSomething()) 
 
 @OptIn(InternalComposeApi::class)
 @Composable
-internal fun TestSubcomposition(content: @Composable () -> Unit) {
+internal fun NoriaContext.TestSubcomposition(content: @Composable NoriaContext.() -> Unit) {
     val parentRef = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     DisposableEffect(parentRef) {
@@ -4983,7 +4983,7 @@ internal fun TestSubcomposition(content: @Composable () -> Unit) {
     }
 }
 
-private fun callSetContent(composition: Composition, content: @Composable () -> Unit) {
+private fun callSetContent(composition: Composition, content: @Composable NoriaContext.() -> Unit) {
     composition.setContent(content)
 }
 
@@ -4992,12 +4992,12 @@ class Ref<T : Any> {
 }
 
 @Composable
-fun NarrowInvalidateForReference(ref: Ref<CompositionContext>) {
+fun NoriaContext.NarrowInvalidateForReference(ref: Ref<CompositionContext>) {
     ref.value = rememberCompositionContext()
 }
 
 @Composable
-fun testDeferredSubcomposition(block: @Composable () -> Unit): () -> Unit {
+fun NoriaContext.testDeferredSubcomposition(block: @Composable NoriaContext.() -> Unit): () -> Unit {
     val container = remember { View() }
     val ref = Ref<CompositionContext>()
     NarrowInvalidateForReference(ref = ref)
@@ -5032,12 +5032,12 @@ private fun TestCoroutineScheduler.advanceTimeByFrame(context: CoroutineContext)
 }
 
 @Composable
-fun Wrap(content: @Composable () -> Unit) {
+fun NoriaContext.Wrap(content: @Composable NoriaContext.() -> Unit) {
     content()
 }
 
 @Composable
-fun Wrap(count: Int, content: @Composable () -> Unit) {
+fun NoriaContext.Wrap(count: Int, content: @Composable NoriaContext.() -> Unit) {
     if (count > 1) Wrap(count - 1, content) else content()
 }
 
@@ -5100,12 +5100,12 @@ fun <T> MutableList<T>.swap(a: T, b: T) {
     set(bIndex, a)
 }
 
-@Composable private inline fun InlineWrapper(content: @Composable () -> Unit) = content()
+@Composable private inline fun InlineWrapper(content: @Composable NoriaContext.() -> Unit) = content()
 
-@Composable private inline fun M1(content: @Composable () -> Unit) = InlineWrapper { content() }
+@Composable private inline fun M1(content: @Composable NoriaContext.() -> Unit) = InlineWrapper { content() }
 
 @Composable
-private fun TextWithNonLocalReturn(text: String?) {
+private fun NoriaContext.TextWithNonLocalReturn(text: String?) {
     InlineWrapper {
         if (text == null) return
         Text(text)
@@ -5113,7 +5113,7 @@ private fun TextWithNonLocalReturn(text: String?) {
 }
 
 @Composable
-private inline fun simulatedIf(condition: Boolean, block: () -> Unit) {
+private inline fun NoriaContext.simulatedIf(condition: Boolean, block: () -> Unit) {
     if (condition) block()
 }
 
@@ -5122,7 +5122,7 @@ private inline fun MockViewValidator.simulatedIf(condition: Boolean, block: () -
 }
 
 @Composable
-private inline fun InlineSubcomposition(crossinline content: @Composable () -> Unit) =
+private inline fun NoriaContext.InlineSubcomposition(crossinline content: @Composable NoriaContext.() -> Unit) =
     TestSubcomposition {
         content()
     }
@@ -5137,7 +5137,7 @@ var itemRendererCalls = 0
 var scrollingListCalls = 0
 
 @Composable
-fun TestSkippingContent(data: State<Int>) {
+fun NoriaContext.TestSkippingContent(data: State<Int>) {
     ScrollingList { viewItem ->
         Text("${data.value}")
         scrollingListCalls++
@@ -5146,13 +5146,13 @@ fun TestSkippingContent(data: State<Int>) {
 }
 
 @Composable
-fun ItemRenderer(viewItem: ListViewItem) {
+fun NoriaContext.ItemRenderer(viewItem: ListViewItem) {
     itemRendererCalls++
     Text("${viewItem.id}")
 }
 
 @Composable
-private fun ScrollingList(itemRenderer: @Composable (ListViewItem) -> Unit) {
+private fun NoriaContext.ScrollingList(itemRenderer: @Composable (ListViewItem) -> Unit) {
     ListContent(
         viewItems = remember { listOf(ListViewItem(0), ListViewItem(1)) },
         itemRenderer = itemRenderer,
@@ -5160,14 +5160,14 @@ private fun ScrollingList(itemRenderer: @Composable (ListViewItem) -> Unit) {
 }
 
 @Composable
-fun ListContent(viewItems: List<ListViewItem>, itemRenderer: @Composable (ListViewItem) -> Unit) {
+fun NoriaContext.ListContent(viewItems: List<ListViewItem>, itemRenderer: @Composable (ListViewItem) -> Unit) {
     viewItems.forEach { viewItem ->
         ListContentItem(viewItem = viewItem, itemRenderer = itemRenderer)
     }
 }
 
 @Composable
-fun ListContentItem(viewItem: ListViewItem, itemRenderer: @Composable (ListViewItem) -> Unit) {
+fun NoriaContext.ListContentItem(viewItem: ListViewItem, itemRenderer: @Composable (ListViewItem) -> Unit) {
     itemRenderer(viewItem)
 }
 
@@ -5181,7 +5181,7 @@ private fun <T> unused(@Suppress("UNUSED_PARAMETER") value: T) {}
 inline fun explicitStartReplaceGroup(
     key: Int,
     insertGroup: Boolean = true,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     if (insertGroup) currentComposer.startReplaceGroup(key)
     content()

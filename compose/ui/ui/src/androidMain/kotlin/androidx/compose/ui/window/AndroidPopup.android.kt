@@ -260,7 +260,7 @@ constructor(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+actual fun NoriaContext.Popup(
     alignment: Alignment,
     offset: IntOffset,
     onDismissRequest: (() -> Unit)?,
@@ -290,7 +290,7 @@ actual fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+actual fun NoriaContext.Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
@@ -420,7 +420,7 @@ private fun createFlags(
 internal val LocalPopupTestTag = compositionLocalOf { "DEFAULT_TEST_TAG" }
 
 @Composable
-internal fun PopupTestTag(tag: String, content: @Composable () -> Unit) {
+internal fun NoriaContext.PopupTestTag(tag: String, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalPopupTestTag provides tag, content = content)
 }
 
@@ -428,7 +428,7 @@ internal fun PopupTestTag(tag: String, content: @Composable () -> Unit) {
 // Popup's SimpleStack and Box.
 @Suppress("NOTHING_TO_INLINE")
 @Composable
-private inline fun SimpleStack(modifier: Modifier, noinline content: @Composable () -> Unit) {
+private inline fun NoriaContext.SimpleStack(modifier: Modifier, noinline content: @Composable () -> Unit) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         when (measurables.size) {
             0 -> layout(0, 0) {}

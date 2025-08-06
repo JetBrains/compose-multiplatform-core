@@ -91,7 +91,7 @@ class TransformableTest {
         isDebugInspectorInfoEnabled = false
     }
 
-    private fun ComposeContentTestRule.setContentAndGetScope(content: @Composable () -> Unit) {
+    private fun ComposeContentTestRule.setContentAndGetScope(content: @Composable NoriaContext.() -> Unit) {
         setContent {
             val actualScope = rememberCoroutineScope()
             SideEffect { scope = actualScope }
@@ -940,7 +940,7 @@ class TransformableTest {
         }
     }
 
-    private fun setTransformableContent(getModifier: @Composable () -> Modifier) {
+    private fun setTransformableContent(getModifier: @Composable NoriaContext.() -> Modifier) {
         rule.setContentAndGetScope {
             Box(Modifier.size(600.dp).testTag(TEST_TAG).then(getModifier()))
         }

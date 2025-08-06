@@ -85,7 +85,7 @@ val LongScreenshotsDemos =
     )
 
 @Composable
-private fun SingleEagerListDemo() {
+private fun NoriaContext.SingleEagerListDemo() {
     var fullWidth by remember { mutableStateOf(false) }
     var fullHeight by remember { mutableStateOf(false) }
 
@@ -130,7 +130,7 @@ private fun SingleEagerListDemo() {
 }
 
 @Composable
-private fun SingleLazyListDemo() {
+private fun NoriaContext.SingleLazyListDemo() {
     Column(
         modifier = Modifier.fillMaxSize().wrapContentHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,7 +154,7 @@ private fun SingleLazyListDemo() {
 }
 
 @Composable
-private fun SingleFullScreenListDemo() {
+private fun NoriaContext.SingleFullScreenListDemo() {
     LazyColumn(Modifier.fillMaxSize()) {
         items(50) { index ->
             Button(onClick = {}, Modifier.padding(8.dp).fillMaxWidth()) { Text("Button $index") }
@@ -163,7 +163,7 @@ private fun SingleFullScreenListDemo() {
 }
 
 @Composable
-private fun LazyListContentPaddingDemo() {
+private fun NoriaContext.LazyListContentPaddingDemo() {
     Scaffold(
         modifier = Modifier.padding(8.dp).border(1.dp, Color.Black),
         topBar = {
@@ -195,7 +195,7 @@ private fun LazyListContentPaddingDemo() {
 }
 
 @Composable
-private fun BigInLittleDemo() {
+private fun NoriaContext.BigInLittleDemo() {
     Column(
         modifier = Modifier.fillMaxSize().wrapContentHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -232,7 +232,7 @@ private fun BigInLittleDemo() {
 }
 
 @Composable
-private fun InDialogDemo() {
+private fun NoriaContext.InDialogDemo() {
     Column {
         // Need a scrolling list in the below screen to check that the scrollable in the dialog is
         // selected instead.
@@ -256,7 +256,7 @@ private fun InDialogDemo() {
 }
 
 @Composable
-private fun AndroidViewDemo() {
+private fun NoriaContext.AndroidViewDemo() {
     class DemoAndroidView(context: Context) : LinearLayout(context) {
         init {
             orientation = VERTICAL
@@ -305,7 +305,7 @@ private fun AndroidViewDemo() {
 }
 
 @Composable
-private fun LegacyTextFieldInScrollableDemo() {
+private fun NoriaContext.LegacyTextFieldInScrollableDemo() {
     LazyColumn(Modifier.fillMaxSize().imePadding()) {
         repeat(10) {
             item {
@@ -334,7 +334,7 @@ private fun LegacyTextFieldInScrollableDemo() {
 }
 
 @Composable
-fun LegacySingleGiantTextFieldDemo() {
+fun NoriaContext.LegacySingleGiantTextFieldDemo() {
     var text by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxSize().imePadding()) {
         TextField(value = text, onValueChange = { text = it }, modifier = Modifier.fillMaxSize())
@@ -342,7 +342,7 @@ fun LegacySingleGiantTextFieldDemo() {
 }
 
 @Composable
-private fun TextFieldInScrollableDemo() {
+private fun NoriaContext.TextFieldInScrollableDemo() {
     LazyColumn(Modifier.fillMaxSize().imePadding()) {
         repeat(10) {
             item {
@@ -368,7 +368,7 @@ private fun TextFieldInScrollableDemo() {
 }
 
 @Composable
-fun SingleGiantTextFieldDemo() {
+fun NoriaContext.SingleGiantTextFieldDemo() {
     val text = rememberTextFieldState()
     Column(modifier = Modifier.fillMaxSize().imePadding()) {
         BasicTextField(state = text, modifier = Modifier.fillMaxSize())
@@ -377,7 +377,7 @@ fun SingleGiantTextFieldDemo() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LazyListWithStickiesDemo() {
+private fun NoriaContext.LazyListWithStickiesDemo() {
     LazyColumn(Modifier.fillMaxSize()) {
         // Header with a big section.
         stickyHeader {
@@ -411,7 +411,7 @@ private fun LazyListWithStickiesDemo() {
 }
 
 @Composable
-private fun ReverseScrollingCaptureDemo() {
+private fun NoriaContext.ReverseScrollingCaptureDemo() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier =

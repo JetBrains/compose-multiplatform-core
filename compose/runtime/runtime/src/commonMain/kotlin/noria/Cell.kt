@@ -26,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import noria.impl.NoriaState
 
 fun interface Cell<out T> {
@@ -73,28 +75,29 @@ val WILDCARD: Any get() = Any()
 @Deprecated(
     "Please use Compose Compatible API: rememberCell + CellConsumer as a generic variant " +
         "or derivedStateOf if dealing with a highly-frequently changing state and comparably few corresponding changes in the UI",
-    ReplaceWith("rememberCell { block() }", "fleet.compose.runtime.rememberCell")
+    ReplaceWith("rememberCell(block)", "fleet.compose.runtime.rememberCell")
 )
 @Composable
-fun <T> NoriaContext.cell(block: @Composable NoriaContext.() -> T): Cell<T> {
-    return rememberFakeCell(block)
+inline fun <T> NoriaContext.cell(block: @Composable NoriaContext.() -> T): Cell<T> {
+    return rememberLegacyCell(block)
 }
 
 @Composable
-fun <T> NoriaContext.activeCell(block: @Composable NoriaContext.() -> T): Cell<T> {
+inline fun <T> NoriaContext.activeCell(block: @Composable NoriaContext.() -> T): Cell<T> {
     // TODO Some mechanism of always dirty involving a composition local that gets counted up every frame?
-    return rememberFakeCell(block)
+    return rememberLegacyCell(block)
 }
 
 @Composable
-fun <T> NoriaContext.state(init: () -> T): StateCell<T> {
+inline fun <T> NoriaContext.state(crossinline init: () -> T): StateCell<T> {
     return state(null, init = init)
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @Composable
-fun <T> NoriaContext.state(
-    reader: ClosureContext.() -> T,
-    updater: ((T) -> T) -> Unit
+inline fun <T> NoriaContext.state(
+    noinline reader: ClosureContext.() -> T,
+    noinline updater: ((T) -> T) -> Unit
 ): StateCell<T> {
     val readerState = rememberUpdatedState(reader)
     val updaterState = rememberUpdatedState(updater)
@@ -114,7 +117,7 @@ fun <T> NoriaContext.state(
 }
 
 @Composable
-fun <T> NoriaContext.state(vararg inputs: Any?, init: () -> T): StateCell<T> {
+inline fun <T> NoriaContext.state(vararg inputs: Any?, crossinline init: () -> T): StateCell<T> {
     val composer = currentComposer
     return remember(*inputs) {
         stateCellNoRemember(composer, init)
@@ -122,14 +125,16 @@ fun <T> NoriaContext.state(vararg inputs: Any?, init: () -> T): StateCell<T> {
 }
 
 @OptIn(InternalComposeApi::class)
-fun <T> stateCellNoRemember(composer: Composer?, init: () -> T): StateCell<T> {
+inline fun <T> stateCellNoRemember(composer: Composer?, init: () -> T): StateCell<T> {
     var backingState by mutableStateOf(init())
     return object : StateCell<T> {
         override fun read(): T = backingState
 
         override fun update(f: (T) -> T) {
-            composer?.recordSideEffect {
-                backingState = f(backingState)
+            composer?.applyCoroutineContext?.let {
+                GlobalScope.launch(it) {
+                    backingState = f(backingState)
+                }
             }
         }
     }
@@ -143,8 +148,8 @@ fun <T> stateCellNoRemember(composer: Composer?, init: () -> T): StateCell<T> {
  * @see [cell]
  */
 @Composable
-fun <T> NoriaContext.memo(block: @Composable NoriaContext.() -> T): T {
-    return cell(block).read()
+inline fun <T> NoriaContext.memo(crossinline block: @Composable NoriaContext.() -> T): T {
+    return rememberLegacyCell(block).read()
 }
 
 /**
@@ -262,13 +267,15 @@ fun <T : Any> NoriaContext.observe(cell: Cell<T>, onChange: (T, firstTime: Boole
 }
 
 @Composable
-private fun <T> NoriaContext.rememberFakeCell(block: @Composable NoriaContext.() -> T): Cell<T> {
+@PublishedApi
+internal inline fun <T> NoriaContext.rememberLegacyCell(block: @Composable NoriaContext.() -> T): Cell<T> {
     var result by remember { mutableStateOf<T?>(null) }
     result = block()
     return remember {
         object : Cell<T> {
             override fun read(): T {
-                return checkNotNull(result)
+                @Suppress("UNCHECKED_CAST")
+                return result as T
             }
         }
     }

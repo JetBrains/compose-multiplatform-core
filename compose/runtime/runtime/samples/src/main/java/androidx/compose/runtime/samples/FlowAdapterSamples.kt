@@ -26,14 +26,14 @@ import kotlinx.coroutines.flow.StateFlow
 
 @Sampled
 @Composable
-fun FlowWithInitialSample(flow: Flow<String>) {
+fun NoriaContext.FlowWithInitialSample(flow: Flow<String>) {
     val value: String by flow.collectAsState("initial")
     Text("Value is $value")
 }
 
 @Sampled
 @Composable
-fun StateFlowSample(stateFlow: StateFlow<String>) {
+fun NoriaContext.StateFlowSample(stateFlow: StateFlow<String>) {
     val value: String by stateFlow.collectAsState()
     Text("Value is $value")
 }

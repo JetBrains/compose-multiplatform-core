@@ -58,6 +58,7 @@ kotlin {
             dependencies {
                 def version = project.findProperty('artifactRedirection.version.androidx.annotation')
                 api("androidx.annotation:annotation:$version")
+                implementation(libs.kotlinStdlib)
             }
         }
     }

@@ -100,7 +100,7 @@ fun Modifier.imeNestedScroll(): Modifier {
  */
 @ExperimentalLayoutApi
 @Composable
-internal fun rememberWindowInsetsConnection(
+internal fun NoriaContext.rememberWindowInsetsConnection(
     windowInsets: AndroidWindowInsets,
     side: WindowInsetsSides,
 ): NestedScrollConnection {

@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun AlphaAnimationSample() {
+fun NoriaContext.AlphaAnimationSample() {
     @Composable
     fun alphaAnimation(visible: Boolean) {
         // Animates to 1f or 0f based on [visible].
@@ -64,7 +64,7 @@ data class MySize(val width: Dp, val height: Dp)
 
 @Sampled
 @Composable
-fun ArbitraryValueTypeTransitionSample() {
+fun NoriaContext.ArbitraryValueTypeTransitionSample() {
     @Composable
     fun ArbitraryValueTypeAnimation(enabled: Boolean) {
         // Sets up the different animation target values based on the [enabled] flag.
@@ -94,7 +94,7 @@ fun ArbitraryValueTypeTransitionSample() {
 
 @Sampled
 @Composable
-fun DpAnimationSample() {
+fun NoriaContext.DpAnimationSample() {
     @Composable
     fun HeightAnimation(collapsed: Boolean) {
         // Animates a height of [Dp] type to different target values based on the [collapsed] flag.

@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ScrollableLazyRowFocusDemo() {
+fun NoriaContext.ScrollableLazyRowFocusDemo() {
     val state = rememberLazyListState()
     var reverseLayout by remember { mutableStateOf(false) }
     Column {
@@ -58,7 +58,7 @@ fun ScrollableLazyRowFocusDemo() {
 }
 
 @Composable
-private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.FocusableBox(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(Color.White) }
     Text(
         text = text,
@@ -75,7 +75,7 @@ private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NonFocusableBox(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.NonFocusableBox(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         fontSize = 50.sp,

@@ -23,18 +23,18 @@ import androidx.compose.ui.text.style.TextDecoration
 
 @Sampled
 @Composable
-fun TextDecorationLineThroughSample() {
+fun NoriaContext.TextDecorationLineThroughSample() {
     Text(text = "Demo Text", textDecoration = TextDecoration.LineThrough)
 }
 
 @Sampled
 @Composable
-fun TextDecorationUnderlineSample() {
+fun NoriaContext.TextDecorationUnderlineSample() {
     Text(text = "Demo Text", textDecoration = TextDecoration.Underline)
 }
 
 @Sampled
 @Composable
-fun TextDecorationCombinedSample() {
+fun NoriaContext.TextDecorationCombinedSample() {
     Text(text = "Demo Text", textDecoration = TextDecoration.Underline + TextDecoration.LineThrough)
 }

@@ -20,8 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.platform.findComposeDefaultViewModelStoreOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import noria.NoriaContext
 
 @OptIn(InternalComposeApi::class)
 @Composable
-internal actual fun findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? =
+internal actual fun NoriaContext.findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? =
     findComposeDefaultViewModelStoreOwner()

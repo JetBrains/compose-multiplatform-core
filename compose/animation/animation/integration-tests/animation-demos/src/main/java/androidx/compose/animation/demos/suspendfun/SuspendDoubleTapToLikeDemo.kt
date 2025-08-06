@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun SuspendDoubleTapToLikeDemo() {
+fun NoriaContext.SuspendDoubleTapToLikeDemo() {
     var alpha by remember { mutableFloatStateOf(0f) }
     var scale by remember { mutableFloatStateOf(0f) }
 

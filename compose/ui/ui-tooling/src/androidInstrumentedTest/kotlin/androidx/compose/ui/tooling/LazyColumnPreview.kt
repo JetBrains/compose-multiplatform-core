@@ -27,13 +27,13 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-fun SimpleLazyComposablePreview() {
+fun NoriaContext.SimpleLazyComposablePreview() {
     Surface(color = Color.Red) { LazyColumn { repeat(3) { item { Text("Hello world") } } } }
 }
 
 @Preview
 @Composable
-fun ComplexLazyComposablePreview() {
+fun NoriaContext.ComplexLazyComposablePreview() {
     Surface(color = Color.Red) {
         LazyColumn() {
             repeat(1) {
@@ -48,6 +48,6 @@ fun ComplexLazyComposablePreview() {
 
 @Preview
 @Composable
-fun SimpleTestComposablePreview() {
+fun NoriaContext.SimpleTestComposablePreview() {
     Surface(color = Color.Red) { repeat(3) { Text("Hello world") } }
 }

@@ -75,6 +75,7 @@ import javax.swing.SwingUtilities
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
+import noria.NoriaContext
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -379,9 +380,9 @@ internal class ComposeContainer(
         )
     }
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         mediator.setContent {
-            ProvideContainerCompositionLocals(this, backGestureDispatcher) {
+            ProvideContainerCompositionLocals(this@ComposeContainer, backGestureDispatcher) {
                 content()
             }
         }
@@ -566,10 +567,10 @@ internal class ComposeContainer(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ProvideContainerCompositionLocals(
+private fun NoriaContext.ProvideContainerCompositionLocals(
     composeContainer: ComposeContainer,
     backGestureDispatcher: DesktopBackGestureDispatcher,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val saveableStateRegistry = remember {
         DisposableSaveableStateRegistry("ComposeContainer", composeContainer)

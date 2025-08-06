@@ -409,7 +409,7 @@ class TextFieldTextContextMenuBuilderTest : FocusedWindowTest {
     private fun runCorrectItemsTest(
         isEmptyClipboard: Boolean = false,
         expectedKeys: List<Any>,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         val clipboard = FakeClipboard()
 

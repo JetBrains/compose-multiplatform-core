@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 /**
  * Collects values from this [StateFlow] and represents its latest value via [State]. The
@@ -63,7 +64,7 @@ public fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
     context: CoroutineContext = EmptyCoroutineContext,
 ): State<R> =
-    produceState(initial, this, context) {
+    NoriaContext.produceState(initial, this, context) {
         if (context == EmptyCoroutineContext) {
             collect { value = it }
         } else withContext(context) { collect { value = it } }

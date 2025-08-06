@@ -21,6 +21,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
+import noria.NoriaContext
 
 /**
  * This function should be used to help build responsive UIs that follow the system setting, to
@@ -46,6 +47,6 @@ import androidx.compose.ui.SystemTheme
 @OptIn(InternalComposeUiApi::class)
 @Composable
 @ReadOnlyComposable
-internal actual fun _isSystemInDarkTheme(): Boolean {
+internal actual fun NoriaContext._isSystemInDarkTheme(): Boolean {
     return LocalSystemTheme.current == SystemTheme.Dark
 }

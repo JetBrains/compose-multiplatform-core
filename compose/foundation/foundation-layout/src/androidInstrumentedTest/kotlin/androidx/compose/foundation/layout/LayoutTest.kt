@@ -92,7 +92,7 @@ open class LayoutTest {
         activityTestRule.runOnUiThread(runnable)
     }
 
-    internal fun show(composable: @Composable () -> Unit) {
+    internal fun show(composable: @Composable NoriaContext.() -> Unit) {
         val runnable: Runnable =
             object : Runnable {
                 override fun run() {
@@ -163,7 +163,7 @@ open class LayoutTest {
         }
 
     internal fun testIntrinsics(
-        vararg layouts: @Composable () -> Unit,
+        vararg layouts: @Composable NoriaContext.() -> Unit,
         test: ((Int) -> Int, (Int) -> Int, (Int) -> Int, (Int) -> Int) -> Unit,
     ) {
         layouts.forEach { layout ->
@@ -225,7 +225,7 @@ open class LayoutTest {
     }
 
     @Composable
-    internal fun WithInfiniteConstraints(content: @Composable () -> Unit) {
+    internal fun WithInfiniteConstraints(content: @Composable NoriaContext.() -> Unit) {
         Layout(content) { measurables, _ ->
             val placeables = measurables.map { it.measure(Constraints()) }
             layout(0, 0) { placeables.forEach { it.placeRelative(0, 0) } }
@@ -236,7 +236,7 @@ open class LayoutTest {
     internal fun ConstrainedBox(
         constraints: DpConstraints,
         modifier: Modifier = Modifier,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         with(LocalDensity.current) {
             val pxConstraints = Constraints(constraints)
@@ -396,7 +396,7 @@ open class LayoutTest {
         constraints: DpConstraints = DpConstraints(),
         width: Dp? = null,
         height: Dp? = null,
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
         Layout(content, modifier) { measurables, incomingConstraints ->
             val containerConstraints =

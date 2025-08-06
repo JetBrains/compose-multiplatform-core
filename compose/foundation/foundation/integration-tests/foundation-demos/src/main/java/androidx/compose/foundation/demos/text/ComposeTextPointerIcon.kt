@@ -51,7 +51,7 @@ private enum class ParentOverride {
 
 @Preview
 @Composable
-fun TextPointerIconDemo() {
+fun NoriaContext.TextPointerIconDemo() {
     Column(
         modifier = Modifier.padding(horizontal = 32.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -73,7 +73,7 @@ fun TextPointerIconDemo() {
 }
 
 @Composable
-private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Boolean) {
+private fun NoriaContext.IconDemoRectangle(parentOverride: ParentOverride, textOverride: Boolean) {
     val rectanglePointerIconModifier =
         when (parentOverride) {
             ParentOverride.None -> Modifier
@@ -114,7 +114,7 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
 }
 
 @Composable
-private fun IconDemoColumn(overrideDescendants: Boolean) {
+private fun NoriaContext.IconDemoColumn(overrideDescendants: Boolean) {
     val borderMod = Modifier.border(1.dp, Color.LightGray)
     val iconMod = borderMod.pointerHoverIcon(PointerIcon.Crosshair, overrideDescendants)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {

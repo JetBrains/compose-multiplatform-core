@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 
 @Sampled
 @Composable
-fun CrossfadeSample() {
+fun NoriaContext.CrossfadeSample() {
     Crossfade(targetState = "A") { screen ->
         when (screen) {
             "A" -> Text("Page A")

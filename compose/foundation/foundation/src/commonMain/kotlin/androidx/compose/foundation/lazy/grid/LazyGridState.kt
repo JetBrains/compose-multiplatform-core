@@ -60,6 +60,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Creates a [LazyGridState] that is remembered across compositions.
@@ -72,7 +73,7 @@ import kotlinx.coroutines.launch
  *   [LazyGridState.firstVisibleItemScrollOffset]
  */
 @Composable
-fun rememberLazyGridState(
+fun NoriaContext.rememberLazyGridState(
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyGridState {
@@ -95,7 +96,7 @@ fun rememberLazyGridState(
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberLazyGridState(
+fun NoriaContext.rememberLazyGridState(
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,
     prefetchStrategy: LazyGridPrefetchStrategy = remember { LazyGridPrefetchStrategy() },
@@ -123,7 +124,7 @@ fun rememberLazyGridState(
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberLazyGridState(
+fun NoriaContext.rememberLazyGridState(
     cacheWindow: LazyLayoutCacheWindow,
     initialFirstVisibleItemIndex: Int = 0,
     initialFirstVisibleItemScrollOffset: Int = 0,

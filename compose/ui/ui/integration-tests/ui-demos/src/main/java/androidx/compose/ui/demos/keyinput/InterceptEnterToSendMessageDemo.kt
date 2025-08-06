@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
-fun InterceptEnterToSendMessageDemo() {
+fun NoriaContext.InterceptEnterToSendMessageDemo() {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
     var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }

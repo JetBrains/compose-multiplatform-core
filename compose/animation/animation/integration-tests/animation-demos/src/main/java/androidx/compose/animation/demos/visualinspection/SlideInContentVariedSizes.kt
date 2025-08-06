@@ -59,7 +59,7 @@ import kotlin.math.min
 @Preview
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun SlideInContentVariedSizes() {
+fun NoriaContext.SlideInContentVariedSizes() {
     Column {
         var contentAlignment by remember { mutableStateOf(Alignment.TopStart) }
         var clip by remember { mutableStateOf(true) }
@@ -140,7 +140,7 @@ fun SlideInContentVariedSizes() {
 }
 
 @Composable
-fun AlignmentMenu(contentAlignment: Alignment, onAlignmentChanged: (alignment: Alignment) -> Unit) {
+fun NoriaContext.AlignmentMenu(contentAlignment: Alignment, onAlignmentChanged: (alignment: Alignment) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         Button(onClick = { expanded = true }) { Text("Current alignment: $contentAlignment") }
@@ -173,7 +173,7 @@ fun AlignmentMenu(contentAlignment: Alignment, onAlignmentChanged: (alignment: A
 }
 
 @Composable
-fun Pane1() {
+fun NoriaContext.Pane1() {
     Column(Modifier.background(Color(0xFFe3ffd9)).padding(10.dp)) {
         for (id in 1..4) {
             Text("Range from ${(id - 1) * 10} to ${id * 10 - 1}:", fontSize = 20.sp)
@@ -182,7 +182,7 @@ fun Pane1() {
 }
 
 @Composable
-fun Pane3() {
+fun NoriaContext.Pane3() {
     Column(Modifier.background(Color(0xFFffe9d6)).padding(10.dp)) {
         for (id in 1..10) {
             Text("Line #$id ", fontSize = 20.sp)
@@ -191,7 +191,7 @@ fun Pane3() {
 }
 
 @Composable
-fun Pane2() {
+fun NoriaContext.Pane2() {
     Column(Modifier.background(Color(0xFFfffbd0)).padding(10.dp)) {
         Text("Yes", fontSize = 20.sp)
         Text("No", fontSize = 20.sp)

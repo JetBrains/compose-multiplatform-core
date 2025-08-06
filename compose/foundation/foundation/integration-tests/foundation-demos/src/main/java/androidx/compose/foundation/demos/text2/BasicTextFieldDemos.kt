@@ -51,7 +51,7 @@ import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SwapFieldSameStateDemo() {
+fun NoriaContext.SwapFieldSameStateDemo() {
     var swapped by remember { mutableStateOf(false) }
     val state = remember { TextFieldState() }
 
@@ -66,7 +66,7 @@ fun SwapFieldSameStateDemo() {
 }
 
 @Composable
-fun BasicTextFieldDemos() {
+fun NoriaContext.BasicTextFieldDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine(tag = "Plain BasicTextField")
         PlainBasicTextField()
@@ -89,7 +89,7 @@ fun BasicTextFieldDemos() {
 }
 
 @Composable
-fun BasicTextFieldValueCallbackDemo() {
+fun NoriaContext.BasicTextFieldValueCallbackDemo() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine("Simple string-only")
         SimpleValueCallbackDemo()
@@ -100,13 +100,13 @@ fun BasicTextFieldValueCallbackDemo() {
 }
 
 @Composable
-private fun SimpleValueCallbackDemo() {
+private fun NoriaContext.SimpleValueCallbackDemo() {
     var text by remember { mutableStateOf("") }
     BasicTextField(value = text, onValueChange = { text = it }, modifier = demoTextFieldModifiers)
 }
 
 @Composable
-private fun CapitalizeValueCallbackDemo() {
+private fun NoriaContext.CapitalizeValueCallbackDemo() {
     var text by remember { mutableStateOf("") }
     BasicTextField(
         value = text,
@@ -117,13 +117,13 @@ private fun CapitalizeValueCallbackDemo() {
 }
 
 @Composable
-fun PlainBasicTextField() {
+fun NoriaContext.PlainBasicTextField() {
     val state = remember { TextFieldState() }
     BasicTextField(state, demoTextFieldModifiers, textStyle = LocalTextStyle.current)
 }
 
 @Composable
-fun SingleLineBasicTextField() {
+fun NoriaContext.SingleLineBasicTextField() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state = state,
@@ -134,7 +134,7 @@ fun SingleLineBasicTextField() {
 }
 
 @Composable
-fun MultiLineBasicTextField() {
+fun NoriaContext.MultiLineBasicTextField() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state = state,
@@ -145,7 +145,7 @@ fun MultiLineBasicTextField() {
 }
 
 @Composable
-fun StateTogglingBasicTextField() {
+fun NoriaContext.StateTogglingBasicTextField() {
     var counter by remember { mutableIntStateOf(0) }
     val states = remember { listOf(TextFieldState(), TextFieldState()) }
     val state = states[counter]
@@ -162,7 +162,7 @@ fun StateTogglingBasicTextField() {
 }
 
 @Composable
-fun BasicTextFieldEditControls() {
+fun NoriaContext.BasicTextFieldEditControls() {
     var enabled by remember { mutableStateOf(true) }
     var readOnly by remember { mutableStateOf(false) }
     val state = remember { TextFieldState("Content goes here") }
@@ -189,7 +189,7 @@ fun BasicTextFieldEditControls() {
 }
 
 @Composable
-fun BasicTextFieldProgrammaticEdit() {
+fun NoriaContext.BasicTextFieldProgrammaticEdit() {
     val state = remember { TextFieldState() }
     Column {
         Row {

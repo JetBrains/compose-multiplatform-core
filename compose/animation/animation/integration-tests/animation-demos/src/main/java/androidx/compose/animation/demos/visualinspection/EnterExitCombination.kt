@@ -81,7 +81,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun EnterExitCombination() {
+fun NoriaContext.EnterExitCombination() {
     Column(Modifier.fillMaxWidth().padding(top = 20.dp)) {
         val oppositeAlignment = remember { mutableStateOf(true) }
 
@@ -185,7 +185,7 @@ fun EnterExitCombination() {
 }
 
 @Composable
-fun AlignmentOption(state: MutableState<Boolean>) {
+fun NoriaContext.AlignmentOption(state: MutableState<Boolean>) {
     Row(
         Modifier.selectable(selected = state.value, onClick = { state.value = !state.value })
             .padding(10.dp)
@@ -197,7 +197,7 @@ fun AlignmentOption(state: MutableState<Boolean>) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun CenterMenu(
+fun NoriaContext.CenterMenu(
     modifier: Modifier = Modifier,
     selectedOptions: List<Boolean>,
     oppositeDirection: Boolean,
@@ -293,7 +293,7 @@ fun CenterMenu(
 }
 
 @Composable
-fun TransitionOptions(selectedOptions: List<Boolean>, onOptionSelected: (Int) -> Unit) {
+fun NoriaContext.TransitionOptions(selectedOptions: List<Boolean>, onOptionSelected: (Int) -> Unit) {
     Column {
         val radioOptions = listOf("Fade", "Expand/Shrink", "Slide")
         radioOptions.forEachIndexed { i, text ->

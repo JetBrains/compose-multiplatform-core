@@ -97,6 +97,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 private object BasicTextFieldDefaults {
     val CursorBrush = SolidColor(Color.Black)
@@ -183,7 +184,7 @@ private object BasicTextFieldDefaults {
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -231,7 +232,7 @@ fun BasicTextField(
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-internal fun BasicTextField(
+internal fun NoriaContext.BasicTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -464,65 +465,67 @@ internal fun BasicTextField(
     Box(decorationModifiers, propagateMinConstraints = true) {
         ContextMenuArea(textFieldSelectionState, enabled) {
             val nonNullDecorator = decorator ?: DefaultTextFieldDecorator
-            nonNullDecorator.Decoration {
-                val minLines: Int
-                val maxLines: Int
-                if (lineLimits is MultiLine) {
-                    minLines = lineLimits.minHeightInLines
-                    maxLines = lineLimits.maxHeightInLines
-                } else {
-                    minLines = 1
-                    maxLines = 1
-                }
+            nonNullDecorator.run {
+                Decoration {
+                    val minLines: Int
+                    val maxLines: Int
+                    if (lineLimits is MultiLine) {
+                        minLines = lineLimits.minHeightInLines
+                        maxLines = lineLimits.maxHeightInLines
+                    } else {
+                        minLines = 1
+                        maxLines = 1
+                    }
 
-                Box(
-                    propagateMinConstraints = true,
-                    modifier =
-                        Modifier.heightIn(min = textLayoutState.minHeightForSingleLineField)
-                            .heightInLines(
-                                textStyle = textStyle,
-                                minLines = minLines,
-                                maxLines = maxLines,
-                            )
-                            .textFieldMinSize(textStyle)
-                            .clipToBounds()
-                            .overscroll(overscrollEffect)
-                            .then(
-                                TextFieldCoreModifier(
-                                    isFocused = isWindowAndTextFieldFocused,
-                                    isDragHovered = isDragHovered,
+                    Box(
+                        propagateMinConstraints = true,
+                        modifier =
+                            Modifier.heightIn(min = textLayoutState.minHeightForSingleLineField)
+                                .heightInLines(
+                                    textStyle = textStyle,
+                                    minLines = minLines,
+                                    maxLines = maxLines,
+                                )
+                                .textFieldMinSize(textStyle)
+                                .clipToBounds()
+                                .overscroll(overscrollEffect)
+                                .then(
+                                    TextFieldCoreModifier(
+                                        isFocused = isWindowAndTextFieldFocused,
+                                        isDragHovered = isDragHovered,
+                                        textLayoutState = textLayoutState,
+                                        textFieldState = transformedState,
+                                        textFieldSelectionState = textFieldSelectionState,
+                                        cursorBrush = cursorBrush,
+                                        writeable = enabled && !readOnly,
+                                        scrollState = scrollState,
+                                        orientation = orientation,
+                                        toolbarRequester = toolbarRequester,
+                                        platformSelectionBehaviors = platformSelectionBehaviors,
+                                    )
+                                ),
+                    ) {
+                        Box(
+                            modifier =
+                                TextFieldTextLayoutModifier(
                                     textLayoutState = textLayoutState,
                                     textFieldState = transformedState,
-                                    textFieldSelectionState = textFieldSelectionState,
-                                    cursorBrush = cursorBrush,
-                                    writeable = enabled && !readOnly,
-                                    scrollState = scrollState,
-                                    orientation = orientation,
-                                    toolbarRequester = toolbarRequester,
-                                    platformSelectionBehaviors = platformSelectionBehaviors,
+                                    textStyle = textStyle,
+                                    singleLine = singleLine,
+                                    onTextLayout = onTextLayout,
+                                    keyboardOptions = resolvedKeyboardOptions,
                                 )
-                            ),
-                ) {
-                    Box(
-                        modifier =
-                            TextFieldTextLayoutModifier(
-                                textLayoutState = textLayoutState,
-                                textFieldState = transformedState,
-                                textStyle = textStyle,
-                                singleLine = singleLine,
-                                onTextLayout = onTextLayout,
-                                keyboardOptions = resolvedKeyboardOptions,
-                            )
-                    )
+                        )
 
-                    if (
-                        enabled &&
+                        if (
+                            enabled &&
                             isWindowAndTextFieldFocused &&
                             textFieldSelectionState.isInTouchMode
-                    ) {
-                        TextFieldSelectionHandles(selectionState = textFieldSelectionState)
-                        if (!readOnly) {
-                            TextFieldCursorHandle(selectionState = textFieldSelectionState)
+                        ) {
+                            TextFieldSelectionHandles(selectionState = textFieldSelectionState)
+                            if (!readOnly) {
+                                TextFieldCursorHandle(selectionState = textFieldSelectionState)
+                            }
                         }
                     }
                 }
@@ -541,7 +544,7 @@ private fun Modifier.addContextMenuComponents(
     else this
 
 @Composable
-internal fun TextFieldCursorHandle(selectionState: TextFieldSelectionState) {
+internal fun NoriaContext.TextFieldCursorHandle(selectionState: TextFieldSelectionState) {
     // Does not recompose if only position of the handle changes.
     val cursorHandleState by
         remember(selectionState) {
@@ -562,7 +565,7 @@ internal fun TextFieldCursorHandle(selectionState: TextFieldSelectionState) {
 }
 
 @Composable
-internal fun TextFieldSelectionHandles(selectionState: TextFieldSelectionState) {
+internal fun NoriaContext.TextFieldSelectionHandles(selectionState: TextFieldSelectionState) {
     // Does not recompose if only position of the handle changes.
     val startHandleState by
         remember(selectionState) {
@@ -731,7 +734,7 @@ private val MinTouchTargetSizeForHandles = DpSize(40.dp, 40.dp)
  *   innerTextField exactly once.
  */
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -747,7 +750,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
 ) {
     // Holds the latest internal TextFieldValue state. We need to keep it to have the correct value
@@ -888,7 +891,7 @@ fun BasicTextField(
  *   innerTextField exactly once.
  */
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -904,7 +907,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
 ) {
     CoreTextField(
@@ -933,7 +936,7 @@ fun BasicTextField(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -948,7 +951,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
 ) {
     BasicTextField(
@@ -973,7 +976,7 @@ fun BasicTextField(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicTextField(
+fun NoriaContext.BasicTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -988,7 +991,7 @@ fun BasicTextField(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
-    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+    decorationBox: @Composable (innerTextField: @Composable NoriaContext.() -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
 ) {
     BasicTextField(

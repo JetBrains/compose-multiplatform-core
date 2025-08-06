@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun KeyboardActionsDemos() {
+fun NoriaContext.KeyboardActionsDemos() {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     Box(Modifier.imePadding()) {
@@ -113,7 +113,7 @@ private val imeActions =
     )
 
 @Composable
-private fun KeyboardActionDemoItem(
+private fun NoriaContext.KeyboardActionDemoItem(
     imeAction: ImeAction,
     onKeyboardAction: KeyboardActionHandler,
     singleLine: Boolean,

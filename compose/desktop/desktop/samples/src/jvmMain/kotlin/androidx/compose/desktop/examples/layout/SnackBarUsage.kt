@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 
 @Suppress("SpellCheckingInspection")
 @Composable
-fun SnackBarUsage() {
+fun NoriaContext.SnackBarUsage() {
     Snackbar(action = null) {
         Text("Snackbar without action")
     }

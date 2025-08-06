@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
+import noria.NoriaContext
 
 /**
  * Returns an existing [ViewModel] or creates a new one in the given owner (usually, a fragment or
@@ -43,7 +44,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 @Deprecated("Superseded by viewModel that takes CreationExtras", level = DeprecationLevel.HIDDEN)
 @Suppress("MissingJvmstatic")
 @Composable
-public inline fun <reified VM : ViewModel> viewModel(
+public inline fun <reified VM : ViewModel> NoriaContext.viewModel(
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
@@ -70,7 +71,7 @@ public inline fun <reified VM : ViewModel> viewModel(
 @Deprecated("Superseded by viewModel that takes CreationExtras", level = DeprecationLevel.HIDDEN)
 @Suppress("MissingJvmstatic")
 @Composable
-public fun <VM : ViewModel> viewModel(
+public fun <VM : ViewModel> NoriaContext.viewModel(
     modelClass: Class<VM>,
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
@@ -102,7 +103,7 @@ public fun <VM : ViewModel> viewModel(
  */
 @Suppress("MissingJvmstatic")
 @Composable
-public fun <VM : ViewModel> viewModel(
+public fun <VM : ViewModel> NoriaContext.viewModel(
     modelClass: Class<VM>,
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {

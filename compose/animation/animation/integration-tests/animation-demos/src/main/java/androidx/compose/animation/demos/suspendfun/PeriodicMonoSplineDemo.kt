@@ -65,7 +65,7 @@ import kotlin.math.roundToLong
 
 @Preview
 @Composable
-fun PeriodicMonoSplineDemo() {
+fun NoriaContext.PeriodicMonoSplineDemo() {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),

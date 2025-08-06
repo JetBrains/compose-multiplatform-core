@@ -54,7 +54,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun BrushAnimatingSpanDemo() {
+fun NoriaContext.BrushAnimatingSpanDemo() {
     val animatable = remember { Animatable(0f) }
     val animatable2 = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
@@ -134,7 +134,7 @@ fun BrushAnimatingSpanDemo() {
 }
 
 @Composable
-fun BrushAnimatingSpanText(
+fun NoriaContext.BrushAnimatingSpanText(
     preWordCount: Int,
     highlightWordCount: Int,
     postWordCount: Int,

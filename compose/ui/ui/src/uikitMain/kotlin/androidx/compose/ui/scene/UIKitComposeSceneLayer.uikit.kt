@@ -45,6 +45,7 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
+import noria.NoriaContext
 import platform.CoreGraphics.CGPoint
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
@@ -52,7 +53,7 @@ import platform.UIKit.UIWindow
 internal class UIKitComposeSceneLayer(
     private val onClosed: (UIKitComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
-    private val hostCompositionLocals: @Composable (@Composable () -> Unit) -> Unit,
+    private val hostCompositionLocals: @Composable NoriaContext.(@Composable NoriaContext.() -> Unit) -> Unit,
     private val metalView: MetalView,
     private val initDensity: Density,
     private val initLayoutDirection: LayoutDirection,
@@ -171,14 +172,14 @@ internal class UIKitComposeSceneLayer(
     }
 
     @Composable
-    private fun ProvideComposeSceneLayerCompositionLocals(
-        content: @Composable () -> Unit
+    private fun NoriaContext.ProvideComposeSceneLayerCompositionLocals(
+        content: @Composable NoriaContext.() -> Unit
     ) = CompositionLocalProvider(
         LocalBackGestureDispatcher provides backGestureDispatcher,
         content = content
     )
 
-    override fun setContent(content: @Composable () -> Unit) {
+    override fun setContent(content: @Composable NoriaContext.() -> Unit) {
         mediator.setContent {
             hostCompositionLocals {
                 ProvideComposeSceneLayerCompositionLocals(content)

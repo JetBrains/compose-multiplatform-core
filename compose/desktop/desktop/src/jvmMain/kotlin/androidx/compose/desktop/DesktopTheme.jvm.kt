@@ -16,61 +16,62 @@
 
 package androidx.compose.desktop
 
-import androidx.compose.foundation.LocalScrollbarStyle
-import androidx.compose.foundation.ScrollbarStyle
-import androidx.compose.material.Colors
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Shapes
-import androidx.compose.material.Typography
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.unit.dp
+//import androidx.compose.foundation.LocalScrollbarStyle
+//import androidx.compose.foundation.ScrollbarStyle
+//import androidx.compose.material.Colors
+//import androidx.compose.material.MaterialTheme
+//import androidx.compose.material.Shapes
+//import androidx.compose.material.Typography
+//import androidx.compose.runtime.Composable
+//import androidx.compose.runtime.CompositionLocalProvider
+//import androidx.compose.ui.unit.dp
+//import noria.NoriaContext
 
-@Deprecated(
-    "Use MaterialTheme",
-    replaceWith = ReplaceWith(
-        "MaterialTheme(colors, typography, shapes, content)",
-        "androidx.compose.material.MaterialTheme"
-    )
-)
-@Suppress("DEPRECATION")
-@Composable
-fun DesktopMaterialTheme(
-    colors: Colors = MaterialTheme.colors,
-    typography: Typography = MaterialTheme.typography,
-    shapes: Shapes = MaterialTheme.shapes,
-    content: @Composable () -> Unit
-) = MaterialTheme(
-    colors,
-    typography,
-    shapes
-) {
-    DesktopTheme(content = content)
-}
-
-@Deprecated(
-    "Use CompositionLocalProvider(LocalScrollbarStyle provides scrollbar)",
-    replaceWith = ReplaceWith(
-        "CompositionLocalProvider(\n" +
-            "    LocalScrollbarStyle provides scrollbar,\n" +
-            "    content = content\n" +
-            ")",
-        "androidx.compose.runtime.CompositionLocalProvider",
-        "androidx.compose.foundation.LocalScrollbarStyle"
-    )
-)
-@Composable
-fun DesktopTheme(
-    scrollbar: ScrollbarStyle = ScrollbarStyle(
-        minimalHeight = 16.dp,
-        thickness = 8.dp,
-        shape = MaterialTheme.shapes.small,
-        hoverDurationMillis = 300,
-        unhoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.12f),
-        hoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.50f)
-    ),
-    content: @Composable () -> Unit
-) = CompositionLocalProvider(
-    LocalScrollbarStyle provides scrollbar,
-    content = content
-)
+//@Deprecated(
+//    "Use MaterialTheme",
+//    replaceWith = ReplaceWith(
+//        "MaterialTheme(colors, typography, shapes, content)",
+//        "androidx.compose.material.MaterialTheme"
+//    )
+//)
+//@Suppress("DEPRECATION")
+//@Composable
+//fun NoriaContext.DesktopMaterialTheme(
+//    colors: Colors = MaterialTheme.colors,
+//    typography: Typography = MaterialTheme.typography,
+//    shapes: Shapes = MaterialTheme.shapes,
+//    content: @Composable NoriaContext.() -> Unit
+//) = MaterialTheme(
+//    colors,
+//    typography,
+//    shapes
+//) {
+//    DesktopTheme(content = content)
+//}
+//
+//@Deprecated(
+//    "Use CompositionLocalProvider(LocalScrollbarStyle provides scrollbar)",
+//    replaceWith = ReplaceWith(
+//        "CompositionLocalProvider(\n" +
+//            "    LocalScrollbarStyle provides scrollbar,\n" +
+//            "    content = content\n" +
+//            ")",
+//        "androidx.compose.runtime.CompositionLocalProvider",
+//        "androidx.compose.foundation.LocalScrollbarStyle"
+//    )
+//)
+//@Composable
+//fun NoriaContext.DesktopTheme(
+//    scrollbar: ScrollbarStyle = ScrollbarStyle(
+//        minimalHeight = 16.dp,
+//        thickness = 8.dp,
+//        shape = MaterialTheme.shapes.small,
+//        hoverDurationMillis = 300,
+//        unhoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.12f),
+//        hoverColor = MaterialTheme.colors.onSurface.copy(alpha = 0.50f)
+//    ),
+//    content: @Composable NoriaContext.() -> Unit
+//) = CompositionLocalProvider(
+//    LocalScrollbarStyle provides scrollbar,
+//    content = content
+//)

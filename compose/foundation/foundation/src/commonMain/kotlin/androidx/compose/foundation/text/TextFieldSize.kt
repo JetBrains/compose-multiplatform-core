@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -34,13 +35,15 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 
-internal fun Modifier.textFieldMinSize(style: TextStyle) = composed {
-    val density = LocalDensity.current
-    val fontFamilyResolver = LocalFontFamilyResolver.current
-    val layoutDirection = LocalLayoutDirection.current
+internal fun Modifier.textFieldMinSize(style: TextStyle) = noriaComposed { noriaContext ->
+    noriaContext.run {
+        val density = LocalDensity.current
+        val fontFamilyResolver = LocalFontFamilyResolver.current
+        val layoutDirection = LocalLayoutDirection.current
 
-    val resolvedStyle = remember(style, layoutDirection) { resolveDefaults(style, layoutDirection) }
-    val typeface by
+        val resolvedStyle =
+            remember(style, layoutDirection) { resolveDefaults(style, layoutDirection) }
+        val typeface by
         remember(fontFamilyResolver, resolvedStyle) {
             fontFamilyResolver.resolve(
                 resolvedStyle.fontFamily,
@@ -50,22 +53,26 @@ internal fun Modifier.textFieldMinSize(style: TextStyle) = composed {
             )
         }
 
-    val minSizeState = remember {
-        TextFieldSize(layoutDirection, density, fontFamilyResolver, style, typeface)
-    }
+        val minSizeState = remember {
+            TextFieldSize(layoutDirection, density, fontFamilyResolver, style, typeface)
+        }
 
-    minSizeState.update(layoutDirection, density, fontFamilyResolver, resolvedStyle, typeface)
+        minSizeState.update(layoutDirection, density, fontFamilyResolver, resolvedStyle, typeface)
 
-    Modifier.layout { measurable, constraints ->
-        val minSize = minSizeState.minSize
+        Modifier.layout { measurable, constraints ->
+            val minSize = minSizeState.minSize
 
-        val childConstraints =
-            constraints.copy(
-                minWidth = minSize.width.coerceIn(constraints.minWidth, constraints.maxWidth),
-                minHeight = minSize.height.coerceIn(constraints.minHeight, constraints.maxHeight),
-            )
-        val measured = measurable.measure(childConstraints)
-        layout(measured.width, measured.height) { measured.placeRelative(0, 0) }
+            val childConstraints =
+                constraints.copy(
+                    minWidth = minSize.width.coerceIn(constraints.minWidth, constraints.maxWidth),
+                    minHeight = minSize.height.coerceIn(
+                        constraints.minHeight,
+                        constraints.maxHeight
+                    ),
+                )
+            val measured = measurable.measure(childConstraints)
+            layout(measured.width, measured.height) { measured.placeRelative(0, 0) }
+        }
     }
 }
 

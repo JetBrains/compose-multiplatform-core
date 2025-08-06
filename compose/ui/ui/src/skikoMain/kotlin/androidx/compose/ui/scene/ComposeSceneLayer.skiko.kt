@@ -43,6 +43,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import noria.NoriaContext
 
 /**
  * An extra layer for the [ComposeScene].
@@ -118,7 +119,7 @@ interface ComposeSceneLayer {
      *
      * @param content Content of the [ComposeScene]
      */
-    fun setContent(content: @Composable () -> Unit)
+    fun setContent(content: @Composable NoriaContext.() -> Unit)
 
     /**
      * Sets the root key event listener.
@@ -157,6 +158,20 @@ interface ComposeSceneLayer {
      * the position relative to the window in pixels.
      */
     fun calculateLocalPosition(positionInWindow: IntOffset): IntOffset
+
+    /**
+     * Sets the content of the layer to [content].
+     */
+    @Composable
+    fun NoriaContext.Content(content: @Composable NoriaContext.() -> Unit) {
+        val currentContent by rememberUpdatedState(content)
+        DisposableEffect(this) {
+            setContent {
+                currentContent()
+            }
+            onDispose {  }
+        }
+    }
 }
 
 /**
@@ -171,7 +186,7 @@ interface ComposeSceneLayer {
  * @return The created [ComposeSceneLayer].
  */
 @Composable
-internal fun rememberComposeSceneLayer(
+internal fun NoriaContext.rememberComposeSceneLayer(
     focusable: Boolean = false
 ): ComposeSceneLayer {
     val sceneContext = LocalComposeSceneContext.requireCurrent()
@@ -198,18 +213,4 @@ internal fun rememberComposeSceneLayer(
         }
     }
     return layer
-}
-
-/**
- * Sets the content of the layer to [content].
- */
-@Composable
-internal fun ComposeSceneLayer.Content(content: @Composable () -> Unit) {
-    val currentContent by rememberUpdatedState(content)
-    DisposableEffect(this) {
-        setContent {
-            currentContent()
-        }
-        onDispose {  }
-    }
 }

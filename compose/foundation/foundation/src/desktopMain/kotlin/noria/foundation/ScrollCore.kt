@@ -24,9 +24,9 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.v2.ScrollbarAdapter
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.*
@@ -126,6 +126,62 @@ data class ScrollAnchor(
 )
 
 @Composable
+fun NoriaContext.rememberScrollbarAdapter(
+    scrollState: MutableState<ScrollState>,
+    orientation: Orientation
+): ScrollbarAdapter {
+    val density = LocalDensity.current
+    return remember(scrollState, orientation, density) {
+        object : ScrollbarAdapter {
+            override val scrollOffset: Double
+                get() = density.run {
+                    scrollState.value.position.run {
+                        when (orientation) {
+                            Orientation.Horizontal -> x
+                            Orientation.Vertical -> y
+                        }.toPx().toDouble()
+                    }
+                }
+            override val contentSize: Double
+                get() = density.run {
+                    scrollState.value.contentSize?.run {
+                        when (orientation) {
+                            Orientation.Horizontal -> width
+                            Orientation.Vertical -> height
+                        }
+                    }?.takeOrElse { 0.dp }?.toPx()?.toDouble() ?: 0.0
+                }
+            override val viewportSize: Double
+                get() = density.run {
+                    scrollState.value.scrollSize?.run {
+                        when (orientation) {
+                            Orientation.Horizontal -> width
+                            Orientation.Vertical -> height
+                        }
+                    }?.takeOrElse { 0.dp }?.toPx()?.toDouble() ?: 0.0
+                }
+
+            override suspend fun scrollTo(scrollOffset: Double) {
+                scrollState.value = scrollState.value.run {
+                    val coercedPosition = density.run {
+                        scrollOffset
+                            .coerceIn(0.0, maxValue(orientation, density).toDouble())
+                            .toFloat()
+                            .toDp()
+                    }
+                    copy(
+                        position = when (orientation) {
+                            Orientation.Horizontal -> position.copy(x = coercedPosition)
+                            Orientation.Vertical -> position.copy(y = coercedPosition)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun NoriaContext.scrollAnchorPreserver(
     scrollState: MutableState<ScrollState>,
     builder: @Composable NoriaContext.(MutableState<ScrollAnchor?>) -> Unit,
@@ -137,11 +193,8 @@ fun NoriaContext.scrollAnchorPreserver(
 @Composable
 fun NoriaContext.scrollCore(
     direction: ScrollDirection = ScrollDirection.BOTH,
-    scrollHandlingPolicy: ScrollHandlingPolicy = ScrollHandlingPolicy.DEFAULT,
     propagationEnabled: Boolean = true,
     scrollState: MutableState<ScrollState>,
-    fadeOptions: FadeOptions? = null,
-    suppressOppositeDirection: Boolean = false,
     enabled: Boolean = true,
     builder: @Composable NoriaContext.() -> Unit,
 ) {
@@ -171,7 +224,7 @@ fun NoriaContext.scrollCore(
         }
     }
     Layout(
-        { builder() },
+        builder,
         Modifier
             .let {
                 when (direction) {
@@ -199,15 +252,9 @@ fun NoriaContext.scrollCore(
                         enabled,
                     )
                 }
-            }
-            .let {
-                if (fadeOptions != null) {
-                    it.scrollFadeEdges(fadeOptions.color, fadeOptions.width, scrollState)
-                } else {
-                    it
-                }
             },
     ) { measurables, constraints ->
+        check(measurables.size <= 1)
         val placeable = measurables.singleOrNull()?.measure(constraints)
         layout(
             placeable?.width ?: constraints.minWidth,
@@ -224,32 +271,34 @@ private fun Modifier.noriaOneDimensionalScroll(
     enabled: Boolean,
 ): Modifier {
     val isVertical = orientation == Orientation.Vertical
-    return composed(
-        factory = {
-            val reverseDirection =
-                ScrollableDefaults.reverseDirection(
-                    LocalLayoutDirection.current,
-                    orientation,
-                    reverseScrolling = false,
-                )
-            val overscrollEffect = ScrollableDefaults.overscrollEffect()
-            Modifier
-                .clipScrollableContainer(orientation)
-                .overscroll(overscrollEffect)
-                .scrollable(
-                    state,
-                    orientation,
-                    overscrollEffect,
-                    enabled,
-                    reverseDirection,
-                )
-                .then(
-                    NoriaOneDimensionalScrollingLayoutElement(
-                        state,
+    return noriaComposed(
+        factory = { noriaContext ->
+            noriaContext.run {
+                val reverseDirection =
+                    ScrollableDefaults.reverseDirection(
+                        LocalLayoutDirection.current,
+                        orientation,
                         reverseScrolling = false,
-                        isVertical
                     )
-                )
+                val overscrollEffect = ScrollableDefaults.run { overscrollEffect() }
+                Modifier
+                    .clipScrollableContainer(orientation)
+                    .overscroll(overscrollEffect)
+                    .scrollable(
+                        state,
+                        orientation,
+                        overscrollEffect,
+                        enabled,
+                        reverseDirection,
+                    )
+                    .then(
+                        NoriaOneDimensionalScrollingLayoutElement(
+                            state,
+                            reverseScrolling = false,
+                            isVertical
+                        )
+                    )
+            }
         },
         inspectorInfo =
             debugInspectorInfo {
@@ -299,7 +348,7 @@ private class NoriaOneDimensionalScrollState(
 }
 
 private fun ScrollState.minConsumableDelta(orientation: Orientation, density: Density): Int =
-    value(orientation, density)
+    -value(orientation, density)
 
 private fun ScrollState.maxConsumableDelta(orientation: Orientation, density: Density): Int =
     maxValue(orientation, density) - value(orientation, density)
@@ -311,12 +360,16 @@ private fun ScrollState.value(orientation: Orientation, density: Density): Int =
     }.roundToPx().coerceAtLeast(0)
 }
 
-private fun ScrollState.maxValue(orientation: Orientation, density: Density): Int = density.run {
-    when (orientation) {
-        Orientation.Horizontal -> ((contentSize?.width ?: 0.dp) - (scrollSize?.width ?: 0.dp))
-        Orientation.Vertical -> ((contentSize?.height ?: 0.dp) - (scrollSize?.height ?: 0.dp))
-    }.roundToPx().coerceAtLeast(0)
-}
+internal fun ScrollState.maxValue(orientation: Orientation, density: Density): Int =
+    density.run {
+        when (orientation) {
+            Orientation.Horizontal -> ((contentSize?.width ?: 0.dp) - (scrollSize?.width
+                ?: 0.dp))
+
+            Orientation.Vertical -> ((contentSize?.height ?: 0.dp) - (scrollSize?.height
+                ?: 0.dp))
+        }.roundToPx().coerceAtLeast(0)
+    }
 
 private fun ScrollState.viewportSize(orientation: Orientation, density: Density): Int =
     density.run {
@@ -498,8 +551,10 @@ fun Modifier.mouseWheelInput(
             awaitPointerEventScope {
                 while (true) {
                     val scrollEvent = awaitScrollEvent()
+                    val change = scrollEvent.changes[0]
+                    val transformedScrollDelta = change.scrollDelta.run { scrollHandlingPolicy.actualDelta(x, y) }
                     val shouldConsume =
-                        currentOnMouseWheel(scrollEvent.changes[0].scrollDelta)
+                        currentOnMouseWheel(transformedScrollDelta)
                     if (shouldConsume) {
                         scrollEvent.changes[0].consume()
                     }
@@ -534,9 +589,8 @@ fun NoriaContext.scrollTo(
     cookie: Any = 0,
     author: Any? = null,
     expectedAuthor: Any? = null,
-    onScrollFinished: (() -> Unit)? = null, // should be idempotent as it might be called twice
+    onScrollFinished: (() -> Unit)? = null,
 ) {
-    // TODO xAxisKind, yAxisKind, animate, cookie, author
     val currentOnScrollFinished by rememberUpdatedState(onScrollFinished)
     LaunchedEffect(
         scrollTarget,

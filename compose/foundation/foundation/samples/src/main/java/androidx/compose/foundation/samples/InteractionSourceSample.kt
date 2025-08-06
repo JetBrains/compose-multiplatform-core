@@ -53,7 +53,7 @@ import kotlinx.coroutines.flow.collect
 
 @Sampled
 @Composable
-fun SimpleInteractionSourceSample() {
+fun NoriaContext.SimpleInteractionSourceSample() {
     // Hoist the MutableInteractionSource that we will provide to interactions
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -106,7 +106,7 @@ fun SimpleInteractionSourceSample() {
 
 @Sampled
 @Composable
-fun InteractionSourceFlowSample() {
+fun NoriaContext.InteractionSourceFlowSample() {
     // Hoist the MutableInteractionSource that we will provide to interactions
     val interactionSource = remember { MutableInteractionSource() }
 

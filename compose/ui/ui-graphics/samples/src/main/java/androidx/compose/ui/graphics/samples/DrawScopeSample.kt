@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
  */
 @Sampled
 @Composable
-fun DrawScopeSample() {
+fun NoriaContext.DrawScopeSample() {
     // Sample showing how to use the DrawScope receiver scope to issue
     // drawing commands
     Canvas(Modifier.size(120.dp)) {
@@ -61,7 +61,7 @@ fun DrawScopeSample() {
 
 @Sampled
 @Composable
-fun DrawScopeBatchedTransformSample() {
+fun NoriaContext.DrawScopeBatchedTransformSample() {
     Canvas(Modifier.size(120.dp)) { // CanvasScope
         inset(20.0f) {
             // Use withTransform to batch multiple transformations for 1 or more drawing calls
@@ -84,7 +84,7 @@ fun DrawScopeBatchedTransformSample() {
 
 @Sampled
 @Composable
-fun DrawScopeOvalBrushSample() {
+fun NoriaContext.DrawScopeOvalBrushSample() {
     Canvas(Modifier.size(120.dp)) {
         drawOval(
             brush = Brush.linearGradient(listOf(Color.Red, Color.Blue)),
@@ -96,7 +96,7 @@ fun DrawScopeOvalBrushSample() {
 
 @Sampled
 @Composable
-fun DrawScopeOvalColorSample() {
+fun NoriaContext.DrawScopeOvalColorSample() {
     Canvas(Modifier.size(120.dp)) {
         drawOval(
             color = Color.Cyan,
@@ -108,7 +108,7 @@ fun DrawScopeOvalColorSample() {
 
 @Sampled
 @Composable
-fun DrawScopeRetargetingSample() {
+fun NoriaContext.DrawScopeRetargetingSample() {
     Box(
         modifier =
             Modifier.size(120.dp).drawWithCache {

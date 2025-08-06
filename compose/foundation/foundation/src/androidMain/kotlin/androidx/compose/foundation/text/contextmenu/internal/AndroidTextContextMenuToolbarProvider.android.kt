@@ -61,9 +61,9 @@ import kotlinx.coroutines.channels.Channel
 
 // TODO(grantapher) Consider making public.
 @Composable
-internal fun ProvidePlatformTextContextMenuToolbar(
+internal fun NoriaContext.ProvidePlatformTextContextMenuToolbar(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     ProvidePlatformTextContextMenuToolbar(modifier, null, content)
 }
@@ -77,10 +77,10 @@ internal fun ProvidePlatformTextContextMenuToolbar(
  */
 @VisibleForTesting
 @Composable
-internal fun ProvidePlatformTextContextMenuToolbar(
+internal fun NoriaContext.ProvidePlatformTextContextMenuToolbar(
     modifier: Modifier = Modifier,
     callbackInjector: ((TextActionModeCallback) -> TextActionModeCallback)?,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     var layoutCoordinates by remember {
         // onGloballyPositioned may fire with the same LayoutCoordinates containing different
@@ -105,7 +105,7 @@ internal fun ProvidePlatformTextContextMenuToolbar(
 }
 
 @Composable
-internal fun platformTextContextMenuToolbarProvider(
+internal fun NoriaContext.platformTextContextMenuToolbarProvider(
     coordinatesProvider: () -> LayoutCoordinates,
     callbackInjector: ((TextActionModeCallback) -> TextActionModeCallback)? = null,
 ): TextContextMenuProvider {

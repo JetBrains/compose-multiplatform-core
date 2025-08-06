@@ -56,6 +56,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.max
+import noria.NoriaContext
 
 /**
  * [AnimatedVisibility] composable animates the appearance and disappearance of its content, as
@@ -121,7 +122,7 @@ import kotlin.math.max
  * @see AnimatedVisibilityScope
  */
 @Composable
-public fun AnimatedVisibility(
+public fun NoriaContext.AnimatedVisibility(
     visible: Boolean,
     modifier: Modifier = Modifier,
     enter: EnterTransition = fadeIn() + expandIn(),
@@ -367,7 +368,7 @@ public enum class EnterExitState {
  * @see AnimatedVisibilityScope
  */
 @Composable
-public fun AnimatedVisibility(
+public fun NoriaContext.AnimatedVisibility(
     visibleState: MutableTransitionState<Boolean>,
     modifier: Modifier = Modifier,
     enter: EnterTransition = fadeIn() + expandIn(),
@@ -591,7 +592,7 @@ public fun <T> Transition<T>.AnimatedVisibility(
     enter: EnterTransition = fadeIn() + expandIn(),
     exit: ExitTransition = shrinkOut() + fadeOut(),
     content: @Composable() AnimatedVisibilityScope.() -> Unit,
-): Unit = AnimatedVisibilityImpl(this, visible, modifier, enter, exit, content = content)
+): Unit = NoriaContext.AnimatedVisibilityImpl(this, visible, modifier, enter, exit, content = content)
 
 /**
  * This is the scope for the content of [AnimatedVisibility]. In this scope, direct and indirect
@@ -608,7 +609,7 @@ public fun <T> Transition<T>.AnimatedVisibility(
  * @sample androidx.compose.animation.samples.AVScopeAnimateEnterExit
  */
 @JvmDefaultWithCompatibility
-public interface AnimatedVisibilityScope {
+public interface AnimatedVisibilityScope : NoriaContext {
     /**
      * [transition] allows custom enter/exit animations to be specified. It will run simultaneously
      * with the built-in enter/exit transitions specified in [AnimatedVisibility].
@@ -668,7 +669,7 @@ internal constructor(transition: Transition<EnterExitState>) : AnimatedVisibilit
  * lookahead when animating out. 2) It sets up a criteria for when content should be disposed.
  */
 @Composable
-internal fun <T> AnimatedVisibilityImpl(
+internal fun <T> NoriaContext.AnimatedVisibilityImpl(
     transition: Transition<T>,
     visible: (T) -> Boolean,
     modifier: Modifier,
@@ -704,7 +705,7 @@ internal fun interface OnLookaheadMeasured {
 
 @OptIn(ExperimentalTransitionApi::class, InternalAnimationApi::class)
 @Composable
-internal fun <T> AnimatedEnterExitImpl(
+internal fun <T> NoriaContext.AnimatedEnterExitImpl(
     transition: Transition<T>,
     visible: (T) -> Boolean,
     modifier: Modifier,
@@ -832,11 +833,11 @@ private fun <T> Transition<T>.targetEnterExit(
     targetState: T,
 ): EnterExitState =
     key(this) {
-        if (this.isSeeking) {
+        if (this@targetEnterExit.isSeeking) {
             if (visible(targetState)) {
                 Visible
             } else {
-                if (visible(this.currentState)) {
+                if (visible(this@targetEnterExit.currentState)) {
                     PostExit
                 } else {
                     PreEnter

@@ -28,6 +28,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.layout.PinnableContainer
+import noria.NoriaContext
 
 /**
  * Wrapper supporting [PinnableContainer] in lazy layout items. Each pinned item is considered
@@ -43,11 +44,11 @@ import androidx.compose.ui.layout.PinnableContainer
  * change.
  */
 @Composable
-fun LazyLayoutPinnableItem(
+fun NoriaContext.LazyLayoutPinnableItem(
     key: Any?,
     index: Int,
     pinnedItemList: LazyLayoutPinnedItemList,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val pinnableItem = remember(key, pinnedItemList) { LazyLayoutPinnableItem(key, pinnedItemList) }
     pinnableItem.index = index

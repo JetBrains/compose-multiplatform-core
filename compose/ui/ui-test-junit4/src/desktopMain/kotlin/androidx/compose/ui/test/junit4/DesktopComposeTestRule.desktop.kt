@@ -34,6 +34,7 @@ import androidx.compose.ui.test.waitUntilNodeCount
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import noria.NoriaContext
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
@@ -135,5 +136,5 @@ class DesktopComposeTestRule private constructor(
         useUnmergedTree: Boolean
     ): SemanticsNodeInteractionCollection = composeTest.onAllNodes(matcher, useUnmergedTree)
 
-    override fun setContent(composable: @Composable () -> Unit) = composeTest.setContent(composable)
+    override fun setContent(composable: @Composable NoriaContext.() -> Unit) = composeTest.setContent(composable)
 }

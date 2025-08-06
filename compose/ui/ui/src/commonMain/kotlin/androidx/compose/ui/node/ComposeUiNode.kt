@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 
 /** Interface extracted from LayoutNode to not mark the whole LayoutNode class as @PublishedApi. */
-interface ComposeUiNode {
+@PublishedApi
+internal interface ComposeUiNode {
     var measurePolicy: MeasurePolicy
     var layoutDirection: LayoutDirection
     var density: Density

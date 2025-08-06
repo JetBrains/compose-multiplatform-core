@@ -31,6 +31,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Velocity
+import noria.NoriaContext
 
 /**
  * An OverscrollEffect represents a visual effect that displays when the edges of a scrolling
@@ -341,7 +342,7 @@ private class OverscrollModifierNode(private var overscrollNode: DelegatableNode
  * returned. Returns `null` if `null` is provided to [LocalOverscrollFactory].
  */
 @Composable
-fun rememberOverscrollEffect(): OverscrollEffect? {
+fun NoriaContext.rememberOverscrollEffect(): OverscrollEffect? {
     val overscrollFactory = LocalOverscrollFactory.current ?: return null
     return remember(overscrollFactory) { overscrollFactory.createOverscrollEffect() }
 }
@@ -352,7 +353,7 @@ fun rememberOverscrollEffect(): OverscrollEffect? {
  * [rememberOverscrollEffect] instead, which takes into account theme provided overscroll, rather
  * than always using the platform default, without any customizations.
  */
-@Composable internal expect fun rememberPlatformOverscrollEffect(): OverscrollEffect?
+@Composable internal expect fun NoriaContext.rememberPlatformOverscrollEffect(): OverscrollEffect?
 
 /**
  * A factory for creating [OverscrollEffect]s. You can provide a factory instance to

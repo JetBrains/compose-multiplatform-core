@@ -426,7 +426,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             val list = listOf(1, 2, 3)
-            var content: (@Composable () -> Unit)? = null
+            var content: (@Composable NoriaContext.() -> Unit)? = null
             // some gymnastics to ensure that Kotlin generates a null check
             if (3 in list) {
                 content = { throwTestException() }

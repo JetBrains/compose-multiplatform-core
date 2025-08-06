@@ -44,7 +44,7 @@ import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 
 @Composable
-fun RecyclerViewFocusTransferDemo() {
+fun NoriaContext.RecyclerViewFocusTransferDemo() {
     AndroidView(
         factory = {
             RecyclerView(it).apply {
@@ -94,7 +94,7 @@ private class DemoAdapter(val entries: List<String>) : Adapter<DemoAdapter.DemoV
 }
 
 @Composable
-private fun FocusableText(text: String, modifier: Modifier) {
+private fun NoriaContext.FocusableText(text: String, modifier: Modifier) {
     var color by remember { mutableStateOf(Color.Unspecified) }
     val focusRequester = remember { FocusRequester() }
     Text(

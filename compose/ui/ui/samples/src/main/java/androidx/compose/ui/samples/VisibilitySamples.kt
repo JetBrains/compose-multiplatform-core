@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import noria.NoriaContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutBoundsHolder
 import androidx.compose.ui.layout.layoutBounds
@@ -32,7 +33,7 @@ import androidx.compose.ui.layout.onVisibilityChanged
 
 @Sampled
 @Composable
-private fun OnVisibilityChangedAutoplaySample() {
+private fun NoriaContext.OnVisibilityChangedAutoplaySample() {
     @Composable
     fun VideoFeed(feedData: List<Video>) {
         LazyColumn {
@@ -51,7 +52,7 @@ private fun OnVisibilityChangedAutoplaySample() {
 
 @Sampled
 @Composable
-private fun OnVisibilityChangedAutoplayWithViewportSample() {
+private fun NoriaContext.OnVisibilityChangedAutoplayWithViewportSample() {
     @Composable
     fun VideoFeed(feedData: List<Video>) {
         val viewport = remember { LayoutBoundsHolder() }
@@ -74,7 +75,7 @@ private fun OnVisibilityChangedAutoplayWithViewportSample() {
 
 @Sampled
 @Composable
-private fun OnVisibilityChangedDurationLoggingSample() {
+private fun NoriaContext.OnVisibilityChangedDurationLoggingSample() {
     @Composable
     fun VideoFeed(feedData: List<Video>, logger: Logger) {
         LazyColumn {
@@ -100,7 +101,7 @@ private fun OnVisibilityChangedDurationLoggingSample() {
 
 @Sampled
 @Composable
-private fun OnFirstVisibleImpressionLoggingSample() {
+private fun NoriaContext.OnFirstVisibleImpressionLoggingSample() {
     @Composable
     fun VideoFeed(feedData: List<Video>, logger: Logger) {
         LazyColumn {
@@ -118,7 +119,7 @@ private fun OnFirstVisibleImpressionLoggingSample() {
 
 @Sampled
 @Composable
-private fun OnFirstVisibleImpressionLoggingWithViewportSample() {
+private fun NoriaContext.OnFirstVisibleImpressionLoggingWithViewportSample() {
     @Composable
     fun VideoFeed(feedData: List<Video>, logger: Logger) {
         val viewport = remember { LayoutBoundsHolder() }
@@ -139,7 +140,7 @@ private fun OnFirstVisibleImpressionLoggingWithViewportSample() {
     }
 }
 
-@Composable fun VideoRow(video: Video, modifier: Modifier = Modifier) {}
+@Composable fun NoriaContext.VideoRow(video: Video, modifier: Modifier = Modifier) {}
 
 class Logger {
     fun logImpression(id: Int) {}

@@ -19,9 +19,10 @@ package androidx.compose.foundation.pager
 import androidx.compose.foundation.lazy.layout.LazyLayoutSemanticState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import noria.NoriaContext
 
 @Composable
-internal fun rememberPagerSemanticState(
+internal fun NoriaContext.rememberPagerSemanticState(
     state: PagerState,
     isVertical: Boolean,
 ): LazyLayoutSemanticState {

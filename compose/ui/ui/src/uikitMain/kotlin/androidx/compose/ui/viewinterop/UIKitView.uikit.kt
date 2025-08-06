@@ -19,6 +19,7 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import noria.NoriaContext
 import platform.UIKit.UIView
 
 /**
@@ -45,7 +46,7 @@ import platform.UIKit.UIView
  * @see UIKitInteropProperties
  */
 @Composable
-fun <T : UIView> UIKitView(
+fun <T : UIView> NoriaContext.UIKitView(
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOp,

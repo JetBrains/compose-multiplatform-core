@@ -19,7 +19,7 @@ package androidx.compose.runtime.mock
 import androidx.compose.runtime.Composable
 
 @Composable
-fun Point(point: Point) {
+fun NoriaContext.Point(point: Point) {
     Text("X: ${point.x} Y: ${point.y}")
 }
 
@@ -30,7 +30,7 @@ fun MockViewValidator.Point(point: Point) {
 private const val SLPoints = 100
 
 @Composable
-fun Points(points: Iterable<Point>) {
+fun NoriaContext.Points(points: Iterable<Point>) {
     Repeated(of = points) { Point(it) }
 }
 

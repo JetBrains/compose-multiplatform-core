@@ -55,7 +55,7 @@ private val tableItems: Array<Array<String>> =
 
 @Preview
 @Composable
-fun Lazy2DGridDemo(modifier: Modifier = Modifier) {
+fun NoriaContext.Lazy2DGridDemo(modifier: Modifier = Modifier) {
     Lazy2DGrid(rows = 20, columns = 20, modifier = modifier) { row, column ->
         Box(modifier = Modifier.size(64.dp).padding(8.dp).background(Color.Red)) {
             Text(tableItems[row][column])
@@ -124,7 +124,7 @@ class Lazy2DGridState : Draggable2DState {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Lazy2DGrid(
+fun NoriaContext.Lazy2DGrid(
     rows: Int,
     columns: Int,
     modifier: Modifier = Modifier,

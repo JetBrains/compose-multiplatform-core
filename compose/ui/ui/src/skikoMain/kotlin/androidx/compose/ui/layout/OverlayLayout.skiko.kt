@@ -22,6 +22,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastMaxOfOrNull
+import noria.NoriaContext
 
 /**
  * Creates an overlay layout that places the content on top of each other.
@@ -30,7 +31,7 @@ import androidx.compose.ui.util.fastMaxOfOrNull
  * @param content The composable content to be placed in the overlay layout.
  */
 @Composable
-internal fun OverlayLayout(modifier: Modifier, content: @Composable () -> Unit) = Layout(
+internal fun NoriaContext.OverlayLayout(modifier: Modifier, content: @Composable NoriaContext.() -> Unit) = Layout(
     content = content,
     modifier = modifier,
     measurePolicy = { measurables, constraints ->

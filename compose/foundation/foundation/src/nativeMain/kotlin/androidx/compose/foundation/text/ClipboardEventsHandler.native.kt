@@ -19,7 +19,7 @@ package androidx.compose.foundation.text
 import androidx.compose.runtime.Composable
 
 @Composable
-internal actual inline fun rememberClipboardEventsHandler(
+internal actual inline fun NoriaContext.rememberClipboardEventsHandler(
     crossinline onPaste: (String) -> Unit,
     crossinline onCopy: () -> String?,
     crossinline onCut: () -> String?,

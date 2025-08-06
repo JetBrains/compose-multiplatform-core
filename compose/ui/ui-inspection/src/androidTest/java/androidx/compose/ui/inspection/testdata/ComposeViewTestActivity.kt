@@ -68,6 +68,6 @@ class ComposeViewTestActivity : ComponentActivity() {
 }
 
 @Composable
-fun Nested(content: @Composable () -> Unit) {
+fun NoriaContext.Nested(content: @Composable () -> Unit) {
     content()
 }

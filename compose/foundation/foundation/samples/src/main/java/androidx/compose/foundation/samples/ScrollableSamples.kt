@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
 
 @Sampled
 @Composable
-fun ScrollableSample() {
+fun NoriaContext.ScrollableSample() {
     // actual composable state that we will show on UI and update in `Scrollable`
     val offset = remember { mutableStateOf(0f) }
     Box(
@@ -89,7 +89,7 @@ fun ScrollableSample() {
 
 @Sampled
 @Composable
-fun CanScrollSample() {
+fun NoriaContext.CanScrollSample() {
     val state = rememberLazyListState()
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
@@ -124,7 +124,7 @@ fun CanScrollSample() {
 @ExperimentalFoundationApi
 @Sampled
 @Composable
-fun FocusScrollingInLazyRowSample() {
+fun NoriaContext.FocusScrollingInLazyRowSample() {
     // a bring into view spec that pivots around the center of the scrollable container
     val customBringIntoViewSpec =
         object : BringIntoViewSpec {

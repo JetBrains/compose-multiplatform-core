@@ -61,7 +61,7 @@ class Details(val index: Int) : State()
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LazyGridSharedElementDemo() {
+fun NoriaContext.LazyGridSharedElementDemo() {
     var target: State by remember { mutableStateOf(List) }
     SharedTransitionLayout {
         AnimatedContent(

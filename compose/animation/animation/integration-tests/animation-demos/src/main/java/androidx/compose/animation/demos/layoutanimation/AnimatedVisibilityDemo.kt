@@ -63,7 +63,7 @@ import kotlin.math.min
 
 @Preview
 @Composable
-fun AnimatedVisibilityDemo() {
+fun NoriaContext.AnimatedVisibilityDemo() {
     val animateContentSize = remember { mutableStateOf(false) }
     Column {
         AnimatedItems(animateContentSize.value)
@@ -73,7 +73,7 @@ fun AnimatedVisibilityDemo() {
 }
 
 @Composable
-fun AnimatedItems(animateContentSize: Boolean) {
+fun NoriaContext.AnimatedItems(animateContentSize: Boolean) {
     var itemNum by remember { mutableIntStateOf(0) }
     Column {
         Row(
@@ -128,14 +128,14 @@ fun AnimatedItems(animateContentSize: Boolean) {
 }
 
 @Composable
-fun Item(color: Color, text: String = "") {
+fun NoriaContext.Item(color: Color, text: String = "") {
     Box(Modifier.requiredHeight(80.dp).fillMaxWidth().background(color)) {
         Text(text, modifier = Modifier.align(Alignment.CenterStart).padding(start = 10.dp))
     }
 }
 
 @Composable
-fun AnimateContentSizeOption(state: MutableState<Boolean>) {
+fun NoriaContext.AnimateContentSizeOption(state: MutableState<Boolean>) {
     Row(
         Modifier.selectable(selected = state.value, onClick = { state.value = !state.value })
             .padding(10.dp)
@@ -147,7 +147,7 @@ fun AnimateContentSizeOption(state: MutableState<Boolean>) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun HorizontalTransition(visible: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.HorizontalTransition(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
         visible = visible,
         enter =
@@ -172,7 +172,7 @@ fun HorizontalTransition(visible: Boolean, content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun SlideTransition(visible: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.SlideTransition(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
         visible = visible,
         enter =
@@ -199,7 +199,7 @@ fun SlideTransition(visible: Boolean, content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun FadeTransition(visible: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.FadeTransition(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
         visible = visible,
         enter =
@@ -218,7 +218,7 @@ fun FadeTransition(visible: Boolean, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun FullyLoadedTransition(visible: Boolean, content: @Composable () -> Unit) {
+fun NoriaContext.FullyLoadedTransition(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
         visible = visible,
         enter =

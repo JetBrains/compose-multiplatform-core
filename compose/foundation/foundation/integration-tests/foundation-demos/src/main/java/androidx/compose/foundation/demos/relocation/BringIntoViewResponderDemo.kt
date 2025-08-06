@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 
 @Composable
-fun BringIntoViewResponderDemo() {
+fun NoriaContext.BringIntoViewResponderDemo() {
     Column {
         Text(
             "Each cell in this box is focusable, use the arrow keys/tab/dpad to move focus " +
@@ -96,7 +96,7 @@ fun BringIntoViewResponderDemo() {
 }
 
 @Composable
-private fun LargeContentWithFocusableChildren() {
+private fun NoriaContext.LargeContentWithFocusableChildren() {
     Column {
         repeat(10) { row ->
             Row {

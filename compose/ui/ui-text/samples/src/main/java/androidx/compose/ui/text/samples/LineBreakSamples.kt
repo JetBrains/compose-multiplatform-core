@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun LineBreakSample() {
+fun NoriaContext.LineBreakSample() {
     Text(
         text = "Title of an article",
         style = TextStyle(fontSize = 20.sp, lineBreak = LineBreak.Heading),
@@ -39,7 +39,7 @@ fun LineBreakSample() {
 
 @Sampled
 @Composable
-fun AndroidLineBreakSample() {
+fun NoriaContext.AndroidLineBreakSample() {
     val customTitleLineBreak =
         LineBreak(
             strategy = LineBreak.Strategy.Simple,

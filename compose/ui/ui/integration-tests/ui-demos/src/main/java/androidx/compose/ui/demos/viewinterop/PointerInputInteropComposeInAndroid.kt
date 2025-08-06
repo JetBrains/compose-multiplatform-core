@@ -308,7 +308,7 @@ private fun Context.removeWindow(view: View) {
 }
 
 @Composable
-private fun SimpleClickableButton() {
+private fun NoriaContext.SimpleClickableButton() {
     var topBarClickCount by rememberSaveable { mutableIntStateOf(0) }
     var bodyClickCount by rememberSaveable { mutableIntStateOf(0) }
 

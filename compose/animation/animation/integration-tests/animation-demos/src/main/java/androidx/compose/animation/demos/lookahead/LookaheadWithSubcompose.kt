@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 @Composable
-fun LookaheadWithSubcompose() {
+fun NoriaContext.LookaheadWithSubcompose() {
     Column {
         LookaheadScope {
             val isWide by

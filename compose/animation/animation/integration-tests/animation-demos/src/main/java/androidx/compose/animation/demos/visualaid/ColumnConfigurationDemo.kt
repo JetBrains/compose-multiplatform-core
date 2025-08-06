@@ -52,7 +52,7 @@ import kotlinx.coroutines.delay
 
 @Preview
 @Composable
-fun ColumnConfigurationDemo() {
+fun NoriaContext.ColumnConfigurationDemo() {
     val height by
         produceState(250.dp) {
             // Skip the animations in tests.
@@ -77,7 +77,7 @@ fun ColumnConfigurationDemo() {
 }
 
 @Composable
-fun ResizableColumn(height: Dp) {
+fun NoriaContext.ResizableColumn(height: Dp) {
     Column(
         Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,

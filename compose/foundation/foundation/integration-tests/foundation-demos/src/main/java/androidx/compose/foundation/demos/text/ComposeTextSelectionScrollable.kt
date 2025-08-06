@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun TextScrollableColumnSelectionDemo() {
+fun NoriaContext.TextScrollableColumnSelectionDemo() {
     val spacing = 16.dp
     Column(modifier = Modifier.padding(spacing), verticalArrangement = spacedBy(spacing)) {
         Text(
@@ -79,7 +79,7 @@ fun TextScrollableColumnSelectionDemo() {
 }
 
 @Suppress("unused") // enum values used in .values()
-private enum class Options(val displayText: String, val content: @Composable () -> Unit) {
+private enum class Options(val displayText: String, val content: @Composable NoriaContext.() -> Unit) {
     LongScrollableText(
         "Long Scrollable Single Text",
         {
@@ -117,7 +117,7 @@ private enum class Options(val displayText: String, val content: @Composable () 
 }
 
 @Composable
-private fun MyText(text: String, modifier: Modifier = Modifier) {
+private fun NoriaContext.MyText(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Center),

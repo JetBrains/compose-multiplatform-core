@@ -103,14 +103,14 @@ class PlatformDefaultTextContextMenuProvidersTest {
         }
 
     private fun runTest(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit,
+        outerContent: @Composable (content: @Composable NoriaContext.() -> Unit) -> Unit,
         testBlock: TestScope.() -> Unit,
     ) {
         TestScope(outerContent).testBlock()
     }
 
     private inner class TestScope(
-        outerContent: @Composable (content: @Composable () -> Unit) -> Unit
+        outerContent: @Composable (content: @Composable NoriaContext.() -> Unit) -> Unit
     ) {
         var toolbarProvider: TextContextMenuProvider? = null
         var dropdownProvider: TextContextMenuProvider? = null

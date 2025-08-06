@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun KeyboardOptionsDemos() {
+fun NoriaContext.KeyboardOptionsDemos() {
     LazyColumn(Modifier.imePadding()) {
         item { Item(KeyboardType.Text) }
         item { Item(KeyboardType.Ascii) }
@@ -63,13 +63,13 @@ fun KeyboardOptionsDemos() {
 }
 
 @Composable
-private fun Item(keyboardType: KeyboardType) {
+private fun NoriaContext.Item(keyboardType: KeyboardType) {
     TagLine(tag = "Keyboard Type: $keyboardType")
     EditLine(keyboardType = keyboardType)
 }
 
 @Composable
-private fun EditLine(
+private fun NoriaContext.EditLine(
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     text: String = "",
@@ -84,7 +84,7 @@ private fun EditLine(
 }
 
 @Composable
-private fun ShowKeyboardOnFocus(showKeyboardOnFocus: Boolean) {
+private fun NoriaContext.ShowKeyboardOnFocus(showKeyboardOnFocus: Boolean) {
     Column {
         TagLine(tag = "showKeyboardOnFocus: $showKeyboardOnFocus")
 
@@ -102,7 +102,7 @@ private fun ShowKeyboardOnFocus(showKeyboardOnFocus: Boolean) {
 }
 
 @Composable
-private fun HintLocaleDemo(localeList: LocaleList) {
+private fun NoriaContext.HintLocaleDemo(localeList: LocaleList) {
     Column {
         TagLine(tag = "Hints IME Locale: $localeList")
 

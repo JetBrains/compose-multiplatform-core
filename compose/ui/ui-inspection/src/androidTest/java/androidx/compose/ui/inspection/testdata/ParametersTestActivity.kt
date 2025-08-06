@@ -25,6 +25,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import noria.NoriaContext
 import androidx.compose.ui.inspection.test.R
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.Font
@@ -65,10 +66,10 @@ class ParametersTestActivity : ComponentActivity() {
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun FunctionWithIntArray(intArray: IntArray) {
+fun NoriaContext.FunctionWithIntArray(intArray: IntArray) {
     Text("three")
 }
 
-@Composable fun SomeContent(content: @Composable () -> Unit) = content()
+@Composable fun NoriaContext.SomeContent(content: @Composable NoriaContext.() -> Unit) = content()
 
 internal fun testClickHandler() {}

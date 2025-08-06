@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
 
 /** Demonstration for how multiple DragGestureDetectors interact. */
 @Composable
-fun NestedScrollingDemo() {
+fun NoriaContext.NestedScrollingDemo() {
     Column {
         Text("Demonstrates nested scrolling.")
         Text(
@@ -75,7 +75,7 @@ fun NestedScrollingDemo() {
 
 /** A very simple ScrollView like implementation that allows for vertical scrolling. */
 @Composable
-private fun ScrollableContainer(content: @Composable () -> Unit) {
+private fun NoriaContext.ScrollableContainer(content: @Composable () -> Unit) {
     var offset by remember { mutableFloatStateOf(0f) }
     var maxOffset by remember { mutableFloatStateOf(0f) }
 
@@ -121,7 +121,7 @@ private fun ScrollableContainer(content: @Composable () -> Unit) {
 
 /** A very simple Button like implementation that visually indicates when it is being pressed. */
 @Composable
-private fun Pressable(height: Dp) {
+private fun NoriaContext.Pressable(height: Dp) {
 
     val pressedColor = PressedColor
     val defaultColor = DefaultBackgroundColor
@@ -172,7 +172,7 @@ private fun Pressable(height: Dp) {
  * times.
  */
 @Composable
-private fun RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
+private fun NoriaContext.RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
     Column(Modifier.border(border = BorderStroke(2.dp, BorderColor))) {
         for (i in 1..repetitions) {
             content()
@@ -184,7 +184,7 @@ private fun RepeatingColumn(repetitions: Int, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun NestedScrollDispatchDemo() {
+fun NoriaContext.NestedScrollDispatchDemo() {
     LazyColumn {
         items(5) { Text("I'm text $it", modifier = Modifier.padding(16.dp)) }
         item { NestedScrollDispatcherSample() }

@@ -283,7 +283,7 @@ class InvalidatingNotPlacedChildTest {
 }
 
 @Composable
-private fun ConditionallyPlacedChild(
+private fun NoriaContext.ConditionallyPlacedChild(
     shouldPlace: State<Boolean>,
     modifier: Modifier = Modifier,
     placeWithLayer: Boolean = false,
@@ -304,7 +304,7 @@ private fun ConditionallyPlacedChild(
 }
 
 @Composable
-private fun MeasureInLayoutBlock(
+private fun NoriaContext.MeasureInLayoutBlock(
     modifier: Modifier = Modifier,
     placeWithLayer: Boolean = false,
     content: @Composable () -> Unit,

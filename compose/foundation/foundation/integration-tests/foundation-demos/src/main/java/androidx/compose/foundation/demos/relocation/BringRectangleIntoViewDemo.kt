@@ -22,7 +22,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 
 @Composable
-fun BringRectangleIntoViewDemo() {
+fun NoriaContext.BringRectangleIntoViewDemo() {
     Column {
         Text(
             "This is a scrollable Box. Drag to scroll the Circle into view or click the " +

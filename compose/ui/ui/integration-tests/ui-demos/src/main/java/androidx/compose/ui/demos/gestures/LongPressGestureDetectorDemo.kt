@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 /** Simple [detectTapGestures] demo for long press. */
 @Composable
-fun LongPressGestureDetectorDemo() {
+fun NoriaContext.LongPressGestureDetectorDemo() {
     val color = remember { mutableStateOf(Colors.random()) }
 
     val onLongPress = { _: Offset -> color.value = color.value.anotherRandomColor() }

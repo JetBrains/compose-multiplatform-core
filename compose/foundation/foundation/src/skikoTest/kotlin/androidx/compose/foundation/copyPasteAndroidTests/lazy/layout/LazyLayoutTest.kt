@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
 import kotlin.test.Test
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 class LazyLayoutTest {
@@ -414,7 +415,7 @@ class LazyLayoutTest {
             object : LazyLayoutItemProvider {
 
                 @Composable
-                override fun Item(index: Int, key: Any) {
+                override fun NoriaContext.Item(index: Int, key: Any) {
                     DisposableEffect(Unit) {
                         composed = true
                         onDispose { composed = false }
@@ -582,7 +583,7 @@ class LazyLayoutTest {
         val itemProvider =
             object : LazyLayoutItemProvider {
                 @Composable
-                override fun Item(index: Int, key: Any) {
+                override fun NoriaContext.Item(index: Int, key: Any) {
                     assertThat(index).isEqualTo(0)
                     assertThat(key).isEqualTo(index)
                     itemCalls++
@@ -653,12 +654,12 @@ class LazyLayoutTest {
     private fun itemProvider(
         itemCount: () -> Int,
         hasContentType: Boolean? = false,
-        itemContent: @Composable (Int) -> Unit,
+        itemContent: @Composable NoriaContext.(Int) -> Unit,
     ): () -> LazyLayoutItemProvider {
         val provider =
             object : LazyLayoutItemProvider {
                 @Composable
-                override fun Item(index: Int, key: Any) {
+                override fun NoriaContext.Item(index: Int, key: Any) {
                     itemContent(index)
                 }
 

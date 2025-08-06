@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.Popup
 
 @Composable
-fun PopupDragDemo() {
+fun NoriaContext.PopupDragDemo() {
     // TODO fix this demo in RTL (check when draggable handles RTL)
     val offset = remember { mutableStateOf(Offset.Zero) }
 

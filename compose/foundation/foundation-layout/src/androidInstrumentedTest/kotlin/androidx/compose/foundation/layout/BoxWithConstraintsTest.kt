@@ -716,7 +716,7 @@ class BoxWithConstraintsTest : LayoutTest() {
 }
 
 @Composable
-private fun TestLayout(@Suppress("UNUSED_PARAMETER") someInput: Int) {
+private fun NoriaContext.TestLayout(@Suppress("UNUSED_PARAMETER") someInput: Int) {
     Layout(content = { BoxWithConstraints { NeedsOtherMeasurementComposable(10) } }) {
         measurables,
         constraints ->
@@ -727,16 +727,16 @@ private fun TestLayout(@Suppress("UNUSED_PARAMETER") someInput: Int) {
 }
 
 @Composable
-private fun NeedsOtherMeasurementComposable(foo: Int) {
+private fun NoriaContext.NeedsOtherMeasurementComposable(foo: Int) {
     Layout(content = {}, modifier = Modifier.background(Color.Red)) { _, _ -> layout(foo, foo) {} }
 }
 
 @Composable
-fun Container(
+fun NoriaContext.Container(
     width: Int,
     height: Int,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     Layout(
         content = content,
@@ -760,7 +760,7 @@ fun Container(
 }
 
 @Composable
-fun ContainerChildrenAffectsParentSize(width: Int, height: Int, content: @Composable () -> Unit) {
+fun NoriaContext.ContainerChildrenAffectsParentSize(width: Int, height: Int, content: @Composable NoriaContext.() -> Unit) {
     Layout(
         content = content,
         measurePolicy =
@@ -777,7 +777,7 @@ fun ContainerChildrenAffectsParentSize(width: Int, height: Int, content: @Compos
 }
 
 @Composable
-private fun ChangingConstraintsLayout(size: State<Int>, content: @Composable () -> Unit) {
+private fun NoriaContext.ChangingConstraintsLayout(size: State<Int>, content: @Composable NoriaContext.() -> Unit) {
     Layout(content) { measurables, _ ->
         layout(100, 100) {
             val constraints = Constraints.fixed(size.value, size.value)
@@ -800,7 +800,7 @@ val infiniteConstraints =
     }
 
 @Composable
-internal fun Padding(size: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun NoriaContext.Padding(size: Int, modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
     Layout(
         modifier = modifier,
         measurePolicy = { measurables, constraints ->
@@ -864,11 +864,11 @@ fun Bitmap.assertRect(
 }
 
 @Composable
-fun Scroller(
+fun NoriaContext.Scroller(
     modifier: Modifier = Modifier,
     onScrollPositionChanged: (position: Int, maxPosition: Int) -> Unit,
     offset: State<Int>,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     val maxPosition = remember { mutableStateOf(Constraints.Infinity) }
     ScrollerLayout(
@@ -883,11 +883,11 @@ fun Scroller(
 }
 
 @Composable
-private fun ScrollerLayout(
+private fun NoriaContext.ScrollerLayout(
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") maxPosition: Int,
     onMaxPositionChanged: () -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable NoriaContext.() -> Unit,
 ) {
     Layout(modifier = modifier, content = content) { measurables, constraints ->
         val childConstraints =

@@ -26,6 +26,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.ReusableContent
+import noria.NoriaContext
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionGroup
 import androidx.compose.ui.Modifier
@@ -419,15 +420,15 @@ private fun <T> TestActivity.uiThread(block: () -> T): T {
     return result!!
 }
 
-@Suppress("UNUSED_PARAMETER") @Composable fun OneParameter(a: Int) {}
+@Suppress("UNUSED_PARAMETER") @Composable fun NoriaContext.OneParameter(a: Int) {}
 
-@Suppress("UNUSED_PARAMETER") @Composable fun OneDefaultParameter(a: Int = 1) {}
+@Suppress("UNUSED_PARAMETER") @Composable fun NoriaContext.OneDefaultParameter(a: Int = 1) {}
 
-@Suppress("UNUSED_PARAMETER") @Composable fun ThreeParameters(a: Int, b: Int, c: Int) {}
+@Suppress("UNUSED_PARAMETER") @Composable fun NoriaContext.ThreeParameters(a: Int, b: Int, c: Int) {}
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun ThreeDefaultParameters(a: Int = 1, b: Int = 2, c: Int = 3) {}
+fun NoriaContext.ThreeDefaultParameters(a: Int = 1, b: Int = 2, c: Int = 3) {}
 
 // BFS
 @UiToolingDataApi

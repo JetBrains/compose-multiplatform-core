@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import noria.NoriaContext
 
 /**
  * Creates a [DecayAnimationSpec] using the native Android fling decay. This can then be used to
@@ -38,7 +39,7 @@ public fun <T> splineBasedDecayDeprecated(density: Density): DecayAnimationSpec<
 internal actual val platformFlingScrollFriction = ViewConfiguration.getScrollFriction()
 
 @Composable
-public actual fun <T> rememberSplineBasedDecay(): DecayAnimationSpec<T> {
+public actual fun <T> NoriaContext.rememberSplineBasedDecay(): DecayAnimationSpec<T> {
     // This function will internally update the calculation of fling decay when the density changes,
     // but the reference to the returned spec will not change across calls.
     val density = LocalDensity.current

@@ -47,6 +47,7 @@ import androidx.compose.ui.window.rememberComponentRectPositionProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Sets the tooltip for an element.
@@ -68,8 +69,8 @@ import kotlinx.coroutines.launch
     )
 )
 @Suppress("UNUSED_PARAMETER")
-fun BoxWithTooltip(
-    tooltip: @Composable () -> Unit,
+fun NoriaContext.BoxWithTooltip(
+    tooltip: @Composable NoriaContext.() -> Unit,
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,
@@ -77,7 +78,7 @@ fun BoxWithTooltip(
     tooltipPlacement: TooltipPlacement = TooltipPlacement.CursorPoint(
         offset = DpOffset(0.dp, 16.dp)
     ),
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) = TooltipArea(
     tooltip, modifier, delay, tooltipPlacement, content
 )
@@ -93,14 +94,14 @@ fun BoxWithTooltip(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TooltipArea(
-    tooltip: @Composable () -> Unit,
+fun NoriaContext.TooltipArea(
+    tooltip: @Composable NoriaContext.() -> Unit,
     modifier: Modifier = Modifier,
     delayMillis: Int = 500,
     tooltipPlacement: TooltipPlacement = TooltipPlacement.CursorPoint(
         offset = DpOffset(0.dp, 16.dp)
     ),
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -156,7 +157,7 @@ fun TooltipArea(
         if (isVisible) {
             @OptIn(ExperimentalFoundationApi::class)
             Popup(
-                popupPositionProvider = tooltipPlacement.positionProvider(cursorPosition),
+                popupPositionProvider = tooltipPlacement.run { positionProvider(cursorPosition) },
                 onDismissRequest = { isVisible = false }
             ) {
                 var popupPosition by remember { mutableStateOf(Offset.Zero) }
@@ -205,7 +206,7 @@ interface TooltipPlacement {
      * @param cursorPosition The position of the mouse cursor relative to the tooltip area.
      */
     @Composable
-    fun positionProvider(cursorPosition: Offset): PopupPositionProvider
+    fun NoriaContext.positionProvider(cursorPosition: Offset): PopupPositionProvider
 
     /**
      * [TooltipPlacement] implementation for providing a [PopupPositionProvider] that calculates
@@ -223,7 +224,7 @@ interface TooltipPlacement {
     ) : TooltipPlacement {
         @OptIn(ExperimentalComposeUiApi::class)
         @Composable
-        override fun positionProvider(cursorPosition: Offset) =
+        override fun NoriaContext.positionProvider(cursorPosition: Offset) =
             rememberPopupPositionProviderAtPosition(
                 positionPx = cursorPosition,
                 offset = offset,
@@ -247,7 +248,7 @@ interface TooltipPlacement {
         private val offset: DpOffset = DpOffset.Zero
     ) : TooltipPlacement {
         @Composable
-        override fun positionProvider(cursorPosition: Offset) =
+        override fun NoriaContext.positionProvider(cursorPosition: Offset) =
             rememberComponentRectPositionProvider(
                 anchor = anchor,
                 alignment = alignment,

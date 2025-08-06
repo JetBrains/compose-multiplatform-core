@@ -34,7 +34,7 @@ val SafeBottomRuler = HorizontalRuler()
 
 @Sampled
 @Composable
-fun RulerProducerUsage(content: @Composable BoxScope.() -> Unit) {
+fun NoriaContext.RulerProducerUsage(content: @Composable BoxScope.() -> Unit) {
     val safeInsets = WindowInsets.safeContent
 
     Box(
@@ -57,7 +57,7 @@ fun RulerProducerUsage(content: @Composable BoxScope.() -> Unit) {
 
 @Sampled
 @Composable
-fun RulerConsumerUsage(content: @Composable BoxScope.() -> Unit) {
+fun NoriaContext.RulerConsumerUsage(content: @Composable BoxScope.() -> Unit) {
     Box(
         Modifier.layout { measurable, constraints ->
             if (!constraints.hasBoundedHeight || !constraints.hasBoundedWidth) {

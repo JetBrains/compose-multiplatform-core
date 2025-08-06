@@ -443,7 +443,7 @@ class LazyListFocusMoveTest {
 
     private lateinit var scope: CoroutineScope
 
-    private fun SkikoComposeUiTest.setTestContent (composable: @Composable () -> Unit) {
+    private fun SkikoComposeUiTest.setTestContent (composable: @Composable NoriaContext.() -> Unit) {
         setContent {
             scope = rememberCoroutineScope()
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {

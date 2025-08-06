@@ -26,6 +26,7 @@ import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlin.jvm.JvmName
+import noria.NoriaContext
 
 
 /**
@@ -40,7 +41,7 @@ import kotlin.jvm.JvmName
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberTextFieldScrollState(
+fun NoriaContext.rememberTextFieldScrollState(
     orientation: Orientation,
     initial: Int = 0,
 ): TextFieldScrollState {
@@ -62,7 +63,7 @@ fun rememberTextFieldScrollState(
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberTextFieldVerticalScrollState(initial: Int = 0): TextFieldScrollState {
+fun NoriaContext.rememberTextFieldVerticalScrollState(initial: Int = 0): TextFieldScrollState {
     return rememberTextFieldScrollState(Orientation.Vertical, initial)
 }
 
@@ -79,7 +80,7 @@ fun rememberTextFieldVerticalScrollState(initial: Int = 0): TextFieldScrollState
  */
 @ExperimentalFoundationApi
 @Composable
-fun rememberTextFieldHorizontalScrollState(initial: Int = 0): TextFieldScrollState {
+fun NoriaContext.rememberTextFieldHorizontalScrollState(initial: Int = 0): TextFieldScrollState {
     return rememberTextFieldScrollState(Orientation.Horizontal, initial)
 }
 

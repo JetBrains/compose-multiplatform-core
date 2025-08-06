@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun SwipeToDismissDemo() {
+fun NoriaContext.SwipeToDismissDemo() {
     Column {
         var index by remember { mutableIntStateOf(0) }
         Box(Modifier.requiredHeight(300.dp).fillMaxWidth()) {

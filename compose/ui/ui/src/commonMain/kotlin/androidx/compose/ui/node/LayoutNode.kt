@@ -76,7 +76,7 @@ private val DefaultDensity = Density(1f)
 
 /** An element in the layout hierarchy, built with compose UI. */
 @OptIn(InternalComposeUiApi::class)
-class LayoutNode(
+internal class LayoutNode(
     // Virtual LayoutNode is the temporary concept allows us to a node which is not a real node,
     // but just a holder for its children - allows us to combine some children into something we
     // can subcompose in(LayoutNode) without being required to define it as a real layout - we

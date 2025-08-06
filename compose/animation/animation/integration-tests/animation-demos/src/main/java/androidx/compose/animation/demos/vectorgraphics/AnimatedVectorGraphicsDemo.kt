@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.dp
 @Preview
 @OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
-fun AnimatedVectorGraphicsDemo() {
+fun NoriaContext.AnimatedVectorGraphicsDemo() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -81,7 +81,7 @@ fun AnimatedVectorGraphicsDemo() {
 }
 
 @Composable
-fun createSampleVectorPainter(toggle: Boolean): Painter {
+fun NoriaContext.createSampleVectorPainter(toggle: Boolean): Painter {
     return rememberVectorPainter(
         defaultWidth = 24.dp,
         defaultHeight = 24.dp,

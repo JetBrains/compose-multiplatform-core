@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun DeterminateProgressSemanticsSample() {
+fun NoriaContext.DeterminateProgressSemanticsSample() {
     val progress = 0.5f // emulate progress from some state
     Box(
         Modifier.progressSemantics(progress)
@@ -40,7 +40,7 @@ fun DeterminateProgressSemanticsSample() {
 
 @Sampled
 @Composable
-fun IndeterminateProgressSemanticsSample() {
+fun NoriaContext.IndeterminateProgressSemanticsSample() {
     Box(Modifier.progressSemantics().background(color = Color.Cyan)) {
         Text("Operation is on progress")
     }

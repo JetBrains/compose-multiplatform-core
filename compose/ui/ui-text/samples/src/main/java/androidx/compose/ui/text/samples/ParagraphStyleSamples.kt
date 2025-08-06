@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-fun ParagraphStyleSample() {
+fun NoriaContext.ParagraphStyleSample() {
     val textStyle =
         TextStyle(
             textAlign = TextAlign.Justify,
@@ -46,7 +46,7 @@ fun ParagraphStyleSample() {
 
 @Sampled
 @Composable
-fun ParagraphStyleAnnotatedStringsSample() {
+fun NoriaContext.ParagraphStyleAnnotatedStringsSample() {
     val text =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
             "incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis " +

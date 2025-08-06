@@ -38,13 +38,13 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformInsetsConfig
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
-import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
+import noria.NoriaContext
 
 /**
  * The default scrim opacity.
@@ -137,13 +137,28 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         result = 31 * result + scrimColor.hashCode()
         return result
     }
+
+    internal val NoriaContext.platformInsets: PlatformInsets
+        @Composable get() {
+            val safeInsets = if (usePlatformInsets) {
+                PlatformInsetsConfig.run { safeInsets }
+            } else {
+                PlatformInsets.Zero
+            }
+            val ime = if (useSoftwareKeyboardInset) {
+                PlatformInsetsConfig.run { ime }
+            } else {
+                PlatformInsets.Zero
+            }
+            return safeInsets.union(ime)
+        }
 }
 
 @Composable
-actual fun Dialog(
+actual fun NoriaContext.Dialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
 
@@ -183,13 +198,13 @@ actual fun Dialog(
 }
 
 @Composable
-private fun DialogLayout(
+private fun NoriaContext.DialogLayout(
     properties: DialogProperties,
     modifier: Modifier = Modifier,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     val currentContent by rememberUpdatedState(content)
 
@@ -199,45 +214,35 @@ private fun DialogLayout(
     layer.scrimColor = properties.scrimColor
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
-    layer.Content {
-        val platformInsets = properties.platformInsets
-        val containerSize = LocalWindowInfo.current.containerSize
-        val measurePolicy = rememberDialogMeasurePolicy(
-            layer = layer,
-            properties = properties,
-            containerSize = containerSize,
-            platformInsets = platformInsets
-        )
-        PlatformInsetsConfig.excludeInsets(
-            safeInsets = properties.usePlatformInsets,
-            ime = properties.useSoftwareKeyboardInset,
-        ) {
-            Layout(
-                content = currentContent,
-                modifier = modifier,
-                measurePolicy = measurePolicy
+    layer.run {
+        Content {
+            val platformInsets = properties.run { platformInsets }
+            val containerSize = LocalWindowInfo.current.containerSize
+            val measurePolicy = rememberDialogMeasurePolicy(
+                layer = layer,
+                properties = properties,
+                containerSize = containerSize,
+                platformInsets = platformInsets
             )
+            PlatformInsetsConfig.run {
+                excludeInsets(
+                    safeInsets = properties.usePlatformInsets,
+                    ime = properties.useSoftwareKeyboardInset,
+                ) {
+                    Layout(
+                        content = currentContent,
+                        modifier = modifier,
+                        measurePolicy = measurePolicy
+                    )
+                }
+            }
         }
     }
 }
 
-private val DialogProperties.platformInsets: PlatformInsets
-    @Composable get() {
-        val safeInsets = if (usePlatformInsets) {
-            PlatformInsetsConfig.safeInsets
-        } else {
-            PlatformInsets.Zero
-        }
-        val ime = if (useSoftwareKeyboardInset) {
-            PlatformInsetsConfig.ime
-        } else {
-            PlatformInsets.Zero
-        }
-        return safeInsets.union(ime)
-    }
 
 @Composable
-private fun rememberDialogMeasurePolicy(
+private fun NoriaContext.rememberDialogMeasurePolicy(
     layer: ComposeSceneLayer,
     properties: DialogProperties,
     containerSize: IntSize,
@@ -247,9 +252,10 @@ private fun rememberDialogMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
-        val positionWithInsets = positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-            sizeWithoutInsets.center - contentSize.center
-        }
+        val positionWithInsets =
+            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                sizeWithoutInsets.center - contentSize.center
+            }
         layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
         layer.calculateLocalPosition(positionWithInsets)
     }

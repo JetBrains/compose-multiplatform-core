@@ -23,10 +23,11 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.launchApplication
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import noria.NoriaContext
 
 internal class PreviewRunner {
     companion object {
-        private var previewComposition: @Composable () -> Unit = {}
+        private var previewComposition: @Composable NoriaContext.() -> Unit = {}
 
         @Suppress("DEPRECATION")
         @JvmStatic

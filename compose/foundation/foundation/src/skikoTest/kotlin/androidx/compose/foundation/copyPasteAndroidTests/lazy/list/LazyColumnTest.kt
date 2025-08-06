@@ -506,7 +506,7 @@ class LazyColumnTest {
     }
 
     @Composable
-    private fun LazyRowWrapped(content: @Composable () -> Unit) {
+    private fun LazyRowWrapped(content: @Composable NoriaContext.() -> Unit) {
         LazyRow {
             items(count = 1) {
                 content()

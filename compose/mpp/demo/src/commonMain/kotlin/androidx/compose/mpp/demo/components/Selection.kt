@@ -41,10 +41,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SelectionExample() {
+fun NoriaContext.SelectionExample() {
     var count by remember { mutableStateOf(0) }
     val textState = remember {
         mutableStateOf(

@@ -41,8 +41,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
@@ -68,6 +68,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import noria.NoriaContext
 
 @OptIn(ExperimentalTestApi::class)
 class DraggableTest {
@@ -719,7 +720,7 @@ class DraggableTest {
         }
     }
 
-    private fun SkikoComposeUiTest.setDraggableContent(draggableFactory: @Composable () -> Modifier) {
+    private fun SkikoComposeUiTest.setDraggableContent(draggableFactory: @Composable NoriaContext.() -> Modifier) {
         setContent {
             Box {
                 val draggable = draggableFactory()
@@ -742,17 +743,19 @@ class DraggableTest {
         onDragStarted: (startedPosition: Offset) -> Unit = {},
         onDragStopped: (velocity: Float) -> Unit = {},
         onDrag: (Float) -> Unit
-    ): Modifier = composed {
-        val state = rememberDraggableState(onDrag)
-        draggable(
-            orientation = orientation,
-            enabled = enabled,
-            reverseDirection = reverseDirection,
-            interactionSource = interactionSource,
-            startDragImmediately = startDragImmediately,
-            onDragStarted = { onDragStarted(it) },
-            onDragStopped = { onDragStopped(it) },
-            state = state
-        )
+    ): Modifier = noriaComposed { noriaContext ->
+        noriaContext.run {
+            val state = rememberDraggableState(onDrag)
+            draggable(
+                orientation = orientation,
+                enabled = enabled,
+                reverseDirection = reverseDirection,
+                interactionSource = interactionSource,
+                startDragImmediately = startDragImmediately,
+                onDragStarted = { onDragStarted(it) },
+                onDragStopped = { onDragStopped(it) },
+                state = state
+            )
+        }
     }
 }

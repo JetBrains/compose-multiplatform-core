@@ -70,14 +70,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 
 @Composable
-fun BasicTextFieldCustomPinFieldDemo() {
+fun NoriaContext.BasicTextFieldCustomPinFieldDemo() {
     val viewModel = remember { VerifyPinViewModel() }
     VerifyPinScreen(viewModel)
 }
 
 @Suppress("AnimateAsStateLabel")
 @Composable
-private fun VerifyPinScreen(viewModel: VerifyPinViewModel) {
+private fun NoriaContext.VerifyPinScreen(viewModel: VerifyPinViewModel) {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(viewModel) { viewModel.run() }
@@ -164,7 +164,7 @@ private class PinState(val maxDigits: Int) {
 }
 
 @Composable
-private fun PinField(state: PinState, modifier: Modifier = Modifier, enabled: Boolean = true) {
+private fun NoriaContext.PinField(state: PinState, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val contentAlpha = if (enabled) 1f else 0.3f
     val contentColor = LocalContentColor.current.copy(alpha = contentAlpha)
 
@@ -183,7 +183,7 @@ private fun PinField(state: PinState, modifier: Modifier = Modifier, enabled: Bo
 }
 
 @Composable
-private fun PinContents(state: PinState) {
+private fun NoriaContext.PinContents(state: PinState) {
     val focusedColor = MaterialTheme.colors.secondary.copy(alpha = LocalContentAlpha.current)
     val text = buildAnnotatedString {
         val digits = state.digits

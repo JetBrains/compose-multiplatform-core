@@ -64,7 +64,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @Preview(showBackground = true)
 @Composable
-fun BasicMarqueeDemo() {
+fun NoriaContext.BasicMarqueeDemo() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = spacedBy(4.dp),
@@ -114,7 +114,7 @@ fun BasicMarqueeDemo() {
 }
 
 @Composable
-private fun AndroidMarqueeWithClickableLink() {
+private fun NoriaContext.AndroidMarqueeWithClickableLink() {
     val text =
         SpannableStringBuilder("text with link").apply {
             setSpan(URLSpan("https://www.google.com"), 5, 9, 0)
@@ -123,7 +123,7 @@ private fun AndroidMarqueeWithClickableLink() {
 }
 
 @Composable
-private fun AndroidMarqueeTextView(
+private fun NoriaContext.AndroidMarqueeTextView(
     text: CharSequence,
     modifier: Modifier = Modifier,
     initiallySelected: Boolean = true,
@@ -151,7 +151,7 @@ private fun AndroidMarqueeTextView(
 }
 
 @Composable
-private fun MarqueeWithClickable() {
+private fun NoriaContext.MarqueeWithClickable() {
     val uriHandler = LocalUriHandler.current
     Row(
         Modifier.width(60.dp).border(1.dp, Color.Black).basicMarquee(iterations = Int.MAX_VALUE),
@@ -164,7 +164,7 @@ private fun MarqueeWithClickable() {
 }
 
 @Composable
-private fun MarqueeText(
+private fun NoriaContext.MarqueeText(
     text: String,
     modifier: Modifier = Modifier,
     animationMode: MarqueeAnimationMode = Immediately,

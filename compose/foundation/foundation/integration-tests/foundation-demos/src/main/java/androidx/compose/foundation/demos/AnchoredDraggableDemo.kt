@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun AnchoredDraggableDemo() {
+fun NoriaContext.AnchoredDraggableDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         AnchoredDraggableAnchorsFromCompositionSample()
         Spacer(Modifier.height(50.dp))

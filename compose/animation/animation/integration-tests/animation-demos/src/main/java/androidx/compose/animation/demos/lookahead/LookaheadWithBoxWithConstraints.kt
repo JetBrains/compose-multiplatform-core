@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
-fun LookaheadWithBoxWithConstraints() {
+fun NoriaContext.LookaheadWithBoxWithConstraints() {
     Box(Modifier.fillMaxSize()) {
         LookaheadScope {
             Column {
@@ -161,7 +161,7 @@ fun RowScope.MyButton() {
 }
 
 @Composable
-fun MyButton() {
+fun NoriaContext.MyButton() {
     Box(
         modifier =
             Modifier.fillMaxWidth(0.5f)

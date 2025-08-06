@@ -24,7 +24,7 @@ import androidx.compose.runtime.key
 
 @Sampled
 @Composable
-fun LocallyUniqueKeys() {
+fun NoriaContext.LocallyUniqueKeys() {
     for (user in users) {
         key(user.id) { UserPreview(user = user) }
     }
@@ -36,7 +36,7 @@ fun LocallyUniqueKeys() {
 
 @Sampled
 @Composable
-fun NotAlwaysUniqueKeys() {
+fun NoriaContext.NotAlwaysUniqueKeys() {
     for ((child, parent) in relationships) {
         key(parent.id) {
             User(user = child)
@@ -47,7 +47,7 @@ fun NotAlwaysUniqueKeys() {
 
 @Sampled
 @Composable
-fun MoreCorrectUniqueKeys() {
+fun NoriaContext.MoreCorrectUniqueKeys() {
     for ((child, parent) in relationships) {
         key(parent.id to child.id) {
             User(user = child)

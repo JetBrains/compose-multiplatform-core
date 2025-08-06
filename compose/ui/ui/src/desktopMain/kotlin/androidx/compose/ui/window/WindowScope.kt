@@ -18,13 +18,14 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Stable
 import java.awt.Window
+import noria.NoriaContext
 
 /**
  * Receiver scope which is used by [androidx.compose.ui.window.Window] and
  * [androidx.compose.ui.window.DialogWindow].
  */
 @Stable
-interface WindowScope {
+interface WindowScope : NoriaContext {
     /**
      * [Window] that was created inside [androidx.compose.ui.window.Window]
      * or [androidx.compose.ui.window.DialogWindow]

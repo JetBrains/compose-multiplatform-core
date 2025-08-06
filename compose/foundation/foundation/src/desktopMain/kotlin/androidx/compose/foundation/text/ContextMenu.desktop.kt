@@ -60,22 +60,23 @@ import javax.swing.JPopupMenu
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 /**
  * Context menu area for [BasicTextField] (with [TextFieldValue] argument).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {
         val state = remember { ContextMenuState() }
         val textManager = remember(manager) { manager.textManager }
-        LocalTextContextMenu.current.Area(textManager, state, content)
+        LocalTextContextMenu.current.run { Area(textManager, state, content) }
     }
 }
 
@@ -83,10 +84,10 @@ internal actual fun ContextMenuArea(
  * Context menu area for [BasicTextField] (with [TextFieldState] argument).
  */
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         val modifier =
@@ -109,7 +110,7 @@ internal actual fun ContextMenuArea(
         val textManager = remember(selectionState, coroutineScope) {
             selectionState.textManager(coroutineScope)
         }
-        LocalTextContextMenu.current.Area(textManager, state, content)
+        LocalTextContextMenu.current.run { Area(textManager, state, content) }
     }
 }
 
@@ -118,16 +119,16 @@ internal actual fun ContextMenuArea(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal actual fun ContextMenuArea(
+internal actual fun NoriaContext.ContextMenuArea(
     manager: SelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideDefaultPlatformTextContextMenuProviders(manager.contextMenuAreaModifier, content)
     } else {
         val state = remember { ContextMenuState() }
         val textManager = remember(manager) { manager.textManager }
-        LocalTextContextMenu.current.Area(textManager, state, content)
+        LocalTextContextMenu.current.run { Area(textManager, state, content) }
     }
 }
 
@@ -268,7 +269,7 @@ interface TextContextMenu {
      * @param content The content of the [ContextMenuArea].
      */
     @Composable
-    fun Area(textManager: TextManager, state: ContextMenuState, content: @Composable () -> Unit)
+    fun NoriaContext.Area(textManager: TextManager, state: ContextMenuState, content: @Composable NoriaContext.() -> Unit)
 
     /**
      * Provides useful methods and information for text for which we show the text context menu.
@@ -314,7 +315,7 @@ interface TextContextMenu {
         @ExperimentalFoundationApi
         val Default = object : TextContextMenu {
             @Composable
-            override fun Area(textManager: TextManager, state: ContextMenuState, content: @Composable () -> Unit) {
+            override fun NoriaContext.Area(textManager: TextManager, state: ContextMenuState, content: @Composable NoriaContext.() -> Unit) {
                 val localization = LocalLocalization.current
                 val items = {
                     listOfNotNull(
@@ -359,7 +360,7 @@ class JPopupTextMenu(
     private val createMenu: (TextManager, List<ContextMenuItem>) -> JPopupMenu,
 ) : TextContextMenu {
     @Composable
-    override fun Area(textManager: TextManager, state: ContextMenuState, content: @Composable () -> Unit) {
+    override fun NoriaContext.Area(textManager: TextManager, state: ContextMenuState, content: @Composable NoriaContext.() -> Unit) {
         CompositionLocalProvider(
             LocalContextMenuRepresentation provides JPopupContextMenuRepresentation(owner) {
                 createMenu(textManager, it)
@@ -388,11 +389,11 @@ class JPopupTextMenu(
  */
 @ExperimentalFoundationApi
 @Composable
-fun TextContextMenuArea(
+fun NoriaContext.TextContextMenuArea(
     textManager: TextManager,
     items: () -> List<ContextMenuItem>,
     state: ContextMenuState,
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ) {
     ContextMenuArea(
         items = items,

@@ -37,7 +37,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 
 @Composable
-fun FocusTextFieldImmediatelyDemo() {
+fun NoriaContext.FocusTextFieldImmediatelyDemo() {
     var value by remember { mutableStateOf("") }
     var launchedEffect by remember { mutableStateOf(false) }
 

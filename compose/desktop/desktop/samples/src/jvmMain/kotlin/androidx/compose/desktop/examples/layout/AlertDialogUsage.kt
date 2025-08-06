@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AlertDialogUsage() {
+fun NoriaContext.AlertDialogUsage() {
     AlertDialog(
         onDismissRequest = {},
         title = { Text("AlertDialog") },

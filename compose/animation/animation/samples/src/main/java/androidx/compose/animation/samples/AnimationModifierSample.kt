@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun AnimateContent() {
+fun NoriaContext.AnimateContent() {
     val shortText = "Hi"
     val longText = "Very long text\nthat spans across\nmultiple lines"
     var short by remember { mutableStateOf(true) }

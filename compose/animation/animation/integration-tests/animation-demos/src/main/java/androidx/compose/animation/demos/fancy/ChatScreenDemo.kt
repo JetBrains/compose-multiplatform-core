@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
-fun ChatScreen() {
+fun NoriaContext.ChatScreen() {
     Surface(color = Color(0xff21181d)) {
         Column {
             val messages = remember { mutableStateListOf<Message>() }

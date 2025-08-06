@@ -1128,7 +1128,7 @@ class BasicTextLinkTest {
         BasicText(text, onTextLayout = { layoutResult = it })
     }
 
-    private fun setupContent(content: @Composable () -> Unit) {
+    private fun setupContent(content: @Composable NoriaContext.() -> Unit) {
         val keyboardMockManager =
             object : InputModeManager {
                 override val inputMode = InputMode.Keyboard

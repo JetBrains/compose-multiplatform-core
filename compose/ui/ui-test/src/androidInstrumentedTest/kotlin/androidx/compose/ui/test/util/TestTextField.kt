@@ -42,7 +42,7 @@ object TestTextField {
 }
 
 @Composable
-fun TestTextField(
+fun NoriaContext.TestTextField(
     width: Float = Width,
     height: Float = Height,
     tag: String = Tag,

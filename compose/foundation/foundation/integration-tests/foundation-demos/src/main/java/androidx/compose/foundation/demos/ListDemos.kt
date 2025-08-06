@@ -177,7 +177,7 @@ val LazyListDemos =
 
 @Preview
 @Composable
-private fun LazyColumnImpressionsDemo() {
+private fun NoriaContext.LazyColumnImpressionsDemo() {
     val viewport = remember { LayoutBoundsHolder() }
     Box {
         LazyColumn {
@@ -218,7 +218,7 @@ private fun LazyColumnImpressionsDemo() {
 
 @Preview
 @Composable
-private fun LazyColumnAutoplayDemo() {
+private fun NoriaContext.LazyColumnAutoplayDemo() {
     val viewport = remember { LayoutBoundsHolder() }
     Box {
         LazyColumn {
@@ -259,7 +259,7 @@ private fun LazyColumnAutoplayDemo() {
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Preview
 @Composable
-fun PullToRefreshSample() {
+fun NoriaContext.PullToRefreshSample() {
     val items = remember {
         mutableStateListOf<String>().apply { repeat(40) { add("Item ${it + 1}") } }
     }
@@ -304,7 +304,7 @@ fun PullToRefreshSample() {
 
 @Preview
 @Composable
-private fun LazyColumnDemo() {
+private fun NoriaContext.LazyColumnDemo() {
     LazyColumn {
         items(
             items =
@@ -331,7 +331,7 @@ private fun LazyColumnDemo() {
 
 @Preview
 @Composable
-private fun ListAddRemoveItemsDemo() {
+private fun NoriaContext.ListAddRemoveItemsDemo() {
     var numItems by remember { mutableIntStateOf(0) }
     var offset by remember { mutableIntStateOf(0) }
     Column {
@@ -351,7 +351,7 @@ private fun ListAddRemoveItemsDemo() {
 
 @Preview
 @Composable
-private fun ListHoistedStateDemo() {
+private fun NoriaContext.ListHoistedStateDemo() {
     val state = rememberLazyListState()
     var lastScrollDescription: String by remember { mutableStateOf("") }
     Column {
@@ -447,12 +447,12 @@ private fun ListHoistedStateDemo() {
 
 @Preview
 @Composable
-private fun LazyRowItemsDemo() {
+private fun NoriaContext.LazyRowItemsDemo() {
     LazyRow { items(1000) { Square(it) } }
 }
 
 @Composable
-private fun Square(index: Int) {
+private fun NoriaContext.Square(index: Int) {
     val width = remember { Random.nextInt(50, 150).dp }
     Box(
         Modifier.width(width).fillMaxHeight().background(colors[index % colors.size]),
@@ -463,7 +463,7 @@ private fun Square(index: Int) {
 }
 
 @Composable
-private fun ListWithIndexSample() {
+private fun NoriaContext.ListWithIndexSample() {
     val friends = listOf("Alex", "John", "Danny", "Sam")
     Column {
         LazyRow(Modifier.fillMaxWidth()) {
@@ -480,7 +480,7 @@ private fun ListWithIndexSample() {
 }
 
 @Composable
-private fun RtlListDemo() {
+private fun NoriaContext.RtlListDemo() {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         LazyRow(Modifier.fillMaxWidth()) {
             items(100) {
@@ -496,7 +496,7 @@ private fun RtlListDemo() {
 }
 
 @Composable
-private fun PagerLikeDemo() {
+private fun NoriaContext.PagerLikeDemo() {
     val pages = listOf(Color.LightGray, Color.White, Color.DarkGray)
     LazyRow { items(pages) { Spacer(Modifier.fillParentMaxSize().background(it)) } }
 }
@@ -511,7 +511,7 @@ private val colors =
     )
 
 @Composable
-private fun LazyColumnScope() {
+private fun NoriaContext.LazyColumnScope() {
     LazyColumn {
         items(10) { Text("$it", fontSize = 40.sp) }
 
@@ -523,7 +523,7 @@ private fun LazyColumnScope() {
 }
 
 @Composable
-private fun LazyRowScope() {
+private fun NoriaContext.LazyRowScope() {
     LazyRow {
         items(10) { Text("$it", fontSize = 40.sp) }
 
@@ -542,7 +542,7 @@ private fun LazyRowScope() {
 }
 
 @Composable
-private fun LazyListArrangements() {
+private fun NoriaContext.LazyListArrangements() {
     var count by remember { mutableIntStateOf(3) }
     var arrangement by remember { mutableIntStateOf(6) }
     Column {
@@ -600,7 +600,7 @@ private val Arrangements =
     )
 
 @Composable
-private fun ReverseLayoutAndRtlDemo() {
+private fun NoriaContext.ReverseLayoutAndRtlDemo() {
     val backgroundColor = Color(1f, .8f, .8f)
     Column {
         val scrollState = rememberScrollState()
@@ -734,7 +734,7 @@ private fun ReverseLayoutAndRtlDemo() {
 }
 
 @Composable
-private fun NestedLazyDemo() {
+private fun NoriaContext.NestedLazyDemo() {
     val item =
         @Composable { index: Int ->
             Box(
@@ -752,7 +752,7 @@ private fun NestedLazyDemo() {
 }
 
 @Composable
-private fun LazyGridDemo() {
+private fun NoriaContext.LazyGridDemo() {
     val columnModes = listOf(GridCells.Fixed(3), GridCells.Adaptive(minSize = 60.dp))
     var currentMode by remember { mutableIntStateOf(0) }
     Column {
@@ -767,7 +767,7 @@ private fun LazyGridDemo() {
 }
 
 @Composable
-private fun LazyGridForMode(mode: GridCells) {
+private fun NoriaContext.LazyGridForMode(mode: GridCells) {
     LazyVerticalGrid(columns = mode) {
         items(100) {
             Text(
@@ -782,7 +782,7 @@ private fun LazyGridForMode(mode: GridCells) {
 
 @Preview
 @Composable
-private fun LazyGridWithSpacingDemo() {
+private fun NoriaContext.LazyGridWithSpacingDemo() {
     val columnModes =
         listOf(
             GridCells.Fixed(3),
@@ -917,7 +917,7 @@ private fun LazyGridWithSpacingDemo() {
 }
 
 @Composable
-private fun LazyGridWithSpacingForMode(
+private fun NoriaContext.LazyGridWithSpacingForMode(
     mode: GridCells,
     horizontalSpacing: Dp,
     verticalSpacing: Dp,
@@ -939,7 +939,7 @@ private fun LazyGridWithSpacingForMode(
 }
 
 @Composable
-private fun ReorderWithCustomKeys() {
+private fun NoriaContext.ReorderWithCustomKeys() {
     var names by remember { mutableStateOf(listOf("John", "Sara", "Dan")) }
     Column {
         Button(onClick = { names = names.shuffled() }) { Text("Shuffle") }
@@ -959,7 +959,7 @@ private fun ReorderWithCustomKeys() {
 }
 
 @Composable
-private fun LazyWithFlingConfig() {
+private fun NoriaContext.LazyWithFlingConfig() {
     Column {
         Text(
             "Custom fling config will dance back and forth when you fling",
@@ -1015,7 +1015,7 @@ private fun LazyWithFlingConfig() {
 
 @Preview
 @Composable
-private fun LazyStaggeredGridDemo() {
+private fun NoriaContext.LazyStaggeredGridDemo() {
     val heights = remember { List(100) { (Random.nextInt(100) + 100).dp } }
 
     val colors = remember { List(100) { Color.hsl(Random.nextFloat() * 360, .5f, .65f) } }
@@ -1085,7 +1085,7 @@ private fun LazyStaggeredGridDemo() {
 }
 
 @Composable
-private fun AnimateItemPlacementDemo() {
+private fun NoriaContext.AnimateItemPlacementDemo() {
     val items = remember { mutableStateListOf<Int>().apply { repeat(20) { add(it) } } }
     val selectedIndexes = remember { mutableStateMapOf<Int, Boolean>() }
     var reverse by remember { mutableStateOf(false) }
@@ -1134,7 +1134,7 @@ private fun AnimateItemPlacementDemo() {
 
 @Preview(uiMode = Configuration.UI_MODE_TYPE_TELEVISION)
 @Composable
-private fun BringIntoViewDemo() {
+private fun NoriaContext.BringIntoViewDemo() {
     LazyRow(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
         items(100) {
             var color by remember { mutableStateOf(Color.White) }
@@ -1156,7 +1156,7 @@ private fun BringIntoViewDemo() {
 
 @Preview
 @Composable
-fun CrossListDragAndDropDemo() {
+fun NoriaContext.CrossListDragAndDropDemo() {
     val targetListState = rememberLazyListState()
     val dragAndDropListState = remember(targetListState) { DragAndDropListState(targetListState) }
 

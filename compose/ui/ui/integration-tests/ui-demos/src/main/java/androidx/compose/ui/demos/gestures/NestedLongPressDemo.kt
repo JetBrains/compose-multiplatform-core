@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 /** Demonstration of how various press/tap gesture interact together in a nested fashion. */
 @Composable
-fun NestedLongPressDemo() {
+fun NoriaContext.NestedLongPressDemo() {
     Column {
         Text(
             "Demonstrates interaction between nested pointerInput modifiers in an " +
@@ -57,7 +57,7 @@ fun NestedLongPressDemo() {
 }
 
 @Composable
-private fun LongPressableContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun NoriaContext.LongPressableContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val defaultColor = DefaultBackgroundColor
     val pressedColor = PressedColor
 

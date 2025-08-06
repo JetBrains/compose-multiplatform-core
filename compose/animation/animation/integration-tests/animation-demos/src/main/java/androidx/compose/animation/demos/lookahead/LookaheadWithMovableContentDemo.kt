@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-fun LookaheadWithMovableContentDemo() {
+fun NoriaContext.LookaheadWithMovableContentDemo() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         var isSingleColumn by remember { mutableStateOf(true) }
 

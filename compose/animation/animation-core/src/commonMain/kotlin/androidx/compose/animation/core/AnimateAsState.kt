@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import noria.NoriaContext
 
 private val defaultAnimation = spring<Float>()
 
@@ -59,7 +60,7 @@ private val defaultAnimation = spring<Float>()
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateFloatAsState(
+public fun NoriaContext.animateFloatAsState(
     targetValue: Float,
     animationSpec: AnimationSpec<Float> = defaultAnimation,
     visibilityThreshold: Float = 0.01f,
@@ -104,7 +105,7 @@ public fun animateFloatAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateDpAsState(
+public fun NoriaContext.animateDpAsState(
     targetValue: Dp,
     animationSpec: AnimationSpec<Dp> = dpDefaultSpring,
     label: String = "DpAnimation",
@@ -145,7 +146,7 @@ private val dpDefaultSpring = spring<Dp>(visibilityThreshold = Dp.VisibilityThre
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateSizeAsState(
+public fun NoriaContext.animateSizeAsState(
     targetValue: Size,
     animationSpec: AnimationSpec<Size> = sizeDefaultSpring,
     label: String = "SizeAnimation",
@@ -184,7 +185,7 @@ private val sizeDefaultSpring = spring(visibilityThreshold = Size.VisibilityThre
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateOffsetAsState(
+public fun NoriaContext.animateOffsetAsState(
     targetValue: Offset,
     animationSpec: AnimationSpec<Offset> = offsetDefaultSpring,
     label: String = "OffsetAnimation",
@@ -225,7 +226,7 @@ private val offsetDefaultSpring = spring(visibilityThreshold = Offset.Visibility
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateRectAsState(
+public fun NoriaContext.animateRectAsState(
     targetValue: Rect,
     animationSpec: AnimationSpec<Rect> = rectDefaultSpring,
     label: String = "RectAnimation",
@@ -263,7 +264,7 @@ private val rectDefaultSpring = spring(visibilityThreshold = Rect.VisibilityThre
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateIntAsState(
+public fun NoriaContext.animateIntAsState(
     targetValue: Int,
     animationSpec: AnimationSpec<Int> = intDefaultSpring,
     label: String = "IntAnimation",
@@ -302,7 +303,7 @@ private val intDefaultSpring = spring(visibilityThreshold = Int.VisibilityThresh
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateIntOffsetAsState(
+public fun NoriaContext.animateIntOffsetAsState(
     targetValue: IntOffset,
     animationSpec: AnimationSpec<IntOffset> = intOffsetDefaultSpring,
     label: String = "IntOffsetAnimation",
@@ -340,7 +341,7 @@ private val intOffsetDefaultSpring = spring(visibilityThreshold = IntOffset.Visi
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun animateIntSizeAsState(
+public fun NoriaContext.animateIntSizeAsState(
     targetValue: IntSize,
     animationSpec: AnimationSpec<IntSize> = intSizeDefaultSpring,
     label: String = "IntSizeAnimation",
@@ -386,7 +387,7 @@ private val intSizeDefaultSpring = spring(visibilityThreshold = IntSize.Visibili
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-public fun <T, V : AnimationVector> animateValueAsState(
+public fun <T, V : AnimationVector> NoriaContext.animateValueAsState(
     targetValue: T,
     typeConverter: TwoWayConverter<T, V>,
     animationSpec: AnimationSpec<T> = remember { spring() },
@@ -438,7 +439,7 @@ public fun <T, V : AnimationVector> animateValueAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateFloatAsState(
+public fun NoriaContext.animateFloatAsState(
     targetValue: Float,
     animationSpec: AnimationSpec<Float> = defaultAnimation,
     visibilityThreshold: Float = 0.01f,
@@ -456,7 +457,7 @@ public fun animateFloatAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateDpAsState(
+public fun NoriaContext.animateDpAsState(
     targetValue: Dp,
     animationSpec: AnimationSpec<Dp> = dpDefaultSpring,
     finishedListener: ((Dp) -> Unit)? = null,
@@ -474,7 +475,7 @@ public fun animateDpAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateSizeAsState(
+public fun NoriaContext.animateSizeAsState(
     targetValue: Size,
     animationSpec: AnimationSpec<Size> = sizeDefaultSpring,
     finishedListener: ((Size) -> Unit)? = null,
@@ -492,7 +493,7 @@ public fun animateSizeAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateOffsetAsState(
+public fun NoriaContext.animateOffsetAsState(
     targetValue: Offset,
     animationSpec: AnimationSpec<Offset> = offsetDefaultSpring,
     finishedListener: ((Offset) -> Unit)? = null,
@@ -510,7 +511,7 @@ public fun animateOffsetAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateRectAsState(
+public fun NoriaContext.animateRectAsState(
     targetValue: Rect,
     animationSpec: AnimationSpec<Rect> = rectDefaultSpring,
     finishedListener: ((Rect) -> Unit)? = null,
@@ -528,7 +529,7 @@ public fun animateRectAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateIntAsState(
+public fun NoriaContext.animateIntAsState(
     targetValue: Int,
     animationSpec: AnimationSpec<Int> = intDefaultSpring,
     finishedListener: ((Int) -> Unit)? = null,
@@ -546,7 +547,7 @@ public fun animateIntAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateIntOffsetAsState(
+public fun NoriaContext.animateIntOffsetAsState(
     targetValue: IntOffset,
     animationSpec: AnimationSpec<IntOffset> = intOffsetDefaultSpring,
     finishedListener: ((IntOffset) -> Unit)? = null,
@@ -564,7 +565,7 @@ public fun animateIntOffsetAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun animateIntSizeAsState(
+public fun NoriaContext.animateIntSizeAsState(
     targetValue: IntSize,
     animationSpec: AnimationSpec<IntSize> = intSizeDefaultSpring,
     finishedListener: ((IntSize) -> Unit)? = null,
@@ -582,7 +583,7 @@ public fun animateIntSizeAsState(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-public fun <T, V : AnimationVector> animateValueAsState(
+public fun <T, V : AnimationVector> NoriaContext.animateValueAsState(
     targetValue: T,
     typeConverter: TwoWayConverter<T, V>,
     animationSpec: AnimationSpec<T> = remember { spring() },

@@ -32,10 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun LazyStaggeredGrid(
+internal fun NoriaContext.LazyStaggeredGrid(
     /** State controlling the scroll position */
     state: LazyStaggeredGridState,
     /** The layout orientation of the grid */
@@ -49,7 +50,7 @@ internal fun LazyStaggeredGrid(
     /** reverse the direction of scrolling and layout */
     reverseLayout: Boolean = false,
     /** fling behavior to be used for flinging */
-    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    flingBehavior: FlingBehavior = ScrollableDefaults.run { flingBehavior() },
     /** Whether scrolling via the user gestures is allowed. */
     userScrollEnabled: Boolean = true,
     /** The overscroll effect to render and dispatch events to */

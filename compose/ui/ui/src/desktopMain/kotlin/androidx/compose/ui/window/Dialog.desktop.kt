@@ -24,6 +24,7 @@ import androidx.compose.ui.awt.SwingDialog
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import java.awt.Window
+import noria.NoriaContext
 
 @Deprecated(
     message = "Replaced by DialogWindow",
@@ -32,7 +33,7 @@ import java.awt.Window
         "onPreviewKeyEvent, onKeyEvent, content)")
 )
 @Composable
-fun Dialog(
+fun NoriaContext.Dialog(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
@@ -64,7 +65,7 @@ fun Dialog(
 )
 
 @Composable
-fun DialogWindow(
+fun NoriaContext.DialogWindow(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
@@ -157,7 +158,7 @@ fun DialogWindow(
  * @param content Composable content of the dialog.
  */
 @Composable
-fun DialogWindow(
+fun NoriaContext.DialogWindow(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
@@ -252,7 +253,7 @@ fun DialogWindow(
  */
 @ExperimentalComposeUiApi
 @Composable
-fun DialogWindow(
+fun NoriaContext.DialogWindow(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
@@ -295,7 +296,7 @@ fun DialogWindow(
     )
 )
 @Composable
-fun Dialog(
+fun NoriaContext.Dialog(
     visible: Boolean = true,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
@@ -361,7 +362,7 @@ fun Dialog(
     )
 )
 @Composable
-fun DialogWindow(
+fun NoriaContext.DialogWindow(
     visible: Boolean = true,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },

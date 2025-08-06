@@ -27,6 +27,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import noria.NoriaContext
 
 /**
  * Collects values from this [StateFlow] and represents its latest value via [State] in a
@@ -56,7 +57,7 @@ import kotlinx.coroutines.withContext
 @Suppress("StateFlowValueCalledInComposition")
 public // Initial value for an ongoing collect.
 fun <T> StateFlow<T>.collectAsStateWithLifecycle(
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+    lifecycleOwner: LifecycleOwner = NoriaContext.run { LocalLifecycleOwner.current },
     minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
     context: CoroutineContext = EmptyCoroutineContext
 ): State<T> =
@@ -132,7 +133,7 @@ fun <T> StateFlow<T>.collectAsStateWithLifecycle(
 @Composable
 public fun <T> Flow<T>.collectAsStateWithLifecycle(
     initialValue: T,
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+    lifecycleOwner: LifecycleOwner = NoriaContext.run { LocalLifecycleOwner.current },
     minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
     context: CoroutineContext = EmptyCoroutineContext
 ): State<T> =
@@ -173,7 +174,7 @@ public fun <T> Flow<T>.collectAsStateWithLifecycle(
     minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
     context: CoroutineContext = EmptyCoroutineContext
 ): State<T> {
-    return produceState(initialValue, this, lifecycle, minActiveState, context) {
+    return NoriaContext.produceState(initialValue, this, lifecycle, minActiveState, context) {
         lifecycle.repeatOnLifecycle(minActiveState) {
             if (context == EmptyCoroutineContext) {
                 this@collectAsStateWithLifecycle.collect { this@produceState.value = it }

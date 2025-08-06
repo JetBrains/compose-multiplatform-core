@@ -1067,7 +1067,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
         expectedChildSize: Dp,
         childCoordinates: State<LayoutCoordinates?>,
         animationSpec: InspectSpringAnimationSpec = InspectSpringAnimationSpec(spring()),
-        content: @Composable () -> Unit,
+        content: @Composable NoriaContext.() -> Unit,
     ) {
 
         val containerSize = 200.dp
@@ -1226,7 +1226,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
     //  tests for intermediate state changes, including request cancellation, non-overlapping
     //  request interruption, etc.
 
-    private fun setContentAndInitialize(content: @Composable () -> Unit) {
+    private fun setContentAndInitialize(content: @Composable NoriaContext.() -> Unit) {
         rule.setContent {
             testScope = rememberCoroutineScope()
             content()
@@ -1250,7 +1250,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
     }
 
     @Composable
-    private fun RowOrColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    private fun RowOrColumn(modifier: Modifier = Modifier, content: @Composable NoriaContext.() -> Unit) {
         when (orientation) {
             Horizontal -> Row(modifier) { content() }
             Vertical -> Column(modifier) { content() }

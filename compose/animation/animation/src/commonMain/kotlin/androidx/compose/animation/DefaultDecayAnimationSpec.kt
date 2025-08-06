@@ -18,10 +18,11 @@ package androidx.compose.animation
 
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.runtime.Composable
+import noria.NoriaContext
 
 /** Create default [DecayAnimationSpec] representing a default fling curve for a platform. */
 @Composable
 @Deprecated("Replace with rememberSplineBasedDecay<Float>")
-public expect fun defaultDecayAnimationSpec(): DecayAnimationSpec<Float>
+public expect fun NoriaContext.defaultDecayAnimationSpec(): DecayAnimationSpec<Float>
 
-@Composable public expect fun <T> rememberSplineBasedDecay(): DecayAnimationSpec<T>
+@Composable public expect fun <T> NoriaContext.rememberSplineBasedDecay(): DecayAnimationSpec<T>

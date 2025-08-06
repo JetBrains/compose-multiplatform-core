@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun CanvasSample() {
+fun NoriaContext.CanvasSample() {
     Canvas(modifier = Modifier.size(100.dp)) {
         drawRect(Color.Magenta)
         inset(10.0f) {
@@ -45,7 +45,7 @@ fun CanvasSample() {
 
 @Sampled
 @Composable
-fun CanvasPieChartSample() {
+fun NoriaContext.CanvasPieChartSample() {
     Canvas(
         contentDescription = "Pie chart: 80% apples, 20% bananas (localized string)",
         modifier = Modifier.size(300.dp),

@@ -55,7 +55,7 @@ import androidx.compose.ui.util.fastRoundToInt
 @Sampled
 @Preview
 @Composable
-fun LazyLayoutPrefetchStateSample() {
+fun NoriaContext.LazyLayoutPrefetchStateSample() {
     val items = remember { (0..100).toList().map { it.toString() } }
     var currentHandle = remember<LazyLayoutPrefetchState.PrefetchHandle?> { null }
     val prefetchState = remember { LazyLayoutPrefetchState() }
@@ -130,7 +130,7 @@ fun LazyLayoutPrefetchStateSample() {
 @Sampled
 @Preview
 @Composable
-fun LazyLayoutSample() {
+fun NoriaContext.LazyLayoutSample() {
     val items = remember { (0..100).toList().map { it.toString() } }
 
     // Create an item provider
@@ -223,7 +223,7 @@ fun LazyLayoutItemProviderSample() {
 @Sampled
 @Preview
 @Composable
-fun LazyLayoutScrollableSample() {
+fun NoriaContext.LazyLayoutScrollableSample() {
     val items = remember { (0..100).toList().map { it.toString() } }
 
     /** Saves the deltas from the scroll gesture. */

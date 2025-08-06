@@ -21,7 +21,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 
 @Composable
-fun BadgeBoxUsage() {
+fun NoriaContext.BadgeBoxUsage() {
     BadgedBox(
         badge = {
             Text("badge")

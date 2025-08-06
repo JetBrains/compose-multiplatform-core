@@ -51,7 +51,7 @@ import kotlin.random.Random
 
 @Preview
 @Composable
-fun LazyStaggeredGridDemo() {
+fun NoriaContext.LazyStaggeredGridDemo() {
     var enableLookahead by remember { mutableStateOf(true) }
     if (enableLookahead) {
         LookaheadScope { Content(enableLookahead) { enableLookahead = !enableLookahead } }
@@ -62,7 +62,7 @@ fun LazyStaggeredGridDemo() {
 
 @SuppressLint("PrimitiveInCollection")
 @Composable
-fun Content(lookaheadEnabled: Boolean, onLookaheadToggled: () -> Unit) {
+fun NoriaContext.Content(lookaheadEnabled: Boolean, onLookaheadToggled: () -> Unit) {
 
     val heights = remember { List(100) { (Random.nextInt(100) + 100).dp } }
     val indices = remember { mutableStateOf(List(100) { it }) }

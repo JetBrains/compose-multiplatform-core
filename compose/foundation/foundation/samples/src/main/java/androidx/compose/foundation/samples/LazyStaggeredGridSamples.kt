@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 @Sampled
 @Preview
 @Composable
-fun LazyVerticalStaggeredGridSample() {
+fun NoriaContext.LazyVerticalStaggeredGridSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -76,7 +76,7 @@ fun LazyVerticalStaggeredGridSample() {
 @Sampled
 @Preview
 @Composable
-fun LazyVerticalStaggeredGridSpanSample() {
+fun NoriaContext.LazyVerticalStaggeredGridSpanSample() {
     val sections = (0 until 25).toList().chunked(5)
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(3),
@@ -104,7 +104,7 @@ fun LazyVerticalStaggeredGridSpanSample() {
 @Sampled
 @Preview
 @Composable
-fun LazyHorizontalStaggeredGridSample() {
+fun NoriaContext.LazyHorizontalStaggeredGridSample() {
     val itemsList = (0..5).toList()
     val itemsIndexedList = listOf("A", "B", "C")
 
@@ -122,7 +122,7 @@ fun LazyHorizontalStaggeredGridSample() {
 @Sampled
 @Preview
 @Composable
-fun LazyHorizontalStaggeredGridSpanSample() {
+fun NoriaContext.LazyHorizontalStaggeredGridSpanSample() {
     val sections = (0 until 25).toList().chunked(5)
     LazyHorizontalStaggeredGrid(
         rows = StaggeredGridCells.Fixed(3),
@@ -149,7 +149,7 @@ fun LazyHorizontalStaggeredGridSpanSample() {
 
 @Sampled
 @Composable
-fun StaggeredGridAnimateItemSample() {
+fun NoriaContext.StaggeredGridAnimateItemSample() {
     var list by remember { mutableStateOf(listOf("A", "B", "C")) }
     Column {
         Button(onClick = { list = list + "D" }) { Text("Add new item") }

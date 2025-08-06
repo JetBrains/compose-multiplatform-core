@@ -43,7 +43,7 @@ import kotlin.random.Random
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun AnimateBoundsModifierDemo() {
+fun NoriaContext.AnimateBoundsModifierDemo() {
     var height by remember { mutableIntStateOf(200) }
     var left by remember { mutableIntStateOf(0) }
     var top by remember { mutableIntStateOf(0) }

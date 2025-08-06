@@ -388,7 +388,7 @@ internal class TextFieldFocusTest {
 
     private fun textInputStarted_whenFocusRequestedImmediately_fromEffect(
         runEffect: @Composable (body: () -> Unit) -> Unit,
-        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() },
+        wrapContent: @Composable (@Composable NoriaContext.() -> Unit) -> Unit = { it() },
     ) {
         val focusRequester = FocusRequester()
         val state = TextFieldState()

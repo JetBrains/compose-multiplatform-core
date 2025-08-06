@@ -36,7 +36,7 @@ import kotlin.math.min
 
 @Sampled
 @Composable
-fun SimpleColumn() {
+fun NoriaContext.SimpleColumn() {
     Column {
         // The child with no weight will have the specified size.
         Box(Modifier.size(40.dp, 80.dp).background(Color.Magenta))
@@ -50,7 +50,7 @@ fun SimpleColumn() {
 
 @Sampled
 @Composable
-fun SimpleAlignInColumn() {
+fun NoriaContext.SimpleAlignInColumn() {
     Column(Modifier.fillMaxWidth()) {
         // The child with no align modifier is positioned by default so that its start edge
         // aligned with the start edge of the horizontal axis.
@@ -72,7 +72,7 @@ fun SimpleAlignInColumn() {
 
 @Sampled
 @Composable
-fun SimpleRelativeToSiblings() {
+fun NoriaContext.SimpleRelativeToSiblings() {
     Column {
         // Center of the first rectangle is aligned to the right edge of the second rectangle and
         // left edge of the third one.
@@ -84,7 +84,7 @@ fun SimpleRelativeToSiblings() {
 
 @Sampled
 @Composable
-fun SimpleRelativeToSiblingsInColumn() {
+fun NoriaContext.SimpleRelativeToSiblingsInColumn() {
     // Alignment lines provided by the RectangleWithStartEnd layout. We need to create these
     // local alignment lines because Compose is currently not providing any top-level out of
     // the box vertical alignment lines. Two horizontal alignment lines are provided though:

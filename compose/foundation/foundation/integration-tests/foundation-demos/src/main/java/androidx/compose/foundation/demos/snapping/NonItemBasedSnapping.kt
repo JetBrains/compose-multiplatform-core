@@ -84,7 +84,7 @@ class NonItemBasedSnappingLayoutInfoProvider(
 private val ThumbSize = 60.dp
 
 @Composable
-fun NonItemBasedLayout() {
+fun NoriaContext.NonItemBasedLayout() {
     var thumbOffset by remember { mutableStateOf(IntOffset.Zero) }
     var layoutSize by remember { mutableIntStateOf(0) }
 

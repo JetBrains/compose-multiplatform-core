@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun TextFontPaddingDemo() {
+fun NoriaContext.TextFontPaddingDemo() {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         FontPaddingRow("JKLMNOPQRSTUVWXYZ")
         FontPaddingRow("مرحبا" + "ဪไန််မ့်၇ဤဩဦနိမြ")
@@ -71,7 +71,7 @@ fun TextFontPaddingDemo() {
 }
 
 @Composable
-private fun Configuration() {
+private fun NoriaContext.Configuration() {
     val fontSize = 72.sp
     val width = with(LocalDensity.current) { fontSize.toDp() } * 5
     val padding = Modifier.padding(8.dp)
@@ -105,7 +105,7 @@ private fun Configuration() {
 }
 
 @Composable
-private fun FontPaddingRow(text: String) {
+private fun NoriaContext.FontPaddingRow(text: String) {
     val padding = Modifier.padding(8.dp)
     Row(padding.horizontalScroll(rememberScrollState())) {
         for (overflow in arrayOf(TextOverflow.Clip, TextOverflow.Ellipsis, TextOverflow.Visible)) {
@@ -119,7 +119,7 @@ private fun FontPaddingRow(text: String) {
 }
 
 @Composable
-private fun FontPaddingColumn(text: String, overflow: TextOverflow) {
+private fun NoriaContext.FontPaddingColumn(text: String, overflow: TextOverflow) {
     val fontSize = fontSize8
     val width = with(LocalDensity.current) { fontSize.toDp() } * 5
     val widthModifier = Modifier.width(width)
@@ -189,7 +189,7 @@ private fun FontPaddingColumn(text: String, overflow: TextOverflow) {
 }
 
 @Composable
-private fun CenteredInContainerRow() {
+private fun NoriaContext.CenteredInContainerRow() {
     Row(Modifier.padding(16.dp).horizontalScroll(rememberScrollState())) {
         CenteredInContainerColumn("Abcdefgh")
         Spacer(Modifier.width(16.dp))
@@ -198,7 +198,7 @@ private fun CenteredInContainerRow() {
 }
 
 @Composable
-private fun CenteredInContainerColumn(text: String) {
+private fun NoriaContext.CenteredInContainerColumn(text: String) {
     val fontSize = fontSize8
     val height = with(LocalDensity.current) { fontSize.toDp() } * 3
     Column(
@@ -211,7 +211,7 @@ private fun CenteredInContainerColumn(text: String) {
 }
 
 @Composable
-private fun CenterInCircleRow() {
+private fun NoriaContext.CenterInCircleRow() {
     Row(Modifier.padding(16.dp).horizontalScroll(rememberScrollState())) {
         CenteredInCircle("1")
         Spacer(Modifier.width(16.dp))
@@ -224,7 +224,7 @@ private fun CenterInCircleRow() {
 }
 
 @Composable
-private fun CenteredInCircle(text: String) {
+private fun NoriaContext.CenteredInCircle(text: String) {
     val fontSize = fontSize8
     val size = with(LocalDensity.current) { fontSize.toDp() } * 3
     Box(
@@ -236,7 +236,7 @@ private fun CenteredInCircle(text: String) {
 }
 
 @Composable
-private fun MultiStyleText() {
+private fun NoriaContext.MultiStyleText() {
     val fontSize = fontSize8
     Row(Modifier.padding(16.dp).horizontalScroll(rememberScrollState())) {
         val shorterTallChar = buildAnnotatedString {
@@ -260,7 +260,7 @@ private fun MultiStyleText() {
 }
 
 @Composable
-private fun InlineContent() {
+private fun NoriaContext.InlineContent() {
     Row(Modifier.padding(16.dp).horizontalScroll(rememberScrollState())) {
         // tall char larger than inline content
         TextWithInlineContent(
@@ -288,7 +288,7 @@ private fun InlineContent() {
 }
 
 @Composable
-private fun TextWithInlineContent(
+private fun NoriaContext.TextWithInlineContent(
     tallCharSize: TextUnit,
     inlineContentSize: TextUnit,
     placeholderVerticalAlign: PlaceholderVerticalAlign,

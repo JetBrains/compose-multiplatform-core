@@ -82,7 +82,7 @@ import kotlinx.coroutines.flow.withIndex
 
 @Preview
 @Composable
-fun DrawTextDemo() {
+fun NoriaContext.DrawTextDemo() {
     LazyColumn {
         item {
             TagLine(tag = "Draw text blendMode")
@@ -121,7 +121,7 @@ fun DrawTextDemo() {
 }
 
 @Composable
-fun DrawTextString() {
+fun NoriaContext.DrawTextString() {
     val textMeasurer = rememberTextMeasurer()
     Canvas(Modifier.fillMaxWidth().height(100.dp)) {
         drawRect(brush = Brush.linearGradient(RainbowColors))
@@ -137,7 +137,7 @@ fun DrawTextString() {
 }
 
 @Composable
-fun DrawTextLongString() {
+fun NoriaContext.DrawTextLongString() {
     val textMeasurer = rememberTextMeasurer()
     Canvas(Modifier.fillMaxWidth().height(100.dp)) {
         drawRect(color = Color.Gray)
@@ -156,7 +156,7 @@ fun DrawTextLongString() {
 
 @Suppress("DEPRECATION")
 @Composable
-fun DrawTextCenter() {
+fun NoriaContext.DrawTextCenter() {
     val textMeasurer = rememberTextMeasurer()
     var includeFontPadding by remember { mutableStateOf(true) }
     var drawLines by remember { mutableStateOf(true) }
@@ -221,7 +221,7 @@ fun DrawTextCenter() {
 }
 
 @Composable
-fun DrawTextAnnotatedString() {
+fun NoriaContext.DrawTextAnnotatedString() {
     val textMeasurer = rememberTextMeasurer()
     val text = remember {
         buildAnnotatedString {
@@ -243,7 +243,7 @@ fun DrawTextAnnotatedString() {
 }
 
 @Composable
-fun DrawTextMeasure() {
+fun NoriaContext.DrawTextMeasure() {
     val textMeasurer = rememberTextMeasurer()
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
@@ -299,7 +299,7 @@ private val blendModes =
     )
 
 @Composable
-fun DrawTextBlendMode() {
+fun NoriaContext.DrawTextBlendMode() {
     val textMeasurer = rememberTextMeasurer()
     var isExpanded by remember { mutableStateOf(false) }
     var blendModeState by remember { mutableStateOf(BlendMode.SrcOver) }
@@ -355,7 +355,7 @@ fun DrawTextBlendMode() {
 }
 
 @Composable
-fun DrawTextAndAnimateColor() {
+fun NoriaContext.DrawTextAndAnimateColor() {
     val infiniteTransition = rememberInfiniteTransition()
     val color by
         infiniteTransition.animateColor(
@@ -394,7 +394,7 @@ fun DrawTextAndAnimateColor() {
 }
 
 @Composable
-fun DrawTextMeasureAndAnimateColor() {
+fun NoriaContext.DrawTextMeasureAndAnimateColor() {
     val textMeasurer = rememberTextMeasurer()
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     val infiniteTransition = rememberInfiniteTransition()

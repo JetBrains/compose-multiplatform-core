@@ -6982,7 +6982,7 @@ class AndroidPointerInputTest {
 }
 
 @Composable
-fun AndroidWithCompose(context: Context, androidPadding: Int, content: @Composable () -> Unit) {
+fun NoriaContext.AndroidWithCompose(context: Context, androidPadding: Int, content: @Composable () -> Unit) {
     val anotherLayout =
         ComposeView(context).also { view ->
             view.setContent { content() }
@@ -7062,7 +7062,7 @@ private class LogEventsGestureFilter(val log: MutableList<List<PointerInputChang
 
 @Suppress("TestFunctionName")
 @Composable
-private fun FillLayout(modifier: Modifier = Modifier) {
+private fun NoriaContext.FillLayout(modifier: Modifier = Modifier) {
     Layout({}, modifier) { _, constraints ->
         layout(constraints.maxWidth, constraints.maxHeight) {}
     }

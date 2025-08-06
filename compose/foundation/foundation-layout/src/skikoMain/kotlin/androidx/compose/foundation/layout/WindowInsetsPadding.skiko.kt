@@ -18,11 +18,11 @@ package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
+import androidx.compose.ui.noriaComposed
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
+import noria.NoriaContext
 
 actual fun Modifier.safeDrawingPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "safeDrawingPadding" }) {
@@ -88,8 +88,10 @@ actual fun Modifier.mandatorySystemGesturesPadding() =
 @Stable
 private inline fun Modifier.windowInsetsPadding(
     noinline inspectorInfo: InspectorInfo.() -> Unit,
-    crossinline insetsCalculation: @Composable () -> WindowInsets
-): Modifier = composed(inspectorInfo) {
-    val insets = insetsCalculation()
-    InsetsPaddingModifier(insets)
+    crossinline insetsCalculation: @Composable NoriaContext.() -> WindowInsets
+): Modifier = noriaComposed(inspectorInfo) { noriaContext ->
+    noriaContext.run {
+        val insets = insetsCalculation()
+        InsetsPaddingModifier(insets)
+    }
 }

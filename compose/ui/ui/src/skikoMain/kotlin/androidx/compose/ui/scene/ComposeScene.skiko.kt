@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.pointerInteropFilter
+import noria.NoriaContext
 
 /**
  * Represents a static [CompositionLocal] key for a [ComposeScene] in Jetpack Compose.
@@ -173,7 +174,7 @@ sealed interface ComposeScene : AutoCloseable {
      *
      * @param content Content of the [ComposeScene]
      */
-    fun setContent(content: @Composable () -> Unit)
+    fun setContent(content: @Composable NoriaContext.() -> Unit)
 
     /**
      * Render the current content on [canvas]. Passed [nanoTime] will be used to drive all

@@ -66,7 +66,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 @Composable
-fun BasicTextFieldOutputTransformationDemos() {
+fun NoriaContext.BasicTextFieldOutputTransformationDemos() {
     Column(modifier = Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine("Insert, replace, delete")
         InsertReplaceDeleteDemo()
@@ -86,7 +86,7 @@ fun BasicTextFieldOutputTransformationDemos() {
 }
 
 @Composable
-private fun InsertReplaceDeleteDemo() {
+private fun NoriaContext.InsertReplaceDeleteDemo() {
     val state = remember { TextFieldState("abc def ghi") }
     var prefixEnabled by remember { mutableStateOf(true) }
     var suffixEnabled by remember { mutableStateOf(true) }
@@ -215,7 +215,7 @@ private fun InsertReplaceDeleteDemo() {
 }
 
 @Composable
-private fun PhoneNumberAsYouTypeDemo() {
+private fun NoriaContext.PhoneNumberAsYouTypeDemo() {
     BasicTextField(
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
@@ -226,7 +226,7 @@ private fun PhoneNumberAsYouTypeDemo() {
 }
 
 @Composable
-private fun PhoneNumberFullTemplateDemo() {
+private fun NoriaContext.PhoneNumberFullTemplateDemo() {
     BasicTextField(
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
@@ -239,7 +239,7 @@ private fun PhoneNumberFullTemplateDemo() {
 }
 
 @Composable
-private fun BoldItalicEveryOtherChar() {
+private fun NoriaContext.BoldItalicEveryOtherChar() {
     BasicTextField(
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
@@ -270,7 +270,7 @@ private fun BoldItalicEveryOtherChar() {
 }
 
 @Composable
-private fun ColorAnimationDemo() {
+private fun NoriaContext.ColorAnimationDemo() {
     val infiniteTransition = rememberInfiniteTransition()
     val color by
         infiniteTransition.animateColor(Color.Red, Color.Blue, infiniteRepeatable(tween(1000)))

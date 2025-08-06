@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ListItemUsage() {
+fun NoriaContext.ListItemUsage() {
     Column {
         ListItem(
             text = { Text("One line list item with no icon") },

@@ -37,7 +37,7 @@ class PointerIconTestScope(val rule: ComposeContentTestRule) {
      *
      * Required to call this in your test if you are using [PointerIconTestScope.assertIcon].
      */
-    fun setContent(contentBlock: @Composable () -> Unit) {
+    fun setContent(contentBlock: @Composable NoriaContext.() -> Unit) {
         rule.setContent {
             view = LocalView.current
             // If nothing sets the pointer icon, then it can end up null in assertIcon.

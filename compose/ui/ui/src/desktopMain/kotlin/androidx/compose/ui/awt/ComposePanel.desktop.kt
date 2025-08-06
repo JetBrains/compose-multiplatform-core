@@ -37,6 +37,7 @@ import java.awt.event.FocusListener
 import java.util.*
 import javax.swing.JLayeredPane
 import javax.swing.SwingUtilities.isEventDispatchThread
+import noria.NoriaContext
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
@@ -114,7 +115,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private val _focusListeners = mutableSetOf<FocusListener?>()
 
     private var _composeContainer: ComposeContainer? = null
-    private var _composeContent: (@Composable () -> Unit)? = null
+    private var _composeContent: (@Composable NoriaContext.() -> Unit)? = null
 
     /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
@@ -176,7 +177,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      *
      * @param content Composable content of the ComposePanel.
      */
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(content: @Composable NoriaContext.() -> Unit) {
         // The window (or root container) may not be ready to render composable content, so we need
         // to keep the lambda describing composable content and set the content only when
         // everything is ready to avoid accidental crashes and memory leaks on all supported OS

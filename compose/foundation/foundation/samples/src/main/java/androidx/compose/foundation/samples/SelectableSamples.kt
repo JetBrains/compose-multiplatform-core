@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-fun SelectableSample() {
+fun NoriaContext.SelectableSample() {
     val option1 = Color.Red
     val option2 = Color.Blue
     var selectedOption by remember { mutableStateOf(option1) }

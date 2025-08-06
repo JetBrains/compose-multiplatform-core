@@ -30,7 +30,7 @@ import androidx.compose.ui.window.Dialog
 
 @Sampled
 @Composable
-fun DialogSample() {
+fun NoriaContext.DialogSample() {
     val openDialog = remember { mutableStateOf(true) }
     val dialogWidth = 200.dp
     val dialogHeight = 50.dp

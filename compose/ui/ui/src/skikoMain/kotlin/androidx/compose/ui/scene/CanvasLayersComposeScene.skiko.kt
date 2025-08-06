@@ -57,6 +57,7 @@ import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
+import noria.NoriaContext
 
 /**
  * Constructs a multi-layer [ComposeScene] using the specified parameters. Unlike
@@ -211,7 +212,7 @@ private class CanvasLayersComposeSceneImpl(
         mainOwner.invalidatePositionOnScreen()
     }
 
-    override fun createComposition(content: @Composable () -> Unit): Composition {
+    override fun createComposition(content: @Composable NoriaContext.() -> Unit): Composition {
         return mainOwner.setContent(
             compositionContext,
             { compositionLocalContext },
@@ -594,7 +595,7 @@ private class CanvasLayersComposeSceneImpl(
             outsidePointerCallback = onOutsidePointerEvent
         }
 
-        override fun setContent(content: @Composable () -> Unit) {
+        override fun setContent(content: @Composable NoriaContext.() -> Unit) {
             check(!isClosed) { "AttachedComposeSceneLayer is closed" }
             composition?.dispose()
             composition = owner.setContent(

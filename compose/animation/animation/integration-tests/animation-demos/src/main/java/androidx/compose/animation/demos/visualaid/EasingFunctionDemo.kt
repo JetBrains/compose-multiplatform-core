@@ -58,7 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun EasingInfoDemo() {
+fun NoriaContext.EasingInfoDemo() {
     val coroutineScope = rememberCoroutineScope()
     LazyColumn { bezierCurveList(coroutineScope) }
 }
@@ -73,7 +73,7 @@ fun LazyListScope.bezierCurveList(coroutineScope: CoroutineScope) {
 }
 
 @Composable
-fun EasingInfo(
+fun NoriaContext.EasingInfo(
     easing: EasingItemDemo,
     coroutineScope: CoroutineScope,
     modifier: Modifier = Modifier,
@@ -86,7 +86,7 @@ fun EasingInfo(
 }
 
 @Composable
-fun EasingGraph(
+fun NoriaContext.EasingGraph(
     easing: Easing,
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),

@@ -20,10 +20,11 @@ import androidx.compose.foundation.text.selection.OffsetProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
+import noria.NoriaContext
 
 @Composable
 @Suppress("UNUSED_PARAMETER")
-internal actual fun CursorHandle(
+internal actual fun NoriaContext.CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
     minTouchTargetSize: DpSize

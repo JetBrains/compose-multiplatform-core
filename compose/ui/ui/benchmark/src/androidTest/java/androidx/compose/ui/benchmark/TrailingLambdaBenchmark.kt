@@ -99,4 +99,4 @@ private class WithoutTrailingLambdas : TrailingLambdaTestCase() {
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun EmptyComposable(number: Int, content: @Composable () -> Unit) {}
+private fun NoriaContext.EmptyComposable(number: Int, content: @Composable () -> Unit) {}

@@ -47,6 +47,7 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit.NANOSECONDS
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
+import noria.NoriaContext
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
@@ -69,7 +70,7 @@ fun renderComposeScene(
     width: Int,
     height: Int,
     density: Density = Density(1f),
-    content: @Composable () -> Unit
+    content: @Composable NoriaContext.() -> Unit
 ): Image = ImageComposeScene(
     width = width,
     height = height,
@@ -126,7 +127,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     density: Density = Density(1f),
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
-    content: @Composable () -> Unit = {},
+    content: @Composable NoriaContext.() -> Unit = {},
 ) {
 
     constructor(
@@ -134,7 +135,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         height: Int,
         density: Density = Density(1f),
         coroutineContext: CoroutineContext = Dispatchers.Unconfined,
-        content: @Composable () -> Unit = {},
+        content: @Composable NoriaContext.() -> Unit = {},
     ): this(
         width,
         height,
@@ -207,7 +208,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      *
      * @param content Content of the [ImageComposeScene]
      */
-    fun setContent(content: @Composable () -> Unit): Unit =
+    fun setContent(content: @Composable NoriaContext.() -> Unit): Unit =
         scene.setContent(content = content)
 
     /**
