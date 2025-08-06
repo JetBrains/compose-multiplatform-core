@@ -480,11 +480,6 @@ abstract class TextInputTests : OnCanvasTests {
         textFieldValue.awaitAndAssertTextEquals("A QWERTY")
     }
 
-    // The default API doesn't work correctly on FF :(, so we do it manually
-    private fun clipboardEvent(type: String): ClipboardEvent = js(""" 
-        new ClipboardEvent(type, { 'clipboardData': new DataTransfer() })
-    """)
-
     @Test
     fun copyEvent() = runApplicationTest {
         createApplicationWithHolder("HELLO", TextRange(1, 5))
@@ -557,3 +552,8 @@ class BasicTextFieldTests2 : TextInputTests() {
         initialSelection: TextRange
     ): TestInputState = TextFieldStateHolder(TextFieldState(initialText, initialSelection))
 }
+
+// The default API doesn't work correctly on FF :(, so we do it manually
+private fun clipboardEvent(type: String): ClipboardEvent = js(""" 
+        new ClipboardEvent(type, { 'clipboardData': new DataTransfer() })
+    """)
