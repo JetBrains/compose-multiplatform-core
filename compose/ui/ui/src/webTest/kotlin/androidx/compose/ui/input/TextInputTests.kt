@@ -472,34 +472,29 @@ abstract class TextInputTests : OnCanvasTests {
         textFieldValue.awaitAndAssertTextEquals("A ")
 
         sendToHtmlInput(
-            ClipboardEvent(
-                type = "paste",
-                eventInitDict = ClipboardEventInit(
-                    clipboardData = createDataTransfer().also {
-                        it.setData("text/plain", "QWERTY")
-                    }
-                )
-            )
+            clipboardEvent(type = "paste").also {
+                it.clipboardData!!.setData("text/plain", "QWERTY")
+            }
         )
 
         textFieldValue.awaitAndAssertTextEquals("A QWERTY")
     }
+
+    // The default API doesn't work correctly on FF :(, so we do it manually
+    private fun clipboardEvent(type: String): ClipboardEvent = js(""" 
+        new ClipboardEvent(type, { 'clipboardData': new DataTransfer() })
+    """)
 
     @Test
     fun copyEvent() = runApplicationTest {
         createApplicationWithHolder("HELLO", TextRange(1, 5))
         awaitIdle()
 
-        val dataTransfer = createDataTransfer()
-        sendToHtmlInput(
-            ClipboardEvent(
-                type = "copy",
-                eventInitDict = ClipboardEventInit(clipboardData = dataTransfer)
-            )
-        )
+        val copyEvent = clipboardEvent(type = "copy")
+        sendToHtmlInput(copyEvent)
         awaitIdle()
 
-        assertEquals("ELLO", dataTransfer.getData("text/plain"))
+        assertEquals("ELLO", copyEvent.clipboardData!!.getData("text/plain"))
     }
 
     @Test
@@ -507,22 +502,14 @@ abstract class TextInputTests : OnCanvasTests {
         val textFieldValue =  createApplicationWithHolder("HELLO", TextRange(1, 4))
         awaitIdle()
 
-        val dataTransfer = createDataTransfer()
-        sendToHtmlInput(
-            ClipboardEvent(
-                type = "cut",
-                eventInitDict = ClipboardEventInit(clipboardData = dataTransfer)
-            )
-        )
+        val cutEvent = clipboardEvent(type = "cut")
+        sendToHtmlInput(cutEvent)
         awaitIdle()
 
-        assertEquals("ELL", dataTransfer.getData("text/plain"))
+        assertEquals("ELL", cutEvent.clipboardData!!.getData("text/plain"))
         assertEquals("HO", textFieldValue.text)
     }
 }
-
-private fun createDataTransfer(): DataTransfer =
-    js("new DataTransfer()")
 
 class BasicTextFieldTests : TextInputTests() {
 
