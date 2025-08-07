@@ -63,6 +63,13 @@ fun Dialog(
     content = content
 )
 
+@Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message = "Replaced by DialogWindow",
+    replaceWith = ReplaceWith("DialogWindow(onCloseRequest, state, visible, title, " +
+        "icon, undecorated, transparent, resizable, enabled, focusable, false, " +
+        "onPreviewKeyEvent, onKeyEvent, content)")
+)
 @Composable
 fun DialogWindow(
     onCloseRequest: () -> Unit,
