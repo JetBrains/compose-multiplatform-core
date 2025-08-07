@@ -87,9 +87,6 @@ dependencyResolutionManagement {
             library("skikoCurrentOs", "org.jetbrains.skiko", currentOsArtifact).versionRef("skiko")
         }
     }
-    repositories {
-        maven { url = "https://redirector.kotlinlang.org/maven/dev" }
-    }
 }
 
 def includeProject(name) {
