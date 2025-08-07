@@ -49,7 +49,7 @@ class WindowInsetsTest {
 
         setContent {
             TestContent(
-                imeInsets,
+                TestWindowInsets(imeInsets),
                 { compositionCount++ },
                 { textFieldBounds = it }
             )
@@ -61,7 +61,6 @@ class WindowInsetsTest {
         assertEquals(1, compositionCount)
 
         imeInsets.value = PlatformInsets(bottom = 100)
-
         waitForIdle()
 
         assertEquals(Rect(initialTextFieldBounds.left, initialTextFieldBounds.top - 100, initialTextFieldBounds.right, initialTextFieldBounds.bottom - 100), textFieldBounds)
@@ -78,7 +77,7 @@ class WindowInsetsTest {
 
         setContent {
             TestContent(
-                imeInsets,
+                TestWindowInsets(imeInsets),
                 { compositionCount++ },
                 { textFieldBounds = it }
             )
@@ -108,7 +107,7 @@ class WindowInsetsTest {
 
         setContent {
             TestContent(
-                imeInsets,
+                TestWindowInsets(imeInsets),
                 { compositionCount++ },
                 { textFieldBounds = it }
             )
@@ -133,16 +132,45 @@ class WindowInsetsTest {
         assertEquals(1, compositionCount)
     }
 
+    /**
+     * Demonstrates that a non-optimized implementation of PlatformWindowInsets causes
+     * recomposition when inset values change. Uses a simple object implementation that directly returns the state value without
+     * using lambda getters. This shows the performance impact of not using the optimized approach.
+     */
+    @Test
+    fun testDirectStateAccessCausesRecompositionOnInsetsChange() = runSkikoComposeUiTest {
+        var compositionCount = 0
+        val imeInsets = mutableStateOf(PlatformInsets.Zero)
+        var initialTextFieldBounds: Rect
+        var textFieldBounds = Rect.Zero
 
+        setContent {
+            TestContent(
+                object : PlatformWindowInsets {
+                    override val ime: PlatformInsets get() = imeInsets.value
+                },
+                { compositionCount++ },
+                { textFieldBounds = it }
+            )
+        }
+
+        initialTextFieldBounds = textFieldBounds
+
+        imeInsets.value = PlatformInsets(bottom = 100)
+        waitForIdle()
+
+        assertEquals(Rect(initialTextFieldBounds.left, initialTextFieldBounds.top - 100, initialTextFieldBounds.right, initialTextFieldBounds.bottom - 100), textFieldBounds)
+        assertEquals(2, compositionCount)
+    }
 }
 
 @Composable
 private fun TestContent(
-    imeInsets: MutableState<PlatformInsets>,
+    insets: PlatformWindowInsets,
     onComposition: () -> Unit,
     onTextFieldPositioned: (Rect) -> Unit
 ) {
-    CompositionLocalProvider(LocalPlatformWindowInsets provides TestWindowInsets(imeInsets = imeInsets)) {
+    CompositionLocalProvider(LocalPlatformWindowInsets provides insets) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().imePadding()){
             Spacer(modifier = Modifier.weight(1f))
             TextField(
