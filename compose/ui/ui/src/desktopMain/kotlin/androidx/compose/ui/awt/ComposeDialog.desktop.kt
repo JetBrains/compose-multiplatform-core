@@ -49,8 +49,8 @@ class ComposeDialog : JDialog {
     private val composePanel: ComposeWindowPanel
 
     private fun createComposePanel(
-        skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-        savedState: SavedState? = null,
+        skiaLayerAnalytics: SkiaLayerAnalytics,
+        savedState: SavedState?,
     ) = ComposeWindowPanel(
         window = this,
         isUndecorated = ::isUndecorated,
@@ -62,11 +62,14 @@ class ComposeDialog : JDialog {
      * ComposeDialog is a dialog for building UI using Compose for Desktop.
      * ComposeDialog inherits javax.swing.JDialog.
      *
-     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behaviour.
-     * SkiaLayer is underlying class used internally to draw Compose content.
-     * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
+     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
+     * SkiaLayer is the underlying class used internally to draw Compose content.
+     * Implementation usually uses a third-party solution to send info to some centralized analytics
+     * gatherer.
      * @param savedState The saved state to restore the UI state from a previous instance.
      */
+    // All constructors that want to call JDialog(Window?) should call this constructor.
+    // On Windows, it will show a taskbar icon if the owner window is null
     @ExperimentalComposeUiApi
     constructor(
         owner: Window?,
@@ -83,19 +86,45 @@ class ComposeDialog : JDialog {
      * ComposeDialog is a dialog for building UI using Compose for Desktop.
      * ComposeDialog inherits javax.swing.JDialog.
      *
-     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behaviour.
-     * SkiaLayer is underlying class used internally to draw Compose content.
-     * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
+     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
+     * SkiaLayer is the underlying class used internally to draw Compose content.
+     * Implementation usually uses a third-party solution to send info to some centralized analytics
+     * gatherer.
+     * @param savedState The saved state to restore the UI state from a previous instance.
+     */
+    // All constructors that want to call JDialog(Frame?) should call this constructor first.
+    // It will not show a taskbar icon if the owner frame is null
+    @ExperimentalComposeUiApi
+    constructor(
+        owner: Frame?,
+        modalityType: ModalityType = ModalityType.MODELESS,
+        graphicsConfiguration: GraphicsConfiguration? = null,
+        skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+        savedState: SavedState? = null,
+    ) : super(owner, "", modalityType, graphicsConfiguration) {
+        composePanel = createComposePanel(skiaLayerAnalytics, savedState)
+        contentPane.add(composePanel)
+    }
+
+    /**
+     * ComposeDialog is a dialog for building UI using Compose for Desktop.
+     * ComposeDialog inherits javax.swing.JDialog.
+     *
+     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
+     * SkiaLayer is the underlying class used internally to draw Compose content.
+     * Implementation usually uses a third-party solution to send info to some centralized analytics
+     * gatherer.
      * @param savedState The saved state to restore the UI state from a previous instance.
      */
     @ExperimentalComposeUiApi
     constructor(
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState: SavedState? = null,
-    ): super() {
-        composePanel = createComposePanel(skiaLayerAnalytics, savedState)
-        contentPane.add(composePanel)
-    }
+    ): this(
+        owner = null as Frame?,
+        skiaLayerAnalytics = skiaLayerAnalytics,
+        savedState = savedState
+    )
 
     constructor(
         owner: Window?,
@@ -112,20 +141,16 @@ class ComposeDialog : JDialog {
     constructor(
         graphicsConfiguration: GraphicsConfiguration? = null,
     ) : this(
-        owner = null,
+        owner = null as Frame?,
         modalityType = ModalityType.MODELESS,
         graphicsConfiguration = graphicsConfiguration,
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState = null
     )
 
-    // don't replace super() by super(null, ModalityType.MODELESS), because
-    // this constructor creates an icon in the taskbar.
-    // Dialog's shouldn't be appeared in the taskbar.
-    constructor() : super() {
-        composePanel = createComposePanel()
-        contentPane.add(composePanel)
-    }
+    constructor() : this(
+        owner = null as Frame?,
+    )
 
     internal var rootForTestListener
         get() = composePanel.rootForTestListener
