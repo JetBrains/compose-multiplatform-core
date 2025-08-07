@@ -43,6 +43,7 @@ javaxInject = "1"
 jcodec = "0.2.5"
 kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
+kotlinComposeCompiler = "2.1.22-338"
 kotlinGradlePluginAnnotations = "2.1.21"
 kotlinGradlePluginApi = "2.1.21"
 kotlinCompileTesting = "1.4.9"
@@ -71,7 +72,6 @@ wire = "4.9.7"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
-kotlinComposeCompiler = "2.1.22-339"
 
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
