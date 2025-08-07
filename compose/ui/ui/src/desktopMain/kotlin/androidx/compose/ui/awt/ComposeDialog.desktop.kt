@@ -64,8 +64,7 @@ class ComposeDialog : JDialog {
      *
      * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
      * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to some centralized analytics
-     * gatherer.
+     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
      * @param savedState The saved state to restore the UI state from a previous instance.
      */
     // All constructors that want to call JDialog(Window?) should call this constructor.
@@ -88,8 +87,7 @@ class ComposeDialog : JDialog {
      *
      * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
      * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to some centralized analytics
-     * gatherer.
+     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
      * @param savedState The saved state to restore the UI state from a previous instance.
      */
     // All constructors that want to call JDialog(Frame?) should call this constructor first.
@@ -97,11 +95,11 @@ class ComposeDialog : JDialog {
     @ExperimentalComposeUiApi
     constructor(
         owner: Frame?,
-        modalityType: ModalityType = ModalityType.MODELESS,
+        modal: Boolean = false,
         graphicsConfiguration: GraphicsConfiguration? = null,
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState: SavedState? = null,
-    ) : super(owner, "", modalityType, graphicsConfiguration) {
+    ) : super(owner, "", modal, graphicsConfiguration) {
         composePanel = createComposePanel(skiaLayerAnalytics, savedState)
         contentPane.add(composePanel)
     }
@@ -112,8 +110,7 @@ class ComposeDialog : JDialog {
      *
      * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
      * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to some centralized analytics
-     * gatherer.
+     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
      * @param savedState The saved state to restore the UI state from a previous instance.
      */
     @ExperimentalComposeUiApi
@@ -142,7 +139,6 @@ class ComposeDialog : JDialog {
         graphicsConfiguration: GraphicsConfiguration? = null,
     ) : this(
         owner = null as Frame?,
-        modalityType = ModalityType.MODELESS,
         graphicsConfiguration = graphicsConfiguration,
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState = null
