@@ -19,7 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -75,8 +75,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toOffset
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.unit.toPlatformInsets
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -104,7 +104,6 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
-import platform.UIKit.UIEdgeInsets
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
 import platform.UIKit.UIEventButtonMaskSecondary
@@ -190,7 +189,7 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
-    interfaceOrientationState: MutableState<InterfaceOrientation>,
+    interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext
@@ -308,7 +307,7 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
-    val windowInsetsManager = UIKitWindowInsetsManager(interfaceOrientation = interfaceOrientationState)
+    private val windowInsetsManager = UIKitWindowInsetsManager(interfaceOrientation = interfaceOrientationState)
 
     /**
      * Used for testing purposes.

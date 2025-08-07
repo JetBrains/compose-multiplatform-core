@@ -19,7 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.Canvas
@@ -29,7 +29,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -66,7 +65,7 @@ internal class UIKitComposeSceneLayer(
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
-    private val interfaceOrientationState: MutableState<InterfaceOrientation>
+    private val interfaceOrientationState: State<InterfaceOrientation>
 ) : ComposeSceneLayer {
 
     override var focusable: Boolean = focusedViewsList != null

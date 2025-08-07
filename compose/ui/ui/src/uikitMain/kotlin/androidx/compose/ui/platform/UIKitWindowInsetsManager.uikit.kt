@@ -16,14 +16,14 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.IntSize
 
 internal class UIKitWindowInsetsManager(
-    val interfaceOrientation: MutableState<InterfaceOrientation>,
+    val interfaceOrientation: State<InterfaceOrientation>,
 ) {
     val layoutMargins = mutableStateOf(PlatformInsets.Zero)
     val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
