@@ -28,7 +28,7 @@ byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
 dagger = "2.49"
-datetime = "0.6.0"
+datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "1.32.0"
 dexmaker = "2.28.3"
 dokka = "1.8.20-dev-214"
@@ -43,6 +43,7 @@ javaxInject = "1"
 jcodec = "0.2.5"
 kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
+kotlinComposeCompiler = "2.1.22-338"
 kotlinGradlePluginAnnotations = "2.1.21"
 kotlinGradlePluginApi = "2.1.21"
 kotlinCompileTesting = "1.4.9"
@@ -227,7 +228,7 @@ kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.14.2" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "1.14.2" }
 kotlinXHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version = "0.7.3" }
-kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3" }
+kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3.1" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kspGradlePluginz = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
