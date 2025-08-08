@@ -408,6 +408,7 @@ interface DialogWindowScope : WindowScope {
  *
  * [DialogModalityType] defines the which set of windows input is blocked to.
  */
+@ExperimentalComposeUiApi
 class DialogModalityType private constructor(val name: String) {
     override fun toString() = name
 
