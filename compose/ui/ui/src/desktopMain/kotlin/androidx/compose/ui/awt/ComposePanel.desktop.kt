@@ -61,19 +61,22 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     )
 
     companion object {
+        private val SwingGraphics = SwingGraphics()
+
+        private val SkiaSurface = SkiaSurface()
+
         /**
          * [RenderSettings] based on the current environment variable configuration.
          *
          * @see ComposeFeatureFlags.useSwingGraphicsInComposePanel
          */
         @ExperimentalComposeUiApi
-        val DefaultRenderSettings: RenderSettings by lazy {
-            if (ComposeFeatureFlags.useSwingGraphicsInComposePanel) {
-                SwingGraphics()
+        val DefaultRenderSettings: RenderSettings
+            get() = if (ComposeFeatureFlags.useSwingGraphicsInComposePanel.value) {
+                SwingGraphics
             } else {
-                SkiaSurface()
+                SkiaSurface
             }
-        }
     }
 
     init {
@@ -168,7 +171,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
         super.getPreferredSize()
     } else  {
-        _composeContainer?.preferredSize
+        _composeContainer?.preferredSize ?: Dimension(0, 0)
     }
 
     /**

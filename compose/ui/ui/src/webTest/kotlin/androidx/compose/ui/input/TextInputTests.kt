@@ -31,9 +31,15 @@ import androidx.compose.ui.TestInputState
 import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.events.InputEvent
 import androidx.compose.ui.events.InputEventInit
+import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.compositionEnd
+import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.keyEvent
+import androidx.compose.ui.events.mobileKeyDown
+import androidx.compose.ui.events.mobileKeyUp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
@@ -42,26 +48,32 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import org.w3c.dom.DataTransfer
 import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.events.CompositionEvent
-import org.w3c.dom.events.CompositionEventInit
+import org.w3c.dom.clipboard.ClipboardEvent
+import org.w3c.dom.clipboard.ClipboardEventInit
 import org.w3c.dom.events.Event
 
 abstract class TextInputTests : OnCanvasTests {
 
-    internal abstract suspend fun createTestInputState(): TestInputState
+    internal abstract suspend fun createTestInputState(
+        initialText: String = "",
+        initialSelection: TextRange = TextRange(initialText.length)
+    ): TestInputState
 
     internal fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
 
-    internal suspend fun WebApplicationScope.createApplicationWithHolder(): TestInputState {
+    internal suspend fun WebApplicationScope.createApplicationWithHolder(
+        initialText: String = "",
+        initialSelection: TextRange = TextRange(initialText.length)
+    ): TestInputState {
         val focusRequester = FocusRequester()
-        val textFieldStateHolder = createTestInputState()
+        val textFieldStateHolder = createTestInputState(initialText, initialSelection)
 
         createComposeWindow {
             textFieldStateHolder.createBasicTextField(focusRequester)
@@ -111,7 +123,14 @@ abstract class TextInputTests : OnCanvasTests {
         focusRequester.requestFocus()
         waitForHtmlInput()
 
-        sendToHtmlInput(keyEvent("a"), keyEvent("b"), keyEvent("c"))
+        sendToHtmlInput(
+            keyEvent("a"),
+            beforeInput(inputType = "insertText", data = "a"),
+            keyEvent("b"),
+            beforeInput(inputType = "insertText", data = "b"),
+            keyEvent("c"),
+            beforeInput(inputType = "insertText", data = "c"),
+        )
 
         inputHolder.awaitAndAssertTextEquals("abc")
 
@@ -161,10 +180,15 @@ abstract class TextInputTests : OnCanvasTests {
 
         sendToHtmlInput(
             keyEvent("s"),
+            beforeInput(inputType = "insertText", data = "s"),
             keyEvent("t"),
+            beforeInput(inputType = "insertText", data = "t"),
             keyEvent("e"),
+            beforeInput(inputType = "insertText", data = "e"),
             keyEvent("p"),
-            keyEvent("1")
+            beforeInput(inputType = "insertText", data = "p"),
+            keyEvent("1"),
+            beforeInput(inputType = "insertText", data = "1"),
         )
 
         textFieldValue.awaitAndAssertTextEquals("step1")
@@ -172,6 +196,7 @@ abstract class TextInputTests : OnCanvasTests {
         sendToHtmlInput(
             keyEvent("Backspace", code = "Backspace"),
             keyEvent("X"),
+            beforeInput(inputType = "insertText", data = "X"),
         )
 
         textFieldValue.awaitAndAssertTextEquals(
@@ -202,6 +227,7 @@ abstract class TextInputTests : OnCanvasTests {
 
         sendToHtmlInput(
             keyEvent("x"),
+            beforeInput(inputType = "insertText", data = "x"),
             keyEvent("x", type = "keyup")
         )
 
@@ -235,6 +261,7 @@ abstract class TextInputTests : OnCanvasTests {
 
         sendToHtmlInput(
             keyEvent("b"),
+            beforeInput(inputType = "insertText", data = "b"),
             keyEvent("b", type = "keyup")
         )
 
@@ -312,14 +339,16 @@ abstract class TextInputTests : OnCanvasTests {
 
         sendToHtmlInput(
             keyEvent("a"),
-            keyEvent("a", repeat = true),
             beforeInput("insertText", "a"),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
+            keyEvent("a", repeat = true),
             keyEvent("b"),
-            keyEvent("c")
+            beforeInput(inputType = "insertText", data = "b"),
+            keyEvent("c"),
+            beforeInput(inputType = "insertText", data = "c"),
         )
 
 
@@ -359,10 +388,13 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
             keyEvent("ArrowLeft", code = "ArrowLeft", type = "keyup"),
             keyEvent("a"),
+            beforeInput(inputType = "insertText", data = "a"),
             keyEvent("a", type = "keyup"),
             keyEvent("b"),
+            beforeInput(inputType = "insertText", data = "b"),
             keyEvent("b", type = "keyup"),
             keyEvent("c"),
+            beforeInput(inputType = "insertText", data = "c"),
             keyEvent("c", type = "keyup"),
         )
 
@@ -406,10 +438,15 @@ abstract class TextInputTests : OnCanvasTests {
 
         sendToHtmlInput(
             keyEvent("s"),
+            beforeInput(inputType = "insertText", data = "s"),
             keyEvent("t"),
+            beforeInput(inputType = "insertText", data = "t"),
             keyEvent("e"),
+            beforeInput(inputType = "insertText", data = "e"),
             keyEvent("p"),
-            keyEvent("1")
+            beforeInput(inputType = "insertText", data = "p"),
+            keyEvent("1"),
+            beforeInput(inputType = "insertText", data = "1"),
         )
 
         inputHolder1.awaitAndAssertTextEquals("step1")
@@ -422,24 +459,52 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("t"),
             keyEvent("e"),
             keyEvent("p"),
-            keyEvent("2")
+            keyEvent("2"),
+            beforeInput(inputType = "insertText", data = "step2"),
         )
 
         inputHolder2.awaitAndAssertTextEquals("step2")
     }
+
+    @Test
+    fun pasteEvent() = runApplicationTest {
+        val textFieldValue =  createApplicationWithHolder(initialText = "A ")
+        textFieldValue.awaitAndAssertTextEquals("A ")
+
+        sendToHtmlInput(
+            clipboardEvent(type = "paste").also {
+                it.clipboardData!!.setData("text/plain", "QWERTY")
+            }
+        )
+
+        textFieldValue.awaitAndAssertTextEquals("A QWERTY")
+    }
+
+    @Test
+    fun copyEvent() = runApplicationTest {
+        createApplicationWithHolder("HELLO", TextRange(1, 5))
+        awaitIdle()
+
+        val copyEvent = clipboardEvent(type = "copy")
+        sendToHtmlInput(copyEvent)
+        awaitIdle()
+
+        assertEquals("ELLO", copyEvent.clipboardData!!.getData("text/plain"))
+    }
+
+    @Test
+    fun cutEvent() = runApplicationTest {
+        val textFieldValue =  createApplicationWithHolder("HELLO", TextRange(1, 4))
+        awaitIdle()
+
+        val cutEvent = clipboardEvent(type = "cut")
+        sendToHtmlInput(cutEvent)
+        awaitIdle()
+
+        assertEquals("ELL", cutEvent.clipboardData!!.getData("text/plain"))
+        assertEquals("HO", textFieldValue.text)
+    }
 }
-
-private fun compositionStart(data: String = "") =
-    CompositionEvent("compositionstart", CompositionEventInit(data = data))
-
-private fun compositionEnd(data: String) =
-    CompositionEvent("compositionend", CompositionEventInit(data = data))
-
-private fun beforeInput(inputType: String, data: String?) =
-    InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data))
-
-private fun mobileKeyDown() = keyEvent(type = "keydown", key = "Unidentified", code = "")
-private fun mobileKeyUp() = keyEvent(type = "keydown", key = "Unidentified", code = "")
 
 class BasicTextFieldTests : TextInputTests() {
 
@@ -459,7 +524,13 @@ class BasicTextFieldTests : TextInputTests() {
         }
     }
 
-    override suspend fun createTestInputState(): TestInputState = TextFieldValueHolder(mutableStateOf(TextFieldValue()))
+    override suspend fun createTestInputState(
+        initialText: String,
+        initialSelection: TextRange
+    ): TestInputState = TextFieldValueHolder(
+        mutableStateOf(
+            value = TextFieldValue(text = initialText, selection = initialSelection))
+    )
 }
 
 class BasicTextFieldTests2 : TextInputTests() {
@@ -476,5 +547,13 @@ class BasicTextFieldTests2 : TextInputTests() {
         }
     }
 
-    override suspend fun createTestInputState(): TestInputState = TextFieldStateHolder(TextFieldState())
+    override suspend fun createTestInputState(
+        initialText: String,
+        initialSelection: TextRange
+    ): TestInputState = TextFieldStateHolder(TextFieldState(initialText, initialSelection))
 }
+
+// The default API doesn't work correctly on FF :(, so we do it manually
+private fun clipboardEvent(type: String): ClipboardEvent = js(""" 
+        new ClipboardEvent(type, { 'clipboardData': new DataTransfer() })
+    """)
