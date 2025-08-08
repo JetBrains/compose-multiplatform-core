@@ -141,7 +141,6 @@ internal class UIKitInstrumentedTest {
         waitForIdle()
 
         appDelegate.cleanUp()
-        delay(1)
     }
 
     private val isIdle: Boolean
