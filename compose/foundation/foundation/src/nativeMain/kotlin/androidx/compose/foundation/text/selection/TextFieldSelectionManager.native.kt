@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.savedstate.internal
+package androidx.compose.foundation.text.selection
 
-import kotlin.reflect.KClass
+import androidx.compose.foundation.internal.hasText
 
-internal actual val KClass<*>?.commonQualifiedName: String? get() = this?.qualifiedName
+internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean {
+    return clipboard?.getClipEntry()?.hasText() == true
+}
