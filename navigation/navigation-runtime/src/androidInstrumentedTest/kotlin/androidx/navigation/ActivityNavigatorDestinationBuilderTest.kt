@@ -21,7 +21,7 @@ import androidx.navigation.NavControllerRouteTest.TestClass
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.kruth.assertWithMessage
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import org.junit.runner.RunWith
 

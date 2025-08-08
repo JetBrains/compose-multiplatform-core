@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ internal actual fun Modifier.textFieldPointer(
     focusRequester: FocusRequester,
     readOnly: Boolean,
     offsetMapping: OffsetMapping
-): Modifier = Modifier.defaultTextFieldPointer(
+): Modifier = defaultTextFieldPointer(
     manager,
     enabled,
     interactionSource,

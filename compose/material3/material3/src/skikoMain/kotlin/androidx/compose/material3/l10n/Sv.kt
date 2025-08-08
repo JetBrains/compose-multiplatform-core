@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.sv() = mapOf(
     Strings.MenuCollapsed to "Komprimerad",
     Strings.ToggleDropdownMenu to "Utöka/komprimera rullgardinsmeny",
     Strings.SnackbarDismiss to "Stäng",
+    Strings.SnackbarPaneTitle to "Varning",
     Strings.SearchBarSearch to "Sök",
     Strings.SuggestionsAvailable to "Se förslag nedan",
     Strings.DatePickerTitle to "Välj datum",
@@ -71,6 +72,8 @@ internal fun Translations.sv() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Komprimera arket på nedre delen av skärmen",
     Strings.BottomSheetDismissDescription to "Stäng arket på nedre delen av skärmen",
     Strings.BottomSheetExpandDescription to "Utöka arket på nedre delen av skärmen",
+    Strings.FloatingToolbarCollapse to "Komprimera verktygsfältet",
+    Strings.FloatingToolbarExpand to "Expandera verktygsfältet",
     Strings.TooltipPaneDescription to "Beskrivning",
     Strings.TooltipLongPressLabel to "Visa beskrivning",
     Strings.TimePickerPM to "EM",
@@ -85,4 +88,10 @@ internal fun Translations.sv() = mapOf(
     Strings.TimePickerHour to "Timme",
     Strings.TimePickerMinuteTextField to "för minuter",
     Strings.TimePickerHourTextField to "för timme",
+    Strings.TimePickerToggleKeyboard to "Byt till textinmatningsläget och ange tid",
+    Strings.TimePickerToggleTouch to "Byt till klockläget och ange tid",
+    Strings.TimePickerDialogTitle to "Välj tid",
+    Strings.TimeInputDialogTitle to "Ange tid",
+    Strings.CloseRail to "Stäng spår",
+    Strings.WideNavigationRailPaneTitle to "Navigeringsspår",
 )

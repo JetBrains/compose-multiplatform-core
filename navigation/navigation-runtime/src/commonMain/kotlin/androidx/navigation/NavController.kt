@@ -22,9 +22,9 @@ package androidx.navigation
 import androidx.annotation.CallSuper
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStore
+import androidx.navigation.internal.NavContext
 import androidx.savedstate.SavedState
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
@@ -50,6 +50,8 @@ import kotlinx.serialization.InternalSerializationApi
  * by live data obtained' from a remote server.)
  */
 public expect open class NavController {
+
+    internal val navContext: NavContext
 
     /**
      * The topmost navigation graph associated with this NavController.
@@ -100,10 +102,6 @@ public expect open class NavController {
      * what the transition state is.
      */
     public val visibleEntries: StateFlow<List<NavBackStackEntry>>
-
-    internal fun unlinkChildFromParent(child: NavBackStackEntry): NavBackStackEntry?
-
-    internal var hostLifecycleState: Lifecycle.State
 
     /**
      * OnDestinationChangedListener receives a callback when the [currentDestination] or its
@@ -250,19 +248,6 @@ public expect open class NavController {
     ): Boolean
 
     /**
-     * Trigger a popBackStack() that originated from a Navigator specifically calling
-     * [NavigatorState.pop] outside of a call to [popBackStack] (e.g., in response to some user
-     * interaction that caused that destination to no longer be needed such as dismissing a dialog
-     * destination).
-     *
-     * This method is responsible for popping all destinations above the given [popUpTo] entry and
-     * popping the entry itself and removing it from the back stack before calling the [onComplete]
-     * callback. Only after the processing here is done and the [onComplete] callback completes does
-     * this method dispatch the destination change event.
-     */
-    internal fun popBackStackFromNavigator(popUpTo: NavBackStackEntry, onComplete: () -> Unit)
-
-    /**
      * Clears any saved state associated with [route] that was previously saved via [popBackStack]
      * when using a `saveState` value of `true`.
      *
@@ -322,10 +307,6 @@ public expect open class NavController {
      */
     @MainThread public open fun navigateUp(): Boolean
 
-    internal fun updateBackStackLifecycle()
-
-    internal fun populateVisibleEntries(): List<NavBackStackEntry>
-
     /**
      * Sets the [navigation graph][NavGraph] to the specified graph. Any current navigation graph
      * data (including back stack) will be replaced.
@@ -340,6 +321,8 @@ public expect open class NavController {
     @MainThread
     @CallSuper
     public open fun setGraph(graph: NavGraph, startDestinationArgs: SavedState?)
+
+    internal fun checkDeepLinkHandled(): Boolean
 
     /**
      * Checks the given NavDeepLinkRequest for a Navigation deep link and navigates to the
@@ -442,6 +425,8 @@ public expect open class NavController {
         navOptions: NavOptions?,
         navigatorExtras: Navigator.Extras?
     )
+
+    internal fun writeIntent(request: NavDeepLinkRequest, args: SavedState)
 
     /**
      * Navigate to a route in the current NavGraph. If an invalid route is given, an
@@ -616,6 +601,33 @@ public expect open class NavController {
      *   two visible entries
      */
     public open val previousBackStackEntry: NavBackStackEntry?
+
+    internal open inner class NavControllerNavigatorState(
+        navigator: Navigator<out NavDestination>
+    ) : NavigatorState {
+        val navigator: Navigator<out NavDestination>
+
+        override fun push(backStackEntry: NavBackStackEntry)
+
+        override fun pop(popUpTo: NavBackStackEntry, saveState: Boolean)
+
+        override fun popWithTransition(popUpTo: NavBackStackEntry, saveState: Boolean)
+
+        fun addInternal(backStackEntry: NavBackStackEntry)
+
+        override fun createBackStackEntry(
+            destination: NavDestination,
+            arguments: SavedState?
+        ): NavBackStackEntry
+
+        override fun prepareForTransition(entry: NavBackStackEntry)
+
+        override fun markTransitionComplete(entry: NavBackStackEntry)
+    }
+
+    internal fun createNavControllerNavigatorState(
+        navigator: Navigator<out NavDestination>
+    ): NavControllerNavigatorState
 
     public companion object {
         /**

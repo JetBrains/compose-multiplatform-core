@@ -29,4 +29,5 @@ import kotlinx.coroutines.flow.StateFlow
  * [State.value] usage.
  */
 @Composable
-fun Lifecycle.currentStateAsState(): State<Lifecycle.State> = currentStateFlow.collectAsState()
+public fun Lifecycle.currentStateAsState(): State<Lifecycle.State> =
+    currentStateFlow.collectAsState()

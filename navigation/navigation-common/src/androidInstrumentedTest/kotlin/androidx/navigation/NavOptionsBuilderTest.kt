@@ -151,6 +151,31 @@ class NavOptionsTest {
     }
 
     @Test
+    fun popUpToKClassNonReifiedBuilder() {
+        val navOptions = navOptions {
+            popUpTo(TestClass::class) {
+                inclusive = true
+                saveState = true
+            }
+        }
+        assertWithMessage("NavOptions should have popUpTo destination class set")
+            .that(navOptions.popUpToRouteClass)
+            .isEqualTo(TestClass::class)
+        assertWithMessage("NavOptions should have popUpTo destination id set")
+            .that(navOptions.popUpToId)
+            .isEqualTo(serializer<TestClass>().expectedSafeArgsId())
+        assertWithMessage("NavOptions should have not have popUpTo destination route set")
+            .that(navOptions.popUpToRoute)
+            .isEqualTo(null)
+        assertWithMessage("NavOptions should have isPopUpToInclusive set")
+            .that(navOptions.isPopUpToInclusive())
+            .isTrue()
+        assertWithMessage("NavOptions should have shouldPopUpToSaveState set")
+            .that(navOptions.shouldPopUpToSaveState())
+            .isTrue()
+    }
+
+    @Test
     fun popUpToObjectBuilder() {
         val popObject = TestClass()
         val navOptions = navOptions {

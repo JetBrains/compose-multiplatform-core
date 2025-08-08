@@ -20,6 +20,7 @@ import kotlin.math.abs
 import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
@@ -36,16 +37,16 @@ internal fun <T> AssertThat<T>.isEqualTo(a: Any?) {
     assertEquals(a, t)
 }
 
-internal fun AssertThat<Float>.isEqualTo(f: Float, eps: Float = 0f) {
-    if (eps != 0f) {
-        assertTrue(message = message ?: "|$t - $f| exceeds $eps") { abs(t!! - f) <= eps }
-    } else {
-        assertEquals(f, t!!, message = message)
-    }
+internal fun AssertThat<Float>.isEqualTo(f: Float, absoluteTolerance: Float = 0.001f) {
+    assertEquals(f, t!!, absoluteTolerance, message = message)
 }
 
 internal fun <T> AssertThat<T>.isNotEqualTo(a: Any?) {
     assertNotEquals(a, t)
+}
+
+internal fun AssertThat<Float>.isNotEqualTo(f: Float, absoluteTolerance: Float = 0.001f) {
+    assertNotEquals(f, t!!, absoluteTolerance, message = message)
 }
 
 internal fun AssertThat<Int>.isEqualTo(i: Int, d: Int = 0) {
@@ -110,6 +111,10 @@ internal fun AssertThat<Float>.isLessThan(n: Int) {
     assertTrue(t!! < n, message ?: "$t is not less than $n")
 }
 
+internal fun AssertThat<Float>.isNotNaN() {
+    assertFalse(t!!.isNaN(), message ?: "$t is NaN")
+}
+
 internal fun <T : Collection<*>> AssertThat<T>.isEmpty() {
     assertTrue(t!!.isEmpty(), message ?: "$t is not empty")
 }
@@ -126,7 +131,7 @@ internal fun <K, T : Collection<*>> AssertThat<T>.contains(vararg items: K) {
 
 internal fun AssertThat<*>.isZero() = isEqualTo(0)
 
-internal fun AssertThat<*>.isNonZero() = isNotEqualTo(0)
+internal fun AssertThat<Float>.isNonZero() = isNotEqualTo(0f, absoluteTolerance = 0.001f)
 
 internal fun AssertThat<*>.isNull() {
     assertEquals(null, t, message ?: "$t expected to be null")

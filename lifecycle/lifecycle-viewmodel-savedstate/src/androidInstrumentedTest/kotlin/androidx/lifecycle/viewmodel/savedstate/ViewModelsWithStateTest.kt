@@ -20,7 +20,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
@@ -165,19 +164,20 @@ class ViewModelsWithStateTest(private val mode: Mode) {
                 activity
             }
 
-        val savedStateOwner = owner as SavedStateRegistryOwner
+        require(owner is SavedStateRegistryOwner)
 
+        @Suppress("DEPRECATION")
         val factory: Factory =
             when (mode.factoryMode) {
                 LEGACY_SAVEDSTATE_FACTORY_MODE -> {
                     // otherwise common type of factory is package private KeyedFactory
-                    SavedStateViewModelFactory(activity.application, savedStateOwner)
+                    SavedStateViewModelFactory(activity.application, owner)
                 }
                 SAVEDSTATE_FACTORY_MODE -> {
                     SavedStateViewModelFactory()
                 }
                 LEGACY_ABSTRACT_FACTORY_MODE -> {
-                    object : AbstractSavedStateViewModelFactory(savedStateOwner, null) {
+                    object : androidx.lifecycle.AbstractSavedStateViewModelFactory(owner, null) {
                         override fun <T : ViewModel> create(
                             key: String,
                             modelClass: Class<T>,
@@ -188,7 +188,7 @@ class ViewModelsWithStateTest(private val mode: Mode) {
                     }
                 }
                 else -> {
-                    object : AbstractSavedStateViewModelFactory() {
+                    object : androidx.lifecycle.AbstractSavedStateViewModelFactory() {
                         override fun <T : ViewModel> create(
                             key: String,
                             modelClass: Class<T>,
@@ -200,7 +200,7 @@ class ViewModelsWithStateTest(private val mode: Mode) {
                 }
             }
         return if (mode.factoryMode in setOf(ABSTRACT_FACTORY_MODE, SAVEDSTATE_FACTORY_MODE))
-            ViewModelProvider(DecorateWithCreationExtras(savedStateOwner, owner), factory)
+            ViewModelProvider(DecorateWithCreationExtras(owner, owner), factory)
         else ViewModelProvider(owner, factory)
     }
 

@@ -21,8 +21,9 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,15 +32,16 @@ plugins {
 }
 
 android {
-    namespace "androidx.window.testing"
+    namespace = "androidx.window.testing"
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     api(project(":window:window"))
     api(libs.junit)
     implementation("androidx.core:core:1.8.0")
-    implementation("androidx.annotation:annotation:1.7.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
@@ -60,9 +62,9 @@ dependencies {
 
 androidx {
     name = "WindowManager Testing Extensions"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "WindowManager Test Library"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

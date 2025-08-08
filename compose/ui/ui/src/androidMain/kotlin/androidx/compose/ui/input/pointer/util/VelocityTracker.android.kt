@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package androidx.compose.ui.input.pointer.util
 
+// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-6853
+
 internal actual const val HistorySize: Int = 20
 
-/**
- * Some platforms (e.g. iOS) filter certain gestures during velocity calculation.
- */
 internal actual fun VelocityTracker1D.shouldUseDataPoints(
     points: FloatArray,
     times: FloatArray,

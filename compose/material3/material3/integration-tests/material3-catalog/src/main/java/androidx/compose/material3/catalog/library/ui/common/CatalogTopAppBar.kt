@@ -40,8 +40,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,17 +64,16 @@ fun CatalogTopAppBar(
     onIssueClick: () -> Unit = {},
     onTermsClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
-    onLicensesClick: () -> Unit = {}
+    onLicensesClick: () -> Unit = {},
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
     TopAppBar(
-        title = {
-            Text(
-                text = title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        },
+        modifier =
+            Modifier.semantics {
+                traversalIndex = -2f
+                isTraversalGroup = true
+            },
+        title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         actions = {
             Box {
                 Row {
@@ -81,19 +84,19 @@ fun CatalogTopAppBar(
                             tint =
                                 if (favorite) MaterialTheme.colorScheme.primary
                                 else LocalContentColor.current,
-                            contentDescription = stringResource(id = R.string.favorite_button)
+                            contentDescription = stringResource(id = R.string.favorite_button),
                         )
                     }
                     IconButton(onClick = onThemeClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_palette_24dp),
-                            contentDescription = stringResource(id = R.string.change_theme_button)
+                            contentDescription = stringResource(id = R.string.change_theme_button),
                         )
                     }
                     IconButton(onClick = { moreMenuExpanded = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(id = R.string.more_menu_button)
+                            contentDescription = stringResource(id = R.string.more_menu_button),
                         )
                     }
                 }
@@ -127,7 +130,7 @@ fun CatalogTopAppBar(
                     onLicensesClick = {
                         onLicensesClick()
                         moreMenuExpanded = false
-                    }
+                    },
                 )
             }
         },
@@ -136,12 +139,12 @@ fun CatalogTopAppBar(
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                        contentDescription = stringResource(id = R.string.back_button)
+                        contentDescription = stringResource(id = R.string.back_button),
                     )
                 }
             }
         },
-        scrollBehavior = scrollBehavior
+        scrollBehavior = scrollBehavior,
     )
 }
 
@@ -160,33 +163,33 @@ private fun MoreMenu(
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.view_design_guidelines)) },
-            onClick = onGuidelinesClick
+            onClick = onGuidelinesClick,
         )
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.view_developer_docs)) },
-            onClick = onDocsClick
+            onClick = onDocsClick,
         )
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.view_source_code)) },
-            onClick = onSourceClick
+            onClick = onSourceClick,
         )
         HorizontalDivider()
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.report_an_issue)) },
-            onClick = onIssueClick
+            onClick = onIssueClick,
         )
         HorizontalDivider()
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.terms_of_service)) },
-            onClick = onTermsClick
+            onClick = onTermsClick,
         )
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.privacy_policy)) },
-            onClick = onPrivacyClick
+            onClick = onPrivacyClick,
         )
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.open_source_licenses)) },
-            onClick = onLicensesClick
+            onClick = onLicensesClick,
         )
     }
 }

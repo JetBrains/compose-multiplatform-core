@@ -22,16 +22,12 @@ import androidx.window.RequiresWindowSdkExtension
 /**
  * Configurations of Activity Embedding environment that defines how the embedded Activities behave.
  *
- * @constructor The [EmbeddingConfiguration] constructor. The properties are undefined if not
- *   specified.
  * @property dimAreaBehavior The requested dim area behavior.
+ * @see Builder
  * @see ActivityEmbeddingController.setEmbeddingConfiguration
  */
 class EmbeddingConfiguration
-@JvmOverloads
-constructor(
-    @RequiresWindowSdkExtension(5) val dimAreaBehavior: DimAreaBehavior = DimAreaBehavior.UNDEFINED
-) {
+private constructor(val dimAreaBehavior: DimAreaBehavior = DimAreaBehavior.UNDEFINED) {
     /**
      * The area of dimming to apply.
      *
@@ -105,10 +101,14 @@ constructor(
          * Sets the dim area behavior. By default, the [DimAreaBehavior.UNDEFINED] is used if not
          * set.
          *
+         * This can be supported only if the Window Extensions version of the target device is
+         * equals or higher than required API level. Otherwise, it would be no-op on a target device
+         * that has lower API level.
+         *
          * @param area The dim area.
          * @return This [Builder]
          */
-        @SuppressWarnings("MissingGetterMatchingBuilder")
+        @RequiresWindowSdkExtension(5)
         fun setDimAreaBehavior(area: DimAreaBehavior): Builder = apply { mDimAreaBehavior = area }
 
         /**

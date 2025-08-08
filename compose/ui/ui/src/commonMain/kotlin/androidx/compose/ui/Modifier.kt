@@ -18,6 +18,7 @@ package androidx.compose.ui
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
+import androidx.compose.ui.internal.PlatformOptimizedCancellationException
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
@@ -29,14 +30,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 
-/**
- * Used in place of the standard Job cancellation pathway to avoid reflective javaClass.simpleName
- * lookups to build the exception message and stack trace collection. Remove if these are changed in
- * kotlinx.coroutines.
- */
-private class ModifierNodeDetachedCancellationException : PlatformOptimizedCancellationException(
-    "The Modifier.Node was detached"
-)
+internal class ModifierNodeDetachedCancellationException :
+    PlatformOptimizedCancellationException("The Modifier.Node was detached")
 
 /**
  * An ordered, immutable collection of [modifier elements][Modifier.Element] that decorate or add

@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import java.awt.Dimension
 import java.awt.Graphics
+import java.awt.event.FocusEvent
+import java.awt.event.FocusListener
 import javax.accessibility.Accessible
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayer
@@ -32,14 +34,19 @@ import org.jetbrains.skiko.SkikoRenderDelegate
  * Provides a heavyweight AWT [contentComponent] used to render content
  * (provided by [SkikoRenderDelegate]) on-screen with Skia.
  *
- * If smooth interop with Swing is needed, consider using [SwingSkiaLayerComponent]
+ * This component renders content directly to a Skia surface for better performance,
+ * using the configuration specified in [renderSettings]. It configures the vsync behavior
+ * based on the [RenderSettings.SkiaSurface.isVsyncEnabled] property.
+ *
+ * If smooth interop with Swing is needed, consider using [SwingSkiaLayerComponent] instead,
+ * which is created when using [RenderSettings.SwingGraphics].
  */
 internal class WindowSkiaLayerComponent(
     private val mediator: ComposeSceneMediator,
     private val windowContext: PlatformWindowContext,
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
-    private val renderSettings: RenderSettings,
+    private val renderSettings: RenderSettings.SkiaSurface,
 ) : SkiaLayerComponent {
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
@@ -59,6 +66,28 @@ internal class WindowSkiaLayerComponent(
         },
         analytics = skiaLayerAnalytics
     ) {
+
+        init {
+            // SkiaLayer never receives focus, only its underlying canvas
+            canvas.addFocusListener(object : FocusListener {
+                override fun focusGained(e: FocusEvent?) = onFocusEvent()
+                override fun focusLost(e: FocusEvent?) = onFocusEvent()
+            })
+        }
+
+        private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
+
+        override fun getInputContext() =
+            endCompositionWorkaround?.inputContext ?: super.getInputContext()
+
+        override fun addNotify() {
+            super.addNotify()
+
+            endCompositionWorkaround = InputMethodEndCompositionWorkaround.forCurrentEnvironment(
+                componentInputContext = { super.getInputContext() }
+            )
+        }
+
         override fun paint(g: Graphics) {
             mediator.onChangeDensity()
             super.paint(g)
@@ -75,6 +104,21 @@ internal class WindowSkiaLayerComponent(
             super.getPreferredSize()
         } else {
             mediator.preferredSize
+        }
+
+        // Workaround for enableInputMethods being ignored until the component is actually focused.
+        // This also controls the default state, without needing it to be set from the outside.
+        private var inputMethodsEnabled = false
+
+        private fun onFocusEvent() {
+            // enableInputMethods is idempotent (and quick when applying the same value),
+            // so it's ok to call it on every event
+            super.enableInputMethods(inputMethodsEnabled)
+        }
+
+        override fun enableInputMethods(enable: Boolean) {
+            inputMethodsEnabled = enable
+            super.enableInputMethods(enable)
         }
     }
 

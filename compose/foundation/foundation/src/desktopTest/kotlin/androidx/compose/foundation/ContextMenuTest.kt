@@ -17,9 +17,10 @@
 package androidx.compose.foundation
 
 import androidx.compose.foundation.copyPasteAndroidTests.lazy.list.assertIsNotPlaced
-import androidx.compose.foundation.internal.toClipEntry
+import androidx.compose.foundation.copyPasteAndroidTests.lazy.list.assertIsPlaced
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,9 +29,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalLocalization
 import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.platform.PlatformLocalization
@@ -40,14 +39,15 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import java.awt.datatransfer.StringSelection
 import kotlin.test.assertEquals
 import org.junit.Test
@@ -96,9 +96,19 @@ class ContextMenuTest {
         assertEquals(1, childrenCount)
     }
 
-    // https://youtrack.jetbrains.com/issue/CMP-7083/Context-menu-on-desktop-shows-incorrect-items-after-the-second-showing
     @Test
-    fun `different items for different selections in textfield`() = runContextMenuTest {
+    fun `different items for different selections in btf`() =
+        `different items for different selections in textfield`(useBtf2 = false)
+
+    @Test
+    fun `different items for different selections in btf2`() =
+        `different items for different selections in textfield`(useBtf2 = true)
+
+
+    // https://youtrack.jetbrains.com/issue/CMP-7083/Context-menu-on-desktop-shows-incorrect-items-after-the-second-showing
+    private fun `different items for different selections in textfield`(
+        useBtf2: Boolean
+    ) = runContextMenuTest {
         val localization = object : PlatformLocalization {
             override val copy = "copy"
             override val cut = "cut"
@@ -131,7 +141,11 @@ class ContextMenuTest {
                 LocalLocalization provides localization,
                 LocalClipboard provides clipboard
             ) {
-                BasicTextField("Text", {}, Modifier.testTag("textfield"))
+                if (useBtf2) {
+                    BasicTextField(rememberTextFieldState("Text"), Modifier.testTag("textfield"))
+                } else {
+                    BasicTextField("Text", {}, Modifier.testTag("textfield"))
+                }
             }
         }
 
@@ -164,6 +178,48 @@ class ContextMenuTest {
         onNodeWithText(localization.cut).assertIsNotPlaced()
         onNodeWithText(localization.paste).assertIsNotPlaced()
         onNodeWithText(localization.selectAll).assertIsNotPlaced()
+    }
+
+    @Test
+    fun contextMenuClosesAfterMenuItemSelection_btf1() =
+        contextMenuClosesAfterMenuItemSelection(useBtf2 = false)
+
+    @Test
+    fun contextMenuClosesAfterMenuItemSelection_btf2() =
+        contextMenuClosesAfterMenuItemSelection(useBtf2 = true)
+
+    private fun contextMenuClosesAfterMenuItemSelection(useBtf2: Boolean) = runContextMenuTest {
+
+        val localization = object : PlatformLocalization {
+            override val copy = "copy"
+            override val cut = "cut"
+            override val paste = "paste"
+            override val selectAll = "selectAll"
+        }
+
+        setContent {
+            CompositionLocalProvider(LocalLocalization provides localization) {
+                if (useBtf2) {
+                    BasicTextField(
+                        rememberTextFieldState("Text", initialSelection = TextRange(0, 4)),
+                        Modifier.testTag("textfield")
+                    )
+                } else {
+                    BasicTextField(
+                        value = TextFieldValue("Text", selection = TextRange(0, 4)),
+                        onValueChange = {},
+                        modifier = Modifier.testTag("textfield")
+                    )
+                }
+            }
+        }
+
+        onNodeWithTag("textfield").performMouseInput { rightClick(Offset(1f, height/2f)) }
+        onNodeWithText(localization.copy).apply {
+            assertIsPlaced()
+            performClick()
+            assertIsNotPlaced()
+        }
     }
 
     private fun runContextMenuTest(block: ComposeUiTest.() -> Unit) = runComposeUiTest {

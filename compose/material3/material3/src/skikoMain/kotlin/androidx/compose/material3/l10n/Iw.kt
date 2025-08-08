@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,13 @@ internal fun Translations.iw() = mapOf(
     Strings.MenuCollapsed to "התפריט הנפתח מכווץ",
     Strings.ToggleDropdownMenu to "החלפת המצב של התפריט הנפתח",
     Strings.SnackbarDismiss to "סגירה",
+    Strings.SnackbarPaneTitle to "התראה",
     Strings.SearchBarSearch to "חיפוש",
     Strings.SuggestionsAvailable to "הצעות מופיעות למטה",
     Strings.DatePickerTitle to "בחירת תאריך",
     Strings.DatePickerHeadline to "התאריך הנבחר",
     Strings.DatePickerSwitchToYearSelection to "החלפה לבחירה של שנה",
-    Strings.DatePickerSwitchToDaySelection to "יש להחליק כדי לבחור שנה, או להקיש כדי לחזור לבחירת היום",
+    Strings.DatePickerSwitchToDaySelection to "יש להחליק כדי לבחור שנה, או ללחוץ כדי לחזור לבחירת היום",
     Strings.DatePickerSwitchToNextMonth to "מעבר לחודש הבא",
     Strings.DatePickerSwitchToPreviousMonth to "מעבר לחודש הקודם",
     Strings.DatePickerNavigateToYearDescription to "‏ניווט לשנת %1\$s",
@@ -71,6 +72,8 @@ internal fun Translations.iw() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "כיווץ הגיליון התחתון",
     Strings.BottomSheetDismissDescription to "סגירת הגיליון התחתון",
     Strings.BottomSheetExpandDescription to "הרחבת הגיליון התחתון",
+    Strings.FloatingToolbarCollapse to "כיווץ סרגל הכלים",
+    Strings.FloatingToolbarExpand to "הרחבת סרגל הכלים",
     Strings.TooltipPaneDescription to "הסבר קצר",
     Strings.TooltipLongPressLabel to "הצגת הסבר קצר",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.iw() = mapOf(
     Strings.TimePickerHour to "שעות",
     Strings.TimePickerMinuteTextField to "דקות",
     Strings.TimePickerHourTextField to "שעות",
+    Strings.TimePickerToggleKeyboard to "מעבר אל שיטת קלט טקסט כדי להזין את השעה",
+    Strings.TimePickerToggleTouch to "מעבר אל מצב שעון כדי להזין את השעה",
+    Strings.TimePickerDialogTitle to "בחירת שעה",
+    Strings.TimeInputDialogTitle to "הזנת שעה",
+    Strings.CloseRail to "סגירה של פס הניווט",
+    Strings.WideNavigationRailPaneTitle to "פס ניווט",
 )

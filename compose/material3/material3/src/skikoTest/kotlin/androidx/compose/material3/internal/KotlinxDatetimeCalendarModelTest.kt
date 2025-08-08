@@ -16,8 +16,10 @@
 
 package androidx.compose.material3.internal
 
+import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.assertThat
+import androidx.compose.material3.defaultLocale
 import androidx.compose.material3.isEqualTo
 import kotlin.test.Test
 
@@ -250,7 +252,7 @@ internal class KotlinxDatetimeCalendarModelTest {
                 dayOfMonth = 1,
                 utcTimeMillis = January2022Millis
             )
-        val parsedDate = model.parse("1/1/2022", "M/d/yyyy")
+        val parsedDate = model.parse("1/1/2022", "M/d/yyyy", locale)
         assertThat(parsedDate).isEqualTo(expectedDate)
     }
 
@@ -419,11 +421,13 @@ internal class KotlinxDatetimeCalendarModelTest {
 
     @Test
     fun illegalDateParsingDoesNotThrowException(){
-        val model = KotlinxDatetimeCalendarModel(calendarLocale("en","US"))
+        val locale = calendarLocale("en","US")
+        val model = KotlinxDatetimeCalendarModel(locale)
 
-        assertThat(model.parse("50-50-2000","MM-dd-yyyy")).isEqualTo(null)
-        assertThat(model.parse("50-50-2000","")).isEqualTo(null)
-        assertThat(model.parse("","MM-dd-yyyy")).isEqualTo(null)
+
+        assertThat(model.parse("50-50-2000","MM-dd-yyyy", locale)).isEqualTo(null)
+        assertThat(model.parse("50-50-2000","", locale)).isEqualTo(null)
+        assertThat(model.parse("","MM-dd-yyyy", locale)).isEqualTo(null)
     }
 }
 

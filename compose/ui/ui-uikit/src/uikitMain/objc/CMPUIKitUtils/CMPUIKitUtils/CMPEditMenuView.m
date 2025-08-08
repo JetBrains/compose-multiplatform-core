@@ -16,6 +16,50 @@
 
 #import "CMPEditMenuView.h"
 
+@interface CMPEditMenuViewRegister: NSObject
+
+@property (nonatomic, strong) NSMutableSet<CMPEditMenuView *> *trackedMenus;
+
+@end
+
+@implementation CMPEditMenuViewRegister
+
++ (instancetype)shared {
+    static CMPEditMenuViewRegister *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[self alloc] init];
+    });
+    return sharedInstance;
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _trackedMenus = [NSMutableSet new];
+    }
+    return self;
+}
+
+- (void)addEditMenu:(CMPEditMenuView *)editMenu {
+    [self.trackedMenus addObject:editMenu];
+}
+
+- (void)removeEditMenu:(CMPEditMenuView *)editMenu {
+    [self.trackedMenus removeObject:editMenu];
+}
+
+- (void)hideAllMenusSkipping:(CMPEditMenuView *)skipEditMenuView {
+    [self.trackedMenus enumerateObjectsUsingBlock:^(CMPEditMenuView * _Nonnull menuView, BOOL * _Nonnull stop) {
+        if (menuView != skipEditMenuView) {
+            [menuView hideEditMenu];
+        }
+    }];
+}
+
+@end
+
+
 @interface CMPEditMenuView() <UIEditMenuInteractionDelegate>
 
 @property (weak, nonatomic, nullable) UIView *rootView;
@@ -63,9 +107,11 @@ id _editInteraction;
     self.selectAllBlock = selectAllBlock;
 
     if (@available(iOS 16, *)) {
+        [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
         if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
+            BOOL isFirstMenuPresentation = self.presentInteractionBlock == nil;
             [self cancelPresentEditMenuInteraction];
-            NSTimeInterval delay = self.presentInteractionBlock == nil ? 0 : [self editMenuDelay];
+            NSTimeInterval delay = isFirstMenuPresentation ? 0 : [self editMenuDelay];
             [self schedulePresentEditMenuInteractionWithDelay:delay];
         } else if (positionChanged) {
             [self.editInteraction updateVisibleMenuPositionAnimated:NO];
@@ -76,6 +122,16 @@ id _editInteraction;
             [self hideEditMenu];
             [self scheduleShowMenuController];
         }
+    }
+}
+
+- (void)didMoveToWindow {
+    [super didMoveToWindow];
+    
+    if (self.window != nil) {
+        [[CMPEditMenuViewRegister shared] addEditMenu:self];
+    } else {
+        [[CMPEditMenuViewRegister shared] removeEditMenu:self];
     }
 }
 
@@ -134,7 +190,6 @@ id _editInteraction;
             [self addInteraction:self.editInteraction];
         }
         [self presentEditMenuInteraction];
-        self.presentInteractionBlock = nil;
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
                    dispatch_get_main_queue(),
@@ -144,6 +199,7 @@ id _editInteraction;
 - (void)cancelPresentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
     if (self.presentInteractionBlock != nil) {
         dispatch_block_cancel(self.presentInteractionBlock);
+        self.presentInteractionBlock = nil;
     }
 }
 

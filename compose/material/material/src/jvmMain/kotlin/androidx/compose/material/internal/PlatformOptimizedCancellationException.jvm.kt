@@ -18,14 +18,14 @@ package androidx.compose.material.internal
 
 import kotlinx.coroutines.CancellationException
 
-internal actual abstract class PlatformOptimizedCancellationException actual constructor(
-    message: String?
-) : CancellationException(message) {
+private val EmptyStackTraceElements = emptyArray<StackTraceElement>()
+
+internal actual abstract class PlatformOptimizedCancellationException
+actual constructor(message: String?) : CancellationException(message) {
 
     override fun fillInStackTrace(): Throwable {
         // Avoid null.clone() on Android <= 6.0 when accessing stackTrace
-        stackTrace = emptyArray()
+        stackTrace = EmptyStackTraceElements
         return this
     }
-
 }

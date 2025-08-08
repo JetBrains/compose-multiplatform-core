@@ -49,7 +49,6 @@ internal inline val Long.floatValue
  * parsed float value. To access these values easily, use [Long.index] and [Long.floatValue]. When
  * parsing is unsuccessful, [Long.floatValue] returns NaN.
  */
-@OptIn(kotlin.ExperimentalStdlibApi::class)
 internal fun nextFloat(s: String, start: Int, end: Int): Long {
     // NOTE: It would be nice to encode invalid parsing with a NaN marker
     // (for instance 0x7FD55555), but doing so prevents us from defining
@@ -887,7 +886,7 @@ internal val Mantissa64 =
         0x91d28b7416cdd27eUL,
         0xb6472e511c81471dUL,
         0xe3d8f9e563a198e5UL,
-        0x8e679c2f5e44ff8fUL
+        0x8e679c2f5e44ff8fUL,
     )
 
 internal inline val Char.isDigit

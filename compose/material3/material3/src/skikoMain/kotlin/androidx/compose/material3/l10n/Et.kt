@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.et() = mapOf(
     Strings.MenuCollapsed to "Ahendatud",
     Strings.ToggleDropdownMenu to "Rippmenüü lülitamine",
     Strings.SnackbarDismiss to "Loobu",
+    Strings.SnackbarPaneTitle to "Hoiatus",
     Strings.SearchBarSearch to "Otsing",
     Strings.SuggestionsAvailable to "Soovitused on allpool",
     Strings.DatePickerTitle to "Valige kuupäev",
@@ -71,6 +72,8 @@ internal fun Translations.et() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Alumise lehe ahendamine",
     Strings.BottomSheetDismissDescription to "Alumisest lehest loobumine",
     Strings.BottomSheetExpandDescription to "Alumise lehe laiendamine",
+    Strings.FloatingToolbarCollapse to "Tööriistariba ahendamine",
+    Strings.FloatingToolbarExpand to "Tööriistariba laiendamine",
     Strings.TooltipPaneDescription to "Kohtspikker",
     Strings.TooltipLongPressLabel to "Kuva kohtspikker",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.et() = mapOf(
     Strings.TimePickerHour to "Tunnid",
     Strings.TimePickerMinuteTextField to "minutite jaoks",
     Strings.TimePickerHourTextField to "tundide jaoks",
+    Strings.TimePickerToggleKeyboard to "Kellaaja sisestamiseks tekstisisestusrežiimi aktiveerimine",
+    Strings.TimePickerToggleTouch to "Kellaaja sisestamiseks kellarežiimi aktiveerimine",
+    Strings.TimePickerDialogTitle to "Valige aeg",
+    Strings.TimeInputDialogTitle to "Sisestage aeg",
+    Strings.CloseRail to "Modaalraja sulgemine",
+    Strings.WideNavigationRailPaneTitle to "Navigeerimisrada",
 )

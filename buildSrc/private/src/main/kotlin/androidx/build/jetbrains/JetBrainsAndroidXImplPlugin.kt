@@ -81,14 +81,37 @@ open class JetbrainsExtensions(
     fun KotlinNativeTarget.substituteForRedirectedPublishedDependencies() {
         val main = compilations.getByName("main")
         val test = compilations.getByName("test")
-        val kNativeManifestRedirectingModulesRaw =
-            project.property("artifactRedirection.modulesForKNativeManifest") as String
 
-        val projectPathToRedirectingVersionMap = kNativeManifestRedirectingModulesRaw
-            .split(",").associate {
-                val pair = it.split("=")
-                pair[0] to project.property(pair[1]) as String
+        val targetName = name.lowercase()
+        // The target name in a dependency project might be different from this project,
+        // so we check for an alternative name too.
+        // Historically, we had such aliases only for the 'ios <-> uikit' pair.
+        val altName = if (targetName.startsWith("ios")) {
+            targetName
+                .replace("iossimulator", "uikitsim")
+                .replace("ios", "uikit")
+        } else if (targetName.startsWith("uikit")) {
+            targetName
+                .replace("uikitsim", "iossimulator")
+                .replace("uikit", "ios")
+        } else {
+            null
+        }
+
+        val rootProjectName = project.rootProject.name // compose-multiplatform-core
+
+        val redirectedProjects = project.rootProject.subprojects.mapNotNull { project ->
+            project.takeIf {
+                // we are not interested in intermediate (structural) projects which are not published.
+                // they have a group name with rootProjectName in it
+               !it.group.toString().contains(rootProjectName)
+            }?.artifactRedirection()?.takeIf {
+                it.targetNames.contains(targetName) || it.targetNames.contains(altName)
+            }?.let {
+                project.path to it.groupId + ":" + project.name + ":" + it.versionForTargetOrDefault(targetName)
             }
+        }
+
         listOf(main, test).flatMap {
             val configurations = it.configurations
             listOf(
@@ -102,10 +125,9 @@ open class JetbrainsExtensions(
         }.forEach { c ->
             c?.resolutionStrategy {
                 it.dependencySubstitution {
-                    projectPathToRedirectingVersionMap.forEach { path, version ->
-                        val artifact = path.replaceFirst(":", "").let {
-                            "androidx.$it:$version"
-                        }
+                    redirectedProjects.forEach { entry ->
+                        val path = entry.first
+                        val artifact = entry.second
                         it.substitute(it.project(path)).using(it.module(artifact))
                     }
                 }
@@ -183,7 +205,45 @@ private fun enableBinaryCompatibilityValidator(project: Project) {
             project.apply(plugin = "org.jetbrains.kotlinx.binary-compatibility-validator")
             project.extensions.getByType(ApiValidationExtension::class.java).apply {
                 klib.enabled = true
+                nonPublicMarkers += NON_PUBLIC_MARKERS
             }
         }
     }
 }
+
+// Not ideal to have a list instead of a pattern to match but this is all the API supports right now
+// https://github.com/Kotlin/binary-compatibility-validator/issues/280
+private val NON_PUBLIC_MARKERS =
+    setOf(
+        "androidx.annotation.Experimental",
+        "androidx.compose.animation.ExperimentalAnimationApi",
+        "androidx.compose.animation.ExperimentalSharedTransitionApi",
+        "androidx.compose.animation.core.ExperimentalAnimatableApi",
+        "androidx.compose.animation.core.ExperimentalAnimationSpecApi",
+        "androidx.compose.animation.core.ExperimentalTransitionApi",
+        "androidx.compose.animation.core.InternalAnimationApi",
+        "androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+        "androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi",
+        "androidx.compose.foundation.ExperimentalFoundationApi",
+        "androidx.compose.foundation.InternalFoundationApi",
+        "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        "androidx.compose.material.ExperimentalMaterialApi",
+        "androidx.compose.material3.ExperimentalMaterial3Api",
+        "androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi",
+        "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+        "androidx.compose.runtime.ExperimentalComposeApi",
+        "androidx.compose.runtime.ExperimentalComposeRuntimeApi",
+        "androidx.compose.runtime.InternalComposeApi",
+        "androidx.compose.runtime.InternalComposeTracingApi",
+        "androidx.compose.ui.ExperimentalComposeUiApi",
+        "androidx.compose.ui.InternalComposeUiApi",
+        "androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi",
+        "androidx.compose.ui.node.InternalCoreApi",
+        "androidx.compose.ui.test.ExperimentalTestApi",
+        "androidx.compose.ui.test.InternalTestApi",
+        "androidx.compose.ui.text.ExperimentalTextApi",
+        "androidx.compose.ui.text.InternalTextApi",
+        "androidx.compose.ui.unit.ExperimentalUnitApi",
+        "androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi",
+        "androidx.window.core.ExperimentalWindowApi",
+    )

@@ -34,7 +34,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import kotlinx.test.IgnoreJsTarget
 
 @Stable
 class CompositionReusingTests {
@@ -102,7 +101,7 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 
@@ -139,20 +138,20 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 
     @Test
     fun compositeHashCodeReflectsReusableChanges() = compositionTest {
         var key by mutableStateOf(0)
-        var lastCompositeHash = 0
+        var lastCompositeHash = EmptyCompositeKeyHashCode
 
         compose {
             ReusableContent(key) {
                 Linear {
                     Text("Key = $key")
-                    lastCompositeHash = currentCompositeKeyHash
+                    lastCompositeHash = currentCompositeKeyHashCode
                 }
             }
         }
@@ -170,13 +169,13 @@ class CompositionReusingTests {
     fun compositeHashCodeIsConsistent() = compositionTest {
         var key by mutableStateOf(0)
         var localValue by mutableStateOf(0)
-        var lastCompositeHash = 0
+        var lastCompositeHash = EmptyCompositeKeyHashCode
 
         compose {
             ReusableContent(key) {
                 Linear {
                     Text("Key = $key: $localValue")
-                    lastCompositeHash = currentCompositeKeyHash
+                    lastCompositeHash = currentCompositeKeyHashCode
                 }
             }
         }

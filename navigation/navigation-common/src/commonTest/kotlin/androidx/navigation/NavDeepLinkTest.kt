@@ -16,7 +16,6 @@
 
 package androidx.navigation
 
-import androidx.collection.emptyIntList
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
 import androidx.navigation.NavType.Companion.BoolListType
@@ -1293,7 +1292,7 @@ class NavDeepLinkTest {
         val deepLinkUri = "https://.*.example.com"
         val deepLink = NavDeepLink(deepLinkUri)
 
-        val matches = deepLink.matches(parseStringAsNavUri(deepLinkUri.replace(".*", "wildCardMatch")))
+        val matches = deepLink.matches(NavUri(deepLinkUri.replace(".*", "wildCardMatch")))
         assertThat(matches).isTrue()
     }
 
@@ -1302,7 +1301,7 @@ class NavDeepLinkTest {
         val deepLinkUri = "https://.*.example.com/.*"
         val deepLink = NavDeepLink(deepLinkUri)
 
-        val matches = deepLink.matches(parseStringAsNavUri(deepLinkUri.replace(".*", "wildCardMatch")))
+        val matches = deepLink.matches(NavUri(deepLinkUri.replace(".*", "wildCardMatch")))
         assertThat(matches).isTrue()
     }
 
@@ -1313,7 +1312,7 @@ class NavDeepLinkTest {
 
         val intArg = 1
         val finalUri =
-            parseStringAsNavUri(deepLinkUri.replace(".*", "wildCardMatch").replace("{id}", intArg.toString()))
+            NavUri(deepLinkUri.replace(".*", "wildCardMatch").replace("{id}", intArg.toString()))
 
         val matches = deepLink.matches(finalUri)
         assertThat(matches).isTrue()
@@ -1333,7 +1332,7 @@ class NavDeepLinkTest {
 
         val intArg = 1
         val finalUri =
-            parseStringAsNavUri(deepLinkUri.replace(".*", "wildCardMatch").replace("{id}", intArg.toString()))
+            NavUri(deepLinkUri.replace(".*", "wildCardMatch").replace("{id}", intArg.toString()))
 
         val matches = deepLink.matches(finalUri)
         assertThat(matches).isTrue()

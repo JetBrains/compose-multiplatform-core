@@ -37,25 +37,25 @@ import kotlinx.coroutines.flow.StateFlow
  * You can write a value to it via [set] or setting a value to [androidx.lifecycle.MutableLiveData]
  * returned by [getLiveData].
  */
-expect class SavedStateHandle {
+public expect class SavedStateHandle {
 
     /**
      * Creates a handle with the given initial arguments.
      *
      * @param initialState initial arguments for the SavedStateHandle
      */
-    constructor(initialState: Map<String, Any?>)
+    public constructor(initialState: Map<String, Any?>)
 
     /** Creates a handle with the empty state. */
-    constructor()
+    public constructor()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun savedStateProvider(): SavedStateProvider
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun savedStateProvider(): SavedStateProvider
 
     /**
      * @param key The identifier for the value
      * @return true if there is value associated with the given key.
      */
-    @MainThread operator fun contains(key: String): Boolean
+    @MainThread public operator fun contains(key: String): Boolean
 
     /**
      * Returns a [StateFlow] that will emit the currently active value associated with the given
@@ -90,7 +90,7 @@ expect class SavedStateHandle {
      * @param initialValue If no value exists with the given `key`, a new one is created with the
      *   given `initialValue`.
      */
-    @MainThread fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T>
+    @MainThread public fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T>
 
     /**
      * Returns a [MutableStateFlow] that will emit the currently active value associated with the
@@ -130,7 +130,8 @@ expect class SavedStateHandle {
      * @param initialValue If no value exists with the given `key`, a new one is created with the
      *   given `initialValue`.
      */
-    @MainThread fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T>
+    @MainThread
+    public fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T>
 
     /**
      * Returns all keys contained in this [SavedStateHandle]
@@ -138,7 +139,7 @@ expect class SavedStateHandle {
      * Returned set contains all keys: keys used to get LiveData-s, to set SavedStateProviders and
      * keys used in regular [set].
      */
-    @MainThread fun keys(): Set<String>
+    @MainThread public fun keys(): Set<String>
 
     /**
      * Returns a value associated with the given key.
@@ -157,7 +158,7 @@ expect class SavedStateHandle {
      *
      * @param key a key used to retrieve a value.
      */
-    @MainThread operator fun <T> get(key: String): T?
+    @MainThread public operator fun <T> get(key: String): T?
 
     /**
      * Associate the given value with the key. The value must have a type that could be stored in
@@ -169,7 +170,7 @@ expect class SavedStateHandle {
      * @param value object of any type that can be accepted by Bundle.
      * @throws IllegalArgumentException value cannot be saved in saved state
      */
-    @MainThread operator fun <T> set(key: String, value: T?)
+    @MainThread public operator fun <T> set(key: String, value: T?)
 
     /**
      * Removes a value associated with the given key. If there is a [LiveData] and/or [StateFlow]
@@ -183,7 +184,7 @@ expect class SavedStateHandle {
      * @param key a key
      * @return a value that was previously associated with the given key.
      */
-    @MainThread fun <T> remove(key: String): T?
+    @MainThread public fun <T> remove(key: String): T?
 
     /**
      * Set a [SavedStateProvider] that will have its state saved into this SavedStateHandle. This
@@ -211,7 +212,7 @@ expect class SavedStateHandle {
      * @param provider a SavedStateProvider which will receive a callback to
      *   [SavedStateProvider.saveState] when the state should be saved
      */
-    @MainThread fun setSavedStateProvider(key: String, provider: SavedStateProvider)
+    @MainThread public fun setSavedStateProvider(key: String, provider: SavedStateProvider)
 
     /**
      * Clear any [SavedStateProvider] that was previously set via [setSavedStateProvider].
@@ -221,14 +222,18 @@ expect class SavedStateHandle {
      *
      * @param key a key previously used with [setSavedStateProvider]
      */
-    @MainThread fun clearSavedStateProvider(key: String)
+    @MainThread public fun clearSavedStateProvider(key: String)
 
-    companion object {
+    public companion object {
+
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         @Suppress("DEPRECATION")
-        fun createHandle(restoredState: SavedState?, defaultState: SavedState?): SavedStateHandle
+        public fun createHandle(
+            restoredState: SavedState?,
+            defaultState: SavedState?
+        ): SavedStateHandle
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun validateValue(value: Any?): Boolean
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun validateValue(value: Any?): Boolean
     }
 }

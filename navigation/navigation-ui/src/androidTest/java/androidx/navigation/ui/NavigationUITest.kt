@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.createGraph
 import androidx.navigation.ui.test.R
+import androidx.savedstate.SavedState
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -216,6 +217,41 @@ class NavigationUITest {
 
         val expected = "123"
         assertThat(toolbar.title.toString()).isEqualTo(expected)
+    }
+
+    @UiThreadTest
+    @Test
+    fun navigateWithLabelEncodedByNavType() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val navController = NavHostController(context)
+        navController.navigatorProvider.addNavigator(TestNavigator())
+
+        val startDestination = "start_destination"
+        val endDestination = "end_destination"
+        val navType =
+            object : NavType<Int>(false) {
+                override fun put(bundle: SavedState, key: String, value: Int) {
+                    IntType.put(bundle, key, value)
+                }
+
+                override fun get(bundle: SavedState, key: String): Int? = IntType[bundle, key]!! + 1
+
+                override fun parseValue(value: String): Int = IntType.parseValue(value)
+            }
+        navController.graph =
+            navController.createGraph(startDestination = startDestination) {
+                test(startDestination)
+                test("$endDestination/{test}") {
+                    label = "{test}"
+                    argument(name = "test") { type = navType }
+                }
+            }
+
+        val toolbar = Toolbar(context).apply { setupWithNavController(navController) }
+        val arg = 1
+        navController.navigate("$endDestination/$arg")
+
+        assertThat(toolbar.title.toString()).isEqualTo((arg + 1).toString())
     }
 
     private fun createToolbarOnDestinationChangedListener(

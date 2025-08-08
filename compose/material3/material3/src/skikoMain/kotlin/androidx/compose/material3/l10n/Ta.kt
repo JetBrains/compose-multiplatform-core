@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ta() = mapOf(
     Strings.MenuCollapsed to "சுருக்கப்பட்டது",
     Strings.ToggleDropdownMenu to "கீழ்த்தோன்றல் மெனுவை நிலைமாற்றும்",
     Strings.SnackbarDismiss to "நிராகரிக்கும்",
+    Strings.SnackbarPaneTitle to "விழிப்பூட்டல்",
     Strings.SearchBarSearch to "தேடல்",
     Strings.SuggestionsAvailable to "பரிந்துரைகள் கீழே கிடைக்கும்",
     Strings.DatePickerTitle to "தேதியைத் தேர்வுசெய்க",
@@ -71,6 +72,8 @@ internal fun Translations.ta() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "கீழ்ப்புற ஷீட்டைச் சுருக்கும்",
     Strings.BottomSheetDismissDescription to "கீழ்ப்புற ஷீட்டை நிராகரிக்கும்",
     Strings.BottomSheetExpandDescription to "கீழ்ப்புற ஷீட்டை விரிவாக்கும்",
+    Strings.FloatingToolbarCollapse to "கருவிப்பட்டியைச் சுருக்கும்",
+    Strings.FloatingToolbarExpand to "கருவிப்பட்டியை விரிவாக்கும்",
     Strings.TooltipPaneDescription to "உதவிக்குறிப்பு",
     Strings.TooltipLongPressLabel to "உதவிக்குறிப்பைக் காட்டு",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.ta() = mapOf(
     Strings.TimePickerHour to "மணிநேரம்",
     Strings.TimePickerMinuteTextField to "நிமிடங்களுக்கு",
     Strings.TimePickerHourTextField to "மணிநேரத்திற்கு",
+    Strings.TimePickerToggleKeyboard to "நேர உள்ளீட்டிற்காக, எழுத்து உள்ளீட்டு முறைக்கு மாற்றும்",
+    Strings.TimePickerToggleTouch to "நேர உள்ளீட்டிற்காக, கடிகாரப் பயன்முறைக்கு மாற்றும்",
+    Strings.TimePickerDialogTitle to "நேரத்தைத் தேர்ந்தெடுங்கள்",
+    Strings.TimeInputDialogTitle to "நேரத்தை டைப் செய்யுங்கள்",
+    Strings.CloseRail to "பாதையை மூடும்",
+    Strings.WideNavigationRailPaneTitle to "வழிசெலுத்தல் பாதை",
 )

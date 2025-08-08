@@ -38,11 +38,11 @@ final class androidx.window.core.layout/WindowSizeClass { // androidx.window.cor
     final val windowWidthSizeClass // androidx.window.core.layout/WindowSizeClass.windowWidthSizeClass|{}windowWidthSizeClass[0]
         final fun <get-windowWidthSizeClass>(): androidx.window.core.layout/WindowWidthSizeClass // androidx.window.core.layout/WindowSizeClass.windowWidthSizeClass.<get-windowWidthSizeClass>|<get-windowWidthSizeClass>(){}[0]
 
-    final fun containsHeightDp(kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.containsHeightDp|containsHeightDp(kotlin.Int){}[0]
-    final fun containsWidthDp(kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.containsWidthDp|containsWidthDp(kotlin.Int){}[0]
-    final fun containsWindowSizeDp(kotlin/Int, kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.containsWindowSizeDp|containsWindowSizeDp(kotlin.Int;kotlin.Int){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.window.core.layout/WindowSizeClass.hashCode|hashCode(){}[0]
+    final fun isAtLeastBreakpoint(kotlin/Int, kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.isAtLeastBreakpoint|isAtLeastBreakpoint(kotlin.Int;kotlin.Int){}[0]
+    final fun isHeightAtLeastBreakpoint(kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.isHeightAtLeastBreakpoint|isHeightAtLeastBreakpoint(kotlin.Int){}[0]
+    final fun isWidthAtLeastBreakpoint(kotlin/Int): kotlin/Boolean // androidx.window.core.layout/WindowSizeClass.isWidthAtLeastBreakpoint|isWidthAtLeastBreakpoint(kotlin.Int){}[0]
     final fun toString(): kotlin/String // androidx.window.core.layout/WindowSizeClass.toString|toString(){}[0]
 
     final object Companion { // androidx.window.core.layout/WindowSizeClass.Companion|null[0]

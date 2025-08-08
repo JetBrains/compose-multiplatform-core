@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ur() = mapOf(
     Strings.MenuCollapsed to "سکیڑا گیا",
     Strings.ToggleDropdownMenu to "ڈراپ ڈاؤن مینیو کو ٹوگل کریں",
     Strings.SnackbarDismiss to "برخاست کریں",
+    Strings.SnackbarPaneTitle to "الرٹ",
     Strings.SearchBarSearch to "تلاش کریں",
     Strings.SuggestionsAvailable to "تلاش کی تجاویز نیچے دستیاب ہیں",
     Strings.DatePickerTitle to "تاریخ منتخب کریں",
@@ -71,6 +72,8 @@ internal fun Translations.ur() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "نیچے کی شیٹ کو سکیڑیں",
     Strings.BottomSheetDismissDescription to "نیچے کی شیٹ کو برخاست کریں",
     Strings.BottomSheetExpandDescription to "نیچے کی شیٹ کو پھیلائیں",
+    Strings.FloatingToolbarCollapse to "ٹول بار کو سکیڑیں",
+    Strings.FloatingToolbarExpand to "ٹول بار کو پھیلائیں",
     Strings.TooltipPaneDescription to "ٹول ٹپ",
     Strings.TooltipLongPressLabel to "ٹول ٹپ دکھائیں",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.ur() = mapOf(
     Strings.TimePickerHour to "گھنٹہ",
     Strings.TimePickerMinuteTextField to "منٹ کے لیے",
     Strings.TimePickerHourTextField to "گھنٹے کے لیے",
+    Strings.TimePickerToggleKeyboard to "وقت ان پٹ کے لیے ٹیکسٹ اِن پٹ موڈ پر سوئچ کریں",
+    Strings.TimePickerToggleTouch to "وقت ان پٹ کے لیے گھڑی موڈ پر سوئچ کریں",
+    Strings.TimePickerDialogTitle to "وقت منتخب کریں",
+    Strings.TimeInputDialogTitle to "وقت درج کریں",
+    Strings.CloseRail to "ریل بند کریں",
+    Strings.WideNavigationRailPaneTitle to "نیوی گیشن ریل",
 )

@@ -18,11 +18,21 @@ package androidx.savedstate
 
 import android.os.Parcel
 
-actual fun platformEncodeDecode(savedState: SavedState): SavedState {
+actual fun platformEncodeDecode(savedState: SavedState, doMarshalling: Boolean): SavedState {
     val parcel =
         Parcel.obtain().apply {
             savedState.writeToParcel(this, 0)
             setDataPosition(0)
         }
-    return SavedState.CREATOR.createFromParcel(parcel)
+    val newParcel =
+        if (doMarshalling) {
+            val bytes = parcel.marshall()
+            Parcel.obtain().apply {
+                unmarshall(bytes, 0, bytes.size)
+                setDataPosition(0)
+            }
+        } else {
+            parcel
+        }
+    return newParcel.readBundle(savedState::class.java.classLoader)!!
 }

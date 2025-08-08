@@ -16,4 +16,7 @@
 
 package androidx.compose.ui.test
 
+import kotlin.native.identityHashCode
 
+internal actual fun identityHashCode(instance: Any?): Int =
+    instance.identityHashCode()

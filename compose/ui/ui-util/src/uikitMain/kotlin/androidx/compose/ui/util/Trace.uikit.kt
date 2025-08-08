@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalForeignApi::class)
+
 package androidx.compose.ui.util
 
 import androidx.compose.ui.uikit.utils.CMPOSAppTraceLogger
 import androidx.compose.ui.uikit.utils.CMPOSInitializeAppTraceLogger
+import kotlinx.cinterop.ExperimentalForeignApi
+
+// TODO: Move it to darwinMain (requires re-organization of obj-c integration)
 
 /**
  * Enables iOS OS logging for the `androidx.compose.ui` APIs.
@@ -38,4 +43,7 @@ actual inline fun <T> trace(sectionName: String, block: () -> T): T {
             CMPOSAppTraceLogger()?.endInterval(it)
         }
     }
+}
+
+actual fun traceValue(tag: String, value: Long) {
 }

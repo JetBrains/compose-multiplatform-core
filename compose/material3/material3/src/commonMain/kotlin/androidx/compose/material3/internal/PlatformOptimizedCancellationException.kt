@@ -19,9 +19,8 @@ package androidx.compose.material3.internal
 import kotlinx.coroutines.CancellationException
 
 /**
- * Represents a platform-optimized cancellation exception.
- * This allows us to configure exceptions separately on JVM and other platforms.
+ * Represents a platform-optimized cancellation exception. This allows us to configure exceptions
+ * separately on JVM and other platforms.
  */
-internal expect abstract class PlatformOptimizedCancellationException(
-    message: String? = null
-) : CancellationException
+internal expect abstract class PlatformOptimizedCancellationException(message: String? = null) :
+    CancellationException

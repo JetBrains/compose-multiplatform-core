@@ -61,13 +61,6 @@ class RequestFocusTest {
             assertThat(focusState?.hasFocus).isEqualTo(true)
         }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    @Suppress("DEPRECATION")
-    @Test
-    fun `mouseClickable should request focus on click`() = shouldRequestFocusOnClick {
-        this.mouseClickable{ it () }
-    }
-
     @Test
     fun `clickable should request focus on click`() = shouldRequestFocusOnClick {
         this.clickable(onClick = it)

@@ -19,8 +19,9 @@ package androidx.window.extensions.embedding;
 import android.app.Activity;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -32,13 +33,10 @@ import java.util.Objects;
  */
 public class EmbeddedActivityWindowInfo {
 
-    @NonNull
-    private final Activity mActivity;
+    private final @NonNull Activity mActivity;
     private final boolean mIsEmbedded;
-    @NonNull
-    private final Rect mTaskBounds;
-    @NonNull
-    private final Rect mActivityStackBounds;
+    private final @NonNull Rect mTaskBounds;
+    private final @NonNull Rect mActivityStackBounds;
 
     EmbeddedActivityWindowInfo(@NonNull Activity activity, boolean isEmbedded,
             @NonNull Rect taskBounds, @NonNull Rect activityStackBounds) {
@@ -52,8 +50,7 @@ public class EmbeddedActivityWindowInfo {
      * Returns the {@link Activity} this {@link EmbeddedActivityWindowInfo} is about.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public Activity getActivity() {
+    public @NonNull Activity getActivity() {
         return mActivity;
     }
 
@@ -70,8 +67,7 @@ public class EmbeddedActivityWindowInfo {
      * Returns the bounds of the Task window in display space.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public Rect getTaskBounds() {
+    public @NonNull Rect getTaskBounds() {
         return mTaskBounds;
     }
 
@@ -81,8 +77,7 @@ public class EmbeddedActivityWindowInfo {
      * the activity is not embedded.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public Rect getActivityStackBounds() {
+    public @NonNull Rect getActivityStackBounds() {
         return mActivityStackBounds;
     }
 
@@ -106,9 +101,8 @@ public class EmbeddedActivityWindowInfo {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "EmbeddedActivityWindowInfo{"
                 + "activity=" + mActivity
                 + ", isEmbedded=" + mIsEmbedded

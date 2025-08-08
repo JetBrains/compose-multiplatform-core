@@ -18,8 +18,37 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.ui.geometry.Offset
 import org.jetbrains.skia.GradientStyle
+import org.jetbrains.skia.Matrix33
 
+// TODO: Do not expose skiko types to common
+//  https://youtrack.jetbrains.com/issue/CMP-219
 actual typealias Shader = org.jetbrains.skia.Shader
+
+internal actual class TransformShader {
+    private var _shader: Shader? = null
+    private var _wrapper: Shader? = null
+    private var _matrix: Matrix33? = null
+
+    actual fun transform(matrix: Matrix?) {
+        _matrix = if (matrix != null) {
+            Matrix33.makeTranslate(0f, 0f).apply { setFrom(matrix) }
+        } else null
+        _wrapper = null
+    }
+
+    actual var shader: Shader?
+        get() {
+            val matrix = _matrix ?: return _shader
+            if (_wrapper == null) {
+                _wrapper = _shader?.makeWithLocalMatrix(matrix)
+            }
+            return _wrapper
+        }
+        set(value) {
+            _shader = value
+            _wrapper = null
+        }
+}
 
 internal actual fun ActualLinearGradientShader(
     from: Offset,
@@ -77,6 +106,9 @@ internal actual fun ActualImageShader(
         tileModeY.toSkiaTileMode()
     )
 }
+
+internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
+    org.jetbrains.skia.Shader.makeBlend(mode = blendMode.toSkia(), dst = dst, src = src)
 
 private fun List<Color>.toIntArray(): IntArray =
     IntArray(size) { i -> this[i].toArgb() }

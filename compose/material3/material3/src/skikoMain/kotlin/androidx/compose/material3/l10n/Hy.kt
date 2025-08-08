@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.hy() = mapOf(
     Strings.MenuCollapsed to "Ծալված է",
     Strings.ToggleDropdownMenu to "Բացել/փակել իջնող ցանկը",
     Strings.SnackbarDismiss to "Փակել",
+    Strings.SnackbarPaneTitle to "Ծանուցում",
     Strings.SearchBarSearch to "Որոնում",
     Strings.SuggestionsAvailable to "Առաջարկները հասանելի են ստորև",
     Strings.DatePickerTitle to "Ընտրեք ամսաթիվը",
@@ -71,6 +72,8 @@ internal fun Translations.hy() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Ծալել ներքևի էկրանը",
     Strings.BottomSheetDismissDescription to "Փակել ներքևի էկրանը",
     Strings.BottomSheetExpandDescription to "Ծավալել ներքևի էկրանը",
+    Strings.FloatingToolbarCollapse to "Ծալել գործիքագոտին",
+    Strings.FloatingToolbarExpand to "Ծավալել գործիքագոտին",
     Strings.TooltipPaneDescription to "Հուշակ",
     Strings.TooltipLongPressLabel to "Ցուցադրել հուշում",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.hy() = mapOf(
     Strings.TimePickerHour to "Ժամ",
     Strings.TimePickerMinuteTextField to "րոպեներ",
     Strings.TimePickerHourTextField to "ժամեր",
+    Strings.TimePickerToggleKeyboard to "Ժամը մուտքագրելու համար անցեք տեքստի ներածման ռեժիմին",
+    Strings.TimePickerToggleTouch to "Ժամը մուտքագրելու համար անցեք ժամացույցի ռեժիմին",
+    Strings.TimePickerDialogTitle to "Ընտրեք ժամը",
+    Strings.TimeInputDialogTitle to "Մուտքագրեք ժամը",
+    Strings.CloseRail to "Փակել նավիգացիայի գոտին",
+    Strings.WideNavigationRailPaneTitle to "Նավիգացիայի գոտի",
 )

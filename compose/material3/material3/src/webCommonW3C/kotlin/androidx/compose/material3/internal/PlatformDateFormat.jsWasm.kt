@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package androidx.compose.material3.internal
 
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.ui.text.intl.Locale
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -54,6 +57,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithPattern(
         utcTimeMillis: Long,
         pattern: String,
+        cache: MutableMap<String, Any>
     ): String {
 
         val date = Instant
@@ -91,6 +95,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithSkeleton(
         utcTimeMillis: Long,
         skeleton: String,
+        cache: MutableMap<String, Any>
     ): String {
         val jsDate = Date(utcTimeMillis.toDouble())
 
@@ -142,8 +147,11 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     @OptIn(FormatStringsInDatetimeFormats::class)
     actual fun parse(
         date: String,
-        pattern: String
+        pattern: String,
+        locale: CalendarLocale,
+        cache: MutableMap<String, Any>
     ): CalendarDate? {
+        // TODO https://youtrack.jetbrains.com/issue/CMP-7146/Properly-use-locale-in-CalendarModel.parse-implementations
         return try {
             LocalDate.parse(
                 input = date,
@@ -306,3 +314,5 @@ private inline fun dateLocaleOptions(init: Date.LocaleOptions.() -> Unit): Date.
     init(result)
     return result
 }
+
+internal const val MillisecondsIn24HoursDouble = 86400000.0

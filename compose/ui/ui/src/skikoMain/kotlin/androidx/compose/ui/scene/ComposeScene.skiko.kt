@@ -25,6 +25,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.draganddrop.DragAndDropNode
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -35,6 +36,7 @@ import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -46,7 +48,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.pointerInteropFilter
-import org.jetbrains.skiko.currentNanoTime
 
 /**
  * Represents a static [CompositionLocal] key for a [ComposeScene] in Jetpack Compose.
@@ -67,9 +68,13 @@ internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null 
  * (such as application, runComposeUiTest, ComposeWindow). While it can be used by
  * third-party users for integrating Compose into other platforms, it does not come
  * with any guarantee of stability.
+ *
+ * @see PlatformLayersComposeScene
+ * @see CanvasLayersComposeScene
  */
 @InternalComposeUiApi
-interface ComposeScene {
+sealed interface ComposeScene : AutoCloseable {
+
     /**
      * Density of the content which will be used to convert [Dp] units.
      */
@@ -120,12 +125,12 @@ interface ComposeScene {
      * Close all resources and subscriptions. Not calling this method when [ComposeScene] is no
      * longer needed will cause a memory leak.
      *
-     * All effects launched via [LaunchedEffect] or [rememberCoroutineScope] will be cancelled
+     * All effects launched via [LaunchedEffect] or [rememberCoroutineScope] will be canceled
      * (but not immediately).
      *
      * After calling this method, you cannot call any other method of this [ComposeScene].
      */
-    fun close()
+    override fun close()
 
     /**
      * Returns the current content size (in pixels) in infinity constraints.
@@ -143,6 +148,15 @@ interface ComposeScene {
      * @see PlatformContext.convertWindowToLocalPosition
      */
     fun invalidatePositionInWindow()
+
+    /**
+     * Invalidates position of the [ComposeScene]'s window. It will trigger callbacks like
+     * [Modifier.onGloballyPositioned] so they can recalculate actual position on screen.
+     *
+     * @see PlatformContext.convertLocalToScreenPosition
+     * @see PlatformContext.convertScreenToLocalPosition
+     */
+    fun invalidatePositionOnScreen()
 
     /**
      * Returns true if there are pending recompositions, renders or dispatched tasks.
@@ -189,7 +203,7 @@ interface ComposeScene {
         eventType: PointerEventType,
         position: Offset,
         scrollDelta: Offset = Offset.Zero,
-        timeMillis: Long = currentTimeForEvent(),
+        timeMillis: Long = currentTimeMillis(),
         type: PointerType = PointerType.Mouse,
         buttons: PointerButtons? = null,
         keyboardModifiers: PointerKeyboardModifiers? = null,
@@ -224,7 +238,7 @@ interface ComposeScene {
         buttons: PointerButtons = PointerButtons(),
         keyboardModifiers: PointerKeyboardModifiers = PointerKeyboardModifiers(),
         scrollDelta: Offset = Offset.Zero,
-        timeMillis: Long = currentTimeForEvent(),
+        timeMillis: Long = currentTimeMillis(),
         nativeEvent: Any? = null,
         button: PointerButton? = null,
     ): PointerEventResult
@@ -242,13 +256,32 @@ interface ComposeScene {
     fun sendKeyEvent(keyEvent: KeyEvent): Boolean
 
     /**
+     * Send rotary scroll event to the content.
+     * @param verticalScrollPixels The amount to scroll (in pixels) in response to a
+     * [RotaryScrollEvent] in a container that can scroll vertically.
+     * @param horizontalScrollPixels The amount to scroll (in pixels) in response to a
+     * [RotaryScrollEvent] in a container that can scroll horizontally.
+     * @param timeMillis The time in milliseconds at which this even occurred. The start (`0`) time
+     * is platform-dependent.
+     * @return true if the event was consumed by the content
+     */
+    fun sendRotaryScrollEvent(
+        verticalScrollPixels: Float,
+        horizontalScrollPixels: Float,
+        timeMillis: Long = currentTimeMillis(),
+    ): Boolean
+
+    /**
      * Perform hit test and return the [InteropView] associated with the resulting node
      * in case it has a [Modifier.pointerInteropFilter], otherwise return null.
      * @param position The position of the hit test.
      * @return The [InteropView] associated with the resulting node in case there is any, or null.
      */
     fun hitTestInteropView(position: Offset): InteropView?
-}
 
-private fun currentTimeForEvent(): Long =
-    (currentNanoTime() / 1E6).toLong()
+    /**
+     * Run the [block] in a coroutine with a [androidx.compose.runtime.MonotonicFrameClock] instance
+     * provided by the [androidx.compose.runtime.Recomposer] of the current scene.
+     */
+    suspend fun withMonotonicFrameClock(block: suspend () -> Unit)
+}

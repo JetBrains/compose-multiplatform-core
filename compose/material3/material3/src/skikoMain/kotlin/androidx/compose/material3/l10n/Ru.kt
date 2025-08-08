@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ru() = mapOf(
     Strings.MenuCollapsed to "Свернуто",
     Strings.ToggleDropdownMenu to "Показать или скрыть раскрывающееся меню",
     Strings.SnackbarDismiss to "Закрыть",
+    Strings.SnackbarPaneTitle to "Оповещение",
     Strings.SearchBarSearch to "Строка поиска",
     Strings.SuggestionsAvailable to "Подсказки показаны ниже",
     Strings.DatePickerTitle to "Выберите дату",
@@ -71,6 +72,8 @@ internal fun Translations.ru() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Свернуть нижний экран",
     Strings.BottomSheetDismissDescription to "Закрыть нижний экран",
     Strings.BottomSheetExpandDescription to "Развернуть нижний экран",
+    Strings.FloatingToolbarCollapse to "Свернуть панель инструментов",
+    Strings.FloatingToolbarExpand to "Развернуть панель инструментов",
     Strings.TooltipPaneDescription to "Подсказка",
     Strings.TooltipLongPressLabel to "Показать подсказку",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.ru() = mapOf(
     Strings.TimePickerHour to "Часы",
     Strings.TimePickerMinuteTextField to "минуты",
     Strings.TimePickerHourTextField to "часы",
+    Strings.TimePickerToggleKeyboard to "Указать время, используя режим ввода текста",
+    Strings.TimePickerToggleTouch to "Выбрать время, используя режим часов",
+    Strings.TimePickerDialogTitle to "Выберите время",
+    Strings.TimeInputDialogTitle to "Укажите время",
+    Strings.CloseRail to "Закрыть боковую панель",
+    Strings.WideNavigationRailPaneTitle to "Боковая панель навигации",
 )

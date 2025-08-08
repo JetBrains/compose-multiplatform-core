@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -40,13 +39,14 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class NavigationDrawerItemScreenshotTest {
     @get:Rule val composeTestRule = createComposeRule()
@@ -68,11 +68,12 @@ class NavigationDrawerItemScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "drawerItem_lightTheme_defaultColors"
+            goldenIdentifier = "drawerItem_lightTheme_defaultColors",
         )
     }
 
     @Test
+    @Ignore("b/355413615")
     fun lightTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -87,7 +88,7 @@ class NavigationDrawerItemScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "drawerItem_lightTheme_defaultColors_pressed"
+            goldenIdentifier = "drawerItem_lightTheme_defaultColors_pressed",
         )
     }
 
@@ -106,11 +107,12 @@ class NavigationDrawerItemScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "drawerItem_darkTheme_defaultColors"
+            goldenIdentifier = "drawerItem_darkTheme_defaultColors",
         )
     }
 
     @Test
+    @Ignore("b/355413615")
     fun darkTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -125,7 +127,7 @@ class NavigationDrawerItemScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "drawerItem_darkTheme_defaultColors_pressed"
+            goldenIdentifier = "drawerItem_darkTheme_defaultColors_pressed",
         )
     }
 
@@ -143,7 +145,7 @@ class NavigationDrawerItemScreenshotTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -168,29 +170,27 @@ class NavigationDrawerItemScreenshotTest {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DefaultDrawerItems(
-    interactionSource: MutableInteractionSource,
-) {
+private fun DefaultDrawerItems(interactionSource: MutableInteractionSource) {
     Column(modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         NavigationDrawerItem(
             icon = { Icon(Icons.Filled.Favorite, null) },
             label = { Text("Favorites") },
             selected = true,
             onClick = {},
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
         NavigationDrawerItem(
             label = { Text("Favorites") },
             selected = true,
             onClick = {},
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
         NavigationDrawerItem(
             icon = { Icon(Icons.Filled.Face, null) },
             label = { Text("Face") },
             selected = false,
             onClick = {},
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
         NavigationDrawerItem(
             icon = { Icon(Icons.Filled.Face, null) },
@@ -198,7 +198,7 @@ private fun DefaultDrawerItems(
             badge = { Text("100+") },
             selected = false,
             onClick = {},
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
     }
 }

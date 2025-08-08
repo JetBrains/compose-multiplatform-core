@@ -17,6 +17,7 @@
 package androidx.navigation.testing
 
 import android.os.Bundle
+import androidx.kruth.assertThat
 import androidx.navigation.ActivityNavigator
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
@@ -30,7 +31,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.ext.truth.os.BundleSubject.assertThat
 import androidx.test.filters.SmallTest
 import androidx.testutils.TestNavigator
-import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,7 +73,7 @@ class TestNavHostControllerTest {
         navController.setGraph(R.navigation.test_graph)
         val backStack = navController.backStack
         assertThat(backStack).hasSize(2)
-        assertThat(backStack[1].destination).isInstanceOf(TestNavigator.Destination::class.java)
+        assertThat(backStack[1].destination).isInstanceOf<TestNavigator.Destination>()
     }
 
     @Suppress("DEPRECATION")
@@ -87,7 +87,7 @@ class TestNavHostControllerTest {
             }
         val backStack = navController.backStack
         assertThat(backStack).hasSize(2)
-        assertThat(backStack[1].destination).isInstanceOf(ActivityNavigator.Destination::class.java)
+        assertThat(backStack[1].destination).isInstanceOf<ActivityNavigator.Destination>()
     }
 
     @UiThreadTest

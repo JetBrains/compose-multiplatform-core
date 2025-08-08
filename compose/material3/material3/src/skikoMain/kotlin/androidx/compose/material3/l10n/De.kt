@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.de() = mapOf(
     Strings.MenuCollapsed to "Minimiert",
     Strings.ToggleDropdownMenu to "Drop-down-Menü maximieren/minimieren",
     Strings.SnackbarDismiss to "Schließen",
+    Strings.SnackbarPaneTitle to "Warnmeldung",
     Strings.SearchBarSearch to "Suche",
     Strings.SuggestionsAvailable to "Vorschläge unten",
     Strings.DatePickerTitle to "Datum auswählen",
@@ -71,6 +72,8 @@ internal fun Translations.de() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Ansicht am unteren Rand minimieren",
     Strings.BottomSheetDismissDescription to "Ansicht am unteren Rand schließen",
     Strings.BottomSheetExpandDescription to "Ansicht am unteren Rand maximieren",
+    Strings.FloatingToolbarCollapse to "Symbolleiste minimieren",
+    Strings.FloatingToolbarExpand to "Symbolleiste maximieren",
     Strings.TooltipPaneDescription to "Kurzinfo",
     Strings.TooltipLongPressLabel to "Kurzinfo anzeigen",
     Strings.TimePickerPM to "Nachmittags",
@@ -85,4 +88,10 @@ internal fun Translations.de() = mapOf(
     Strings.TimePickerHour to "Stunde",
     Strings.TimePickerMinuteTextField to "für Minuten",
     Strings.TimePickerHourTextField to "für Stunde",
+    Strings.TimePickerToggleKeyboard to "In den Texteingabemodus wechseln, um die Uhrzeit einzugeben",
+    Strings.TimePickerToggleTouch to "In den Uhrzeitmodus wechseln, um die Uhrzeit einzugeben",
+    Strings.TimePickerDialogTitle to "Uhrzeit auswählen",
+    Strings.TimeInputDialogTitle to "Uhrzeit eingeben",
+    Strings.CloseRail to "Streifen schließen",
+    Strings.WideNavigationRailPaneTitle to "Navigationsstreifen",
 )

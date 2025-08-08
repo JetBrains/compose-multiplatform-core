@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.mn() = mapOf(
     Strings.MenuCollapsed to "Хураасан",
     Strings.ToggleDropdownMenu to "Унадаг цэсийг асаах/унтраах",
     Strings.SnackbarDismiss to "Хаах",
+    Strings.SnackbarPaneTitle to "Сэрэмжлүүлэг",
     Strings.SearchBarSearch to "Хайх",
     Strings.SuggestionsAvailable to "Доорх зөвлөмжүүд",
     Strings.DatePickerTitle to "Огноо сонгох",
@@ -71,6 +72,8 @@ internal fun Translations.mn() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Доод хүснэгтийг хураах",
     Strings.BottomSheetDismissDescription to "Доод хүснэгтийг хаах",
     Strings.BottomSheetExpandDescription to "Доод хүснэгтийг дэлгэх",
+    Strings.FloatingToolbarCollapse to "Самбарыг хураана уу",
+    Strings.FloatingToolbarExpand to "Самбарыг дэлгэнэ үү",
     Strings.TooltipPaneDescription to "Зөвлөмж",
     Strings.TooltipLongPressLabel to "Зөвлөмж харуулах",
     Strings.TimePickerPM to "ҮХ",
@@ -85,4 +88,10 @@ internal fun Translations.mn() = mapOf(
     Strings.TimePickerHour to "Цаг",
     Strings.TimePickerMinuteTextField to "минутын турш",
     Strings.TimePickerHourTextField to "цагийн турш",
+    Strings.TimePickerToggleKeyboard to "Цаг оруулахын тулд текст оруулах горим руу сэлгэх",
+    Strings.TimePickerToggleTouch to "Цаг оруулахын тулд цагны горим руу сэлгэх",
+    Strings.TimePickerDialogTitle to "Цаг сонгох",
+    Strings.TimeInputDialogTitle to "Цаг оруулах",
+    Strings.CloseRail to "Хажуугийн навигацын бүрэлдэхүүнийг хаах",
+    Strings.WideNavigationRailPaneTitle to "Хажуугийн навигацын бүрэлдэхүүн",
 )

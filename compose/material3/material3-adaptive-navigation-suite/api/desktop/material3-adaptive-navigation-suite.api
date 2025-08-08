@@ -1,8 +1,20 @@
 public final class androidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1164008505$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1305500908$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1476022764$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1548300991$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1866128853$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-492711772$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$568924554$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$895267259$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/DefaultNavigationSuiteScaffoldOverride : androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverride {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/DefaultNavigationSuiteScaffoldOverride;
+	public fun NavigationSuiteScaffold (Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverrideScope;Landroidx/compose/runtime/Composer;I)V
 }
 
 public abstract interface annotation class androidx/compose/material3/adaptive/navigationsuite/ExperimentalMaterial3AdaptiveNavigationSuiteApi : java/lang/annotation/Annotation {
@@ -16,12 +28,17 @@ public final class androidx/compose/material3/adaptive/navigationsuite/Navigatio
 	public final fun getNavigationDrawerContentColor-0d7_KjU ()J
 	public final fun getNavigationRailContainerColor-0d7_KjU ()J
 	public final fun getNavigationRailContentColor-0d7_KjU ()J
+	public final fun getShortNavigationBarContainerColor-0d7_KjU ()J
+	public final fun getShortNavigationBarContentColor-0d7_KjU ()J
+	public final fun getWideNavigationRailColors ()Landroidx/compose/material3/WideNavigationRailColors;
 }
 
 public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteDefaults;
-	public final fun colors-5tl4gsc (JJJJJJLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;
+	public final fun colors-0SPqQx0 (JJLandroidx/compose/material3/WideNavigationRailColors;JJJJJJLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;
+	public final synthetic fun colors-5tl4gsc (JJJJJJLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;
+	public final fun getVerticalArrangement ()Landroidx/compose/foundation/layout/Arrangement$Vertical;
 	public final fun itemColors (Landroidx/compose/material3/NavigationBarItemColors;Landroidx/compose/material3/NavigationRailItemColors;Landroidx/compose/material3/NavigationDrawerItemColors;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteItemColors;
 }
 
@@ -39,15 +56,64 @@ public final class androidx/compose/material3/adaptive/navigationsuite/Navigatio
 	public final fun calculateFromAdaptiveInfo-JYfApLo (Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;)Ljava/lang/String;
 	public final fun getContainerColor (Landroidx/compose/runtime/Composer;I)J
 	public final fun getContentColor (Landroidx/compose/runtime/Composer;I)J
+	public final fun getPrimaryActionContentAlignment ()Landroidx/compose/ui/Alignment$Horizontal;
+	public final fun navigationSuiteType-JYfApLo (Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;)Ljava/lang/String;
 }
 
 public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldKt {
 	public static final synthetic fun NavigationSuite-Og0-EV8 (Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuite-ST6eI8U (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;Landroidx/compose/foundation/layout/Arrangement$Vertical;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 	public static final fun NavigationSuite-koyC03U (Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteItem-CKlOKsw (ZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Landroidx/compose/material3/NavigationItemColors;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteItem-n-ovj3Y (ZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Landroidx/compose/material3/NavigationItemColors;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun NavigationSuiteScaffold-Fin9vsw (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun NavigationSuiteScaffold-thDv9LQ (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteScaffold-LDyHd3E (Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLandroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Landroidx/compose/foundation/layout/Arrangement$Vertical;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Alignment$Horizontal;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun NavigationSuiteScaffold-QXLVvyo (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLandroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffold-Ynpp4HM (Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLandroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Landroidx/compose/foundation/layout/Arrangement$Vertical;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Alignment$Horizontal;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;III)V
+	public static final fun NavigationSuiteScaffold-oDdo8iI (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLandroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffold-thDv9LQ (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteScaffoldLayout-7VEDjxc (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Alignment$Horizontal;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffoldLayout-Og0-EV8 (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun NavigationSuiteScaffoldLayout-Yk5QHw8 (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun NavigationSuiteScaffoldLayout-zTpdPhI (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteScaffoldLayout-koyC03U (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffoldLayout-zTpdPhI (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun getLocalNavigationSuiteScaffoldOverride ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun rememberNavigationSuiteScaffoldState (Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;
+}
+
+public abstract interface class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverride {
+	public abstract fun NavigationSuiteScaffold (Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverrideScope;Landroidx/compose/runtime/Composer;I)V
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverrideScope {
+	public static final field $stable I
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLandroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getContainerColor-0d7_KjU ()J
+	public final fun getContent ()Lkotlin/jvm/functions/Function2;
+	public final fun getContentColor-0d7_KjU ()J
+	public final fun getLayoutType-QfFTkUs ()Ljava/lang/String;
+	public final fun getModifier ()Landroidx/compose/ui/Modifier;
+	public final fun getNavigationSuiteColors ()Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;
+	public final fun getNavigationSuiteItems ()Lkotlin/jvm/functions/Function1;
+	public final fun getState ()Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState;
+}
+
+public abstract interface class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldState {
+	public abstract fun getCurrentValue ()Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
+	public abstract fun getTargetValue ()Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
+	public abstract fun hide (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isAnimating ()Z
+	public abstract fun show (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun snapTo (Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun toggle (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue : java/lang/Enum {
+	public static final field Hidden Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
+	public static final field Visible Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
+	public static fun values ()[Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldValue;
 }
 
 public abstract interface class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScope {
@@ -73,5 +139,9 @@ public final class androidx/compose/material3/adaptive/navigationsuite/Navigatio
 	public final fun getNavigationDrawer-QfFTkUs ()Ljava/lang/String;
 	public final fun getNavigationRail-QfFTkUs ()Ljava/lang/String;
 	public final fun getNone-QfFTkUs ()Ljava/lang/String;
+	public final fun getShortNavigationBarCompact-QfFTkUs ()Ljava/lang/String;
+	public final fun getShortNavigationBarMedium-QfFTkUs ()Ljava/lang/String;
+	public final fun getWideNavigationRailCollapsed-QfFTkUs ()Ljava/lang/String;
+	public final fun getWideNavigationRailExpanded-QfFTkUs ()Ljava/lang/String;
 }
 

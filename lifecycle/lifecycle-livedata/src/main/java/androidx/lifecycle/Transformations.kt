@@ -46,7 +46,7 @@ import androidx.arch.core.util.Function
 @MainThread
 @CheckResult
 @Suppress("UNCHECKED_CAST")
-fun <X, Y> LiveData<X>.map(
+public fun <X, Y> LiveData<X>.map(
     transform: (@JvmSuppressWildcards X) -> (@JvmSuppressWildcards Y)
 ): LiveData<Y> {
     val result =
@@ -66,7 +66,7 @@ fun <X, Y> LiveData<X>.map(
 @JvmName("map")
 @MainThread
 @CheckResult
-fun <X, Y> LiveData<X>.map(mapFunction: Function<X, Y>): LiveData<Y> {
+public fun <X, Y> LiveData<X>.map(mapFunction: Function<X, Y>): LiveData<Y> {
     val result = MediatorLiveData<Y>()
     result.addSource(this) { x -> result.value = mapFunction.apply(x) }
     return result
@@ -119,7 +119,7 @@ fun <X, Y> LiveData<X>.map(mapFunction: Function<X, Y>): LiveData<Y> {
 @MainThread
 @CheckResult
 @Suppress("UNCHECKED_CAST")
-fun <X, Y> LiveData<X>.switchMap(
+public fun <X, Y> LiveData<X>.switchMap(
     transform: (@JvmSuppressWildcards X) -> (@JvmSuppressWildcards LiveData<Y>)?
 ): LiveData<Y> {
     var liveData: LiveData<Y>? = null
@@ -156,7 +156,7 @@ fun <X, Y> LiveData<X>.switchMap(
 @JvmName("switchMap")
 @MainThread
 @CheckResult
-fun <X, Y> LiveData<X>.switchMap(switchMapFunction: Function<X, LiveData<Y>>): LiveData<Y> {
+public fun <X, Y> LiveData<X>.switchMap(switchMapFunction: Function<X, LiveData<Y>>): LiveData<Y> {
     val result = MediatorLiveData<Y>()
     result.addSource(
         this,
@@ -190,7 +190,7 @@ fun <X, Y> LiveData<X>.switchMap(switchMapFunction: Function<X, LiveData<Y>>): L
 @JvmName("distinctUntilChanged")
 @MainThread
 @CheckResult
-fun <X> LiveData<X>.distinctUntilChanged(): LiveData<X> {
+public fun <X> LiveData<X>.distinctUntilChanged(): LiveData<X> {
     var firstTime = true
     val outputLiveData =
         if (isInitialized) {

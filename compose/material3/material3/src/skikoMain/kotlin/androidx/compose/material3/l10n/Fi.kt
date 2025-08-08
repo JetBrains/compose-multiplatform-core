@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.fi() = mapOf(
     Strings.MenuCollapsed to "Tiivistetty",
     Strings.ToggleDropdownMenu to "Laita avattava valikko päälle",
     Strings.SnackbarDismiss to "Ohita",
+    Strings.SnackbarPaneTitle to "Ilmoitus",
     Strings.SearchBarSearch to "Hae",
     Strings.SuggestionsAvailable to "Ehdotuksia alla",
     Strings.DatePickerTitle to "Valitse päivämäärä",
@@ -71,6 +72,8 @@ internal fun Translations.fi() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Tiivistä alapaneeli",
     Strings.BottomSheetDismissDescription to "Hylkää alapaneeli",
     Strings.BottomSheetExpandDescription to "Laajenna alapaneeli",
+    Strings.FloatingToolbarCollapse to "Tiivistä työkalupalkki",
+    Strings.FloatingToolbarExpand to "Laajenna työkalupalkki",
     Strings.TooltipPaneDescription to "Vihjeteksti",
     Strings.TooltipLongPressLabel to "Näytä vihjeteksti",
     Strings.TimePickerPM to "IP",
@@ -85,4 +88,10 @@ internal fun Translations.fi() = mapOf(
     Strings.TimePickerHour to "Tunti",
     Strings.TimePickerMinuteTextField to "minuuttien osalta",
     Strings.TimePickerHourTextField to "tuntien osalta",
+    Strings.TimePickerToggleKeyboard to "Vaihda ajan syöttämiseen tekstitilassa",
+    Strings.TimePickerToggleTouch to "Vaihda ajan syöttämiseen kellotilassa",
+    Strings.TimePickerDialogTitle to "Valitse aika",
+    Strings.TimeInputDialogTitle to "Lisää aika",
+    Strings.CloseRail to "Sulje palkki",
+    Strings.WideNavigationRailPaneTitle to "Siirtymispalkki",
 )

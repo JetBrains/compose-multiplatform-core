@@ -45,35 +45,37 @@ class SplitAttributesTest {
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .build()
         val attrs2 =
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_HINGE)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .build()
         val attrs3 =
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_HINGE)
                 .setLayoutDirection(TOP_TO_BOTTOM)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
+                .build()
+        val animParams =
+            EmbeddingAnimationParams.Builder()
+                .setAnimationBackground(
+                    EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
+                )
                 .build()
         val attrs4 =
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_HINGE)
                 .setLayoutDirection(TOP_TO_BOTTOM)
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
-                )
+                .setAnimationParams(animParams)
                 .build()
         val attrs5 =
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_HINGE)
                 .setLayoutDirection(TOP_TO_BOTTOM)
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
-                )
+                .setAnimationParams(animParams)
                 .build()
 
         assertNotEquals(attrs1, attrs2)
@@ -99,7 +101,7 @@ class SplitAttributesTest {
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .build()
 
         // Fixed divider
@@ -107,7 +109,7 @@ class SplitAttributesTest {
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .setDividerAttributes(FixedDividerAttributes.Builder().build())
                 .build()
 
@@ -116,7 +118,7 @@ class SplitAttributesTest {
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .setDividerAttributes(DraggableDividerAttributes.Builder().build())
                 .build()
 
@@ -125,7 +127,7 @@ class SplitAttributesTest {
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(LOCALE)
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .setDividerAttributes(DraggableDividerAttributes.Builder().build())
                 .build()
 

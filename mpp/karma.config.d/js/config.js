@@ -20,9 +20,11 @@ const path = require("node:path");
 config.browserConsoleLogOptions.level = "debug";
 
 const basePath = config.basePath;
-// const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
 const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
-const configPath = path.resolve(rootPath, "mpp", "karma.config.d", "js");
+const karmaPath = path.resolve(rootPath, "mpp", "karma.config.d")
+const configPath = path.resolve(karmaPath, "js");
+
+const {configLaunchers} = require(path.resolve(karmaPath, "web", "commonKarmaConfig.js"))
 
 const debug = message => console.error(`[karma-config] ${message}`);
 debug(`karma basePath: ${basePath}`);
@@ -46,7 +48,7 @@ function KarmaWebpackOutputFramework(config) {
             "Webpack has not instantiated controller yet.\n" +
             "Check if you have enabled webpack preprocessor and framework before this framework"
         )
-        returns
+        return
     }
 
     config.files.push({
@@ -63,10 +65,6 @@ function KarmaWebpackOutputFramework(config) {
         watched: false
     });
 }
-config.proxies = {
-    "/skiko.js": path.resolve(basePath, "kotlin", "skiko.js"),
-    "/skiko.wasm": path.resolve(basePath, "kotlin", "skiko.wasm"),
-}
 
 const KarmaWebpackOutputPlugin = {
     'framework:webpack-output': ['factory', KarmaWebpackOutputFramework],
@@ -75,17 +73,21 @@ const KarmaWebpackOutputPlugin = {
 config.plugins.push(KarmaWebpackOutputPlugin);
 config.frameworks.push("webpack-output");
 
-config.files.push({pattern: path.resolve(basePath, "kotlin", "skiko.wasm"), included: false, served: true, watched: false},);
-config.files.push(path.resolve(basePath, "kotlin", "skiko.js"));
+config.files.push(
+    {pattern: path.resolve(basePath, "kotlin", "skiko.wasm"), included: false, served: true, watched: false},
+    {pattern: path.resolve(basePath, "kotlin", "skiko.mjs"), included: true, served: true, watched: false, type: 'module'},
+    {pattern: path.resolve(basePath, "kotlin", "js-reexport-symbols.mjs"), included: false, served: true, watched: false, type: 'module'},
+);
 
-config.customLaunchers = {
-    ChromeForComposeTests: {
-        base: "Chrome",
-        flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
-    }
+config.proxies = {
+    "/skiko.mjs": path.resolve(basePath, "kotlin", "skiko.mjs"),
+    "/skiko.wasm": path.resolve(basePath, "kotlin", "skiko.wasm"),
+    "/js-reexport-symbols.mjs": path.resolve(basePath, "kotlin", "js-reexport-symbols.mjs"),
 }
 
-config.browsers = ["ChromeForComposeTests"];
+
+
+configLaunchers(config);
 
 // A workaround from https://android-review.googlesource.com/c/platform/frameworks/support/+/3413540
 (function() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ro() = mapOf(
     Strings.MenuCollapsed to "Restrâns",
     Strings.ToggleDropdownMenu to "Comută meniul drop-down",
     Strings.SnackbarDismiss to "Închide",
+    Strings.SnackbarPaneTitle to "Alertă",
     Strings.SearchBarSearch to "Caută",
     Strings.SuggestionsAvailable to "Sugestii mai jos",
     Strings.DatePickerTitle to "Selectează data",
@@ -71,6 +72,8 @@ internal fun Translations.ro() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Restrânge foaia din partea de jos",
     Strings.BottomSheetDismissDescription to "Închide foaia din partea de jos",
     Strings.BottomSheetExpandDescription to "Extinde foaia din partea de jos",
+    Strings.FloatingToolbarCollapse to "Restrânge bara de instrumente",
+    Strings.FloatingToolbarExpand to "Extinde bara de instrumente",
     Strings.TooltipPaneDescription to "Balon explicativ",
     Strings.TooltipLongPressLabel to "Afișează balonul explicativ",
     Strings.TimePickerPM to "p.m.",
@@ -85,4 +88,10 @@ internal fun Translations.ro() = mapOf(
     Strings.TimePickerHour to "Oră",
     Strings.TimePickerMinuteTextField to "pentru minute",
     Strings.TimePickerHourTextField to "pentru oră",
+    Strings.TimePickerToggleKeyboard to "Pentru a introduce ora, comută la modul de introducere a textului",
+    Strings.TimePickerToggleTouch to "Pentru a introduce ora, comută la modul ceas.",
+    Strings.TimePickerDialogTitle to "Selectează ora",
+    Strings.TimeInputDialogTitle to "Introdu ora",
+    Strings.CloseRail to "Închide bara",
+    Strings.WideNavigationRailPaneTitle to "Bară de navigare",
 )

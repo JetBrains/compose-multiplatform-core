@@ -16,23 +16,19 @@
 
 package androidx.build
 
-import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import org.gradle.api.Project
-import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Exec
-import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getValue
+import org.gradle.kotlin.dsl.getByName
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
-import org.jetbrains.kotlin.gradle.targets.native.DefaultSimulatorTestRun
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.tomlj.Toml
+import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 
 open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     val project: Project
@@ -41,6 +37,18 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         project.extensions.getByType(KotlinMultiplatformExtension::class.java)
 
     private val skikoVersion: String
+
+    fun KotlinJsTest.passTestFlagsToEnvironment() {
+        listOf(
+            "jetbrains.androidx.web.tests.enableChrome",
+            "jetbrains.androidx.web.tests.enableFirefox",
+            "jetbrains.androidx.web.tests.enableSafari"
+        ).forEach { propertyName ->
+            if (project.findProperty(propertyName)?.toString()?.toBoolean() == true) {
+                environment(propertyName, "1")
+            }
+        }
+    }
 
     init {
         val toml = Toml.parse(
@@ -80,10 +88,14 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         js(KotlinJsCompilerType.IR) {
             browser {
                 testTask {
+                    it.passTestFlagsToEnvironment()
+
                     it.useKarma {
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/js/config.js
                         useChrome()
+                        useFirefox()
+                        useSafari()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/js")
                         )
@@ -108,7 +120,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             it.from(skikoWasm.map { artifact ->
                 project.zipTree(artifact)
                     .matching { pattern ->
-                        pattern.include("skiko.wasm", "skiko.js")
+                        pattern.include("skiko.wasm", "skiko.mjs", "js-reexport-symbols.mjs")
                     }
             })
         }
@@ -133,10 +145,14 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         wasmJs {
             browser {
                 testTask {
+                    it.passTestFlagsToEnvironment()
+
                     it.useKarma {
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/wasm/config.js
                         useChrome()
+                        useFirefox()
+                        useSafari()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/wasm")
                         )
@@ -190,8 +206,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         iosArm64("uikitArm64")
         iosSimulatorArm64("uikitSimArm64")
 
-        val commonMain = sourceSets.getByName("commonMain")
-        val nativeMain = sourceSets.create("nativeMain")
+        val nativeMain = getOrCreateNativeMain()
         val darwinMain = sourceSets.create("darwinMain")
         val macosMain = sourceSets.create("macosMain")
         val macosX64Main = sourceSets.getByName("macosX64Main")
@@ -200,7 +215,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val uikitX64Main = sourceSets.getByName("uikitX64Main")
         val uikitArm64Main = sourceSets.getByName("uikitArm64Main")
         val uikitSimArm64Main = sourceSets.getByName("uikitSimArm64Main")
-        nativeMain.dependsOn(commonMain)
         darwinMain.dependsOn(nativeMain)
         macosMain.dependsOn(darwinMain)
         macosX64Main.dependsOn(macosMain)
@@ -210,8 +224,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         uikitArm64Main.dependsOn(uikitMain)
         uikitSimArm64Main.dependsOn(uikitMain)
 
-        val commonTest = sourceSets.getByName("commonTest")
-        val nativeTest = sourceSets.create("nativeTest")
+        val nativeTest = getOrCreateNativeTest()
         val darwinTest = sourceSets.create("darwinTest")
         val macosTest = sourceSets.create("macosTest")
         val macosX64Test = sourceSets.getByName("macosX64Test")
@@ -220,7 +233,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val uikitX64Test = sourceSets.getByName("uikitX64Test")
         val uikitArm64Test = sourceSets.getByName("uikitArm64Test")
         val uikitSimArm64Test = sourceSets.getByName("uikitSimArm64Test")
-        nativeTest.dependsOn(commonTest)
         darwinTest.dependsOn(nativeTest)
         macosTest.dependsOn(darwinTest)
         macosX64Test.dependsOn(macosTest)
@@ -231,12 +243,25 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         uikitSimArm64Test.dependsOn(uikitTest)
     }
 
-    override fun linuxX64(): Unit = multiplatformExtension.run {
+    override fun linux(): Unit = multiplatformExtension.run {
         linuxX64()
-    }
-
-    override fun linuxArm64(): Unit = multiplatformExtension.run {
         linuxArm64()
+
+        val nativeMain = getOrCreateNativeMain()
+        val linuxMain = sourceSets.create("linuxMain")
+        val linuxX64Main = sourceSets.getByName("linuxX64Main")
+        val linuxArm64Main = sourceSets.getByName("linuxArm64Main")
+        linuxMain.dependsOn(nativeMain)
+        linuxX64Main.dependsOn(linuxMain)
+        linuxArm64Main.dependsOn(linuxMain)
+
+        val nativeTest = getOrCreateNativeTest()
+        val linuxTest = sourceSets.create("linuxTest")
+        val linuxX64Test = sourceSets.getByName("linuxX64Test")
+        val linuxArm64Test = sourceSets.getByName("linuxArm64Test")
+        linuxTest.dependsOn(nativeTest)
+        linuxX64Test.dependsOn(linuxTest)
+        linuxArm64Test.dependsOn(linuxTest)
     }
 
     private fun getOrCreateJvmMain(): KotlinSourceSet =
@@ -244,6 +269,12 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
 
     private fun getOrCreateJvmTest(): KotlinSourceSet =
         getOrCreateSourceSet("jvmTest", "commonTest")
+
+    private fun getOrCreateNativeMain(): KotlinSourceSet =
+        getOrCreateSourceSet("nativeMain", "commonMain")
+
+    private fun getOrCreateNativeTest(): KotlinSourceSet =
+        getOrCreateSourceSet("nativeTest", "commonTest")
 
     private fun getOrCreateSourceSet(
         name: String,
@@ -283,7 +314,17 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
                     addAll(darwinFlags)
                     if (isIOS) addAll(iosFlags)
                 }
-                it.freeCompilerArgs = it.freeCompilerArgs + flags
+
+                // TODO: Remove when the issue is fixed in KGP
+                // https://youtrack.jetbrains.com/issue/KT-74564
+                // it.freeCompilerArgs += flags
+                //
+                // Fixes problem when instrumented tests compilation is not properly applied to
+                // the framework configuration.
+                it.linkTaskProvider.configure {
+                    @Suppress("DEPRECATION")
+                    it.kotlinOptions.freeCompilerArgs += flags
+                }
             }
         }
         multiplatformExtension.run {
@@ -295,68 +336,36 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         }
     }
 
-    // https://youtrack.jetbrains.com/issue/KT-55751/MPP-Gradle-Consumable-configurations-must-have-unique-attributes
-    private val instrumentedTestAttribute = Attribute.of("instrumentedTest", String::class.java)
-    private val instrumentedTestCompilationAttribute = Attribute.of("instrumentedTestCompilation", String::class.java)
-    override fun iosInstrumentedTest(): Unit =
+    override fun iosInstrumentedTest() {
         multiplatformExtension.run {
-            fun getDeviceName(): String? {
-                return project.findProperty("iosSimulatorName") as? String
-            }
-
-            val bootTask = project.tasks.register("bootIosSimulator", Exec::class.java) { task ->
-                task.isIgnoreExitValue = true
-                task.errorOutput = ByteArrayOutputStream()
-                task.doFirst {
-                    val simulatorName = getDeviceName()
-                        ?: error("Device is not provided. Use Use the -PiosSimulatorName=<Device name> flag to pass the device.")
-                    task.commandLine("xcrun", "simctl", "boot", simulatorName)
-                }
-                task.doLast {
-                    val result = task.executionResult.get()
-                    if (result.exitValue != 148 && result.exitValue != 149) { // ignoring device already booted errors
-                        result.assertNormalExitValue()
-                    }
-                }
-            }
+            val uikitInstrumentedTest = sourceSets.create("uikitInstrumentedTest")
 
             fun KotlinNativeTargetWithSimulatorTests.configureTestRun() {
-                attributes.attribute(instrumentedTestAttribute, "test")
-                testRuns.forEach {
-                    (it as DefaultSimulatorTestRun).executionTask.configure { task ->
-                        task.dependsOn(bootTask)
-                        task.standalone.set(false)
-                        task.device.set(getDeviceName())
+                val testCompilation = compilations.create("instrumentedTest") {
+                    compilerOptions {
+                        // Generate K/N test runner for kotlin.test @Test support
+                        freeCompilerArgs.add("-tr")
                     }
+
+                    it.associateWith(compilations.getByName("test"))
+                    it.defaultSourceSet.dependsOn(uikitInstrumentedTest)
                 }
-                compilations.forEach {
-                    it.attributes.attribute(instrumentedTestCompilationAttribute, "test")
+                binaries.framework("InstrumentedTest", setOf(DEBUG)) {
+                    compilation = testCompilation
+                    baseName = "InstrumentedTest"
+                    isStatic = true
                 }
             }
-
-            iosX64("uikitInstrumentedX64") {
-                configureTestRun()
-            }
-            // Testing on real iOS devices is not supported.
-            // iosArm64("uikitInstrumentedArm64") { ... }
-            iosSimulatorArm64("uikitInstrumentedSimArm64") {
-                configureTestRun()
-            }
-
-            val uikitMain = sourceSets.getByName("uikitMain")
-            val uikitInstrumentedMain = sourceSets.create("uikitInstrumentedMain")
-            val uikitInstrumentedX64Main = sourceSets.getByName("uikitInstrumentedX64Main")
-            val uikitInstrumentedSimArm64Main = sourceSets.getByName("uikitInstrumentedSimArm64Main")
-            uikitInstrumentedMain.dependsOn(uikitMain)
-            uikitInstrumentedX64Main.dependsOn(uikitInstrumentedMain)
-            uikitInstrumentedSimArm64Main.dependsOn(uikitInstrumentedMain)
-
-            val commonTest = sourceSets.getByName("commonTest")
-            val uikitInstrumentedTest = sourceSets.create("uikitInstrumentedTest")
-            val uikitInstrumentedX64Test = sourceSets.getByName("uikitInstrumentedX64Test")
-            val uikitInstrumentedSimArm64Test = sourceSets.getByName("uikitInstrumentedSimArm64Test")
-            uikitInstrumentedTest.dependsOn(commonTest)
-            uikitInstrumentedX64Test.dependsOn(uikitInstrumentedTest)
-            uikitInstrumentedSimArm64Test.dependsOn(uikitInstrumentedTest)
+            testableTargets.getByName(
+                "uikitX64",
+                KotlinNativeTargetWithSimulatorTests::class,
+                KotlinNativeTargetWithSimulatorTests::configureTestRun
+            )
+            testableTargets.getByName(
+                "uikitSimArm64",
+                KotlinNativeTargetWithSimulatorTests::class,
+                KotlinNativeTargetWithSimulatorTests::configureTestRun
+            )
         }
+    }
 }

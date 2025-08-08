@@ -24,15 +24,15 @@ public final class androidx/window/core/layout/WindowSizeClass {
 	public fun <init> (FF)V
 	public fun <init> (II)V
 	public static final fun compute (FF)Landroidx/window/core/layout/WindowSizeClass;
-	public final fun containsHeightDp (I)Z
-	public final fun containsWidthDp (I)Z
-	public final fun containsWindowSizeDp (II)Z
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getMinHeightDp ()I
 	public final fun getMinWidthDp ()I
 	public final fun getWindowHeightSizeClass ()Landroidx/window/core/layout/WindowHeightSizeClass;
 	public final fun getWindowWidthSizeClass ()Landroidx/window/core/layout/WindowWidthSizeClass;
 	public fun hashCode ()I
+	public final fun isAtLeastBreakpoint (II)Z
+	public final fun isHeightAtLeastBreakpoint (I)Z
+	public final fun isWidthAtLeastBreakpoint (I)Z
 	public fun toString ()Ljava/lang/String;
 }
 

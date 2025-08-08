@@ -16,17 +16,6 @@
 
 package androidx.compose.mpp.demo.accessibility
 
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-
-// TODO https://youtrack.jetbrains.com/issue/CMP-7679/Revert-material3-to-1.4.-version-after-material3-isnt-needed-in-jb-main
-@Composable
-fun SampleScrollingTooltipScreen() {
-    Text("Disabled until Material3 is reverted back to 1.4 version")
-}
-
-/*
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -110,5 +99,3 @@ fun SampleScrollingTooltipScreen() {
         }
     }
 }
-
-*/

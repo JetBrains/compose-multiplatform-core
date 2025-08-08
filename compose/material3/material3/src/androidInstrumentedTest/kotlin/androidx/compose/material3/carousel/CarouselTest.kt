@@ -16,6 +16,9 @@
 
 package androidx.compose.material3.carousel
 
+import android.graphics.Rect
+import android.os.Build
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
@@ -34,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,6 +46,7 @@ import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -128,6 +133,18 @@ class CarouselTest {
     }
 
     @Test
+    fun uncontainedCarousel_userScrollDisabled_doesNotScroll() {
+        createCarousel(userScrollEnabled = false)
+        assertThat(carouselState.pagerState.currentPage).isEqualTo(0)
+
+        rule.onNodeWithTag(CarouselTestTag).performTouchInput {
+            swipeWithVelocity(centerRight, centerLeft, 1000f)
+        }
+
+        rule.runOnIdle { assertThat(carouselState.pagerState.currentPage).isEqualTo(0) }
+    }
+
+    @Test
     fun carouselSingleAdvanceFling_capsScroll() {
         // Arrange
         createCarousel()
@@ -153,7 +170,7 @@ class CarouselTest {
         createCarousel(
             flingBehavior = { state: CarouselState ->
                 CarouselDefaults.multiBrowseFlingBehavior(state)
-            },
+            }
         )
         assertThat(carouselState.pagerState.currentPage).isEqualTo(0)
 
@@ -188,7 +205,7 @@ class CarouselTest {
                     availableSpace = 380f,
                     itemSpacing = 8f,
                     beforeContentPadding = 0f,
-                    afterContentPadding = 0f
+                    afterContentPadding = 0f,
                 )
 
             // Max offset should only add item spacing between each item
@@ -198,11 +215,39 @@ class CarouselTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun carousel_semanticsBoundsAreReportedCorrectly() {
+        lateinit var androidView: View
+
+        createCarousel(modifier = Modifier.width(300.dp).height(300.dp)) {
+            androidView = LocalView.current
+            Item(index = it)
+        }
+
+        // Nodes that are out of place
+        val item1 = rule.onNodeWithTag("1").fetchSemanticsNode()
+        val item2 = rule.onNodeWithTag("2").fetchSemanticsNode()
+
+        // verify that the a11y sees the correct semantics node size
+        rule.runOnUiThread {
+            val item1NodeInfo =
+                androidView.accessibilityNodeProvider.createAccessibilityNodeInfo(item1.id)
+            val item2NodeInfo =
+                androidView.accessibilityNodeProvider.createAccessibilityNodeInfo(item2.id)
+            val bounds = Rect(-1, -1, -1, -1)
+            item1NodeInfo?.getBoundsInScreen(bounds)
+            assertThat(bounds.width().toFloat()).isWithin(1f).of(item1.size.width.toFloat())
+            item2NodeInfo?.getBoundsInScreen(bounds)
+            assertThat(bounds.width().toFloat()).isWithin(1f).of(item2.size.width.toFloat())
+        }
+    }
+
     @Composable
     internal fun Item(index: Int) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.Blue).testTag("$index").focusable(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             BasicText(text = index.toString())
         }
@@ -214,12 +259,9 @@ class CarouselTest {
         modifier: Modifier = Modifier.width(412.dp).height(221.dp),
         orientation: Orientation = Orientation.Horizontal,
         flingBehavior: @Composable (CarouselState) -> TargetedFlingBehavior =
-            @Composable {
-                CarouselDefaults.singleAdvanceFlingBehavior(
-                    state = it,
-                )
-            },
-        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) }
+            @Composable { CarouselDefaults.singleAdvanceFlingBehavior(state = it) },
+        userScrollEnabled: Boolean = true,
+        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) },
     ) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberCarouselState(initialItem, itemCount).also { carouselState = it }
@@ -237,6 +279,7 @@ class CarouselTest {
                     )
                 },
                 flingBehavior = flingBehavior(state),
+                userScrollEnabled = userScrollEnabled,
                 maxNonFocalVisibleItemCount = 2,
                 modifier = modifier.testTag(CarouselTestTag),
                 itemSpacing = 0.dp,
@@ -250,7 +293,7 @@ class CarouselTest {
         initialItem: Int = 0,
         itemCount: () -> Int = { DefaultItemCount },
         modifier: Modifier = Modifier.width(412.dp).height(221.dp),
-        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) }
+        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) },
     ) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberCarouselState(initialItem, itemCount).also { carouselState = it }

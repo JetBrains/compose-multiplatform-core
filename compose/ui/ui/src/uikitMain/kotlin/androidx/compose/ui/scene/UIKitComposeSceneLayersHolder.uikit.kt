@@ -29,7 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.Canvas
-import platform.UIKit.UIWindow
+import platform.UIKit.UIView
 
 /**
  * A class responsible for managing and rendering [UIKitComposeSceneLayer]s.
@@ -72,7 +72,7 @@ internal class UIKitComposeSceneLayersHolder(
         )
     }
 
-    var window: UIWindow? = null
+    var containerView: UIView? = null
         set(value) {
             if (field != value) {
                 field = value
@@ -102,6 +102,8 @@ internal class UIKitComposeSceneLayersHolder(
         }
     }
 
+    fun animateCrossFadeTransition(scope: CoroutineScope) = view.animateCrossFadeTransition(scope)
+
     fun dispose(hasViewAppeared: Boolean) {
         // `dispose` is called instead of `close`, because `close` is also used imperatively
         // to remove the layer from the array based on user interaction.
@@ -117,18 +119,19 @@ internal class UIKitComposeSceneLayersHolder(
 
         view.updateMetalView(metalView = null)
         view.removeFromSuperview()
+        containerView = null
     }
 
     fun attach(layer: UIKitComposeSceneLayer, hasViewAppeared: Boolean) {
         val isFirstLayer = layers.isEmpty()
 
         layers.add(layer)
-        view.insertSubview(layer.interopContainerView, belowSubview = metalView)
-        layer.interopContainerView.addLayoutConstraintsToMatch(view)
-        view.embedSubview(layer.view)
+        view.insertSubview(layer.interactionView, belowSubview = metalView)
+        layer.interactionView.addLayoutConstraintsToMatch(view)
+        view.embedSubview(layer.overlayView)
 
         if (isFirstLayer) {
-            window?.embedSubview(view)
+            containerView?.embedSubview(view)
         }
 
         if (hasViewAppeared) {
@@ -173,6 +176,17 @@ internal class UIKitComposeSceneLayersHolder(
         this.layers.fastForEach {
             it.sceneWillDisappear()
         }
+    }
+
+    val hasInteropViews: Boolean get() {
+        layersCache.withCopy { layers ->
+            layers.fastForEach {
+                if (it.hasInteropViews) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /**

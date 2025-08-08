@@ -16,13 +16,10 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import kotlin.coroutines.CoroutineContext
 
-@OptIn(ExperimentalComposeApi::class)
-internal actual class SnapshotContextElementImpl actual constructor(
-    snapshot: Snapshot
-) : SnapshotContextElement {
+internal actual class SnapshotContextElementImpl actual constructor(snapshot: Snapshot) :
+    SnapshotContextElement {
 
     init {
         error("provide SnapshotContextElementImpl when coroutines lib has necessary APIs")

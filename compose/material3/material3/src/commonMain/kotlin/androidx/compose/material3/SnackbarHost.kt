@@ -18,10 +18,10 @@ package androidx.compose.material3
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.getString
+import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RecomposeScope
@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.compose.ui.util.fastForEach
@@ -101,7 +102,7 @@ class SnackbarHostState {
         actionLabel: String? = null,
         withDismissAction: Boolean = false,
         duration: SnackbarDuration =
-            if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Indefinite
+            if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Indefinite,
     ): SnackbarResult =
         showSnackbar(SnackbarVisualsImpl(message, actionLabel, withDismissAction, duration))
 
@@ -117,7 +118,6 @@ class SnackbarHostState {
      * All of this allows for granular control over the snackbar queue from within:
      *
      * @sample androidx.compose.material3.samples.ScaffoldWithCustomSnackbar
-     *
      * @param visuals [SnackbarVisuals] that are used to create a Snackbar
      * @return [SnackbarResult.ActionPerformed] if option action has been clicked or
      *   [SnackbarResult.Dismissed] if snackbar has been dismissed via timeout or by the user
@@ -137,7 +137,7 @@ class SnackbarHostState {
         override val message: String,
         override val actionLabel: String?,
         override val withDismissAction: Boolean,
-        override val duration: SnackbarDuration
+        override val duration: SnackbarDuration,
     ) : SnackbarVisuals {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -164,7 +164,7 @@ class SnackbarHostState {
 
     private class SnackbarDataImpl(
         override val visuals: SnackbarVisuals,
-        private val continuation: CancellableContinuation<SnackbarResult>
+        private val continuation: CancellableContinuation<SnackbarResult>,
     ) : SnackbarData {
 
         override fun performAction() {
@@ -208,7 +208,6 @@ class SnackbarHostState {
  * of the [SnackbarHost] to the [Scaffold]:
  *
  * @sample androidx.compose.material3.samples.ScaffoldWithCustomSnackbar
- *
  * @param hostState state of this component to read and show [Snackbar]s accordingly
  * @param modifier the [Modifier] to be applied to this component
  * @param snackbar the instance of the [Snackbar] to be shown at the appropriate time with
@@ -218,7 +217,7 @@ class SnackbarHostState {
 fun SnackbarHost(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    snackbar: @Composable (SnackbarData) -> Unit = { Snackbar(it) }
+    snackbar: @Composable (SnackbarData) -> Unit = { Snackbar(it) },
 ) {
     val currentSnackbarData = hostState.currentSnackbarData
     val accessibilityManager = LocalAccessibilityManager.current
@@ -227,7 +226,7 @@ fun SnackbarHost(
             val duration =
                 currentSnackbarData.visuals.duration.toMillis(
                     currentSnackbarData.visuals.actionLabel != null,
-                    accessibilityManager
+                    accessibilityManager,
                 )
             delay(duration)
             currentSnackbarData.dismiss()
@@ -236,7 +235,7 @@ fun SnackbarHost(
     FadeInFadeOutWithScale(
         current = hostState.currentSnackbarData,
         modifier = modifier,
-        content = snackbar
+        content = snackbar,
     )
 }
 
@@ -293,13 +292,13 @@ enum class SnackbarDuration {
     Long,
 
     /** Show the Snackbar indefinitely until explicitly dismissed or action is clicked */
-    Indefinite
+    Indefinite,
 }
 
 // TODO: magic numbers adjustment
 internal fun SnackbarDuration.toMillis(
     hasAction: Boolean,
-    accessibilityManager: AccessibilityManager?
+    accessibilityManager: AccessibilityManager?,
 ): Long {
     val original =
         when (this) {
@@ -314,7 +313,7 @@ internal fun SnackbarDuration.toMillis(
         original,
         containsIcons = true,
         containsText = true,
-        containsControls = hasAction
+        containsControls = hasAction,
     )
 }
 
@@ -324,8 +323,9 @@ internal fun SnackbarDuration.toMillis(
 private fun FadeInFadeOutWithScale(
     current: SnackbarData?,
     modifier: Modifier = Modifier,
-    content: @Composable (SnackbarData) -> Unit
+    content: @Composable (SnackbarData) -> Unit,
 ) {
+    val a11yPaneTitle = getString(Strings.SnackbarPaneTitle)
     val state = remember { FadeInFadeOutState<SnackbarData?>() }
     if (current != state.current) {
         state.current = current
@@ -337,22 +337,10 @@ private fun FadeInFadeOutWithScale(
         keys.fastFilterNotNull().fastMapTo(state.items) { key ->
             FadeInFadeOutAnimationItem(key) { children ->
                 val isVisible = key == current
-                val duration = if (isVisible) SnackbarFadeInMillis else SnackbarFadeOutMillis
-                val delay = SnackbarFadeOutMillis + SnackbarInBetweenDelayMillis
-                val animationDelay =
-                    if (isVisible && keys.fastFilterNotNull().size != 1) {
-                        delay
-                    } else {
-                        0
-                    }
+                // TODO Load the motionScheme tokens from the component tokens file
                 val opacity =
                     animatedOpacity(
-                        animation =
-                            tween(
-                                easing = LinearEasing,
-                                delayMillis = animationDelay,
-                                durationMillis = duration
-                            ),
+                        animation = MotionSchemeKeyTokens.FastEffects.value(),
                         visible = isVisible,
                         onAnimationFinish = {
                             if (key != state.current) {
@@ -360,30 +348,29 @@ private fun FadeInFadeOutWithScale(
                                 state.items.removeAll { it.key == key }
                                 state.scope?.invalidate()
                             }
-                        }
+                        },
                     )
                 val scale =
                     animatedScale(
-                        animation =
-                            tween(
-                                easing = FastOutSlowInEasing,
-                                delayMillis = animationDelay,
-                                durationMillis = duration
-                            ),
-                        visible = isVisible
+                        // TODO Load the motionScheme tokens from the component tokens file
+                        animation = MotionSchemeKeyTokens.FastSpatial.value(),
+                        visible = isVisible,
                     )
                 Box(
                     Modifier.graphicsLayer(
                             scaleX = scale.value,
                             scaleY = scale.value,
-                            alpha = opacity.value
+                            alpha = opacity.value,
                         )
                         .semantics {
-                            liveRegion = LiveRegionMode.Polite
+                            if (isVisible) {
+                                liveRegion = LiveRegionMode.Polite
+                            }
                             dismiss {
                                 key.dismiss()
                                 true
                             }
+                            paneTitle = a11yPaneTitle
                         }
                 ) {
                     children()
@@ -406,7 +393,7 @@ private class FadeInFadeOutState<T> {
 
 private data class FadeInFadeOutAnimationItem<T>(
     val key: T,
-    val transition: FadeInFadeOutTransition
+    val transition: FadeInFadeOutTransition,
 )
 
 private typealias FadeInFadeOutTransition = @Composable (content: @Composable () -> Unit) -> Unit
@@ -415,7 +402,7 @@ private typealias FadeInFadeOutTransition = @Composable (content: @Composable ()
 private fun animatedOpacity(
     animation: AnimationSpec<Float>,
     visible: Boolean,
-    onAnimationFinish: () -> Unit = {}
+    onAnimationFinish: () -> Unit = {},
 ): State<Float> {
     val alpha = remember { Animatable(if (!visible) 1f else 0f) }
     LaunchedEffect(visible) {
@@ -433,7 +420,3 @@ private fun animatedScale(animation: AnimationSpec<Float>, visible: Boolean): St
     }
     return scale.asState()
 }
-
-private const val SnackbarFadeInMillis = 150
-private const val SnackbarFadeOutMillis = 75
-private const val SnackbarInBetweenDelayMillis = 0

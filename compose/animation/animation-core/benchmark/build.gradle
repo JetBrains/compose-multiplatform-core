@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import androidx.build.SoftwareType
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
@@ -24,10 +26,10 @@ plugins {
 
 dependencies {
 
-    androidTestImplementation project(":compose:animation:animation-core")
-    androidTestImplementation androidxArtifact(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
+    androidTestImplementation(project(":compose:animation:animation-core"))
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinTestCommon)
@@ -35,5 +37,11 @@ dependencies {
 }
 
 android {
-    namespace "androidx.compose.animation.core.benchmark"
+    compileSdk = 35
+
+    namespace = "androidx.compose.animation.core.benchmark"
+}
+
+androidx {
+    type = SoftwareType.BENCHMARK
 }

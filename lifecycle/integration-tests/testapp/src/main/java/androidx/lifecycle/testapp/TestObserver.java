@@ -29,9 +29,9 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.OnLifecycleEvent;
 
-import java.util.List;
-
 import kotlin.Pair;
+
+import java.util.List;
 
 class TestObserver implements LifecycleObserver {
     private final List<Pair<TestEvent, Event>> mCollectedEvents;

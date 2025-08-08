@@ -21,34 +21,49 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.util.fastRoundToInt
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
  * Reserves at least 48.dp in size to disambiguate touch interactions if the element would measure
  * smaller.
  *
- * https://m3.material.io/foundations/accessible-design/accessibility-basics#28032e45-c598-450c-b355-f9fe737b1cd8
+ * [Target
+ * sizes](https://m3.material.io/foundations/designing/structure#dab862b1-e042-4c40-b680-b484b9f077f6)
  *
  * This uses the Material recommended minimum size of 48.dp x 48.dp, which may not the same as the
  * system enforced minimum size. The minimum clickable / touch target size (48.dp by default) is
- * controlled by the system via ViewConfiguration` and automatically expanded at the touch input
+ * controlled by the system via [ViewConfiguration] and automatically expanded at the touch input
  * layer.
  *
  * This modifier is not needed for touch target expansion to happen. It only affects layout, to make
  * sure there is adequate space for touch target expansion.
+ *
+ * Because layout constraints are affected by modifier order, for this modifier to take effect, it
+ * must come before any size modifiers on the element that might limit its constraints.
+ *
+ * @sample androidx.compose.material3.samples.MinimumInteractiveComponentSizeSample
+ * @sample androidx.compose.material3.samples.MinimumInteractiveComponentSizeCheckboxRowSample
+ * @see LocalMinimumInteractiveComponentSize
  */
 @Stable
 fun Modifier.minimumInteractiveComponentSize(): Modifier = this then MinimumInteractiveModifier
@@ -73,11 +88,16 @@ internal object MinimumInteractiveModifier : ModifierNodeElement<MinimumInteract
     override fun equals(other: Any?) = (other === this)
 }
 
+@Suppress("PrimitiveInCollection")
 internal class MinimumInteractiveModifierNode :
     Modifier.Node(), CompositionLocalConsumerModifierNode, LayoutModifierNode {
+
+    private var alignmentLinesCache: MutableMap<AlignmentLine, Int>? = null
+
+    @Suppress("PrimitiveInCollection")
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = currentValueOf(LocalMinimumInteractiveComponentSize).coerceAtLeast(0.dp)
         val placeable = measurable.measure(constraints)
@@ -98,13 +118,53 @@ internal class MinimumInteractiveModifierNode :
                 placeable.height
             }
 
-        return layout(width, height) {
+        if (enforcement) {
+            updateAlignmentLines(sizePx, placeable)
+        }
+
+        return layout(
+            width = width,
+            height = height,
+            alignmentLines = alignmentLinesCache ?: emptyMap(),
+        ) {
             val centerX = ((width - placeable.width) / 2f).roundToInt()
             val centerY = ((height - placeable.height) / 2f).roundToInt()
             placeable.place(centerX, centerY)
         }
     }
+
+    /**
+     * Updates the alignment lines cache based on the enforcement of minimum interactive size and
+     * the measured size of the placeable.
+     *
+     * If the enforced minimum size (`sizePx`) is larger than the placeable's width or height, it
+     * calculates the necessary alignment offsets and adds them to the cache. If the minimum size is
+     * not enforced or is smaller than the placeable's dimensions, it sets the alignment lines to 0.
+     *
+     * @param enforcement A boolean indicating whether the minimum interactive size is enforced.
+     * @param sizePx The minimum size in pixels that should be enforced.
+     * @param placeable The [Placeable] object representing the measured component.
+     */
+    private fun updateAlignmentLines(sizePx: Int, placeable: Placeable) {
+        val cache = getAlignmentLinesCache()
+        cache[MinimumInteractiveLeftAlignmentLine] =
+            ((sizePx - placeable.width) / 2f).fastRoundToInt().coerceAtLeast(0)
+        cache[MinimumInteractiveTopAlignmentLine] =
+            ((sizePx - placeable.height) / 2f).fastRoundToInt().coerceAtLeast(0)
+    }
+
+    /**
+     * Returns a [MutableMap] that will act as a cache of alignment lines.
+     *
+     * In case it is null, it will be initialized and assigned to the [alignmentLinesCache].
+     */
+    private fun getAlignmentLinesCache(): MutableMap<AlignmentLine, Int> =
+        alignmentLinesCache
+            ?: LinkedHashMap<AlignmentLine, Int>(2).also { alignmentLinesCache = it }
 }
+
+internal val MinimumInteractiveTopAlignmentLine = HorizontalAlignmentLine(::min)
+internal val MinimumInteractiveLeftAlignmentLine = VerticalAlignmentLine(::min)
 
 /**
  * CompositionLocal that configures whether Material components that have a visual size that is
@@ -114,15 +174,11 @@ internal class MinimumInteractiveModifierNode :
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3Api
 @ExperimentalMaterial3Api
 @Deprecated(
-    message =
-        "Use LocalMinimumInteractiveComponentSize with Dp.Unspecified to turn off " +
-            "enforcement instead.",
+    message = "Use LocalMinimumInteractiveComponentSize with 0.dp to turn off enforcement instead.",
     replaceWith = ReplaceWith("LocalMinimumInteractiveComponentSize"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf {
@@ -132,10 +188,10 @@ val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Bool
 /**
  * CompositionLocal that configures the minimum touch target size for Material components (such as
  * [Button]) to ensure they are accessible. If a component has a visual size that is lower than the
- * minimum touch target size, extra space outside the component will be included. If set to
- * [Dp.Unspecified] there will be no extra space, and so it is possible that if the component is
- * placed near the edge of a layout / near to another component without any padding, there will not
- * be enough space for an accessible touch target.
+ * minimum touch target size, extra space outside the component will be included. If set to 0.dp,
+ * there will be no extra space, and so it is possible that if the component is placed near the edge
+ * of a layout / near to another component without any padding, there will not be enough space for
+ * an accessible touch target.
  */
 val LocalMinimumInteractiveComponentSize: ProvidableCompositionLocal<Dp> =
     staticCompositionLocalOf {

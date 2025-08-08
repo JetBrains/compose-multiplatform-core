@@ -25,6 +25,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.navigation.internal.NavContext
 import androidx.navigation.serialization.decodeArguments
 import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry
@@ -47,8 +48,29 @@ public expect class NavBackStackEntry :
     HasDefaultViewModelProviderFactory,
     SavedStateRegistryOwner {
 
+    internal val context: NavContext?
+    internal val immutableArgs: SavedState?
+    internal var hostLifecycleState: Lifecycle.State
+    internal val viewModelStoreProvider: NavViewModelStoreProvider?
+    internal val savedState: SavedState?
+
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(entry: NavBackStackEntry, arguments: SavedState? = entry.arguments)
+
+    public companion object {
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun create(
+            context: NavContext?,
+            destination: NavDestination,
+            arguments: SavedState? = null,
+            hostLifecycleState: Lifecycle.State = Lifecycle.State.CREATED,
+            viewModelStoreProvider: NavViewModelStoreProvider? = null,
+            id: String = randomUUID(),
+            savedState: SavedState? = null
+        ): NavBackStackEntry
+
+        internal fun randomUUID(): String
+    }
 
     /**
      * The destination associated with this entry

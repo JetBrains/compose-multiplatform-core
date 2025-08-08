@@ -21,7 +21,6 @@ import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
@@ -60,7 +59,7 @@ class NavHostScreenShotTest {
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation/navigation-compose")
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun testNavHostAnimationsZIndex() {
         lateinit var navController: NavHostController
@@ -110,7 +109,7 @@ class NavHostScreenShotTest {
             .assertAgainstGolden(screenshotRule, "testNavHostAnimationsZIndex")
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testNavHostAnimationsZIndexPredictiveBack() {
         lateinit var navController: NavHostController
@@ -167,7 +166,6 @@ class NavHostScreenShotTest {
             .assertAgainstGolden(screenshotRule, "testNavHostAnimationsZIndexPredictiveBack")
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testNavHostPredictiveBackAnimations() {
@@ -225,7 +223,7 @@ class NavHostScreenShotTest {
             .assertAgainstGolden(screenshotRule, "testNavHostPredictiveBackAnimations")
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun testNavHostSizeTransform() {
         lateinit var navController: NavHostController

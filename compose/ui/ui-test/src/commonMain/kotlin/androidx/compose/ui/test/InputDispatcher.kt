@@ -15,15 +15,13 @@
  */
 package androidx.compose.ui.test
 
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.node.RootForTest
-import androidx.compose.ui.test.internal.identityHashCode
 
 internal expect fun createInputDispatcher(
     testContext: TestContext,
-    root: RootForTest
+    root: RootForTest,
 ): InputDispatcher
 
 /**
@@ -74,12 +72,11 @@ internal expect fun createInputDispatcher(
  * benefit of any interop Android views inside Compose, which expect an Android-native model of the
  * event stream.
  */
-@OptIn(InternalComposeApi::class)
 internal abstract class InputDispatcher(
     private val testContext: TestContext,
     private val root: RootForTest,
     private val exitHoverOnPress: Boolean = true,
-    private val moveOnScroll: Boolean = true
+    private val moveOnScroll: Boolean = true,
 ) {
     companion object {
         /**
@@ -286,7 +283,7 @@ internal abstract class InputDispatcher(
      */
     fun enqueueTouchMoves(
         relativeHistoricalTimes: List<Long>,
-        historicalCoordinates: List<List<Offset>>
+        historicalCoordinates: List<List<Offset>>,
     ) {
         val gesture =
             checkNotNull(partialGesture) { "Cannot send MOVE event, no gesture is in progress" }
@@ -673,7 +670,7 @@ internal abstract class InputDispatcher(
 
     protected abstract fun PartialGesture.enqueueMoves(
         relativeHistoricalTimes: List<Long>,
-        historicalCoordinates: List<List<Offset>>
+        historicalCoordinates: List<List<Offset>>,
     )
 
     protected abstract fun PartialGesture.enqueueUp(pointerId: Int)
@@ -906,5 +903,5 @@ internal class RotaryInputState
 internal data class InputDispatcherState(
     val partialGesture: PartialGesture?,
     val mouseInputState: MouseInputState,
-    val keyInputState: KeyInputState
+    val keyInputState: KeyInputState,
 )

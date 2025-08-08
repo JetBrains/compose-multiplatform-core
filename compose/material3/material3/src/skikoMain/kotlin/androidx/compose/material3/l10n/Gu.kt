@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.gu() = mapOf(
     Strings.MenuCollapsed to "નાની કરેલી",
     Strings.ToggleDropdownMenu to "ડ્રૉપડાઉન મેનૂ ટૉગલ કરો",
     Strings.SnackbarDismiss to "છોડી દો",
+    Strings.SnackbarPaneTitle to "અલર્ટ",
     Strings.SearchBarSearch to "શોધો",
     Strings.SuggestionsAvailable to "સૂચનો નીચે છે",
     Strings.DatePickerTitle to "તારીખ પસંદ કરો",
@@ -71,6 +72,8 @@ internal fun Translations.gu() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "બોટમ શીટ નાની કરો",
     Strings.BottomSheetDismissDescription to "બોટમ શીટ છોડી દો",
     Strings.BottomSheetExpandDescription to "બોટમ શીટ મોટી કરો",
+    Strings.FloatingToolbarCollapse to "ટૂલબાર નાનો કરો",
+    Strings.FloatingToolbarExpand to "ટૂલબાર મોટો કરો",
     Strings.TooltipPaneDescription to "ટૂલટિપ",
     Strings.TooltipLongPressLabel to "ટૂલટિપ બતાવો",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.gu() = mapOf(
     Strings.TimePickerHour to "કલાક",
     Strings.TimePickerMinuteTextField to "મિનિટ માટે",
     Strings.TimePickerHourTextField to "કલાક માટે",
+    Strings.TimePickerToggleKeyboard to "સમય દાખલ કરવા માટે ટેક્સ્ટ ઇનપુટ મોડ પર સ્વિચ કરો",
+    Strings.TimePickerToggleTouch to "સમય દાખલ કરવા માટે ક્લૉક મોડ પર સ્વિચ કરો",
+    Strings.TimePickerDialogTitle to "સમય પસંદ કરો",
+    Strings.TimeInputDialogTitle to "સમય દાખલ કરો",
+    Strings.CloseRail to "રેલ બંધ કરો",
+    Strings.WideNavigationRailPaneTitle to "નૅવિગેશન રેલ",
 )

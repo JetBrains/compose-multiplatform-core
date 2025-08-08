@@ -32,6 +32,7 @@ import androidx.window.WindowSdkExtensions
 import androidx.window.demo.R
 import androidx.window.demo.common.EdgeToEdgeActivity
 import androidx.window.demo.databinding.ActivitySplitDeviceStateLayoutBinding
+import androidx.window.embedding.EmbeddingAnimationParams
 import androidx.window.embedding.EmbeddingRule
 import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
@@ -272,7 +273,11 @@ open class SplitDeviceStateActivityBase :
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
-                .setAnimationBackground(demoActivityEmbeddingController.animationBackground)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(demoActivityEmbeddingController.animationBackground)
+                        .build()
+                )
                 .build()
         // Use the tag to control the rule how to change split attributes with the current state
         var tag =
@@ -321,7 +326,11 @@ open class SplitDeviceStateActivityBase :
         var splitAttributes: SplitAttributes =
             SplitAttributes.Builder()
                 .setSplitType(SPLIT_TYPE_EXPAND)
-                .setAnimationBackground(demoActivityEmbeddingController.animationBackground)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(demoActivityEmbeddingController.animationBackground)
+                        .build()
+                )
                 .build()
         var suggestToFinishItself = false
 

@@ -41,11 +41,14 @@ import org.w3c.dom.Window
  * @param navController The [NavController] instance to bind to browser window navigation.
  * @param getBackStackEntryRoute An optional function that returns the route to show for a given [NavBackStackEntry].
  */
+@Suppress("UnusedReceiverParameter")
+@Deprecated(message = "Use bindToBrowserNavigation", replaceWith = ReplaceWith("navController.bindToBrowserNavigation(getBackStackEntryRoute)"))
 @ExperimentalBrowserHistoryApi
 suspend fun Window.bindToNavigation(
     navController: NavController,
     getBackStackEntryRoute: ((entry: NavBackStackEntry) -> String)? = null
 ) {
-    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
-    (this as BrowserWindow).bindToNavigation(navController, getBackStackEntryRoute)
+    navController.bindToBrowserNavigation(getBackStackEntryRoute)
 }
+
+internal actual fun refBrowserWindow(): BrowserWindow = js("window")

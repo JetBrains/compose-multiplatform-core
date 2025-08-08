@@ -34,6 +34,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavOptions
+import androidx.navigation.internal.NavContext
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -98,7 +99,7 @@ public object NavigationUI {
             // Return true only if the destination we've navigated to matches the MenuItem
             navController.currentDestination?.matchDestination(item.itemId) == true
         } catch (e: IllegalArgumentException) {
-            val name = NavDestination.getDisplayName(navController.context, item.itemId)
+            val name = NavDestination.getDisplayName(NavContext(navController.context), item.itemId)
             Log.i(
                 TAG,
                 "Ignoring onNavDestinationSelected for MenuItem $name as it cannot be found " +
@@ -166,7 +167,7 @@ public object NavigationUI {
             // Return true only if the destination we've navigated to matches the MenuItem
             navController.currentDestination?.matchDestination(item.itemId) == true
         } catch (e: IllegalArgumentException) {
-            val name = NavDestination.getDisplayName(navController.context, item.itemId)
+            val name = NavDestination.getDisplayName(NavContext(navController.context), item.itemId)
             Log.i(
                 TAG,
                 "Ignoring onNavDestinationSelected for MenuItem $name as it cannot be found " +

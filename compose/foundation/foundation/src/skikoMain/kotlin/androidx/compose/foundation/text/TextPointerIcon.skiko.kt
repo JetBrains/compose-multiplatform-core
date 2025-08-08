@@ -18,7 +18,5 @@ package androidx.compose.foundation.text
 
 import androidx.compose.ui.input.pointer.PointerIcon
 
-internal actual val textPointerIcon: PointerIcon = PointerIcon.Text
-
 // TODO https://youtrack.jetbrains.com/issue/CMP-7145/Properly-adopt-stylus-handwriting-hover-icon
 internal actual val handwritingPointerIcon: PointerIcon = PointerIcon.Hand

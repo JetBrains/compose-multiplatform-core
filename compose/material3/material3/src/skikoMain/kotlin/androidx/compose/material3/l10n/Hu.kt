@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.hu() = mapOf(
     Strings.MenuCollapsed to "Összecsukva",
     Strings.ToggleDropdownMenu to "Legördülő menü átváltása",
     Strings.SnackbarDismiss to "Elvetés",
+    Strings.SnackbarPaneTitle to "Figyelmeztetés",
     Strings.SearchBarSearch to "Keresés",
     Strings.SuggestionsAvailable to "Javaslatok alább",
     Strings.DatePickerTitle to "Dátum kiválasztása",
@@ -71,6 +72,8 @@ internal fun Translations.hu() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Az alsó lap összecsukása",
     Strings.BottomSheetDismissDescription to "Az alsó lap elvetése",
     Strings.BottomSheetExpandDescription to "Az alsó lap kibontása",
+    Strings.FloatingToolbarCollapse to "Eszköztár összecsukása",
+    Strings.FloatingToolbarExpand to "Eszköztár kibontása",
     Strings.TooltipPaneDescription to "Elemleírás",
     Strings.TooltipLongPressLabel to "Elemleírás megjelenítése",
     Strings.TimePickerPM to "du.",
@@ -85,4 +88,10 @@ internal fun Translations.hu() = mapOf(
     Strings.TimePickerHour to "Óra",
     Strings.TimePickerMinuteTextField to "perc megadása",
     Strings.TimePickerHourTextField to "óra megadása",
+    Strings.TimePickerToggleKeyboard to "Az időpont megadásához váltson szövegbeviteli módra",
+    Strings.TimePickerToggleTouch to "Az időpont bevitelhez váltson óra módra",
+    Strings.TimePickerDialogTitle to "Időpont kiválasztása",
+    Strings.TimeInputDialogTitle to "Időpont megadása",
+    Strings.CloseRail to "Sáv bezárása",
+    Strings.WideNavigationRailPaneTitle to "Navigációs sáv",
 )

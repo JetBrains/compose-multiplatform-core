@@ -29,11 +29,12 @@ import kotlinx.coroutines.yield
     "MonotonicFrameClocks are not globally applicable across platforms. " +
         "Use an appropriate local clock."
 )
-actual val DefaultMonotonicFrameClock: MonotonicFrameClock = object : MonotonicFrameClock {
-    override suspend fun <R> withFrameNanos(
-        onFrame: (Long) -> R
-    ): R {
-        yield()
-        return onFrame(TimeSource.Monotonic.markNow().elapsedNow().inWholeNanoseconds)
+public actual val DefaultMonotonicFrameClock: MonotonicFrameClock =
+    object : MonotonicFrameClock {
+        private val markNow = TimeSource.Monotonic.markNow()
+
+        override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+            yield()
+            return onFrame(markNow.elapsedNow().inWholeNanoseconds)
+        }
     }
-}

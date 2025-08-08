@@ -28,7 +28,7 @@ byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
 dagger = "2.49"
-datetime = "0.6.0"
+datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "1.32.0"
 dexmaker = "2.28.3"
 dokka = "1.8.20-dev-214"
@@ -41,16 +41,17 @@ hilt = "2.49"
 incap = "0.2"
 javaxInject = "1"
 jcodec = "0.2.5"
-kotlin = "2.1.10"
+kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
-kotlinGradlePluginAnnotations = "2.1.10"
-kotlinGradlePluginApi = "2.1.10"
+kotlinComposeCompiler = "2.1.22-338"
+kotlinGradlePluginAnnotations = "2.1.21"
+kotlinGradlePluginApi = "2.1.21"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.8.0"
-kotlinNativeUtils = "2.1.10"
+kotlinNativeUtils = "2.1.21"
 kotlinSerialization = "1.7.3"
-kotlinToolingCore = "2.1.10"
-ksp = "2.1.10-1.0.29"
+kotlinToolingCore = "2.1.21"
+ksp = "2.1.21-2.0.1"
 ktlint = "0.46.0"
 ktfmt = "0.50"
 leakcanary = "2.13"
@@ -63,7 +64,7 @@ protobuf = "3.22.3"
 paparazzi = "1.0.0"
 paparazziNative = "2022.1.1-canary-f5f9f71"
 shadow = "8.1.1"
-skiko = "0.9.4"
+skiko = "0.9.22"
 spdxGradlePlugin = "0.6.0"
 sqldelight = "1.3.0"
 retrofit = "2.7.2"
@@ -164,6 +165,7 @@ jcodecJavaSe = { module = "org.jcodec:jcodec-javase", version.ref = "jcodec" }
 johnrengelmanShadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 json = { module = "org.json:json", version = "20180813" }
 jsoup = { module = "org.jsoup:jsoup", version = "1.16.2" }
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
 jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version = "3.1" }
 jsr250 = { module = "javax.annotation:javax.annotation-api", version = "1.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
@@ -213,7 +215,9 @@ kotlinGradlePluginz = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
 kotlinStdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
-kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js" }
+# The Kotlin/JS and Kotlin/Wasm standard library must match the compiler
+kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js", version.ref = "kotlin" }
+kotlinStdlibWasm = { module = "org.jetbrains.kotlin:kotlin-stdlib-wasm-js", version.ref = "kotlin" }
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test" }
 kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
 kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
@@ -224,7 +228,7 @@ kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.14.2" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "1.14.2" }
 kotlinXHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version = "0.7.3" }
-kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3" }
+kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3.1" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kspGradlePluginz = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }

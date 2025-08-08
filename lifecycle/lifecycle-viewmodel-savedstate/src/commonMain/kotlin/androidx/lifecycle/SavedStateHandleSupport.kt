@@ -44,7 +44,9 @@ internal const val SAVED_STATE_KEY = "androidx.lifecycle.internal.SavedStateHand
  * with [SavedStateHandle] is requested.
  */
 @MainThread
-fun <T> T.enableSavedStateHandles() where T : SavedStateRegistryOwner, T : ViewModelStoreOwner {
+public fun <T> T.enableSavedStateHandles() where
+T : SavedStateRegistryOwner,
+T : ViewModelStoreOwner {
     val currentState = lifecycle.currentState
     require(currentState == Lifecycle.State.INITIALIZED || currentState == Lifecycle.State.CREATED)
 
@@ -223,10 +225,15 @@ internal class SavedStateHandleAttacher(private val provider: SavedStateHandlesP
  * A key for [SavedStateRegistryOwner] that corresponds to [ViewModelStoreOwner] of a [ViewModel]
  * that is being created.
  */
-@JvmField val SAVED_STATE_REGISTRY_OWNER_KEY = CreationExtras.Key<SavedStateRegistryOwner>()
+@JvmField
+public val SAVED_STATE_REGISTRY_OWNER_KEY: CreationExtras.Key<SavedStateRegistryOwner> =
+    CreationExtras.Key<SavedStateRegistryOwner>()
 
 /** A key for [ViewModelStoreOwner] that is an owner of a [ViewModel] that is being created. */
-@JvmField val VIEW_MODEL_STORE_OWNER_KEY = CreationExtras.Key<ViewModelStoreOwner>()
+@JvmField
+public val VIEW_MODEL_STORE_OWNER_KEY: CreationExtras.Key<ViewModelStoreOwner> =
+    CreationExtras.Key<ViewModelStoreOwner>()
 
 /** A key for default arguments that should be passed to [SavedStateHandle] if needed. */
-@JvmField val DEFAULT_ARGS_KEY = CreationExtras.Key<SavedState>()
+@JvmField
+public val DEFAULT_ARGS_KEY: CreationExtras.Key<SavedState> = CreationExtras.Key<SavedState>()

@@ -17,10 +17,11 @@
 package androidx.navigation.testing
 
 import android.content.Context
-import android.os.Bundle
 import androidx.annotation.IdRes
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
+import androidx.savedstate.SavedState
+import androidx.savedstate.savedState
 import java.lang.IllegalArgumentException
 
 /** Subclass of [NavHostController] that offers additional APIs for testing Navigation. */
@@ -44,7 +45,7 @@ public class TestNavHostController(context: Context) : NavHostController(context
      * @throws IllegalArgumentException If the [destination][destId] does not exist on the NavGraph.
      */
     @JvmOverloads
-    public fun setCurrentDestination(@IdRes destId: Int, args: Bundle = Bundle()) {
+    public fun setCurrentDestination(@IdRes destId: Int, args: SavedState = savedState()) {
         val taskStackBuilder =
             createDeepLink().setDestination(destId).setArguments(args).createTaskStackBuilder()
         val intent = taskStackBuilder.editIntentAt(0)
@@ -62,7 +63,7 @@ public class TestNavHostController(context: Context) : NavHostController(context
      *   NavGraph.
      */
     @JvmOverloads
-    public fun setCurrentDestination(destRoute: String, args: Bundle = Bundle()) {
+    public fun setCurrentDestination(destRoute: String, args: SavedState = savedState()) {
         val taskStackBuilder =
             createDeepLink().setDestination(destRoute).setArguments(args).createTaskStackBuilder()
         val intent = taskStackBuilder.editIntentAt(0)

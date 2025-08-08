@@ -59,6 +59,9 @@ private constructor(
          * Module with contextual and polymorphic serializers to be used in the resulting
          * [SavedStateConfiguration] instance.
          *
+         * Note that this [SerializersModule] will be combined with an internal [SerializersModule]
+         * in the resulting [SavedStateConfiguration] to support built-in types.
+         *
          * @see SerializersModule
          * @see Contextual
          * @see Polymorphic

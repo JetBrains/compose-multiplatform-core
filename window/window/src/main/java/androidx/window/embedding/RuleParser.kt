@@ -212,8 +212,14 @@ internal object RuleParser {
                     .setLayoutDirection(
                         SplitAttributes.LayoutDirection.getLayoutDirectionFromValue(layoutDir)
                     )
-                    .setAnimationBackground(
-                        EmbeddingAnimationBackground.buildFromValue(animationBackgroundColor)
+                    .setAnimationParams(
+                        EmbeddingAnimationParams.Builder()
+                            .setAnimationBackground(
+                                EmbeddingAnimationBackground.buildFromValue(
+                                    animationBackgroundColor
+                                )
+                            )
+                            .build()
                     )
                     .build()
 
@@ -299,8 +305,14 @@ internal object RuleParser {
                     .setLayoutDirection(
                         SplitAttributes.LayoutDirection.getLayoutDirectionFromValue(layoutDir)
                     )
-                    .setAnimationBackground(
-                        EmbeddingAnimationBackground.buildFromValue(animationBackgroundColor)
+                    .setAnimationParams(
+                        EmbeddingAnimationParams.Builder()
+                            .setAnimationBackground(
+                                EmbeddingAnimationBackground.buildFromValue(
+                                    animationBackgroundColor
+                                )
+                            )
+                            .build()
                     )
                     .build()
             val packageName = context.applicationContext.packageName

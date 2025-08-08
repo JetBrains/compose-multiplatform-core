@@ -35,11 +35,8 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
     public actual open fun parseValue(value: String, previousValue: T): T = parseValue(value)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public actual fun parseAndPut(bundle: SavedState, key: String, value: String): T {
-        val parsedValue = parseValue(value)
-        put(bundle, key, parsedValue)
-        return parsedValue
-    }
+    public actual fun parseAndPut(bundle: SavedState, key: String, value: String): T =
+        navTypeParseAndPut(bundle, key, value)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun parseAndPut(
@@ -47,73 +44,47 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
         key: String,
         value: String?,
         previousValue: T
-    ): T {
-        if (!bundle.read { contains(key) }) {
-            throw IllegalArgumentException("There is no previous value in this savedState.")
-        }
-        if (value != null) {
-            val parsedCombinedValue = parseValue(value, previousValue)
-            put(bundle, key, parsedCombinedValue)
-            return parsedCombinedValue
-        }
-        return previousValue
-    }
+    ): T = navTypeParseAndPut(bundle, key, value, previousValue)
 
-    public actual open fun serializeAsValue(value: T): String {
-        return value.toString()
-    }
+    public actual open fun serializeAsValue(value: T): String = value.toString()
 
     public actual open val name: String = "nav_type"
 
     public actual open fun valueEquals(value: T, other: T): Boolean = value == other
 
-    override fun toString(): String {
-        return name
-    }
+    override fun toString(): String = name
 
     public actual companion object {
         @Suppress("NON_FINAL_MEMBER_IN_OBJECT", "UNCHECKED_CAST") // this needs to be open to
         // maintain api compatibility and type cast are unchecked
         @JvmStatic
         public actual open fun fromArgType(type: String?, packageName: String?): NavType<*> {
-            when {
-                IntType.name == type -> return IntType
-                IntArrayType.name == type -> return IntArrayType
-                IntListType.name == type -> return IntListType
-                LongType.name == type -> return LongType
-                LongArrayType.name == type -> return LongArrayType
-                LongListType.name == type -> return LongListType
-                BoolType.name == type -> return BoolType
-                BoolArrayType.name == type -> return BoolArrayType
-                BoolListType.name == type -> return BoolListType
-                StringType.name == type -> return StringType
-                StringArrayType.name == type -> return StringArrayType
-                StringListType.name == type -> return StringListType
-                FloatType.name == type -> return FloatType
-                FloatArrayType.name == type -> return FloatArrayType
-                FloatListType.name == type -> return FloatListType
-                ReferenceType.name == type -> return ReferenceType
-                !type.isNullOrEmpty() -> {
-                    try {
-                        var className: String
-                        className =
-                            if (type.startsWith(".") && packageName != null) {
-                                packageName + type
-                            } else {
-                                type
+            return navTypeFromArgType(type)
+                ?: when {
+                    ReferenceType.name == type -> return ReferenceType
+                    !type.isNullOrEmpty() -> {
+                        try {
+                            var className: String
+                            className =
+                                if (type.startsWith(".") && packageName != null) {
+                                    packageName + type
+                                } else {
+                                    type
+                                }
+                            val isArray = type.endsWith("[]")
+                            if (isArray) className = className.substring(0, className.length - 2)
+                            val clazz = Class.forName(className)
+                            return requireNotNull(
+                                parseSerializableOrParcelableType(clazz, isArray)
+                            ) {
+                                "$className is not Serializable or Parcelable."
                             }
-                        val isArray = type.endsWith("[]")
-                        if (isArray) className = className.substring(0, className.length - 2)
-                        val clazz = Class.forName(className)
-                        return requireNotNull(parseSerializableOrParcelableType(clazz, isArray)) {
-                            "$className is not Serializable or Parcelable."
+                        } catch (e: ClassNotFoundException) {
+                            throw RuntimeException(e)
                         }
-                    } catch (e: ClassNotFoundException) {
-                        throw RuntimeException(e)
                     }
+                    else -> StringType
                 }
-            }
-            return StringType
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -141,74 +112,42 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
                 else -> null
             }
 
-        @Suppress("UNCHECKED_CAST") // needed for cast to NavType<Any>
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public actual fun inferFromValue(value: String): NavType<Any> {
-            // because we allow Long literals without the L suffix at runtime,
-            // the order of IntType and LongType parsing has to be reversed compared to Safe Args
-            try {
-                IntType.parseValue(value)
-                return IntType as NavType<Any>
-            } catch (e: IllegalArgumentException) {
-                // ignored, proceed to check next type
-            }
-            try {
-                LongType.parseValue(value)
-                return LongType as NavType<Any>
-            } catch (e: IllegalArgumentException) {
-                // ignored, proceed to check next type
-            }
-            try {
-                FloatType.parseValue(value)
-                return FloatType as NavType<Any>
-            } catch (e: IllegalArgumentException) {
-                // ignored, proceed to check next type
-            }
-            try {
-                BoolType.parseValue(value)
-                return BoolType as NavType<Any>
-            } catch (e: IllegalArgumentException) {
-                // ignored, proceed to check next type
-            }
-            return StringType as NavType<Any>
-        }
+        public actual fun inferFromValue(value: String): NavType<Any> = navTypeInferFromValue(value)
 
         @Suppress("UNCHECKED_CAST") // needed for cast to NavType<Any>
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public actual fun inferFromValueType(value: Any?): NavType<Any> {
-            return when {
-                value is Int -> IntType as NavType<Any>
-                value is IntArray -> IntArrayType as NavType<Any>
-                value is Long -> LongType as NavType<Any>
-                value is LongArray -> LongArrayType as NavType<Any>
-                value is Float -> FloatType as NavType<Any>
-                value is FloatArray -> FloatArrayType as NavType<Any>
-                value is Boolean -> BoolType as NavType<Any>
-                value is BooleanArray -> BoolArrayType as NavType<Any>
-                value is String || value == null -> StringType as NavType<Any>
-                value is Array<*> && value.isArrayOf<String>() -> StringArrayType as NavType<Any>
-                value.javaClass.isArray &&
-                    Parcelable::class.java.isAssignableFrom(value.javaClass.componentType!!) -> {
-                    ParcelableArrayType(value.javaClass.componentType as Class<Parcelable>)
-                        as NavType<Any>
+            return navTypeInferFromValueType(value)
+                ?: when {
+                    value is Array<*> && value.isArrayOf<String>() ->
+                        StringArrayType as NavType<Any>
+                    value!!.javaClass.isArray &&
+                        Parcelable::class
+                            .java
+                            .isAssignableFrom(value.javaClass.componentType!!) -> {
+                        ParcelableArrayType(value.javaClass.componentType as Class<Parcelable>)
+                            as NavType<Any>
+                    }
+                    value.javaClass.isArray &&
+                        Serializable::class
+                            .java
+                            .isAssignableFrom(value.javaClass.componentType!!) -> {
+                        SerializableArrayType(value.javaClass.componentType as Class<Serializable>)
+                            as NavType<Any>
+                    }
+                    value is Parcelable -> ParcelableType(value.javaClass) as NavType<Any>
+                    value is Enum<*> -> EnumType(value.javaClass) as NavType<Any>
+                    value is Serializable -> SerializableType(value.javaClass) as NavType<Any>
+                    else -> {
+                        throw IllegalArgumentException(
+                            "Object of type ${value.javaClass.name} is not supported for navigation " +
+                                "arguments."
+                        )
+                    }
                 }
-                value.javaClass.isArray &&
-                    Serializable::class.java.isAssignableFrom(value.javaClass.componentType!!) -> {
-                    SerializableArrayType(value.javaClass.componentType as Class<Serializable>)
-                        as NavType<Any>
-                }
-                value is Parcelable -> ParcelableType(value.javaClass) as NavType<Any>
-                value is Enum<*> -> EnumType(value.javaClass) as NavType<Any>
-                value is Serializable -> SerializableType(value.javaClass) as NavType<Any>
-                else -> {
-                    throw IllegalArgumentException(
-                        "Object of type ${value.javaClass.name} is not supported for navigation " +
-                            "arguments."
-                    )
-                }
-            }
         }
 
         @JvmField public actual val IntType: NavType<Int> = IntNavType()

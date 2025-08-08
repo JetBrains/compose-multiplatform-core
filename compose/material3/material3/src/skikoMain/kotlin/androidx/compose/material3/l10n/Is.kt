@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.`is`() = mapOf(
     Strings.MenuCollapsed to "Minnkað",
     Strings.ToggleDropdownMenu to "Velja eða afvelja fellivalmynd",
     Strings.SnackbarDismiss to "Hunsa",
+    Strings.SnackbarPaneTitle to "Viðvörun",
     Strings.SearchBarSearch to "Leit",
     Strings.SuggestionsAvailable to "Tillögur hér fyrir neðan",
     Strings.DatePickerTitle to "Velja dagsetningu",
@@ -71,6 +72,8 @@ internal fun Translations.`is`() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Minnka blað neðst",
     Strings.BottomSheetDismissDescription to "Hunsa blað neðst",
     Strings.BottomSheetExpandDescription to "Stækka blað neðst",
+    Strings.FloatingToolbarCollapse to "Minnka tækjastiku",
+    Strings.FloatingToolbarExpand to "Stækka tækjastiku",
     Strings.TooltipPaneDescription to "Ábending",
     Strings.TooltipLongPressLabel to "Sýna ábendingu",
     Strings.TimePickerPM to "eh",
@@ -85,4 +88,10 @@ internal fun Translations.`is`() = mapOf(
     Strings.TimePickerHour to "Klukkustund",
     Strings.TimePickerMinuteTextField to "fyrir mínútur",
     Strings.TimePickerHourTextField to "fyrir klukkustund",
+    Strings.TimePickerToggleKeyboard to "Skiptu yfir í textainnslátt til að slá inn tíma",
+    Strings.TimePickerToggleTouch to "Skiptu yfir í klukkustillingu til að slá inn tíma",
+    Strings.TimePickerDialogTitle to "Veldu tíma",
+    Strings.TimeInputDialogTitle to "Sláðu inn tíma",
+    Strings.CloseRail to "Loka stiku",
+    Strings.WideNavigationRailPaneTitle to "Yfirlitsstika",
 )

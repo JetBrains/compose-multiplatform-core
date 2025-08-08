@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.ceilToIntPx
@@ -56,7 +57,7 @@ internal class MultiParagraphLayoutCache(
     private var maxLines: Int = Int.MAX_VALUE,
     private var minLines: Int = DefaultMinLines,
     private var placeholders: List<AnnotatedString.Range<Placeholder>>? = null,
-    private var autoSize: TextAutoSize? = null
+    private var autoSize: TextAutoSize? = null,
 ) {
     /** Convert min max lines into actual constraints */
     private var mMinLinesConstrainer: MinLinesConstrainer? = null
@@ -83,6 +84,7 @@ internal class MultiParagraphLayoutCache(
             if (value == null || lastDensity != newDensity) {
                 field = value
                 lastDensity = newDensity
+                recordHistory(LayoutCacheOperation.MarkDirtyDensity)
                 markDirty()
             }
         }
@@ -129,11 +131,47 @@ internal class MultiParagraphLayoutCache(
     /** The last computed TextLayoutResult, or throws if not initialized. */
     val textLayoutResult: TextLayoutResult
         get() =
-            layoutCache ?: throw IllegalStateException("You must call layoutWithConstraints first")
+            layoutCache
+                ?: throw IllegalStateException(
+                    "Internal Error: MultiParagraphLayoutCache could not provide TextLayoutResult during the draw phase. Please report this bug on the official Issue Tracker with the following diagnostic information: ${toString()}"
+                )
 
     /** The last computed TextLayoutResult, or null if not initialized. */
     val layoutOrNull: TextLayoutResult?
         get() = layoutCache
+
+    /**
+     * A 64-bit flag that records the history of `markDirty`, `markStyleDirty`, and
+     * `layoutWithConstraints` operations. Each 2-bit segment represents a distinct operation.
+     * Consequently, this flag maintains a record of the last 32 operations performed on this cache.
+     *
+     * Bit representation:
+     * ```
+     *   | Operation                | Bits |
+     *   | :----------------------- | :--- |
+     *   | markStyleDirty           | 00   |
+     *   | markDirtyDensity         | 01   |
+     *   | markDirtyNodeUpdate      | 10   |
+     *   | layoutWithConstraints    | 11   |
+     * ```
+     *
+     * With the operations encoded in 2 bit segments and read from right to left. For example:
+     * ```
+     *   01111000 would represent that the last 4 operations performed were
+     *   1. markStyleDirty (00)
+     *   2. markDirtyNodeUpdate (10)
+     *   3. layoutWithConstraints (11)
+     *   4. markDirtyDensity (01)
+     * ```
+     *
+     * This history can be used to debug or print as a log of what operations have been performed on
+     * this [MultiParagraphLayoutCache].
+     */
+    @VisibleForTesting internal var historyFlag: Long = 0L
+
+    private fun recordHistory(op: LayoutCacheOperation) {
+        historyFlag = (historyFlag shl 2) or op.flag
+    }
 
     /**
      * Update layout constraints for this text
@@ -141,6 +179,7 @@ internal class MultiParagraphLayoutCache(
      * @return true if constraints caused a text layout invalidation
      */
     fun layoutWithConstraints(constraints: Constraints, layoutDirection: LayoutDirection): Boolean {
+        recordHistory(LayoutCacheOperation.LayoutWithConstraints)
         val finalConstraints =
             if (minLines > 1) {
                 useMinLinesConstrainer(constraints, layoutDirection)
@@ -155,7 +194,7 @@ internal class MultiParagraphLayoutCache(
                 textLayoutResult(
                     layoutDirection = layoutDirection,
                     finalConstraints = finalConstraints,
-                    multiParagraph = layoutCache!!.multiParagraph
+                    multiParagraph = layoutCache!!.multiParagraph,
                 )
             return true
         }
@@ -197,7 +236,7 @@ internal class MultiParagraphLayoutCache(
 
     private fun useMinLinesConstrainer(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Constraints {
         val localMin =
             MinLinesConstrainer.from(
@@ -205,7 +244,7 @@ internal class MultiParagraphLayoutCache(
                     layoutDirection,
                     style,
                     density!!,
-                    fontFamilyResolver
+                    fontFamilyResolver,
                 )
                 .also { mMinLinesConstrainer = it }
         return localMin.coerceMinLines(inConstraints = constraints, minLines = minLines)
@@ -214,7 +253,7 @@ internal class MultiParagraphLayoutCache(
     private fun textLayoutResult(
         layoutDirection: LayoutDirection,
         finalConstraints: Constraints,
-        multiParagraph: MultiParagraph
+        multiParagraph: MultiParagraph,
     ): TextLayoutResult {
         val layoutWidth = min(multiParagraph.intrinsics.maxIntrinsicWidth, multiParagraph.width)
         return TextLayoutResult(
@@ -228,12 +267,12 @@ internal class MultiParagraphLayoutCache(
                 density!!,
                 layoutDirection,
                 fontFamilyResolver,
-                finalConstraints
+                finalConstraints,
             ),
             multiParagraph,
             finalConstraints.constrain(
                 IntSize(layoutWidth.ceilToIntPx(), multiParagraph.height.ceilToIntPx())
-            )
+            ),
         )
     }
 
@@ -270,7 +309,7 @@ internal class MultiParagraphLayoutCache(
         maxLines: Int,
         minLines: Int,
         placeholders: List<AnnotatedString.Range<Placeholder>>?,
-        autoSize: TextAutoSize?
+        autoSize: TextAutoSize?,
     ) {
         this.text = text
         this.style = style
@@ -281,6 +320,7 @@ internal class MultiParagraphLayoutCache(
         this.minLines = minLines
         this.placeholders = placeholders
         this.autoSize = autoSize
+        recordHistory(LayoutCacheOperation.MarkDirtyNode)
         markDirty()
     }
 
@@ -303,7 +343,7 @@ internal class MultiParagraphLayoutCache(
                     style = resolveDefaults(style, layoutDirection),
                     density = density!!,
                     fontFamilyResolver = fontFamilyResolver,
-                    placeholders = placeholders.orEmpty()
+                    placeholders = placeholders.orEmpty(),
                 )
             } else {
                 localIntrinsics
@@ -322,7 +362,6 @@ internal class MultiParagraphLayoutCache(
     private fun layoutText(
         constraints: Constraints,
         layoutDirection: LayoutDirection,
-        overflow: TextOverflow = this.overflow
     ): MultiParagraph {
         val localParagraphIntrinsics = setLayoutDirection(layoutDirection)
 
@@ -333,10 +372,10 @@ internal class MultiParagraphLayoutCache(
                     constraints,
                     softWrap,
                     overflow,
-                    localParagraphIntrinsics.maxIntrinsicWidth
+                    localParagraphIntrinsics.maxIntrinsicWidth,
                 ),
             maxLines = finalMaxLines(softWrap, overflow, maxLines),
-            overflow = overflow
+            overflow = overflow,
         )
     }
 
@@ -346,7 +385,7 @@ internal class MultiParagraphLayoutCache(
      */
     private fun TextLayoutResult?.newLayoutWillBeDifferent(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Boolean {
         // no layout yet
         if (this == null) return true
@@ -361,6 +400,7 @@ internal class MultiParagraphLayoutCache(
         if (constraints == layoutInput.constraints) return false
 
         if (constraints.maxWidth != layoutInput.constraints.maxWidth) return true
+        if (constraints.minWidth != layoutInput.constraints.minWidth) return true
 
         // if we get here width won't change, height may be clipped
         if (constraints.maxHeight < multiParagraph.height || multiParagraph.didExceedMaxLines) {
@@ -381,6 +421,7 @@ internal class MultiParagraphLayoutCache(
     }
 
     private fun markStyleAffectedDirty() {
+        recordHistory(LayoutCacheOperation.MarkDirtyStyle)
         paragraphIntrinsics = null
         layoutCache = null
         cachedIntrinsicHeight = -1
@@ -414,7 +455,7 @@ internal class MultiParagraphLayoutCache(
         override fun performLayout(
             constraints: Constraints,
             text: AnnotatedString,
-            fontSize: TextUnit
+            fontSize: TextUnit,
         ): TextLayoutResult {
             val styleBeforeLayout = style
             // If the cache is populated with a SP [TextUnit] and [performLayout]'s requested
@@ -431,20 +472,9 @@ internal class MultiParagraphLayoutCache(
                 if (minLines > 1) useMinLinesConstrainer(constraints, intrinsicsLayoutDirection!!)
                 else constraints
 
-            val multiParagraph =
-                layoutText(
-                    layoutConstraints,
-                    intrinsicsLayoutDirection!!,
-                    // We use TextOverflow.Clip for auto size layout as ellipsize won't overflow for
-                    // even the largest font size. The layout pass after will measure with ellipsize
-                    TextOverflow.Clip
-                )
+            val multiParagraph = layoutText(layoutConstraints, intrinsicsLayoutDirection!!)
             val layoutResult =
-                textLayoutResult(
-                    intrinsicsLayoutDirection!!,
-                    layoutConstraints,
-                    multiParagraph,
-                )
+                textLayoutResult(intrinsicsLayoutDirection!!, layoutConstraints, multiParagraph)
             lastLayoutResult = layoutResult
             style = styleBeforeLayout
             return layoutResult
@@ -465,6 +495,10 @@ internal class MultiParagraphLayoutCache(
             return toDp().toPx()
         }
     }
+
+    override fun toString(): String =
+        "MultiParagraphLayoutCache(textLayoutResult=${if (layoutCache != null) "<TextLayoutResult>" else "null"}, " +
+            "lastDensity=$lastDensity, history=$historyFlag, constraints=${layoutCache?.layoutInput?.constraints ?: "null"})"
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.`as`() = mapOf(
     Strings.MenuCollapsed to "সংকোচন কৰা আছে",
     Strings.ToggleDropdownMenu to "ড্ৰপডাউন মেনু ট’গল কৰক",
     Strings.SnackbarDismiss to "অগ্ৰাহ্য কৰক",
+    Strings.SnackbarPaneTitle to "সতৰ্কবাৰ্তা",
     Strings.SearchBarSearch to "সন্ধান কৰক",
     Strings.SuggestionsAvailable to "তলত পৰামৰ্শ দেখুওৱা হৈছে",
     Strings.DatePickerTitle to "তাৰিখ বাছনি কৰক",
@@ -71,6 +72,8 @@ internal fun Translations.`as`() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "তলৰ শ্বীটখন সংকোচন কৰক",
     Strings.BottomSheetDismissDescription to "তলৰ শ্বীটখন অগ্ৰাহ্য কৰক",
     Strings.BottomSheetExpandDescription to "তলৰ শ্বীটখন বিস্তাৰ কৰক",
+    Strings.FloatingToolbarCollapse to "টুলবাৰ সংকোচন কৰক",
+    Strings.FloatingToolbarExpand to "টুলবাৰ বিস্তাৰ কৰক",
     Strings.TooltipPaneDescription to "টুলটিপ",
     Strings.TooltipLongPressLabel to "টুলটিপ দেখুৱাওক",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.`as`() = mapOf(
     Strings.TimePickerHour to "ঘণ্টা",
     Strings.TimePickerMinuteTextField to "মিনিটৰ বাবে",
     Strings.TimePickerHourTextField to "ঘণ্টাৰ বাবে",
+    Strings.TimePickerToggleKeyboard to "সময়ৰ ইনপুটৰ বাবে পাঠৰ ইনপুট ম’ডলৈ সলনি কৰক",
+    Strings.TimePickerToggleTouch to "সময়ৰ ইনপুটৰ বাবে ঘড়ী ম’ডলৈ যাওক",
+    Strings.TimePickerDialogTitle to "সময় বাছনি কৰক",
+    Strings.TimeInputDialogTitle to "সময় দিয়ক",
+    Strings.CloseRail to "ৰে’ল কৰক",
+    Strings.WideNavigationRailPaneTitle to "নেভিগেশ্বন ৰে’ল",
 )

@@ -18,7 +18,7 @@ package androidx.window.sidecar;
 
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Main Sidecar interface definition that will be used by the WindowManager library to get custom
@@ -37,8 +37,7 @@ public interface SidecarInterface {
     /**
      * Gets current information about the display features present within the application window.
      */
-    @NonNull
-    SidecarWindowLayoutInfo getWindowLayoutInfo(@NonNull IBinder windowToken);
+    @NonNull SidecarWindowLayoutInfo getWindowLayoutInfo(@NonNull IBinder windowToken);
 
     /**
      * Notifies sidecar that a listener for display feature layout changes was registered for the
@@ -56,8 +55,7 @@ public interface SidecarInterface {
      * Gets current device state.
      * @see #onDeviceStateListenersChanged(boolean)
      */
-    @NonNull
-    SidecarDeviceState getDeviceState();
+    @NonNull SidecarDeviceState getDeviceState();
 
     /**
      * Notifies the sidecar that a device state change listener was updated.

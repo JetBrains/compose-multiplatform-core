@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ar() = mapOf(
     Strings.MenuCollapsed to "مصغَّرة",
     Strings.ToggleDropdownMenu to "توسيع القائمة المنسدلة أو تصغيرها",
     Strings.SnackbarDismiss to "إغلاق",
+    Strings.SnackbarPaneTitle to "تنبيه",
     Strings.SearchBarSearch to "شريط بحث",
     Strings.SuggestionsAvailable to "إليك الاقتراحات",
     Strings.DatePickerTitle to "اختيار تاريخ",
@@ -71,6 +72,8 @@ internal fun Translations.ar() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "تصغير البطاقة السفلية",
     Strings.BottomSheetDismissDescription to "إغلاق البطاقة السفلية",
     Strings.BottomSheetExpandDescription to "توسيع البطاقة السفلية",
+    Strings.FloatingToolbarCollapse to "تصغير شريط الأدوات",
+    Strings.FloatingToolbarExpand to "توسيع شريط الأدوات",
     Strings.TooltipPaneDescription to "تلميح",
     Strings.TooltipLongPressLabel to "إظهار التلميح",
     Strings.TimePickerPM to "م",
@@ -85,4 +88,10 @@ internal fun Translations.ar() = mapOf(
     Strings.TimePickerHour to "ساعة",
     Strings.TimePickerMinuteTextField to "الدقائق",
     Strings.TimePickerHourTextField to "الساعات",
+    Strings.TimePickerToggleKeyboard to "التبديل إلى وضع إدخال النص لإدخال الوقت",
+    Strings.TimePickerToggleTouch to "التبديل إلى وضع الساعة لإدخال الوقت",
+    Strings.TimePickerDialogTitle to "اختيار الوقت",
+    Strings.TimeInputDialogTitle to "إدخال الوقت",
+    Strings.CloseRail to "إغلاق الشريط",
+    Strings.WideNavigationRailPaneTitle to "شريط التنقّل",
 )

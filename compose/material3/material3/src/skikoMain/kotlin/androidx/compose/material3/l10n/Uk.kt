@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.uk() = mapOf(
     Strings.MenuCollapsed to "Згорнуто",
     Strings.ToggleDropdownMenu to "Згорнути або розгорнути спадне меню",
     Strings.SnackbarDismiss to "Закрити",
+    Strings.SnackbarPaneTitle to "Сповіщення",
     Strings.SearchBarSearch to "Пошук",
     Strings.SuggestionsAvailable to "Підказки внизу",
     Strings.DatePickerTitle to "Виберіть дату",
@@ -71,6 +72,8 @@ internal fun Translations.uk() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Згорнути нижній екран",
     Strings.BottomSheetDismissDescription to "Закрити нижній екран",
     Strings.BottomSheetExpandDescription to "Розгорнути нижній екран",
+    Strings.FloatingToolbarCollapse to "Згорнути панель інструментів",
+    Strings.FloatingToolbarExpand to "Розгорнути панель інструментів",
     Strings.TooltipPaneDescription to "Спливаюча підказка",
     Strings.TooltipLongPressLabel to "Показати спливаючу підказку",
     Strings.TimePickerPM to "ПП",
@@ -85,4 +88,10 @@ internal fun Translations.uk() = mapOf(
     Strings.TimePickerHour to "Година",
     Strings.TimePickerMinuteTextField to "для хвилин",
     Strings.TimePickerHourTextField to "для годин",
+    Strings.TimePickerToggleKeyboard to "Перейти в режим введення тексту, щоб указати час",
+    Strings.TimePickerToggleTouch to "Перейти в режим годинника, щоб ввести час",
+    Strings.TimePickerDialogTitle to "Виберіть час",
+    Strings.TimeInputDialogTitle to "Введіть час",
+    Strings.CloseRail to "Закрити панель",
+    Strings.WideNavigationRailPaneTitle to "Панель навігації",
 )

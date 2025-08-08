@@ -134,9 +134,9 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.kotlinStdlib)
                 }
             }
-            jsNativeMain.dependsOn(skikoMain)
-            nativeMain.dependsOn(jsNativeMain)
-            jsWasmMain.dependsOn(jsNativeMain)
+            nonJvmMain.dependsOn(skikoMain)
+            nativeMain.dependsOn(nonJvmMain)
+            webMain.dependsOn(nonJvmMain)
             uikitMain {
                 dependencies {
                     implementation(project(":compose:ui:ui-uikit"))
@@ -144,18 +144,12 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
 
             wasmJsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
-            }
-
-            commonTest {
-                dependencies {
-                    implementation(kotlin("test"))
-                }
+                dependsOn(webMain)
             }
 
             // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
@@ -204,7 +198,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.skikoCommon)
                 }
             }
-            jsNativeTest {
+            nonJvmTest {
                 dependsOn(skikoTest)
             }
 
@@ -232,9 +226,9 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             desktopTest.kotlin.srcDirs("src/desktopTest/kotlin")
 
-            nativeTest.dependsOn(jsNativeTest)
-            jsTest.dependsOn(jsNativeTest)
-            wasmJsTest.dependsOn(jsNativeTest)
+            nativeTest.dependsOn(nonJvmTest)
+            jsTest.dependsOn(nonJvmTest)
+            wasmJsTest.dependsOn(nonJvmTest)
 
             configureEach {
                 languageSettings.optIn("androidx.compose.foundation.ExperimentalFoundationApi")
@@ -259,4 +253,38 @@ androidx {
     inceptionYear = "2018"
     description = "Higher level abstractions of the Compose UI primitives. This library is design system agnostic, providing the high-level building blocks for both application and design-system developers"
     legacyDisableKotlinStrictApiMode = true
+}
+
+
+// This task updates the translations of the localizable strings for the desktopMain target.
+// It obtains them from Android's base repository.
+tasks.register("updateTranslations", UpdateTranslationsTask.class) {
+    group = "localization"
+    gitRepo = "https://android.googlesource.com/platform/frameworks/base"
+    repoResDirectories = ["core/res/res"]
+    targetDirectory = project.file("src/skikoMain/kotlin/androidx/compose/foundation/text/l10n")
+    targetPackageName = "androidx.compose.foundation.text.l10n"
+    kotlinStringsPackageName = "androidx.compose.foundation.text"
+    stringByResourceName = [
+            "copy": "Copy",
+            "paste": "Paste",
+            "cut": "Cut",
+            "selectAll": "SelectAll",
+            "autofill": "Autofill"
+    ]
+    // This is all the locales translated by Compose on Android in the ui module:
+    // https://github.com/androidx/androidx/tree/androidx-main/compose/ui/ui/src/androidMain/res
+    // with the exception of
+    // - b+sr+Latn which doesn't appear to be supported by Java
+    // - en_XC which has weird invisible LRM characters, and the visible text is the same as for
+    //   en anyway.
+    locales = [
+            "en", "af", "am", "ar", "as", "az", "be", "bg", "bn", "bs", "ca", "cs", "da", "de",
+            "el", "en_AU", "en_CA", "en_GB", "en_IN", "es", "es_US", "et", "eu", "fa",
+            "fi", "fr", "fr_CA", "gl", "gu", "hi", "hr", "hu", "hy", "in", "is", "it", "iw",
+            "ja", "ka", "kk", "km", "kn", "ko", "ky", "lo", "lt", "lv", "mk", "ml", "mn", "mr",
+            "ms", "my", "nb", "ne", "nl", "or", "pa", "pl", "pt", "pt_BR", "pt_PT", "ro", "ru",
+            "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur",
+            "uz", "vi", "zh_CN", "zh_HK", "zh_TW", "zu"
+    ]
 }

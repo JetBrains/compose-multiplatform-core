@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.tr() = mapOf(
     Strings.MenuCollapsed to "Daraltıldı",
     Strings.ToggleDropdownMenu to "Açılır menüyü açın/kapatın",
     Strings.SnackbarDismiss to "Kapat",
+    Strings.SnackbarPaneTitle to "Uyarı",
     Strings.SearchBarSearch to "Arama",
     Strings.SuggestionsAvailable to "Önerileri aşağıda bulabilirsiniz",
     Strings.DatePickerTitle to "Tarih seç",
@@ -71,6 +72,8 @@ internal fun Translations.tr() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Alt sayfayı daralt",
     Strings.BottomSheetDismissDescription to "Alt sayfayı kapat",
     Strings.BottomSheetExpandDescription to "Alt sayfayı genişlet",
+    Strings.FloatingToolbarCollapse to "Araç çubuğunu daralt",
+    Strings.FloatingToolbarExpand to "Araç çubuğunu genişlet",
     Strings.TooltipPaneDescription to "İpucu",
     Strings.TooltipLongPressLabel to "Araç ipucunu göster",
     Strings.TimePickerPM to "ÖS",
@@ -85,4 +88,10 @@ internal fun Translations.tr() = mapOf(
     Strings.TimePickerHour to "Saat",
     Strings.TimePickerMinuteTextField to "dakika",
     Strings.TimePickerHourTextField to "saat",
+    Strings.TimePickerToggleKeyboard to "Saat girmek için metin giriş moduna geç",
+    Strings.TimePickerToggleTouch to "Saati girmek için saat moduna geç",
+    Strings.TimePickerDialogTitle to "Saat Seçin",
+    Strings.TimeInputDialogTitle to "Saat Girin",
+    Strings.CloseRail to "Sütunu kapat",
+    Strings.WideNavigationRailPaneTitle to "Gezinme sütunu",
 )

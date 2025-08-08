@@ -24,7 +24,7 @@ internal class SynchronizedObject
 @JvmName("synchronized")
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "not expected to be referenced directly as the old version had to be inlined"
+    message = "not expected to be referenced directly as the old version had to be inlined",
 )
 internal inline fun <R> oldSynchronized2(lock: SynchronizedObject, block: () -> R): R =
     androidx.compose.runtime.platform.synchronized(lock, block)

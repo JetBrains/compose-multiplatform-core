@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.pt() = mapOf(
     Strings.MenuCollapsed to "Fechado",
     Strings.ToggleDropdownMenu to "Ativar/desativar o menu suspenso",
     Strings.SnackbarDismiss to "Dispensar",
+    Strings.SnackbarPaneTitle to "Alerta",
     Strings.SearchBarSearch to "Pesquisar",
     Strings.SuggestionsAvailable to "Sugestões abaixo",
     Strings.DatePickerTitle to "Selecionar data",
@@ -71,6 +72,8 @@ internal fun Translations.pt() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Fechar página inferior",
     Strings.BottomSheetDismissDescription to "Dispensar página inferior",
     Strings.BottomSheetExpandDescription to "Abrir página inferior",
+    Strings.FloatingToolbarCollapse to "Fechar barra de ferramentas",
+    Strings.FloatingToolbarExpand to "Abrir barra de ferramentas",
     Strings.TooltipPaneDescription to "Dica",
     Strings.TooltipLongPressLabel to "Mostrar dica",
     Strings.TimePickerPM to "PM",
@@ -85,6 +88,12 @@ internal fun Translations.pt() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "por minutos",
     Strings.TimePickerHourTextField to "por hora",
+    Strings.TimePickerToggleKeyboard to "Mudar para o modo de entrada de texto para informar o horário",
+    Strings.TimePickerToggleTouch to "Mudar para o modo de relógio para informar o horário",
+    Strings.TimePickerDialogTitle to "Selecione o horário",
+    Strings.TimeInputDialogTitle to "Insira a hora",
+    Strings.CloseRail to "Fechar coluna",
+    Strings.WideNavigationRailPaneTitle to "Coluna de navegação",
 )
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
@@ -101,6 +110,7 @@ internal fun Translations.ptBR() = mapOf(
     Strings.MenuCollapsed to "Fechado",
     Strings.ToggleDropdownMenu to "Ativar/desativar o menu suspenso",
     Strings.SnackbarDismiss to "Dispensar",
+    Strings.SnackbarPaneTitle to "Alerta",
     Strings.SearchBarSearch to "Pesquisar",
     Strings.SuggestionsAvailable to "Sugestões abaixo",
     Strings.DatePickerTitle to "Selecionar data",
@@ -139,6 +149,8 @@ internal fun Translations.ptBR() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Fechar página inferior",
     Strings.BottomSheetDismissDescription to "Dispensar página inferior",
     Strings.BottomSheetExpandDescription to "Abrir página inferior",
+    Strings.FloatingToolbarCollapse to "Fechar barra de ferramentas",
+    Strings.FloatingToolbarExpand to "Abrir barra de ferramentas",
     Strings.TooltipPaneDescription to "Dica",
     Strings.TooltipLongPressLabel to "Mostrar dica",
     Strings.TimePickerPM to "PM",
@@ -153,6 +165,12 @@ internal fun Translations.ptBR() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "por minutos",
     Strings.TimePickerHourTextField to "por hora",
+    Strings.TimePickerToggleKeyboard to "Mudar para o modo de entrada de texto para informar o horário",
+    Strings.TimePickerToggleTouch to "Mudar para o modo de relógio para informar o horário",
+    Strings.TimePickerDialogTitle to "Selecione o horário",
+    Strings.TimeInputDialogTitle to "Insira a hora",
+    Strings.CloseRail to "Fechar coluna",
+    Strings.WideNavigationRailPaneTitle to "Coluna de navegação",
 )
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
@@ -169,6 +187,7 @@ internal fun Translations.ptPT() = mapOf(
     Strings.MenuCollapsed to "Reduzido",
     Strings.ToggleDropdownMenu to "Ativar/desativar menu pendente",
     Strings.SnackbarDismiss to "Ignorar",
+    Strings.SnackbarPaneTitle to "Alerta",
     Strings.SearchBarSearch to "Pesquisar",
     Strings.SuggestionsAvailable to "Sugestões abaixo",
     Strings.DatePickerTitle to "Selecione uma data",
@@ -207,6 +226,8 @@ internal fun Translations.ptPT() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Reduza a secção inferior",
     Strings.BottomSheetDismissDescription to "Ignore a secção inferior",
     Strings.BottomSheetExpandDescription to "Expanda a secção inferior",
+    Strings.FloatingToolbarCollapse to "Reduzir barra de ferramentas",
+    Strings.FloatingToolbarExpand to "Expandir barra de ferramentas",
     Strings.TooltipPaneDescription to "Sugestão",
     Strings.TooltipLongPressLabel to "Mostrar sugestão",
     Strings.TimePickerPM to "PM",
@@ -221,4 +242,10 @@ internal fun Translations.ptPT() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "para minutos",
     Strings.TimePickerHourTextField to "para hora",
+    Strings.TimePickerToggleKeyboard to "Mude para o método de introdução de texto para a introdução da hora",
+    Strings.TimePickerToggleTouch to "Mude para o modo de relógio para a introdução da hora",
+    Strings.TimePickerDialogTitle to "Selecione uma hora",
+    Strings.TimeInputDialogTitle to "Introduza uma hora",
+    Strings.CloseRail to "Fechar barra",
+    Strings.WideNavigationRailPaneTitle to "Barra de navegação",
 )

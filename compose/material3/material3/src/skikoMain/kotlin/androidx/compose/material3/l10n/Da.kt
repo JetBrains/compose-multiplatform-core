@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.da() = mapOf(
     Strings.MenuCollapsed to "Skjult",
     Strings.ToggleDropdownMenu to "Skift visningen af rullemenuen",
     Strings.SnackbarDismiss to "Afvis",
+    Strings.SnackbarPaneTitle to "Underretning",
     Strings.SearchBarSearch to "Søg",
     Strings.SuggestionsAvailable to "Forslag nedenfor",
     Strings.DatePickerTitle to "Vælg dato",
@@ -71,6 +72,8 @@ internal fun Translations.da() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Skjul felt i bunden",
     Strings.BottomSheetDismissDescription to "Luk felt i bunden",
     Strings.BottomSheetExpandDescription to "Udvid felt i bunden",
+    Strings.FloatingToolbarCollapse to "Skjul værktøjslinjen",
+    Strings.FloatingToolbarExpand to "Udvid værktøjslinjen",
     Strings.TooltipPaneDescription to "Værktøjstip",
     Strings.TooltipLongPressLabel to "Se værktøjstip",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.da() = mapOf(
     Strings.TimePickerHour to "Time",
     Strings.TimePickerMinuteTextField to "til minutter",
     Strings.TimePickerHourTextField to "til timer",
+    Strings.TimePickerToggleKeyboard to "Skift til input-tilstand for tekst for at angive tidspunkt",
+    Strings.TimePickerToggleTouch to "Skift til urtilstand for at angive tidspunkt",
+    Strings.TimePickerDialogTitle to "Vælg tidspunkt",
+    Strings.TimeInputDialogTitle to "Angiv tidspunkt",
+    Strings.CloseRail to "Luk bjælke",
+    Strings.WideNavigationRailPaneTitle to "Navigationsbjælke",
 )

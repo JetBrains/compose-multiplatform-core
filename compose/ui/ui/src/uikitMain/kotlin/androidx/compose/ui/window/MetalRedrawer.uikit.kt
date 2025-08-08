@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
@@ -155,10 +156,20 @@ internal class MetalRedrawer(
 
     var isForcedToPresentWithTransactionEveryFrame = false
 
-    var maximumFramesPerSecond: NSInteger
+    var maximumFramesPerSecond: NSInteger = 0
+
+    var preferredFramesPerSecond: NSInteger
         get() = caDisplayLink?.preferredFramesPerSecond ?: 0
         set(value) {
+            if (caDisplayLink?.preferredFramesPerSecond == value) return
             caDisplayLink?.preferredFramesPerSecond = value
+        }
+
+    val currentTargetFrameDuration: NSTimeInterval?
+        get() {
+            val currentTargetTimestamp = currentTargetTimestamp ?: return null
+            val currentTimestamp = caDisplayLink?.timestamp ?: return null
+            return currentTargetTimestamp - currentTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
@@ -293,6 +304,28 @@ internal class MetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
+    private var currentFrameRate: Float = Float.NaN
+
+    fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
+        val frameRateCategoryValue = when (frameRateCategory) {
+            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
+            FrameRateCategory.Normal.value -> 60f
+            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
+            else -> Float.NaN
+        }
+
+        val resolvedFrameRate = when {
+            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
+            !frameRate.isNaN() -> frameRate
+            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
+            else -> return
+        }
+
+        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
+            currentFrameRate = resolvedFrameRate
+        }
+    }
+
     /**
      * Encodes the frame and presents it on the screen.
      *
@@ -325,11 +358,15 @@ internal class MetalRedrawer(
                         height.toFloat()
                     )
                 ).also { canvas ->
-                    canvas.clear(if (metalLayer.isOpaque()) Color.WHITE else Color.TRANSPARENT)
                     render(canvas, lastRenderTimestamp)
                 }
 
                 pictureRecorder.finishRecordingAsPicture()
+            }
+
+            if (!currentFrameRate.isNaN()) {
+                preferredFramesPerSecond = currentFrameRate.toLong()
+                currentFrameRate = Float.NaN
             }
 
             trace("MetalRedrawer:draw:waitInflightSemaphore") {

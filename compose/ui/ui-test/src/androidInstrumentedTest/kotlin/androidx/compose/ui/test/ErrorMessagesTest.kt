@@ -323,7 +323,7 @@ class ErrorMessagesTest {
             Column {
                 TestButton(
                     modifier = Modifier.testTag("MyButton"),
-                    onClick = { toggle(!showText) }
+                    onClick = { toggle(!showText) },
                 ) {
                     Text("Toggle")
                 }
@@ -352,7 +352,7 @@ class ErrorMessagesTest {
     fun TestButton(
         modifier: Modifier = Modifier,
         onClick: (() -> Unit)? = null,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         Surface {
             Box(modifier.clickable(onClick = onClick ?: {}, enabled = onClick != null)) {
@@ -371,11 +371,11 @@ fun ComposeContentTestRule.setContentWithoutMinimumTouchTarget(composable: @Comp
                 doubleTapTimeoutMillis = oldViewConfiguration.doubleTapTimeoutMillis,
                 doubleTapMinTimeMillis = oldViewConfiguration.doubleTapMinTimeMillis,
                 touchSlop = oldViewConfiguration.touchSlop,
-                minimumTouchTargetSize = DpSize.Zero
+                minimumTouchTargetSize = DpSize.Zero,
             )
         CompositionLocalProvider(
             LocalViewConfiguration provides viewConfiguration,
-            content = composable
+            content = composable,
         )
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -36,19 +37,21 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalPlatformScreenReader
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.withContext
 
 /**
  * BaseComposeScene is an internal abstract class that implements the ComposeScene interface.
  * It provides a base implementation for managing composition, input events, and rendering.
  *
  * @property composeSceneContext the object that used to share "context" between multiple scenes
- * on the screen. Also, it provides a way for platform interaction that required within a scene.
+ * on the screen. Also, it provides a way for platform interaction that is required within a scene.
  */
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
@@ -225,7 +228,6 @@ internal abstract class BaseComposeScene(
         }
     }
 
-    // TODO(demin): return Boolean (when it is consumed)
     // TODO(demin) verify that pressure is the same on Android and iOS
     override fun sendPointerEvent(
         eventType: PointerEventType,
@@ -263,6 +265,29 @@ internal abstract class BaseComposeScene(
         }
     }
 
+    override fun sendRotaryScrollEvent(
+        verticalScrollPixels: Float,
+        horizontalScrollPixels: Float,
+        timeMillis: Long
+    ): Boolean = postponeInvalidation("BaseComposeScene:sendRotaryScrollEvent") {
+        val event = RotaryScrollEvent(
+            verticalScrollPixels = verticalScrollPixels,
+            horizontalScrollPixels = horizontalScrollPixels,
+            uptimeMillis = timeMillis
+        )
+        processRotaryScrollEvent(event).also {
+            recomposer.performScheduledEffects()
+        }
+    }
+
+    override suspend fun withMonotonicFrameClock(block: suspend () -> Unit) {
+        val monotonicFrameClock = compositionContext.effectCoroutineContext[MonotonicFrameClock]
+            ?: error("No MonotonicFrameClock found in compositionContext")
+        withContext(monotonicFrameClock) {
+            block()
+        }
+    }
+
     private fun doMeasureAndLayout() {
         snapshotInvalidationTracker.onMeasureAndLayout()
         measureAndLayout()
@@ -275,6 +300,8 @@ internal abstract class BaseComposeScene(
     protected abstract fun processCancelPointerInput()
 
     protected abstract fun processKeyEvent(keyEvent: KeyEvent): Boolean
+
+    protected abstract fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean
 
     protected abstract fun measureAndLayout()
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// VERSION: v0_210
+// VERSION: v0_11_0
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.compose.material3.tokens
@@ -21,31 +21,19 @@ package androidx.compose.material3.tokens
 import androidx.compose.ui.unit.dp
 
 internal object NavigationBarTokens {
-    val ActiveFocusIconColor = ColorSchemeKeyTokens.OnSecondaryContainer
-    val ActiveFocusLabelTextColor = ColorSchemeKeyTokens.OnSurface
-    val ActiveHoverIconColor = ColorSchemeKeyTokens.OnSecondaryContainer
-    val ActiveHoverLabelTextColor = ColorSchemeKeyTokens.OnSurface
-    val ActiveIconColor = ColorSchemeKeyTokens.OnSecondaryContainer
-    val ActiveIndicatorColor = ColorSchemeKeyTokens.SecondaryContainer
-    val ActiveIndicatorHeight = 32.0.dp
-    val ActiveIndicatorShape = ShapeKeyTokens.CornerFull
-    val ActiveIndicatorWidth = 64.0.dp
-    val ActiveLabelTextColor = ColorSchemeKeyTokens.OnSurface
-    val ActivePressedIconColor = ColorSchemeKeyTokens.OnSecondaryContainer
-    val ActivePressedLabelTextColor = ColorSchemeKeyTokens.OnSurface
     val ContainerColor = ColorSchemeKeyTokens.SurfaceContainer
     val ContainerElevation = ElevationTokens.Level2
-    val ContainerHeight = 80.0.dp
-    val ContainerShape = ShapeKeyTokens.CornerNone
-    val FocusIndicatorColor = ColorSchemeKeyTokens.Secondary
-    val IconSize = 24.0.dp
-    val InactiveFocusIconColor = ColorSchemeKeyTokens.OnSurface
-    val InactiveFocusLabelTextColor = ColorSchemeKeyTokens.OnSurface
-    val InactiveHoverIconColor = ColorSchemeKeyTokens.OnSurface
-    val InactiveHoverLabelTextColor = ColorSchemeKeyTokens.OnSurface
-    val InactiveIconColor = ColorSchemeKeyTokens.OnSurfaceVariant
-    val InactiveLabelTextColor = ColorSchemeKeyTokens.OnSurfaceVariant
-    val InactivePressedIconColor = ColorSchemeKeyTokens.OnSurface
-    val InactivePressedLabelTextColor = ColorSchemeKeyTokens.OnSurface
+    val ContainerHeight = 64.0.dp
+    val ItemActiveIconColor = ColorSchemeKeyTokens.OnSecondaryContainer
+    val ItemActiveIndicatorColor = ColorSchemeKeyTokens.SecondaryContainer
+    val ItemActiveIndicatorIconLabelSpace = 4.0.dp
+    val ItemActiveIndicatorShape = ShapeKeyTokens.CornerFull
+    val ItemActiveLabelTextColor = ColorSchemeKeyTokens.Secondary
+    val ItemBetweenSpace = 0.0.dp
+    val ItemInactiveIconColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val ItemInactiveLabelTextColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val NavShape = ShapeKeyTokens.CornerNone
+    // TODO: Update this file to include the following missing tokens:
+    val TallContainerHeight = 80.0.dp
     val LabelTextFont = TypographyKeyTokens.LabelMedium
 }

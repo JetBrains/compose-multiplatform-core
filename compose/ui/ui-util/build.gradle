@@ -97,7 +97,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             wasmJsMain.dependsOn(webMain)
 
             commonTest.dependencies {
-                implementation(kotlin("test"))
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
 
             // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you

@@ -96,12 +96,6 @@ androidXMultiplatform {
                 }
             }
         }
-
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
-        }
     }
 }
 

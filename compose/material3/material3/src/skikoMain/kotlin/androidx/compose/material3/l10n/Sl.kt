@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.sl() = mapOf(
     Strings.MenuCollapsed to "Strnjeno",
     Strings.ToggleDropdownMenu to "Preklop spustnega menija",
     Strings.SnackbarDismiss to "Opusti",
+    Strings.SnackbarPaneTitle to "Opozorilo",
     Strings.SearchBarSearch to "Iskanje",
     Strings.SuggestionsAvailable to "Predlogi so spodaj",
     Strings.DatePickerTitle to "Izbira datuma",
@@ -71,6 +72,8 @@ internal fun Translations.sl() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Strnitev razdelka na dnu zaslona",
     Strings.BottomSheetDismissDescription to "Opustitev razdelka na dnu zaslona",
     Strings.BottomSheetExpandDescription to "Razširitev razdelka na dnu zaslona",
+    Strings.FloatingToolbarCollapse to "Strnitev orodne vrstice",
+    Strings.FloatingToolbarExpand to "Razširitev orodne vrstice",
     Strings.TooltipPaneDescription to "Opis orodja",
     Strings.TooltipLongPressLabel to "Pokaži opis orodja",
     Strings.TimePickerPM to "pop.",
@@ -85,4 +88,10 @@ internal fun Translations.sl() = mapOf(
     Strings.TimePickerHour to "Ura",
     Strings.TimePickerMinuteTextField to "za minute",
     Strings.TimePickerHourTextField to "za uro",
+    Strings.TimePickerToggleKeyboard to "Preklop na način za vnos besedila, da vnesete uro",
+    Strings.TimePickerToggleTouch to "Preklop na način ure, da vnesete uro",
+    Strings.TimePickerDialogTitle to "Izberite uro",
+    Strings.TimeInputDialogTitle to "Vnesite uro",
+    Strings.CloseRail to "Zapiranje črte",
+    Strings.WideNavigationRailPaneTitle to "Črta za krmarjenje",
 )

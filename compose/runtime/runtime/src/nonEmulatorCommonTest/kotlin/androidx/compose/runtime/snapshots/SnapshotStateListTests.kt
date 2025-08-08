@@ -112,6 +112,16 @@ class SnapshotStateListTests {
         }
     }
 
+    @Test // b/417493222
+    fun validateIterator_previous_remove() {
+        validate(mutableStateListOf(100)) { normalList ->
+            val iterator = normalList.listIterator(1)
+            val value = iterator.previous()
+            assertEquals(100, value)
+            iterator.remove()
+        }
+    }
+
     @Test
     fun validateLastIndexOf() {
         val list = mutableStateListOf(0, 1, 2, 3, 4, 0, 1, 2, 3, 4)

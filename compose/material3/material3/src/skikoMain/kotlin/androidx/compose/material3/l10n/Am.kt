@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.am() = mapOf(
     Strings.MenuCollapsed to "ተሰብስቧል",
     Strings.ToggleDropdownMenu to "ተቆልቋይ ምናሌ ይቀያይሩ",
     Strings.SnackbarDismiss to "አሰናብት",
+    Strings.SnackbarPaneTitle to "ማንቂያ",
     Strings.SearchBarSearch to "ፈልግ",
     Strings.SuggestionsAvailable to "የአስተያየት ጥቆማዎች ከታች",
     Strings.DatePickerTitle to "ቀን ይምረጡ",
@@ -71,6 +72,8 @@ internal fun Translations.am() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "የግርጌ ሉህን ይሰብስቡ",
     Strings.BottomSheetDismissDescription to "የግርጌ ሉህን ያሰናብቱ",
     Strings.BottomSheetExpandDescription to "የግርጌ ሉህ ይዘርጉ",
+    Strings.FloatingToolbarCollapse to "የመሣሪያ አሞሌን ሰብስብ",
+    Strings.FloatingToolbarExpand to "የመሣሪያ አሞሌን ዘርጋ",
     Strings.TooltipPaneDescription to "የመሣሪያ ጥቆማ",
     Strings.TooltipLongPressLabel to "መሣሪያ ጥቆማን አሳይ",
     Strings.TimePickerPM to "ፒኤም",
@@ -85,4 +88,10 @@ internal fun Translations.am() = mapOf(
     Strings.TimePickerHour to "ሰዓት",
     Strings.TimePickerMinuteTextField to "ለደቂቃዎች",
     Strings.TimePickerHourTextField to "ለሰዓት",
+    Strings.TimePickerToggleKeyboard to "ለጊዜ ግቤቱ ወደ የጽሑፍ ግቤት ሁነታ ይቀይሩ",
+    Strings.TimePickerToggleTouch to "ለጊዜ ግቤቱ ወደ የሰዓት ሁነታ ይቀይሩ",
+    Strings.TimePickerDialogTitle to "ጊዜ ምረጥ",
+    Strings.TimeInputDialogTitle to "ጊዜ ያስገቡ",
+    Strings.CloseRail to "ሐዲድ ዝጋ",
+    Strings.WideNavigationRailPaneTitle to "የአሰሳ ሐዲድ",
 )

@@ -18,6 +18,12 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.DesktopPlatform
 import androidx.compose.foundation.text.MappedKeys
+import androidx.compose.foundation.text.DesktopTextContextMenuItems
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Copy
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithLocalization
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -37,3 +43,37 @@ internal actual fun isCopyKeyEvent(keyEvent: KeyEvent) =
  * Magnification is not supported on desktop.
  */
 internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modifier = this
+
+internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
+    selectionManager: SelectionManager,
+): Modifier = addTextContextMenuComponentsWithLocalization { localization ->
+    fun TextContextMenuBuilderScope.selectionContainerItem(
+        item: DesktopTextContextMenuItems,
+        enabled: Boolean,
+        closePredicate: (() -> Boolean)? = null,
+        onClick: () -> Unit
+    ) {
+        item(
+            key = item.key,
+            label = item.label(localization),
+            enabled = enabled,
+            onClick = {
+                onClick()
+                if (closePredicate?.invoke() != false) close()
+            }
+        )
+    }
+
+    with(selectionManager) {
+        separator()
+        selectionContainerItem(Copy, enabled = isNonEmptySelection()) { copy() }
+        selectionContainerItem(
+            item = SelectAll,
+            enabled = !isEntireContainerSelected(),
+            closePredicate = { !showToolbar || !isInTouchMode },
+        ) {
+            selectAll()
+        }
+        separator()
+    }
+}

@@ -162,12 +162,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 30.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 40.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -202,12 +202,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 40.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 30.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -242,12 +242,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 3000.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 4000.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -282,12 +282,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 4000.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 3000.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -322,7 +322,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -358,7 +358,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -394,7 +394,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -464,7 +464,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("es-ES"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
     }
 
@@ -484,7 +484,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("ar"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
         assertEquals(LayoutDirection.Rtl, layoutDirection)
         assertEquals(View.LAYOUT_DIRECTION_RTL, configuration.layoutDirection)
@@ -502,7 +502,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             Configuration.UI_MODE_NIGHT_YES,
-            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
         )
     }
 
@@ -518,7 +518,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             Configuration.UI_MODE_NIGHT_NO,
-            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
         )
     }
 
@@ -597,7 +597,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("ar"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
         assertEquals(LayoutDirection.Ltr, layoutDirection)
         assertEquals(View.LAYOUT_DIRECTION_LTR, configuration.layoutDirection)

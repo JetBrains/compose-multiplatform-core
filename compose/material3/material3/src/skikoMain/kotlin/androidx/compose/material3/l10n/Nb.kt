@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.nb() = mapOf(
     Strings.MenuCollapsed to "Skjules",
     Strings.ToggleDropdownMenu to "Slå rullegardinmeny av/på",
     Strings.SnackbarDismiss to "Lukk",
+    Strings.SnackbarPaneTitle to "Varsel",
     Strings.SearchBarSearch to "Søk",
     Strings.SuggestionsAvailable to "Du finner forslag nedenfor",
     Strings.DatePickerTitle to "Velg dato",
@@ -71,6 +72,8 @@ internal fun Translations.nb() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Skjul feltet nederst",
     Strings.BottomSheetDismissDescription to "Lukk feltet nederst",
     Strings.BottomSheetExpandDescription to "Vis feltet nederst",
+    Strings.FloatingToolbarCollapse to "Skjul verktøylinjen",
+    Strings.FloatingToolbarExpand to "Vis verktøylinjen",
     Strings.TooltipPaneDescription to "Verktøytips",
     Strings.TooltipLongPressLabel to "Vis verktøytips",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.nb() = mapOf(
     Strings.TimePickerHour to "Time",
     Strings.TimePickerMinuteTextField to "for minutter",
     Strings.TimePickerHourTextField to "for timer",
+    Strings.TimePickerToggleKeyboard to "Bytt til inndatamodus for tekst for tidsinndata",
+    Strings.TimePickerToggleTouch to "Bytt til klokkemodus for tidsinndata",
+    Strings.TimePickerDialogTitle to "Velg et klokkeslett",
+    Strings.TimeInputDialogTitle to "Angi et klokkeslett",
+    Strings.CloseRail to "Lukk linjen",
+    Strings.WideNavigationRailPaneTitle to "Navigasjonslinje",
 )

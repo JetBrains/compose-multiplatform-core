@@ -74,6 +74,9 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val SnackbarDismiss
             get() = Strings(MaterialR.string.m3c_snackbar_dismiss)
 
+        actual inline val SnackbarPaneTitle
+            get() = Strings(MaterialR.string.m3c_snackbar_pane_title)
+
         actual inline val SearchBarSearch
             get() = Strings(MaterialR.string.m3c_search_bar_search)
 
@@ -173,6 +176,12 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val DateRangeInputInvalidRangeInput
             get() = Strings(MaterialR.string.m3c_date_range_input_invalid_range_input)
 
+        actual inline val FloatingToolbarCollapse
+            get() = Strings(MaterialR.string.m3c_floating_toolbar_collapse)
+
+        actual inline val FloatingToolbarExpand
+            get() = Strings(MaterialR.string.m3c_floating_toolbar_expand)
+
         actual inline val BottomSheetPaneTitle
             get() = Strings(MaterialR.string.m3c_bottom_sheet_pane_title)
 
@@ -227,6 +236,18 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val TimePickerMinuteTextField
             get() = Strings(MaterialR.string.m3c_time_picker_minute_text_field)
 
+        actual inline val TimePickerDialogTitle
+            get() = Strings(MaterialR.string.m3c_time_picker_dialog_title)
+
+        actual inline val TimeInputDialogTitle
+            get() = Strings(MaterialR.string.m3c_time_input_dialog_title)
+
+        actual inline val TimePickerToggleKeyboard
+            get() = Strings(MaterialR.string.m3c_time_picker_toggle_keyboard)
+
+        actual inline val TimePickerToggleTouch
+            get() = Strings(MaterialR.string.m3c_time_picker_toggle_touch)
+
         actual inline val TooltipPaneDescription
             get() = Strings(MaterialR.string.m3c_tooltip_pane_description)
 
@@ -236,7 +257,16 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val CloseDrawer
             get() = Strings(R.string.close_drawer)
 
+        actual inline val CloseRail
+            get() = Strings(MaterialR.string.m3c_wide_navigation_rail_close_rail)
+
         actual inline val CloseSheet
             get() = Strings(R.string.close_sheet)
+
+        actual inline val WideNavigationRailPaneTitle
+            get() = Strings(MaterialR.string.m3c_wide_navigation_rail_pane_title)
     }
 }
+
+internal actual fun formatString(string: String, vararg formatArgs: Any?): String =
+    string.format(*formatArgs)

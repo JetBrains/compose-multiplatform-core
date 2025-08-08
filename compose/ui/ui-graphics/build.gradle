@@ -108,16 +108,16 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(skikoMain)
             }
 
-            jsNativeMain.dependsOn(skikoMain)
+            nonJvmMain.dependsOn(skikoMain)
 
-            jsWasmMain.dependsOn(jsNativeMain)
+            webMain.dependsOn(nonJvmMain)
 
             jsMain {
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
 
             wasmJsMain {
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
                 dependencies {
                     implementation(libs.kotlinStdlib)
                     implementation(libs.create("skikoWasm"))
@@ -139,7 +139,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 }
             }
 
-            nativeMain.dependsOn(jsNativeMain)
+            nativeMain.dependsOn(nonJvmMain)
             nativeMain.dependsOn(skikoExcludingWebMain)
 
             // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you

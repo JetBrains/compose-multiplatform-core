@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -46,7 +45,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Kotlin extensions for 'savedstate' artifact"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {

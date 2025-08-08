@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.sq() = mapOf(
     Strings.MenuCollapsed to "Palosur",
     Strings.ToggleDropdownMenu to "Zgjero/palos menynë me lëshim poshtë",
     Strings.SnackbarDismiss to "Hiq",
+    Strings.SnackbarPaneTitle to "Sinjalizim",
     Strings.SearchBarSearch to "Kërkimi",
     Strings.SuggestionsAvailable to "Sugjerimet më poshtë",
     Strings.DatePickerTitle to "Zgjidh datën",
@@ -71,6 +72,8 @@ internal fun Translations.sq() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Palos fletën e poshtme",
     Strings.BottomSheetDismissDescription to "Hiq fletën e poshtme",
     Strings.BottomSheetExpandDescription to "Zgjero fletën e poshtme",
+    Strings.FloatingToolbarCollapse to "Palos shiritin e veglave",
+    Strings.FloatingToolbarExpand to "Zgjero shiritin e veglave",
     Strings.TooltipPaneDescription to "Këshilla për veglën",
     Strings.TooltipLongPressLabel to "Shfaq këshillat për veglën",
     Strings.TimePickerPM to "pasdite",
@@ -85,4 +88,10 @@ internal fun Translations.sq() = mapOf(
     Strings.TimePickerHour to "Ora",
     Strings.TimePickerMinuteTextField to "për minuta",
     Strings.TimePickerHourTextField to "për orë",
+    Strings.TimePickerToggleKeyboard to "Kalo te modaliteti i hyrjes së tekstit për hyrjen e kohës",
+    Strings.TimePickerToggleTouch to "Kalo te modaliteti i orës për hyrjen e kohës",
+    Strings.TimePickerDialogTitle to "Zgjidh orën",
+    Strings.TimeInputDialogTitle to "Fut orën",
+    Strings.CloseRail to "Mbyll shinën",
+    Strings.WideNavigationRailPaneTitle to "Shina e shfletimit",
 )

@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
@@ -96,7 +95,6 @@ private data class CupertinoOverscrollAvailableDelta(
  */
 internal class CupertinoOverscrollEffect(
     private val density: Float,
-    layoutDirection: LayoutDirection,
     val applyClip: Boolean
 ) : OverscrollEffect {
     /*
@@ -110,12 +108,6 @@ internal class CupertinoOverscrollEffect(
      * received delta.
      */
     private var direction: CupertinoOverscrollDirection = CupertinoOverscrollDirection.UNKNOWN
-
-    private val reverseHorizontal =
-        when (layoutDirection) {
-            LayoutDirection.Ltr -> false
-            LayoutDirection.Rtl -> true
-        }
 
     /*
      * Size of container is taking into consideration when computing rubber banding
@@ -141,7 +133,7 @@ internal class CupertinoOverscrollEffect(
 
     private var lastFlingUnconsumedDelta: Offset = Offset.Zero
     private val visibleOverscrollOffset: IntOffset
-        get() = overscrollOffsetState.value.reverseHorizontalIfNeeded().rubberBanded().round()
+        get() = overscrollOffsetState.value.rubberBanded().round()
 
     override val isInProgress: Boolean
         get() =
@@ -433,12 +425,6 @@ internal class CupertinoOverscrollEffect(
 
         return currentVelocity
     }
-
-    private fun Offset.reverseHorizontalIfNeeded(): Offset =
-        Offset(
-            if (reverseHorizontal) -x else x,
-            y
-        )
 
     private fun Offset.rubberBanded(): Offset {
         if (scrollSize.width == 0f || scrollSize.height == 0f) {

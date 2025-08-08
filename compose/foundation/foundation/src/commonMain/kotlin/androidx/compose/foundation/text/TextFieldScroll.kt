@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
@@ -56,7 +55,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.min
 
-@ExperimentalFoundationApi
 @Composable
 internal expect fun rememberTextFieldOverscrollEffect(): OverscrollEffect?
 
@@ -65,7 +63,7 @@ internal fun Modifier.textFieldScrollable(
     scrollerPosition: TextFieldScrollerPosition,
     interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
-    overscrollEffect: OverscrollEffect? = null
+    overscrollEffect: OverscrollEffect? = null,
 ) =
     composed(
         inspectorInfo =
@@ -111,7 +109,7 @@ internal fun Modifier.textFieldScrollable(
                 overscrollEffect = overscrollEffect,
                 state = wrappedScrollableState,
                 interactionSource = interactionSource,
-                enabled = enabled && scrollerPosition.maximum != 0f
+                enabled = enabled && scrollerPosition.maximum != 0f,
             )
         scroll
     }
@@ -122,14 +120,14 @@ internal expect fun Modifier.textFieldScroll(
     scrollerPosition: TextFieldScrollerPosition,
     textFieldValue: TextFieldValue,
     visualTransformation: VisualTransformation,
-    textLayoutResultProvider: () -> TextLayoutResultProxy?
+    textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ): Modifier
 
 internal fun Modifier.defaultTextFieldScroll(
     scrollerPosition: TextFieldScrollerPosition,
     textFieldValue: TextFieldValue,
     visualTransformation: VisualTransformation,
-    textLayoutResultProvider: () -> TextLayoutResultProxy?
+    textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ): Modifier {
     val orientation = scrollerPosition.orientation
     val cursorOffset = scrollerPosition.getOffsetToFollow(textFieldValue.selection)
@@ -144,14 +142,14 @@ internal fun Modifier.defaultTextFieldScroll(
                     scrollerPosition,
                     cursorOffset,
                     transformedText,
-                    textLayoutResultProvider
+                    textLayoutResultProvider,
                 )
             Orientation.Horizontal ->
                 HorizontalScrollLayoutModifier(
                     scrollerPosition,
                     cursorOffset,
                     transformedText,
-                    textLayoutResultProvider
+                    textLayoutResultProvider,
                 )
         }
     return this.clipToBounds().then(layout)
@@ -161,11 +159,11 @@ private data class VerticalScrollLayoutModifier(
     val scrollerPosition: TextFieldScrollerPosition,
     val cursorOffset: Int,
     val transformedText: TransformedText,
-    val textLayoutResultProvider: () -> TextLayoutResultProxy?
+    val textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val childConstraints = constraints.copy(maxHeight = Constraints.Infinity)
         val placeable = measurable.measure(childConstraints)
@@ -178,14 +176,14 @@ private data class VerticalScrollLayoutModifier(
                     transformedText = transformedText,
                     textLayoutResult = textLayoutResultProvider()?.value,
                     rtl = false,
-                    textFieldWidth = placeable.width
+                    textFieldWidth = placeable.width,
                 )
 
             scrollerPosition.update(
                 orientation = Orientation.Vertical,
                 cursorRect = cursorRect,
                 containerSize = height,
-                textFieldSize = placeable.height
+                textFieldSize = placeable.height,
             )
 
             val offset = -scrollerPosition.offset
@@ -198,11 +196,11 @@ private data class HorizontalScrollLayoutModifier(
     val scrollerPosition: TextFieldScrollerPosition,
     val cursorOffset: Int,
     val transformedText: TransformedText,
-    val textLayoutResultProvider: () -> TextLayoutResultProxy?
+    val textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // If the maxIntrinsicWidth of the children is already smaller than the constraint, pass
         // the original constraints so that the children has more information to  determine its
@@ -224,14 +222,14 @@ private data class HorizontalScrollLayoutModifier(
                     transformedText = transformedText,
                     textLayoutResult = textLayoutResultProvider()?.value,
                     rtl = layoutDirection == LayoutDirection.Rtl,
-                    textFieldWidth = placeable.width
+                    textFieldWidth = placeable.width,
                 )
 
             scrollerPosition.update(
                 orientation = Orientation.Horizontal,
                 cursorRect = cursorRect,
                 containerSize = width,
-                textFieldSize = placeable.width
+                textFieldSize = placeable.width,
             )
 
             val offset = -scrollerPosition.offset
@@ -245,7 +243,7 @@ private fun Density.getCursorRectInScroller(
     transformedText: TransformedText,
     textLayoutResult: TextLayoutResult?,
     rtl: Boolean,
-    textFieldWidth: Int
+    textFieldWidth: Int,
 ): Rect {
     val cursorRect =
         textLayoutResult?.getCursorRect(
@@ -270,10 +268,7 @@ private fun Density.getCursorRectInScroller(
 }
 
 @Stable
-internal class TextFieldScrollerPosition(
-    initialOrientation: Orientation,
-    initial: Float = 0f,
-) {
+internal class TextFieldScrollerPosition(initialOrientation: Orientation, initial: Float = 0f) {
 
     /*@VisibleForTesting*/
     constructor() : this(Orientation.Vertical)
@@ -396,9 +391,9 @@ internal class TextFieldScrollerPosition(
                     TextFieldScrollerPosition(
                         if (restored[1] as Boolean) Orientation.Vertical
                         else Orientation.Horizontal,
-                        restored[0] as Float
+                        restored[0] as Float,
                     )
-                }
+                },
             )
     }
 }

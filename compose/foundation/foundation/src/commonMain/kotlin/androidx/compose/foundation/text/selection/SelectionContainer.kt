@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.isWriteSupported
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.ContextMenuArea
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
@@ -57,7 +60,7 @@ fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () ->
         modifier = modifier,
         selection = selection,
         onSelectionChange = { selection = it },
-        children = content
+        children = content,
     )
 }
 
@@ -87,7 +90,7 @@ internal fun SelectionContainer(
     selection: Selection?,
     /** A function containing customized behaviour when selection changes. */
     onSelectionChange: (Selection?) -> Unit,
-    children: @Composable () -> Unit
+    children: @Composable () -> Unit,
 ) {
     val registrarImpl =
         rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() }
@@ -99,15 +102,25 @@ internal fun SelectionContainer(
     manager.hapticFeedBack = LocalHapticFeedback.current
     manager.onCopyHandler =
         remember(coroutineScope, clipboard) {
-            { textToCopy ->
-                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    clipboard.setClipEntry(textToCopy.toClipEntry())
+            if (clipboard.isWriteSupported()) {
+                { textToCopy ->
+                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        clipboard.setClipEntry(textToCopy.toClipEntry())
+                    }
                 }
+            } else {
+                null
             }
         }
     manager.textToolbar = LocalTextToolbar.current
     manager.onSelectionChange = onSelectionChange
     manager.selection = selection
+    @OptIn(ExperimentalFoundationApi::class)
+    if (ComposeFoundationFlags.isSmartSelectionEnabled) {
+        manager.platformSelectionBehaviors =
+            rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, null)
+        manager.coroutineScope = coroutineScope
+    }
 
     // TODO: upstreaming https://youtrack.jetbrains.com/issue/CMP-7517/Upstream-rememberClipboardEventsHandler
     rememberClipboardEventsHandler(

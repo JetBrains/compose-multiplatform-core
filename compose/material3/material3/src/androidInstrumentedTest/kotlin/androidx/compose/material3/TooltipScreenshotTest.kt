@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
@@ -38,7 +37,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class TooltipScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -55,7 +54,7 @@ class TooltipScreenshotTest {
         rule.onNodeWithTag(AnchorTestTag).performTouchInput { longClick() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
         assertAgainstGolden("plainTooltip_lightTheme")
@@ -71,7 +70,7 @@ class TooltipScreenshotTest {
         rule.onNodeWithTag(AnchorTestTag).performTouchInput { longClick() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
         assertAgainstGolden("plainTooltip_darkTheme")
@@ -87,7 +86,7 @@ class TooltipScreenshotTest {
         rule.onNodeWithTag(AnchorTestTag).performTouchInput { longClick() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
         assertAgainstGolden("richTooltip_lightTheme")
@@ -103,7 +102,7 @@ class TooltipScreenshotTest {
         rule.onNodeWithTag(AnchorTestTag).performTouchInput { longClick() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
         assertAgainstGolden("richTooltip_darkTheme")
@@ -120,14 +119,15 @@ class TooltipScreenshotTest {
     private fun PlainTooltipTest() {
         val tooltipState = rememberTooltipState()
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 PlainTooltip(modifier = Modifier.testTag(TooltipTestTag)) {
                     Text("Tooltip Description")
                 }
             },
             modifier = Modifier.testTag(AnchorTestTag),
-            state = tooltipState
+            state = tooltipState,
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null)
         }
@@ -137,12 +137,13 @@ class TooltipScreenshotTest {
     private fun RichTooltipTest() {
         val tooltipState = rememberTooltipState(isPersistent = true)
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 RichTooltip(
                     title = { Text("Title") },
                     action = { TextButton(onClick = {}) { Text("Action Text") } },
-                    modifier = Modifier.testTag(TooltipTestTag)
+                    modifier = Modifier.testTag(TooltipTestTag),
                 ) {
                     Text(
                         "Area for supportive text, providing a descriptive " +
@@ -151,7 +152,7 @@ class TooltipScreenshotTest {
                 }
             },
             state = tooltipState,
-            modifier = Modifier.testTag(AnchorTestTag)
+            modifier = Modifier.testTag(AnchorTestTag),
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null)
         }
@@ -160,3 +161,5 @@ class TooltipScreenshotTest {
 
 private const val AnchorTestTag = "Anchor"
 private const val TooltipTestTag = "tooltip"
+// We use springs to animate, so picking an arbitrary duration that works.
+private const val TooltipFadeInDuration = 300L

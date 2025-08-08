@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.uikit
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
@@ -47,7 +46,7 @@ class ComposeUIViewControllerConfiguration {
      * Determines whether the Compose view should have an opaque background.
      * Warning: disabling opaque layer may affect performance.
      */
-    @ExperimentalComposeApi
+    @ExperimentalComposeUiApi
     var opaque: Boolean = true
 
     /**
@@ -72,7 +71,7 @@ class ComposeUIViewControllerConfiguration {
     /**
      * A flag to enable or disable iOS BackGesture recognizer.
      */
-    @ExperimentalComposeApi
+    @ExperimentalComposeUiApi
     var enableBackGesture: Boolean = true
 }
 

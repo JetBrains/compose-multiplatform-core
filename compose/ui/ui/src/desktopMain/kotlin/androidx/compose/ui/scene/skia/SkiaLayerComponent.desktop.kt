@@ -16,11 +16,16 @@
 
 package androidx.compose.ui.scene.skia
 
+import androidx.compose.ui.awt.RenderSettings
+import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.scene.ComposeSceneMediator
 import javax.accessibility.Accessible
 import javax.swing.JComponent
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayer
+import org.jetbrains.skiko.SkiaLayerAnalytics
+import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.swing.SkiaSwingLayer
 
 /**
@@ -43,4 +48,28 @@ internal interface SkiaLayerComponent {
 
     fun onComposeInvalidation()
     fun onRenderApiChanged(action: () -> Unit)
+}
+
+/**
+ * Factory method to create an instance of [SkiaLayerComponent] based on the render settings.
+ */
+internal fun SkiaLayerComponent(
+    mediator: ComposeSceneMediator,
+    windowContext: PlatformWindowContext,
+    renderDelegate: SkikoRenderDelegate,
+    skiaLayerAnalytics: SkiaLayerAnalytics,
+    renderSettings: RenderSettings,
+): SkiaLayerComponent = when (renderSettings) {
+    is RenderSettings.SwingGraphics -> SwingSkiaLayerComponent(
+        mediator = mediator,
+        renderDelegate = renderDelegate,
+        skiaLayerAnalytics = skiaLayerAnalytics
+    )
+    is RenderSettings.SkiaSurface -> WindowSkiaLayerComponent(
+        mediator = mediator,
+        windowContext = windowContext,
+        renderDelegate = renderDelegate,
+        skiaLayerAnalytics = skiaLayerAnalytics,
+        renderSettings = renderSettings
+    )
 }

@@ -17,4 +17,5 @@
 package androidx.savedstate
 
 // No parceling in non-Android platforms.
-actual fun platformEncodeDecode(savedState: SavedState): SavedState = savedState
+actual fun platformEncodeDecode(savedState: SavedState, doMarshalling: Boolean): SavedState =
+    savedState

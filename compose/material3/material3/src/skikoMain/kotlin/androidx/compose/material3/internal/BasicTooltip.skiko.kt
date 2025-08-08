@@ -16,48 +16,13 @@
 
 package androidx.compose.material3.internal
 
-import androidx.compose.foundation.BasicTooltipState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.TooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.window.PopupProperties
 
-/**
- * NOTICE:
- * Fork from androidx.compose.foundation.BasicTooltip box since those are experimental
- *
- * BasicTooltipBox that wraps a composable with a tooltip.
- *
- * Tooltip that provides a descriptive message for an anchor.
- * It can be used to call the users attention to the anchor.
- *
- * @param positionProvider [PopupPositionProvider] that will be used to place the tooltip
- * relative to the anchor content.
- * @param tooltip the composable that will be used to populate the tooltip's content.
- * @param state handles the state of the tooltip's visibility.
- * @param modifier the [Modifier] to be applied to this BasicTooltipBox.
- * @param focusable [Boolean] that determines if the tooltip is focusable. When true,
- * the tooltip will consume touch events while it's shown and will have accessibility
- * focus move to the first element of the component. When false, the tooltip
- * won't consume touch events while it's shown but assistive-tech users will need
- * to swipe or drag to get to the first element of the component.
- * @param enableUserInput [Boolean] which determines if this BasicTooltipBox will handle
- * long press and mouse hover to trigger the tooltip through the state provided.
- * @param content the composable that the tooltip will anchor to.
-*/
-@Composable
-internal actual fun BasicTooltipBox(
-    positionProvider: PopupPositionProvider,
-    tooltip: @Composable () -> Unit,
-    state: TooltipState,
-    modifier: Modifier,
-    focusable: Boolean,
-    enableUserInput: Boolean,
-    content: @Composable () -> Unit
-) = BasicTooltipBoxInternal(
-    positionProvider, tooltip, state, modifier, focusable, enableUserInput, content
-)
-
+// TODO(https://github.com/JetBrains/compose-multiplatform/issues/3360) Support localization
+//  the current values are copied from compose\foundation\foundation\src\androidMain\res\values-en-rGB\strings.xml
+internal actual object BasicTooltipStrings {
+    @Composable
+    actual fun label() = "show tooltip"
+    @Composable
+    actual fun description() = "tooltip"
+}

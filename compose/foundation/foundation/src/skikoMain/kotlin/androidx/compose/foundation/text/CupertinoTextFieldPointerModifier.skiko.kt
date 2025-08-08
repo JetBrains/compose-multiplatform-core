@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
@@ -63,14 +64,14 @@ internal fun Modifier.cupertinoTextFieldPointer(
         this
             .then(tapHandlerModifier)
             .then(longPressHandlerModifier)
-            .pointerHoverIcon(textPointerIcon)
+            .pointerHoverIcon(PointerIcon.Text)
     } else {
         this
             .selectionGestureInput(
                 mouseSelectionObserver = manager.mouseSelectionObserver,
                 textDragObserver = manager.touchSelectionObserver,
             )
-            .pointerHoverIcon(textPointerIcon)
+            .pointerHoverIcon(PointerIcon.Text)
     }
 } else {
     this

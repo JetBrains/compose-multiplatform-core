@@ -21,7 +21,10 @@ config.browserConsoleLogOptions.level = "debug";
 
 const basePath = config.basePath;
 const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
-const configPath = path.resolve(rootPath, "mpp", "karma.config.d", "wasm");
+const karmaPath = path.resolve(rootPath, "mpp", "karma.config.d")
+const configPath = path.resolve(karmaPath, "wasm");
+
+const {configLaunchers} = require(path.resolve(karmaPath, "web", "commonKarmaConfig.js"))
 
 // https://github.com/JetBrains/compose-multiplatform-core/pull/1008#issuecomment-1956354231
 config.client.mocha = config.client.mocha || {};
@@ -44,19 +47,10 @@ function KarmaWebpackOutputFramework(config) {
         return
     }
 
-    config.files.push({
-        pattern: `${staticFilesDir}/**/*.js`,
-        included: true,
-        served: true,
-        watched: false
-    });
-
-    config.files.push({
-        pattern: `${controller.outputPath}/**/*`,
-        included: false,
-        served: true,
-        watched: false
-    });
+    config.files.push(
+        {pattern: `${staticFilesDir}/**/*.js`, included: true, served: true, watched: false},
+        {pattern: `${controller.outputPath}/**/*`, included: false, served: true, watched: false}
+    );
 }
 
 const KarmaWebpackOutputPlugin = {
@@ -66,15 +60,7 @@ const KarmaWebpackOutputPlugin = {
 config.plugins.push(KarmaWebpackOutputPlugin);
 config.frameworks.push("webpack-output");
 
-
-config.customLaunchers = {
-    ChromeForComposeTests: {
-        base: "Chrome",
-        flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
-    }
-}
-
-config.browsers = ["ChromeForComposeTests"];
+configLaunchers(config);
 
 // A workaround from https://android-review.googlesource.com/c/platform/frameworks/support/+/3413540
 (function() {

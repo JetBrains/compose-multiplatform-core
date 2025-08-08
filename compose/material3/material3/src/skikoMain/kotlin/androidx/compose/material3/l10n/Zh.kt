@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.zhCN() = mapOf(
     Strings.MenuCollapsed to "已收起",
     Strings.ToggleDropdownMenu to "展开/收起下拉菜单",
     Strings.SnackbarDismiss to "关闭",
+    Strings.SnackbarPaneTitle to "提醒",
     Strings.SearchBarSearch to "搜索",
     Strings.SuggestionsAvailable to "以下是搜索建议",
     Strings.DatePickerTitle to "选择日期",
@@ -71,6 +72,8 @@ internal fun Translations.zhCN() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "收起底部动作条",
     Strings.BottomSheetDismissDescription to "关闭底部动作条",
     Strings.BottomSheetExpandDescription to "展开底部动作条",
+    Strings.FloatingToolbarCollapse to "收起工具栏",
+    Strings.FloatingToolbarExpand to "展开工具栏",
     Strings.TooltipPaneDescription to "提示",
     Strings.TooltipLongPressLabel to "显示提示",
     Strings.TimePickerPM to "下午",
@@ -85,6 +88,12 @@ internal fun Translations.zhCN() = mapOf(
     Strings.TimePickerHour to "小时",
     Strings.TimePickerMinuteTextField to "输入分钟",
     Strings.TimePickerHourTextField to "输入小时",
+    Strings.TimePickerToggleKeyboard to "切换到文字输入法来输入时间",
+    Strings.TimePickerToggleTouch to "切换到时钟模式来输入时间",
+    Strings.TimePickerDialogTitle to "选择时间",
+    Strings.TimeInputDialogTitle to "输入时间",
+    Strings.CloseRail to "关闭此栏",
+    Strings.WideNavigationRailPaneTitle to "侧边导航栏",
 )
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
@@ -101,6 +110,7 @@ internal fun Translations.zhHK() = mapOf(
     Strings.MenuCollapsed to "已收合",
     Strings.ToggleDropdownMenu to "切換下拉式選單",
     Strings.SnackbarDismiss to "關閉",
+    Strings.SnackbarPaneTitle to "警示",
     Strings.SearchBarSearch to "搜尋",
     Strings.SuggestionsAvailable to "建議如下",
     Strings.DatePickerTitle to "選取日期",
@@ -139,6 +149,8 @@ internal fun Translations.zhHK() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "收合頁底面板",
     Strings.BottomSheetDismissDescription to "關閉頁底面板",
     Strings.BottomSheetExpandDescription to "展開頁底面板",
+    Strings.FloatingToolbarCollapse to "收埋工具列",
+    Strings.FloatingToolbarExpand to "打展工具列",
     Strings.TooltipPaneDescription to "提示",
     Strings.TooltipLongPressLabel to "顯示提示",
     Strings.TimePickerPM to "下午",
@@ -153,6 +165,12 @@ internal fun Translations.zhHK() = mapOf(
     Strings.TimePickerHour to "小時",
     Strings.TimePickerMinuteTextField to "分鐘",
     Strings.TimePickerHourTextField to "小時",
+    Strings.TimePickerToggleKeyboard to "切換至文字輸入模式即可輸入時間",
+    Strings.TimePickerToggleTouch to "切換至時鐘模式即可輸入時間",
+    Strings.TimePickerDialogTitle to "選取時間",
+    Strings.TimeInputDialogTitle to "輸入時間",
+    Strings.CloseRail to "閂咗個欄",
+    Strings.WideNavigationRailPaneTitle to "導覽欄",
 )
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
@@ -169,6 +187,7 @@ internal fun Translations.zhTW() = mapOf(
     Strings.MenuCollapsed to "已收合",
     Strings.ToggleDropdownMenu to "切換鈕下拉式選單",
     Strings.SnackbarDismiss to "關閉",
+    Strings.SnackbarPaneTitle to "快訊",
     Strings.SearchBarSearch to "搜尋",
     Strings.SuggestionsAvailable to "建議如下",
     Strings.DatePickerTitle to "選取日期",
@@ -207,6 +226,8 @@ internal fun Translations.zhTW() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "收合底部功能表",
     Strings.BottomSheetDismissDescription to "關閉底部功能表",
     Strings.BottomSheetExpandDescription to "展開底部功能表",
+    Strings.FloatingToolbarCollapse to "收合工具列",
+    Strings.FloatingToolbarExpand to "展開工具列",
     Strings.TooltipPaneDescription to "工具提示",
     Strings.TooltipLongPressLabel to "顯示工具提示",
     Strings.TimePickerPM to "下午",
@@ -221,4 +242,10 @@ internal fun Translations.zhTW() = mapOf(
     Strings.TimePickerHour to "小時",
     Strings.TimePickerMinuteTextField to "分鐘",
     Strings.TimePickerHourTextField to "小時",
+    Strings.TimePickerToggleKeyboard to "如要輸入時間，請切換到文字輸入模式",
+    Strings.TimePickerToggleTouch to "如要輸入時間，請切換到時鐘模式",
+    Strings.TimePickerDialogTitle to "選取時間",
+    Strings.TimeInputDialogTitle to "輸入時間",
+    Strings.CloseRail to "關閉邊欄",
+    Strings.WideNavigationRailPaneTitle to "導覽邊欄",
 )

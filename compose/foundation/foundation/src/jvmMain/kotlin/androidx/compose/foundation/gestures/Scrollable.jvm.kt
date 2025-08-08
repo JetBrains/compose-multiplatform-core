@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,16 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.animation.SplineBasedFloatDecayAnimationSpec
-import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.animation.splineBasedDecay
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
 internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
-    DefaultFlingBehavior(
-        SplineBasedFloatDecayAnimationSpec(UnityDensity).generateDecayAnimationSpec()
-    )
+    DefaultFlingBehavior(splineBasedDecay(UnityDensity))
 
 @Composable
 internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
     val flingSpec = rememberSplineBasedDecay<Float>()
-    return remember(flingSpec) {
-        DefaultFlingBehavior(flingSpec)
-    }
+    return remember(flingSpec) { DefaultFlingBehavior(flingSpec) }
 }

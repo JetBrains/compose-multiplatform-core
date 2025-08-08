@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ms() = mapOf(
     Strings.MenuCollapsed to "Dikuncupkan",
     Strings.ToggleDropdownMenu to "Togol menu lungsur",
     Strings.SnackbarDismiss to "Ketepikan",
+    Strings.SnackbarPaneTitle to "Makluman",
     Strings.SearchBarSearch to "Carian",
     Strings.SuggestionsAvailable to "Cadangan di bawah",
     Strings.DatePickerTitle to "Pilih tarikh",
@@ -71,6 +72,8 @@ internal fun Translations.ms() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Kuncupkan helaian bawah",
     Strings.BottomSheetDismissDescription to "Ketepikan helaian bawah",
     Strings.BottomSheetExpandDescription to "Kembangkan helaian bawah",
+    Strings.FloatingToolbarCollapse to "Kuncupkan bar alat",
+    Strings.FloatingToolbarExpand to "Kembangkan bar alat",
     Strings.TooltipPaneDescription to "Tip alat",
     Strings.TooltipLongPressLabel to "Tunjukkan tip alat",
     Strings.TimePickerPM to "P/M",
@@ -85,4 +88,10 @@ internal fun Translations.ms() = mapOf(
     Strings.TimePickerHour to "Jam",
     Strings.TimePickerMinuteTextField to "selama # minit",
     Strings.TimePickerHourTextField to "selama # jam",
+    Strings.TimePickerToggleKeyboard to "Beralih kepada mod input teks untuk input masa",
+    Strings.TimePickerToggleTouch to "Beralih kepada mod jam untuk input masa",
+    Strings.TimePickerDialogTitle to "Pilih Masa",
+    Strings.TimeInputDialogTitle to "Masukkan Masa",
+    Strings.CloseRail to "Tutup rel",
+    Strings.WideNavigationRailPaneTitle to "Rel navigasi",
 )

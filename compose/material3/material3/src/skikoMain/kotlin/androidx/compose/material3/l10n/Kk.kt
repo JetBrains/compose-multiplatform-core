@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.kk() = mapOf(
     Strings.MenuCollapsed to "Жиылды",
     Strings.ToggleDropdownMenu to "Ашылмалы мәзірді жаю/жию",
     Strings.SnackbarDismiss to "Жабу",
+    Strings.SnackbarPaneTitle to "Ескерту",
     Strings.SearchBarSearch to "Іздеу",
     Strings.SuggestionsAvailable to "Төмендегі ұсыныстар",
     Strings.DatePickerTitle to "Күн таңдау",
@@ -71,6 +72,8 @@ internal fun Translations.kk() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Төменгі парақшаны жию",
     Strings.BottomSheetDismissDescription to "Төменгі парақшаны жабу",
     Strings.BottomSheetExpandDescription to "Төменгі парақшаны жаю",
+    Strings.FloatingToolbarCollapse to "Құралдар тақтасын жию",
+    Strings.FloatingToolbarExpand to "Құралдар тақтасын жаю",
     Strings.TooltipPaneDescription to "Қалқыма көмек",
     Strings.TooltipLongPressLabel to "Қалқыма көмекті көрсету",
     Strings.TimePickerPM to "түстен кейін",
@@ -85,4 +88,10 @@ internal fun Translations.kk() = mapOf(
     Strings.TimePickerHour to "Сағат",
     Strings.TimePickerMinuteTextField to "минут",
     Strings.TimePickerHourTextField to "сағат",
+    Strings.TimePickerToggleKeyboard to "Уақытты енгізу үшін мәтін енгізу режиміне ауысу",
+    Strings.TimePickerToggleTouch to "Уақытты енгізу үшін сағат режиміне ауысу",
+    Strings.TimePickerDialogTitle to "Уақытты таңдаңыз",
+    Strings.TimeInputDialogTitle to "Уақытты енгізіңіз",
+    Strings.CloseRail to "Жолақты жабу",
+    Strings.WideNavigationRailPaneTitle to "Навигация жолағы",
 )

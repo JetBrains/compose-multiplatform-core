@@ -18,19 +18,13 @@ package androidx.compose.runtime.internal
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
-import kotlinx.coroutines.CancellationException
+
+internal actual fun invokeComposable(composer: Composer, composable: @Composable () -> Unit) {
+    @Suppress("UNCHECKED_CAST") val realFn = composable as Function2<Composer, Int, Unit>
+    realFn(composer, 1)
+}
 
 internal actual fun logError(message: String, e: Throwable) {
     println(message)
     e.printStackTrace()
-}
-
-internal actual abstract class PlatformOptimizedCancellationException actual constructor(
-    message: String?
-) : CancellationException(message)
-
-internal actual fun invokeComposable(composer: Composer, composable: @Composable () -> Unit) {
-    @Suppress("UNCHECKED_CAST")
-    val realFn = composable as Function2<Composer, Int, Unit>
-    realFn(composer, 1)
 }

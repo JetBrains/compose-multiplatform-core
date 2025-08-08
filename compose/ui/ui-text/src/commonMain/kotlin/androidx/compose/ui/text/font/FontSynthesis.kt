@@ -102,5 +102,5 @@ internal expect fun FontSynthesis.synthesizeTypeface(
     typeface: Any,
     font: Font,
     requestedWeight: FontWeight,
-    requestedStyle: FontStyle
+    requestedStyle: FontStyle,
 ): Any

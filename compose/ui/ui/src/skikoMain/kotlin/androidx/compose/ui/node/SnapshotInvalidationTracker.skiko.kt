@@ -20,6 +20,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.internal.getCurrentThreadId
 import androidx.compose.ui.platform.synchronized
+import androidx.compose.ui.util.fastForEach
 import kotlinx.atomicfu.atomic
 
 /**
@@ -141,7 +142,7 @@ private class CommandList(
             listCopy.addAll(list)
             list.clear()
         }
-        listCopy.forEach { it.invoke() }
+        listCopy.fastForEach { it.invoke() }
         listCopy.clear()
     }
 }

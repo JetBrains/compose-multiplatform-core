@@ -74,6 +74,7 @@ internal actual fun createPlatformTextStyle(
 /**
  * Provides configuration options for behavior compatibility for SpanStyle.
  */
+@OptIn(ExperimentalTextApi::class)
 actual class PlatformParagraphStyle {
     actual companion object {
         actual val Default: PlatformParagraphStyle = PlatformParagraphStyle()
@@ -116,6 +117,7 @@ actual class PlatformParagraphStyle {
  * relevant only if `textDecoration` is specified, for example in `TextStyle(textDecoration = )` or
  * in `SpanStyle(textDecoration = )`.
  */
+@OptIn(ExperimentalTextApi::class)
 actual class PlatformSpanStyle @ExperimentalTextApi constructor(
     val textDecorationLineStyle: TextDecorationLineStyle?
 ) {
@@ -177,6 +179,7 @@ actual fun lerp(
  * between [start] and [stop]. The interpolation can be extrapolated beyond 0.0 and
  * 1.0, so negative values and values greater than 1.0 are valid.
  */
+@OptIn(ExperimentalTextApi::class)
 actual fun lerp(
     start: PlatformSpanStyle,
     stop: PlatformSpanStyle,

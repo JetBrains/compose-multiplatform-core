@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.asSkiaPath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toComposeRect
+import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.platform.SkiaParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -47,25 +48,16 @@ import org.jetbrains.skia.paragraph.LineMetrics
 import org.jetbrains.skia.paragraph.RectHeightMode
 import org.jetbrains.skia.paragraph.RectWidthMode
 import org.jetbrains.skia.paragraph.TextBox
+import org.jetbrains.skia.paragraph.Paragraph as SkParagraph
 
 internal class SkiaParagraph(
     private val paragraphIntrinsics: SkiaParagraphIntrinsics,
     val maxLines: Int,
-    overflow: TextOverflow,
+    private val overflow: TextOverflow,
     val constraints: Constraints
 ) : Paragraph {
     private val layouter = paragraphIntrinsics.layouter().apply {
-        // TODO: Support Middle/Start ellipsis
-        val ellipsisChar = if (overflow in listOf(
-                TextOverflow.Ellipsis,
-                TextOverflow.MiddleEllipsis,
-                TextOverflow.StartEllipsis,
-            )
-        ) "\u2026" else ""
-        setParagraphStyle(
-            maxLines = maxLines,
-            ellipsis = ellipsisChar
-        )
+        setParagraphStyle(maxLines, ellipsis)
     }
 
     internal val defaultFont
@@ -75,7 +67,7 @@ internal class SkiaParagraph(
      * Paragraph isn't always immutable, it could be changed via [paint] method without
      * rerunning layout
      */
-    private var paragraph = layouter.layoutParagraph(
+    private var paragraph: SkParagraph = layouter.layoutParagraph(
         width = width
     )
         set(value) {
@@ -84,14 +76,48 @@ internal class SkiaParagraph(
         }
 
     init {
+        requirePrecondition(constraints.minHeight == 0 && constraints.minWidth == 0) {
+            "Setting Constraints.minWidth and Constraints.minHeight is not supported, " +
+                "these should be the default zero values instead."
+        }
+        requirePrecondition(maxLines >= 1) { "maxLines should be greater than 0" }
+
         // Size is not known until layout is complete but to apply it, we need to re-create
         // skia's paragraph :'(
         // layouter might use cached instance if no [ShaderBrush] was applied.
         layouter.setBrushSize(Size(width, height))
         paragraph = layouter.layoutParagraph(width)
 
-        paragraph.layout(width)
+        // Ellipsize if there's not enough vertical space to fit all lines. Because this only makes
+        // sense for end ellipsis because start/middle only works for a single line.
+        if (overflow == TextOverflow.Ellipsis
+            && paragraph.height > constraints.maxHeight
+            && maxLines > 1
+        ) {
+            val calculatedMaxLines =
+                numberOfLinesThatFitMaxHeight(constraints.maxHeight)
+            if (calculatedMaxLines >= 0 && calculatedMaxLines != maxLines) {
+                layouter.setParagraphStyle(
+                    // When we can't fully fit even a single line, measure with one line anyway.
+                    // This will allow to have an ellipsis on that single line. If we measured
+                    // with 0 maxLines, it would measure all lines with no ellipsis even though
+                    // the first line might be partially visible
+                    maxLines = calculatedMaxLines.coerceAtLeast(1),
+                    ellipsis = ellipsis
+                )
+                paragraph = layouter.layoutParagraph(width)
+            }
+        }
     }
+
+    // TODO(https://youtrack.jetbrains.com/issue/CMP-6716): Properly support Middle/Start ellipsis
+    private val ellipsis: String
+        get() = if (overflow in listOf(
+                TextOverflow.Ellipsis,
+                TextOverflow.MiddleEllipsis,
+                TextOverflow.StartEllipsis,
+            )
+        ) "\u2026" else ""
 
     private val text: String
         get() = paragraphIntrinsics.text
@@ -133,6 +159,11 @@ internal class SkiaParagraph(
             }
 
     override fun getPathForRange(start: Int, end: Int): Path {
+        requirePrecondition(start in 0..end && end <= text.length) {
+            "start($start) or end($end) is out of range [0..${text.length}]," +
+                " or start > end!"
+        }
+
         val boxes = paragraph.getRectsForRange(
             start,
             end,
@@ -147,6 +178,7 @@ internal class SkiaParagraph(
     }
 
     override fun getCursorRect(offset: Int): Rect {
+        checkOffsetIsValid(offset)
         val horizontal = getHorizontalPosition(offset, true)
         val line = lineMetricsForOffset(offset)!!
 
@@ -205,13 +237,12 @@ internal class SkiaParagraph(
     internal fun getLineDescent(lineIndex: Int): Float =
         lineMetrics.getOrNull(lineIndex)?.descent?.toFloat() ?: 0f
 
-    private fun lineMetricsForOffset(offset: Int): LineMetrics? {
-        checkOffsetIsValid(offset)
-
-        return lineMetrics.binarySearchFirstMatchingOrLast {
-            offset < it.endIncludingNewline
-        }
-    }
+    private fun lineMetricsForOffset(offset: Int): LineMetrics? =
+        if (offset in 0..text.length) {
+            lineMetrics.binarySearchFirstMatchingOrLast {
+                offset < it.endIncludingNewline
+            }
+        } else null
 
     override fun getLineHeight(lineIndex: Int) =
         lineMetrics.getOrNull(lineIndex)?.height?.toFloat() ?: 0f
@@ -245,7 +276,11 @@ internal class SkiaParagraph(
     override fun isLineEllipsized(lineIndex: Int) = false
 
     override fun getLineForOffset(offset: Int) =
-        lineMetricsForOffset(offset)?.lineNumber ?: 0
+        when {
+            offset < 0 -> 0
+            offset > text.length -> lineCount - 1
+            else -> lineMetricsForOffset(offset)!!.lineNumber
+        }
 
     override fun getLineForVerticalPosition(vertical: Float): Int {
         return getLineMetricsForVerticalPosition(vertical)?.lineNumber ?: 0
@@ -313,7 +348,7 @@ internal class SkiaParagraph(
     }
 
     private fun getBoxForwardByOffset(offset: Int): TextBox? {
-        checkOffsetIsValid(offset)
+        if (offset !in 0..text.length) return null
         var to = offset + 1 // TODO: Use unicode code points (CodePoint.charCount() instead of +1)
         while (to <= text.length) {
             val box = paragraph.getRectsForRange(
@@ -329,7 +364,7 @@ internal class SkiaParagraph(
     }
 
     private fun getBoxBackwardByOffset(offset: Int, end: Int = offset): TextBox? {
-        checkOffsetIsValid(offset)
+        if (offset !in 0..text.length) return null
         var from = offset - 1
         val isRtl = paragraphIntrinsics.textDirection == ResolvedTextDirection.Rtl
         while (from >= 0) {
@@ -392,7 +427,26 @@ internal class SkiaParagraph(
         }
 
     override fun getOffsetForPosition(position: Offset): Int {
-        val glyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+        val initialGlyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
+
+        // Check if the position is inside a complex character with non-spacing marks
+        // If it is, adjust the position to the next possible space
+        var glyphPosition = initialGlyphPosition
+        if (glyphPosition in 0 until text.length) {
+            // Check if the current position has a non-spacing mark
+            val isNonSpacingMark = text.codePointAt(glyphPosition).isNonSpacingMark()
+
+            if (isNonSpacingMark) {
+                // Find the boundaries of the complex character
+                val precedingBreak = text.findPrecedingBreak(glyphPosition)
+                val followingBreak = text.findFollowingBreak(glyphPosition)
+
+                // If we're inside a complex character, jump to the end of it
+                if (precedingBreak != glyphPosition && followingBreak != glyphPosition) {
+                    glyphPosition = followingBreak
+                }
+            }
+        }
 
         // Below we apply a workaround for skiko/skia issue:
         //
@@ -439,6 +493,23 @@ internal class SkiaParagraph(
             return glyphPosition
         }
 
+        // Check if the last character of the line is a non-spacing mark
+        val hasNonSpacingMarkAtEnd = if (isNotEmptyLine && expectedLine.endExcludingWhitespaces > 0) {
+            val lastCharIndex = expectedLine.endExcludingWhitespaces - 1
+            if (lastCharIndex >= 0 && lastCharIndex < text.length) {
+                text.codePointAt(lastCharIndex).isNonSpacingMark()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+
+        // If the line ends with a non-spacing mark, don't apply the workaround
+        if (hasNonSpacingMarkAtEnd) {
+            return glyphPosition
+        }
+
         var correctedGlyphPosition = glyphPosition
 
         if (position.x <= leftX) { // when clicked to the left of a text line
@@ -463,11 +534,14 @@ internal class SkiaParagraph(
         granularity: TextGranularity,
         inclusionStrategy: TextInclusionStrategy
     ): TextRange {
-        // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-1255/Implement-Paragraph.getRangeForRect)
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-1255)
         return TextRange.Zero
     }
 
     override fun getBoundingBox(offset: Int): Rect {
+        requirePrecondition(offset in text.indices) {
+            "offset($offset) is out of bounds [0,${text.length})"
+        }
         val box = getBoxForwardByOffset(offset) ?: getBoxBackwardByOffset(offset, text.length)!!
         return box.rect.toComposeRect()
     }
@@ -478,8 +552,8 @@ internal class SkiaParagraph(
         arrayStart: Int
     ) {
         println("Compose Multiplatform doesn't support fillBoundingBoxes` yet. " +
-            "Follow https://github.com/JetBrains/compose-multiplatform/issues/4236")
-        // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-720/Implement-Paragraph.fillBoundingBoxes) implement fillBoundingBoxes
+            "Follow https://youtrack.jetbrains.com/issue/CMP-720")
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-720) implement fillBoundingBoxes
     }
 
     override fun getWordBoundary(offset: Int): TextRange {
@@ -584,8 +658,8 @@ internal class SkiaParagraph(
      * Check if the given offset is in the given range.
      */
     private inline fun checkOffsetIsValid(offset: Int) {
-        require(offset in 0..text.length) {
-            ("Invalid offset: $offset. Valid range is [0, ${text.length}]")
+        requirePrecondition(offset in 0..text.length) {
+            "offset($offset) is out of bounds [0,${text.length}]"
         }
     }
 }
@@ -647,6 +721,13 @@ private fun LineMetrics.copy(
     baseline = baseline,
     lineNumber = lineNumber
 )
+
+private fun Paragraph.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
+    for (lineIndex in 0 until lineCount) {
+        if (getLineBottom(lineIndex) > maxHeight) return lineIndex
+    }
+    return lineCount
+}
 
 private fun IRange.toTextRange() = TextRange(start, end)
 

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
@@ -28,20 +30,27 @@ apply plugin: "kotlin"
 allprojects {
     repos.addMavenRepositories(repositories)
 
-    tasks.withType(KotlinCompile).configureEach {
-        kotlinOptions {
-            jvmTarget = "17"
-            freeCompilerArgs += [
-                    "-Werror",
+    tasks.withType(KotlinCompile).configureEach { task ->
+        task.compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
+                    // A lot of deprecation warnings due to Gradle/Java update.
+                    // TODO: Uncomment back once it's fixed (after AOSP sync)
+                    // "-Werror",
                     "-Xskip-metadata-version-check",
                     // Issue where sam conversion in gradle's kts file causes task-out-of-date
                     // Details: KT-46445 and https://github.com/gradle/gradle/issues/17052
                     "-Xsam-conversions=class",
                     "-opt-in=kotlin.RequiresOptIn", // for JB-fork only - don't upstream
-            ]
-            languageVersion = "1.8"
-            apiVersion = "1.8"
+            )
+            languageVersion.set(KotlinVersion.KOTLIN_2_0)
+            apiVersion.set(KotlinVersion.KOTLIN_2_0)
         }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -50,9 +59,11 @@ dependencies {
     implementation project(':public')
 }
 
-// use jvmTarger 17 for buildSrc .kts scripts. Keep during merge
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
+// use jvmTarget 17 for buildSrc .kts scripts. Keep during merge
+tasks.withType(KotlinCompile).configureEach {task ->
+    task.compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }
 }

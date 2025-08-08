@@ -20,18 +20,6 @@ import androidx.compose.ui.unit.IntRect
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Region
 
-/** Wrapper around platform-specific Region class */
-internal interface SemanticsRegion {
-    fun set(rect: IntRect)
-
-    fun intersect(region: SemanticsRegion): Boolean
-
-    fun difference(rect: IntRect): Boolean
-
-    val bounds: IntRect
-    val isEmpty: Boolean
-}
-
 private class SemanticRegionImpl : SemanticsRegion {
     val region = Region()
 
@@ -56,5 +44,4 @@ private class SemanticRegionImpl : SemanticsRegion {
     }
 }
 
-/** Builder that creates wrapper around platform-specific Region class */
-internal fun SemanticsRegion(): SemanticsRegion = SemanticRegionImpl()
+internal actual fun SemanticsRegion(): SemanticsRegion = SemanticRegionImpl()

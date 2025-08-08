@@ -136,25 +136,25 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(jvmMain)
             }
 
-            jsNativeMain.dependsOn(skikoMain)
+            nonJvmMain.dependsOn(skikoMain)
 
-            jsWasmMain.dependsOn(jsNativeMain)
+            webMain.dependsOn(nonJvmMain)
 
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
 
             wasmJsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
                 dependencies {
                     implementation(libs.create("skikoWasm"))
                     implementation(libs.create("skikoWasmWasm"))
                 }
             }
 
-            nativeMain.dependsOn(jsNativeMain)
+            nativeMain.dependsOn(nonJvmMain)
 
             androidMain {
                 dependsOn(commonMain)
@@ -205,6 +205,9 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             skikoTest {
                 dependsOn(commonTest)
+                dependencies {
+                    implementation(project(":kruth:kruth"))
+                }
             }
 
             desktopTest {
@@ -226,12 +229,12 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             desktopTest.kotlin.srcDirs("src/test/java", "src/desktopTest/kotlin")
             desktopTest.resources.srcDirs("src/test/resources", "src/desktopTest/resources")
 
-            jsNativeTest {
+            nonJvmTest {
                 dependsOn(skikoTest)
             }
-            nativeTest.dependsOn(jsNativeTest)
-            jsTest.dependsOn(jsNativeTest)
-            wasmJsTest.dependsOn(jsNativeTest)
+            nativeTest.dependsOn(nonJvmTest)
+            jsTest.dependsOn(nonJvmTest)
+            wasmJsTest.dependsOn(nonJvmTest)
 
             configureEach {
                 languageSettings.optIn("androidx.compose.ui.text.ExperimentalTextApi")

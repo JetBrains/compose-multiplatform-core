@@ -35,9 +35,7 @@ androidXComposeMultiplatform {
     js()
     wasm()
     darwin()
-
-    linuxX64()
-    linuxArm64()
+    linux()
 }
 
 kotlin {
@@ -58,7 +56,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api("androidx.annotation:annotation:1.9.1")
+                def version = project.findProperty('artifactRedirection.version.androidx.annotation')
+                api("androidx.annotation:annotation:$version")
             }
         }
     }

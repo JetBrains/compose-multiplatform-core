@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.kn() = mapOf(
     Strings.MenuCollapsed to "ಕುಗ್ಗಿಸಲಾಗಿದೆ",
     Strings.ToggleDropdownMenu to "ಡ್ರಾಪ್‌ಡೌನ್ ಮೆನುವನ್ನು ಟಾಗಲ್ ಮಾಡಿ",
     Strings.SnackbarDismiss to "ವಜಾಗೊಳಿಸಿ",
+    Strings.SnackbarPaneTitle to "ಎಚ್ಚರಿಕೆ",
     Strings.SearchBarSearch to "ಹುಡುಕಿ",
     Strings.SuggestionsAvailable to "ಸಲಹೆಗಳನ್ನು ಕೆಳಗೆ ನೀಡಲಾಗಿದೆ",
     Strings.DatePickerTitle to "ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ",
@@ -71,6 +72,8 @@ internal fun Translations.kn() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ಕುಗ್ಗಿಸಿ",
     Strings.BottomSheetDismissDescription to "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ವಜಾಗೊಳಿಸಿ",
     Strings.BottomSheetExpandDescription to "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ವಿಸ್ತರಿಸಿ",
+    Strings.FloatingToolbarCollapse to "ಟೂಲ್‌ಬಾರ್ ಅನ್ನು ಸಂಕುಚಿಸಿ",
+    Strings.FloatingToolbarExpand to "ಟೂಲ್‌ಬಾರ್ ಅನ್ನು ವಿಸ್ತರಿಸಿ",
     Strings.TooltipPaneDescription to "ಟೂಲ್‌ಟಿಪ್",
     Strings.TooltipLongPressLabel to "ಟೂಲ್‌ಟಿಪ್ ಅನ್ನು ತೋರಿಸಿ",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.kn() = mapOf(
     Strings.TimePickerHour to "ಗಂಟೆ",
     Strings.TimePickerMinuteTextField to "ನಿಮಿಷಗಳವರೆಗೆ",
     Strings.TimePickerHourTextField to "ಗಂಟೆಯವರೆಗೆ",
+    Strings.TimePickerToggleKeyboard to "ಸಮಯದ ಇನ್‌ಪುಟ್‌ಗಾಗಿ ಪಠ್ಯ ಇನ್‌ಪುಟ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",
+    Strings.TimePickerToggleTouch to "ಸಮಯವನ್ನು ನಮೂದಿಸಲು ಗಡಿಯಾರದ ನಮೂನೆಗೆ ಬದಲಿಸಿ",
+    Strings.TimePickerDialogTitle to "ಸಮಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+    Strings.TimeInputDialogTitle to "ಸಮಯವನ್ನು ನಮೂದಿಸಿ",
+    Strings.CloseRail to "ರೇಲ್‌ ಮುಚ್ಚಿರಿ",
+    Strings.WideNavigationRailPaneTitle to "ನ್ಯಾವಿಗೇಷನ್ ರೇಲ್‌",
 )

@@ -16,10 +16,8 @@
 
 package androidx.lifecycle.viewmodel.compose
 
-import androidx.lifecycle.SavedStateHandle
-
 /** @see SavedStateHandle */
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
-annotation class SavedStateHandleSaveableApi
+public annotation class SavedStateHandleSaveableApi

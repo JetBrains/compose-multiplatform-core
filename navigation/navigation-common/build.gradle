@@ -51,10 +51,14 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
+        configureEach {
+            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+        }
+
         commonMain {
             dependencies {
                 api "androidx.annotation:annotation:1.9.1"
-                api "androidx.collection:collection:1.5.0-beta01"
+                api "androidx.collection:collection:1.5.0"
                 api project(":lifecycle:lifecycle-common")
                 api project(":lifecycle:lifecycle-runtime")
                 api project(":lifecycle:lifecycle-viewmodel")

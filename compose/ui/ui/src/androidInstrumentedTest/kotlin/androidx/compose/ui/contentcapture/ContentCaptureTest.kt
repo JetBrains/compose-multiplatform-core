@@ -595,7 +595,7 @@ class ContentCaptureTest {
             androidComposeView.onCreateVirtualViewTranslationRequests(
                 ids,
                 IntArray(0),
-                requestsCollector
+                requestsCollector,
             )
         }
 
@@ -607,11 +607,11 @@ class ContentCaptureTest {
                     .isEqualTo(
                         ViewTranslationRequest.Builder(
                                 androidComposeView.autofillId,
-                                virtualViewId.toLong()
+                                virtualViewId.toLong(),
                             )
                             .setValue(
                                 ID_TEXT,
-                                TranslationRequestValue.forText(AnnotatedString("foo"))
+                                TranslationRequestValue.forText(AnnotatedString("foo")),
                             )
                             .build()
                     )
@@ -650,9 +650,9 @@ class ContentCaptureTest {
                         ViewTranslationResponse.Builder(androidComposeView.autofillId)
                             .setValue(
                                 ID_TEXT,
-                                TranslationResponseValue.Builder(0).setText("bar").build()
+                                TranslationResponseValue.Builder(0).setText("bar").build(),
                             )
-                            .build()
+                            .build(),
                     )
                 }
             )
@@ -748,7 +748,7 @@ class ContentCaptureTest {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun ComposeContentTestRule.setContentWithContentCaptureEnabled(
         retainInteractionsDuringInitialization: Boolean = false,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         contentCaptureSessionCompat = mock()
         viewStructureCompat = mock()

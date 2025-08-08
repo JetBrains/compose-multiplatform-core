@@ -18,7 +18,6 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.input.EditProcessor
 import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
@@ -46,12 +44,13 @@ import androidx.compose.ui.unit.asCGRect
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.IntermediateTextInputUIView
 import kotlin.math.absoluteValue
 import kotlin.math.min
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
@@ -60,18 +59,23 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
 import platform.UIKit.UIViewAutoresizingFlexibleWidth
 
+// Due to unexpected delays between the commands to show/hide the keyboard,
+// it may jump when switching between text fields.
+// Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
+private val CLEAR_FOCUS_DELAY: Long = 10L
+
 internal class UIKitTextInputService(
     private val updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
-    private val focusStack: FocusStack?,
-    private val onInputStarted: () -> Unit,
+    private val focusedViewsList: FocusedViewsList?,
+    private var onInputStarted: () -> Unit,
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
-    private val onKeyboardPresses: (Set<*>) -> Unit,
-    private val focusManager: () -> ComposeSceneFocusManager
+    private var onKeyboardPresses: (Set<*>) -> Unit,
+    private var focusManager: () -> ComposeSceneFocusManager?
 ) : PlatformTextInputService, TextToolbar {
 
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
@@ -163,21 +167,20 @@ internal class UIKitTextInputService(
 
     override fun showSoftwareKeyboard() {
         textUIView?.let {
-            focusStack?.pushAndFocus(it)
+            focusedViewsList?.addAndFocus(it)
         }
     }
 
     override fun hideSoftwareKeyboard() {
         textUIView?.let {
-            focusStack?.popUntilNext(it)
+            focusedViewsList?.remove(it, delayMillis = CLEAR_FOCUS_DELAY)
         }
     }
 
     override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
         val internalOldValue = sessionEditProcessor?.toTextFieldValue()
         val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
-        val selectionChanged =
-            textChanged || internalOldValue == null || internalOldValue.selection != newValue.selection
+        val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
         if (textChanged) {
             textUIView?.textWillChange()
         }
@@ -206,29 +209,6 @@ internal class UIKitTextInputService(
             Key.Escape -> handleEscape(event)
             else -> false
         }
-    }
-
-    override fun updateTextLayoutResult(
-        textFieldValue: TextFieldValue,
-        offsetMapping: OffsetMapping,
-        textLayoutResult: TextLayoutResult,
-        textFieldToRootTransform: (Matrix) -> Unit,
-        innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
-    ) {
-        super.updateTextLayoutResult(
-            textFieldValue,
-            offsetMapping,
-            textLayoutResult,
-            textFieldToRootTransform,
-            innerTextFieldBounds,
-            decorationBoxBounds
-        )
-        updateTextLayoutResult(textLayoutResult)
-
-        val matrix = Matrix()
-        textFieldToRootTransform(matrix)
-        updateTextFrame(matrix.map(decorationBoxBounds))
     }
 
     fun updateTextFrame(rect: Rect) {
@@ -265,7 +245,7 @@ internal class UIKitTextInputService(
 
     private fun handleEscape(event: KeyEvent): Boolean {
         return if (sessionEditProcessor != null && event.type == KeyEventType.KeyUp) {
-            focusManager().releaseFocus()
+            focusManager()?.releaseFocus()
             true
         } else {
             false
@@ -334,6 +314,18 @@ internal class UIKitTextInputService(
         return true
     }
 
+    private var textMenuInvalidationsCount = 0
+    private fun textMenuAppearanceChanged() {
+        textMenuInvalidationsCount++
+        mainScope.launch {
+            // Time to show, hide or update state of context menu
+            delay(500)
+            textMenuInvalidationsCount--
+        }
+    }
+
+    val hasInvalidations: Boolean get() = textMenuInvalidationsCount > 0
+
     private fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
 
     // Fixes a problem where the menu is shown before the textUIView gets its final layout.
@@ -366,6 +358,7 @@ internal class UIKitTextInputService(
                         override val selectAll: (() -> Unit)? = onSelectAllRequested
                     }
                 )
+                textMenuAppearanceChanged()
             }
         }
         showMenuOrUpdatePosition()
@@ -376,7 +369,10 @@ internal class UIKitTextInputService(
      */
     override fun hide() {
         showMenuOrUpdatePosition = {}
-        textUIView?.hideTextMenu()
+        textUIView?.let {
+            it.hideTextMenu()
+            textMenuAppearanceChanged()
+        }
         if ((textUIView != null) && (sessionEditProcessor == null)) { // means that editing context menu shown in selection container
             textUIView?.resignFirstResponder()
             detachIntermediateTextInputView()
@@ -393,7 +389,7 @@ internal class UIKitTextInputService(
         detachIntermediateTextInputView()
         showMenuOrUpdatePosition = {}
         textUIView = IntermediateTextInputUIView(
-            viewConfiguration = viewConfiguration
+            doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis
         ).also {
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
@@ -413,10 +409,18 @@ internal class UIKitTextInputService(
 
             view.resetOnKeyboardPressesCallback()
             mainScope.launch {
+                delay(CLEAR_FOCUS_DELAY)
                 view.removeFromSuperview()
             }
         }
         textUIView = null
+    }
+
+    fun dispose() {
+        stopInput()
+        onInputStarted = { }
+        onKeyboardPresses = { }
+        focusManager = { null }
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {

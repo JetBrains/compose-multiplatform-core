@@ -23,6 +23,17 @@ import kotlinx.serialization.InternalSerializationApi
 public expect class NavOptions {
 
     /**
+     * The destination to pop up to before navigating. When set, all non-matching destinations
+     * should be popped from the back stack.
+     *
+     * @return the destinationId to pop up to, clearing all intervening destinations
+     * @see Builder.setPopUpTo
+     * @see isPopUpToInclusive
+     * @see shouldPopUpToSaveState
+     */
+    public val popUpToId: Int
+
+    /**
      * Route for the destination to pop up to before navigating. When set, all non-matching
      * destinations should be popped from the back stack.
      *

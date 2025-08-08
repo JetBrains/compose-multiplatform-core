@@ -52,12 +52,15 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
-                api(project(":annotation:annotation"))
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
+            dependencies {
+                api(libs.jspecify)
+            }
         }
 
         jvmTest {
@@ -68,18 +71,30 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain {
+        nonJvmMain {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.atomicFu)
             }
         }
 
+        wasmJsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        jsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
         targets.configureEach { target ->
             if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonJvmCommonMain)
-                }
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
             }
         }
     }
@@ -101,7 +116,6 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle-Common"
-    metalavaK2UastEnabled = false
 }
 
 java {

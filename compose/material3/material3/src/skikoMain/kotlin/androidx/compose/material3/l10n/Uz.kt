@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.uz() = mapOf(
     Strings.MenuCollapsed to "Yigʻilgan",
     Strings.ToggleDropdownMenu to "Pastga ochiluvchi menyuni koʻrsatish/yashirish",
     Strings.SnackbarDismiss to "Yopish",
+    Strings.SnackbarPaneTitle to "Signal",
     Strings.SearchBarSearch to "Qidiruv",
     Strings.SuggestionsAvailable to "Takliflar quyida",
     Strings.DatePickerTitle to "Sanani tanlang",
@@ -71,6 +72,8 @@ internal fun Translations.uz() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Quyi ekranni yigʻish",
     Strings.BottomSheetDismissDescription to "Quyi ekranni yopish",
     Strings.BottomSheetExpandDescription to "Quyi ekranni yoyish",
+    Strings.FloatingToolbarCollapse to "Asboblar panelini yopish",
+    Strings.FloatingToolbarExpand to "Asboblar panelini yoyish",
     Strings.TooltipPaneDescription to "Maslahat oynasi",
     Strings.TooltipLongPressLabel to "Maslahat oynasini koʻrsatish",
     Strings.TimePickerPM to "TK",
@@ -85,4 +88,10 @@ internal fun Translations.uz() = mapOf(
     Strings.TimePickerHour to "Soat",
     Strings.TimePickerMinuteTextField to "bir daqiqa",
     Strings.TimePickerHourTextField to "bir soat",
+    Strings.TimePickerToggleKeyboard to "Vaqtni kiritish uchun matn kiritish rejimiga oʻting",
+    Strings.TimePickerToggleTouch to "Vaqtni kiritish uchun soat rejimiga oʻting",
+    Strings.TimePickerDialogTitle to "Vaqtni tanlang",
+    Strings.TimeInputDialogTitle to "Vaqtni kiriting",
+    Strings.CloseRail to "Panelni yopish",
+    Strings.WideNavigationRailPaneTitle to "Navigatsiya paneli",
 )

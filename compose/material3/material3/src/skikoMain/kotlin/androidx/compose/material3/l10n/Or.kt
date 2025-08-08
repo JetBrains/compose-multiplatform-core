@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.or() = mapOf(
     Strings.MenuCollapsed to "ସଙ୍କୁଚିତ କରାଯାଇଛି",
     Strings.ToggleDropdownMenu to "ଡ୍ରପଡାଉନ ମେନୁକୁ ଟୋଗଲ କରନ୍ତୁ",
     Strings.SnackbarDismiss to "ଖାରଜ କରନ୍ତୁ",
+    Strings.SnackbarPaneTitle to "ଆଲର୍ଟ",
     Strings.SearchBarSearch to "ସର୍ଚ୍ଚ କରନ୍ତୁ",
     Strings.SuggestionsAvailable to "ପରାମର୍ଶ ତଳେ ଦିଆଯାଇଛି",
     Strings.DatePickerTitle to "ତାରିଖ ଚୟନ କରନ୍ତୁ",
@@ -71,6 +72,8 @@ internal fun Translations.or() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ବଟମ ସିଟକୁ ସଙ୍କୁଚିତ କରନ୍ତୁ",
     Strings.BottomSheetDismissDescription to "ବଟମ ସିଟକୁ ଖାରଜ କରନ୍ତୁ",
     Strings.BottomSheetExpandDescription to "ବଟମ ସିଟକୁ ବିସ୍ତାର କରନ୍ତୁ",
+    Strings.FloatingToolbarCollapse to "ଟୁଲବାରକୁ ସଙ୍କୁଚିତ କରନ୍ତୁ",
+    Strings.FloatingToolbarExpand to "ଟୁଲବାରକୁ ବିସ୍ତାର କରନ୍ତୁ",
     Strings.TooltipPaneDescription to "ଟୁଲଟିପ",
     Strings.TooltipLongPressLabel to "ଟୁଲଟିପ ଦେଖାନ୍ତୁ",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.or() = mapOf(
     Strings.TimePickerHour to "ଘଣ୍ଟା",
     Strings.TimePickerMinuteTextField to "ମିନିଟ ପାଇଁ",
     Strings.TimePickerHourTextField to "ଘଣ୍ଟା ପାଇଁ",
+    Strings.TimePickerToggleKeyboard to "ସମୟ ଇନପୁଟ ପାଇଁ ଟେକ୍ସଟ ଇନପୁଟ ମୋଡକୁ ସୁଇଚ କରନ୍ତୁ",
+    Strings.TimePickerToggleTouch to "ସମୟ ଇନପୁଟ୍ ପାଇଁ ଘଣ୍ଟା ମୋଡକୁ ସୁଇଚ କରନ୍ତୁ",
+    Strings.TimePickerDialogTitle to "ସମୟ ଚୟନ କରନ୍ତୁ",
+    Strings.TimeInputDialogTitle to "ସମୟ ଲେଖନ୍ତୁ",
+    Strings.CloseRail to "ରେଲ ବନ୍ଦ କରନ୍ତୁ",
+    Strings.WideNavigationRailPaneTitle to "ନାଭିଗେସନ ରେଲ",
 )

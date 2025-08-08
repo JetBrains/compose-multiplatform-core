@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.be() = mapOf(
     Strings.MenuCollapsed to "Згорнута",
     Strings.ToggleDropdownMenu to "Уключыць (выключыць) выпадное меню",
     Strings.SnackbarDismiss to "Закрыць",
+    Strings.SnackbarPaneTitle to "Абвестка",
     Strings.SearchBarSearch to "Пошук",
     Strings.SuggestionsAvailable to "Прапановы ўнізе",
     Strings.DatePickerTitle to "Выберыце дату",
@@ -71,6 +72,8 @@ internal fun Translations.be() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Згарнуць ніжні аркуш",
     Strings.BottomSheetDismissDescription to "Закрыць ніжні аркуш",
     Strings.BottomSheetExpandDescription to "Разгарнуць ніжні аркуш",
+    Strings.FloatingToolbarCollapse to "Згарнуць панэль інструментаў",
+    Strings.FloatingToolbarExpand to "Разгарнуць панэль інструментаў",
     Strings.TooltipPaneDescription to "Падказка",
     Strings.TooltipLongPressLabel to "Паказваць усплывальую падказку",
     Strings.TimePickerPM to "пасля паўдня",
@@ -85,4 +88,10 @@ internal fun Translations.be() = mapOf(
     Strings.TimePickerHour to "Гадзіны",
     Strings.TimePickerMinuteTextField to "хвіліны",
     Strings.TimePickerHourTextField to "гадзіны",
+    Strings.TimePickerToggleKeyboard to "Пераключыцца на тэкставы рэжым уводу, каб указаць час",
+    Strings.TimePickerToggleTouch to "Пераключыцца на рэжым гадзінніка, каб указаць час",
+    Strings.TimePickerDialogTitle to "Выберыце час",
+    Strings.TimeInputDialogTitle to "Увядзіце час",
+    Strings.CloseRail to "Закрыць планку",
+    Strings.WideNavigationRailPaneTitle to "Планка навігацыі",
 )

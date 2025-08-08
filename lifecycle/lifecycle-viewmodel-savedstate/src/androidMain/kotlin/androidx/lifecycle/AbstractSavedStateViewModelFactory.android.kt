@@ -15,25 +15,58 @@
  */
 package androidx.lifecycle
 
+import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.LegacySavedStateHandleController.TAG_SAVED_STATE_HANDLE_CONTROLLER
 import androidx.lifecycle.LegacySavedStateHandleController.attachHandleIfNeeded
 import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.savedstate.SavedState
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryOwner
-import kotlin.reflect.KClass
 
+/**
+ * Skeleton of androidx.lifecycle.ViewModelProvider.KeyedFactory that creates [SavedStateHandle] for
+ * every requested [ViewModel]. The subclasses implement [create] to actually instantiate
+ * `androidx.lifecycle.ViewModel`s.
+ *
+ * **Deprecated:** Use [viewModelFactory] or implement [ViewModelProvider.Factory] directly,
+ * combined with [CreationExtras.createSavedStateHandle]. This base class creates a
+ * [SavedStateHandle] for every [ViewModel], even when unnecessary, causing overhead.
+ *
+ * For example:
+ * ```
+ * viewModelFactory { initializer { MyViewModel(createSavedStateHandle()) } }
+ * ```
+ */
+@Deprecated(
+    "Use `viewModelFactory` or implement `ViewModelProvider.Factory`, combined with `CreationExtras.createSavedStateHandle()`."
+)
 public abstract class AbstractSavedStateViewModelFactory :
     ViewModelProvider.OnRequeryFactory, ViewModelProvider.Factory {
 
     private var savedStateRegistry: SavedStateRegistry? = null
     private var lifecycle: Lifecycle? = null
-    private var defaultArgs: SavedState? = null
+    private var defaultArgs: Bundle? = null
 
-    constructor() {}
+    /**
+     * Constructs this factory.
+     *
+     * When a factory is constructed this way, a component for which [SavedStateHandle] is scoped
+     * must have called [enableSavedStateHandles]. See [CreationExtras.createSavedStateHandle] docs
+     * for more details.
+     */
+    public constructor() {}
 
-    constructor(owner: SavedStateRegistryOwner, defaultArgs: SavedState?) {
+    /**
+     * Constructs this factory.
+     *
+     * @param owner [SavedStateRegistryOwner] that will provide restored state for created
+     *   [ViewModels][ViewModel]
+     * @param defaultArgs values from this `Bundle` will be used as defaults by [SavedStateHandle]
+     *   passed in [ViewModels][ViewModel] if there is no previously saved state or previously saved
+     *   state misses a value by such key
+     */
+    public constructor(owner: SavedStateRegistryOwner, defaultArgs: Bundle?) {
         savedStateRegistry = owner.savedStateRegistry
         lifecycle = owner.lifecycle
         this.defaultArgs = defaultArgs
@@ -115,12 +148,6 @@ public abstract class AbstractSavedStateViewModelFactory :
         modelClass: Class<T>,
         handle: SavedStateHandle
     ): T
-
-    protected open fun <T : ViewModel> create(
-        key: String,
-        modelClass: KClass<T>,
-        handle: SavedStateHandle
-    ): T = create(key, modelClass.java, handle)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun onRequery(viewModel: ViewModel) {

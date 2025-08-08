@@ -56,13 +56,13 @@ import androidx.compose.ui.spatial.RelativeLayoutBounds
 fun Modifier.onLayoutRectChanged(
     throttleMillis: Long = 0,
     debounceMillis: Long = 64,
-    callback: (RelativeLayoutBounds) -> Unit
+    callback: (RelativeLayoutBounds) -> Unit,
 ) = this then OnLayoutRectChangedElement(throttleMillis, debounceMillis, callback)
 
-private data class OnLayoutRectChangedElement(
+private class OnLayoutRectChangedElement(
     val throttleMillis: Long,
     val debounceMillis: Long,
-    val callback: (RelativeLayoutBounds) -> Unit
+    val callback: (RelativeLayoutBounds) -> Unit,
 ) : ModifierNodeElement<OnLayoutRectChangedNode>() {
     override fun create() = OnLayoutRectChangedNode(throttleMillis, debounceMillis, callback)
 
@@ -78,6 +78,24 @@ private data class OnLayoutRectChangedElement(
         properties["throttleMillis"] = throttleMillis
         properties["debounceMillis"] = debounceMillis
         properties["callback"] = callback
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is OnLayoutRectChangedElement) return false
+
+        if (throttleMillis != other.throttleMillis) return false
+        if (debounceMillis != other.debounceMillis) return false
+        if (callback !== other.callback) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = throttleMillis.hashCode()
+        result = 31 * result + debounceMillis.hashCode()
+        result = 31 * result + callback.hashCode()
+        return result
     }
 }
 
@@ -99,6 +117,7 @@ private class OnLayoutRectChangedNode(
 
     override fun onDetach() {
         handle?.unregister()
+        handle = null
     }
 }
 

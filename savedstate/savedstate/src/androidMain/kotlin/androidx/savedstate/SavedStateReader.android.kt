@@ -41,18 +41,32 @@ internal actual constructor(
 ) {
 
     /**
-     * Retrieves an [IBinder] object associated with the specified key.
+     * Retrieves an [IBinder] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun getBinder(key: String): IBinder {
         return source.getBinder(key) ?: keyOrValueNotFoundError(key)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [IBinder] value associated with the specified [key], or `null` if this
+     * [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public fun getBinderOrNull(key: String): IBinder? {
         return source.getBinder(key)
     }
@@ -203,12 +217,17 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [Parcelable] object associated with the specified key.
+     * Retrieves a [Parcelable] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
-     * @param parcelableClass The type of the object expected
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param parcelableClass The expected type of the value.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun <T : Parcelable> getParcelable(key: String, parcelableClass: KClass<T>): T {
@@ -216,34 +235,65 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [Parcelable] object associated with the specified key.
+     * Retrieves a [Parcelable] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param T The expected type of the value.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public inline fun <reified T : Parcelable> getParcelable(key: String): T {
         return getParcelable(key, T::class)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Parcelable] value associated with the specified [key], or `null` if this
+     * [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param parcelableClass The expected type of the value.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public fun <T : Parcelable> getParcelableOrNull(key: String, parcelableClass: KClass<T>): T? {
         return getParcelable(source, key, parcelableClass.java)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Parcelable] value associated with the specified [key], or `null` if this
+     * [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param T The expected type of the value.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public inline fun <reified T : Parcelable> getParcelableOrNull(key: String): T? {
         return getParcelableOrNull(key, T::class)
     }
 
     /**
-     * Retrieves a [Serializable] object associated with the specified key.
+     * Retrieves a [Serializable] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
-     * @param serializableClass The type of the object expected
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param serializableClass The expected type of the value.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun <T : Serializable> getJavaSerializable(
@@ -254,18 +304,34 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [Serializable] object associated with the specified key.
+     * Retrieves a [Serializable] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param T The expected type of the value.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public inline fun <reified T : Serializable> getJavaSerializable(key: String): T {
         return getJavaSerializable(key, T::class)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Serializable] value associated with the specified [key], or `null` if this
+     * [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param serializableClass The expected type of the value.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public fun <T : Serializable> getJavaSerializableOrNull(
         key: String,
         serializableClass: KClass<T>
@@ -273,41 +339,79 @@ internal actual constructor(
         return getSerializable(source, key, serializableClass.java)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Serializable] value associated with the specified [key], or `null` if this
+     * [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param T The expected type of the value.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public inline fun <reified T : Serializable> getJavaSerializableOrNull(key: String): T? {
         return getJavaSerializableOrNull(key, T::class)
     }
 
     /**
-     * Retrieves a [Size] object associated with the specified key.
+     * Retrieves a [Size] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun getSize(key: String): Size {
         return source.getSize(key) ?: keyOrValueNotFoundError(key)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Size] value associated with the specified [key], or `null` if this [SavedState]
+     * does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public fun getSizeOrNull(key: String): Size? {
         return source.getSize(key)
     }
 
     /**
-     * Retrieves a [SizeF] object associated with the specified key.
+     * Retrieves a [SizeF] value associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The key to retrieve the value for.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
      * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun getSizeF(key: String): SizeF {
         return source.getSizeF(key) ?: keyOrValueNotFoundError(key)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [SizeF] value associated with the specified [key], or `null` if this [SavedState]
+     * does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     public fun getSizeFOrNull(key: String): SizeF? {
         return source.getSizeF(key)
     }
@@ -367,12 +471,17 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [List] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves a [List] of [Parcelable] values associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @param parcelableClass The type of the object expected
-     * @return The value associated with the [key].
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key].
      * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun <T : Parcelable> getParcelableList(
@@ -384,18 +493,34 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [List] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves a [List] of [Parcelable] values associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @return The value associated with the [key].
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The values associated with the [key].
      * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public inline fun <reified T : Parcelable> getParcelableList(key: String): List<T> {
         return getParcelableList(key, T::class)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [List] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key], or `null` if no valid value is found.
+     */
     @Suppress("NullableCollection")
     public fun <T : Parcelable> getParcelableListOrNull(
         key: String,
@@ -404,7 +529,17 @@ internal actual constructor(
         return getParcelableArrayList(source, key, parcelableClass.java)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [List] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The value associated with the [key], or `null` if no valid value is found.
+     */
     @Suppress("NullableCollection")
     public inline fun <reified T : Parcelable> getParcelableListOrNull(key: String): List<T>? {
         return getParcelableListOrNull(key, T::class)
@@ -478,12 +613,17 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves an [Array] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves an [Array] of [Parcelable] values associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @param parcelableClass The type of the object expected
-     * @return The value associated with the [key].
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key].
      * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     @Suppress("ArrayReturn")
@@ -495,11 +635,17 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves an [Array] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves an [Array] of [Parcelable] values associated with the specified [key], or throws an
+     * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @return The value associated with the [key].
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The values associated with the [key].
      * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     @Suppress("ArrayReturn")
@@ -507,7 +653,17 @@ internal actual constructor(
         return getParcelableArray(key, T::class)
     }
 
-    /** Returns the value corresponding to the given [key], or throws [IllegalArgumentException]. */
+    /**
+     * Retrieves an [Array] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key], or `null` if no valid value is found.
+     */
     @Suppress("ArrayReturn", "NullableCollection")
     public fun <T : Parcelable> getParcelableArrayOrNull(
         key: String,
@@ -517,19 +673,35 @@ internal actual constructor(
         return getParcelableArray(source, key, parcelableClass.java) as? Array<T>
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves an [Array] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The values associated with the [key], or `null` if no valid value is found.
+     */
     @Suppress("ArrayReturn", "NullableCollection")
     public inline fun <reified T : Parcelable> getParcelableArrayOrNull(key: String): Array<T>? {
         return getParcelableArrayOrNull(key, T::class)
     }
 
     /**
-     * Retrieves a [SparseArray] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves a [SparseArray] of [Parcelable] values associated with the specified [key], or
+     * throws an [IllegalArgumentException] if this [SavedState] does not contain a valid value for
+     * the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @param parcelableClass The type of the object expected
-     * @return The value associated with the [key].
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key].
      * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public fun <T : Parcelable> getSparseParcelableArray(
@@ -540,11 +712,18 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [SparseArray] of elements of [Parcelable] associated with the specified [key].
+     * Retrieves a [SparseArray] of [Parcelable] values associated with the specified [key], or
+     * throws an [IllegalArgumentException] if this [SavedState] does not contain a valid value for
+     * the key.
      *
-     * @param key The [key] to retrieve the value for.
-     * @return The value associated with the [key].
-     * @throws IllegalArgumentException If the key is not found.
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The values associated with the [key].
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalArgumentException If associated value is `null`.
      * @throws IllegalArgumentException if associated value has wrong type.
      */
     public inline fun <reified T : Parcelable> getSparseParcelableArray(
@@ -553,7 +732,17 @@ internal actual constructor(
         return getSparseParcelableArray(key, T::class)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Array] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param parcelableClass The expected type of the values.
+     * @return The values associated with the [key], or `null` if no valid value is found.
+     */
     public fun <T : Parcelable> getSparseParcelableArrayOrNull(
         key: String,
         parcelableClass: KClass<T>,
@@ -561,7 +750,17 @@ internal actual constructor(
         return getSparseParcelableArray(source, key, parcelableClass.java)
     }
 
-    /** Returns the value corresponding to the given [key], or null if such a key is not present. */
+    /**
+     * Retrieves a [Array] of [Parcelable] values associated with the specified [key], or `null` if
+     * this [SavedState] does not contain a valid value for the key.
+     *
+     * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
+     * [key] exists, the associated value is not `null`, and it is of the expected type.
+     *
+     * @param key The [key] to retrieve the values for.
+     * @param T The expected type of the values.
+     * @return The values associated with the [key], or `null` if no valid value is found.
+     */
     public inline fun <reified T : Parcelable> getSparseParcelableArrayOrNull(
         key: String
     ): SparseArray<T>? {
@@ -595,7 +794,11 @@ internal actual constructor(
 
     public actual fun contentDeepHashCode(): Int = source.contentDeepHashCode()
 
-    public actual fun contentDeepToString(): String = source.contentDeepToString()
+    public actual fun contentDeepToString(): String {
+        // in order not to overflow Int.MAX_VALUE
+        val length = source.size().coerceAtMost((Int.MAX_VALUE - 2) / 5) * 5 + 2
+        return buildString(length) { source.contentDeepToString(result = this, mutableListOf()) }
+    }
 
     public actual fun toMap(): Map<String, Any?> {
         return buildMap(capacity = source.size()) {
@@ -669,13 +872,7 @@ private fun SavedState.contentDeepHashCode(): Int {
     return result
 }
 
-private fun SavedState.contentDeepToString(): String {
-    // in order not to overflow Int.MAX_VALUE
-    val length = size().coerceAtMost((Int.MAX_VALUE - 2) / 5) * 5 + 2
-    return buildString(length) { contentDeepToStringInternal(this, mutableListOf()) }
-}
-
-private fun SavedState.contentDeepToStringInternal(
+private fun SavedState.contentDeepToString(
     result: StringBuilder,
     processed: MutableList<SavedState>,
 ) {
@@ -694,7 +891,7 @@ private fun SavedState.contentDeepToStringInternal(
         when (@Suppress("DEPRECATION") val element = this[k]) {
             null -> result.append("null")
             // container types
-            is SavedState -> element.contentDeepToStringInternal(result, processed)
+            is SavedState -> element.contentDeepToString(result, processed)
             is Array<*> -> result.append(element.contentDeepToString())
 
             // primitive arrays

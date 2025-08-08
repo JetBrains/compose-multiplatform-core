@@ -85,7 +85,7 @@ class PaintTest {
                 1f,
                 green,
                 red,
-                android.graphics.Shader.TileMode.MIRROR
+                android.graphics.Shader.TileMode.MIRROR,
             )
         composePaint.shader = shader
         assertSame(composePaint.shader, nativePaint.shader)

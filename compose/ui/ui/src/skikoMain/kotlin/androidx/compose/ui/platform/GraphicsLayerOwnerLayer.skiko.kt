@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isUnspecified
@@ -45,9 +46,24 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
+/**
+ * A class representing a layer that owns and manages a `GraphicsLayer` for composable rendering.
+ *
+ * This layer is responsible for managing graphical properties, transformations, and rendering
+ * tasks associated with a `GraphicsLayer`. It provides mechanisms for updating layer properties,
+ * triggering invalidations, resizing, and mapping offsets or bounds using transformation matrices.
+ *
+ * @constructor
+ * @param graphicsLayer The initial `GraphicsLayer` for this layer.
+ * @param context The graphics context responsible for managing this layer, or `null` if externally
+ *   managed. When context is not null, it means the object is created internally, and we need to
+ *   release it during disposal.
+ * @param layerManager The manager responsible for handling the ownership and lifecycle of this layer.
+ * @param drawBlock The lambda function invoked to perform custom drawing on the canvas.
+ * @param invalidateParentLayer Callback to invalidate the parent layer when necessary.
+ */
 internal class GraphicsLayerOwnerLayer(
     graphicsLayer: GraphicsLayer,
-    // when we have a context it means the object is created by us and we need to release it
     private val context: GraphicsContext?,
     private val layerManager: OwnedLayerManager,
     drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
@@ -80,6 +96,8 @@ internal class GraphicsLayerOwnerLayer(
     private var isMatrixDirty = false
     private var isInverseMatrixDirty = false
     private var isIdentity = true
+    override var frameRate: Float = 0f
+    override var isFrameRateFromParent = false
 
     override fun updateLayerProperties(scope: ReusableGraphicsLayerScope) {
         val maybeChangedFields = scope.mutatedFields or mutatedFields
@@ -141,6 +159,12 @@ internal class GraphicsLayerOwnerLayer(
         if (maybeChangedFields and Fields.RenderEffect != 0) {
             graphicsLayer.renderEffect = scope.renderEffect
         }
+        if (maybeChangedFields and Fields.ColorFilter != 0) {
+            graphicsLayer.colorFilter = scope.colorFilter
+        }
+        if (maybeChangedFields and Fields.BlendMode != 0) {
+            graphicsLayer.blendMode = scope.blendMode
+        }
         if (maybeChangedFields and Fields.CompositingStrategy != 0) {
             graphicsLayer.compositingStrategy =
                 when (scope.compositingStrategy) {
@@ -165,8 +189,16 @@ internal class GraphicsLayerOwnerLayer(
 
         mutatedFields = scope.mutatedFields
         if (maybeChangedFields != 0 || outlineChanged) {
-            invalidate()
+            triggerRepaint()
+            layerManager.voteFrameRate(frameRate)
         }
+    }
+
+    /**
+     * Triggers redrawing of Compose content during the next frame.
+     */
+    private fun triggerRepaint() {
+        layerManager.invalidate()
     }
 
     private fun updateOutline() {
@@ -186,12 +218,14 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun move(position: IntOffset) {
+        layerManager.voteFrameRate(FrameRateCategory.High.value)
         graphicsLayer.topLeft = position
-        invalidate()
+        triggerRepaint()
     }
 
     override fun resize(size: IntSize) {
         if (size != this.size) {
+            layerManager.voteFrameRate(FrameRateCategory.High.value)
             this.size = size
             invalidate()
         }
@@ -207,6 +241,7 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun updateDisplayList() {
+        layerManager.voteFrameRate(frameRate)
         if (isDirty) {
             if (transformOrigin != TransformOrigin.Center && graphicsLayer.size != size) {
                 graphicsLayer.pivotOffset =
@@ -226,6 +261,9 @@ internal class GraphicsLayerOwnerLayer(
         }
     }
 
+    /**
+     * Marks content as dirty and triggers redrawing.
+     */
     override fun invalidate() {
         if (isDestroyed) return
         isDirty = true
@@ -233,6 +271,8 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun destroy() {
+        frameRate = 0f
+        isFrameRateFromParent = false
         drawBlock = null
         invalidateParentLayer = null
         isDestroyed = true
@@ -347,8 +387,8 @@ internal class GraphicsLayerOwnerLayer(
             val pivotX: Float
             val pivotY: Float
             if (pivotOffset.isUnspecified) {
-                pivotX = size.width / 2f
-                pivotY = size.height / 2f
+                pivotX = this@GraphicsLayerOwnerLayer.size.width / 2f
+                pivotY = this@GraphicsLayerOwnerLayer.size.height / 2f
             } else {
                 pivotX = pivotOffset.x
                 pivotY = pivotOffset.y

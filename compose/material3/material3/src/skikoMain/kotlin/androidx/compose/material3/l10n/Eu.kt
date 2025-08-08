@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.eu() = mapOf(
     Strings.MenuCollapsed to "Tolestuta",
     Strings.ToggleDropdownMenu to "Zabaldu/Tolestu goitibeherako menua",
     Strings.SnackbarDismiss to "Baztertu",
+    Strings.SnackbarPaneTitle to "Alerta",
     Strings.SearchBarSearch to "Bilatu",
     Strings.SuggestionsAvailable to "Iradokizunak daude behean",
     Strings.DatePickerTitle to "Hautatu data bat",
@@ -71,6 +72,8 @@ internal fun Translations.eu() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Tolestu pantailaren behealdean ainguratutako orria",
     Strings.BottomSheetDismissDescription to "Baztertu pantailaren behealdean ainguratutako orria",
     Strings.BottomSheetExpandDescription to "Zabaldu pantailaren behealdean ainguratutako orria",
+    Strings.FloatingToolbarCollapse to "Tolestu tresna-barra",
+    Strings.FloatingToolbarExpand to "Zabaldu tresna-barra",
     Strings.TooltipPaneDescription to "Aholkua",
     Strings.TooltipLongPressLabel to "Erakutsi aholkua",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.eu() = mapOf(
     Strings.TimePickerHour to "Ordua",
     Strings.TimePickerMinuteTextField to "minutuetarako",
     Strings.TimePickerHourTextField to "ordurako",
+    Strings.TimePickerToggleKeyboard to "Ordua idazteko, aldatu testua idazteko modura",
+    Strings.TimePickerToggleTouch to "Aldatu erloju modura ordua zehazteko",
+    Strings.TimePickerDialogTitle to "Hautatu ordua",
+    Strings.TimeInputDialogTitle to "Idatzi ordua",
+    Strings.CloseRail to "Itxi erraila",
+    Strings.WideNavigationRailPaneTitle to "Nabigazio-erraila",
 )

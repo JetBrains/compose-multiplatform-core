@@ -18,8 +18,8 @@ package androidx.compose.material3
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SnapSpec
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.indication
@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.SwitchTokens
 import androidx.compose.material3.tokens.SwitchTokens.TrackOutlineWidth
 import androidx.compose.runtime.Composable
@@ -57,8 +58,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/switch" class="external" target="_blank">Material
- * Design Switch</a>.
+ * [Material Design switch](https://m3.material.io/components/switch)
  *
  * Switches toggle the state of a single item on or off.
  *
@@ -70,7 +70,6 @@ import kotlinx.coroutines.launch
  * Switch can be used with a custom icon via [thumbContent] parameter
  *
  * @sample androidx.compose.material3.samples.SwitchWithThumbIconSample
- *
  * @param checked whether or not this switch is checked
  * @param onCheckedChange called when this switch is clicked. If `null`, then this switch will not
  *   be interactable, unless something else handles its input events and updates its state.
@@ -111,7 +110,7 @@ fun Switch(
                     enabled = enabled,
                     role = Role.Switch,
                     interactionSource = interactionSource,
-                    indication = null
+                    indication = null,
                 )
         } else {
             Modifier
@@ -155,23 +154,27 @@ private fun SwitchImpl(
         Box(
             modifier =
                 Modifier.align(Alignment.CenterStart)
-                    .then(ThumbElement(interactionSource, checked))
+                    .then(
+                        ThumbElement(
+                            interactionSource = interactionSource,
+                            checked = checked,
+                            // TODO Load the motionScheme tokens from the component tokens file
+                            animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
+                        )
+                    )
                     .indication(
                         interactionSource = interactionSource,
                         indication =
-                            rippleOrFallbackImplementation(
-                                bounded = false,
-                                radius = SwitchTokens.StateLayerSize / 2
-                            )
+                            ripple(bounded = false, radius = SwitchTokens.StateLayerSize / 2),
                     )
                     .background(resolvedThumbColor, thumbShape),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             if (thumbContent != null) {
                 val iconColor = colors.iconColor(enabled, checked)
                 CompositionLocalProvider(
                     LocalContentColor provides iconColor,
-                    content = thumbContent
+                    content = thumbContent,
                 )
             }
         }
@@ -181,8 +184,9 @@ private fun SwitchImpl(
 private data class ThumbElement(
     val interactionSource: InteractionSource,
     val checked: Boolean,
+    val animationSpec: FiniteAnimationSpec<Float>,
 ) : ModifierNodeElement<ThumbNode>() {
-    override fun create() = ThumbNode(interactionSource, checked)
+    override fun create() = ThumbNode(interactionSource, checked, animationSpec)
 
     override fun update(node: ThumbNode) {
         node.interactionSource = interactionSource
@@ -190,6 +194,7 @@ private data class ThumbElement(
             node.invalidateMeasurement()
         }
         node.checked = checked
+        node.animationSpec = animationSpec
         node.update()
     }
 
@@ -197,12 +202,14 @@ private data class ThumbElement(
         name = "switchThumb"
         properties["interactionSource"] = interactionSource
         properties["checked"] = checked
+        properties["animationSpec"] = animationSpec
     }
 }
 
 private class ThumbNode(
     var interactionSource: InteractionSource,
     var checked: Boolean,
+    var animationSpec: FiniteAnimationSpec<Float>,
 ) : Modifier.Node(), LayoutModifierNode {
 
     override val shouldAutoInvalidate: Boolean
@@ -234,7 +241,7 @@ private class ThumbNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val hasContent =
             measurable.maxIntrinsicHeight(constraints.maxWidth) != 0 &&
@@ -262,13 +269,13 @@ private class ThumbNode(
 
         if (sizeAnim?.targetValue != size) {
             coroutineScope.launch {
-                sizeAnim?.animateTo(size, if (isPressed) SnapSpec else AnimationSpec)
+                sizeAnim?.animateTo(size, if (isPressed) SnapSpec else animationSpec)
             }
         }
 
         if (offsetAnim?.targetValue != offset) {
             coroutineScope.launch {
-                offsetAnim?.animateTo(offset, if (isPressed) SnapSpec else AnimationSpec)
+                offsetAnim?.animateTo(offset, if (isPressed) SnapSpec else animationSpec)
             }
         }
 
@@ -376,7 +383,7 @@ object SwitchDefaults {
             disabledUncheckedThumbColor = disabledUncheckedThumbColor,
             disabledUncheckedTrackColor = disabledUncheckedTrackColor,
             disabledUncheckedBorderColor = disabledUncheckedBorderColor,
-            disabledUncheckedIconColor = disabledUncheckedIconColor
+            disabledUncheckedIconColor = disabledUncheckedIconColor,
         )
 
     internal val ColorScheme.defaultSwitchColors: SwitchColors
@@ -469,7 +476,7 @@ constructor(
     val disabledUncheckedThumbColor: Color,
     val disabledUncheckedTrackColor: Color,
     val disabledUncheckedBorderColor: Color,
-    val disabledUncheckedIconColor: Color
+    val disabledUncheckedIconColor: Color,
 ) {
     /**
      * Returns a copy of this SwitchColors, optionally overriding some of the values. This uses the
@@ -621,4 +628,3 @@ private val SwitchWidth = SwitchTokens.TrackWidth
 private val SwitchHeight = SwitchTokens.TrackHeight
 private val ThumbPadding = (SwitchHeight - ThumbDiameter) / 2
 private val SnapSpec = SnapSpec<Float>()
-private val AnimationSpec = TweenSpec<Float>(durationMillis = 100)

@@ -65,16 +65,6 @@ object ComposeUiFlags {
     @Suppress("MutableBareField") @JvmField var isRectTrackingEnabled: Boolean = true
 
     /**
-     * Selecting flag to enable the change new onPostFling nested scroll behavior for ongoing
-     * flings. If a nested scroll node is removed from the tree before sending the onPostFling
-     * callback, we will hold on to the next node in the tree so we have a handle to send the
-     * information after the fling finish/is cancelled.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var NewNestedScrollFlingDispatchingEnabled: Boolean = true
-
-    /**
      * With this flag on, the new semantic version of Autofill APIs will be enabled. Turning this
      * flag off will disable the new Semantic Autofill APIs, and the new refactored semantics.
      */
@@ -91,13 +81,74 @@ object ComposeUiFlags {
      * requestFocus() which tries to re-assign focus before the previous composition is complete.
      * This flag enables a fix for this issue.
      */
-    @Suppress("MutableBareField") @JvmField var isRemoveFocusedViewFixEnabled: Boolean = false
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isRemoveFocusedViewFixEnabled: Boolean = false
 
     /**
-     * With this flag on, the new focus state management implementation is enabled. The new
-     * implementation removes the focus state previously stored in each FocusTargetNode and instead
-     * keeps track of the current active focus node centrally in FocusOwnerImpl. This change reduces
-     * the cost of initializing the focus system.
+     * Enable WindowInsets rulers:
+     * * `SystemBarsRulers`
+     * * `ImeRulers`
+     * * `StatusBarsRulers`
+     * * `NavigationBarsRulers`
+     * * `CaptionBarRulers`
+     * * `MandatorySystemGesturesRulers`
+     * * `TappableElementRulers`
+     * * `WaterfallRulers`
+     * * `SafeDrawingRulers`
+     * * `SafeGesturesRulers`
+     * * `SafeContentRulers`
      */
-    @Suppress("MutableBareField") @JvmField var isTrackFocusEnabled: Boolean = true
+    // off for b/410868572
+    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
+
+    /**
+     * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
+     * if it is in touch mode, it will exit touch mode first, then try to request focus on the node.
+     */
+    @Suppress("MutableBareField") @JvmField var isFocusActionExitsTouchModeEnabled: Boolean = true
+
+    /**
+     * With this flag on, Modifier.focusRestorer() will not pin the item that needs to be restored.
+     * Users are responsible for providing a key for the item that needs to be restored b/330696779.
+     */
+    @Suppress("MutableBareField") @JvmField var isNoPinningInFocusRestorationEnabled: Boolean = true
+
+    /**
+     * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
+     * frame, not as part of a regular recomposition phase. It allows to not block the drawing
+     * phase, improving the scrolling performance for lazy layouts.
+     */
+    @Suppress("MutableBareField") @JvmField var isOutOfFrameDeactivationEnabled: Boolean = true
+
+    /** Enable clearing focus when a focused item is removed from a lazyList. */
+    @Suppress("MutableBareField") @JvmField var isClearFocusOnResetEnabled: Boolean = true
+
+    /**
+     * With this flag on, the adaptive refresh rate (ARR) feature will be enabled. A preferred frame
+     * rate can be set on a Composable through frame rate modifier: [Modifier.preferredFrameRate]
+     */
+    @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
+
+    /**
+     * Flag for enabling the fix for correctly dispatching interop pointer events during the
+     * [PointerEventPass.Main] pass and not the final pass.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isPointerInteropFilterDispatchingFixEnabled: Boolean = true
+
+    /**
+     * Flag for enabling the fix for calling the correct nested scrolling methods from the
+     * connection created by [rememberNestedScrollInteropConnection].
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollInteropPostFlingFixEnabled: Boolean = true
+
+    /** Flag for enabling the fix for using the correct node for nested scroll operations. */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollDispatcherNodeFixEnabled: Boolean = true
 }

@@ -16,12 +16,9 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.ComposeFeatureFlags
-import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -33,6 +30,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.internal
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.pointer.AwtCursor
@@ -51,7 +49,6 @@ import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -93,10 +90,6 @@ import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -155,7 +148,8 @@ internal class ComposeSceneMediator(
      * @see ComposeFeatureFlags.useInteropBlending
      */
     private val useInteropBlending: Boolean
-        get() = ComposeFeatureFlags.useInteropBlending && skiaLayerComponent.interopBlendingSupported
+        get() = ComposeFeatureFlags.useInteropBlending.value &&
+            skiaLayerComponent.interopBlendingSupported
 
     /**
      * Adding any components below [contentComponent] makes our bridge non-transparent on macOS.
@@ -381,8 +375,6 @@ internal class ComposeSceneMediator(
         container.transferHandler = dragAndDropManager.transferHandler
         container.dropTarget = dragAndDropManager.dropTarget
 
-        // It will be enabled dynamically. See DesktopPlatformComponent
-        contentComponent.enableInputMethods(false)
         contentComponent.focusTraversalKeysEnabled = false
 
         subscribe(contentComponent)
@@ -499,10 +491,6 @@ internal class ComposeSceneMediator(
 
         unsubscribe(contentComponent)
 
-        interopContainer.root.removeContainerListener(interopContainerListener)
-        // Since rendering will not happen after, we need to execute all scheduled updates
-        interopContainer.dispose()
-
         container.remove(contentComponent)
         container.remove(invisibleComponent)
         container.transferHandler = null
@@ -510,6 +498,11 @@ internal class ComposeSceneMediator(
 
         scene.close()
         skiaLayerComponent.dispose()
+
+        interopContainer.root.removeContainerListener(interopContainerListener)
+        // Since rendering will not happen after, we need to execute all scheduled updates
+        interopContainer.dispose()
+
         _onComponentAttached = null
     }
 
@@ -579,6 +572,10 @@ internal class ComposeSceneMediator(
         )
     }
 
+    fun onWindowPositionChanged() = catchExceptions {
+        scene.invalidatePositionOnScreen()
+    }
+
     fun onChangeDensity(density: Density = container.density) = catchExceptions {
         if (scene.density != density) {
             scene.density = density
@@ -621,7 +618,7 @@ internal class ComposeSceneMediator(
         skiaLayerComponent.onRenderApiChanged(action)
     }
 
-    fun onChangeWindowFocus() {
+    fun onWindowFocusChanged() {
         keyboardModifiersRequireUpdate = true
     }
 
@@ -715,16 +712,9 @@ internal class ComposeSceneMediator(
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
         override val textInputService = this@ComposeSceneMediator.textInputService
 
-        private val textInputSessionMutex = SessionMutex<DesktopTextInputSession>()
-
-        override suspend fun textInputSession(
-            session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ): Nothing = textInputSessionMutex.withSessionCancellingPrevious(
-            sessionInitializer = {
-                DesktopTextInputSession(coroutineScope = it)
-            },
-            session = session
-        )
+        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+            textInputService2.startInputMethod(request)
+        }
 
         override fun setPointerIcon(pointerIcon: PointerIcon) {
             contentComponent.cursor =
@@ -751,9 +741,16 @@ internal class ComposeSceneMediator(
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {
+        override val locationOnScreen: Point
+            get() = contentComponent.locationOnScreen
+
+        override val density: Density
+            get() = contentComponent.density
+
         override fun enableInput(inputMethodRequests: InputMethodRequests) {
             currentInputMethodRequests = inputMethodRequests
             contentComponent.enableInputMethods(true)
+            contentComponent.inputContext.endComposition()
             // Without resetting the focus, Swing won't update the status (doesn't show/hide popup)
             // enableInputMethods is design to used per-Swing component level at init stage,
             // not dynamically
@@ -769,45 +766,8 @@ internal class ComposeSceneMediator(
             resetFocus()
         }
 
-        override val locationOnScreen: Point
-            get() = contentComponent.locationOnScreen
-
-        override val density: Density
-            get() = contentComponent.density
-    }
-
-    @OptIn(InternalComposeUiApi::class)
-    private inner class DesktopTextInputSession(
-        coroutineScope: CoroutineScope,
-    ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
-
-        private val innerSessionMutex = SessionMutex<Nothing?>()
-
-        override suspend fun startInputMethod(
-            request: PlatformTextInputMethodRequest
-        ): Nothing = innerSessionMutex.withSessionCancellingPrevious(
-            // This session has no data, just init/dispose tasks.
-            sessionInitializer = { null }
-        ) {
-            coroutineScope {
-                launch {
-                    request.focusedRectInRoot.collect {
-                        textInputService2.focusedRectChanged(it)
-                    }
-                }
-
-                suspendCancellableCoroutine<Nothing> { continuation ->
-                    textInputService2.startInput(
-                        state = request.state,
-                        imeOptions = request.imeOptions,
-                        editText = request.editText,
-                    )
-
-                    continuation.invokeOnCancellation {
-                        textInputService2.stopInput()
-                    }
-                }
-            }
+        override fun endComposition() {
+            contentComponent.inputContext.endComposition()
         }
     }
 

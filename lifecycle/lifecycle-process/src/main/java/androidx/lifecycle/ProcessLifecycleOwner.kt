@@ -40,7 +40,7 @@ import androidx.lifecycle.ReportFragment.Companion.reportFragment
  * It is useful for use cases where you would like to react on your app coming to the foreground or
  * going to the background and you don't need a milliseconds accuracy in receiving lifecycle events.
  */
-class ProcessLifecycleOwner private constructor() : LifecycleOwner {
+public class ProcessLifecycleOwner private constructor() : LifecycleOwner {
     // ground truth counters
     private var startedCounter = 0
     private var resumedCounter = 0
@@ -65,7 +65,7 @@ class ProcessLifecycleOwner private constructor() : LifecycleOwner {
             }
         }
 
-    companion object {
+    public companion object {
         @VisibleForTesting internal const val TIMEOUT_MS: Long = 700 // mls
         private val newInstance = ProcessLifecycleOwner()
 
@@ -76,7 +76,7 @@ class ProcessLifecycleOwner private constructor() : LifecycleOwner {
          * @return [LifecycleOwner] for the whole application.
          */
         @JvmStatic
-        fun get(): LifecycleOwner {
+        public fun get(): LifecycleOwner {
             return newInstance
         }
 

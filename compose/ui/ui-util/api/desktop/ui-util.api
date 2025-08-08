@@ -1,6 +1,9 @@
 public abstract interface annotation class androidx/compose/ui/ExperimentalComposeUiApi : java/lang/annotation/Annotation {
 }
 
+public abstract interface annotation class androidx/compose/ui/ExperimentalIndirectTouchTypeApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class androidx/compose/ui/InternalComposeUiApi : java/lang/annotation/Annotation {
 }
 
@@ -83,5 +86,6 @@ public final class androidx/compose/ui/util/MathHelpersKt {
 
 public final class androidx/compose/ui/util/Trace_jbKt {
 	public static final fun trace (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static final fun traceValue (Ljava/lang/String;J)V
 }
 

@@ -16,11 +16,12 @@
 
 package androidx.compose.material3.internal
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.Flow
 
-// TODO: Remove once this API will be available in common
-
+// TODO(b/352352908): Remove once this API will be available in common
 internal expect class BackEventCompat {
     val touchX: Float
     val touchY: Float
@@ -33,11 +34,18 @@ internal expect class BackEventCompat {
     }
 }
 
-@Composable
-internal expect fun BackHandler(enabled: Boolean = true, onBack: () -> Unit)
+// TODO(b/352352908): Remove once this API will be available in common
+@Composable internal expect fun BackHandler(enabled: Boolean = true, onBack: () -> Unit)
 
+// TODO(b/352352908): Remove once this API will be available in common
 @Composable
 internal expect fun PredictiveBackHandler(
     enabled: Boolean = true,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
+    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
 )
+
+private val PredictiveBackEasing: Easing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
+
+internal object PredictiveBack {
+    internal fun transform(progress: Float) = PredictiveBackEasing.transform(progress)
+}

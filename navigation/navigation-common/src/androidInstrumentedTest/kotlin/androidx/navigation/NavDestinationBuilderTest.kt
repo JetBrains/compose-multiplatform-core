@@ -228,6 +228,19 @@ class NavDestinationTest {
     }
 
     @Test
+    fun navDestinationDeepLinkBuilderKClassNonReified() {
+        @Serializable class Destination
+        @Serializable class TestDeepLink
+
+        val destination =
+            provider.navDestination<Destination> {
+                deepLink(TestDeepLink::class, "example.com") { action = "action" }
+            }
+        val request = NavDeepLinkRequest(Uri.parse("https://example.com"), "action", null)
+        assertThat(destination.hasDeepLink(request)).isTrue()
+    }
+
+    @Test
     fun navDestinationDeepLinkKClassArgs() {
         @Serializable class Destination(val arg: Int, val arg2: Boolean = false)
         @Serializable class DeepLink(val arg: Int, val arg2: Boolean = false)

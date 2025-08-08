@@ -20,6 +20,7 @@ import android.app.Application
 import android.graphics.Color
 import androidx.annotation.Sampled
 import androidx.window.embedding.EmbeddingAnimationBackground
+import androidx.window.embedding.EmbeddingAnimationParams
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EQUAL
 import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
@@ -61,8 +62,12 @@ fun splitAttributesCalculatorSample() {
                 )
                 // Optionally set the animation background to use when switching between
                 // vertical and horizontal
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                        )
+                        .build()
                 )
                 .build()
         }
@@ -75,8 +80,12 @@ fun splitAttributesCalculatorSample() {
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
                 // Optionally set the animation background to use when switching between
                 // vertical and horizontal
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                        )
+                        .build()
                 )
                 .build()
         } else {
@@ -98,8 +107,12 @@ fun splitWithOrientations() {
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
                 // Optionally set the animation background to use when switching between
                 // vertical and horizontal
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                        )
+                        .build()
                 )
                 .build()
         } else if (parentConfiguration.screenHeightDp >= 600) {
@@ -107,8 +120,12 @@ fun splitWithOrientations() {
                 .setLayoutDirection(SplitAttributes.LayoutDirection.TOP_TO_BOTTOM)
                 // Optionally set the animation background to use when switching between
                 // vertical and horizontal
-                .setAnimationBackground(
-                    EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GRAY)
+                        )
+                        .build()
                 )
                 .build()
         } else {

@@ -60,6 +60,7 @@ import platform.UIKit.UIScrollView
 import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.endEditing
+import platform.UIKit.setAccessibilityElements
 import platform.UIKit.setState
 
 /**
@@ -100,7 +101,8 @@ private val UIGestureRecognizerState.isOngoing: Boolean
 private class TouchesGestureRecognizer(
     private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
     private var onCancelAllTouches: (touches: Set<*>) -> Unit,
-    private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean
+    private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean,
+    private var ignoreTouchesChanges: () -> Boolean
 ) : CMPGestureRecognizer(target = null, action = null) {
     /**
      * Touches that are currently tracked by the gesture recognizer.
@@ -127,6 +129,10 @@ private class TouchesGestureRecognizer(
 
     override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
         super.touchesBegan(touches, withEvent)
+
+        if (ignoreTouchesChanges()) {
+            return
+        }
 
         val touchesToInteractionMode = touches.map { touch ->
             touch as UITouch
@@ -168,6 +174,10 @@ private class TouchesGestureRecognizer(
     override fun touchesMoved(touches: Set<*>, withEvent: UIEvent) {
         super.touchesMoved(touches, withEvent)
 
+        if (ignoreTouchesChanges()) {
+            return
+        }
+
         fun processGesture() {
             if (trackedTouches.isEmpty()) {
                 return
@@ -181,7 +191,7 @@ private class TouchesGestureRecognizer(
             }
         }
 
-        // The UserInputGestureRecognizer receives touches earlier than its interop scroll views,
+        // The TouchesGestureRecognizer receives touches earlier than its interop scroll views,
         // if any. If an interop scroll view is involved in tracking touches, we let it capture
         // the pan gesture first in order to prioritise the scrolling gesture of the child scroll
         // view.
@@ -196,6 +206,11 @@ private class TouchesGestureRecognizer(
 
     override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
         super.touchesEnded(touches, withEvent)
+
+        if (ignoreTouchesChanges()) {
+            cancelAllTrackedTouches()
+            return
+        }
 
         fun endTouchesEvent() {
             onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.ENDED)
@@ -344,6 +359,7 @@ private class TouchesGestureRecognizer(
         onTouchesEvent = { _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
         onCancelAllTouches = {}
         canIgnoreDragGesture = { false }
+        ignoreTouchesChanges = { false }
         trackedTouches.clear()
     }
 
@@ -454,7 +470,8 @@ private class ScrollGestureRecognizer(
     }
 
     override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
-        // Do nothing. No need to handle touches for scroll gesture
+        // Gesture recognizer only works with the trackpad. All touches should be cancelled.
+        setState(UIGestureRecognizerStateFailed)
     }
 
     override fun touchesMoved(touches: Set<*>, withEvent: UIEvent) {
@@ -491,6 +508,7 @@ internal class UserInputView(
     onCancelScroll: () -> Unit,
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
+    ignoreTouchChanges: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -502,7 +520,8 @@ internal class UserInputView(
     private val touchesGestureRecognizer = TouchesGestureRecognizer(
         onTouchesEvent = onTouchesEvent,
         onCancelAllTouches = onCancelAllTouches,
-        canIgnoreDragGesture = { canIgnoreDragGesture(it) }
+        canIgnoreDragGesture = { canIgnoreDragGesture(it) },
+        ignoreTouchesChanges = ignoreTouchChanges
     )
 
     private val scrollGestureRecognizer by lazy {
@@ -531,6 +550,8 @@ internal class UserInputView(
             addGestureRecognizer(it)
         }
         hoverGestureHandler.attachToView(this)
+
+        setAccessibilityElements(emptyList<Any>())
     }
 
     override fun canBecomeFirstResponder() = true

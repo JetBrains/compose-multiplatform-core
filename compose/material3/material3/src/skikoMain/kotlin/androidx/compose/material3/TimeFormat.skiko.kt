@@ -20,7 +20,7 @@ import androidx.compose.material3.internal.PlatformDateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 
-@Composable
-@ReadOnlyComposable
-internal actual fun is24HourFormat(): Boolean =
-    PlatformDateFormat(defaultLocale()).is24HourFormat()
+internal actual val is24HourFormat
+    @Composable
+    @ReadOnlyComposable
+    get(): Boolean = PlatformDateFormat(defaultLocale()).is24HourFormat()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.my() = mapOf(
     Strings.MenuCollapsed to "ချုံ့ထားသည်",
     Strings.ToggleDropdownMenu to "ဆွဲချမီနူးကို ပြောင်းရန်",
     Strings.SnackbarDismiss to "ပယ်ရန်",
+    Strings.SnackbarPaneTitle to "သတိပေးချက်",
     Strings.SearchBarSearch to "ရှာရန်",
     Strings.SuggestionsAvailable to "အကြံပြုချက်များသည် အောက်တွင်ရှိသည်",
     Strings.DatePickerTitle to "ရက်စွဲရွေးရန်",
@@ -71,6 +72,8 @@ internal fun Translations.my() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ချုံ့သည်",
     Strings.BottomSheetDismissDescription to "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ပယ်သည်",
     Strings.BottomSheetExpandDescription to "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ချဲ့သည်",
+    Strings.FloatingToolbarCollapse to "ကိရိယာဘား ချုံ့ရန်",
+    Strings.FloatingToolbarExpand to "ကိရိယာဘား ချဲ့ရန်",
     Strings.TooltipPaneDescription to "အကြံပြုချက်ပြ ပေါ့အပ် ဝင်းဒိုး",
     Strings.TooltipLongPressLabel to "အကြံပြုချက်ပြ ပေါ့အပ်ဝင်းဒိုး ပြရန်",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.my() = mapOf(
     Strings.TimePickerHour to "နာရီ",
     Strings.TimePickerMinuteTextField to "မိနစ်ကြာ",
     Strings.TimePickerHourTextField to "နာရီကြာ",
+    Strings.TimePickerToggleKeyboard to "အချိန်ထည့်သွင်းမှုအတွက် စာရိုက်နည်းသို့ ပြောင်းရန်",
+    Strings.TimePickerToggleTouch to "အချိန်ထည့်သွင်းမှုအတွက် နာရီမုဒ်သို့ ပြောင်းရန်",
+    Strings.TimePickerDialogTitle to "အချိန်ရွေးပါ",
+    Strings.TimeInputDialogTitle to "အချိန်ထည့်ပါ",
+    Strings.CloseRail to "ဘားပိတ်ရန်",
+    Strings.WideNavigationRailPaneTitle to "လမ်းကြောင်းပြဘား",
 )

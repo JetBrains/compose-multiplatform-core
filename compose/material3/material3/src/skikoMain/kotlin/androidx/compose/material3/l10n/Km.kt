@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.km() = mapOf(
     Strings.MenuCollapsed to "បាន​បង្រួម",
     Strings.ToggleDropdownMenu to "បិទ/បើកម៉ឺនុយ​ធ្លាក់​ចុះ",
     Strings.SnackbarDismiss to "ច្រានចោល",
+    Strings.SnackbarPaneTitle to "ជូន​ដំណឹង",
     Strings.SearchBarSearch to "ស្វែងរក",
     Strings.SuggestionsAvailable to "ការណែនាំខាងក្រោម",
     Strings.DatePickerTitle to "ជ្រើសរើស​កាលបរិច្ឆេទ",
@@ -71,6 +72,8 @@ internal fun Translations.km() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "បង្រួម​សន្លឹកខាងក្រោម",
     Strings.BottomSheetDismissDescription to "ច្រានចោល​សន្លឹកខាងក្រោម",
     Strings.BottomSheetExpandDescription to "ពង្រីក​សន្លឹកខាងក្រោម",
+    Strings.FloatingToolbarCollapse to "បង្រួមរបារឧបករណ៍",
+    Strings.FloatingToolbarExpand to "ពង្រីករបារឧបករណ៍",
     Strings.TooltipPaneDescription to "កំណត់​ពន្យល់",
     Strings.TooltipLongPressLabel to "បង្ហាញ​កំណត់​ពន្យល់",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.km() = mapOf(
     Strings.TimePickerHour to "ម៉ោង",
     Strings.TimePickerMinuteTextField to "រយៈពេលប៉ុន្មាននាទី",
     Strings.TimePickerHourTextField to "រយៈពេលប៉ុន្មានម៉ោង",
+    Strings.TimePickerToggleKeyboard to "ប្ដូរ​ទៅ​មុខងារបញ្ចូល​អក្សរសម្រាប់​ការ​បញ្ចូល​ម៉ោង",
+    Strings.TimePickerToggleTouch to "ប្ដូរ​ទៅ​មុខងារ​នាឡិកា​សម្រាប់​ការ​បញ្ចូល​ម៉ោង",
+    Strings.TimePickerDialogTitle to "ជ្រើសរើស​ពេលវេលា",
+    Strings.TimeInputDialogTitle to "បញ្ចូលម៉ោង",
+    Strings.CloseRail to "បិទខ្សែ",
+    Strings.WideNavigationRailPaneTitle to "ខ្សែរុករក",
 )

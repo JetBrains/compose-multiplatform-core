@@ -25,8 +25,8 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 /**
  * Similar to [TestCoroutineExceptionHandler], but with clearing all thrown exceptions
  *
- * If we don't clear exceptions they will be thrown twice in this example
- * (the exception will be thrown inside awaitIdle and after the test):
+ * If we don't clear exceptions they will be thrown twice in this example (the exception will be
+ * thrown inside awaitIdle and after the test):
  * ```
  * @Test
  * fun test() {
@@ -41,33 +41,35 @@ import kotlinx.coroutines.CoroutineExceptionHandler
  * ```
  */
 // TODO(b/200151447): When this moves over to ui-test, move the code sample above to ui-test:samples
-internal class UncaughtExceptionHandler :
-    AbstractCoroutineContextElement(CoroutineExceptionHandler),
-    CoroutineExceptionHandler {
+internal class UncaughtExceptionHandler(private val delegate: CoroutineExceptionHandler? = null) :
+    AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
     private var exception: Throwable? = null
     private val lock = makeSynchronizedObject(this)
 
     override fun handleException(context: CoroutineContext, exception: Throwable) {
-        synchronized(lock) {
-            if (this.exception == null) {
-                this.exception = exception
-            } else {
-                this.exception!!.addSuppressed(exception)
+        try {
+            delegate?.handleException(context, exception) ?: throw exception
+        } catch (e: Throwable) {
+            synchronized(lock) {
+                if (this.exception == null) {
+                    this.exception = e
+                } else {
+                    this.exception!!.addSuppressed(e)
+                }
             }
         }
     }
 
     /**
-     * Checks if the [UncaughtExceptionHandler] has caught uncaught exceptions. If so, will
-     * rethrow the first to fail the test. The rest exceptions will be added to the first and
-     * marked as `suppressed`.
+     * Checks if the [UncaughtExceptionHandler] has caught uncaught exceptions. If so, will rethrow
+     * the first to fail the test. The rest exceptions will be added to the first and marked as
+     * `suppressed`.
      *
      * The next call of this method will not throw already thrown exception.
      *
      * Rather than only calling this only at the end of the test, as recommended by
-     * [UncaughtExceptionCaptor.cleanupTestCoroutines],
-     * try calling this at a few strategic
-     * points to fail the test asap after the exception was caught.
+     * [UncaughtExceptionCaptor.cleanupTestCoroutines], try calling this at a few strategic points
+     * to fail the test asap after the exception was caught.
      */
     fun throwUncaught() {
         synchronized(lock) {

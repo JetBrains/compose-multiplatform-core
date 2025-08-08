@@ -52,16 +52,3 @@ internal actual fun InspectorInfo.tryPopulateReflectively(element: ModifierNodeE
             }
         }
 }
-
-internal actual abstract class PlatformOptimizedCancellationException actual constructor(
-    message: String?
-) : CancellationException(message) {
-
-    override fun fillInStackTrace(): Throwable {
-        // Avoid null.clone() on Android <= 6.0 when accessing stackTrace
-        stackTrace = emptyArray()
-        return this
-    }
-
-}
-

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ml() = mapOf(
     Strings.MenuCollapsed to "ചുരുക്കിയത്",
     Strings.ToggleDropdownMenu to "ഡ്രോപ്പ്ഡൗൺ മെനു ടോഗിൾ ചെയ്യുക",
     Strings.SnackbarDismiss to "ഡിസ്‌മിസ് ചെയ്യുക",
+    Strings.SnackbarPaneTitle to "മുന്നറിയിപ്പ്",
     Strings.SearchBarSearch to "തിരയുക",
     Strings.SuggestionsAvailable to "നിദ്ദേശങ്ങൾ ചുവടെയുണ്ട്",
     Strings.DatePickerTitle to "തീയതി തിരഞ്ഞെടുക്കുക",
@@ -71,6 +72,8 @@ internal fun Translations.ml() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ബോട്ടം ഷീറ്റ് ചുരുക്കുക",
     Strings.BottomSheetDismissDescription to "ബോട്ടം ഷീറ്റ് ഡിസ്മിസ് ചെയ്യുക",
     Strings.BottomSheetExpandDescription to "ബോട്ടം ഷീറ്റ് വികസിപ്പിക്കുക",
+    Strings.FloatingToolbarCollapse to "ടൂൾബാർ ചുരുക്കുക",
+    Strings.FloatingToolbarExpand to "ടൂൾബാർ വികസിപ്പിക്കുക",
     Strings.TooltipPaneDescription to "ടൂൾടിപ്പ്",
     Strings.TooltipLongPressLabel to "ടൂൾടിപ്പ് കാണിക്കുക",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.ml() = mapOf(
     Strings.TimePickerHour to "മണിക്കൂർ",
     Strings.TimePickerMinuteTextField to "മിനിറ്റ് നേരത്തേക്ക്",
     Strings.TimePickerHourTextField to "മണിക്കൂർ നേരത്തേക്ക്",
+    Strings.TimePickerToggleKeyboard to "സമയ ഇൻപുട്ടിനായി ടെക്സ്റ്റ് ഇൻപുട്ട് മോഡിലേക്ക് മാറുക",
+    Strings.TimePickerToggleTouch to "സമയ ഇൻപുട്ടിനായി ക്ലോക്ക് മോഡിലേക്ക് മാറുക",
+    Strings.TimePickerDialogTitle to "സമയം തിരഞ്ഞെടുക്കുക",
+    Strings.TimeInputDialogTitle to "സമയം നൽകുക",
+    Strings.CloseRail to "റെയിൽ അടയ്ക്കുക",
+    Strings.WideNavigationRailPaneTitle to "നാവിഗേഷൻ റെയിൽ",
 )

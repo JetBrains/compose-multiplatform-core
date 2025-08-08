@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.lo() = mapOf(
     Strings.MenuCollapsed to "ຫຍໍ້ລົງແລ້ວ",
     Strings.ToggleDropdownMenu to "ສະ​ຫຼັບເມນູແບບເລື່ອນລົງ",
     Strings.SnackbarDismiss to "ປິດໄວ້",
+    Strings.SnackbarPaneTitle to "ແຈ້ງເຕືອນ",
     Strings.SearchBarSearch to "ຊອກຫາ",
     Strings.SuggestionsAvailable to "ມີຄຳແນະນຳຢູ່ຂ້າງລຸ່ມ",
     Strings.DatePickerTitle to "ເລືອກວັນທີ",
@@ -71,6 +72,8 @@ internal fun Translations.lo() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ຫຍໍ້ຊີດລຸ່ມສຸດລົງ",
     Strings.BottomSheetDismissDescription to "ປິດຊີດລຸ່ມສຸດໄວ້",
     Strings.BottomSheetExpandDescription to "ຂະຫຍາຍຊີດລຸ່ມສຸດ",
+    Strings.FloatingToolbarCollapse to "ຫຍໍ້ແຖບ​ເຄື່ອງ​ມືລົງ",
+    Strings.FloatingToolbarExpand to "ຂະຫຍາຍແຖບເຄື່ອງມື",
     Strings.TooltipPaneDescription to "ຄຳແນະນຳ",
     Strings.TooltipLongPressLabel to "ສະແດງຄຳແນະນຳ",
     Strings.TimePickerPM to "ຫຼັງທ່ຽງ",
@@ -85,4 +88,10 @@ internal fun Translations.lo() = mapOf(
     Strings.TimePickerHour to "ຊົ່ວໂມງ",
     Strings.TimePickerMinuteTextField to "ສຳລັບນາທີ",
     Strings.TimePickerHourTextField to "ສຳລັບຊົ່ວໂມງ",
+    Strings.TimePickerToggleKeyboard to "ປ່ຽນໄປໃຊ້ໂໝດປ້ອນຂໍ້ຄວາມເພື່ອປ້ອນເວລາ",
+    Strings.TimePickerToggleTouch to "ປ່ຽນໄປໃຊ້ໂໝດໂມງສຳລັບການໃສ່ເວລາ",
+    Strings.TimePickerDialogTitle to "ເລືອກເວລາ",
+    Strings.TimeInputDialogTitle to "ໃສ່ເວລາ",
+    Strings.CloseRail to "ປິດແຖບຂ້າງ",
+    Strings.WideNavigationRailPaneTitle to "ແຖບຂ້າງສຳລັບນຳທາງໄປຫາສ່ວນຕ່າງໆ",
 )

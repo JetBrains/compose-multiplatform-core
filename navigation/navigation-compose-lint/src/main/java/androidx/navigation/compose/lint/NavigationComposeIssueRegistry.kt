@@ -18,6 +18,7 @@
 
 package androidx.navigation.compose.lint
 
+import androidx.navigation.lint.MIN_ANALYSIS_API
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.CURRENT_API
@@ -25,8 +26,8 @@ import com.android.tools.lint.detector.api.CURRENT_API
 /** [IssueRegistry] containing runtime specific lint issues. */
 class NavigationComposeIssueRegistry : IssueRegistry() {
     // Tests are run with this version. We ensure that with ApiLintVersionsTest
-    override val api = 14
-    override val minApi = CURRENT_API
+    override val api = CURRENT_API
+    override val minApi = MIN_ANALYSIS_API
 
     override val issues
         get() =
@@ -35,6 +36,8 @@ class NavigationComposeIssueRegistry : IssueRegistry() {
                 ComposableDestinationInComposeScopeDetector.ComposableNavGraphInComposeScope,
                 UnrememberedGetBackStackEntryDetector.UnrememberedGetBackStackEntry,
                 WrongStartDestinationTypeDetector.WrongStartDestinationType,
+                TypeSafeDestinationMissingAnnotationDetector.MissingKeepAnnotationIssue,
+                TypeSafeDestinationMissingAnnotationDetector.MissingSerializableAnnotationIssue,
             )
 
     override val vendor =

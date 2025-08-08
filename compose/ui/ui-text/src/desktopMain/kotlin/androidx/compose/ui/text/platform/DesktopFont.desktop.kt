@@ -15,15 +15,20 @@
  */
 package androidx.compose.ui.text.platform
 
-import org.jetbrains.skia.FontStyle as SkFontStyle
-import org.jetbrains.skia.Typeface as SkTypeface
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontLoadingStrategy
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
 import java.io.File
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.FontSlant
+import org.jetbrains.skia.FontStyle as SkFontStyle
 import org.jetbrains.skia.FontWidth
+import org.jetbrains.skia.Typeface as SkTypeface
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
@@ -201,7 +206,6 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
     }
     val typeface = when (font) {
         is ResourceFont -> typefaceResource(font.name)
-        // TODO: replace with FontMgr.makeFromFile(font.file.toString())
         is FileFont -> FontMgr.default.makeFromFile(font.file.toString())
         is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.getData()))
         is SystemFont -> FontMgr.default.matchFamilyStyle(font.identity, font.skFontStyle)

@@ -21,11 +21,12 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.Display;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.UiContext;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.WindowExtensions;
 import androidx.window.extensions.core.util.function.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The interface definition that will be used by the WindowManager library to get custom
@@ -51,7 +52,7 @@ public interface WindowLayoutComponent {
     @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     void addWindowLayoutInfoListener(@NonNull Activity activity,
-            @NonNull java.util.function.Consumer<WindowLayoutInfo> consumer);
+            java.util.function.@NonNull Consumer<WindowLayoutInfo> consumer);
 
     /**
      * @deprecated Use {@link #removeWindowLayoutInfoListener(Consumer)} starting with
@@ -61,7 +62,7 @@ public interface WindowLayoutComponent {
     @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     void removeWindowLayoutInfoListener(
-            @NonNull java.util.function.Consumer<WindowLayoutInfo> consumer);
+            java.util.function.@NonNull Consumer<WindowLayoutInfo> consumer);
 
     /**
      * Adds a listener interested in receiving updates to {@link WindowLayoutInfo}.
@@ -80,7 +81,7 @@ public interface WindowLayoutComponent {
     @RequiresVendorApiLevel(level = 2)
     @SuppressWarnings("PairedRegistration")
     // The paired method for unregistering is also removeWindowLayoutInfoListener.
-    default void addWindowLayoutInfoListener(@NonNull @UiContext Context context,
+    default void addWindowLayoutInfoListener(@UiContext @NonNull Context context,
             @NonNull Consumer<WindowLayoutInfo> consumer) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
@@ -104,8 +105,7 @@ public interface WindowLayoutComponent {
      * listener for features that impact the window.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    default SupportedWindowFeatures getSupportedWindowFeatures() {
+    default @NonNull SupportedWindowFeatures getSupportedWindowFeatures() {
         throw new UnsupportedOperationException("This method will not be called unless there is a"
                 + " corresponding override implementation on the device");
     }

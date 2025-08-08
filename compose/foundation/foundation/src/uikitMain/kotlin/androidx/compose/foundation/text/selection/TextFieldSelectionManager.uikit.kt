@@ -20,6 +20,10 @@ import androidx.compose.foundation.PlatformMagnifierFactory
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.TextContextMenuItem
+import androidx.compose.foundation.text.addTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +35,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManager): Modifier {
     if (!isPlatformMagnifierSupported()) {
@@ -173,4 +180,44 @@ internal fun isSelectionHandleIsVisible(isStartHandle: Boolean, position: Offset
     val containsVertical = toleratedY in visibleBounds.top..visibleBounds.bottom
 
     return containsHorizontal && containsVertical
+}
+
+internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
+    manager: TextFieldSelectionManager,
+    coroutineScope: CoroutineScope,
+): Modifier = addTextContextMenuComponents {
+    fun TextContextMenuBuilderScope.textFieldItem(
+        key: Any,
+        enabled: Boolean,
+        onClick: () -> Unit,
+    ) {
+        addComponent(
+            TextContextMenuItem(
+                key = key,
+                enabled = enabled,
+                onClick = {
+                    onClick()
+                    close()
+                })
+        )
+    }
+
+    fun TextContextMenuBuilderScope.textFieldSuspendItem(
+        key: Any,
+        enabled: Boolean,
+        onClick: suspend () -> Unit,
+    ) {
+        textFieldItem(key, enabled) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
+        }
+    }
+
+    with(manager) {
+        separator()
+        textFieldSuspendItem(TextContextMenuKeys.CutKey, enabled = canCut()) { cut() }
+        textFieldSuspendItem(TextContextMenuKeys.CopyKey, enabled = canCopy()) { copy(cancelSelection = false) }
+        textFieldSuspendItem(TextContextMenuKeys.PasteKey, enabled = canPaste()) { paste() }
+        textFieldItem(TextContextMenuKeys.SelectAllKey, enabled = canSelectAll()) { selectAll() }
+        separator()
+    }
 }

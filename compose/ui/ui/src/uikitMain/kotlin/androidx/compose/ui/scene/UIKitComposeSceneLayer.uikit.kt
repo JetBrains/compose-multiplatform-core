@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -40,11 +41,12 @@ import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toRect
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
 import platform.CoreGraphics.CGPoint
+import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
 internal class UIKitComposeSceneLayer(
@@ -56,14 +58,14 @@ internal class UIKitComposeSceneLayer(
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
-    focusStack: FocusStack?,
+    focusedViewsList: FocusedViewsList?,
     windowContext: PlatformWindowContext,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
 ) : ComposeSceneLayer {
 
-    override var focusable: Boolean = focusStack != null
+    override var focusable: Boolean = focusedViewsList != null
         set(value) {
             if (field != value) {
                 field = value
@@ -71,34 +73,34 @@ internal class UIKitComposeSceneLayer(
             }
         }
 
-    val view = UIKitComposeSceneLayerView(
+    val interactionView = UIKitComposeSceneLayerView(
         ::onDidMoveToWindow,
         ::isInsideInteractionBounds,
         isInterceptingOutsideEvents = { focusable }
     )
 
-    val interopContainerView = UIKitTransparentContainerView()
+    val overlayView: UIView get() = mediator.overlayView
 
     private val backGestureDispatcher = UIKitBackGestureDispatcher(
         enableBackGesture = enableBackGesture,
-        density = view.density,
+        density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft }
     )
 
     private val mediator = ComposeSceneMediator(
-        parentView = view,
-        interopContainerView = interopContainerView,
         onFocusBehavior = onFocusBehavior,
-        focusStack = focusStack,
+        focusedViewsList = focusedViewsList,
         windowContext = windowContext,
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher
-    )
+    ).also {
+        interactionView.embedSubview(it.inputView)
+    }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =
-        boundsInWindow.contains(point.asDpOffset().toOffset(view.density).round())
+        boundsInWindow.contains(point.asDpOffset().toOffset(interactionView.density).round())
     
     private fun createComposeScene(
         invalidate: () -> Unit,
@@ -137,7 +139,7 @@ internal class UIKitComposeSceneLayer(
     private val scrimPaint = Paint()
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        backGestureDispatcher.onDidMoveToWindow(window, view)
+        backGestureDispatcher.onDidMoveToWindow(window, interactionView)
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
@@ -152,6 +154,8 @@ internal class UIKitComposeSceneLayer(
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
 
+    val hasInteropViews: Boolean get() = mediator.hasInteropViews
+
     fun prepareAndGetSizeTransitionAnimation() = mediator.prepareAndGetSizeTransitionAnimation()
 
     override fun close() {
@@ -162,9 +166,8 @@ internal class UIKitComposeSceneLayer(
 
     internal fun dispose() {
         mediator.dispose()
-        view.removeFromSuperview()
-        view.dispose()
-        interopContainerView.removeFromSuperview()
+        interactionView.removeFromSuperview()
+        interactionView.dispose()
     }
 
     @Composable
@@ -193,7 +196,7 @@ internal class UIKitComposeSceneLayer(
     override fun setOutsidePointerEventListener(
         onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)?
     ) {
-        view.onOutsidePointerEvent = {
+        interactionView.onOutsidePointerEvent = {
             onOutsidePointerEvent?.invoke(it, null)
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.ka() = mapOf(
     Strings.MenuCollapsed to "ჩაკეცილი",
     Strings.ToggleDropdownMenu to "გადართეთ ჩამოსაშლელი მენიუ",
     Strings.SnackbarDismiss to "დახურვა",
+    Strings.SnackbarPaneTitle to "გაფრთხილება",
     Strings.SearchBarSearch to "ძიება",
     Strings.SuggestionsAvailable to "შემოთავაზებები იხილეთ ქვემოთ",
     Strings.DatePickerTitle to "თარიღის არჩევა",
@@ -71,6 +72,8 @@ internal fun Translations.ka() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ქვედა ფურცლის ჩაკეცვა",
     Strings.BottomSheetDismissDescription to "ქვედა ფურცლის უარყოფა",
     Strings.BottomSheetExpandDescription to "ქვედა ფურცლის გაშლა",
+    Strings.FloatingToolbarCollapse to "ხელსაწყოთა ზოლის ჩაკეცვა",
+    Strings.FloatingToolbarExpand to "ხელსაწყოთა ზოლის გაფართოება",
     Strings.TooltipPaneDescription to "მინიშნება",
     Strings.TooltipLongPressLabel to "მინიშნების ჩვენება",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.ka() = mapOf(
     Strings.TimePickerHour to "საათი",
     Strings.TimePickerMinuteTextField to "რამდენიმე წუთით",
     Strings.TimePickerHourTextField to "ერთი საათით",
+    Strings.TimePickerToggleKeyboard to "დროის შეყვანისთვის ტექსტის შეყვანის რეჟიმზე გადართვა",
+    Strings.TimePickerToggleTouch to "დროის შეყვანისთვის საათის რეჟიმზე გადართვა",
+    Strings.TimePickerDialogTitle to "აირჩიეთ დრო",
+    Strings.TimeInputDialogTitle to "შეიყვანეთ დრო",
+    Strings.CloseRail to "არხის დახურვა",
+    Strings.WideNavigationRailPaneTitle to "ნავიგაციის არხი",
 )

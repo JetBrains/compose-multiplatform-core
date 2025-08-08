@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.gl() = mapOf(
     Strings.MenuCollapsed to "Contraído",
     Strings.ToggleDropdownMenu to "Activa ou desactiva o menú despregable",
     Strings.SnackbarDismiss to "Pechar",
+    Strings.SnackbarPaneTitle to "Alerta",
     Strings.SearchBarSearch to "Buscar",
     Strings.SuggestionsAvailable to "Hai suxestións abaixo",
     Strings.DatePickerTitle to "Selecciona a data",
@@ -71,6 +72,8 @@ internal fun Translations.gl() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Contrae o panel inferior",
     Strings.BottomSheetDismissDescription to "Pecha o panel inferior",
     Strings.BottomSheetExpandDescription to "Desprega o panel inferior",
+    Strings.FloatingToolbarCollapse to "Contraer a barra de ferramentas",
+    Strings.FloatingToolbarExpand to "Despregar a barra de ferramentas",
     Strings.TooltipPaneDescription to "Cadro de información",
     Strings.TooltipLongPressLabel to "Mostrar o cadro de información",
     Strings.TimePickerPM to "p.m.",
@@ -85,4 +88,10 @@ internal fun Translations.gl() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "por minuto",
     Strings.TimePickerHourTextField to "por hora",
+    Strings.TimePickerToggleKeyboard to "Cambiar ao modo de introdución de texto para indicar a hora",
+    Strings.TimePickerToggleTouch to "Cambiar ao modo de reloxo para indicar a hora",
+    Strings.TimePickerDialogTitle to "Seleccionar a hora",
+    Strings.TimeInputDialogTitle to "Indicar a hora",
+    Strings.CloseRail to "Pechar o raíl",
+    Strings.WideNavigationRailPaneTitle to "Raíl de navegación",
 )

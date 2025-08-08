@@ -18,9 +18,10 @@ package androidx.window.extensions.util;
 
 import android.util.ArraySet;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 
@@ -36,8 +37,7 @@ public final class SetUtilApi23 {
     /**
      * Creates an instance of {@link ArraySet}.
      */
-    @NonNull
-    public static <T> Set<T> createSet() {
+    public static <T> @NonNull Set<T> createSet() {
         return new ArraySet<>();
     }
 }

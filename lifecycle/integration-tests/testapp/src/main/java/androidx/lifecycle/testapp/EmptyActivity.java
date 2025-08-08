@@ -18,8 +18,9 @@ package androidx.lifecycle.testapp;
 
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * empty activity

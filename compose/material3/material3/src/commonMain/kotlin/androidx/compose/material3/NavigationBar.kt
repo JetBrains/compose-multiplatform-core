@@ -18,7 +18,6 @@ package androidx.compose.material3
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.Interaction
@@ -39,12 +38,16 @@ import androidx.compose.material3.internal.MappedInteractionSource
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.tokens.ElevationTokens
+import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.NavigationBarTokens
+import androidx.compose.material3.tokens.NavigationBarVerticalItemTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -74,8 +77,8 @@ import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m3.material.io/components/navigation-bar/overview" class="external"
- * target="_blank">Material Design bottom navigation bar</a>.
+ * [Material Design bottom navigation
+ * bar](https://m3.material.io/components/navigation-bar/overview)
  *
  * Navigation bars offer a persistent and convenient way to switch between primary destinations in
  * an app.
@@ -105,6 +108,7 @@ import kotlin.math.roundToInt
  * @param windowInsets a window insets of the navigation bar.
  * @param content the content of this navigation bar, typically 3-5 [NavigationBarItem]s
  */
+@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun NavigationBar(
     modifier: Modifier = Modifier,
@@ -112,24 +116,47 @@ fun NavigationBar(
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
     tonalElevation: Dp = NavigationBarDefaults.Elevation,
     windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
-    Surface(
-        color = containerColor,
-        contentColor = contentColor,
-        tonalElevation = tonalElevation,
-        modifier = modifier
-    ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .windowInsetsPadding(windowInsets)
-                    .defaultMinSize(minHeight = NavigationBarHeight)
-                    .selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(NavigationBarItemHorizontalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
-        )
+    with(LocalNavigationBarOverride.current) {
+        NavigationBarOverrideScope(
+                modifier = modifier,
+                containerColor = containerColor,
+                contentColor = contentColor,
+                tonalElevation = tonalElevation,
+                windowInsets = windowInsets,
+                content = content,
+            )
+            .NavigationBar()
+    }
+}
+
+/**
+ * This override provides the default behavior of the [NavigationBar] component.
+ *
+ * [NavigationBarOverride] used when no override is specified.
+ */
+@ExperimentalMaterial3ComponentOverrideApi
+object DefaultNavigationBarOverride : NavigationBarOverride {
+    @Composable
+    override fun NavigationBarOverrideScope.NavigationBar() {
+        Surface(
+            color = containerColor,
+            contentColor = contentColor,
+            tonalElevation = tonalElevation,
+            modifier = modifier,
+        ) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .windowInsetsPadding(windowInsets)
+                        .defaultMinSize(minHeight = NavigationBarHeight)
+                        .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(NavigationBarItemHorizontalPadding),
+                verticalAlignment = Alignment.CenterVertically,
+                content = content,
+            )
+        }
     }
 }
 
@@ -177,16 +204,18 @@ fun RowScope.NavigationBarItem(
     label: @Composable (() -> Unit)? = null,
     alwaysShowLabel: Boolean = true,
     colors: NavigationBarItemColors = NavigationBarItemDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
+    // TODO Load the motionScheme tokens from the component tokens file
+    val colorAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Color>()
     val styledIcon =
         @Composable {
             val iconColor by
                 animateColorAsState(
                     targetValue = colors.iconColor(selected = selected, enabled = enabled),
-                    animationSpec = tween(ItemAnimationDurationMillis)
+                    animationSpec = colorAnimationSpec,
                 )
             // If there's a label, don't have a11y services repeat the icon description.
             val clearSemantics = label != null && (alwaysShowLabel || selected)
@@ -202,12 +231,12 @@ fun RowScope.NavigationBarItem(
                 val textColor by
                     animateColorAsState(
                         targetValue = colors.textColor(selected = selected, enabled = enabled),
-                        animationSpec = tween(ItemAnimationDurationMillis)
+                        animationSpec = colorAnimationSpec,
                     )
                 ProvideContentColorTextStyle(
                     contentColor = textColor,
                     textStyle = style,
-                    content = label
+                    content = label,
                 )
             }
         }
@@ -230,18 +259,24 @@ fun RowScope.NavigationBarItem(
         contentAlignment = Alignment.Center,
         propagateMinConstraints = true,
     ) {
-        val animationProgress: State<Float> =
+        val alphaAnimationProgress: State<Float> =
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
-                animationSpec = tween(ItemAnimationDurationMillis)
+                // TODO Load the motionScheme tokens from the component tokens file
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             )
-
+        val sizeAnimationProgress: State<Float> =
+            animateFloatAsState(
+                targetValue = if (selected) 1f else 0f,
+                // TODO Load the motionScheme tokens from the component tokens file
+                animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
+            )
         // The entire item is selectable, but only the indicator pill shows the ripple. To achieve
         // this, we re-map the coordinates of the item's InteractionSource into the coordinates of
         // the indicator.
         val deltaOffset: Offset
         with(LocalDensity.current) {
-            val indicatorWidth = NavigationBarTokens.ActiveIndicatorWidth.roundToPx()
+            val indicatorWidth = NavigationBarVerticalItemTokens.ActiveIndicatorWidth.roundToPx()
             deltaOffset =
                 Offset((itemWidth - indicatorWidth).toFloat() / 2, IndicatorVerticalOffset.toPx())
         }
@@ -256,18 +291,18 @@ fun RowScope.NavigationBarItem(
             @Composable {
                 Box(
                     Modifier.layoutId(IndicatorRippleLayoutIdTag)
-                        .clip(NavigationBarTokens.ActiveIndicatorShape.value)
-                        .indication(offsetInteractionSource, rippleOrFallbackImplementation())
+                        .clip(NavigationBarTokens.ItemActiveIndicatorShape.value)
+                        .indication(offsetInteractionSource, ripple())
                 )
             }
         val indicator =
             @Composable {
                 Box(
                     Modifier.layoutId(IndicatorLayoutIdTag)
-                        .graphicsLayer { alpha = animationProgress.value }
+                        .graphicsLayer { alpha = alphaAnimationProgress.value }
                         .background(
                             color = colors.indicatorColor,
-                            shape = NavigationBarTokens.ActiveIndicatorShape.value,
+                            shape = NavigationBarTokens.ItemActiveIndicatorShape.value,
                         )
                 )
             }
@@ -278,7 +313,8 @@ fun RowScope.NavigationBarItem(
             icon = styledIcon,
             label = styledLabel,
             alwaysShowLabel = alwaysShowLabel,
-            animationProgress = { animationProgress.value },
+            alphaAnimationProgress = { alphaAnimationProgress.value },
+            sizeAnimationProgress = { sizeAnimationProgress.value },
         )
     }
 }
@@ -347,17 +383,18 @@ object NavigationBarItemDefaults {
         get() {
             return defaultNavigationBarItemColorsCached
                 ?: NavigationBarItemColors(
-                        selectedIconColor = fromToken(NavigationBarTokens.ActiveIconColor),
-                        selectedTextColor = fromToken(NavigationBarTokens.ActiveLabelTextColor),
+                        selectedIconColor = fromToken(NavigationBarTokens.ItemActiveIconColor),
+                        selectedTextColor = fromToken(NavigationBarTokens.ItemActiveLabelTextColor),
                         selectedIndicatorColor =
-                            fromToken(NavigationBarTokens.ActiveIndicatorColor),
-                        unselectedIconColor = fromToken(NavigationBarTokens.InactiveIconColor),
-                        unselectedTextColor = fromToken(NavigationBarTokens.InactiveLabelTextColor),
+                            fromToken(NavigationBarTokens.ItemActiveIndicatorColor),
+                        unselectedIconColor = fromToken(NavigationBarTokens.ItemInactiveIconColor),
+                        unselectedTextColor =
+                            fromToken(NavigationBarTokens.ItemInactiveLabelTextColor),
                         disabledIconColor =
-                            fromToken(NavigationBarTokens.InactiveIconColor)
+                            fromToken(NavigationBarTokens.ItemInactiveIconColor)
                                 .copy(alpha = DisabledAlpha),
                         disabledTextColor =
-                            fromToken(NavigationBarTokens.InactiveLabelTextColor)
+                            fromToken(NavigationBarTokens.ItemInactiveLabelTextColor)
                                 .copy(alpha = DisabledAlpha),
                     )
                     .also { defaultNavigationBarItemColorsCached = it }
@@ -365,15 +402,15 @@ object NavigationBarItemDefaults {
 
     @Deprecated(
         "Use overload with disabledIconColor and disabledTextColor",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     @Composable
     fun colors(
-        selectedIconColor: Color = NavigationBarTokens.ActiveIconColor.value,
-        selectedTextColor: Color = NavigationBarTokens.ActiveLabelTextColor.value,
-        indicatorColor: Color = NavigationBarTokens.ActiveIndicatorColor.value,
-        unselectedIconColor: Color = NavigationBarTokens.InactiveIconColor.value,
-        unselectedTextColor: Color = NavigationBarTokens.InactiveLabelTextColor.value,
+        selectedIconColor: Color = NavigationBarTokens.ItemActiveIconColor.value,
+        selectedTextColor: Color = NavigationBarTokens.ItemActiveLabelTextColor.value,
+        indicatorColor: Color = NavigationBarTokens.ItemActiveIndicatorColor.value,
+        unselectedIconColor: Color = NavigationBarTokens.ItemInactiveIconColor.value,
+        unselectedTextColor: Color = NavigationBarTokens.ItemInactiveLabelTextColor.value,
     ): NavigationBarItemColors =
         NavigationBarItemColors(
             selectedIconColor = selectedIconColor,
@@ -501,8 +538,10 @@ constructor(
  * @param label text label for this item
  * @param alwaysShowLabel whether to always show the label for this item. If false, the label will
  *   only be shown when this item is selected.
- * @param animationProgress progress of the animation, where 0 represents the unselected state of
- *   this item and 1 represents the selected state. This value controls other values such as
+ * @param alphaAnimationProgress progress of the animation, where 0 represents the unselected state
+ *   of this item and 1 represents the selected state. This value controls the indicator's opacity.
+ * @param sizeAnimationProgress progress of the animation, where 0 represents the unselected state
+ *   of this item and 1 represents the selected state. This value controls other values such as
  *   indicator size, icon and label positions, etc.
  */
 @Composable
@@ -512,25 +551,31 @@ private fun NavigationBarItemLayout(
     icon: @Composable () -> Unit,
     label: @Composable (() -> Unit)?,
     alwaysShowLabel: Boolean,
-    animationProgress: () -> Float,
+    alphaAnimationProgress: () -> Float,
+    sizeAnimationProgress: () -> Float,
 ) {
-    Layout({
-        indicatorRipple()
-        indicator()
+    Layout(
+        modifier = Modifier.badgeBounds(),
+        content = {
+            indicatorRipple()
+            indicator()
 
-        Box(Modifier.layoutId(IconLayoutIdTag)) { icon() }
+            Box(Modifier.layoutId(IconLayoutIdTag)) { icon() }
 
-        if (label != null) {
-            Box(
-                Modifier.layoutId(LabelLayoutIdTag).graphicsLayer {
-                    alpha = if (alwaysShowLabel) 1f else animationProgress()
+            if (label != null) {
+                Box(
+                    Modifier.layoutId(LabelLayoutIdTag).graphicsLayer {
+                        alpha = if (alwaysShowLabel) 1f else alphaAnimationProgress()
+                    }
+                ) {
+                    label()
                 }
-            ) {
-                label()
             }
-        }
-    }) { measurables, constraints ->
-        @Suppress("NAME_SHADOWING") val animationProgress = animationProgress()
+        },
+    ) { measurables, constraints ->
+        @Suppress("NAME_SHADOWING")
+        // Ensure that the progress is >= 0. It may be negative on bouncy springs, for example.
+        val animationProgress = sizeAnimationProgress().coerceAtLeast(0f)
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
         val iconPlaceable =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.measure(looseConstraints)
@@ -564,7 +609,7 @@ private fun NavigationBarItemLayout(
                 indicatorPlaceable,
                 constraints,
                 alwaysShowLabel,
-                animationProgress
+                animationProgress,
             )
         }
     }
@@ -575,9 +620,14 @@ private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable?,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
-    val width = constraints.maxWidth
+    val width =
+        if (constraints.maxWidth == Constraints.Infinity) {
+            iconPlaceable.width + NavigationBarItemToIconMinimumPadding.roundToPx() * 2
+        } else {
+            constraints.maxWidth
+        }
     val height = constraints.constrainHeight(NavigationBarHeight.roundToPx())
 
     val iconX = (width - iconPlaceable.width) / 2
@@ -666,7 +716,12 @@ private fun MeasureScope.placeLabelAndIcon(
             IndicatorVerticalPadding.toPx() +
             NavigationBarIndicatorToLabelPadding.toPx()
 
-    val containerWidth = constraints.maxWidth
+    val containerWidth =
+        if (constraints.maxWidth == Constraints.Infinity) {
+            iconPlaceable.width + NavigationBarItemToIconMinimumPadding.roundToPx() * 2
+        } else {
+            constraints.maxWidth
+        }
 
     val labelX = (containerWidth - labelPlaceable.width) / 2
     val iconX = (containerWidth - iconPlaceable.width) / 2
@@ -696,9 +751,7 @@ private const val IconLayoutIdTag: String = "icon"
 
 private const val LabelLayoutIdTag: String = "label"
 
-private val NavigationBarHeight: Dp = NavigationBarTokens.ContainerHeight
-
-private const val ItemAnimationDurationMillis: Int = 100
+private val NavigationBarHeight: Dp = NavigationBarTokens.TallContainerHeight
 
 /*@VisibleForTesting*/
 internal val NavigationBarItemHorizontalPadding: Dp = 8.dp
@@ -707,10 +760,60 @@ internal val NavigationBarItemHorizontalPadding: Dp = 8.dp
 internal val NavigationBarIndicatorToLabelPadding: Dp = 4.dp
 
 private val IndicatorHorizontalPadding: Dp =
-    (NavigationBarTokens.ActiveIndicatorWidth - NavigationBarTokens.IconSize) / 2
+    (NavigationBarVerticalItemTokens.ActiveIndicatorWidth -
+        NavigationBarVerticalItemTokens.IconSize) / 2
 
 /*@VisibleForTesting*/
 internal val IndicatorVerticalPadding: Dp =
-    (NavigationBarTokens.ActiveIndicatorHeight - NavigationBarTokens.IconSize) / 2
+    (NavigationBarVerticalItemTokens.ActiveIndicatorHeight -
+        NavigationBarVerticalItemTokens.IconSize) / 2
 
 private val IndicatorVerticalOffset: Dp = 12.dp
+
+/*@VisibleForTesting*/
+internal val NavigationBarItemToIconMinimumPadding: Dp = 44.dp
+
+/**
+ * Interface that allows libraries to override the behavior of the [NavigationBar] component.
+ *
+ * To override this component, implement the member function of this interface, then provide the
+ * implementation to [LocalNavigationBarOverride] in the Compose hierarchy.
+ */
+@ExperimentalMaterial3ComponentOverrideApi
+interface NavigationBarOverride {
+    /** Behavior function that is called by the [NavigationBar] component. */
+    @Composable fun NavigationBarOverrideScope.NavigationBar()
+}
+
+/**
+ * Parameters available to [NavigationBar].
+ *
+ * @param modifier the [Modifier] to be applied to this navigation bar
+ * @param containerColor the color used for the background of this navigation bar. Use
+ *   [Color.Transparent] to have no color.
+ * @param contentColor the preferred color for content inside this navigation bar. Defaults to
+ *   either the matching content color for [containerColor], or to the current [LocalContentColor]
+ *   if [containerColor] is not a color from the theme.
+ * @param tonalElevation when [containerColor] is [ColorScheme.surface], a translucent primary color
+ *   overlay is applied on top of the container. A higher tonal elevation value will result in a
+ *   darker color in light theme and lighter color in dark theme. See also: [Surface].
+ * @param windowInsets a window insets of the navigation bar.
+ * @param content the content of this navigation bar, typically 3-5 [NavigationBarItem]s
+ */
+@ExperimentalMaterial3ComponentOverrideApi
+class NavigationBarOverrideScope
+internal constructor(
+    val modifier: Modifier = Modifier,
+    val containerColor: Color,
+    val contentColor: Color,
+    val tonalElevation: Dp,
+    val windowInsets: WindowInsets,
+    val content: @Composable RowScope.() -> Unit,
+)
+
+/** CompositionLocal containing the currently-selected [NavigationBarOverride]. */
+@ExperimentalMaterial3ComponentOverrideApi
+val LocalNavigationBarOverride: ProvidableCompositionLocal<NavigationBarOverride> =
+    compositionLocalOf {
+        DefaultNavigationBarOverride
+    }

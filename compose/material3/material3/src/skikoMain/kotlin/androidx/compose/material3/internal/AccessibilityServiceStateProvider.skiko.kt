@@ -34,5 +34,6 @@ private val AccessibilityServiceEnabled = mutableStateOf(false)
 @Composable
 internal actual fun rememberAccessibilityServiceState(
     listenToTouchExplorationState: Boolean,
-    listenToSwitchAccessState: Boolean
+    listenToSwitchAccessState: Boolean,
+    listenToVoiceAccessState: Boolean,
 ): State<Boolean> = AccessibilityServiceEnabled

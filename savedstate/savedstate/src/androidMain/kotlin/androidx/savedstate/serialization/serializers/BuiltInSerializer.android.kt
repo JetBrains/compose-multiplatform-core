@@ -104,12 +104,11 @@ public object SizeFSerializer : KSerializer<SizeF> {
  * Note that this serializer should be used with [SavedStateEncoder] or [SavedStateDecoder] only.
  * Using it with other Encoders/Decoders may throw [IllegalArgumentException].
  *
- * @sample androidx.savedstate.charSequenceSerializer
  * @see androidx.savedstate.serialization.encodeToSavedState
  * @see androidx.savedstate.serialization.decodeFromSavedState
  */
 @OptIn(ExperimentalSerializationApi::class)
-public object CharSequenceSerializer : KSerializer<CharSequence> {
+internal object CharSequenceSerializer : KSerializer<CharSequence> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("kotlin.CharSequence")
 
     override fun serialize(encoder: Encoder, value: CharSequence) {
@@ -203,12 +202,11 @@ public abstract class ParcelableSerializer<T : Parcelable> : KSerializer<T> {
  * Note that this serializer should be used with [SavedStateEncoder] or [SavedStateDecoder] only.
  * Using it with other Encoders/Decoders may throw [IllegalArgumentException].
  *
- * @sample androidx.savedstate.iBinderSerializer
  * @see androidx.savedstate.serialization.encodeToSavedState
  * @see androidx.savedstate.serialization.decodeFromSavedState
  */
 @OptIn(ExperimentalSerializationApi::class)
-public object IBinderSerializer : KSerializer<IBinder> {
+internal object IBinderSerializer : KSerializer<IBinder> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("android.os.IBinder")
 
     override fun serialize(encoder: Encoder, value: IBinder) {

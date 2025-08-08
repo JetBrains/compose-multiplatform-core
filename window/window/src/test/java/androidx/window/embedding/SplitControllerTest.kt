@@ -48,7 +48,7 @@ internal class SplitControllerTest {
                     SplitInfo(
                         ActivityStack(emptyList(), true),
                         ActivityStack(emptyList(), true),
-                        SplitAttributes(),
+                        SplitAttributes.Builder().build(),
                     )
                 )
             doAnswer { invocationOnMock ->
@@ -90,7 +90,7 @@ internal class SplitControllerTest {
 
     @Test
     fun test_updateSplitAttribute_delegates() {
-        val mockSplitAttributes = SplitAttributes()
+        val mockSplitAttributes = SplitAttributes.Builder().build()
         val mockSplitInfo =
             SplitInfo(
                 ActivityStack(emptyList(), true),

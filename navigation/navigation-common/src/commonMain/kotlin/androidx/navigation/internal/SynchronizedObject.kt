@@ -15,7 +15,6 @@
  */
 package androidx.navigation.internal
 
-import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
@@ -33,7 +32,7 @@ internal expect class SynchronizedObject()
  * - JVM: implemented via `synchronized`, `ReentrantLock` is avoided for performance reasons.
  * - Native: implemented via POSIX mutex with `PTHREAD_MUTEX_RECURSIVE` flag.
  */
-@OptIn(ExperimentalContracts::class)
+@Suppress("LEAKED_IN_PLACE_LAMBDA", "WRONG_INVOCATION_KIND")
 internal inline fun <T> synchronized(lock: SynchronizedObject, crossinline action: () -> T): T {
     contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
     return synchronizedImpl(lock, action)

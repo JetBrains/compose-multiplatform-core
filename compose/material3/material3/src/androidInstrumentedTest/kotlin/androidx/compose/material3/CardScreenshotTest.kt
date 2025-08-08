@@ -16,14 +16,12 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -31,7 +29,6 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -45,13 +42,14 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import org.junit.After
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CardScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -103,7 +101,7 @@ class CardScreenshotTest {
                 Card(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -121,7 +119,7 @@ class CardScreenshotTest {
                 Card(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -167,7 +165,7 @@ class CardScreenshotTest {
                 ElevatedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -185,7 +183,7 @@ class CardScreenshotTest {
                 ElevatedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -231,7 +229,7 @@ class CardScreenshotTest {
                 OutlinedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))
@@ -249,7 +247,7 @@ class CardScreenshotTest {
                 OutlinedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))
@@ -261,6 +259,7 @@ class CardScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun filledCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -276,6 +275,7 @@ class CardScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun elevatedCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -291,6 +291,7 @@ class CardScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun outlinedCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -305,7 +306,6 @@ class CardScreenshotTest {
         assertPressed("outlinedCard_pressed")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun filledCard_hover() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -324,7 +324,6 @@ class CardScreenshotTest {
         assertAgainstGolden("filledCard_hover")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun elevatedCard_hover() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -343,7 +342,6 @@ class CardScreenshotTest {
         assertAgainstGolden("elevatedCard_hover")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun outlinedCard_hover() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -371,7 +369,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 Card(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -381,7 +379,6 @@ class CardScreenshotTest {
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
             localInputModeManager!!.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
         }
@@ -399,7 +396,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 ElevatedCard(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -409,7 +406,6 @@ class CardScreenshotTest {
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
             localInputModeManager!!.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
         }
@@ -427,7 +423,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 OutlinedCard(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))
@@ -437,7 +433,6 @@ class CardScreenshotTest {
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
             localInputModeManager!!.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
         }

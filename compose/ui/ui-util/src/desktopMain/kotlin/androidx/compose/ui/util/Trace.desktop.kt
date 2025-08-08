@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 @file:JvmName("Trace_jbKt")
+@file:JvmMultifileClass
 
 package androidx.compose.ui.util
 
 actual inline fun <T> trace(sectionName: String, block: () -> T): T {
     return block()
+}
+
+actual fun traceValue(tag: String, value: Long) {
 }

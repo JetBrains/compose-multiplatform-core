@@ -66,7 +66,7 @@ class AndroidAutofillBenchmark {
                         onFill = {},
                         autofillTypes =
                             listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
-                        boundingBox = Rect(0f, 0f, 0f, 0f)
+                        boundingBox = Rect(0f, 0f, 0f, 0f),
                     )
 
                 autofillTree += autofillNode

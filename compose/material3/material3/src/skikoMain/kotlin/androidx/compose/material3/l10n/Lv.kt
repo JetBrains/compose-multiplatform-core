@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.lv() = mapOf(
     Strings.MenuCollapsed to "Sakļauta",
     Strings.ToggleDropdownMenu to "Pārslēgt nolaižamo izvēlni",
     Strings.SnackbarDismiss to "Nerādīt",
+    Strings.SnackbarPaneTitle to "Brīdinājums",
     Strings.SearchBarSearch to "Meklēšana",
     Strings.SuggestionsAvailable to "Tālāk ir sniegti ieteikumi",
     Strings.DatePickerTitle to "Atlasīt datumu",
@@ -71,6 +72,8 @@ internal fun Translations.lv() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Sakļaut ekrāna apakšdaļas lapu",
     Strings.BottomSheetDismissDescription to "Noraidīt ekrāna apakšdaļas lapu",
     Strings.BottomSheetExpandDescription to "Izvērst ekrāna apakšdaļas lapu",
+    Strings.FloatingToolbarCollapse to "Sakļaut rīkjoslu",
+    Strings.FloatingToolbarExpand to "Izvērst rīkjoslu",
     Strings.TooltipPaneDescription to "Rīka padoms",
     Strings.TooltipLongPressLabel to "Rādīt rīka padomu",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.lv() = mapOf(
     Strings.TimePickerHour to "Stunda",
     Strings.TimePickerMinuteTextField to "minūtēm",
     Strings.TimePickerHourTextField to "stundām",
+    Strings.TimePickerToggleKeyboard to "Ieslēdziet teksta ievades režīmu, lai ievadītu laiku.",
+    Strings.TimePickerToggleTouch to "Ieslēdziet pulksteņa režīmu, lai ievadītu laiku.",
+    Strings.TimePickerDialogTitle to "Laika atlase",
+    Strings.TimeInputDialogTitle to "Laika ievade",
+    Strings.CloseRail to "Aizvērt joslu",
+    Strings.WideNavigationRailPaneTitle to "Navigācijas josla",
 )

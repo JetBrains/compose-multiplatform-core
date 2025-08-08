@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:OptIn(ExperimentalMultiplatform::class)
+
 package kotlinx.test
 
-annotation class DoNothing()
+@OptionalExpectation expect annotation class IgnoreAndroidUnitTestTarget()
 
-expect annotation class IgnoreJsTarget()
-expect annotation class IgnoreNativeTarget()
-expect annotation class IgnoreJsAndNative()
+@OptionalExpectation expect annotation class IgnoreNativeTarget()
+
+@OptionalExpectation expect annotation class IgnoreWasmTarget()
+
+@OptionalExpectation expect annotation class IgnoreJsTarget()

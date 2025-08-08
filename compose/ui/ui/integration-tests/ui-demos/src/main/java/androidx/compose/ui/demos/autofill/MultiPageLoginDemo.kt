@@ -50,7 +50,7 @@ fun MultiPageLoginDemo() {
         NavHost(
             modifier = Modifier.padding(innerPadding),
             navController = navController,
-            startDestination = "UsernameScreen"
+            startDestination = "UsernameScreen",
         ) {
             composable("UsernameScreen") { Screen1(navController) }
             composable("PasswordScreen") { Screen2(navController) }

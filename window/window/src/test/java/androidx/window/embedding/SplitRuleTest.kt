@@ -23,16 +23,19 @@ class SplitRuleTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun test_minWidthMustBeNonNegative() {
-        SplitRule(minWidthDp = -1, defaultSplitAttributes = SplitAttributes())
+        SplitRule(minWidthDp = -1, defaultSplitAttributes = SplitAttributes.Builder().build())
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun test_minHeightMustBeNonNegative() {
-        SplitRule(minHeightDp = -1, defaultSplitAttributes = SplitAttributes())
+        SplitRule(minHeightDp = -1, defaultSplitAttributes = SplitAttributes.Builder().build())
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun test_minSmallestWidthMustBeNonNegative() {
-        SplitRule(minSmallestWidthDp = -1, defaultSplitAttributes = SplitAttributes())
+        SplitRule(
+            minSmallestWidthDp = -1,
+            defaultSplitAttributes = SplitAttributes.Builder().build()
+        )
     }
 }

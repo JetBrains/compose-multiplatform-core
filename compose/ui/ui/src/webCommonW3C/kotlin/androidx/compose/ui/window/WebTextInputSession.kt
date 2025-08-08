@@ -16,12 +16,14 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.SessionMutex
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.WebTextInputService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -30,37 +32,33 @@ internal class WebTextInputSession(
     private val webTextInputService: WebTextInputService
 ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
 
-    private val innerSessionMutex = SessionMutex<Nothing?>()
-
     override suspend fun startInputMethod(
         request: PlatformTextInputMethodRequest
-    ): Nothing = innerSessionMutex.withSessionCancellingPrevious(
-        // This session has no data, just init/dispose tasks.
-        sessionInitializer = { null }
-    ) {
-        coroutineScope {
-            // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7831/Web-Adopt-PlatformTextInputService2)
-            launch {
-                request.outputValue.collect {
-                    webTextInputService.updateState(oldValue = null, newValue = it)
-                }
+    ): Nothing = coroutineScope {
+        // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7831/Web-Adopt-PlatformTextInputService2)
+        launch {
+            snapshotFlow { request.value() }.collect {
+                webTextInputService.updateState(oldValue = null, newValue = it)
             }
-            launch {
-                request.focusedRectInRoot.collect {
+        }
+        launch {
+            snapshotFlow { request.focusedRectInRoot() }.filterNotNull().collect {
+                // Skip Rect.Zero, because it's an initial value. The real value is never Zero
+                if (it != Rect.Zero) {
                     webTextInputService.notifyFocusedRect(it)
                 }
             }
-            suspendCancellableCoroutine<Nothing> { continuation ->
-                webTextInputService.startInput(
-                    value = request.value(),
-                    imeOptions = request.imeOptions,
-                    onEditCommand = request.onEditCommand,
-                    onImeActionPerformed = request.onImeAction ?: {}
-                )
+        }
+        suspendCancellableCoroutine<Nothing> { continuation ->
+            webTextInputService.startInput(
+                value = request.value(),
+                imeOptions = request.imeOptions,
+                onEditCommand = request.onEditCommand,
+                onImeActionPerformed = request.onImeAction ?: {}
+            )
 
-                continuation.invokeOnCancellation {
-                    webTextInputService.stopInput()
-                }
+            continuation.invokeOnCancellation {
+                webTextInputService.stopInput()
             }
         }
     }

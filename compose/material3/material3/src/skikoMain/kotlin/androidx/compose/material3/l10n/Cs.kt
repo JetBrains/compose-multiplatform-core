@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ internal fun Translations.cs() = mapOf(
     Strings.MenuCollapsed to "Sbaleno",
     Strings.ToggleDropdownMenu to "Přepnout rozbalovací nabídku",
     Strings.SnackbarDismiss to "Zavřít",
+    Strings.SnackbarPaneTitle to "Upozornění",
     Strings.SearchBarSearch to "Vyhledávání",
     Strings.SuggestionsAvailable to "Níže jsou k dispozici návrhy",
     Strings.DatePickerTitle to "Výběr data",
@@ -66,11 +67,13 @@ internal fun Translations.cs() = mapOf(
     Strings.DateRangePickerDayInRange to "V rozsahu",
     Strings.DateRangeInputTitle to "Zadejte data",
     Strings.DateRangeInputInvalidRangeInput to "Neplatné období",
-    Strings.BottomSheetPaneTitle to "Spodní tabulka",
+    Strings.BottomSheetPaneTitle to "Spodní panel",
     Strings.BottomSheetDragHandleDescription to "Úchyt pro přetažení",
-    Strings.BottomSheetPartialExpandDescription to "Sbalit spodní tabulku",
-    Strings.BottomSheetDismissDescription to "Zavřít spodní tabulku",
-    Strings.BottomSheetExpandDescription to "Rozbalit spodní tabulku",
+    Strings.BottomSheetPartialExpandDescription to "Sbalit spodní panel",
+    Strings.BottomSheetDismissDescription to "Zavřít spodní panel",
+    Strings.BottomSheetExpandDescription to "Rozbalit spodní panel",
+    Strings.FloatingToolbarCollapse to "Sbalit lištu",
+    Strings.FloatingToolbarExpand to "Rozbalit lištu",
     Strings.TooltipPaneDescription to "Popisek",
     Strings.TooltipLongPressLabel to "Zobrazit popisek",
     Strings.TimePickerPM to "PM",
@@ -85,4 +88,10 @@ internal fun Translations.cs() = mapOf(
     Strings.TimePickerHour to "Hodina",
     Strings.TimePickerMinuteTextField to "pro minuty",
     Strings.TimePickerHourTextField to "pro hodinu",
+    Strings.TimePickerToggleKeyboard to "Přepnout na režim zadávání textu za účelem zadání času",
+    Strings.TimePickerToggleTouch to "Pokud chcete zadat čas, přepněte na režim hodin",
+    Strings.TimePickerDialogTitle to "Vyberte čas",
+    Strings.TimeInputDialogTitle to "Zadejte čas",
+    Strings.CloseRail to "Zavřít sloupec",
+    Strings.WideNavigationRailPaneTitle to "Navigační sloupec",
 )
