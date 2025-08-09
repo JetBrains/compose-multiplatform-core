@@ -63,8 +63,8 @@ internal class UIKitWindowInsetsManager(
                 val hasCutout = when (orientation) {
                     InterfaceOrientation.Portrait -> safeAreaInsets.top > 0
                     InterfaceOrientation.PortraitUpsideDown -> safeAreaInsets.bottom > 0
-                    InterfaceOrientation.LandscapeLeft -> safeAreaInsets.left > 0
-                    InterfaceOrientation.LandscapeRight -> safeAreaInsets.right > 0
+                    InterfaceOrientation.LandscapeLeft -> safeAreaInsets.right > 0
+                    InterfaceOrientation.LandscapeRight -> safeAreaInsets.left > 0
                 }
 
                 if (!hasCutout || sceneSize.width <= 0 || sceneSize.height <= 0) {
@@ -85,10 +85,6 @@ internal class UIKitWindowInsetsManager(
                         )
 
                         InterfaceOrientation.LandscapeLeft -> listOf(
-                            Rect(0f, 0f, safeAreaInsets.left.toFloat(), sceneSize.height.toFloat())
-                        )
-
-                        InterfaceOrientation.LandscapeRight -> listOf(
                             Rect(
                                 sceneSize.width - safeAreaInsets.right.toFloat(),
                                 0f,
@@ -96,16 +92,22 @@ internal class UIKitWindowInsetsManager(
                                 sceneSize.height.toFloat()
                             )
                         )
+
+                        InterfaceOrientation.LandscapeRight -> listOf(
+                            Rect(0f, 0f, safeAreaInsets.left.toFloat(), sceneSize.height.toFloat())
+                        )
                     }
                 }
             }
         override val captionBar: PlatformInsets get() = PlatformInsets.Zero
-        override val displayCutout: PlatformInsets get() = when (interfaceOrientation()) {
-                    InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
-                    InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
-                    InterfaceOrientation.LandscapeLeft -> PlatformInsets(getLeft = { safeAreaInsets().left })
-                    InterfaceOrientation.LandscapeRight -> PlatformInsets(getRight = { safeAreaInsets().right })
-                }
+        override val displayCutout: PlatformInsets get() {
+            return when (interfaceOrientation()) {
+                InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
+                InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
+                InterfaceOrientation.LandscapeLeft -> PlatformInsets(getRight = { safeAreaInsets().right }) // In LandscapeLeft orientation, the device's top edge (where the front camera is located) is positioned on the right
+                InterfaceOrientation.LandscapeRight -> PlatformInsets(getLeft = { safeAreaInsets().left }) // In LandscapeRight orientation, the device's top edge (where the front camera is located) is positioned on the left
+            }
+        }
         override val ime: PlatformInsets get() = PlatformInsets(getBottom = keyboardOverlapHeight)
         override val mandatorySystemGestures: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top }, getBottom = { safeAreaInsets().bottom })
         override val navigationBars: PlatformInsets get() = PlatformInsets(getBottom = { safeAreaInsets().bottom })
