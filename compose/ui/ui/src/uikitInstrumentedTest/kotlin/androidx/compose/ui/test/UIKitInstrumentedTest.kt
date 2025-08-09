@@ -90,7 +90,7 @@ internal class UIKitInstrumentedTest {
     val appDelegate = MockAppDelegate()
     val keyboardHeight: Dp get() =
         KeyboardVisibilityListener.keyboardFrame.useContents { size.height.dp }
-    val screenSize: DpSize = screen.bounds().useContents { DpSize(size.width.dp, size.height.dp) }
+    val screenSize: DpSize get() = screen.bounds().useContents { DpSize(size.width.dp, size.height.dp) }
     internal lateinit var hostingViewController: ComposeHostingViewController
 
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
