@@ -49,6 +49,8 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIInterfaceOrientationMask
+import platform.UIKit.UIInterfaceOrientationMaskAll
 import platform.UIKit.UIScreen
 import platform.UIKit.UITouch
 import platform.UIKit.UIViewController
@@ -275,6 +277,8 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
+    var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
+
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
 
@@ -293,5 +297,12 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
+    }
+
+    override fun application(
+        application: UIApplication,
+        supportedInterfaceOrientationsForWindow: UIWindow?
+    ): UIInterfaceOrientationMask {
+        return supportedInterfaceOrientations
     }
 }

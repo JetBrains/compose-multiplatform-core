@@ -230,11 +230,9 @@ internal class ComposeHostingViewController(
 
     /**
      * Used for testing purposes.
-     * Updates safe area insets on the main compose scene mediator.
+     * Safe area insets of the main compose scene mediator.
      */
-    fun updateSafeAreaInsets(insets: PlatformInsets) {
-        mediator?.updateSafeAreaInsets(insets)
-    }
+    val safeAreaInsets: PlatformInsets get() = mediator?.safeAreaInsets ?: PlatformInsets.Zero
 
 
     override fun viewWillTransitionToSize(
