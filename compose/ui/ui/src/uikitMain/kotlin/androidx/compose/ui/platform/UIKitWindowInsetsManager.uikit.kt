@@ -100,13 +100,11 @@ internal class UIKitWindowInsetsManager(
                 }
             }
         override val captionBar: PlatformInsets get() = PlatformInsets.Zero
-        override val displayCutout: PlatformInsets get() {
-            return when (interfaceOrientation()) {
-                InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
-                InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
-                InterfaceOrientation.LandscapeLeft -> PlatformInsets(getRight = { safeAreaInsets().right }) // In LandscapeLeft orientation, the device's top edge (where the front camera is located) is positioned on the right
-                InterfaceOrientation.LandscapeRight -> PlatformInsets(getLeft = { safeAreaInsets().left }) // In LandscapeRight orientation, the device's top edge (where the front camera is located) is positioned on the left
-            }
+        override val displayCutout: PlatformInsets get() = when (interfaceOrientation()) {
+            InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
+            InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
+            InterfaceOrientation.LandscapeLeft -> PlatformInsets(getRight = { safeAreaInsets().right }) // In LandscapeLeft orientation, the device's top edge (where the front camera is located) is positioned on the right
+            InterfaceOrientation.LandscapeRight -> PlatformInsets(getLeft = { safeAreaInsets().left }) // In LandscapeRight orientation, the device's top edge (where the front camera is located) is positioned on the left
         }
         override val ime: PlatformInsets get() = PlatformInsets(getBottom = keyboardOverlapHeight)
         override val mandatorySystemGestures: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top }, getBottom = { safeAreaInsets().bottom })
