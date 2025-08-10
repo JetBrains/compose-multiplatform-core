@@ -49,12 +49,18 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIInterfaceOrientationLandscapeLeft
+import platform.UIKit.UIInterfaceOrientationLandscapeRight
 import platform.UIKit.UIInterfaceOrientationMask
 import platform.UIKit.UIInterfaceOrientationMaskAll
+import platform.UIKit.UIInterfaceOrientationMaskPortrait
+import platform.UIKit.UIInterfaceOrientationPortrait
+import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITouch
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.attemptRotationToDeviceOrientation
 import platform.UIKit.endEditing
 import platform.UIKit.systemBackgroundColor
 import platform.darwin.NSObject
@@ -105,6 +111,7 @@ internal class UIKitInstrumentedTest {
 
     fun setContent(
         configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
+        interfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskPortrait,
         content: @Composable () -> Unit
     ) {
         hostingViewController = ComposeHostingViewController(
@@ -119,6 +126,12 @@ internal class UIKitInstrumentedTest {
 
         appDelegate.setUpWindow(hostingViewController)
         waitForIdle()
+
+        if ((appDelegate.window?.windowScene?.interfaceOrientation != UIInterfaceOrientationPortrait && interfaceOrientations == UIInterfaceOrientationMaskPortrait) || interfaceOrientations != UIInterfaceOrientationMaskPortrait) {
+            appDelegate.supportedInterfaceOrientations = interfaceOrientations
+            UIViewController.attemptRotationToDeviceOrientation()
+            delay(1000)
+        }
     }
 
     fun tearDown() {

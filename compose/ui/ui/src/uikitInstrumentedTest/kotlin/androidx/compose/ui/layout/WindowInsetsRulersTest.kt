@@ -200,21 +200,8 @@ class WindowInsetsRulersTest {
             block(readRulers(ruler.current))
         }
     }
-}
 
-private val UIKitInstrumentedTest.screenSizePx get() = with(density) {
-    IntSize(screenSize.width.roundToPx(), screenSize.height.roundToPx())
-}
-
-private fun UIKitInstrumentedTest.setContent(
-    configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
-    interfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskPortrait,
-    content: @Composable () -> Unit
-) {
-    setContent(configure, content)
-    if (appDelegate.supportedInterfaceOrientations != interfaceOrientations) {
-        appDelegate.supportedInterfaceOrientations = interfaceOrientations
-        UIViewController.attemptRotationToDeviceOrientation()
-        delay(1000)
+    private val UIKitInstrumentedTest.screenSizePx get() = with(density) {
+        IntSize(screenSize.width.roundToPx(), screenSize.height.roundToPx())
     }
 }

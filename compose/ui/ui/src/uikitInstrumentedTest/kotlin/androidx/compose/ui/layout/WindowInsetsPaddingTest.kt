@@ -60,7 +60,7 @@ class WindowInsetsPaddingTest {
 
         setContent {
             val focusRequester = remember { FocusRequester() }
-            Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().imePadding()){
+            Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
                 Spacer(modifier = Modifier.weight(1f))
                 TextField(
                     "",
@@ -95,10 +95,12 @@ class WindowInsetsPaddingTest {
         }
 
         assertEquals(
-            DpRect(DpOffset.Zero, size = DpSize(
-                screenSize.width - with(density) { hostingViewController.safeAreaInsets.right.toDp() },
-                screenSize.height
-            )),
+            DpRect(
+                DpOffset.Zero, size = DpSize(
+                    screenSize.width - with(density) { hostingViewController.safeAreaInsets.right.toDp() },
+                    screenSize.height
+                )
+            ),
             boxRect
         )
     }
@@ -129,18 +131,5 @@ class WindowInsetsPaddingTest {
             ),
             boxRect
         )
-    }
-}
-
-private fun UIKitInstrumentedTest.setContent(
-    configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
-    interfaceOrientations: UIInterfaceOrientationMask,
-    content: @Composable () -> Unit
-) {
-    setContent(configure, content)
-    if (appDelegate.supportedInterfaceOrientations != interfaceOrientations) {
-        appDelegate.supportedInterfaceOrientations = interfaceOrientations
-        UIViewController.attemptRotationToDeviceOrientation()
-        delay(1000)
     }
 }
