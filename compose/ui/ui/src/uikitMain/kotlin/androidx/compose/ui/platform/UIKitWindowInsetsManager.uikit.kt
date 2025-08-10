@@ -21,20 +21,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.IntSize
+import platform.UIKit.UIDevice
+import platform.UIKit.UIUserInterfaceIdiom
+import platform.UIKit.UIUserInterfaceIdiomPad
 
 internal class UIKitWindowInsetsManager(
     val interfaceOrientation: State<InterfaceOrientation>,
+    userInterfaceIdiom: UIUserInterfaceIdiom = UIDevice.currentDevice.userInterfaceIdiom
 ) {
     val layoutMargins = mutableStateOf(PlatformInsets.Zero)
     val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
     val keyboardOverlapHeight = mutableStateOf(0)
     val sceneSize = mutableStateOf(IntSize.Zero)
+    private val isPad: Boolean = userInterfaceIdiom == UIUserInterfaceIdiomPad
 
     val windowInsets: PlatformWindowInsets = UIKitWindowInsets(
         { layoutMargins.value },
         { safeAreaInsets.value },
         { keyboardOverlapHeight.value },
-        { interfaceOrientation.value },
+        { if (isPad) InterfaceOrientation.Portrait else interfaceOrientation.value },
         { sceneSize.value }
     )
 
