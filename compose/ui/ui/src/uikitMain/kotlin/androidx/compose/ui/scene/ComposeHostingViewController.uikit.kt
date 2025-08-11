@@ -544,7 +544,6 @@ internal class ComposeHostingViewController(
         CompositionLocalProvider(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
-            LocalInterfaceOrientation provides interfaceOrientationState.value,
             LocalSystemTheme provides systemThemeState.value,
             LocalLifecycleOwner provides lifecycleOwner,
             LocalInternalViewModelStoreOwner provides lifecycleOwner,
