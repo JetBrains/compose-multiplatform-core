@@ -131,7 +131,7 @@ internal class UIKitInstrumentedTest {
         waitForIdle()
 
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
-            delay(1000)
+            delay(600)
         }
     }
 
