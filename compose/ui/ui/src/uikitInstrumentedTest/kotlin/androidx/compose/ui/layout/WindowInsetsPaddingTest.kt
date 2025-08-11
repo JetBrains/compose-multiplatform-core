@@ -77,7 +77,7 @@ class WindowInsetsPaddingTest {
     fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest {
         var boxRect = DpRectZero()
 
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeLeft) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeLeft) {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -105,7 +105,7 @@ class WindowInsetsPaddingTest {
     fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest {
         var boxRect = DpRectZero()
 
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeRight) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeRight) {
             Box(
                 Modifier
                     .fillMaxSize()

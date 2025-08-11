@@ -52,7 +52,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutsForPortrait() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskPortrait) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskPortrait) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -66,7 +66,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutsForLandscapeLeft() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeLeft) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeLeft) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -80,7 +80,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutsForLandscapeRight() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeRight) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeRight) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -94,7 +94,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsPortrait() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskPortrait) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskPortrait) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -103,7 +103,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsLandscapeLeft() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeLeft) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeLeft) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -112,7 +112,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsLandscapeRight() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskLandscapeRight) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeRight) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
@@ -121,7 +121,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisplayCutoutWindowInsetsRulersBoundedByDisplayCutoutsPortraitUpsideDown() = runUIKitInstrumentedTest {
-        setContent(interfaceOrientations = UIInterfaceOrientationMaskPortraitUpsideDown) {
+        setContent(interfaceOrientation = UIInterfaceOrientationMaskPortraitUpsideDown) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
         }
 
