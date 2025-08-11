@@ -291,7 +291,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
-    var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
+    private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
