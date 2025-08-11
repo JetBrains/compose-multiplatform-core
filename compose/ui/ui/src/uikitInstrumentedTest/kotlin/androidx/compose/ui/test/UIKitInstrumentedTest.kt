@@ -49,13 +49,10 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
-import platform.UIKit.UIInterfaceOrientationLandscapeLeft
-import platform.UIKit.UIInterfaceOrientationLandscapeRight
 import platform.UIKit.UIInterfaceOrientationMask
 import platform.UIKit.UIInterfaceOrientationMaskAll
 import platform.UIKit.UIInterfaceOrientationMaskPortrait
 import platform.UIKit.UIInterfaceOrientationPortrait
-import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITouch
 import platform.UIKit.UIViewController
