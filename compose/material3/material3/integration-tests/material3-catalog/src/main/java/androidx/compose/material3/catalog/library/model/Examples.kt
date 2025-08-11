@@ -30,128 +30,74 @@ import androidx.compose.material3.catalog.library.util.SampleSourceUrl
 import androidx.compose.material3.samples.AlertDialogSample
 import androidx.compose.material3.samples.AlertDialogWithIconSample
 import androidx.compose.material3.samples.AnimatedExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
 import androidx.compose.material3.samples.AssistChipSample
 import androidx.compose.material3.samples.BasicAlertDialogSample
 import androidx.compose.material3.samples.BottomAppBarWithFAB
-import androidx.compose.material3.samples.BottomAppBarWithOverflow
 import androidx.compose.material3.samples.BottomSheetScaffoldNestedScrollSample
-import androidx.compose.material3.samples.ButtonGroupSample
 import androidx.compose.material3.samples.ButtonSample
-import androidx.compose.material3.samples.ButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ButtonWithIconSample
 import androidx.compose.material3.samples.CardSample
 import androidx.compose.material3.samples.CarouselWithShowAllButtonSample
-import androidx.compose.material3.samples.CenteredHorizontalFloatingToolbarWithFabSample
-import androidx.compose.material3.samples.CenteredSliderSample
-import androidx.compose.material3.samples.CenteredVerticalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.CheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.CheckboxSample
 import androidx.compose.material3.samples.CheckboxWithTextSample
 import androidx.compose.material3.samples.ChipGroupReflowSample
 import androidx.compose.material3.samples.ChipGroupSingleLineSample
 import androidx.compose.material3.samples.CircularProgressIndicatorSample
-import androidx.compose.material3.samples.CircularWavyProgressIndicatorSample
 import androidx.compose.material3.samples.ClickableCardSample
 import androidx.compose.material3.samples.ClickableElevatedCardSample
 import androidx.compose.material3.samples.ClickableOutlinedCardSample
-import androidx.compose.material3.samples.ContainedLoadingIndicatorSample
-import androidx.compose.material3.samples.CustomTwoRowsTopAppBar
 import androidx.compose.material3.samples.DateInputSample
 import androidx.compose.material3.samples.DatePickerDialogSample
 import androidx.compose.material3.samples.DatePickerSample
 import androidx.compose.material3.samples.DatePickerWithDateSelectableDatesSample
 import androidx.compose.material3.samples.DateRangePickerSample
 import androidx.compose.material3.samples.DenseTextFieldContentPadding
-import androidx.compose.material3.samples.DeterminateContainedLoadingIndicatorSample
-import androidx.compose.material3.samples.DeterminateLoadingIndicatorSample
 import androidx.compose.material3.samples.DismissibleModalWideNavigationRailSample
 import androidx.compose.material3.samples.DismissibleNavigationDrawerSample
 import androidx.compose.material3.samples.DockedSearchBarScaffoldSample
 import androidx.compose.material3.samples.EditableExposedDropdownMenuSample
 import androidx.compose.material3.samples.ElevatedAssistChipSample
 import androidx.compose.material3.samples.ElevatedButtonSample
-import androidx.compose.material3.samples.ElevatedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ElevatedCardSample
 import androidx.compose.material3.samples.ElevatedFilterChipSample
-import androidx.compose.material3.samples.ElevatedSplitButtonSample
 import androidx.compose.material3.samples.ElevatedSuggestionChipSample
-import androidx.compose.material3.samples.ElevatedToggleButtonSample
-import androidx.compose.material3.samples.EnterAlwaysTopAppBar
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBar
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBarFixed
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBarFixedVibrant
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedAround
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedBetween
-import androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedEvenly
-import androidx.compose.material3.samples.ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar
-import androidx.compose.material3.samples.ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar
 import androidx.compose.material3.samples.ExitUntilCollapsedLargeTopAppBar
 import androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
-import androidx.compose.material3.samples.ExpandableHorizontalFloatingToolbarSample
-import androidx.compose.material3.samples.ExpandableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ExposedDropdownMenuSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonTextSample
-import androidx.compose.material3.samples.ExtraLargeFilledSplitButtonSample
-import androidx.compose.material3.samples.ExtraSmallNarrowSquareIconButtonsSample
 import androidx.compose.material3.samples.FadingHorizontalMultiBrowseCarouselSample
 import androidx.compose.material3.samples.FancyIndicatorContainerTabs
 import androidx.compose.material3.samples.FancyIndicatorTabs
 import androidx.compose.material3.samples.FancyTabs
 import androidx.compose.material3.samples.FilledIconButtonSample
 import androidx.compose.material3.samples.FilledIconToggleButtonSample
-import androidx.compose.material3.samples.FilledSplitButtonSample
 import androidx.compose.material3.samples.FilledTonalButtonSample
-import androidx.compose.material3.samples.FilledTonalButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.FilledTonalIconButtonSample
 import androidx.compose.material3.samples.FilledTonalIconToggleButtonSample
 import androidx.compose.material3.samples.FilterChipSample
 import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
-import androidx.compose.material3.samples.FloatingActionButtonMenuSample
 import androidx.compose.material3.samples.FloatingActionButtonSample
 import androidx.compose.material3.samples.FullScreenSearchBarScaffoldSample
 import androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
-import androidx.compose.material3.samples.HorizontalFloatingToolbarAsScaffoldFabSample
-import androidx.compose.material3.samples.HorizontalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.HorizontalMultiBrowseCarouselSample
 import androidx.compose.material3.samples.HorizontalUncontainedCarouselSample
 import androidx.compose.material3.samples.IconButtonSample
 import androidx.compose.material3.samples.IconToggleButtonSample
 import androidx.compose.material3.samples.IndeterminateCircularProgressIndicatorSample
-import androidx.compose.material3.samples.IndeterminateCircularWavyProgressIndicatorSample
 import androidx.compose.material3.samples.IndeterminateLinearProgressIndicatorSample
-import androidx.compose.material3.samples.IndeterminateLinearWavyProgressIndicatorSample
 import androidx.compose.material3.samples.InputChipSample
 import androidx.compose.material3.samples.InputChipWithAvatarSample
-import androidx.compose.material3.samples.LargeAnimatedExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.LargeButtonWithIconSample
-import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonTextSample
-import androidx.compose.material3.samples.LargeFilledSplitButtonSample
 import androidx.compose.material3.samples.LargeFloatingActionButtonSample
-import androidx.compose.material3.samples.LargeRoundUniformOutlinedIconButtonSample
-import androidx.compose.material3.samples.LargeToggleButtonWithIconSample
 import androidx.compose.material3.samples.LeadingIconTabs
 import androidx.compose.material3.samples.LinearProgressIndicatorSample
-import androidx.compose.material3.samples.LinearWavyProgressIndicatorSample
-import androidx.compose.material3.samples.LoadingIndicatorPullToRefreshSample
-import androidx.compose.material3.samples.LoadingIndicatorSample
-import androidx.compose.material3.samples.MediumAnimatedExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.MediumButtonWithIconSample
-import androidx.compose.material3.samples.MediumExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.MediumExtendedFloatingActionButtonTextSample
-import androidx.compose.material3.samples.MediumFilledSplitButtonSample
-import androidx.compose.material3.samples.MediumFloatingActionButtonSample
-import androidx.compose.material3.samples.MediumRoundWideIconButtonSample
-import androidx.compose.material3.samples.MediumToggleButtonWithIconSample
 import androidx.compose.material3.samples.MenuSample
 import androidx.compose.material3.samples.MenuWithScrollStateSample
 import androidx.compose.material3.samples.ModalBottomSheetSample
 import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.ModalWideNavigationRailSample
 import androidx.compose.material3.samples.MultiAutocompleteExposedDropdownMenuSample
-import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
 import androidx.compose.material3.samples.NavigationBarItemWithBadge
 import androidx.compose.material3.samples.NavigationBarSample
 import androidx.compose.material3.samples.NavigationBarWithOnlySelectedLabelsSample
@@ -160,30 +106,28 @@ import androidx.compose.material3.samples.NavigationRailSample
 import androidx.compose.material3.samples.NavigationRailWithOnlySelectedLabelsSample
 import androidx.compose.material3.samples.OneLineListItem
 import androidx.compose.material3.samples.OutlinedButtonSample
-import androidx.compose.material3.samples.OutlinedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedCardSample
 import androidx.compose.material3.samples.OutlinedIconButtonSample
 import androidx.compose.material3.samples.OutlinedIconToggleButtonSample
-import androidx.compose.material3.samples.OutlinedSplitButtonSample
 import androidx.compose.material3.samples.OutlinedTextFieldWithInitialValueAndSelection
-import androidx.compose.material3.samples.OutlinedToggleButtonSample
-import androidx.compose.material3.samples.OverflowingHorizontalFloatingToolbarSample
-import androidx.compose.material3.samples.OverflowingVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.PasswordTextField
 import androidx.compose.material3.samples.PermanentNavigationDrawerSample
 import androidx.compose.material3.samples.PinnedTopAppBar
 import androidx.compose.material3.samples.PlainTooltipSample
 import androidx.compose.material3.samples.PlainTooltipWithCaret
+import androidx.compose.material3.samples.PlainTooltipWithCaretBelowAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretEndOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretLeftOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretRightOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretStartOfAnchor
 import androidx.compose.material3.samples.PlainTooltipWithCustomCaret
 import androidx.compose.material3.samples.PlainTooltipWithManualInvocationSample
 import androidx.compose.material3.samples.PrimaryIconTabs
 import androidx.compose.material3.samples.PrimaryTextTabs
-import androidx.compose.material3.samples.PullToRefreshCustomIndicatorWithDefaultTransform
 import androidx.compose.material3.samples.PullToRefreshSample
 import androidx.compose.material3.samples.PullToRefreshSampleCustomState
 import androidx.compose.material3.samples.PullToRefreshScalingSample
 import androidx.compose.material3.samples.PullToRefreshViewModelSample
-import androidx.compose.material3.samples.PullToRefreshWithLoadingIndicatorSample
 import androidx.compose.material3.samples.RadioButtonSample
 import androidx.compose.material3.samples.RadioGroupSample
 import androidx.compose.material3.samples.RangeSliderSample
@@ -197,8 +141,6 @@ import androidx.compose.material3.samples.ScaffoldWithCustomSnackbar
 import androidx.compose.material3.samples.ScaffoldWithIndefiniteSnackbar
 import androidx.compose.material3.samples.ScaffoldWithMultilineSnackbar
 import androidx.compose.material3.samples.ScaffoldWithSimpleSnackbar
-import androidx.compose.material3.samples.ScrollableHorizontalFloatingToolbarSample
-import androidx.compose.material3.samples.ScrollableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ScrollingFancyIndicatorContainerTabs
 import androidx.compose.material3.samples.ScrollingPrimaryTextTabs
 import androidx.compose.material3.samples.ScrollingSecondaryTextTabs
@@ -211,29 +153,15 @@ import androidx.compose.material3.samples.ShortNavigationBarWithHorizontalItemsS
 import androidx.compose.material3.samples.SimpleBottomAppBar
 import androidx.compose.material3.samples.SimpleBottomSheetScaffoldSample
 import androidx.compose.material3.samples.SimpleCenterAlignedTopAppBar
-import androidx.compose.material3.samples.SimpleCenterAlignedTopAppBarWithSubtitle
 import androidx.compose.material3.samples.SimpleOutlinedTextFieldSample
 import androidx.compose.material3.samples.SimpleSearchBarSample
 import androidx.compose.material3.samples.SimpleTextFieldSample
 import androidx.compose.material3.samples.SimpleTopAppBar
 import androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
-import androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
-import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
 import androidx.compose.material3.samples.SliderSample
 import androidx.compose.material3.samples.SliderWithCustomThumbSample
 import androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
-import androidx.compose.material3.samples.SliderWithTrackIconsSample
-import androidx.compose.material3.samples.SmallAnimatedExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.SmallButtonSample
-import androidx.compose.material3.samples.SmallExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.SmallExtendedFloatingActionButtonTextSample
 import androidx.compose.material3.samples.SmallFloatingActionButtonSample
-import androidx.compose.material3.samples.SplitButtonWithDropdownMenuSample
-import androidx.compose.material3.samples.SplitButtonWithIconSample
-import androidx.compose.material3.samples.SplitButtonWithTextSample
-import androidx.compose.material3.samples.SplitButtonWithUnCheckableTrailingButtonSample
-import androidx.compose.material3.samples.SquareButtonSample
-import androidx.compose.material3.samples.SquareToggleButtonSample
 import androidx.compose.material3.samples.StepRangeSliderSample
 import androidx.compose.material3.samples.StepsSliderSample
 import androidx.compose.material3.samples.SuggestionChipSample
@@ -242,7 +170,6 @@ import androidx.compose.material3.samples.SwitchWithThumbIconSample
 import androidx.compose.material3.samples.TextAndIconTabs
 import androidx.compose.material3.samples.TextArea
 import androidx.compose.material3.samples.TextButtonSample
-import androidx.compose.material3.samples.TextButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.TextFieldWithErrorState
 import androidx.compose.material3.samples.TextFieldWithHideKeyboardOnImeAction
 import androidx.compose.material3.samples.TextFieldWithIcons
@@ -257,25 +184,13 @@ import androidx.compose.material3.samples.TimeInputSample
 import androidx.compose.material3.samples.TimePickerSample
 import androidx.compose.material3.samples.TimePickerSwitchableSample
 import androidx.compose.material3.samples.TintedIconButtonSample
-import androidx.compose.material3.samples.ToggleButtonSample
-import androidx.compose.material3.samples.ToggleButtonWithIconSample
-import androidx.compose.material3.samples.TonalSplitButtonSample
-import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.material3.samples.TwoLineListItem
-import androidx.compose.material3.samples.VerticalCenteredSliderSample
-import androidx.compose.material3.samples.VerticalFloatingToolbarWithFabSample
-import androidx.compose.material3.samples.VerticalSliderSample
 import androidx.compose.material3.samples.WideNavigationRailArrangementsSample
 import androidx.compose.material3.samples.WideNavigationRailCollapsedSample
 import androidx.compose.material3.samples.WideNavigationRailExpandedSample
 import androidx.compose.material3.samples.WideNavigationRailResponsiveSample
-import androidx.compose.material3.samples.XLargeButtonWithIconSample
-import androidx.compose.material3.samples.XLargeToggleButtonWithIconSample
-import androidx.compose.material3.samples.XSmallButtonWithIconSample
-import androidx.compose.material3.samples.XSmallFilledSplitButtonSample
-import androidx.compose.material3.samples.XSmallToggleButtonWithIconSample
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -375,44 +290,12 @@ val ButtonsExamples =
             ButtonSample()
         },
         Example(
-            name = "ButtonWithAnimatedShapeSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ButtonWithAnimatedShapeSample()
-        },
-        Example(
-            name = "SquareButtonSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SquareButtonSample()
-        },
-        Example(
-            name = "SmallButtonSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SmallButtonSample()
-        },
-        Example(
             name = "ElevatedButtonSample",
             description = ButtonsExampleDescription,
             sourceUrl = ButtonsExampleSourceUrl,
             isExpressive = false,
         ) {
             ElevatedButtonSample()
-        },
-        Example(
-            name = "ElevatedButtonWithAnimatedShapeSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ElevatedButtonWithAnimatedShapeSample()
         },
         Example(
             name = "FilledTonalButtonSample",
@@ -423,28 +306,12 @@ val ButtonsExamples =
             FilledTonalButtonSample()
         },
         Example(
-            name = "FilledTonalButtonWithAnimatedShapeSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            FilledTonalButtonWithAnimatedShapeSample()
-        },
-        Example(
             name = "OutlinedButtonSample",
             description = ButtonsExampleDescription,
             sourceUrl = ButtonsExampleSourceUrl,
             isExpressive = false,
         ) {
             OutlinedButtonSample()
-        },
-        Example(
-            name = "OutlinedButtonWithAnimatedShapeSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            OutlinedButtonWithAnimatedShapeSample()
         },
         Example(
             name = "TextButtonSample",
@@ -455,14 +322,6 @@ val ButtonsExamples =
             TextButtonSample()
         },
         Example(
-            name = "TextButtonWithAnimatedShapeSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            TextButtonWithAnimatedShapeSample()
-        },
-        Example(
             name = "ButtonWithIconSample",
             description = ButtonsExampleDescription,
             sourceUrl = ButtonsExampleSourceUrl,
@@ -470,69 +329,10 @@ val ButtonsExamples =
         ) {
             ButtonWithIconSample()
         },
-        Example(
-            name = "XSmallButtonWithIconSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            XSmallButtonWithIconSample()
-        },
-        Example(
-            name = "MediumButtonWithIconSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumButtonWithIconSample()
-        },
-        Example(
-            name = "LargeButtonWithIconSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeButtonWithIconSample()
-        },
-        Example(
-            name = "XLargeButtonWithIconSample",
-            description = ButtonsExampleDescription,
-            sourceUrl = ButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            XLargeButtonWithIconSample()
-        },
     )
 
 private const val ButtonGroupsExampleDescription = "ButtonGroup examples"
 private const val ButtonGroupsExampleSourceUrl = "$SampleSourceUrl/ButtonGroupSamples.kt"
-val ButtonGroupsExamples =
-    listOf(
-        Example(
-            name = "ButtonGroupSample",
-            description = ButtonGroupsExampleDescription,
-            sourceUrl = ButtonGroupsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ButtonGroupSample()
-        },
-        Example(
-            name = "SingleSelectConnectedButtonGroupWithFlowLayoutSample",
-            description = ButtonGroupsExampleDescription,
-            sourceUrl = ButtonGroupsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SingleSelectConnectedButtonGroupWithFlowLayoutSample()
-        },
-        Example(
-            name = "MultiSelectConnectedButtonGroupWithFlowLayoutSample",
-            description = ButtonGroupsExampleDescription,
-            sourceUrl = ButtonGroupsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MultiSelectConnectedButtonGroupWithFlowLayoutSample()
-        },
-    )
 
 private const val CardsExampleDescription = "Cards examples"
 private const val CardsExampleSourceUrl = "$SampleSourceUrl/CardSamples.kt"
@@ -870,62 +670,6 @@ val BottomAppBarsExamples =
         ) {
             BottomAppBarWithFAB()
         },
-        Example(
-            name = "BottomAppBarWithOverflow",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            BottomAppBarWithOverflow()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBar",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            ExitAlwaysBottomAppBar()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBarSpacedAround",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitAlwaysBottomAppBarSpacedAround()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBarSpacedBetween",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitAlwaysBottomAppBarSpacedBetween()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBarSpacedEvenly",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitAlwaysBottomAppBarSpacedEvenly()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBarFixed",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitAlwaysBottomAppBarFixed()
-        },
-        Example(
-            name = "ExitAlwaysBottomAppBarFixedVibrant",
-            description = BottomAppBarsExampleDescription,
-            sourceUrl = BottomAppBarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitAlwaysBottomAppBarFixedVibrant()
-        },
     )
 
 private const val TopAppBarExampleDescription = "Top app bar examples"
@@ -949,28 +693,12 @@ val TopAppBarExamples =
             SimpleTopAppBarWithAdaptiveActions()
         },
         Example(
-            name = "SimpleTopAppBarWithSubtitle",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SimpleTopAppBarWithSubtitle()
-        },
-        Example(
             name = "SimpleCenterAlignedTopAppBar",
             description = TopAppBarExampleDescription,
             sourceUrl = TopAppBarExampleSourceUrl,
             isExpressive = false,
         ) {
             SimpleCenterAlignedTopAppBar()
-        },
-        Example(
-            name = "SimpleCenterAlignedTopAppBarWithSubtitle",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SimpleCenterAlignedTopAppBarWithSubtitle()
         },
         Example(
             name = "PinnedTopAppBar",
@@ -981,14 +709,6 @@ val TopAppBarExamples =
             PinnedTopAppBar()
         },
         Example(
-            name = "EnterAlwaysTopAppBar",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            EnterAlwaysTopAppBar()
-        },
-        Example(
             name = "ExitUntilCollapsedMediumTopAppBar",
             description = TopAppBarExampleDescription,
             sourceUrl = TopAppBarExampleSourceUrl,
@@ -997,131 +717,12 @@ val TopAppBarExamples =
             ExitUntilCollapsedMediumTopAppBar()
         },
         Example(
-            name = "ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar with subtitle",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar()
-        },
-        Example(
             name = "ExitUntilCollapsedLargeTopAppBar",
             description = TopAppBarExampleDescription,
             sourceUrl = TopAppBarExampleSourceUrl,
             isExpressive = false,
         ) {
             ExitUntilCollapsedLargeTopAppBar()
-        },
-        Example(
-            name = "ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar with subtitle",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar()
-        },
-        Example(
-            name = "CustomTwoRowsTopAppBar",
-            description = TopAppBarExampleDescription,
-            sourceUrl = TopAppBarExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            CustomTwoRowsTopAppBar()
-        },
-    )
-
-private const val FloatingToolbarsExampleDescription = "Floating toolbar examples"
-private const val FloatingToolbarsExampleSourceUrl = "$SampleSourceUrl/FloatingToolbarSamples.kt"
-
-val FloatingToolbarsExamples =
-    listOf(
-        Example(
-            name = "ExpandableHorizontalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExpandableHorizontalFloatingToolbarSample()
-        },
-        Example(
-            name = "OverflowingHorizontalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            OverflowingHorizontalFloatingToolbarSample()
-        },
-        Example(
-            name = "ScrollableHorizontalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ScrollableHorizontalFloatingToolbarSample()
-        },
-        Example(
-            name = "ExpandableVerticalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExpandableVerticalFloatingToolbarSample()
-        },
-        Example(
-            name = "OverflowingVerticalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            OverflowingVerticalFloatingToolbarSample()
-        },
-        Example(
-            name = "ScrollableVerticalFloatingToolbarSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ScrollableVerticalFloatingToolbarSample()
-        },
-        Example(
-            name = "HorizontalFloatingToolbarWithFabSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            HorizontalFloatingToolbarWithFabSample()
-        },
-        Example(
-            name = "CenteredHorizontalFloatingToolbarWithFabSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            CenteredHorizontalFloatingToolbarWithFabSample()
-        },
-        Example(
-            name = "HorizontalFloatingToolbarAsScaffoldFabSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            HorizontalFloatingToolbarAsScaffoldFabSample()
-        },
-        Example(
-            name = "VerticalFloatingToolbarWithFabSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            VerticalFloatingToolbarWithFabSample()
-        },
-        Example(
-            name = "CenteredVerticalFloatingToolbarWithFabSample",
-            description = FloatingToolbarsExampleDescription,
-            sourceUrl = FloatingToolbarsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            CenteredVerticalFloatingToolbarWithFabSample()
         },
     )
 
@@ -1138,30 +739,6 @@ val ExtendedFABExamples =
             ExtendedFloatingActionButtonSample()
         },
         Example(
-            name = "SmallExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SmallExtendedFloatingActionButtonSample()
-        },
-        Example(
-            name = "MediumExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumExtendedFloatingActionButtonSample()
-        },
-        Example(
-            name = "LargeExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeExtendedFloatingActionButtonSample()
-        },
-        Example(
             name = "ExtendedFloatingActionButtonTextSample",
             description = ExtendedFABExampleDescription,
             sourceUrl = ExtendedFABExampleSourceUrl,
@@ -1170,60 +747,12 @@ val ExtendedFABExamples =
             ExtendedFloatingActionButtonTextSample()
         },
         Example(
-            name = "SmallExtendedFloatingActionButtonTextSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SmallExtendedFloatingActionButtonTextSample()
-        },
-        Example(
-            name = "MediumExtendedFloatingActionButtonTextSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumExtendedFloatingActionButtonTextSample()
-        },
-        Example(
-            name = "LargeExtendedFloatingActionButtonTextSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeExtendedFloatingActionButtonTextSample()
-        },
-        Example(
             name = "AnimatedExtendedFloatingActionButtonSample",
             description = ExtendedFABExampleDescription,
             sourceUrl = ExtendedFABExampleSourceUrl,
             isExpressive = false,
         ) {
             AnimatedExtendedFloatingActionButtonSample()
-        },
-        Example(
-            name = "SmallAnimatedExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SmallAnimatedExtendedFloatingActionButtonSample()
-        },
-        Example(
-            name = "MediumAnimatedExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumAnimatedExtendedFloatingActionButtonSample()
-        },
-        Example(
-            name = "LargeAnimatedExtendedFloatingActionButtonSample",
-            description = ExtendedFABExampleDescription,
-            sourceUrl = ExtendedFABExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeAnimatedExtendedFloatingActionButtonSample()
         },
     )
 
@@ -1249,22 +778,6 @@ val FloatingActionButtonsExamples =
             LargeFloatingActionButtonSample()
         },
         Example(
-            name = "AnimatedFloatingActionButtonSample",
-            description = FloatingActionButtonsExampleDescription,
-            sourceUrl = FloatingActionButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            AnimatedFloatingActionButtonSample()
-        },
-        Example(
-            name = "MediumFloatingActionButtonSample",
-            description = FloatingActionButtonsExampleDescription,
-            sourceUrl = FloatingActionButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumFloatingActionButtonSample()
-        },
-        Example(
             name = "SmallFloatingActionButtonSample",
             description = FloatingActionButtonsExampleDescription,
             sourceUrl = FloatingActionButtonsExampleSourceUrl,
@@ -1272,21 +785,6 @@ val FloatingActionButtonsExamples =
         ) {
             SmallFloatingActionButtonSample()
         },
-    )
-
-private const val FloatingActionButtonMenuExampleDescription = "FAB Menu examples"
-private const val FloatingActionButtonMenuExampleSourceUrl =
-    "$SampleSourceUrl/FloatingActionButtonMenuSamples.kt"
-val FloatingActionButtonMenuExamples =
-    listOf(
-        Example(
-            name = "FloatingActionButtonMenuSample",
-            description = FloatingActionButtonMenuExampleDescription,
-            sourceUrl = FloatingActionButtonMenuExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            FloatingActionButtonMenuSample()
-        }
     )
 
 private const val ListsExampleDescription = "List examples"
@@ -1403,78 +901,11 @@ val IconButtonExamples =
         ) {
             OutlinedIconToggleButtonSample()
         },
-        Example(
-            name = "XSmallNarrowSquareIconButtonsSample",
-            description = IconButtonExampleDescription,
-            sourceUrl = IconButtonExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ExtraSmallNarrowSquareIconButtonsSample()
-        },
-        Example(
-            name = "MediumRoundWideIconButtonSample",
-            description = IconButtonExampleDescription,
-            sourceUrl = IconButtonExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumRoundWideIconButtonSample()
-        },
-        Example(
-            name = "LargeRoundUniformOutlinedIconButtonSample",
-            description = IconButtonExampleDescription,
-            sourceUrl = IconButtonExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeRoundUniformOutlinedIconButtonSample()
-        },
     )
 
 private const val LoadingIndicatorsExampleDescription = "Loading indicators examples"
 private const val LoadingIndicatorsExampleSourceUrl =
     "$SampleSourceUrl/" + "LoadingIndicatorSamples.kt"
-val LoadingIndicatorsExamples =
-    listOf(
-        Example(
-            name = "LoadingIndicatorSample",
-            description = LoadingIndicatorsExampleDescription,
-            sourceUrl = LoadingIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LoadingIndicatorSample()
-        },
-        Example(
-            name = "ContainedLoadingIndicatorSample",
-            description = LoadingIndicatorsExampleDescription,
-            sourceUrl = LoadingIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ContainedLoadingIndicatorSample()
-        },
-        Example(
-            name = "DeterminateLoadingIndicatorSample",
-            description = LoadingIndicatorsExampleDescription,
-            sourceUrl = LoadingIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            DeterminateLoadingIndicatorSample()
-        },
-        Example(
-            name = "DeterminateContainedLoadingIndicatorSample",
-            description = LoadingIndicatorsExampleDescription,
-            sourceUrl = LoadingIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            DeterminateContainedLoadingIndicatorSample()
-        },
-        Example(
-            name = "LoadingIndicatorPullToRefreshSample",
-            description = LoadingIndicatorsExampleDescription,
-            sourceUrl = LoadingIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LoadingIndicatorPullToRefreshSample()
-        },
-    )
 
 private const val MenusExampleDescription = "Menus examples"
 private const val MenusExampleSourceUrl = "$SampleSourceUrl/MenuSamples.kt"
@@ -1705,28 +1136,12 @@ val ProgressIndicatorsExamples =
             LinearProgressIndicatorSample()
         },
         Example(
-            name = "LinearWavyProgressIndicatorSample",
-            description = ProgressIndicatorsExampleDescription,
-            sourceUrl = ProgressIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LinearWavyProgressIndicatorSample()
-        },
-        Example(
             name = "IndeterminateLinearProgressIndicatorSample",
             description = ProgressIndicatorsExampleDescription,
             sourceUrl = ProgressIndicatorsExampleSourceUrl,
             isExpressive = false,
         ) {
             IndeterminateLinearProgressIndicatorSample()
-        },
-        Example(
-            name = "IndeterminateLinearWavyProgressIndicatorSample",
-            description = ProgressIndicatorsExampleDescription,
-            sourceUrl = ProgressIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            IndeterminateLinearWavyProgressIndicatorSample()
         },
         Example(
             name = "CircularProgressIndicatorSample",
@@ -1737,28 +1152,12 @@ val ProgressIndicatorsExamples =
             CircularProgressIndicatorSample()
         },
         Example(
-            name = "CircularWavyProgressIndicatorSample",
-            description = ProgressIndicatorsExampleDescription,
-            sourceUrl = ProgressIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            CircularWavyProgressIndicatorSample()
-        },
-        Example(
             name = "IndeterminateCircularProgressIndicatorSample",
             description = ProgressIndicatorsExampleDescription,
             sourceUrl = ProgressIndicatorsExampleSourceUrl,
             isExpressive = false,
         ) {
             IndeterminateCircularProgressIndicatorSample()
-        },
-        Example(
-            name = "IndeterminateCircularWavyProgressIndicatorSample",
-            description = ProgressIndicatorsExampleDescription,
-            sourceUrl = ProgressIndicatorsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            IndeterminateCircularWavyProgressIndicatorSample()
         },
     )
 
@@ -1773,14 +1172,6 @@ val PullToRefreshExamples =
             isExpressive = false,
         ) {
             PullToRefreshSample()
-        },
-        Example(
-            name = "PullToRefreshWithLoadingIndicatorSample",
-            description = PullToRefreshExampleDescription,
-            sourceUrl = PullToRefreshExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            PullToRefreshWithLoadingIndicatorSample()
         },
         Example(
             name = "PullToRefreshScalingSample",
@@ -1805,14 +1196,6 @@ val PullToRefreshExamples =
             isExpressive = false,
         ) {
             PullToRefreshViewModelSample()
-        },
-        Example(
-            name = "PullToRefreshCustomIndicatorWithDefaultTransform",
-            description = PullToRefreshExampleDescription,
-            sourceUrl = PullToRefreshExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            PullToRefreshCustomIndicatorWithDefaultTransform()
         },
     )
 
@@ -1892,90 +1275,6 @@ val SegmentedButtonExamples =
 
 private const val ToggleButtonsExampleDescription = "ToggleButton examples"
 private const val ToggleButtonsExampleSourceUrl = "$SampleSourceUrl/ToggleButtonSamples.kt"
-val ToggleButtonsExamples =
-    listOf(
-        Example(
-            name = "ToggleButtonSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ToggleButtonSample()
-        },
-        Example(
-            name = "RoundToggleButtonSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SquareToggleButtonSample()
-        },
-        Example(
-            name = "ElevatedToggleButtonSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ElevatedToggleButtonSample()
-        },
-        Example(
-            name = "TonalToggleButtonSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            TonalToggleButtonSample()
-        },
-        Example(
-            name = "OutlinedToggleButtonSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            OutlinedToggleButtonSample()
-        },
-        Example(
-            name = "ToggleButtonWithIconSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            ToggleButtonWithIconSample()
-        },
-        Example(
-            name = "XSmallToggleButtonWithIconSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            XSmallToggleButtonWithIconSample()
-        },
-        Example(
-            name = "MediumToggleButtonWithIconSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumToggleButtonWithIconSample()
-        },
-        Example(
-            name = "LargeToggleButtonWithIconSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeToggleButtonWithIconSample()
-        },
-        Example(
-            name = "XLargeToggleButtonWithIconSample",
-            description = ToggleButtonsExampleDescription,
-            sourceUrl = ToggleButtonsExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            XLargeToggleButtonWithIconSample()
-        },
-    )
-
 private const val SlidersExampleDescription = "Sliders examples"
 private const val SlidersExampleSourceUrl = "$SampleSourceUrl/SliderSamples.kt"
 val SlidersExamples =
@@ -2011,38 +1310,6 @@ val SlidersExamples =
             isExpressive = false,
         ) {
             SliderWithCustomTrackAndThumbSample()
-        },
-        Example(
-            name = "SliderWithTrackIconsSample",
-            description = SlidersExampleDescription,
-            sourceUrl = SlidersExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            SliderWithTrackIconsSample()
-        },
-        Example(
-            name = "CenteredSliderSample",
-            description = SlidersExampleDescription,
-            sourceUrl = SlidersExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            CenteredSliderSample()
-        },
-        Example(
-            name = "VerticalSliderSample",
-            description = SlidersExampleDescription,
-            sourceUrl = SlidersExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            VerticalSliderSample()
-        },
-        Example(
-            name = "VerticalCenteredSliderSample",
-            description = SlidersExampleDescription,
-            sourceUrl = SlidersExampleSourceUrl,
-            isExpressive = true,
-        ) {
-            VerticalCenteredSliderSample()
         },
         Example(
             name = "RangeSliderSample",
@@ -2113,108 +1380,6 @@ val SnackbarsExamples =
             isExpressive = false,
         ) {
             ScaffoldWithMultilineSnackbar()
-        },
-    )
-
-private const val SplitButtonExampleDescription = "Split Button examples"
-private const val SplitButtonSourceUrl = "$SampleSourceUrl/SplitButtonSamples.kt"
-val SplitButtonExamples =
-    listOf(
-        Example(
-            name = "FilledSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            FilledSplitButtonSample()
-        },
-        Example(
-            name = "SplitButtonWithUnCheckableTrailingButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            SplitButtonWithUnCheckableTrailingButtonSample()
-        },
-        Example(
-            name = "SplitButtonWithDropdownMenuSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            SplitButtonWithDropdownMenuSample()
-        },
-        Example(
-            name = "TonalSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            TonalSplitButtonSample()
-        },
-        Example(
-            name = "ElevatedSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            ElevatedSplitButtonSample()
-        },
-        Example(
-            name = "OutlinedSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            OutlinedSplitButtonSample()
-        },
-        Example(
-            name = "SplitButtonWithTextSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            SplitButtonWithTextSample()
-        },
-        Example(
-            name = "SplitButtonWithIconSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            SplitButtonWithIconSample()
-        },
-        Example(
-            name = "XSmallFilledSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            XSmallFilledSplitButtonSample()
-        },
-        Example(
-            name = "MediumFilledSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            MediumFilledSplitButtonSample()
-        },
-        Example(
-            name = "LargeFilledSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            LargeFilledSplitButtonSample()
-        },
-        Example(
-            name = "ExtraLargeFilledSplitButtonSample",
-            description = SplitButtonExampleDescription,
-            sourceUrl = SplitButtonSourceUrl,
-            isExpressive = true,
-        ) {
-            ExtraLargeFilledSplitButtonSample()
         },
     )
 
@@ -2524,6 +1689,46 @@ val TooltipsExamples =
             isExpressive = false,
         ) {
             PlainTooltipWithCaret()
+        },
+        Example(
+            name = "PlainTooltipWithCaretBelowAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretBelowAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretLeftOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretLeftOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretRightOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretRightOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretStartOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretStartOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretEndOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretEndOfAnchor()
         },
         Example(
             name = "PlainTooltipWithCustomCaret",

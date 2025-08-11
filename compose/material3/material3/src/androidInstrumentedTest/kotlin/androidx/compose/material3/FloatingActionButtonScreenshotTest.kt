@@ -238,22 +238,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_size")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun mediumFab() {
-        rule.setMaterialContent(lightColorScheme()) {
-            MediumFloatingActionButton(onClick = {}) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = "Localized description",
-                    modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize),
-                )
-            }
-        }
-
-        assertClickableAgainstGolden("fab_medium_size")
-    }
-
     @Test
     fun largeFab() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -289,90 +273,6 @@ class FloatingActionButtonScreenshotTest {
         }
 
         assertClickableAgainstGolden("fab_extended_text_and_icon")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun smallExtendedFabTextOnly() {
-        rule.setMaterialContent(lightColorScheme()) {
-            SmallExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
-        }
-
-        assertClickableAgainstGolden("fab_small_extended_text")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun smallExtendedFabTextAndIcon() {
-        rule.setMaterialContent(lightColorScheme()) {
-            SmallExtendedFloatingActionButton(
-                text = { Text("EXTENDED") },
-                icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                onClick = {},
-            )
-        }
-
-        assertClickableAgainstGolden("fab_small_extended_text_and_icon")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun mediumExtendedFabTextOnly() {
-        rule.setMaterialContent(lightColorScheme()) {
-            MediumExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
-        }
-
-        assertClickableAgainstGolden("fab_medium_extended_text")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun mediumExtendedFabTextAndIcon() {
-        rule.setMaterialContent(lightColorScheme()) {
-            MediumExtendedFloatingActionButton(
-                text = { Text("EXTENDED") },
-                icon = {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        contentDescription = null,
-                        modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize),
-                    )
-                },
-                onClick = {},
-            )
-        }
-
-        assertClickableAgainstGolden("fab_medium_extended_text_and_icon")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun largeExtendedFabTextOnly() {
-        rule.setMaterialContent(lightColorScheme()) {
-            LargeExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
-        }
-
-        assertClickableAgainstGolden("fab_large_extended_text")
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Test
-    fun largeExtendedFabTextAndIcon() {
-        rule.setMaterialContent(lightColorScheme()) {
-            LargeExtendedFloatingActionButton(
-                text = { Text("EXTENDED") },
-                icon = {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        contentDescription = null,
-                        modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize),
-                    )
-                },
-                onClick = {},
-            )
-        }
-
-        assertClickableAgainstGolden("fab_large_extended_text_and_icon")
     }
 
     @Test

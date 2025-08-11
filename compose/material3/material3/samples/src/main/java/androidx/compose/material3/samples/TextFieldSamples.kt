@@ -62,7 +62,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.error
@@ -329,6 +331,8 @@ fun TextArea() {
 fun CustomTextFieldUsingDecorator() {
     val state = rememberTextFieldState()
     val interactionSource = remember { MutableInteractionSource() }
+    val customColors =
+        TextFieldDefaults.colors(focusedIndicatorColor = Color.Blue, cursorColor = Color.Green)
     val enabled = true
     val isError = false
     val lineLimits = TextFieldLineLimits.SingleLine
@@ -339,7 +343,11 @@ fun CustomTextFieldUsingDecorator() {
         interactionSource = interactionSource,
         enabled = enabled,
         lineLimits = lineLimits,
+
+        // Colors of non-decorator elements (such as text color or cursor color)
+        // must be passed to BasicTextField
         textStyle = LocalTextStyle.current,
+        cursorBrush = SolidColor(customColors.cursorColor),
         decorator =
             TextFieldDefaults.decorator(
                 state = state,
@@ -353,6 +361,7 @@ fun CustomTextFieldUsingDecorator() {
                         enabled = enabled,
                         isError = isError,
                         interactionSource = interactionSource,
+                        colors = customColors,
                         // Update indicator line thickness
                         unfocusedIndicatorLineThickness = 2.dp,
                         focusedIndicatorLineThickness = 4.dp,
@@ -368,6 +377,8 @@ fun CustomTextFieldUsingDecorator() {
 fun CustomOutlinedTextFieldUsingDecorator() {
     val state = rememberTextFieldState()
     val interactionSource = remember { MutableInteractionSource() }
+    val customColors =
+        OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Blue, cursorColor = Color.Green)
     val enabled = true
     val isError = false
     val lineLimits = TextFieldLineLimits.SingleLine
@@ -378,7 +389,11 @@ fun CustomOutlinedTextFieldUsingDecorator() {
         interactionSource = interactionSource,
         enabled = enabled,
         lineLimits = lineLimits,
+
+        // Colors of non-decorator elements (such as text color or cursor color)
+        // must be passed to BasicTextField
         textStyle = LocalTextStyle.current,
+        cursorBrush = SolidColor(customColors.cursorColor),
         decorator =
             OutlinedTextFieldDefaults.decorator(
                 state = state,
@@ -392,6 +407,7 @@ fun CustomOutlinedTextFieldUsingDecorator() {
                         enabled = enabled,
                         isError = isError,
                         interactionSource = interactionSource,
+                        colors = customColors,
                         // Update border thickness and shape
                         shape = RectangleShape,
                         unfocusedBorderThickness = 2.dp,
@@ -408,6 +424,8 @@ fun CustomOutlinedTextFieldUsingDecorator() {
 fun CustomTextFieldBasedOnDecorationBox() {
     var text by remember { mutableStateOf("") }
     val interactionSource = remember { MutableInteractionSource() }
+    val customColors =
+        TextFieldDefaults.colors(focusedIndicatorColor = Color.Blue, cursorColor = Color.Green)
     val enabled = true
     val isError = false
     val singleLine = true
@@ -419,7 +437,11 @@ fun CustomTextFieldBasedOnDecorationBox() {
         interactionSource = interactionSource,
         enabled = enabled,
         singleLine = singleLine,
+
+        // Colors of non-decoration-box elements (such as text color or cursor color)
+        // must be passed to BasicTextField
         textStyle = LocalTextStyle.current,
+        cursorBrush = SolidColor(customColors.cursorColor),
         decorationBox = { innerTextField ->
             TextFieldDefaults.DecorationBox(
                 value = text,
@@ -434,6 +456,7 @@ fun CustomTextFieldBasedOnDecorationBox() {
                         enabled = enabled,
                         isError = isError,
                         interactionSource = interactionSource,
+                        colors = customColors,
                         // Update indicator line thickness
                         unfocusedIndicatorLineThickness = 2.dp,
                         focusedIndicatorLineThickness = 4.dp,
@@ -450,6 +473,8 @@ fun CustomTextFieldBasedOnDecorationBox() {
 fun CustomOutlinedTextFieldBasedOnDecorationBox() {
     var text by remember { mutableStateOf("") }
     val interactionSource = remember { MutableInteractionSource() }
+    val customColors =
+        OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Blue, cursorColor = Color.Green)
     val enabled = true
     val isError = false
     val singleLine = true
@@ -461,7 +486,11 @@ fun CustomOutlinedTextFieldBasedOnDecorationBox() {
         interactionSource = interactionSource,
         enabled = enabled,
         singleLine = singleLine,
+
+        // Colors of non-decoration-box elements (such as text color or cursor color)
+        // must be passed to BasicTextField
         textStyle = LocalTextStyle.current,
+        cursorBrush = SolidColor(customColors.cursorColor),
         decorationBox = { innerTextField ->
             OutlinedTextFieldDefaults.DecorationBox(
                 value = text,
@@ -476,6 +505,7 @@ fun CustomOutlinedTextFieldBasedOnDecorationBox() {
                         enabled = enabled,
                         isError = isError,
                         interactionSource = interactionSource,
+                        colors = customColors,
                         // Update border thickness and shape
                         shape = RectangleShape,
                         unfocusedBorderThickness = 2.dp,
