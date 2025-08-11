@@ -309,10 +309,6 @@ internal class ComposeSceneMediator(
 
     private val windowInsetsManager = UIKitWindowInsetsManager(interfaceOrientation = interfaceOrientationState)
 
-    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
-        windowInsetsManager.safeAreaInsets.value = safeAreaInsets
-    }
-
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
      *
@@ -645,7 +641,6 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-
         windowInsetsManager.layoutMargins.value = _overlayView.layoutMargins.toPlatformInsets(density)
         windowInsetsManager.safeAreaInsets.value = _overlayView.safeAreaInsets.toPlatformInsets(density)
         size = currentViewSize.roundToIntSize()
