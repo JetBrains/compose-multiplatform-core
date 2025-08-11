@@ -33,13 +33,13 @@ internal class UIKitWindowInsetsManager(
     val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
     val keyboardOverlapHeight = mutableStateOf(0)
     val sceneSize = mutableStateOf(IntSize.Zero)
-    private val isPad: Boolean = userInterfaceIdiom == UIUserInterfaceIdiomPad
 
     val windowInsets: PlatformWindowInsets = UIKitWindowInsets(
         { layoutMargins.value },
         { safeAreaInsets.value },
         { keyboardOverlapHeight.value },
-        { if (isPad) InterfaceOrientation.Portrait else interfaceOrientation.value },
+        { interfaceOrientation.value },
+        { userInterfaceIdiom },
         { sceneSize.value }
     )
 
@@ -57,11 +57,17 @@ internal class UIKitWindowInsetsManager(
         private val safeAreaInsets: () -> PlatformInsets,
         private val keyboardOverlapHeight: () -> Int,
         private val interfaceOrientation: () -> InterfaceOrientation,
+        private val userInterfaceIdiom: () -> UIUserInterfaceIdiom,
         private val sceneSize: () -> IntSize
     ) : PlatformWindowInsets {
+
+        // Force InterfaceOrientation.Portrait for iPad display cutout computation. iPads don’t have left/right hardware cutouts and
+        // safeAreaInsets for iPad report the same value independent of interface rotation.
+        private fun displayCutoutEffectiveInterfaceOrientation(): InterfaceOrientation = if (userInterfaceIdiom() == UIUserInterfaceIdiomPad) InterfaceOrientation.Portrait else interfaceOrientation()
+
         override val displayCutouts: List<Rect>
             get() {
-                val orientation = interfaceOrientation()
+                val orientation = displayCutoutEffectiveInterfaceOrientation()
                 val safeAreaInsets = safeAreaInsets()
                 val sceneSize = sceneSize()
 
@@ -105,12 +111,12 @@ internal class UIKitWindowInsetsManager(
                 }
             }
         override val captionBar: PlatformInsets get() = PlatformInsets.Zero
-        override val displayCutout: PlatformInsets get() = when (interfaceOrientation()) {
-            InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
-            InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
-            InterfaceOrientation.LandscapeLeft -> PlatformInsets(getRight = { safeAreaInsets().right }) // In LandscapeLeft orientation, the device's top edge (where the front camera is located) is positioned on the right
-            InterfaceOrientation.LandscapeRight -> PlatformInsets(getLeft = { safeAreaInsets().left }) // In LandscapeRight orientation, the device's top edge (where the front camera is located) is positioned on the left
-        }
+        override val displayCutout: PlatformInsets get() = when (displayCutoutEffectiveInterfaceOrientation()) {
+                InterfaceOrientation.Portrait -> PlatformInsets(getTop = { safeAreaInsets().top })
+                InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(getBottom = { safeAreaInsets().bottom })
+                InterfaceOrientation.LandscapeLeft -> PlatformInsets(getRight = { safeAreaInsets().right }) // In LandscapeLeft orientation, the device's top edge (where the front camera is located) is positioned on the right
+                InterfaceOrientation.LandscapeRight -> PlatformInsets(getLeft = { safeAreaInsets().left }) // In LandscapeRight orientation, the device's top edge (where the front camera is located) is positioned on the left
+            }
         override val ime: PlatformInsets get() = PlatformInsets(getBottom = keyboardOverlapHeight)
         override val mandatorySystemGestures: PlatformInsets get() = PlatformInsets(getTop = { safeAreaInsets().top }, getBottom = { safeAreaInsets().bottom })
         override val navigationBars: PlatformInsets get() = PlatformInsets(getBottom = { safeAreaInsets().bottom })
@@ -135,6 +141,7 @@ internal class UIKitWindowInsetsManager(
                     if (safeInsets) derivedSafeAreaInsets else safeAreaInsets,
                     if (ime) derivedKeyboardOverlapHeight else keyboardOverlapHeight,
                     interfaceOrientation,
+                    userInterfaceIdiom,
                     sceneSize
                 )
             }
