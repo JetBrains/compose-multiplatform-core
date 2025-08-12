@@ -34,9 +34,9 @@ androidXMultiplatform {
         namespace = "androidx.testutils.lifecycle"
     }
     desktop()
-    mingwX64()
-    linux()
     mac()
+    linux()
+    mingwX64()
     ios()
     watchos()
     tvos()
@@ -83,11 +83,23 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
+        wasmJsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        jsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
             }
         }
     }

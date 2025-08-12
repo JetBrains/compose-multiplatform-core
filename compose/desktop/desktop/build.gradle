@@ -23,9 +23,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm() {
-        withJava()
-    }
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
