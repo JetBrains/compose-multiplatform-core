@@ -37,8 +37,6 @@ playground {
         if (name.startsWith(":compose:material")) return true
         if (name.startsWith(":compose:material3")) return true
         if (name.startsWith(":compose:foundataion")) return true
-
-        if (name == ":compose:ui:ui-inspection") return false
         if (name.startsWith(":compose:ui")) return true
 
         if (name == ":compose:runtime:runtime-tracing") return false
