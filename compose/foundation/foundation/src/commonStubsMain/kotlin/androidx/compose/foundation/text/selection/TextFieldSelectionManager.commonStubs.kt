@@ -33,3 +33,5 @@ internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
     isStartHandle: Boolean
 ): Boolean = implementedInJetBrainsFork()
 
+internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean =
+    implementedInJetBrainsFork()

@@ -31,3 +31,7 @@ internal actual fun FillableData(charSequenceValue: CharSequence): FillableData 
 internal actual fun FillableData(booleanValue: Boolean): FillableData {
     return PlatformFillableData(booleanValue)
 }
+
+internal actual fun FillableData(intValue: Int): FillableData {
+    return PlatformFillableData(intValue)
+}
