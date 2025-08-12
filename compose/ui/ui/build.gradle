@@ -229,25 +229,14 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Get rid of this. It should rely on compilation target
-        notMobileMain {
-            dependsOn(skikoMain)
-        }
-
-        notMobileTest {
-            dependsOn(skikoTest)
-        }
-
         desktopMain {
             dependsOn(jvmMain)
             dependsOn(skikoMain)
-            dependsOn(notMobileMain)
         }
 
         desktopTest {
             dependsOn(jvmTest)
             dependsOn(skikoTest)
-            dependsOn(notMobileTest)
             dependencies {
                 // TODO: Move to jvmTest?
                 implementation(libs.truth)
@@ -281,12 +270,10 @@ androidXMultiplatform {
 
         macosMain {
             dependsOn(nativeMain)
-            dependsOn(notMobileMain)
         }
 
         macosTest {
             dependsOn(nativeTest)
-            dependsOn(notMobileTest)
         }
 
         uikitMain {
@@ -309,12 +296,10 @@ androidXMultiplatform {
 
         webMain {
             dependsOn(nonJvmMain)
-            dependsOn(notMobileMain)
         }
 
         webTest {
             dependsOn(nonJvmTest)
-            dependsOn(notMobileTest)
         }
 
         jsMain {

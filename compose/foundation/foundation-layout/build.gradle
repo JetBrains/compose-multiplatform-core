@@ -123,25 +123,14 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        // TODO: Get rid of this. It should rely on compilation target
-        notMobileMain {
-            dependsOn(skikoMain)
-        }
-
-        notMobileTest {
-            dependsOn(skikoTest)
-        }
-
         desktopMain {
             dependsOn(jvmMain)
             dependsOn(skikoMain)
-            dependsOn(notMobileMain)
         }
 
         desktopTest {
             dependsOn(jvmTest)
             dependsOn(skikoTest)
-            dependsOn(notMobileTest)
         }
 
         nonJvmMain {
@@ -170,7 +159,6 @@ androidXMultiplatform {
 
         macosMain {
             dependsOn(nativeMain)
-            dependsOn(notMobileMain)
         }
 
         macosTest {
@@ -179,7 +167,6 @@ androidXMultiplatform {
 
         webMain {
             dependsOn(nonJvmMain)
-            dependsOn(notMobileMain)
         }
 
         webTest {
