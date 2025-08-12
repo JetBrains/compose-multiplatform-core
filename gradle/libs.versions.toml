@@ -214,8 +214,8 @@ kotlinSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serializatio
 kotlinSerializationJsonOkio = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-okio", version.ref = "kotlinSerialization" }
 kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinSerialization" }
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlin" }
+kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
+kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
 # The Kotlin/JS and Kotlin/Wasm standard library must match the compiler
 kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js", version.ref = "kotlin" }
 kotlinStdlibWasm = { module = "org.jetbrains.kotlin:kotlin-stdlib-wasm-js", version.ref = "kotlin" }
@@ -225,7 +225,7 @@ kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common", version
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
 kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js", version.ref = "kotlin" }
-kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }
 kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3.1" }
@@ -328,6 +328,7 @@ kotlinBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotli
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+atomicFu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "atomicFu" }
 
 [bundles]
 # prevent androidAccessibilityFramework 3.1 which pulls hamcrest 2.2, breaking espresso-core
