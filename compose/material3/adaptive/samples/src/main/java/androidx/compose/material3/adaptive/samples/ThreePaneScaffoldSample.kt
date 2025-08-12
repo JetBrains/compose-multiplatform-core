@@ -370,7 +370,7 @@ fun <T> reflowAdaptStrategySample(): ThreePaneScaffoldNavigator<T> =
         adaptStrategies =
             ListDetailPaneScaffoldDefaults.adaptStrategies(
                 extraPaneAdaptStrategy =
-                    AdaptStrategy.Reflow(targetPane = ListDetailPaneScaffoldRole.Detail)
+                    AdaptStrategy.Reflow(reflowUnder = ListDetailPaneScaffoldRole.Detail)
             )
     )
 

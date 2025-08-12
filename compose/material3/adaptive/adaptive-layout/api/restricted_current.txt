@@ -15,12 +15,6 @@ package androidx.compose.material3.adaptive.layout {
     ctor public AdaptStrategy.Levitate();
     ctor @KotlinOnly public AdaptStrategy.Levitate(optional androidx.compose.material3.adaptive.layout.AdaptStrategy.Levitate.Strategy strategy, optional androidx.compose.ui.Alignment alignment, optional androidx.compose.material3.adaptive.layout.Scrim? scrim);
     ctor @BytecodeOnly public AdaptStrategy.Levitate(String!, androidx.compose.ui.Alignment!, androidx.compose.material3.adaptive.layout.Scrim!, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method public androidx.compose.ui.Alignment getAlignment();
-    method public androidx.compose.material3.adaptive.layout.Scrim? getScrim();
-    method @BytecodeOnly public String getStrategy-H_H46_c();
-    property public androidx.compose.ui.Alignment alignment;
-    property public androidx.compose.material3.adaptive.layout.Scrim? scrim;
-    property public androidx.compose.material3.adaptive.layout.AdaptStrategy.Levitate.Strategy strategy;
   }
 
   @kotlin.jvm.JvmInline public static final value class AdaptStrategy.Levitate.Strategy {
@@ -37,9 +31,7 @@ package androidx.compose.material3.adaptive.layout {
   }
 
   @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Reflow implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
-    ctor public AdaptStrategy.Reflow(Object targetPane);
-    method public Object getTargetPane();
-    property public Object targetPane;
+    ctor public AdaptStrategy.Reflow(Object reflowUnder);
   }
 
   @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi public interface AnimatedPaneOverride {
