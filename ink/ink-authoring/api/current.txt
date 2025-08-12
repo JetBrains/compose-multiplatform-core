@@ -14,13 +14,19 @@ package androidx.ink.authoring {
     ctor public InProgressStrokesView(android.content.Context context, optional android.util.AttributeSet? attrs);
     ctor public InProgressStrokesView(android.content.Context context, optional android.util.AttributeSet? attrs, optional @AttrRes int defStyleAttr);
     method public void addFinishedStrokesListener(androidx.ink.authoring.InProgressStrokesFinishedListener listener);
+    method public boolean addToStroke(android.view.MotionEvent event, int pointerId);
+    method public boolean addToStroke(android.view.MotionEvent event, int pointerId, optional android.view.MotionEvent? prediction);
     method public void addToStroke(android.view.MotionEvent event, int pointerId, androidx.ink.authoring.InProgressStrokeId strokeId);
     method public void addToStroke(android.view.MotionEvent event, int pointerId, androidx.ink.authoring.InProgressStrokeId strokeId, optional android.view.MotionEvent? prediction);
     method public void addToStroke(androidx.ink.strokes.StrokeInputBatch inputs, androidx.ink.authoring.InProgressStrokeId strokeId);
     method public void addToStroke(androidx.ink.strokes.StrokeInputBatch inputs, androidx.ink.authoring.InProgressStrokeId strokeId, optional androidx.ink.strokes.StrokeInputBatch prediction);
+    method public boolean cancelStroke(android.view.MotionEvent event, int pointerId);
     method public void cancelStroke(androidx.ink.authoring.InProgressStrokeId strokeId);
     method public void cancelStroke(androidx.ink.authoring.InProgressStrokeId strokeId, optional android.view.MotionEvent? event);
+    method public void cancelUnfinishedStrokes();
+    method public void clearFinishedStrokesListeners();
     method public void eagerInit();
+    method public boolean finishStroke(android.view.MotionEvent event, int pointerId);
     method public void finishStroke(android.view.MotionEvent event, int pointerId, androidx.ink.authoring.InProgressStrokeId strokeId);
     method public void finishStroke(androidx.ink.strokes.StrokeInput input, androidx.ink.authoring.InProgressStrokeId strokeId);
     method public java.util.Map<androidx.ink.authoring.InProgressStrokeId,androidx.ink.strokes.Stroke> getFinishedStrokes();
@@ -29,6 +35,7 @@ package androidx.ink.authoring {
     method public android.graphics.Matrix getMotionEventToViewTransform();
     method public kotlin.jvm.functions.Function0<androidx.ink.rendering.android.canvas.CanvasStrokeRenderer> getRendererFactory();
     method public androidx.ink.brush.TextureBitmapStore getTextureBitmapStore();
+    method public boolean hasUnfinishedStrokes();
     method @UiThread public void removeFinishedStrokes(java.util.Set<androidx.ink.authoring.InProgressStrokeId> strokeIds);
     method public void removeFinishedStrokesListener(androidx.ink.authoring.InProgressStrokesFinishedListener listener);
     method public void setInProgressStrokeCounter(androidx.test.espresso.idling.CountingIdlingResource?);

@@ -348,6 +348,8 @@ public interface IcingOptionsConfig {
                 .setEnableSmallerDecompressionBufferSize(
                         Flags.enableSmallerDecompressionBufferSize() || isVMEnabled)
                 .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
+                .setEnablePassingFilterToChildren(
+                        Flags.enablePassingFilterToChildren() || isVMEnabled)
                 .build();
     }
 }

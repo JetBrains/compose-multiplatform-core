@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
 import java.lang.reflect.InvocationHandler;
 
 public class PrefetchOperationCallbackAdapter {
-
+    private PrefetchOperationCallbackAdapter() {}
     /**
      * Builds the PrefetchOperationCallback to send to the prefetch request.
      *

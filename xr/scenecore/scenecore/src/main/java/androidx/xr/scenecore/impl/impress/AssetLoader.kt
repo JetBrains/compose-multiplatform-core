@@ -16,14 +16,16 @@
 
 package androidx.xr.scenecore.impl.impress
 
-import androidx.annotation.RestrictTo
-
-/** Interface defining the callback that get triggered when an asset is loaded. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface AssetLoader {
+/**
+ * Interface defining the callbacks that are triggered from the Native side when an asset is loaded.
+ */
+internal interface AssetLoader {
     /** Called when the asset is successfully loaded where the long value is the asset token. */
     public fun onSuccess(value: Long)
 
     /** Called when the asset fails to load. */
     public fun onFailure(message: String)
+
+    /** Called when the asset loading is cancelled, such as during shutdown. */
+    public fun onCancelled(message: String)
 }

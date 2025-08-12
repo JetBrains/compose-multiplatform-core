@@ -30,7 +30,7 @@ import android.os.Environment;
 import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
-import androidx.compose.remote.creation.RemoteComposeContext;
+import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 
@@ -323,12 +323,12 @@ public class TestUtils {
          *
          * @param foo context
          */
-        void run(RemoteComposeContext foo);
+        void run(RemoteComposeContextAndroid foo);
     }
 
     static RemoteComposeDocument createDocument(RemoteContext context, final Callback cb) {
-        RemoteComposeContext doc =
-                new RemoteComposeContext(
+        RemoteComposeContextAndroid doc =
+                new RemoteComposeContextAndroid(
                         600,
                         600,
                         "Demo",

@@ -110,9 +110,7 @@ public final class DrawableCompat {
      * @param y The Y coordinate of the center of the hotspot
      */
     public static void setHotspot(@NonNull Drawable drawable, float x, float y) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setHotspot(drawable, x, y);
-        }
+        drawable.setHotspot(x, y);
     }
 
     /**
@@ -127,9 +125,7 @@ public final class DrawableCompat {
      */
     public static void setHotspotBounds(@NonNull Drawable drawable, int left, int top,
             int right, int bottom) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setHotspotBounds(drawable, left, top, right, bottom);
-        }
+        drawable.setHotspotBounds(left, top, right, bottom);
     }
 
     /**
@@ -139,11 +135,7 @@ public final class DrawableCompat {
      * @param tint     Color to use for tinting this drawable
      */
     public static void setTint(@NonNull Drawable drawable, @ColorInt int tint) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setTint(drawable, tint);
-        } else if (drawable instanceof TintAwareDrawable) {
-            ((TintAwareDrawable) drawable).setTint(tint);
-        }
+        drawable.setTint(tint);
     }
 
     /**
@@ -153,11 +145,7 @@ public final class DrawableCompat {
      * @param tint     Color state list to use for tinting this drawable, or null to clear the tint
      */
     public static void setTintList(@NonNull Drawable drawable, @Nullable ColorStateList tint) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setTintList(drawable, tint);
-        } else if (drawable instanceof TintAwareDrawable) {
-            ((TintAwareDrawable) drawable).setTintList(tint);
-        }
+        drawable.setTintList(tint);
     }
 
     /**
@@ -167,11 +155,7 @@ public final class DrawableCompat {
      * @param tintMode A Porter-Duff blending mode
      */
     public static void setTintMode(@NonNull Drawable drawable, PorterDuff.@Nullable Mode tintMode) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setTintMode(drawable, tintMode);
-        } else if (drawable instanceof TintAwareDrawable) {
-            ((TintAwareDrawable) drawable).setTintMode(tintMode);
-        }
+        drawable.setTintMode(tintMode);
     }
 
     /**
@@ -193,9 +177,7 @@ public final class DrawableCompat {
      */
     @SuppressWarnings("unused")
     public static void applyTheme(@NonNull Drawable drawable, Resources.@NonNull Theme theme) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.applyTheme(drawable, theme);
-        }
+        drawable.applyTheme(theme);
     }
 
     /**
@@ -203,11 +185,7 @@ public final class DrawableCompat {
      */
     @SuppressWarnings("unused")
     public static boolean canApplyTheme(@NonNull Drawable drawable) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.canApplyTheme(drawable);
-        } else {
-            return false;
-        }
+        return drawable.canApplyTheme();
     }
 
     /**
@@ -217,11 +195,7 @@ public final class DrawableCompat {
      */
     @SuppressWarnings("unused")
     public static @Nullable ColorFilter getColorFilter(@NonNull Drawable drawable) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getColorFilter(drawable);
-        } else {
-            return null;
-        }
+        return drawable.getColorFilter();
     }
 
     /**
@@ -232,7 +206,7 @@ public final class DrawableCompat {
         if (Build.VERSION.SDK_INT >= 23) {
             // We can use clearColorFilter() safely on M+
             drawable.clearColorFilter();
-        } else if (Build.VERSION.SDK_INT >= 21) {
+        } else {
             drawable.clearColorFilter();
 
             // API 21 + 22 have an issue where clearing a color filter on a DrawableContainer
@@ -257,8 +231,6 @@ public final class DrawableCompat {
                     }
                 }
             }
-        } else {
-            drawable.clearColorFilter();
         }
     }
 
@@ -277,11 +249,7 @@ public final class DrawableCompat {
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
             Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.inflate(drawable, res, parser, attrs, theme);
-        } else {
-            drawable.inflate(res, parser, attrs);
-        }
+        drawable.inflate(res, parser, attrs, theme);
     }
 
     /**
@@ -318,14 +286,9 @@ public final class DrawableCompat {
     public static @NonNull Drawable wrap(@NonNull Drawable drawable) {
         if (Build.VERSION.SDK_INT >= 23) {
             return drawable;
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            if (!(drawable instanceof TintAwareDrawable)) {
-                return new WrappedDrawableApi21(drawable);
-            }
-            return drawable;
         } else {
             if (!(drawable instanceof TintAwareDrawable)) {
-                return new WrappedDrawableApi14(drawable);
+                return new WrappedDrawableApi21(drawable);
             }
             return drawable;
         }
@@ -429,7 +392,6 @@ public final class DrawableCompat {
     private DrawableCompat() {
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

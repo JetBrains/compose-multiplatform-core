@@ -15,7 +15,6 @@
  */
 package androidx.camera.core.imagecapture
 
-import android.os.Build
 import android.util.Pair
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.imagecapture.Utils.createProcessingRequest
@@ -28,13 +27,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [NoMetadataImageReader]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class NoMetadataImageReaderTest {
     @Test
     fun acquireLatestImage_receiveImageWithTimestamp() {

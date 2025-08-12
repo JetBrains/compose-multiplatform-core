@@ -51,10 +51,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based screenshot test of [CanvasStrokeRenderer] for Stroke and InProgressStroke. */
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CanvasStrokeRendererTest {
 
     @get:Rule
@@ -717,7 +717,7 @@ class CanvasStrokeRendererTest {
                 .add(InputToolType.UNKNOWN, x = 10F, y = 80F, elapsedTimeMillis = 217)
                 .add(InputToolType.UNKNOWN, x = 20F, y = 90F, elapsedTimeMillis = 233)
                 .add(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .toImmutable()
 
         val INPUTS_ZAGZIG =
             MutableStrokeInputBatch()
@@ -731,7 +731,7 @@ class CanvasStrokeRendererTest {
                 .add(InputToolType.UNKNOWN, x = 28F, y = 77F, elapsedTimeMillis = 217)
                 .add(InputToolType.UNKNOWN, x = 17F, y = 83F, elapsedTimeMillis = 233)
                 .add(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .toImmutable()
 
         val INPUTS_TWIST =
             MutableStrokeInputBatch()
@@ -745,7 +745,7 @@ class CanvasStrokeRendererTest {
                 .add(InputToolType.UNKNOWN, x = 27F, y = 67F, elapsedTimeMillis = 217)
                 .add(InputToolType.UNKNOWN, x = 53F, y = 33F, elapsedTimeMillis = 233)
                 .add(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .toImmutable()
 
         fun brush(
             family: BrushFamily = StockBrushes.markerLatest,

@@ -11,4 +11,8 @@
     <string name="page_object_pdf_string">PageObject Pdf</string>
     <string name="save_pdf_string">Save Pdf</string>
     <string name="compose_fragment">Compose PDF</string>
+    <string name="preference_string">Feature flags</string>
+    <string name="external_input">External Hardware Interaction</string>
+    <string name="smart_action_menu">Smart Action Menu</string>
+    <string name="custom_link">Custom Link Handling</string>
 </resources>

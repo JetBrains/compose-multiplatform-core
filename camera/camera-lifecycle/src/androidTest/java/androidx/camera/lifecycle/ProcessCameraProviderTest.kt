@@ -69,7 +69,6 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
@@ -92,7 +91,6 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 @kotlin.OptIn(ExperimentalSessionConfig::class)
 class ProcessCameraProviderTest(
     private val implName: String,
@@ -440,7 +438,6 @@ class ProcessCameraProviderTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun canRebindSessionConfigToSameLifecycleOwner_withExtensionsEnabled() = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
 
@@ -480,7 +477,6 @@ class ProcessCameraProviderTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun canRebindSameSessionConfigToSameLifecycleOwner_withExtensionsEnabled() = runBlocking {
         ProcessCameraProvider.configureInstance(cameraConfig)
 
@@ -1499,7 +1495,6 @@ class ProcessCameraProviderTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun bindWithExtensions_doesNotImpactPreviousCamera(): Unit =
         runBlocking(Dispatchers.Main) {
             // 1. Arrange.

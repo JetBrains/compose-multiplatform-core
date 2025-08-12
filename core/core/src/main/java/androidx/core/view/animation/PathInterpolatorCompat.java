@@ -17,11 +17,8 @@
 package androidx.core.view.animation;
 
 import android.graphics.Path;
-import android.os.Build;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
-
-import androidx.annotation.RequiresApi;
 
 import org.jspecify.annotations.NonNull;
 
@@ -49,10 +46,7 @@ public final class PathInterpolatorCompat {
      * @return the {@link Interpolator} representing the {@link Path}
      */
     public static @NonNull Interpolator create(@NonNull Path path) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.createPathInterpolator(path);
-        }
-        return new PathInterpolatorApi14(path);
+        return Api21Impl.createPathInterpolator(path);
     }
 
     /**
@@ -64,10 +58,7 @@ public final class PathInterpolatorCompat {
      * @return the {@link Interpolator} representing the quadratic Bezier curve
      */
     public static @NonNull Interpolator create(float controlX, float controlY) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.createPathInterpolator(controlX, controlY);
-        }
-        return new PathInterpolatorApi14(controlX, controlY);
+        return Api21Impl.createPathInterpolator(controlX, controlY);
     }
 
     /**
@@ -82,13 +73,9 @@ public final class PathInterpolatorCompat {
      */
     public static @NonNull Interpolator create(float controlX1, float controlY1,
             float controlX2, float controlY2) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.createPathInterpolator(controlX1, controlY1, controlX2, controlY2);
-        }
-        return new PathInterpolatorApi14(controlX1, controlY1, controlX2, controlY2);
+        return Api21Impl.createPathInterpolator(controlX1, controlY1, controlX2, controlY2);
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

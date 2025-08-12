@@ -16,14 +16,22 @@
 
 package androidx.camera.camera2.pipe.framegraph
 
+import android.hardware.camera2.params.MeteringRectangle
 import android.view.Surface
+import androidx.camera.camera2.pipe.AeMode
+import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AudioRestrictionMode
+import androidx.camera.camera2.pipe.AwbMode
+import androidx.camera.camera2.pipe.CameraControls3A
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.GraphState
+import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Parameters
+import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
 import androidx.camera.camera2.pipe.config.FrameGraphScope
@@ -42,22 +50,76 @@ constructor(
     private val frameDistributor: FrameDistributor,
     private val frameGraphBuffers: FrameGraphBuffers,
     @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope,
-) : FrameGraph {
+) : FrameGraph, CameraControls3A by cameraGraph {
+    init {
+        // Wire up the frameStartedListener.
+        frameDistributor.frameStartedListener = frameGraphBuffers
+    }
+
     override val streams = cameraGraph.streams
 
     override val graphState: StateFlow<GraphState> = cameraGraph.graphState
 
     override var isForeground: Boolean = cameraGraph.isForeground
+
+    override fun setSurface(stream: StreamId, surface: Surface?) {
+        cameraGraph.setSurface(stream, surface)
+    }
+
+    override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {
+        cameraGraph.updateAudioRestrictionMode(mode)
+    }
+
+    override fun lock3A(
+        aeMode: AeMode?,
+        afMode: AfMode?,
+        awbMode: AwbMode?,
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeLockBehavior: Lock3ABehavior?,
+        afLockBehavior: Lock3ABehavior?,
+        awbLockBehavior: Lock3ABehavior?,
+        afTriggerStartAeMode: AeMode?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        lockedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int,
+        convergedTimeLimitNs: Long,
+        lockedTimeLimitNs: Long,
+    ): Deferred<Result3A> =
+        cameraGraph.lock3A(
+            aeMode,
+            afMode,
+            awbMode,
+            aeRegions,
+            afRegions,
+            awbRegions,
+            aeLockBehavior,
+            afLockBehavior,
+            awbLockBehavior,
+            afTriggerStartAeMode,
+            convergedCondition,
+            lockedCondition,
+            frameLimit,
+            convergedTimeLimitNs,
+            lockedTimeLimitNs,
+        )
+
+    override fun unlock3A(
+        ae: Boolean?,
+        af: Boolean?,
+        awb: Boolean?,
+        unlockedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int,
+        timeLimitNs: Long,
+    ): Deferred<Result3A> =
+        cameraGraph.unlock3A(ae, af, awb, unlockedCondition, frameLimit, timeLimitNs)
+
     override val parameters: Parameters
         get() = cameraGraph.parameters
 
     override val id: CameraGraphId
         get() = cameraGraph.id
-
-    init {
-        // Wire up the frameStartedListener.
-        frameDistributor.frameStartedListener = frameGraphBuffers
-    }
 
     override fun start() {
         cameraGraph.start()
@@ -67,24 +129,12 @@ constructor(
         cameraGraph.stop()
     }
 
-    override fun setSurface(stream: StreamId, surface: Surface?) {
-        cameraGraph.setSurface(stream, surface)
-    }
-
     override fun captureWith(
         streamIds: Set<StreamId>,
         parameters: Map<Any, Any?>,
         capacity: Int,
     ): FrameBuffer {
         return frameGraphBuffers.attach(streamIds, parameters, capacity)
-    }
-
-    override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {
-        cameraGraph.updateAudioRestrictionMode(mode)
-    }
-
-    override fun close() {
-        cameraGraph.close()
     }
 
     override suspend fun acquireSession(): FrameGraph.Session {
@@ -120,4 +170,8 @@ constructor(
             CameraGraph::class -> cameraGraph as T?
             else -> null
         }
+
+    override fun close() {
+        cameraGraph.close()
+    }
 }

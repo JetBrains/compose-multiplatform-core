@@ -1,11 +1,3 @@
 // Baseline format: 1.0
-AddedField: androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo#INSTANCE:
-    Added field androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo.INSTANCE
-
-
-RemovedClass: androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo.Companion:
-    Removed class androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo.Companion
-
-
-RemovedField: androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo#Companion:
-    Removed field androidx.camera.viewfinder.core.camera2.Camera2TransformationInfo.Companion
+RemovedFromJava: androidx.camera.viewfinder.core.ViewfinderSurfaceRequest#copy(int, int, androidx.camera.viewfinder.core.ImplementationMode, String):
+    Source breaking change: method androidx.camera.viewfinder.core.ViewfinderSurfaceRequest.copy(int,int,androidx.camera.viewfinder.core.ImplementationMode,String) can no longer be resolved from Java source

@@ -201,7 +201,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
     private final @NonNull CaptureSessionRepository mCaptureSessionRepository;
     private final SynchronizedCaptureSession.@NonNull OpenerBuilder mCaptureSessionOpenerBuilder;
-    private final Set<String> mNotifyStateAttachedSet = new HashSet<>();
+    private final Set<String> mSessionStartNotifiedUseCases = new HashSet<>();
 
     private @NonNull CameraConfig mCameraConfig = CameraConfigs.defaultConfig();
     final Object mLock = new Object();
@@ -947,7 +947,7 @@ final class Camera2CameraImpl implements CameraInternal {
          * use count to recover the additional increment here.
          */
         mCameraControlInternal.incrementUseCount();
-        notifyStateAttachedAndCameraControlReady(new ArrayList<>(useCases));
+        notifySessionStartedAndCameraControlReady(new ArrayList<>(useCases));
         List<UseCaseInfo> useCaseInfos = new ArrayList<>(toUseCaseInfos(useCases));
         try {
             mExecutor.execute(() -> {
@@ -1089,28 +1089,28 @@ final class Camera2CameraImpl implements CameraInternal {
         return mCameraConfig;
     }
 
-    private void notifyStateAttachedAndCameraControlReady(List<UseCase> useCases) {
+    private void notifySessionStartedAndCameraControlReady(List<UseCase> useCases) {
         for (UseCase useCase : useCases) {
             String useCaseId = getUseCaseId(useCase);
-            if (mNotifyStateAttachedSet.contains(useCaseId)) {
+            if (mSessionStartNotifiedUseCases.contains(useCaseId)) {
                 continue;
             }
 
-            mNotifyStateAttachedSet.add(useCaseId);
-            useCase.onStateAttached();
+            mSessionStartNotifiedUseCases.add(useCaseId);
+            useCase.onSessionStart();
             useCase.onCameraControlReady();
         }
     }
 
-    private void notifyStateDetachedToUseCases(List<UseCase> useCases) {
+    private void notifySessionStoppedToUseCases(List<UseCase> useCases) {
         for (UseCase useCase : useCases) {
             String useCaseId = getUseCaseId(useCase);
-            if (!mNotifyStateAttachedSet.contains(useCaseId)) {
+            if (!mSessionStartNotifiedUseCases.contains(useCaseId)) {
                 continue;
             }
 
-            useCase.onStateDetached();
-            mNotifyStateAttachedSet.remove(useCaseId);
+            useCase.onSessionStop();
+            mSessionStartNotifiedUseCases.remove(useCaseId);
         }
     }
 
@@ -1128,7 +1128,7 @@ final class Camera2CameraImpl implements CameraInternal {
         }
 
         List<UseCaseInfo> useCaseInfos = new ArrayList<>(toUseCaseInfos(useCases));
-        notifyStateDetachedToUseCases(new ArrayList<>(useCases));
+        notifySessionStoppedToUseCases(new ArrayList<>(useCases));
         mExecutor.execute(() -> tryDetachUseCases(useCaseInfos));
     }
 

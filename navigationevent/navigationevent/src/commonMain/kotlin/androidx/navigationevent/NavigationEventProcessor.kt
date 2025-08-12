@@ -17,8 +17,15 @@
 package androidx.navigationevent
 
 import androidx.annotation.MainThread
+import androidx.navigationevent.NavigationEventInfo.NotProvided
 import androidx.navigationevent.NavigationEventPriority.Companion.Default
 import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
+import androidx.navigationevent.NavigationEventState.Idle
+import androidx.navigationevent.NavigationEventState.InProgress
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Manages the lifecycle and dispatching of [NavigationEventCallback] instances across all
@@ -26,6 +33,16 @@ import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
  * and prioritized dispatch for navigation events.
  */
 internal class NavigationEventProcessor {
+
+    /** The private, mutable source of truth for the navigation state. */
+    internal val _state = MutableStateFlow<NavigationEventState<*>>(Idle(NotProvided))
+
+    /**
+     * The [StateFlow] from the highest-priority, enabled navigation callback.
+     *
+     * This represents the navigation state of the currently active component.
+     */
+    val state: StateFlow<NavigationEventState<*>> = _state.asStateFlow()
 
     /**
      * Stores high-priority callbacks that should be evaluated before default callbacks.
@@ -35,9 +52,9 @@ internal class NavigationEventProcessor {
      * overlay callback is the first to be checked.
      *
      * @see [defaultCallbacks]
-     * @see [inProgressCallbacks]
+     * @see [inProgressCallback]
      */
-    private val overlayCallbacks = ArrayDeque<NavigationEventCallback>()
+    private val overlayCallbacks = ArrayDeque<NavigationEventCallback<*>>()
 
     /**
      * Stores standard-priority callbacks.
@@ -46,24 +63,24 @@ internal class NavigationEventProcessor {
      * the most recently added default callback is checked first within its priority level.
      *
      * @see [overlayCallbacks]
-     * @see [inProgressCallbacks]
+     * @see [inProgressCallback]
      */
-    private val defaultCallbacks = ArrayDeque<NavigationEventCallback>()
+    private val defaultCallbacks = ArrayDeque<NavigationEventCallback<*>>()
 
     /**
-     * A list of callbacks for a navigation event that is currently in progress.
+     * The callback for a navigation event that is currently in progress.
      *
-     * Callbacks in this list have the highest dispatch priority, ensuring that terminal events
-     * (like [dispatchOnCompleted] or [dispatchOnCancelled]) are delivered only to the participants
-     * of the active navigation. The list is cleared after the event is terminated.
+     * This callback has the highest dispatch priority, ensuring that terminal events (like
+     * [dispatchOnCompleted] or [dispatchOnCancelled]) are delivered only to the participant of the
+     * active navigation. This is cleared after the event is terminated.
      *
-     * Notably, if a callback is removed while in this list, it is implicitly treated as a terminal
-     * event and receives an [dispatchOnCancelled] call before being removed.
+     * Notably, if this callback is removed while an event is in progress, it is implicitly treated
+     * as a terminal event and receives a cancellation call before being removed.
      *
      * @see [overlayCallbacks]
      * @see [defaultCallbacks]
      */
-    private val inProgressCallbacks = mutableListOf<NavigationEventCallback>()
+    private var inProgressCallback: NavigationEventCallback<*>? = null
 
     /**
      * Tracks listeners for changes in the overall enabled state of callbacks across all
@@ -99,23 +116,61 @@ internal class NavigationEventProcessor {
         }
 
     /**
-     * Recomputes and updates the current [hasEnabledCallbacks] state based on the enabled status of
-     * all registered callbacks. This method should be called whenever a callback's enabled state or
-     * its registration status (added/removed) changes.
+     * Recomputes and updates [hasEnabledCallbacks] based on the enabled status of all registered
+     * callbacks. This should be called whenever a callback’s enabled state or its registration
+     * status (added or removed) changes.
      */
     fun updateEnabledCallbacks() {
         // `any` and `||` are efficient as they short-circuit on the first `true` result.
         hasEnabledCallbacks =
             overlayCallbacks.any { it.isEnabled } || defaultCallbacks.any { it.isEnabled }
+
+        // Whenever the set of enabled callbacks changes, we must immediately
+        // synchronize the global navigation state. This picks the new highest-priority
+        // active callback and updates the state to reflect its info, preventing stale data.
+        val enabledCallback = resolveEnabledCallback()
+        if (enabledCallback != null) {
+            updateEnabledCallbackState(enabledCallback)
+        }
+    }
+
+    /**
+     * Called by a NavigationEventCallback when its info changes via `setInfo`.
+     *
+     * This method centralizes the state update logic. It checks if the callback that changed is the
+     * authoritative one (either the `inProgressCallback` or the highest-priority idle callback)
+     * before updating the shared `_state`. This prevents lower-priority callbacks from incorrectly
+     * overwriting the state.
+     */
+    internal fun updateEnabledCallbackState(callback: NavigationEventCallback<*>) {
+        val currentCallback = inProgressCallback ?: resolveEnabledCallback()
+        if (currentCallback != callback) return
+
+        _state.update { state ->
+            when (state) {
+                is Idle -> Idle(callback.currentInfo ?: NotProvided)
+                is InProgress ->
+                    InProgress(
+                        currentInfo = callback.currentInfo ?: NotProvided,
+                        previousInfo = callback.previousInfo,
+                        latestEvent = state.latestEvent,
+                    )
+            }
+        }
     }
 
     /**
      * Adds a callback that will be notified when the overall enabled state of registered callbacks
      * changes.
      *
+     * @param inputHandler The [NavigationEventInputHandler] registering the callback.
      * @param callback The callback to invoke when the enabled state changes.
      */
-    fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
+    fun addOnHasEnabledCallbacksChangedCallback(
+        inputHandler: NavigationEventInputHandler? = null,
+        callback: (Boolean) -> Unit,
+    ) {
+        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish callbacks.
         onHasEnabledCallbacksChangedCallbacks += callback
     }
 
@@ -167,7 +222,7 @@ internal class NavigationEventProcessor {
     @MainThread
     fun addCallback(
         dispatcher: NavigationEventDispatcher,
-        callback: NavigationEventCallback,
+        callback: NavigationEventCallback<*>,
         priority: NavigationEventPriority = Default,
     ) {
         // Enforce that a callback is not already registered with another dispatcher.
@@ -189,19 +244,19 @@ internal class NavigationEventProcessor {
     /**
      * Removes a [NavigationEventCallback] from the processor's registry.
      *
-     * If the callback is currently part of an active event (i.e., in `inProgressCallbacks`), it
-     * will be notified of cancellation before being removed. This method is idempotent and can be
-     * called safely even if the callback is not currently registered.
+     * If the callback is currently part of an active event (i.e., it is the `inProgressCallback`),
+     * it will be notified of cancellation before being removed. This method is idempotent and can
+     * be called safely even if the callback is not currently registered.
      *
      * @param callback The [NavigationEventCallback] to remove.
      */
     @MainThread
-    fun removeCallback(callback: NavigationEventCallback) {
-        // If the callback is currently being processed (i.e., it's in `inProgressCallbacks`),
-        // it needs to be notified of cancellation and then removed from the in-progress tracking.
-        if (callback in inProgressCallbacks) {
+    fun removeCallback(callback: NavigationEventCallback<*>) {
+        // If the callback is the one currently being processed, it needs to be notified of
+        // cancellation and then cleared from the in-progress state.
+        if (callback == inProgressCallback) {
             callback.onEventCancelled()
-            inProgressCallbacks -= callback
+            inProgressCallback = null
         }
 
         // The `remove()` operation on ArrayDeque is efficient and simply returns `false` if the
@@ -217,135 +272,160 @@ internal class NavigationEventProcessor {
 
     /**
      * Dispatches an [NavigationEventCallback.onEventStarted] event with the given event to the
-     * appropriate callbacks.
+     * highest-priority enabled callback.
      *
      * If an event is currently in progress, it will be cancelled first to ensure a clean state for
-     * the new event. Only enabled callbacks are notified.
+     * the new event. Only the single, highest-priority enabled callback is notified and becomes the
+     * `inProgressCallback`.
      *
-     * @param event [NavigationEvent] to dispatch to the callbacks.
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
+     * @param event [NavigationEvent] to dispatch to the callback.
      */
     @MainThread
-    fun dispatchOnStarted(event: NavigationEvent) {
-        if (inProgressCallbacks.isNotEmpty()) {
+    fun dispatchOnStarted(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+        event: NavigationEvent,
+    ) {
+        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
+
+        if (inProgressCallback != null) {
             // It's important to ensure that any ongoing operations from previous events are
             // properly cancelled before starting new ones to maintain a consistent state.
-            dispatchOnCancelled()
+            dispatchOnCancelled(inputHandler, direction)
         }
 
-        for (callback in getEnabledCallbacks()) {
-            // Add callback to `inProgressCallbacks` *before* execution. This ensures `onCancelled`
-            // can be called even if the callback removes itself during `onEventStarted`.
-            inProgressCallbacks += callback
+        // Find the highest-priority enabled callback to handle this event.
+        val callback = resolveEnabledCallback()
+        if (callback != null) {
+            // Set this callback as the one in progress *before* execution. This ensures
+            // `onCancelled` can be correctly handled if the callback removes itself during
+            // `onEventStarted`.
+            inProgressCallback = callback
             callback.onEventStarted(event)
+            _state.update {
+                InProgress(callback.currentInfo ?: NotProvided, callback.previousInfo, event)
+            }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventProgressed] event with the given event to the
-     * appropriate callbacks.
+     * Dispatches an [NavigationEventCallback.onEventProgressed] event with the given event.
      *
-     * If there are callbacks currently in progress (from a [dispatchOnStarted] call), only those
-     * will be notified. Otherwise, all currently enabled callbacks will receive the progress event.
-     * This is not a terminal event, so `inProgressCallbacks` are not cleared.
+     * If a callback is currently in progress (from a [dispatchOnStarted] call), only that callback
+     * will be notified. Otherwise, the highest-priority enabled callback will receive the progress
+     * event. This is not a terminal event, so `inProgressCallback` is not cleared.
      *
-     * @param event [NavigationEvent] to dispatch to the callbacks.
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
+     * @param event [NavigationEvent] to dispatch to the callback.
      */
     @MainThread
-    fun dispatchOnProgressed(event: NavigationEvent) {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
-        // Progressed is not a terminal event, so `inProgressCallbacks` is not cleared.
+    fun dispatchOnProgressed(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+        event: NavigationEvent,
+    ) {
+        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
-        for (callback in callbacks) {
+        // If there is a callback in progress, only that one is notified.
+        // Otherwise, the highest-priority enabled callback is notified.
+        val callback = inProgressCallback ?: resolveEnabledCallback()
+        // Progressed is not a terminal event, so `inProgressCallback` is not cleared.
+
+        if (callback != null) {
             callback.onEventProgressed(event)
+            _state.update {
+                InProgress(callback.currentInfo ?: NotProvided, callback.previousInfo, event)
+            }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventCompleted] event to the appropriate callbacks.
+     * Dispatches an [NavigationEventCallback.onEventCompleted] event.
      *
-     * If there are callbacks currently in progress, only those will be notified. Otherwise, all
-     * currently enabled callbacks will receive the completion event. This is a terminal event,
-     * clearing `inProgressCallbacks`. If no callbacks handle the event, the `fallbackOnBackPressed`
-     * action is invoked.
+     * If a callback is currently in progress, only it will be notified. Otherwise, the
+     * highest-priority enabled callback will be notified. This is a terminal event, clearing the
+     * `inProgressCallback`. If no callback handles the event, the `fallbackOnBackPressed` action is
+     * invoked.
      *
-     * @param fallbackOnBackPressed The action to invoke if no callbacks handle the completion.
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
+     * @param fallbackOnBackPressed The action to invoke if no callback handles the completion.
      */
     @MainThread
-    fun dispatchOnCompleted(fallbackOnBackPressed: (() -> Unit)?) {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
-        inProgressCallbacks.clear() // Clear in-progress, as 'completed' is a terminal event.
+    fun dispatchOnCompleted(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+        fallbackOnBackPressed: (() -> Unit)?,
+    ) {
+        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
-        // If no callbacks are notified (either none were in progress or enabled), use fallback.
-        if (callbacks.isEmpty()) {
+        // If there is a callback in progress, only that one is notified.
+        // Otherwise, the highest-priority enabled callback is notified.
+        val callback = inProgressCallback ?: resolveEnabledCallback()
+        inProgressCallback = null // Clear in-progress, as 'completed' is a terminal event.
+
+        // If no callback is notified, use the fallback.
+        if (callback == null) {
             fallbackOnBackPressed?.invoke()
         } else {
-            for (callback in callbacks) {
-                callback.onEventCompleted()
-            }
+            callback.onEventCompleted()
+            _state.update { Idle(callback.currentInfo ?: NotProvided) }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventCancelled] event to the appropriate callbacks.
+     * Dispatches an [NavigationEventCallback.onEventCancelled] event.
      *
-     * If there are callbacks currently in progress, only those will be notified. Otherwise, all
-     * currently enabled callbacks will receive the cancellation event. This is a terminal event,
-     * clearing `inProgressCallbacks`.
+     * If a callback is currently in progress, only it will be notified. Otherwise, the
+     * highest-priority enabled callback will be notified. This is a terminal event, clearing the
+     * `inProgressCallback`.
+     *
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
      */
     @MainThread
-    fun dispatchOnCancelled() {
-        // If there is callbacks in progress, only those are notified.
-        // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
-        inProgressCallbacks.clear() // Clear in-progress, as 'cancelled' is a terminal event.
+    fun dispatchOnCancelled(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+    ) {
+        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
-        for (callback in callbacks) {
+        // If there is a callback in progress, only that one is notified.
+        // Otherwise, the highest-priority enabled callback is notified.
+        val callback = inProgressCallback ?: resolveEnabledCallback()
+        inProgressCallback = null // Clear in-progress, as 'cancelled' is a terminal event.
+
+        if (callback != null) {
             callback.onEventCancelled()
+            _state.update { Idle(callback.currentInfo ?: NotProvided) }
         }
     }
 
     /**
-     * Builds the prioritized list of callbacks for event dispatch.
+     * Resolves which callback should handle a navigation event based on priority and enabled state.
      *
-     * Callbacks are added in a strict priority order: [overlayCallbacks] first, then
-     * [defaultCallbacks]. The process stops if a callback has
-     * [NavigationEventCallback.isPassThrough] is `false`, allowing it to "consume" the event and
-     * prevent further propagation.
+     * This function is the core of the priority dispatch system. It ensures that only one callback
+     * is selected to receive an event by strictly enforcing dispatch order. The resolution process
+     * is:
+     * 1. It first scans **overlay** callbacks, from most-to-least recently added.
+     * 2. If no enabled overlay callback is found, it then scans **default** callbacks in the same
+     *    LIFO order.
      *
-     * **Performance Considerations:** This method avoids unnecessary allocations by iterating
-     * directly over the source collections. The early exit on a non-pass-through callback ensures
-     * that only the relevant callbacks are included in the final result.
+     * The very first callback that is found to be `isEnabled` is returned immediately.
      *
-     * @return The list of callbacks to dispatch to, truncated at the first consuming callback.
+     * @return The single highest-priority [NavigationEventCallback] that is currently enabled, or
+     *   `null` if no enabled callbacks exist.
      */
-    fun getEnabledCallbacks(): List<NavigationEventCallback> {
-        val callbacksForDispatching = mutableListOf<NavigationEventCallback>()
-
-        // Process higher-priority overlay callbacks first.
-        for (callback in overlayCallbacks) {
-            if (callback.isEnabled) {
-                callbacksForDispatching += callback
-                // This callback consumes the event, so we stop here.
-                if (!callback.isPassThrough) {
-                    return callbacksForDispatching
-                }
-            }
-        }
-
-        // Then, process default priority callbacks.
-        for (callback in defaultCallbacks) {
-            if (callback.isEnabled) {
-                callbacksForDispatching += callback
-                if (!callback.isPassThrough) {
-                    return callbacksForDispatching
-                }
-            }
-        }
-
-        return callbacksForDispatching
+    fun resolveEnabledCallback(): NavigationEventCallback<*>? {
+        // `firstOrNull` is efficient and respects the LIFO order of the ArrayDeque.
+        return overlayCallbacks.firstOrNull { it.isEnabled }
+            ?: defaultCallbacks.firstOrNull { it.isEnabled }
     }
 }

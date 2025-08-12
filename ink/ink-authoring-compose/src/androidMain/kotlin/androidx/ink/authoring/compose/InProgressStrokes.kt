@@ -51,7 +51,6 @@ import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesFinishedListener
 import androidx.ink.authoring.InProgressStrokesView
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
@@ -139,7 +138,6 @@ import java.util.concurrent.TimeUnit
  *   thread, it may not be in the same UI thread run loop and lead to a flicker.
  */
 @Composable
-@OptIn(ExperimentalInkCustomBrushApi::class)
 public fun InProgressStrokes(
     defaultBrush: Brush?,
     nextBrush: () -> Brush? = { defaultBrush },
@@ -158,7 +156,6 @@ public fun InProgressStrokes(
     )
 }
 
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @VisibleForTesting
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @Composable

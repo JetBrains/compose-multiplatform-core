@@ -98,6 +98,7 @@ internal class QueryInterceptorDatabase(
         query.bindTo(queryInterceptorProgram)
         queryCallbackScope.launch {
             queryCallback.onQuery(query.sql, queryInterceptorProgram.bindArgsCache)
+            queryInterceptorProgram.close()
         }
         return delegate.query(query)
     }
@@ -107,6 +108,7 @@ internal class QueryInterceptorDatabase(
         query.bindTo(queryInterceptorProgram)
         queryCallbackScope.launch {
             queryCallback.onQuery(query.sql, queryInterceptorProgram.bindArgsCache)
+            queryInterceptorProgram.close()
         }
         return delegate.query(query)
     }

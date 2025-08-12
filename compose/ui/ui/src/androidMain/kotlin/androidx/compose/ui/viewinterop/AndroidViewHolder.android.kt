@@ -483,28 +483,6 @@ internal open class AndroidViewHolder(
                             layoutParams!!.height,
                         ),
                     )
-
-                    // There is a difference in how Views and Compose handle dirty flags:
-                    // * In views when you need to "relayout" you call requestLayout() which
-                    //    would always trigger both onMeasure() and onLayout(). And
-                    //    isLayoutRequested() flag will only be cleared after onLayout().
-                    // * In Compose we have separate separate dirty flags for each stage, so you
-                    //    can separately call requestRemeasure() (which includes relayout as well)
-                    //    or requestRelayout().
-                    // * But another important difference is that in Compose it is possible to do
-                    //    remeasure, but skip relayout, if this node is not placed yet. It could be
-                    //    placed again at some point in future without triggering remeasure again.
-                    // * It was causing an issue for the interop, as some View might have it's
-                    //    isLayoutRequested() flag set to true. But then Compose system will only
-                    //    onMeasure() it without onLayout(), so isLayoutRequested() is still true.
-                    //    Then something changes in the View, and it needs another remeasure, but
-                    //    requestRemeasure() call is ignored, as the flag is true already.
-                    //    Then, when Compose finally decides to place this View, it only called
-                    //    onLayout on it, as it wasn't notified that measurement is dirty.
-                    // * To avoid this issue we clear the isLayoutRequested() flag for the whole
-                    //    subtree earlier, after we finished with measurement.
-                    cleanupLayoutRequestedStateForSubtree(this@AndroidViewHolder)
-
                     return layout(measuredWidth, measuredHeight) { layoutAccordingTo(layoutNode) }
                 }
 
@@ -717,23 +695,6 @@ internal open class AndroidViewHolder(
             (this.right - right).fastCoerceAtLeast(0),
             (this.bottom - bottom).fastCoerceAtLeast(0),
         )
-    }
-
-    /** Clears [View.isLayoutRequested] flag for the whole subtree. */
-    private fun cleanupLayoutRequestedStateForSubtree(viewGroup: ViewGroup) {
-        if (viewGroup.isLayoutRequested) {
-            // similar technique to the one we used in [AndroidViewHandler.requestLayout]
-            cleanupLayoutState(viewGroup)
-
-            for (i in 0 until viewGroup.childCount) {
-                val child = viewGroup.getChildAt(i)
-                if (child is ViewGroup) {
-                    cleanupLayoutRequestedStateForSubtree(child)
-                } else {
-                    cleanupLayoutState(child)
-                }
-            }
-        }
     }
 
     companion object {

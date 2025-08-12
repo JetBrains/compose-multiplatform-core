@@ -45,12 +45,17 @@ class DeviceMirroringTest {
             @Parameterized.Parameters
             fun parameters(): Array<String> =
                 arrayOf(
-                    "mokey_api35_surfaceflingerDump_deviceMirroring_active.txt",
-                    "pixel9a_api36_surfaceflingerDump_deviceMirroring_active.txt",
-                    "s23plus_api34_surfaceflingerDump_deviceMirroring_active.txt",
-                    "pixelwatch3_api35_surfaceflingerDump_deviceMirroring_active.txt",
-                    "motoGPower_api30_surfaceflingerDump_deviceMirroring_active.txt",
+                    "htcU11Life_api26_surfaceflingerDump_deviceMirroring_active.txt",
                     "blackberryKey2_api27_surfaceflingerDump_deviceMirroring_active.txt",
+                    "sonyG8441_api28_surfaceflingerDump_deviceMirroring_active.txt",
+                    "motoGPower_api30_surfaceflingerDump_deviceMirroring_active.txt",
+                    "lenovoTab_api30_surfaceflingerDump_deviceMirroring_active.txt",
+                    "wembley_api31_surfaceflingerDump_deviceMirroring_active.txt",
+                    "wembley_api32_surfaceflingerDump_deviceMirroring_active.txt",
+                    "s23plus_api34_surfaceflingerDump_deviceMirroring_active.txt",
+                    "mokey_api35_surfaceflingerDump_deviceMirroring_active.txt",
+                    "pixelwatch3_api35_surfaceflingerDump_deviceMirroring_active.txt",
+                    "pixel9a_api36_surfaceflingerDump_deviceMirroring_active.txt",
                 )
         }
     }
@@ -72,13 +77,18 @@ class DeviceMirroringTest {
             @Parameterized.Parameters
             fun parameters(): Array<String> =
                 arrayOf(
-                    "pixel2_api30_surfaceflingerDump_deviceMirroring_inactive.txt",
-                    "pixel9a_api36_surfaceflingerDump_deviceMirroring_inactive.txt",
-                    "s23plus_api34_surfaceflingerDump_deviceMirroring_inactive.txt",
-                    "pixelwatch3_api35_surfaceflingerDump_deviceMirroring_inactive.txt",
-                    "motoGPower_api30_surfaceflingerDump_deviceMirroring_inactive.txt",
-                    "pixel5_api31_surfaceflingerDump_deviceMirroring_inactive_scrcpyActive.txt",
+                    "htcU11Life_api26_surfaceflingerDump_deviceMirroring_inactive.txt",
                     "blackberryKey2_api27_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "sonyG8441_api28_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "motoGPower_api30_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "lenovoTab_api30_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "pixel5_api31_surfaceflingerDump_deviceMirroring_inactive_scrcpyActive.txt",
+                    "wembley_api31_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "wembley_api32_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "s23plus_api34_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "mokey_api35_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "pixelwatch3_api35_surfaceflingerDump_deviceMirroring_inactive.txt",
+                    "pixel9a_api36_surfaceflingerDump_deviceMirroring_inactive.txt",
                 )
         }
     }

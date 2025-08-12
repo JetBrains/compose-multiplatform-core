@@ -41,7 +41,7 @@ package androidx.work {
     property public androidx.work.InputMergerFactory inputMergerFactory;
     property public int maxJobSchedulerId;
     property public int minJobSchedulerId;
-    property @IntRange(from=0L, to=1200000L) public long remoteSessionTimeoutMillis;
+    property public long remoteSessionTimeoutMillis;
     property public androidx.work.RunnableScheduler runnableScheduler;
     property public androidx.core.util.Consumer<java.lang.Throwable>? schedulingExceptionHandler;
     property public java.util.concurrent.Executor taskExecutor;
@@ -88,22 +88,22 @@ package androidx.work {
   public final class Constraints {
     ctor public Constraints(androidx.work.Constraints other);
     ctor @androidx.room.Ignore public Constraints(optional androidx.work.NetworkType requiredNetworkType, optional boolean requiresCharging, optional boolean requiresBatteryNotLow, optional boolean requiresStorageNotLow);
-    ctor @RequiresApi(23) @androidx.room.Ignore public Constraints(optional androidx.work.NetworkType requiredNetworkType, optional boolean requiresCharging, optional boolean requiresDeviceIdle, optional boolean requiresBatteryNotLow, optional boolean requiresStorageNotLow);
+    ctor @androidx.room.Ignore public Constraints(optional androidx.work.NetworkType requiredNetworkType, optional boolean requiresCharging, optional boolean requiresDeviceIdle, optional boolean requiresBatteryNotLow, optional boolean requiresStorageNotLow);
     ctor @RequiresApi(24) @androidx.room.Ignore public Constraints(optional androidx.work.NetworkType requiredNetworkType, optional boolean requiresCharging, optional boolean requiresDeviceIdle, optional boolean requiresBatteryNotLow, optional boolean requiresStorageNotLow, optional long contentTriggerUpdateDelayMillis, optional long contentTriggerMaxDelayMillis, optional java.util.Set<androidx.work.Constraints.ContentUriTrigger> contentUriTriggers);
     method @RequiresApi(24) public long getContentTriggerMaxDelayMillis();
     method @RequiresApi(24) public long getContentTriggerUpdateDelayMillis();
     method @RequiresApi(24) public java.util.Set<androidx.work.Constraints.ContentUriTrigger> getContentUriTriggers();
-    method @RequiresApi(21) public android.net.NetworkRequest? getRequiredNetworkRequest();
+    method public android.net.NetworkRequest? getRequiredNetworkRequest();
     method public androidx.work.NetworkType getRequiredNetworkType();
     method public boolean requiresBatteryNotLow();
     method public boolean requiresCharging();
-    method @RequiresApi(23) public boolean requiresDeviceIdle();
+    method public boolean requiresDeviceIdle();
     method public boolean requiresStorageNotLow();
-    property @RequiresApi(24) @androidx.room.ColumnInfo(name="trigger_max_content_delay") public long contentTriggerMaxDelayMillis;
-    property @RequiresApi(24) @androidx.room.ColumnInfo(name="trigger_content_update_delay") public long contentTriggerUpdateDelayMillis;
-    property @RequiresApi(24) @androidx.room.ColumnInfo(name="content_uri_triggers") public java.util.Set<androidx.work.Constraints.ContentUriTrigger> contentUriTriggers;
-    property @RequiresApi(21) public android.net.NetworkRequest? requiredNetworkRequest;
-    property @androidx.room.ColumnInfo(name="required_network_type") public androidx.work.NetworkType requiredNetworkType;
+    property @RequiresApi(24) public long contentTriggerMaxDelayMillis;
+    property @RequiresApi(24) public long contentTriggerUpdateDelayMillis;
+    property @RequiresApi(24) public java.util.Set<androidx.work.Constraints.ContentUriTrigger> contentUriTriggers;
+    property public android.net.NetworkRequest? requiredNetworkRequest;
+    property public androidx.work.NetworkType requiredNetworkType;
     field public static final androidx.work.Constraints.Companion Companion;
     field public static final androidx.work.Constraints NONE;
   }
@@ -112,11 +112,11 @@ package androidx.work {
     ctor public Constraints.Builder();
     method @RequiresApi(24) public androidx.work.Constraints.Builder addContentUriTrigger(android.net.Uri uri, boolean triggerForDescendants);
     method public androidx.work.Constraints build();
-    method @RequiresApi(21) public androidx.work.Constraints.Builder setRequiredNetworkRequest(android.net.NetworkRequest networkRequest, androidx.work.NetworkType networkType);
+    method public androidx.work.Constraints.Builder setRequiredNetworkRequest(android.net.NetworkRequest networkRequest, androidx.work.NetworkType networkType);
     method public androidx.work.Constraints.Builder setRequiredNetworkType(androidx.work.NetworkType networkType);
     method public androidx.work.Constraints.Builder setRequiresBatteryNotLow(boolean requiresBatteryNotLow);
     method public androidx.work.Constraints.Builder setRequiresCharging(boolean requiresCharging);
-    method @RequiresApi(23) public androidx.work.Constraints.Builder setRequiresDeviceIdle(boolean requiresDeviceIdle);
+    method public androidx.work.Constraints.Builder setRequiresDeviceIdle(boolean requiresDeviceIdle);
     method public androidx.work.Constraints.Builder setRequiresStorageNotLow(boolean requiresStorageNotLow);
     method @RequiresApi(26) public androidx.work.Constraints.Builder setTriggerContentMaxDelay(java.time.Duration duration);
     method @RequiresApi(24) public androidx.work.Constraints.Builder setTriggerContentMaxDelay(long duration, java.util.concurrent.TimeUnit timeUnit);

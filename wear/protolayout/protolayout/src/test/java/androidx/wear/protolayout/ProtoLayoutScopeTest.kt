@@ -47,6 +47,7 @@ class ProtoLayoutScopeTest {
         val collectedResources = scope.collectResources()
         val resourcesList = collectedResources.idToImageMapping
 
+        assertThat(scope.hasResources()).isTrue()
         assertThat(resourcesList).hasSize(1)
         assertThat(resourcesList).containsKey(id)
         assertThat(resourcesList[id]!!.toProto()).isEqualTo(image.toProto())
@@ -156,6 +157,7 @@ class ProtoLayoutScopeTest {
         scope.clear()
 
         assertThat(scope.resources).isEmpty()
+        assertThat(scope.hasResources()).isFalse()
         assertThat(scope.pendingIntents.isEmpty()).isTrue()
     }
 }

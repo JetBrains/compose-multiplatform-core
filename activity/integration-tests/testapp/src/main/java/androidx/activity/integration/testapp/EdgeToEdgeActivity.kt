@@ -18,7 +18,6 @@ package androidx.activity.integration.testapp
 
 import android.app.Dialog
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.SystemBarStyle
@@ -32,9 +31,7 @@ import androidx.fragment.app.DialogFragment
 class EdgeToEdgeActivity : AppCompatActivity(R.layout.edge_to_edge_activity) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            installSplashScreen()
-        }
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.default_config).setOnClickListener {

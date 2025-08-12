@@ -269,7 +269,8 @@ public class BoxAccumulator {
         other: BoxAccumulator,
         @FloatRange(from = 0.0) tolerance: Float,
     ): Boolean =
-        (isEmpty() && other.isEmpty()) ||
+        this === other ||
+            (isEmpty() && other.isEmpty()) ||
             (!isEmpty() && !other.isEmpty() && box!!.isAlmostEqual(other.box!!, tolerance))
 
     /**

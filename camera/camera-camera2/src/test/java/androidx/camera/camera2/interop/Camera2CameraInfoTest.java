@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl;
@@ -41,8 +40,7 @@ import java.util.Map;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.camera2.interop",
+@Config(instrumentedPackages = { "androidx.camera.camera2.interop",
                 "androidx.camera.camera2.internal" })
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
 public final class Camera2CameraInfoTest {

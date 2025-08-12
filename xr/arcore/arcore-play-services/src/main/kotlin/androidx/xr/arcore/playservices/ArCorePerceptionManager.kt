@@ -226,13 +226,21 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val arDevice: ArDevice
         get() = throw NotImplementedError("Not implemented on mobile runtime.")
 
-    /** Returns a list of [ViewCamera] objects. */
+    /**
+     * Returns a list of [ViewCamera] objects.
+     *
+     * This is not currently implemented in ARCore, so this property will always be an empty list.
+     */
     override val viewCameras: List<ViewCamera>
-        get() = throw NotImplementedError("Not implemented on mobile runtime.")
+        get() = emptyList()
 
-    /** Returns a list of [DepthMap] objects. */
+    /**
+     * Returns a list of [DepthMap] objects.
+     *
+     * This is not currently implemented in ARCore, so this property will always be an empty list.
+     */
     override val depthMaps: List<DepthMap>
-        get() = throw NotImplementedError("Not implemented on mobile runtime")
+        get() = emptyList()
 
     /**
      * Updates the perception manager.

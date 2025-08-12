@@ -162,7 +162,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                         new Pose(
                                 getPose(Space.PARENT)
                                         .getTranslation()
-                                        .times(xrParent.getActivitySpaceScale()),
+                                        .scale(xrParent.getActivitySpaceScale()),
                                 getPose(Space.PARENT).getRotation()));
     }
 

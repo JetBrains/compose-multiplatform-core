@@ -43,7 +43,6 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.common.truth.Truth;
@@ -735,7 +734,6 @@ public class MigrationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void missingAddedIndex() throws IOException {
         SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, 11);
         database.close();
@@ -756,7 +754,6 @@ public class MigrationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void missingAddedIndex_viaMigrationTesting() throws IOException {
         SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, 11);
         database.close();

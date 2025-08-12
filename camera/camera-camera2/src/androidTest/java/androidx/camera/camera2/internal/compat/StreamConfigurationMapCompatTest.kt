@@ -25,7 +25,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.testing.impl.CameraUtil
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -35,7 +34,6 @@ import org.junit.runner.RunWith
 /** Contains tests for [StreamConfigurationMapCompat]. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class StreamConfigurationMapCompatTest {
 
     @get:Rule

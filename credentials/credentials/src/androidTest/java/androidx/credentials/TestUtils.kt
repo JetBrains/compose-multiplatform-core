@@ -37,7 +37,6 @@ import androidx.credentials.provider.PasswordCredentialEntry
 import androidx.credentials.provider.ProviderClearCredentialStateRequest
 import androidx.credentials.provider.ProviderCreateCredentialRequest
 import androidx.credentials.provider.ProviderGetCredentialRequest
-import androidx.credentials.provider.ProviderSignalCredentialStateRequest
 import androidx.credentials.provider.PublicKeyCredentialEntry
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -316,16 +315,6 @@ fun assertEquals(
     assertThat(actual.biometricPromptResult).isEqualTo(expected.biometricPromptResult)
     assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
     assertEquals(context, actual.callingRequest, expected.callingRequest)
-}
-
-@RequiresApi(28)
-fun assertEquals(
-    actual: ProviderSignalCredentialStateRequest,
-    expected: ProviderSignalCredentialStateRequest,
-) {
-    if (actual === expected) return
-    assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
-    assertEquals(actual.callingRequest, expected.callingRequest)
 }
 
 @RequiresApi(28)

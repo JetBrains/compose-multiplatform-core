@@ -35,7 +35,6 @@ import androidx.core.os.HandlerCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import org.junit.After
@@ -55,7 +54,6 @@ import org.mockito.Mockito
  */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraDeviceCompatDeviceTest {
     @get:Rule
     val useCamera =

@@ -53,7 +53,6 @@ import java.util.concurrent.TimeoutException;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public class TorchControlDeviceTest {
     @CameraSelector.LensFacing
     private static final int LENS_FACING = CameraSelector.LENS_FACING_BACK;

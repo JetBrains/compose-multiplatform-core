@@ -52,7 +52,7 @@ class CanvasMeshRendererRobolectricTest {
             inputs =
                 MutableStrokeInputBatch()
                     .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
-                    .asImmutable(),
+                    .toImmutable(),
         )
 
     private val meshRenderer = @OptIn(ExperimentalInkCustomBrushApi::class) CanvasMeshRenderer()

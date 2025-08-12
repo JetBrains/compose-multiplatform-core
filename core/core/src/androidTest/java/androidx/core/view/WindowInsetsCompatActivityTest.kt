@@ -21,7 +21,6 @@ import android.os.Build
 import android.view.View
 import android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
 import android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-import androidx.annotation.RequiresApi
 import androidx.core.graphics.Insets
 import androidx.core.test.R
 import androidx.core.view.WindowInsetsCompat.Type
@@ -82,7 +81,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_viewInsets() {
@@ -129,7 +127,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_rootInsets() {
@@ -171,7 +168,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 29)
+    @SdkSuppress(maxSdkVersion = 29)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_insets_cleared_on_back() {
@@ -218,7 +215,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertEquals(0, insets.getInsets(Type.ime()).bottom)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun systemBars_viewInsets() {
@@ -264,7 +260,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertFalse(insets.isVisible(Type.systemBars()))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     @Test
     public fun systemBars_rootInsets() {
@@ -294,7 +289,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
 
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
-    @SdkSuppress(minSdkVersion = 21)
     public fun rootInsets_no_ime() {
         scenario.onActivity { activity ->
             WindowCompat.setDecorFitsSystemWindows(activity.window, false)
@@ -362,7 +356,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun root_insets_not_null() {
         val container: View = scenario.withActivity { findViewById(R.id.container) }
         val rootWindowInsets = ViewCompat.getRootWindowInsets(container)
@@ -402,7 +395,6 @@ private fun View.doAndAwaitNextInsets(action: (View) -> Unit): WindowInsetsCompa
     return received.get()
 }
 
-@RequiresApi(20)
 private fun View.requestAndAwaitInsets(): WindowInsetsCompat {
     val latch = CountDownLatch(1)
     val received = AtomicReference<WindowInsetsCompat>()

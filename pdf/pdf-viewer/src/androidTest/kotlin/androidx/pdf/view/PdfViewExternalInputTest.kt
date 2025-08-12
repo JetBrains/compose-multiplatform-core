@@ -18,29 +18,28 @@ package androidx.pdf.view
 
 import android.content.ClipboardManager
 import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.RectF
-import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.pdf.PdfPoint
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.featureflag.PdfFeatureFlags
+import androidx.pdf.selection.model.TextSelection
+import androidx.pdf.util.ZoomUtils
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.UiController
-import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.EspressoKey
-import androidx.test.espresso.action.GeneralLocation
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import com.google.common.truth.Truth
-import org.hamcrest.Matcher
+import com.google.common.truth.Truth.assertThat
+import kotlin.math.roundToInt
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -115,31 +114,43 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportHeight, KEYBOARD_VERTICAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled vertically by the correct amount.
-        Truth.assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(expectedScrollDelta)
+        assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(expectedScrollDelta)
 
         // Verify that the view did not scroll horizontally.
-        Truth.assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+        assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
     }
 
     @Test
-    fun testDpadLeft_scrollsLeft() {
+    fun testDpadLeft_zoomMoreThanFitToWidth_scrollsLeft() {
         var scrollBefore = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         var scrollAfter = Point(Int.MIN_VALUE, Int.MIN_VALUE)
-        var viewportWidth = 0
+        var fitToWidthZoom: Float
         val initialScrollX = 500
+        var finalZoomGreaterThanFitToWidth = false
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
                     val pdfView = view as PdfView
-                    // Request focus to receive key events.
-                    pdfView.post { pdfView.requestFocus() }
-                    // Zoom in to ensure the content is larger than the view, making it scrollable.
-                    pdfView.zoom = 2.0f
-                    // Scroll right initially so there is space to scroll left.
-                    pdfView.scrollTo(initialScrollX, pdfView.scrollY)
+                    with(pdfView) {
+                        // Request focus to receive key events.
+                        requestFocus()
+                        // find fit to width zoom
+                        fitToWidthZoom =
+                            ZoomUtils.calculateZoomToFit(
+                                viewportWidth.toFloat(),
+                                viewportHeight.toFloat(),
+                                contentWidth,
+                                1f,
+                            )
+                        // Zoom in to ensure the content is larger than the view, making it
+                        // scrollable.
+                        zoom = fitToWidthZoom * 2f
+                        if (zoom > fitToWidthZoom) finalZoomGreaterThanFitToWidth = true
+                        // Scroll right initially so there is space to scroll left.
+                        scrollTo(initialScrollX, pdfView.scrollY)
+                    }
                     scrollBefore = Point(pdfView.scrollX, pdfView.scrollY)
-                    viewportWidth = pdfView.viewportWidth
                 }
                 .perform(ViewActions.pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
                 .check { view, _ ->
@@ -149,35 +160,148 @@ class PdfViewExternalInputTest {
             close()
         }
 
-        // Calculate the expected scroll distance based on the helper utility.
-        val expectedScrollDelta =
-            ExternalInputUtils.calculateScroll(viewportWidth, KEYBOARD_HORIZONTAL_SCROLL_FACTOR)
-
-        // Verify that the view scrolled horizontally by the correct amount.
-        Truth.assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(-expectedScrollDelta)
+        // Verify that the view scrolled horizontally
+        if (finalZoomGreaterThanFitToWidth) assertThat(scrollAfter.x).isLessThan(scrollBefore.x)
 
         // Verify that the view did not scroll vertically.
-        Truth.assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
+        assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
     }
 
     @Test
-    fun testDpadRight_scrollsRight() {
+    fun testDpadLeft_zoomLessOrEqualToFitToWidth_AtTopOfPage_scrollToPreviousPage() {
+        var fitToWidthZoom: Float
         var scrollBefore = Point(Int.MAX_VALUE, Int.MAX_VALUE)
         var scrollAfter = Point(Int.MIN_VALUE, Int.MIN_VALUE)
-        var viewportWidth = 0
+        var isFinalZoomLessOrEqualToFitToWidth = false
+        var scrollForPreviousPageTop = -1
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
                     val pdfView = view as PdfView
-                    // Request focus to receive key events.
-                    pdfView.post { pdfView.requestFocus() }
-                    // Zoom in to ensure the content is larger than the view, making it scrollable.
-                    pdfView.zoom = 2.0f
-                    // Ensure we are at the far left to have space to scroll right.
-                    pdfView.scrollTo(0, pdfView.scrollY)
+                    with(pdfView) {
+                        // Request focus to receive key events.
+                        requestFocus()
+                        // find fit to width zoom
+                        fitToWidthZoom =
+                            ZoomUtils.calculateZoomToFit(
+                                viewportWidth.toFloat(),
+                                viewportHeight.toFloat(),
+                                contentWidth,
+                                1f,
+                            )
+                        zoom = fitToWidthZoom - 0.1f
+                        if (zoom <= fitToWidthZoom) isFinalZoomLessOrEqualToFitToWidth = true
+
+                        scrollToPosition(PdfPoint(1, 0f, 0f))
+                    }
                     scrollBefore = Point(pdfView.scrollX, pdfView.scrollY)
-                    viewportWidth = pdfView.viewportWidth
+                }
+                .perform(ViewActions.pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val pageRect =
+                        pdfView.pageMetadataLoader?.getPageLocation(
+                            0,
+                            pdfView.getVisibleAreaInContentCoords(),
+                        )
+                    if (pageRect != null) {
+                        // Calculate y to align top of page with top of viewport.
+                        scrollForPreviousPageTop = (pageRect.top * pdfView.zoom).roundToInt()
+                    }
+                    scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
+                }
+            close()
+        }
+
+        if (isFinalZoomLessOrEqualToFitToWidth) {
+            assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+            assertThat(scrollAfter.y).isEqualTo(scrollForPreviousPageTop)
+        }
+    }
+
+    @Test
+    fun testDpadLeft_zoomLessOrEqualToFitToWidth_beyondTopOfPage_scrollToPreviousPage() {
+        var fitToWidthZoom: Float
+        var scrollBefore = Point(Int.MAX_VALUE, Int.MAX_VALUE)
+        var scrollAfter = Point(Int.MIN_VALUE, Int.MIN_VALUE)
+        var isFinalZoomLessOrEqualToFitToWidth = false
+        var scrollForPreviousPageTop = -1
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        // Request focus to receive key events.
+                        requestFocus()
+                        // find fit to width zoom
+                        fitToWidthZoom =
+                            ZoomUtils.calculateZoomToFit(
+                                viewportWidth.toFloat(),
+                                viewportHeight.toFloat(),
+                                contentWidth,
+                                1f,
+                            )
+                        zoom = fitToWidthZoom - 0.1f
+                        if (zoom <= fitToWidthZoom) isFinalZoomLessOrEqualToFitToWidth = true
+                        scrollToPosition(PdfPoint(1, 0f, 10f), ScrollAlignment.TOP)
+                    }
+                    scrollBefore = Point(pdfView.scrollX, pdfView.scrollY)
+                }
+                .perform(ViewActions.pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val pageRect =
+                        pdfView.pageMetadataLoader?.getPageLocation(
+                            1,
+                            pdfView.getVisibleAreaInContentCoords(),
+                        )
+                    if (pageRect != null) {
+                        // Calculate y to align top of page with top of viewport.
+                        scrollForPreviousPageTop = (pageRect.top * pdfView.zoom).roundToInt()
+                    }
+                    scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
+                }
+            close()
+        }
+
+        if (isFinalZoomLessOrEqualToFitToWidth) {
+            assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+            assertThat(scrollAfter.y).isEqualTo(scrollForPreviousPageTop)
+        }
+    }
+
+    @Test
+    fun testDpadRight_zoomMoreThanFitToWidth_scrollsRight() {
+        var scrollBefore = Point(Int.MAX_VALUE, Int.MAX_VALUE)
+        var scrollAfter = Point(Int.MIN_VALUE, Int.MIN_VALUE)
+        var fitToWidthZoom: Float
+        var finalZoomGreaterThanFitToWidth = false
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        // Request focus to receive key events.
+                        requestFocus()
+                        // find fit to width zoom
+                        fitToWidthZoom =
+                            ZoomUtils.calculateZoomToFit(
+                                viewportWidth.toFloat(),
+                                viewportHeight.toFloat(),
+                                contentWidth,
+                                1f,
+                            )
+                        // Zoom in to ensure the content is larger than the view, making it
+                        // scrollable.
+                        zoom = fitToWidthZoom * 2f
+                        if (zoom > fitToWidthZoom) finalZoomGreaterThanFitToWidth = true
+                        // Scroll left initially so there is space to scroll left.
+                        scrollTo(0, pdfView.scrollY)
+                    }
+                    scrollBefore = Point(pdfView.scrollX, pdfView.scrollY)
                 }
                 .perform(ViewActions.pressKey(KeyEvent.KEYCODE_DPAD_RIGHT))
                 .check { view, _ ->
@@ -187,15 +311,62 @@ class PdfViewExternalInputTest {
             close()
         }
 
-        // Calculate the expected scroll distance based on the helper utility.
-        val expectedScrollDelta =
-            ExternalInputUtils.calculateScroll(viewportWidth, KEYBOARD_HORIZONTAL_SCROLL_FACTOR)
-
-        // Verify that the view scrolled horizontally by the correct amount.
-        Truth.assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(expectedScrollDelta)
+        // Verify that the view scrolled horizontally.
+        if (finalZoomGreaterThanFitToWidth) assertThat(scrollAfter.x).isGreaterThan(scrollBefore.x)
 
         // Verify that the view did not scroll vertically.
-        Truth.assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
+        assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
+    }
+
+    @Test
+    fun testDpadRight_zoomLessOrEqualToFitToWidth_scrollToNextPage() {
+        var fitToWidthZoom: Float
+        var scrollBefore = Point(Int.MAX_VALUE, Int.MAX_VALUE)
+        var scrollAfter = Point(Int.MIN_VALUE, Int.MIN_VALUE)
+        var isFinalZoomLessOrEqualToFitToWidth = false
+        var scrollForPreviousPageTop = -1
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        // Request focus to receive key events.
+                        requestFocus()
+                        // find fit to width zoom
+                        fitToWidthZoom =
+                            ZoomUtils.calculateZoomToFit(
+                                viewportWidth.toFloat(),
+                                viewportHeight.toFloat(),
+                                contentWidth,
+                                1f,
+                            )
+                        zoom = fitToWidthZoom - 0.1f
+                        if (zoom <= fitToWidthZoom) isFinalZoomLessOrEqualToFitToWidth = true
+                    }
+                    scrollBefore = Point(pdfView.scrollX, pdfView.scrollY)
+                }
+                .perform(ViewActions.pressKey(KeyEvent.KEYCODE_DPAD_RIGHT))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val pageRect =
+                        pdfView.pageMetadataLoader?.getPageLocation(
+                            1,
+                            pdfView.getVisibleAreaInContentCoords(),
+                        )
+                    if (pageRect != null) {
+                        // Calculate y to align top of page with top of viewport.
+                        scrollForPreviousPageTop = (pageRect.top * pdfView.zoom).roundToInt()
+                    }
+                    scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
+                }
+            close()
+        }
+
+        if (isFinalZoomLessOrEqualToFitToWidth) {
+            assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+            assertThat(scrollAfter.y).isEqualTo(scrollForPreviousPageTop)
+        }
     }
 
     @Test
@@ -231,10 +402,10 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportHeight, KEYBOARD_VERTICAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled vertically by the correct amount.
-        Truth.assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(-expectedScrollDelta)
+        assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(-expectedScrollDelta)
 
         // Verify that the view did not scroll horizontally.
-        Truth.assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+        assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
     }
 
     @Test
@@ -255,7 +426,7 @@ class PdfViewExternalInputTest {
                     viewportHeight = pdfView.viewportHeight
                 }
                 // Negative vscroll for scroll down
-                .perform(scrollMouseWheel(-1.0f, 0f))
+                .scrollMouseWheel(-1.0f, 0f)
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
@@ -268,9 +439,9 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportHeight, MOUSE_VERTICAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled vertically by the correct amount.
-        Truth.assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(expectedScrollDelta)
+        assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(expectedScrollDelta)
         // Verify that the view did not scroll horizontally.
-        Truth.assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+        assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
     }
 
     @Test
@@ -292,7 +463,7 @@ class PdfViewExternalInputTest {
                     viewportWidth = pdfView.viewportWidth
                 }
                 // Negative hscroll for scroll left
-                .perform(scrollMouseWheel(0f, -1.0f))
+                .scrollMouseWheel(0f, -1.0f)
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
@@ -305,10 +476,10 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportWidth, MOUSE_HORIZONTAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled horizontally by the correct amount.
-        Truth.assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(-expectedScrollDelta)
+        assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(-expectedScrollDelta)
 
         // Verify that the view did not scroll vertically.
-        Truth.assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
+        assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
     }
 
     @Test
@@ -329,7 +500,7 @@ class PdfViewExternalInputTest {
                     viewportWidth = pdfView.viewportWidth
                 }
                 // Positive hscroll for scroll right
-                .perform(scrollMouseWheel(0f, 1.0f))
+                .scrollMouseWheel(0f, 1.0f)
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
@@ -342,10 +513,10 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportWidth, MOUSE_HORIZONTAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled horizontally by the correct amount.
-        Truth.assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(expectedScrollDelta)
+        assertThat(scrollAfter.x - scrollBefore.x).isEqualTo(expectedScrollDelta)
 
         // Verify that the view did not scroll vertically.
-        Truth.assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
+        assertThat(scrollAfter.y).isEqualTo(scrollBefore.y)
     }
 
     @Test
@@ -367,7 +538,7 @@ class PdfViewExternalInputTest {
                     viewportHeight = pdfView.viewportHeight
                 }
                 // Positive vscroll for scroll up
-                .perform(scrollMouseWheel(1.0f, 0f))
+                .scrollMouseWheel(1.0f, 0f)
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     scrollAfter = Point(pdfView.scrollX, pdfView.scrollY)
@@ -380,9 +551,9 @@ class PdfViewExternalInputTest {
             ExternalInputUtils.calculateScroll(viewportHeight, MOUSE_VERTICAL_SCROLL_FACTOR)
 
         // Verify that the view scrolled vertically by the correct amount.
-        Truth.assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(-expectedScrollDelta)
+        assertThat(scrollAfter.y - scrollBefore.y).isEqualTo(-expectedScrollDelta)
         // Verify that the view did not scroll horizontally.
-        Truth.assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
+        assertThat(scrollAfter.x).isEqualTo(scrollBefore.x)
     }
 
     @Test
@@ -415,7 +586,7 @@ class PdfViewExternalInputTest {
                 }
             close()
         }
-        Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
+        assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
     }
 
     @Test
@@ -448,7 +619,7 @@ class PdfViewExternalInputTest {
                 }
             close()
         }
-        Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
+        assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
     }
 
     @Test
@@ -481,7 +652,7 @@ class PdfViewExternalInputTest {
                 }
             close()
         }
-        Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
+        assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
     }
 
     @Test
@@ -514,7 +685,7 @@ class PdfViewExternalInputTest {
                 }
             close()
         }
-        Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
+        assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(defaultZoom)
     }
 
     @Test
@@ -550,9 +721,9 @@ class PdfViewExternalInputTest {
 
         // zoomAfter should be greater than zoomBefore only if zoomBefore is smaller than maxZoom
         if (zoomBefore < maxZoom) {
-            Truth.assertThat(zoomAfter).isGreaterThan(zoomBefore)
+            assertThat(zoomAfter).isGreaterThan(zoomBefore)
         } else {
-            Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
+            assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
         }
     }
 
@@ -589,9 +760,9 @@ class PdfViewExternalInputTest {
 
         // zoomAfter should be greater than zoomBefore only if zoomBefore is smaller than maxZoom
         if (zoomBefore < maxZoom) {
-            Truth.assertThat(zoomAfter).isGreaterThan(zoomBefore)
+            assertThat(zoomAfter).isGreaterThan(zoomBefore)
         } else {
-            Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
+            assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
         }
     }
 
@@ -628,9 +799,9 @@ class PdfViewExternalInputTest {
 
         // zoomAfter should be smaller than zoomBefore only if zoomBefore is greater than minZoom
         if (zoomBefore > minZoom) {
-            Truth.assertThat(zoomBefore).isGreaterThan(zoomAfter)
+            assertThat(zoomBefore).isGreaterThan(zoomAfter)
         } else {
-            Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(minZoom)
+            assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(minZoom)
         }
     }
 
@@ -648,7 +819,7 @@ class PdfViewExternalInputTest {
 
                     zoomBefore = pdfView.zoom
                 }
-                .perform(scrollMouseWheel(-1.0f, 0f, KeyEvent.META_CTRL_ON))
+                .scrollMouseWheel(-1.0f, 0f, KeyEvent.META_CTRL_ON)
                 .check { view, _ ->
                     val pdfView = view as PdfView
 
@@ -660,9 +831,9 @@ class PdfViewExternalInputTest {
 
         // zoomAfter should be greater than zoomBefore only if zoomBefore is smaller than maxZoom
         if (zoomBefore < maxZoom) {
-            Truth.assertThat(zoomAfter).isGreaterThan(zoomBefore)
+            assertThat(zoomAfter).isGreaterThan(zoomBefore)
         } else {
-            Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
+            assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(maxZoom)
         }
     }
 
@@ -680,7 +851,7 @@ class PdfViewExternalInputTest {
 
                     zoomBefore = pdfView.zoom
                 }
-                .perform(scrollMouseWheel(1.0f, 0f, KeyEvent.META_CTRL_ON))
+                .scrollMouseWheel(1.0f, 0f, KeyEvent.META_CTRL_ON)
                 .check { view, _ ->
                     val pdfView = view as PdfView
 
@@ -692,9 +863,9 @@ class PdfViewExternalInputTest {
 
         // zoomAfter should be smaller than zoomBefore only if zoomBefore is greater than minZoom
         if (zoomBefore > minZoom) {
-            Truth.assertThat(zoomBefore).isGreaterThan(zoomAfter)
+            assertThat(zoomBefore).isGreaterThan(zoomAfter)
         } else {
-            Truth.assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(minZoom)
+            assertThat(zoomAfter).isWithin(ZOOM_DIFFERENCE_TOLERANCE).of(minZoom)
         }
     }
 
@@ -715,7 +886,7 @@ class PdfViewExternalInputTest {
                     // Verify that the long press selected the correct word.
                     val selectedText =
                         (pdfView.currentSelection as? TextSelection)?.text?.toString()
-                    Truth.assertThat(selectedText).isEqualTo(expectedSelectedText)
+                    assertThat(selectedText).isEqualTo(expectedSelectedText)
                 }
                 // Perform the Ctrl+C key press.
                 .perform(
@@ -732,60 +903,139 @@ class PdfViewExternalInputTest {
 
                     // Verify the clipboard content.
                     val clip = clipboard.primaryClip
-                    Truth.assertThat(clip).isNotNull()
-                    Truth.assertThat(clip!!.itemCount).isGreaterThan(0)
+                    assertThat(clip).isNotNull()
+                    assertThat(clip!!.itemCount).isGreaterThan(0)
                     val clipboardText = clip.getItemAt(0).text
-                    Truth.assertThat(clipboardText).isEqualTo(expectedSelectedText)
+                    assertThat(clipboardText).isEqualTo(expectedSelectedText)
 
                     // Verify that the selection was cleared after copying.
-                    Truth.assertThat(pdfView.currentSelection).isNull()
+                    assertThat(pdfView.currentSelection).isNull()
                 }
             close()
         }
     }
 
-    private fun scrollMouseWheel(vscroll: Float, hscroll: Float, metaState: Int = 0): ViewAction {
-        return object : ViewAction {
-            override fun getConstraints(): Matcher<View> {
-                return ViewMatchers.isAssignableFrom(PdfView::class.java)
-            }
+    @Test
+    fun mouseDrag_selectsContentBetweenStartAndEnd_samePage() {
+        var start: PointF? = PointF(-1f, -1f)
+        var end: PointF? = PointF(-1f, -1f)
 
-            override fun getDescription(): String {
-                return "dispatch generic motion event"
-            }
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        isAutoScrollingEnabled = false
+                        start = pdfToViewPoint(PdfPoint(0, 200f, 400f))
+                        end = pdfToViewPoint(PdfPoint(0, 300f, 400f))
+                        assertThat(start).isNotNull()
+                        assertThat(end).isNotNull()
+                    }
+                }
+                .drag(
+                    start!!.x,
+                    start!!.y,
+                    end!!.x,
+                    end!!.y,
+                    MotionEvent.BUTTON_PRIMARY,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                )
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val selection = pdfView.currentSelection
+                    assertThat(selection).isNotNull()
+                    val selectedPages = selection?.bounds?.map { it.pageNum }?.toSet()
+                    assertThat(selectedPages).isNotNull()
+                    assertThat(selectedPages).contains(0)
+                }
+            close()
+        }
+    }
 
-            override fun perform(uiController: UiController, view: View) {
-                val downTime = SystemClock.uptimeMillis()
-                val eventTime = SystemClock.uptimeMillis()
-                val pointerProperties = arrayOf(MotionEvent.PointerProperties().apply { id = 0 })
-                val pointerCoords =
-                    arrayOf(
-                        MotionEvent.PointerCoords().apply {
-                            this.x = GeneralLocation.CENTER.calculateCoordinates(view)[0]
-                            this.y = GeneralLocation.CENTER.calculateCoordinates(view)[1]
-                            setAxisValue(MotionEvent.AXIS_VSCROLL, vscroll)
-                            setAxisValue(MotionEvent.AXIS_HSCROLL, hscroll)
-                        }
-                    )
-                val scrollEvent =
-                    MotionEvent.obtain(
-                        downTime,
-                        eventTime,
-                        MotionEvent.ACTION_SCROLL,
-                        1, // pointerCount
-                        pointerProperties,
-                        pointerCoords,
-                        metaState,
-                        0, // buttonState
-                        1f, // xPrecision
-                        1f, // yPrecision
-                        0, // deviceId
-                        0, // edgeFlags
-                        InputDevice.SOURCE_MOUSE,
-                        0, // flags
-                    )
-                uiController.injectMotionEvent(scrollEvent)
-            }
+    @Test
+    fun mouseDrag_selectsContentBetweenStartAndEnd_differentPages() {
+        var start: PointF? = null
+        var end: PointF? = null
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        isAutoScrollingEnabled = false
+                        // zoom out to get both the pages within the viewport
+                        zoom = 0.1f
+                        // Start point on page 0
+                        start = pdfToViewPoint(PdfPoint(0, 1000f, 1000f))
+                        // End point on page 1
+                        end = pdfToViewPoint(PdfPoint(1, 1000f, 400f))
+                        assertThat(start).isNotNull()
+                        assertThat(end).isNotNull()
+                    }
+                }
+                .drag(
+                    start!!.x,
+                    start!!.y,
+                    end!!.x,
+                    end!!.y,
+                    MotionEvent.BUTTON_PRIMARY,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                )
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val selection = pdfView.currentSelection
+                    assertThat(selection).isNotNull()
+                    val selectedPages = selection?.bounds?.map { it.pageNum }?.toSet()
+                    assertThat(selectedPages).isNotNull()
+                    assertThat(selectedPages).contains(0)
+                    assertThat(selectedPages).contains(1)
+                }
+            close()
+        }
+    }
+
+    @Test
+    fun mouseDrag_selectsContentInReverse_differentPages() {
+        var start: PointF? = null
+        var end: PointF? = null
+
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    with(pdfView) {
+                        isAutoScrollingEnabled = false
+                        // zoom out to get both the pages within the viewport
+                        zoom = 0.1f
+                        // Start point on page 1
+                        start = pdfToViewPoint(PdfPoint(1, 1000f, 400f))
+                        // End point on page 0
+                        end = pdfToViewPoint(PdfPoint(0, 1000f, 1000f))
+                        assertThat(start).isNotNull()
+                        assertThat(end).isNotNull()
+                    }
+                }
+                .drag(
+                    start!!.x,
+                    start!!.y,
+                    end!!.x,
+                    end!!.y,
+                    MotionEvent.BUTTON_PRIMARY,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                )
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    val selection = pdfView.currentSelection
+                    assertThat(selection).isNotNull()
+                    val selectedPages = selection?.bounds?.map { it.pageNum }?.toSet()
+                    assertThat(selectedPages).isNotNull()
+                    assertThat(selectedPages).contains(0)
+                    assertThat(selectedPages).contains(1)
+                }
+            close()
         }
     }
 

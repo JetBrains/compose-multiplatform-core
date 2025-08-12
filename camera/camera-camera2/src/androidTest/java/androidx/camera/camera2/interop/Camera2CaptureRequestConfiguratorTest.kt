@@ -18,7 +18,6 @@ package androidx.camera.camera2.interop
 
 import android.content.Context
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
@@ -32,7 +31,6 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
@@ -46,7 +44,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 class Camera2CaptureRequestConfiguratorTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = ApplicationProvider.getApplicationContext() as Context

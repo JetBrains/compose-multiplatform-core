@@ -28,6 +28,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
+import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -50,7 +51,7 @@ public class ImageDrawTest {
         int th = lightImage.getHeight();
 
         RemoteComposeContext doc =
-                new RemoteComposeContext(
+                new RemoteComposeContextAndroid(
                         tw,
                         th,
                         "Demo",
@@ -195,7 +196,7 @@ public class ImageDrawTest {
         android.content.Context appContext =
                 InstrumentationRegistry.getInstrumentation().getTargetContext();
         RemoteComposeContext doc =
-                new RemoteComposeContext(
+                new RemoteComposeContextAndroid(
                         tw,
                         th,
                         "Demo",

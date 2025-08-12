@@ -16,9 +16,12 @@
 
 package androidx.webkit;
 
+import android.content.Context;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -142,12 +145,12 @@ public final class WebViewStartUpConfig {
          *
          * If this method isn't called, the default profile will be loaded during startup.
          *
-         * <p><b>Note:</b> A copy of the provided {@code Set} will be made when the {@link #build()}
-         * method is called. Any subsequent modifications to the original {@code Set} will not be
-         * reflected in the final {@link WebViewStartUpConfig} object.</p>
-         *
          * <p><b>Note:</b> This method cannot be used if
          * {@link #setShouldRunUiThreadStartUpTasks(boolean)} is set to {@code false}.
+         *
+         * <p>This method will be no-op if
+         * {@link WebViewFeature#isStartupFeatureSupported(Context, String)}
+         * returns false for {@link WebViewFeature#STARTUP_FEATURE_SET_PROFILES_TO_LOAD}.
          *
          * @param profiles A {@link Set} of profile names to pre-load or an empty Set to load none.
          * @return The {@link Builder} instance for method chaining.
@@ -158,9 +161,10 @@ public final class WebViewStartUpConfig {
         public @NonNull Builder setProfilesToLoadDuringStartup(@NonNull Set<String> profiles) {
             if (!mShouldRunUiThreadStartUpTasks) {
                 throw new IllegalArgumentException(
-                        "Can't specify profiles to load without running UI thread startup tasks");
+                        "Can't specify profiles to load without running UI thread startup "
+                                + "tasks");
             }
-            this.mProfilesToLoadDuringStartup = profiles;
+            this.mProfilesToLoadDuringStartup = new HashSet<>(profiles);
             return this;
         }
 

@@ -56,7 +56,6 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CameraCoordinatorAdapterTest {
     private val cameraMetadata0 =
         FakeCameraMetadata(

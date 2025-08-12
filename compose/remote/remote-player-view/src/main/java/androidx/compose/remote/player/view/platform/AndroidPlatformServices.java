@@ -15,12 +15,15 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
 import android.graphics.Bitmap;
 import android.graphics.Path;
 import android.graphics.PathIterator;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.core.operations.PathData;
 
@@ -31,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 /** Services that are needed to be provided by the platform during encoding. */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidPlatformServices implements Platform {
     private static final String LOG_TAG = "RemoteCompose";
 
@@ -150,5 +154,75 @@ public class AndroidPlatformServices implements Platform {
         }
 
         return Arrays.copyOf(pathFloat, count);
+    }
+
+    /**
+     * Parse a path represented as a string and returns a Path object
+     *
+     * @param pathData string representation of a path
+     * @return Path object
+     */
+    @Override
+    public @NonNull Object parsePath(@NonNull String pathData) {
+        Path path = new Path();
+        float[] cords = new float[6];
+
+        String[] commands = pathData.split("(?=[MmZzLlHhVvCcSsQqTtAa])");
+        for (String command : commands) {
+            char cmd = command.charAt(0);
+            String[] values = command.substring(1).trim().split("[,\\s]+");
+            switch (cmd) {
+                case 'M':
+                    path.moveTo(Float.parseFloat(values[0]), Float.parseFloat(values[1]));
+                    break;
+                case 'L':
+                    for (int i = 0; i < values.length; i += 2) {
+                        path.lineTo(Float.parseFloat(values[i]), Float.parseFloat(values[i + 1]));
+                    }
+                    break;
+                case 'H':
+                    for (String value : values) {
+                        path.lineTo(Float.parseFloat(value), cords[1]);
+                    }
+                    break;
+                case 'C':
+                    for (int i = 0; i < values.length; i += 6) {
+                        path.cubicTo(
+                                Float.parseFloat(values[i]),
+                                Float.parseFloat(values[i + 1]),
+                                Float.parseFloat(values[i + 2]),
+                                Float.parseFloat(values[i + 3]),
+                                Float.parseFloat(values[i + 4]),
+                                Float.parseFloat(values[i + 5]));
+                    }
+                    break;
+                case 'S':
+                    for (int i = 0; i < values.length; i += 4) {
+                        path.cubicTo(
+                                2 * cords[0] - cords[2],
+                                2 * cords[1] - cords[3],
+                                Float.parseFloat(values[i]),
+                                Float.parseFloat(values[i + 1]),
+                                Float.parseFloat(values[i + 2]),
+                                Float.parseFloat(values[i + 3]));
+                    }
+                    break;
+                case 'Z':
+                    path.close();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported command: " + cmd);
+            }
+            if (cmd != 'Z' && cmd != 'H') {
+                cords[0] = Float.parseFloat(values[values.length - 2]);
+                cords[1] = Float.parseFloat(values[values.length - 1]);
+                if (cmd == 'C' || cmd == 'S') {
+                    cords[2] = Float.parseFloat(values[values.length - 4]);
+                    cords[3] = Float.parseFloat(values[values.length - 3]);
+                }
+            }
+        }
+
+        return path;
     }
 }

@@ -35,9 +35,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.pdf.PdfPoint
+import androidx.pdf.selection.Selection
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.Selection
-import androidx.pdf.view.TextSelection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest

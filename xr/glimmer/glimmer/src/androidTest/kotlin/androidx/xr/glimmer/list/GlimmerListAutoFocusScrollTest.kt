@@ -26,17 +26,21 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,66 +60,71 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
     @Test
     fun verifyFocusIsSetCorrectlyAtEachScrollStep() = runTest {
         val state = ListState()
-        rule.setContent { FocusableTestList(state, testCase) }
-
-        scrollIterate(state, testCase) { iteration, scrollPx ->
-            val expectedFocusIndex = testCase.focusedItemIndexForEachStep[iteration]
-            val itemTestTag = itemTag(expectedFocusIndex)
-            rule.onNodeWithTag(itemTestTag).assert(isFocused()) {
-                val scrollDp = with(rule.density) { scrollPx.toDp() }
-                "When the user scrolls $scrollDp, [$itemTestTag] should gain focus."
+        val density = Density(1f)
+        rule.setContentAndSaveScope {
+            CompositionLocalProvider(LocalDensity provides density) {
+                FocusableTestList(state, testCase)
             }
         }
+
+        runTestCase(state, density, testCase)
     }
 
-    /** Use this method to generate new numbers for test cases whenever the focus logic changes. */
-    private suspend fun generateDebugSampleNumbers(
+    private suspend fun runTestCase(
         state: ListState,
+        density: Density,
         testCase: FocusStrategyScrollTestCase,
-    ): List<Int> {
-        val goldenSamples = ArrayList<Int>()
+    ) {
+        var prevScrollPx = 0f
+        for ((targetScroll, expectedFocusTag) in testCase.expectedFocusedItemForScrollOffset) {
+            // Calculates the diff for the next scroll position.
+            val targetScrollPx = with(density) { targetScroll.toPx() }
+            val diffScrollPx = targetScrollPx - prevScrollPx
+            prevScrollPx = targetScrollPx
 
-        scrollIterate(state, testCase) { _, _ ->
-            val node = rule.onNodeWithTag(LIST_TEST_TAG).fetchSemanticsNode()
-            for (child in node.children) {
-                val tagProperty =
-                    child.config.find { (key, _) -> key == SemanticsProperties.TestTag }
-                val focusedProperty =
-                    child.config.find { (key, _) -> key == SemanticsProperties.Focused }
-                val isFocused = focusedProperty?.value as? Boolean ?: false
-                val tag = tagProperty?.value as? String ?: "no test tag"
-                if (isFocused) {
-                    val index = tag.removePrefix("item-").toInt()
-                    goldenSamples.add(index)
+            // Scrolls the list to the target position.
+            state.scrollAndWaitForIdle(diffScrollPx)
+
+            // Checks if expected items is focused.
+            rule.onNodeWithTag(expectedFocusTag).assert(isFocused()) {
+                val debugListTree = rule.onNodeWithTag(LIST_TEST_TAG).printToString()
+                buildString {
+                    append("When the user scrolls $targetScroll, ")
+                    appendLine("item with tag [$expectedFocusTag] should gain focus.")
+                    appendLine("Debug list tree: $debugListTree")
                 }
             }
         }
-
-        return goldenSamples
     }
 
     /**
-     * Using a [testCase] iterates through the list with the given parameters. Callback
-     * [onScrollStep] gets invoked on every scroll step.
+     * Use this method to generate new numbers for test cases whenever the focus logic changes. It
+     * iterates through the list with given [scrollStep] and on each step records which item was
+     * focused to generate data for [FocusStrategyScrollTestCase.expectedFocusedItemForScrollOffset]
+     * field.
      */
-    private suspend fun scrollIterate(
+    private suspend fun generateDebugSampleNumbers(
         state: ListState,
-        testCase: FocusStrategyScrollTestCase,
-        onScrollStep: suspend (iteration: Int, totalScrolled: Float) -> Unit,
-    ) {
-        var iteration = 0
-        var totalScrolled = 0f
-        val contentSizePx = with(rule.density) { testCase.scrollDistance.toPx() }
-        val scrollStepPx = with(rule.density) { testCase.scrollStep.toPx() }
+        density: Density,
+        scrollStep: Dp,
+        scrollDistance: Dp,
+    ): Map<Dp, String> {
+        val focusedItemsByScrollOffset = mutableMapOf<Dp, String>()
 
-        onScrollStep(iteration, totalScrolled)
+        val scrollDistancePx = with(density) { scrollDistance.toPx() }
+        val scrollStepPx = with(density) { scrollStep.toPx() }
+        var totalScrolledPx = 0f
 
-        while (totalScrolled < contentSizePx) {
+        while (totalScrolledPx < scrollDistancePx) {
             state.scrollAndWaitForIdle(scrollStepPx)
-            totalScrolled += scrollStepPx
-            ++iteration
-            onScrollStep(iteration, totalScrolled)
+            totalScrolledPx += scrollStepPx
+
+            val focusedTag = rule.onNodeWithTag(LIST_TEST_TAG).findFocusedChildTag()
+            val totalScrolledDp = with(density) { totalScrolledPx.toDp() }
+            focusedItemsByScrollOffset[totalScrolledDp] = requireNotNull(focusedTag)
         }
+
+        return focusedItemsByScrollOffset
     }
 
     private suspend fun ListState.scrollAndWaitForIdle(delta: Float) {
@@ -124,13 +133,8 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
         rule.waitForIdle()
     }
 
-    private fun itemTag(index: Int): String {
-        return "item-$index"
-    }
-
     @Composable
     private fun FocusableTestList(state: ListState, testCase: FocusStrategyScrollTestCase) {
-        scope = rememberCoroutineScope()
         TestList(
             state = state,
             itemsCount = testCase.itemsCount,
@@ -148,7 +152,7 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
             contentAlignment = Alignment.Center,
             modifier =
                 modifier
-                    .testTag(itemTag(index))
+                    .testTag("item-$index")
                     .background(color = if (isFocused) Color.Red else Color.Green)
                     .border(1.dp, Color.Black)
                     .focusable(true, interactionSource),
@@ -166,142 +170,203 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
         val itemsCount: Int,
         val itemSize: Dp,
         val listSize: Dp,
-        val scrollStep: Dp,
-        val scrollDistance: Dp,
-        val focusedItemIndexForEachStep: List<Int>,
-    )
+        // Defines which item should be focused based on the scroll offset.
+        val expectedFocusedItemForScrollOffset: Map<Dp, String>,
+    ) {
+        override fun toString(): String {
+            return buildString {
+                append("FocusStrategyScrollTestCase(")
+                append("itemsCount=$itemsCount, ")
+                append("itemSize=$itemSize, ")
+                append("listSize=$listSize)")
+            }
+        }
+    }
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{index}-{0}")
         internal fun params(): Array<FocusStrategyScrollTestCase> =
             arrayOf(
-                // Large list, 2 * threshold < content size.
+                // Large list, 2 * threshold < available scroll.
                 FocusStrategyScrollTestCase(
                     itemsCount = 15,
                     itemSize = 100.dp,
                     listSize = 500.dp,
-                    scrollStep = 50.dp,
-                    scrollDistance = 1000.dp,
-                    focusedItemIndexForEachStep =
-                        listOf(0, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 10, 11, 12, 13, 14, 14),
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            45.0.dp to "item-0",
+                            90.0.dp to "item-1",
+                            135.0.dp to "item-2",
+                            180.0.dp to "item-3",
+                            225.0.dp to "item-4",
+                            270.0.dp to "item-4",
+                            315.0.dp to "item-5",
+                            360.0.dp to "item-6",
+                            405.0.dp to "item-6",
+                            445.0.dp to "item-6",
+                            495.0.dp to "item-7",
+                            540.0.dp to "item-7",
+                            585.0.dp to "item-8",
+                            630.0.dp to "item-8",
+                            675.0.dp to "item-9",
+                            720.0.dp to "item-10",
+                            765.0.dp to "item-10",
+                            810.0.dp to "item-11",
+                            855.0.dp to "item-12",
+                            900.0.dp to "item-13",
+                            945.0.dp to "item-14",
+                            990.0.dp to "item-14",
+                            1035.0.dp to "item-14",
+                        ),
                 ),
-                // Large list (another parameters), 2 * threshold < content size.
+                // Large list, 2 * threshold < available scroll.
                 FocusStrategyScrollTestCase(
                     itemsCount = 20,
                     itemSize = 50.dp,
                     listSize = 300.dp,
-                    scrollStep = 30.dp,
-                    scrollDistance = 700.dp,
-                    focusedItemIndexForEachStep =
-                        listOf(
-                            0,
-                            1,
-                            2,
-                            3,
-                            4,
-                            5,
-                            6,
-                            7,
-                            7,
-                            8,
-                            9,
-                            9,
-                            10,
-                            10,
-                            11,
-                            12,
-                            12,
-                            13,
-                            14,
-                            15,
-                            16,
-                            17,
-                            18,
-                            19,
-                            19,
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            30.0.dp to "item-1",
+                            60.0.dp to "item-2",
+                            90.0.dp to "item-3",
+                            120.0.dp to "item-4",
+                            150.0.dp to "item-5",
+                            180.0.dp to "item-6",
+                            210.0.dp to "item-7",
+                            240.0.dp to "item-7",
+                            270.0.dp to "item-8",
+                            305.0.dp to "item-9",
+                            330.0.dp to "item-9",
+                            360.0.dp to "item-10",
+                            390.0.dp to "item-10",
+                            420.0.dp to "item-11",
+                            455.0.dp to "item-12",
+                            480.0.dp to "item-12",
+                            510.0.dp to "item-13",
+                            540.0.dp to "item-14",
+                            570.0.dp to "item-15",
+                            600.0.dp to "item-16",
+                            630.0.dp to "item-17",
+                            660.0.dp to "item-18",
+                            690.0.dp to "item-19",
+                            720.0.dp to "item-19",
                         ),
                 ),
-                // Medium list, 2 * threshold == content size.
+                // Medium list, 2 * threshold == available scroll.
+                FocusStrategyScrollTestCase(
+                    itemsCount = 11,
+                    itemSize = 60.dp,
+                    listSize = 300.dp,
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            25.0.dp to "item-0",
+                            50.0.dp to "item-1",
+                            80.0.dp to "item-2",
+                            105.0.dp to "item-3",
+                            125.0.dp to "item-3",
+                            155.0.dp to "item-4",
+                            175.0.dp to "item-5",
+                            205.0.dp to "item-6",
+                            225.0.dp to "item-6",
+                            250.0.dp to "item-7",
+                            275.0.dp to "item-8",
+                            300.0.dp to "item-9",
+                            320.0.dp to "item-9",
+                            350.0.dp to "item-10",
+                            360.0.dp to "item-10",
+                        ),
+                ),
+                // Short list, 2 * threshold > available scroll.
                 FocusStrategyScrollTestCase(
                     itemsCount = 10,
                     itemSize = 50.dp,
                     listSize = 250.dp,
-                    scrollStep = 15.dp,
-                    scrollDistance = 250.dp,
-                    focusedItemIndexForEachStep =
-                        listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8, 8, 9),
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            15.0.dp to "item-0",
+                            30.0.dp to "item-1",
+                            45.0.dp to "item-1",
+                            60.0.dp to "item-2",
+                            75.0.dp to "item-2",
+                            90.0.dp to "item-3",
+                            105.0.dp to "item-3",
+                            120.0.dp to "item-4",
+                            130.0.dp to "item-4",
+                            150.0.dp to "item-5",
+                            170.0.dp to "item-6",
+                            180.0.dp to "item-6",
+                            195.0.dp to "item-7",
+                            210.0.dp to "item-7",
+                            225.0.dp to "item-8",
+                            240.0.dp to "item-8",
+                            250.0.dp to "item-9",
+                        ),
                 ),
-                // Short list, 2 * threshold < content size.
+                // Short list, 2 * threshold > available scroll.
                 FocusStrategyScrollTestCase(
                     itemsCount = 10,
                     itemSize = 100.dp,
                     listSize = 500.dp,
-                    scrollStep = 10.dp,
-                    scrollDistance = 600.dp,
-                    focusedItemIndexForEachStep =
-                        listOf(
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            1,
-                            1,
-                            1,
-                            1,
-                            1,
-                            2,
-                            2,
-                            2,
-                            2,
-                            2,
-                            2,
-                            3,
-                            3,
-                            3,
-                            3,
-                            3,
-                            4,
-                            4,
-                            4,
-                            4,
-                            4,
-                            4,
-                            5,
-                            5,
-                            5,
-                            5,
-                            5,
-                            6,
-                            6,
-                            6,
-                            6,
-                            6,
-                            6,
-                            7,
-                            7,
-                            7,
-                            7,
-                            7,
-                            8,
-                            8,
-                            8,
-                            8,
-                            8,
-                            8,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
-                            9,
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            10.0.dp to "item-0",
+                            20.0.dp to "item-0",
+                            30.0.dp to "item-0",
+                            40.0.dp to "item-0",
+                            50.0.dp to "item-0",
+                            60.0.dp to "item-1",
+                            70.0.dp to "item-1",
+                            80.0.dp to "item-1",
+                            90.0.dp to "item-1",
+                            100.0.dp to "item-1",
+                            115.0.dp to "item-2",
+                            120.0.dp to "item-2",
+                            130.0.dp to "item-2",
+                            140.0.dp to "item-2",
+                            150.0.dp to "item-2",
+                            160.0.dp to "item-2",
+                            171.0.dp to "item-3",
+                            180.0.dp to "item-3",
+                            190.0.dp to "item-3",
+                            200.0.dp to "item-3",
+                            210.0.dp to "item-3",
+                            225.0.dp to "item-4",
+                            230.0.dp to "item-4",
+                            240.0.dp to "item-4",
+                            250.0.dp to "item-4",
+                            260.0.dp to "item-4",
+                            265.0.dp to "item-4",
+                            280.0.dp to "item-5",
+                            290.0.dp to "item-5",
+                            300.0.dp to "item-5",
+                            310.0.dp to "item-5",
+                            320.0.dp to "item-5",
+                            335.0.dp to "item-6",
+                            340.0.dp to "item-6",
+                            350.0.dp to "item-6",
+                            360.0.dp to "item-6",
+                            370.0.dp to "item-6",
+                            375.0.dp to "item-6",
+                            390.0.dp to "item-7",
+                            400.0.dp to "item-7",
+                            410.0.dp to "item-7",
+                            420.0.dp to "item-7",
+                            430.0.dp to "item-7",
+                            440.0.dp to "item-8",
+                            450.0.dp to "item-8",
+                            460.0.dp to "item-8",
+                            470.0.dp to "item-8",
+                            480.0.dp to "item-8",
+                            485.0.dp to "item-8",
+                            505.0.dp to "item-9",
+                            510.0.dp to "item-9",
+                            520.0.dp to "item-9",
+                            530.0.dp to "item-9",
+                            540.0.dp to "item-9",
+                            550.0.dp to "item-9",
+                            560.0.dp to "item-9",
+                            575.0.dp to "item-9",
                         ),
                 ),
                 // List w/o scroll - all content fits into viewport.
@@ -309,11 +374,52 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
                     itemsCount = 8,
                     itemSize = 50.dp,
                     listSize = 500.dp,
-                    scrollStep = 20.dp,
-                    scrollDistance = 400.dp,
-                    focusedItemIndexForEachStep =
-                        listOf(0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7),
+                    expectedFocusedItemForScrollOffset =
+                        mapOf(
+                            20.0.dp to "item-0",
+                            40.0.dp to "item-0",
+                            60.0.dp to "item-1",
+                            80.0.dp to "item-1",
+                            105.0.dp to "item-2",
+                            120.0.dp to "item-2",
+                            140.0.dp to "item-2",
+                            160.0.dp to "item-3",
+                            180.0.dp to "item-3",
+                            205.0.dp to "item-4",
+                            220.0.dp to "item-4",
+                            240.0.dp to "item-4",
+                            260.0.dp to "item-5",
+                            280.0.dp to "item-5",
+                            305.0.dp to "item-6",
+                            320.0.dp to "item-6",
+                            340.0.dp to "item-6",
+                            360.0.dp to "item-7",
+                            380.0.dp to "item-7",
+                            400.0.dp to "item-7",
+                        ),
                 ),
             )
+    }
+}
+
+private fun SemanticsNodeInteraction.findFocusedChildTag(): String? {
+    val semanticNode = fetchSemanticsNode()
+    for (child in semanticNode.children) {
+        val tagProperty = child.config.find { (key, _) -> key == SemanticsProperties.TestTag }
+        val focusedProperty = child.config.find { (key, _) -> key == SemanticsProperties.Focused }
+        val isFocused = focusedProperty?.value as? Boolean ?: false
+        val tag = tagProperty?.value as? String ?: "no test tag"
+        if (isFocused) return tag
+    }
+    return null
+}
+
+private fun Map<Dp, String>.toTestCase(): String {
+    return buildString {
+        appendLine("expectedFocusedItemForScrollOffset = mapOf(")
+        for ((dp, item) in this@toTestCase) {
+            appendLine("\t$dp to \"$item\",")
+        }
+        appendLine("),")
     }
 }

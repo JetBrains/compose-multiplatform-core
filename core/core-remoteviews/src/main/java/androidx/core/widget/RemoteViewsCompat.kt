@@ -2138,7 +2138,6 @@ public object RemoteViewsCompat {
      * @param viewId The id of the target view
      * @param fontFeatureSettings Font feature settings represented as CSS compatible string.
      */
-    @RequiresApi(21)
     @JvmStatic
     public fun RemoteViews.setTextViewFontFeatureSettings(
         @IdRes viewId: Int,
@@ -2377,7 +2376,6 @@ public object RemoteViewsCompat {
      * @param viewId The id of the target view
      * @param letterSpacing A text letter-space value in ems.
      */
-    @RequiresApi(21)
     @JvmStatic
     public fun RemoteViews.setTextViewLetterSpacing(@IdRes viewId: Int, letterSpacing: Float) {
         requireSdk(21, "setLetterSpacing")

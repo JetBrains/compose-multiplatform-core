@@ -31,7 +31,9 @@ import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import okio.BufferedSink
 
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
@@ -69,7 +71,7 @@ public class WireTraceSink(
     private val bufferedSink: BufferedSink,
 
     /** Coroutine context to execute the serialization on. */
-    private val coroutineContext: CoroutineContext = Dispatchers.IO,
+    private val coroutineContext: CoroutineContext = NonCancellable + Dispatchers.IO,
 ) : TraceSink() {
     private val wireTraceEventSerializer =
         WireTraceEventSerializer(sequenceId, ProtoWriter(bufferedSink))
@@ -121,7 +123,7 @@ public class WireTraceSink(
 
     override fun flush() {
         makeDrainRequest()
-        while (queue.isNotEmpty() && synchronized(drainLock) { drainRequested }) {
+        while (queue.isNotEmpty()) {
             // Await completion of the drain.
         }
         bufferedSink.flush()
@@ -139,26 +141,35 @@ public class WireTraceSink(
 
     private fun drainQueue() {
         while (queue.isNotEmpty()) {
-            val pooledPacketArray = queue.removeFirstOrNull()
+            val pooledPacketArray = queue.firstOrNull()
             if (pooledPacketArray != null) {
                 pooledPacketArray.forEach { wireTraceEventSerializer.writeTraceEvent(it) }
                 pooledPacketArray.recycle()
+                // Remove the item from the Queue to denote that we have written the underlying
+                // bytes to the proto stream.
+                queue.removeFirst()
             }
         }
         synchronized(drainLock) {
             drainRequested = false
             // Mark resumeDrain as consumed because the Coroutines Machinery might still consider
-            // the Continuation as resumed after drainQueue() completes. This was the Atomics
+            // the Continuation as resumed after drainQueue() completes. This way the signal
             // drainRequested, and the Continuation resumeDrain are in sync.
             resumeDrain = null
         }
     }
 
     override fun close() {
+        // If already closed then we have nothing to do.
+        if (closed) return
+
         // Mark closed.
         // We don't need a critical section here, given we have one final flush() that blocks
         // until the queue is drained. So even if we are racing against additions to the queue,
         // that should still be okay, because enqueue()'s will eventually start no-oping.
+
+        // Note: Closed only means that we will no longer enqueue() new items into the Queue.
+        // Flushing and closing of the underlying BufferedSink are still allowed.
         closed = true
         flush()
         bufferedSink.close()

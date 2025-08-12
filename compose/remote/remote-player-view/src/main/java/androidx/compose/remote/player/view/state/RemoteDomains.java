@@ -15,6 +15,11 @@
  */
 package androidx.compose.remote.player.view.state;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
+@RestrictTo(LIBRARY_GROUP)
 public enum RemoteDomains {
     USER,
     SYSTEM

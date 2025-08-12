@@ -18,7 +18,6 @@ package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Size
 import androidx.camera.core.ImageCapture
@@ -40,14 +39,12 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowBuild
 
 /** Unit tests for [TakePictureManager]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class TakePictureManagerTest {
 
     private val imagePipeline = FakeImagePipeline()

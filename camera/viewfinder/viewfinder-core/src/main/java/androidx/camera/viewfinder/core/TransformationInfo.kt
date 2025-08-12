@@ -16,6 +16,8 @@
 
 package androidx.camera.viewfinder.core
 
+import androidx.camera.viewfinder.core.TransformationInfo.Companion.CROP_NONE
+
 /**
  * Transformation information associated with the preview output.
  *

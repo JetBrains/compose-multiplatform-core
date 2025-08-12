@@ -15,7 +15,10 @@
  */
 package androidx.compose.remote.player.view.state;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
 import android.graphics.Bitmap;
+import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
 
@@ -37,7 +40,7 @@ public interface StateUpdater {
      * @param integerName the original name of the integer parameter.
      * @param value the integer value to set.
      */
-    void setUserLocalInt(String integerName, int value);
+    void setUserLocalInt(@NonNull String integerName, int value);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedColorOverride(String, int)}
@@ -46,7 +49,7 @@ public interface StateUpdater {
      * @param name the original name of the color parameter.
      * @param value the color value to set (as an int).
      */
-    void setUserLocalColor(String name, int value);
+    void setUserLocalColor(@NonNull String name, int value);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedDataOverride(String, Object)}
@@ -55,7 +58,7 @@ public interface StateUpdater {
      * @param name the original name of the data parameter.
      * @param content the {@link android.graphics.Bitmap} content to set.
      */
-    void setUserLocalBitmap(String name, Bitmap content);
+    void setUserLocalBitmap(@NonNull String name, @NonNull Bitmap content);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedStringOverride(String,
@@ -64,7 +67,7 @@ public interface StateUpdater {
      * @param stringName the original name of the string parameter.
      * @param value the string value to set.
      */
-    void setUserLocalString(String stringName, String value);
+    void setUserLocalString(@NonNull String stringName, @NonNull String value);
 
     /**
      * Returns the user domain string for the given parameter name.
@@ -72,7 +75,8 @@ public interface StateUpdater {
      * @param name the original name of the parameter.
      * @return the user domain string for the given parameter name.
      */
-    static String getUserDomainString(String name) {
+    @RestrictTo(LIBRARY_GROUP)
+    static String getUserDomainString(@NonNull String name) {
         return RemoteDomains.USER + ":" + name;
     }
 }

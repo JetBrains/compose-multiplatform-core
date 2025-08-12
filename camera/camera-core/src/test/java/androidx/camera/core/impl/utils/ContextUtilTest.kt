@@ -30,7 +30,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ContextUtilTest {
     companion object {
         const val ATTRIBUTION_TAG = "attributionTag"

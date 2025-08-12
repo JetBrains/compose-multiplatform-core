@@ -17,9 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The credential json cannot be trusted because the caller is unknown */
-public class GetCredentialTransferCapabilitiesUnknownCallerException(
-    errorMessage: CharSequence? = null
-) :
+public class GetCredentialTransferCapabilitiesUnknownCallerException(errorMessage: String? = null) :
     GetCredentialTransferCapabilitiesException(
         TYPE_GET_CREDENTIAL_TRANSFER_CAPABILITIES_UNKNOWN_CALLER_EXCEPTION,
         errorMessage,

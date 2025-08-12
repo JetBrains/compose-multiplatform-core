@@ -165,6 +165,15 @@
 
     <issue
         id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="    configurations.create(&quot;libraryVersionMetadata&quot;) { configuration ->"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/metalava/GenerateApiLevels.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
         message="Avoid using method forEach"
         errorLine1="        otherProject.tasks.forEach { task -> allTasks.add(task) }"
         errorLine2="                           ~~~~~~~">

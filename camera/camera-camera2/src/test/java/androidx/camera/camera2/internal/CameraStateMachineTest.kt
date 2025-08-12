@@ -15,7 +15,6 @@
  */
 package androidx.camera.camera2.internal
 
-import android.os.Build
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.camera.core.CameraState
 import androidx.camera.core.CameraState.ERROR_CAMERA_FATAL_ERROR
@@ -35,12 +34,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class CameraStateMachineTest {
 
     @get:Rule val instantTaskExecutorRule = InstantTaskExecutorRule()

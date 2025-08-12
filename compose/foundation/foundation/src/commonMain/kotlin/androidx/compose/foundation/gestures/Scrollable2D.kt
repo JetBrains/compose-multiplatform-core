@@ -33,7 +33,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.UserI
 import androidx.compose.ui.input.nestedscroll.nestedScrollModifierNode
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.invalidateSemantics
@@ -153,8 +152,7 @@ internal class Scrollable2DNode(
         interactionSource = interactionSource,
         orientationLock = null,
     ),
-    SemanticsModifierNode,
-    CompositionLocalConsumerModifierNode {
+    SemanticsModifierNode {
 
     override val shouldAutoInvalidate: Boolean = false
 

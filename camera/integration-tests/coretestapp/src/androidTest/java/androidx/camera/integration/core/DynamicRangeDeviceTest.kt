@@ -75,7 +75,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class DynamicRangeDeviceTest(
     private val testName: String,
     private val cameraSelector: CameraSelector,

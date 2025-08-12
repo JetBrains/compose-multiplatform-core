@@ -40,7 +40,6 @@ import java.util.function.Consumer
  * setting the [Entity.parent] property on an AnchorEntity has no effect, as the parenting of an
  * Anchor is controlled by the system.
  */
-@Suppress("HiddenSuperclass") // TODO: b/427566816 - Fix HiddenSuperclass suppression
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public class AnchorEntity
 private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :

@@ -29,7 +29,6 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
 
     @Test
@@ -228,10 +227,18 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
 
                 // Tests for FULL Samsung devices
                 Config("Samsung", null, "SCG25", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config("Samsung", null, "SCG25", "1", createLevel3PrivPrivYuvSubsetConfiguration()),
                 Config(
                     "Samsung",
                     null,
                     "SM-S9210",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S9213",
                     "1",
                     createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
@@ -259,7 +266,125 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
                 Config(
                     "Samsung",
                     null,
-                    "SM-S928B",
+                    "SM-S928U",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-51E",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-51E",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-52E",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-52E",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config("Samsung", null, "SCG26", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config("Samsung", null, "SCG26", "1", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S931U",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S931B",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S936U",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S936L",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S937",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S937U",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S938N",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S938R",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config("Samsung", null, "SCG31", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config("Samsung", null, "SCG31", "1", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config("Samsung", null, "SCG32", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config("Samsung", null, "SCG32", "1", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-51F",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-51F",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-52F",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Samsung",
+                    null,
+                    "SC-52F",
                     "1",
                     createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),

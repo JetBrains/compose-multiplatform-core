@@ -17,7 +17,6 @@
 package androidx.camera.core.internal
 
 import android.graphics.ImageFormat
-import android.os.Build
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.AspectRatio
@@ -54,7 +53,6 @@ private val DEFAULT_SUPPORTED_SIZES =
 /** Unit tests for [SupportedOutputSizesSorterLegacy]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SupportedOutputSizesSorterLegacyTest {
     private val cameraInfoInternal = FakeCameraInfoInternal()
     private val supportedOutputSizesSorterLegacy =

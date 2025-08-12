@@ -98,7 +98,6 @@ import androidx.appcompat.widget.ActionBarContextView;
 import androidx.appcompat.widget.AppCompatDrawableManager;
 import androidx.appcompat.widget.ContentFrameLayout;
 import androidx.appcompat.widget.DecorContentParent;
-import androidx.appcompat.widget.FitWindowsViewGroup;
 import androidx.appcompat.widget.TintTypedArray;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.VectorEnabledTintResources;
@@ -125,7 +124,6 @@ import androidx.lifecycle.LifecycleOwner;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.xmlpull.v1.XmlPullParser;
 
 import java.util.List;
 import java.util.Locale;
@@ -137,7 +135,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         implements MenuBuilder.Callback, LayoutInflater.Factory2 {
 
     private static final SimpleArrayMap<String, Integer> sLocalNightModes = new SimpleArrayMap<>();
-    private static final boolean IS_PRE_LOLLIPOP = Build.VERSION.SDK_INT < 21;
 
     private static final int[] sWindowBackgroundStyleable = {android.R.attr.windowBackground};
 
@@ -147,47 +144,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
      */
     private static final boolean sCanReturnDifferentContext =
             !"robolectric".equals(Build.FINGERPRINT);
-
-    private static boolean sInstalledExceptionHandler;
-
-    static final String EXCEPTION_HANDLER_MESSAGE_SUFFIX= ". If the resource you are"
-            + " trying to use is a vector resource, you may be referencing it in an unsupported"
-            + " way. See AppCompatDelegate.setCompatVectorFromResourcesEnabled() for more info.";
-
-    static {
-        if (IS_PRE_LOLLIPOP && !sInstalledExceptionHandler) {
-            final Thread.UncaughtExceptionHandler defHandler
-                    = Thread.getDefaultUncaughtExceptionHandler();
-
-            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(@NonNull Thread thread,
-                        final @NonNull Throwable throwable) {
-                    if (shouldWrapException(throwable)) {
-                        // Now wrap the throwable, but append some extra information to the message
-                        final Throwable wrapped = new Resources.NotFoundException(
-                                throwable.getMessage() + EXCEPTION_HANDLER_MESSAGE_SUFFIX);
-                        wrapped.initCause(throwable.getCause());
-                        wrapped.setStackTrace(throwable.getStackTrace());
-                        defHandler.uncaughtException(thread, wrapped);
-                    } else {
-                        defHandler.uncaughtException(thread, throwable);
-                    }
-                }
-
-                private boolean shouldWrapException(Throwable throwable) {
-                    if (throwable instanceof Resources.NotFoundException) {
-                        final String message = throwable.getMessage();
-                        return message != null && (message.contains("drawable")
-                                || message.contains("Drawable"));
-                    }
-                    return false;
-                }
-            });
-
-            sInstalledExceptionHandler = true;
-        }
-    }
 
     final Object mHost;
     final Context mContext;
@@ -986,39 +942,25 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                             + ", windowNoTitle: " + mWindowNoTitle
                             + " }");
         }
+        ViewCompat.setOnApplyWindowInsetsListener(subDecor, new OnApplyWindowInsetsListener() {
+                    @Override
+                    public WindowInsetsCompat onApplyWindowInsets(View v,
+                            WindowInsetsCompat insets) {
+                        final int top = insets.getSystemWindowInsetTop();
+                        final int newTop = updateActionModeInsets(insets, null);
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            // If we're running on L or above, we can rely on ViewCompat's
-            // setOnApplyWindowInsetsListener
-            ViewCompat.setOnApplyWindowInsetsListener(subDecor, new OnApplyWindowInsetsListener() {
-                        @Override
-                        public WindowInsetsCompat onApplyWindowInsets(View v,
-                                WindowInsetsCompat insets) {
-                            final int top = insets.getSystemWindowInsetTop();
-                            final int newTop = updateActionModeInsets(insets, null);
-
-                            if (top != newTop) {
-                                insets = insets.replaceSystemWindowInsets(
-                                        insets.getSystemWindowInsetLeft(),
-                                        newTop,
-                                        insets.getSystemWindowInsetRight(),
-                                        insets.getSystemWindowInsetBottom());
-                            }
-
-                            // Now apply the insets on our view
-                            return ViewCompat.onApplyWindowInsets(v, insets);
+                        if (top != newTop) {
+                            insets = insets.replaceSystemWindowInsets(
+                                    insets.getSystemWindowInsetLeft(),
+                                    newTop,
+                                    insets.getSystemWindowInsetRight(),
+                                    insets.getSystemWindowInsetBottom());
                         }
-                    });
-        } else if (subDecor instanceof FitWindowsViewGroup) {
-            // Else, we need to use our own FitWindowsViewGroup handling
-            ((FitWindowsViewGroup) subDecor).setOnFitSystemWindowsListener(
-                    new FitWindowsViewGroup.OnFitSystemWindowsListener() {
-                        @Override
-                        public void onFitSystemWindows(Rect insets) {
-                            insets.top = updateActionModeInsets(null, insets);
-                        }
-                    });
-        }
+
+                        // Now apply the insets on our view
+                        return ViewCompat.onApplyWindowInsets(v, insets);
+                    }
+                });
 
         if (mDecorContentParent == null) {
             mTitleView = (TextView) subDecor.findViewById(R.id.title);
@@ -1630,25 +1572,9 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         }
 
         boolean inheritContext = false;
-        if (IS_PRE_LOLLIPOP) {
-            if (mLayoutIncludeDetector == null) {
-                mLayoutIncludeDetector = new LayoutIncludeDetector();
-            }
-            if (mLayoutIncludeDetector.detect(attrs)) {
-                // The view being inflated is the root of an <include>d view, so make sure
-                // we carry over any themed context.
-                inheritContext = true;
-            } else {
-                inheritContext = (attrs instanceof XmlPullParser)
-                        // If we have a XmlPullParser, we can detect where we are in the layout
-                        ? ((XmlPullParser) attrs).getDepth() > 1
-                        // Otherwise we have to use the old heuristic
-                        : shouldInheritContext((ViewParent) parent);
-            }
-        }
 
         return mAppCompatViewInflater.createView(parent, name, context, attrs, inheritContext,
-                IS_PRE_LOLLIPOP, /* Only read android:theme pre-L (L+ handles this anyway) */
+                false, /* Only read android:theme pre-L (L+ handles this anyway) */
                 true, /* Read read app:theme as a fallback at all times for legacy reasons */
                 VectorEnabledTintResources.shouldBeUsed() /* Only tint wrap the context if enabled */
         );
@@ -2535,15 +2461,10 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             // one from the requested locales.
             if (requestedLocales.isEmpty()) {
                 localesToBeApplied = LocaleListCompat.getEmptyLocaleList();
-            } else if (Build.VERSION.SDK_INT >= 21) {
+            } else {
                 localesToBeApplied =
                         LocaleListCompat.forLanguageTags(Api21Impl.toLanguageTag(
                                 requestedLocales.get(0)));
-            } else {
-                // The method Locale.forLanguageTag() was introduced in API level 21,
-                // using Locale.toString() method for APIs below that.
-                localesToBeApplied =
-                        LocaleListCompat.forLanguageTags(requestedLocales.get(0).toString());
             }
         }
 
@@ -2624,10 +2545,8 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     LocaleListCompat getConfigurationLocales(Configuration conf) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.getLocales(conf);
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            return LocaleListCompat.forLanguageTags(Api21Impl.toLanguageTag(conf.locale));
         } else {
-            return LocaleListCompat.create(conf.locale);
+            return LocaleListCompat.forLanguageTags(Api21Impl.toLanguageTag(conf.locale));
         }
     }
 
@@ -2859,11 +2778,15 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             Lifecycle lifecycle = ((LifecycleOwner) activity).getLifecycle();
             if (lifecycle.getCurrentState().isAtLeast(Lifecycle.State.CREATED)) {
                 activity.onConfigurationChanged(conf);
+                // Dispatch the configuration change through the view tree
+                mWindow.getDecorView().dispatchConfigurationChanged(conf);
             }
         } else {
             // Otherwise, we'll fallback to our internal created and destroyed flags.
             if (mCreated && !mDestroyed) {
                 activity.onConfigurationChanged(conf);
+                // Dispatch the configuration change through the view tree
+                mWindow.getDecorView().dispatchConfigurationChanged(conf);
             }
         }
     }
@@ -3644,10 +3567,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         @ApplyableNightMode
         @Override
         public int getApplyableNightMode() {
-            if (Build.VERSION.SDK_INT >= 21) {
-                return Api21Impl.isPowerSaveMode(mPowerManager) ? MODE_NIGHT_YES : MODE_NIGHT_NO;
-            }
-            return MODE_NIGHT_NO;
+            return Api21Impl.isPowerSaveMode(mPowerManager) ? MODE_NIGHT_YES : MODE_NIGHT_NO;
         }
 
         @Override
@@ -3657,12 +3577,9 @@ class AppCompatDelegateImpl extends AppCompatDelegate
 
         @Override
         IntentFilter createIntentFilterForBroadcastReceiver() {
-            if (Build.VERSION.SDK_INT >= 21) {
-                IntentFilter filter = new IntentFilter();
-                filter.addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
-                return filter;
-            }
-            return null;
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
+            return filter;
         }
     }
 
@@ -3835,7 +3752,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         return delta;
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() { }
 

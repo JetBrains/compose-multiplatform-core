@@ -16,6 +16,9 @@
   -->
 <manifest
         xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-feature android:name="android.hardware.camera.any" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application>
         <!-- enable profiling by shell for non-intrusive profiling tools -->
         <profileable android:shell="true"/>

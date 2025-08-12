@@ -179,4 +179,7 @@ object ComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var isNestedScrollInteropIntegerPropagationEnabled: Boolean = true
+
+    /** This flag enables clearing focus on pointer down by default. */
+    @Suppress("MutableBareField") @JvmField var isClearFocusOnPointerDownEnabled: Boolean = true
 }

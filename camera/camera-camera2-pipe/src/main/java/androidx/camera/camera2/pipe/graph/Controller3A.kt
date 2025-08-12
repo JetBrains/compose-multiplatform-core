@@ -44,9 +44,13 @@ import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.Result3A.Status
 import androidx.camera.camera2.pipe.core.Log.debug
+import androidx.camera.camera2.pipe.core.Token
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /** This class implements the 3A methods of [CameraGraphSessionImpl]. */
 internal class Controller3A(
@@ -170,6 +174,10 @@ internal class Controller3A(
                 .toConditionChecker()
     }
 
+    fun state3ASnapshot(): State3A {
+        return graphState3A.current
+    }
+
     // Keep track of the result associated with latest call to update3A. If update3A is called again
     // and the current result is not complete, we will cancel the current result.
     @GuardedBy("this") private var lastUpdate3AResult: Deferred<Result3A>? = null
@@ -195,7 +203,7 @@ internal class Controller3A(
                 afRegions,
                 awbRegions,
             )
-            graphProcessor.update3AParameters(graphState3A.readState())
+            graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
             return deferredResult3ASubmitFailed
         }
 
@@ -211,7 +219,7 @@ internal class Controller3A(
 
         // Try submitting a new repeating request with the 3A parameters corresponding to the new
         // 3A state and corresponding listeners.
-        graphProcessor.update3AParameters(graphState3A.readState())
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
 
         val result = listener.result
         synchronized(this) {
@@ -306,7 +314,7 @@ internal class Controller3A(
         // are given as null then they are ignored and the current metering regions continue to be
         // applied in subsequent requests to the camera device.
         graphState3A.update(aeRegions = aeRegions, afRegions = afRegions, awbRegions = awbRegions)
-        graphProcessor.update3AParameters(graphState3A.readState())
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
 
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
@@ -356,7 +364,7 @@ internal class Controller3A(
                 debug { "lock3A - setting aeLock=$aeLockValue, awbLock=$awbLockValue" }
                 graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
             }
-            graphProcessor.update3AParameters(graphState3A.readState())
+            graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
 
             debug {
                 "lock3A - waiting for" +
@@ -438,7 +446,7 @@ internal class Controller3A(
             debug { "unlock3A - updating graph state, aeLock=$aeLockValue, awbLock=$awbLockValue" }
             graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
         }
-        graphProcessor.update3AParameters(graphState3A.readState())
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
         return listener.result
     }
 
@@ -570,7 +578,7 @@ internal class Controller3A(
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
-        graphProcessor.update3AParameters(graphState3A.readState())
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
         return listener.result
     }
 
@@ -639,7 +647,7 @@ internal class Controller3A(
                 Result3AStateListenerImpl(emptyMap())
             }
         graphListener3A.addListener(listener)
-        graphProcessor.update3AParameters(graphState3A.readState())
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
         return listener.result
     }
 
@@ -651,7 +659,7 @@ internal class Controller3A(
      * AE mode to [AeMode.ON] in order to enable the torch.
      */
     fun setTorchOn(): Deferred<Result3A> {
-        val currAeMode = graphState3A.aeMode
+        val currAeMode = graphState3A.current.aeMode
         val desiredAeMode =
             if (currAeMode == AeMode.ON || currAeMode == AeMode.OFF) null else AeMode.ON
         return update3A(aeMode = desiredAeMode, flashMode = FlashMode.TORCH)
@@ -690,7 +698,7 @@ internal class Controller3A(
                 "lock3A - submitting request with aeLock=$finalAeLockValue , " +
                     "awbLock=$finalAwbLockValue"
             }
-            graphProcessor.update3AParameters(graphState3A.readState())
+            graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
             resultForLocked = listener.result
         }
 
@@ -700,9 +708,9 @@ internal class Controller3A(
 
         var lastAeMode: AeMode? = null
         afTriggerStartAeMode?.let {
-            lastAeMode = graphState3A.aeMode
+            lastAeMode = graphState3A.current.aeMode
             graphState3A.update(it)
-            graphProcessor.update3AParameters(graphState3A.readState())
+            graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
         }
 
         debug { "lock3A - submitting a request to lock af." }
@@ -712,7 +720,7 @@ internal class Controller3A(
 
         lastAeMode?.let {
             graphState3A.update(aeMode = it)
-            graphProcessor.update3AParameters(graphState3A.readState())
+            graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
         }
         return resultForLocked!!
     }
@@ -847,6 +855,55 @@ internal class Controller3A(
         awbMode?.let { resultModesMap.put(CaptureResult.CONTROL_AWB_MODE, listOf(it.value)) }
         flashMode?.let { resultModesMap.put(CaptureResult.FLASH_MODE, listOf(it.value)) }
         return Result3AStateListenerImpl(resultModesMap.toMap())
+    }
+
+    /*
+     * Resets the state of 3A to the given State3A. It uses the given CoroutineScope any suspending
+     * or blocking operations that might be need to perform the reset. The token is released
+     * completion of the reset, and irrespective of whether the reset operation failed for some
+     * reason.
+     */
+    fun reset3A(scope: CoroutineScope, token: Token, initialState3A: State3A) {
+        val currentState3A = state3ASnapshot()
+
+        if (currentState3A == initialState3A) {
+            token.release()
+            return
+        }
+
+        graphState3A.current = initialState3A
+        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
+
+        val wasAeLocked = initialState3A.wasAeLocked(currentState3A)
+        val wasAwbLocked = initialState3A.wasAwbLocked(currentState3A)
+
+        if (wasAeLocked || wasAwbLocked) {
+            unlock3A(ae = wasAeLocked, awb = wasAwbLocked)
+        }
+
+        val wasAeUnlocked = initialState3A.wasAeUnlocked(currentState3A)
+        val wasAwbUnlocked = initialState3A.wasAwbUnlocked(currentState3A)
+        if (!(wasAeUnlocked || wasAwbUnlocked)) {
+            token.release()
+            return
+        }
+
+        // We didn't use to track the lock for af since af lock is achieved by setting 'af trigger =
+        // start' in a request and then omitting the af trigger field in the subsequent requests
+        // doesn't disturb the af state. For ae and awb, the lock type is boolean and should be
+        // explicitly set to 'true' in the subsequent requests once we have locked ae/awb and want
+        // them to stay locked. Now that we want to provide an ability to reset3A, we need to keep
+        // the af lock state information and use it to restore af.
+        //
+        // TODO: b/435774981 - handle the reset of auto-focus.
+        scope
+            .launch(Dispatchers.Unconfined) {
+                lock3A(
+                    aeLockBehavior = if (wasAeUnlocked) Lock3ABehavior.IMMEDIATE else null,
+                    awbLockBehavior = if (wasAwbUnlocked) Lock3ABehavior.IMMEDIATE else null,
+                )
+            }
+            .invokeOnCompletion { token.release() }
     }
 }
 

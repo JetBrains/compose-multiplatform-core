@@ -230,13 +230,13 @@ class PartitionedMeshTest {
         val intersectingShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(15f, 3f, 15f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(15f, 3f, 15f, 5f)).toImmutable(),
                 )
                 .shape
         val externalShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).toImmutable(),
                 )
                 .shape
 
@@ -350,13 +350,13 @@ class PartitionedMeshTest {
         val intersectingShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(15f, 3f, 15f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(15f, 3f, 15f, 5f)).toImmutable(),
                 )
                 .shape
         val externalShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).toImmutable(),
                 )
                 .shape
 
@@ -395,7 +395,7 @@ class PartitionedMeshTest {
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
                 TEST_BRUSH,
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }

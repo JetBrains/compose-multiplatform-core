@@ -225,10 +225,15 @@ public interface Features {
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link
-     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)} and
-     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
+     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)}.
      */
     String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
+     */
+    String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
@@ -359,14 +364,6 @@ public interface Features {
      */
     @ExperimentalAppSearchApi
     String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
-
-    /**
-     * Feature for {@link #isFeatureSupported(String)}. This feature covers {@link
-     * androidx.appsearch.usagereporting.ActionAccumulator#create}.
-     */
-    // Due to lint checks, we cannot include the word "ACTION" in this value
-    @ExperimentalAppSearchApi
-    String SEARCH_AND_CLICK_ACCUMULATOR = "SEARCH_AND_CLICK_ACCUMULATOR";
 
     /**
      * Returns whether a feature is supported at run-time. Feature support depends on the

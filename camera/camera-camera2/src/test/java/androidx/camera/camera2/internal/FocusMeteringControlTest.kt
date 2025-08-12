@@ -24,7 +24,6 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
-import android.os.Build
 import android.util.Pair
 import android.util.Rational
 import android.util.Size
@@ -103,7 +102,6 @@ private val PREVIEW_ASPECT_RATIO_4_X_3 = Rational(4, 3)
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FocusMeteringControlTest(private val template: Int) {
     companion object {
         @JvmStatic

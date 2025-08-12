@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableIntObjectMap
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.util.Collections.unmodifiableList
@@ -225,10 +226,13 @@ private constructor(
     /** Delete native BrushBehavior memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushBehaviorNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushBehaviorNative.free(nativePointer)
     }
 
     public companion object {
@@ -279,159 +283,116 @@ private constructor(
      * List of input properties along with their units that can act as sources for a
      * [BrushBehavior].
      */
-    public class Source internal constructor(@JvmField internal val value: Int) {
-        internal fun toSimpleString(): String =
-            when (this) {
-                NORMALIZED_PRESSURE -> "NORMALIZED_PRESSURE"
-                TILT_IN_RADIANS -> "TILT_IN_RADIANS"
-                TILT_X_IN_RADIANS -> "TILT_X_IN_RADIANS"
-                TILT_Y_IN_RADIANS -> "TILT_Y_IN_RADIANS"
-                ORIENTATION_IN_RADIANS -> "ORIENTATION_IN_RADIANS"
-                ORIENTATION_ABOUT_ZERO_IN_RADIANS -> "ORIENTATION_ABOUT_ZERO_IN_RADIANS"
-                SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND ->
-                    "SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND"
-                VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND ->
-                    "VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND"
-                VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND ->
-                    "VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND"
-                DIRECTION_IN_RADIANS -> "DIRECTION_IN_RADIANS"
-                DIRECTION_ABOUT_ZERO_IN_RADIANS -> "DIRECTION_ABOUT_ZERO_IN_RADIANS"
-                NORMALIZED_DIRECTION_X -> "NORMALIZED_DIRECTION_X"
-                NORMALIZED_DIRECTION_Y -> "NORMALIZED_DIRECTION_Y"
-                DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE"
-                TIME_OF_INPUT_IN_SECONDS -> "TIME_OF_INPUT_IN_SECONDS"
-                TIME_OF_INPUT_IN_MILLIS -> "TIME_OF_INPUT_IN_MILLIS"
-                PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE"
-                PREDICTED_TIME_ELAPSED_IN_SECONDS -> "PREDICTED_TIME_ELAPSED_IN_SECONDS"
-                PREDICTED_TIME_ELAPSED_IN_MILLIS -> "PREDICTED_TIME_ELAPSED_IN_MILLIS"
-                DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE"
-                TIME_SINCE_INPUT_IN_SECONDS -> "TIME_SINCE_INPUT_IN_SECONDS"
-                TIME_SINCE_INPUT_IN_MILLIS -> "TIME_SINCE_INPUT_IN_MILLIS"
-                ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED ->
-                    "ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED"
-                ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED ->
-                    "ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED"
-                ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED ->
-                    "ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED"
-                ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED ->
-                    "ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED"
-                ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED ->
-                    "ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED"
-                INPUT_SPEED_IN_CENTIMETERS_PER_SECOND -> "INPUT_SPEED_IN_CENTIMETERS_PER_SECOND"
-                INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND ->
-                    "INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND"
-                INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND ->
-                    "INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND"
-                INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS -> "INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS"
-                PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS ->
-                    "PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS"
-                INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED ->
-                    "INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED"
-                INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED ->
-                    "INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED"
-                INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED ->
-                    "INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED"
-                INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED ->
-                    "INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED"
-                INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED ->
-                    "INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED"
-                DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH ->
-                    "DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is Source) return false
-            return value == other.value
+    public class Source
+    internal constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate Source value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.Source.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<Source>()
+
+            internal fun fromInt(value: Int): Source =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid Source value: $value" }
 
             /** Stylus or touch pressure with values reported in the range [0, 1]. */
-            @JvmField public val NORMALIZED_PRESSURE: Source = Source(0)
+            @JvmField public val NORMALIZED_PRESSURE: Source = Source(0, "NORMALIZED_PRESSURE")
             /** Stylus tilt with values reported in the range [0, π/2] radians. */
-            @JvmField public val TILT_IN_RADIANS: Source = Source(1)
+            @JvmField public val TILT_IN_RADIANS: Source = Source(1, "TILT_IN_RADIANS")
             /**
              * Stylus tilt along the x axis in the range [-π/2, π/2], with a positive value
              * corresponding to tilt toward the respective positive axis. In order for those values
              * to be reported, both tilt and orientation have to be populated on the StrokeInput.
              */
-            @JvmField public val TILT_X_IN_RADIANS: Source = Source(2)
+            @JvmField public val TILT_X_IN_RADIANS: Source = Source(2, "TILT_X_IN_RADIANS")
             /**
              * Stylus tilt along the y axis in the range [-π/2, π/2], with a positive value
              * corresponding to tilt toward the respective positive axis. In order for those values
              * to be reported, both tilt and orientation have to be populated on the StrokeInput.
              */
-            @JvmField public val TILT_Y_IN_RADIANS: Source = Source(3)
+            @JvmField public val TILT_Y_IN_RADIANS: Source = Source(3, "TILT_Y_IN_RADIANS")
             /** Stylus orientation with values reported in the range [0, 2π). */
-            @JvmField public val ORIENTATION_IN_RADIANS: Source = Source(4)
+            @JvmField
+            public val ORIENTATION_IN_RADIANS: Source = Source(4, "ORIENTATION_IN_RADIANS")
             /** Stylus orientation with values reported in the range (-π, π]. */
-            @JvmField public val ORIENTATION_ABOUT_ZERO_IN_RADIANS: Source = Source(5)
+            @JvmField
+            public val ORIENTATION_ABOUT_ZERO_IN_RADIANS: Source =
+                Source(5, "ORIENTATION_ABOUT_ZERO_IN_RADIANS")
             /**
              * Pointer speed with values >= 0 in distance units per second, where one distance unit
              * is equal to the brush size.
              */
-            @JvmField public val SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source = Source(6)
+            @JvmField
+            public val SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
+                Source(6, "SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
              * Signed x component of pointer velocity in distance units per second, where one
              * distance unit is equal to the brush size.
              */
             @JvmField
-            public val VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source = Source(7)
+            public val VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
+                Source(7, "VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
              * Signed y component of pointer velocity in distance units per second, where one
              * distance unit is equal to the brush size.
              */
             @JvmField
-            public val VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source = Source(8)
+            public val VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
+                Source(8, "VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
              * The angle of the stroke's current direction of travel in stroke space, normalized to
              * the range [0, 2π). A value of 0 indicates the direction of the positive X-axis in
              * stroke space; a value of π/2 indicates the direction of the positive Y-axis in stroke
              * space.
              */
-            @JvmField public val DIRECTION_IN_RADIANS: Source = Source(9)
+            @JvmField public val DIRECTION_IN_RADIANS: Source = Source(9, "DIRECTION_IN_RADIANS")
             /**
              * The angle of the stroke's current direction of travel in stroke space, normalized to
              * the range (-π, π]. A value of 0 indicates the direction of the positive X-axis in
              * stroke space; a value of π/2 indicates the direction of the positive Y-axis in stroke
              * space.
              */
-            @JvmField public val DIRECTION_ABOUT_ZERO_IN_RADIANS: Source = Source(10)
+            @JvmField
+            public val DIRECTION_ABOUT_ZERO_IN_RADIANS: Source =
+                Source(10, "DIRECTION_ABOUT_ZERO_IN_RADIANS")
             /**
              * Signed x component of the normalized travel direction, with values in the range
              * [-1, 1].
              */
-            @JvmField public val NORMALIZED_DIRECTION_X: Source = Source(11)
+            @JvmField
+            public val NORMALIZED_DIRECTION_X: Source = Source(11, "NORMALIZED_DIRECTION_X")
             /**
              * Signed y component of the normalized travel direction, with values in the range
              * [-1, 1].
              */
-            @JvmField public val NORMALIZED_DIRECTION_Y: Source = Source(12)
+            @JvmField
+            public val NORMALIZED_DIRECTION_Y: Source = Source(12, "NORMALIZED_DIRECTION_Y")
             /**
              * Distance traveled by the inputs of the current stroke, starting at 0 at the first
              * input, where one distance unit is equal to the brush size.
              */
-            @JvmField public val DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source = Source(13)
+            @JvmField
+            public val DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
+                Source(13, "DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * The time elapsed, in seconds, from when the stroke started to when this part of the
              * stroke was drawn. The value remains fixed for any given part of the stroke once
              * drawn.
              */
-            @JvmField public val TIME_OF_INPUT_IN_SECONDS: Source = Source(14)
+            @JvmField
+            public val TIME_OF_INPUT_IN_SECONDS: Source = Source(14, "TIME_OF_INPUT_IN_SECONDS")
             /**
              * The time elapsed, in millis, from when the stroke started to when this part of the
              * stroke was drawn. The value remains fixed for any given part of the stroke once
              * drawn.
              */
-            @JvmField public val TIME_OF_INPUT_IN_MILLIS: Source = Source(15)
+            @JvmField
+            public val TIME_OF_INPUT_IN_MILLIS: Source = Source(15, "TIME_OF_INPUT_IN_MILLIS")
             /**
              * Distance traveled by the inputs of the current prediction, starting at 0 at the last
              * non-predicted input, where one distance unit is equal to the brush size. For cases
@@ -439,25 +400,32 @@ private constructor(
              * min of 0.
              */
             @JvmField
-            public val PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source = Source(16)
+            public val PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
+                Source(16, "PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * Elapsed time of the prediction, starting at 0 at the last non-predicted input. For
              * cases where prediction hasn't started yet, we don't return a negative value, but
              * clamp to a min of 0.
              */
-            @JvmField public val PREDICTED_TIME_ELAPSED_IN_SECONDS: Source = Source(17)
+            @JvmField
+            public val PREDICTED_TIME_ELAPSED_IN_SECONDS: Source =
+                Source(17, "PREDICTED_TIME_ELAPSED_IN_SECONDS")
             /**
              * Elapsed time of the prediction, starting at 0 at the last non-predicted input. For
              * cases where prediction hasn't started yet, we don't return a negative value, but
              * clamp to a min of 0.
              */
-            @JvmField public val PREDICTED_TIME_ELAPSED_IN_MILLIS: Source = Source(18)
+            @JvmField
+            public val PREDICTED_TIME_ELAPSED_IN_MILLIS: Source =
+                Source(18, "PREDICTED_TIME_ELAPSED_IN_MILLIS")
             /**
              * The distance left to be traveled from a given input to the current last input of the
              * stroke, where one distance unit is equal to the brush size. This value changes for
              * each input as the stroke is drawn.
              */
-            @JvmField public val DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE: Source = Source(19)
+            @JvmField
+            public val DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
+                Source(19, "DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * The amount of time that has elapsed, in seconds, since this part of the stroke was
              * drawn. This continues to increase even after all stroke inputs have completed, and
@@ -465,7 +433,9 @@ private constructor(
              * [sourceOutOfRangeBehavior] of [OutOfRange.CLAMP], to ensure that the animation will
              * eventually end.
              */
-            @JvmField public val TIME_SINCE_INPUT_IN_SECONDS: Source = Source(20)
+            @JvmField
+            public val TIME_SINCE_INPUT_IN_SECONDS: Source =
+                Source(20, "TIME_SINCE_INPUT_IN_SECONDS")
             /**
              * The amount of time that has elapsed, in millis, since this part of the stroke was
              * drawn. This continues to increase even after all stroke inputs have completed, and
@@ -473,28 +443,29 @@ private constructor(
              * [sourceOutOfRangeBehavior] of [OutOfRange.CLAMP], to ensure that the animation will
              * eventually end.
              */
-            @JvmField public val TIME_SINCE_INPUT_IN_MILLIS: Source = Source(21)
+            @JvmField
+            public val TIME_SINCE_INPUT_IN_MILLIS: Source = Source(21, "TIME_SINCE_INPUT_IN_MILLIS")
             /**
              * Directionless pointer acceleration with values >= 0 in distance units per second
              * squared, where one distance unit is equal to the brush size.
              */
             @JvmField
             public val ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
-                Source(22)
+                Source(22, "ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
              * Signed x component of pointer acceleration in distance units per second squared,
              * where one distance unit is equal to the brush size.
              */
             @JvmField
             public val ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
-                Source(23)
+                Source(23, "ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
              * Signed y component of pointer acceleration in distance units per second squared,
              * where one distance unit is equal to the brush size.
              */
             @JvmField
             public val ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
-                Source(24)
+                Source(24, "ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
              * Pointer acceleration along the current direction of travel in distance units per
              * second squared, where one distance unit is equal to the brush size. A positive value
@@ -503,7 +474,7 @@ private constructor(
              */
             @JvmField
             public val ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
-                Source(25)
+                Source(25, "ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
              * Pointer acceleration perpendicular to the current direction of travel in distance
              * units per second squared, where one distance unit is equal to the brush size. If the
@@ -514,27 +485,35 @@ private constructor(
              */
             @JvmField
             public val ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
-                Source(26)
+                Source(26, "ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
              * The physical speed of the input pointer at the point in question, in centimeters per
              * second.
              */
-            @JvmField public val INPUT_SPEED_IN_CENTIMETERS_PER_SECOND: Source = Source(27)
+            @JvmField
+            public val INPUT_SPEED_IN_CENTIMETERS_PER_SECOND: Source =
+                Source(27, "INPUT_SPEED_IN_CENTIMETERS_PER_SECOND")
             /**
              * Signed x component of the physical velocity of the input pointer at the point in
              * question, in centimeters per second.
              */
-            @JvmField public val INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND: Source = Source(28)
+            @JvmField
+            public val INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND: Source =
+                Source(28, "INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND")
             /**
              * Signed y component of the physical velocity of the input pointer at the point in
              * question, in centimeters per second.
              */
-            @JvmField public val INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND: Source = Source(29)
+            @JvmField
+            public val INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND: Source =
+                Source(29, "INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND")
             /**
              * The physical distance traveled by the input pointer from the start of the stroke
              * along the input path to the point in question, in centimeters.
              */
-            @JvmField public val INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source = Source(30)
+            @JvmField
+            public val INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source =
+                Source(30, "INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS")
             /**
              * The physical distance that the input pointer would have to travel from its actual
              * last real position along its predicted path to reach the predicted point in question,
@@ -542,25 +521,29 @@ private constructor(
              * value of zero.
              */
             @JvmField
-            public val PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source = Source(31)
+            public val PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source =
+                Source(31, "PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS")
             /**
              * The directionless physical acceleration of the input pointer at the point in
              * question, with values >= 0, in centimeters per second squared.
              */
             @JvmField
-            public val INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED: Source = Source(32)
+            public val INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
+                Source(32, "INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
              * Signed x component of the physical acceleration of the input pointer, in centimeters
              * per second squared.
              */
             @JvmField
-            public val INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED: Source = Source(33)
+            public val INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
+                Source(33, "INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
              * Signed y component of the physical acceleration of the input pointer, in centimeters
              * per second squared.
              */
             @JvmField
-            public val INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED: Source = Source(34)
+            public val INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
+                Source(34, "INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
              * The physical acceleration of the input pointer along its current direction of travel
              * at the point in question, in centimeters per second squared. A positive value
@@ -569,7 +552,7 @@ private constructor(
              */
             @JvmField
             public val INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
-                Source(35)
+                Source(35, "INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
              * The physical acceleration of the input pointer perpendicular to its current direction
              * of travel at the point in question, in centimeters per second squared. If the X- and
@@ -580,56 +563,35 @@ private constructor(
              */
             @JvmField
             public val INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
-                Source(36)
+                Source(36, "INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
              * The distance left to be traveled from a given input to the current last input of the
              * stroke, as a fraction of the current total length of the stroke. This value changes
              * for each input as the stroke is drawn.
              */
             @JvmField
-            public val DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH: Source = Source(37)
-            private const val PREFIX = "BrushBehavior.Source."
+            public val DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH: Source =
+                Source(37, "DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH")
         }
     }
 
     /** List of scalar tip properties that can be modified by a [BrushBehavior]. */
-    public class Target internal constructor(@JvmField internal val value: Int) {
-
-        internal fun toSimpleString(): String =
-            when (this) {
-                WIDTH_MULTIPLIER -> "WIDTH_MULTIPLIER"
-                HEIGHT_MULTIPLIER -> "HEIGHT_MULTIPLIER"
-                SIZE_MULTIPLIER -> "SIZE_MULTIPLIER"
-                SLANT_OFFSET_IN_RADIANS -> "SLANT_OFFSET_IN_RADIANS"
-                PINCH_OFFSET -> "PINCH_OFFSET"
-                ROTATION_OFFSET_IN_RADIANS -> "ROTATION_OFFSET_IN_RADIANS"
-                CORNER_ROUNDING_OFFSET -> "CORNER_ROUNDING_OFFSET"
-                POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE"
-                POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE"
-                POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE"
-                POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE"
-                TEXTURE_ANIMATION_PROGRESS_OFFSET -> "TEXTURE_ANIMATION_PROGRESS_OFFSET"
-                HUE_OFFSET_IN_RADIANS -> "HUE_OFFSET_IN_RADIANS"
-                SATURATION_MULTIPLIER -> "SATURATION_MULTIPLIER"
-                LUMINOSITY -> "LUMINOSITY"
-                OPACITY_MULTIPLIER -> "OPACITY_MULTIPLIER"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is Target) return false
-            return value == other.value
+    public class Target
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate Target value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.Target." + name
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<Target>()
+
+            internal fun fromInt(value: Int): Target =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid Target value: $value" }
 
             /**
              * Scales the brush-tip width, starting from the value calculated using
@@ -637,55 +599,63 @@ private constructor(
              * maximum of twice the base width. If multiple behaviors have one of these targets,
              * they stack multiplicatively.
              */
-            @JvmField public val WIDTH_MULTIPLIER: Target = Target(0)
+            @JvmField public val WIDTH_MULTIPLIER: Target = Target(0, "WIDTH_MULTIPLIER")
             /**
              * Scales the brush-tip height, starting from the value calculated using
              * [BrushTip.scaleX] and [BrushTip.scaleY]. The final brush height is clamped to a
              * maximum of twice the base height. If multiple behaviors have one of these targets,
              * they stack multiplicatively.
              */
-            @JvmField public val HEIGHT_MULTIPLIER: Target = Target(1)
+            @JvmField public val HEIGHT_MULTIPLIER: Target = Target(1, "HEIGHT_MULTIPLIER")
             /** Convenience enumerator to target both [WIDTH_MULTIPLIER] and [HEIGHT_MULTIPLIER]. */
-            @JvmField public val SIZE_MULTIPLIER: Target = Target(2)
+            @JvmField public val SIZE_MULTIPLIER: Target = Target(2, "SIZE_MULTIPLIER")
             /**
              * Adds the target modifier to [BrushTip.slant]. The final brush slant value is clamped
              * to [-π/2, π/2]. If multiple behaviors have this target, they stack additively.
              */
-            @JvmField public val SLANT_OFFSET_IN_RADIANS: Target = Target(3)
+            @JvmField
+            public val SLANT_OFFSET_IN_RADIANS: Target = Target(3, "SLANT_OFFSET_IN_RADIANS")
             /**
              * Adds the target modifier to [BrushTip.pinch]. The final brush pinch value is clamped
              * to [0, 1]. If multiple behaviors have this target, they stack additively.
              */
-            @JvmField public val PINCH_OFFSET: Target = Target(4)
+            @JvmField public val PINCH_OFFSET: Target = Target(4, "PINCH_OFFSET")
             /**
              * Adds the target modifier to [BrushTip.rotation]. The final brush rotation angle is
              * effectively normalized (mod 2π). If multiple behaviors have this target, they stack
              * additively.
              */
-            @JvmField public val ROTATION_OFFSET_IN_RADIANS: Target = Target(5)
+            @JvmField
+            public val ROTATION_OFFSET_IN_RADIANS: Target = Target(5, "ROTATION_OFFSET_IN_RADIANS")
             /**
              * Adds the target modifier to [BrushTip.cornerRounding]. The final brush corner
              * rounding value is clamped to [0, 1]. If multiple behaviors have this target, they
              * stack additively.
              */
-            @JvmField public val CORNER_ROUNDING_OFFSET: Target = Target(6)
+            @JvmField
+            public val CORNER_ROUNDING_OFFSET: Target = Target(6, "CORNER_ROUNDING_OFFSET")
             /**
              * Adds the target modifier to the brush tip x position, where one distance unit is
              * equal to the brush size.
              */
-            @JvmField public val POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE: Target = Target(7)
+            @JvmField
+            public val POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
+                Target(7, "POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * Adds the target modifier to the brush tip y position, where one distance unit is
              * equal to the brush size.
              */
-            @JvmField public val POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE: Target = Target(8)
+            @JvmField
+            public val POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
+                Target(8, "POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * Moves the brush tip center forward (or backward, for negative values) from the input
              * position, in the current direction of stroke travel, where one distance unit is equal
              * to the brush size.
              */
             @JvmField
-            public val POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE: Target = Target(9)
+            public val POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
+                Target(9, "POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * Moves the brush tip center sideways from the input position, relative to the
              * direction of stroke travel, where one distance unit is equal to the brush size. If
@@ -695,14 +665,17 @@ private constructor(
              * center towards the negative Y-axis).
              */
             @JvmField
-            public val POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE: Target = Target(10)
+            public val POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
+                Target(10, "POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
              * Adds the target modifier to the initial texture animation progress value of the
              * current particle (which is relevant only for strokes with an animated texture). The
              * final progress offset is not clamped, but is effectively normalized (mod 1). If
              * multiple behaviors have this target, they stack additively.
              */
-            @JvmField public val TEXTURE_ANIMATION_PROGRESS_OFFSET: Target = Target(11)
+            @JvmField
+            public val TEXTURE_ANIMATION_PROGRESS_OFFSET: Target =
+                Target(11, "TEXTURE_ANIMATION_PROGRESS_OFFSET")
 
             // The following are targets for tip color adjustments, including opacity. Renderers can
             // apply
@@ -715,42 +688,38 @@ private constructor(
              * towards violet. The final hue offset is not clamped, but is effectively normalized
              * (mod 2π). If multiple behaviors have this target, they stack additively.
              */
-            @JvmField public val HUE_OFFSET_IN_RADIANS: Target = Target(12)
+            @JvmField public val HUE_OFFSET_IN_RADIANS: Target = Target(12, "HUE_OFFSET_IN_RADIANS")
             /**
              * Scales the saturation of the base brush color. If multiple behaviors have one of
              * these targets, they stack multiplicatively. The final saturation multiplier is
              * clamped to [0, 2].
              */
-            @JvmField public val SATURATION_MULTIPLIER: Target = Target(13)
+            @JvmField public val SATURATION_MULTIPLIER: Target = Target(13, "SATURATION_MULTIPLIER")
             /**
              * Target the luminosity of the color. An offset of +/-100% corresponds to changing the
              * luminosity by up to +/-100%.
              */
-            @JvmField public val LUMINOSITY: Target = Target(14)
+            @JvmField public val LUMINOSITY: Target = Target(14, "LUMINOSITY")
             /**
              * Scales the opacity of the base brush color. If multiple behaviors have one of these
              * targets, they stack multiplicatively. The final opacity multiplier is clamped to
              * [0, 2].
              */
-            @JvmField public val OPACITY_MULTIPLIER: Target = Target(15)
-
-            private const val PREFIX = "BrushBehavior.Target."
+            @JvmField public val OPACITY_MULTIPLIER: Target = Target(15, "OPACITY_MULTIPLIER")
         }
     }
 
     /** List of vector tip properties that can be modified by a [BrushBehavior]. */
-    public class PolarTarget internal constructor(@JvmField internal val value: Int) {
+    public class PolarTarget
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate PolarTarget value: $value." }
+            VALUE_TO_INSTANCE[value] = this
+        }
 
-        internal fun toSimpleString(): String =
-            when (this) {
-                POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE"
-                POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE ->
-                    "POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE"
-                else -> "INVALID"
-            }
+        internal fun toSimpleString(): String = name
 
-        override fun toString(): String = PREFIX + this.toSimpleString()
+        override fun toString(): String = "BrushBehavior.PolarTarget." + name
 
         override fun equals(other: Any?): Boolean {
             if (other == null || other !is PolarTarget) return false
@@ -760,6 +729,10 @@ private constructor(
         override fun hashCode(): Int = value.hashCode()
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<PolarTarget>()
+
+            internal fun fromInt(value: Int): PolarTarget =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid PolarTarget value: $value" }
 
             /**
              * Adds the vector to the brush tip's absolute x/y position in stroke space, where the
@@ -771,7 +744,7 @@ private constructor(
             @JvmField
             public val POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE:
                 PolarTarget =
-                PolarTarget(0)
+                PolarTarget(0, "POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE")
 
             /**
              * Adds the vector to the brush tip's forward/lateral position relative to the current
@@ -786,9 +759,7 @@ private constructor(
             @JvmField
             public val POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE:
                 PolarTarget =
-                PolarTarget(1)
-
-            private const val PREFIX = "BrushBehavior.PolarTarget."
+                PolarTarget(1, "POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE")
         }
     }
 
@@ -796,27 +767,26 @@ private constructor(
      * The desired behavior when an input value is outside the range defined by
      * [sourceValueRangeStart] and [sourceValueRangeEnd].
      */
-    public class OutOfRange internal constructor(@JvmField internal val value: Int) {
-        internal fun toSimpleString(): String =
-            when (this) {
-                CLAMP -> "CLAMP"
-                REPEAT -> "REPEAT"
-                MIRROR -> "MIRROR"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is OutOfRange) return false
-            return value == other.value
+    public class OutOfRange
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate OutOfRange value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.OutOfRange." + name
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<OutOfRange>()
+
+            internal fun fromInt(value: Int): OutOfRange =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid OutOfRange value: $value" }
+
             /** Values outside the range will be clamped to not exceed the bounds. */
-            @JvmField public val CLAMP: OutOfRange = OutOfRange(0)
+            @JvmField public val CLAMP: OutOfRange = OutOfRange(0, "CLAMP")
+
             /**
              * Values will be shifted by an integer multiple of the range size so that they fall
              * within the bounds.
@@ -824,100 +794,93 @@ private constructor(
              * In this case, the range will be treated as a half-open interval, with a value exactly
              * at [sourceValueRangeEnd] being treated as though it was [sourceValueRangeStart].
              */
-            @JvmField public val REPEAT: OutOfRange = OutOfRange(1)
+            @JvmField public val REPEAT: OutOfRange = OutOfRange(1, "REPEAT")
             /**
              * Similar to [Repeat], but every other repetition of the bounds will be mirrored, as
              * though the two elements [sourceValueRangeStart] and [sourceValueRangeEnd] were
              * swapped. This means the range does not need to be treated as a half-open interval
              * like in the case of [Repeat].
              */
-            @JvmField public val MIRROR: OutOfRange = OutOfRange(2)
-            private const val PREFIX = "BrushBehavior.OutOfRange."
+            @JvmField public val MIRROR: OutOfRange = OutOfRange(2, "MIRROR")
         }
     }
 
     /** List of input properties that might not be reported by inputs. */
-    public class OptionalInputProperty internal constructor(@JvmField internal val value: Int) {
-
-        internal fun toSimpleString(): String =
-            when (this) {
-                PRESSURE -> "PRESSURE"
-                TILT -> "TILT"
-                ORIENTATION -> "ORIENTATION"
-                TILT_X_AND_Y -> "TILT_X_AND_Y"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is OptionalInputProperty) return false
-            return value == other.value
+    public class OptionalInputProperty
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate OptionalInputProperty value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.OptionalInputProperty.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<OptionalInputProperty>()
 
-            @JvmField public val PRESSURE: OptionalInputProperty = OptionalInputProperty(0)
-            @JvmField public val TILT: OptionalInputProperty = OptionalInputProperty(1)
-            @JvmField public val ORIENTATION: OptionalInputProperty = OptionalInputProperty(2)
+            internal fun fromInt(value: Int): OptionalInputProperty =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) {
+                    "Invalid OptionalInputProperty value: $value"
+                }
+
+            @JvmField
+            public val PRESSURE: OptionalInputProperty = OptionalInputProperty(0, "PRESSURE")
+            @JvmField public val TILT: OptionalInputProperty = OptionalInputProperty(1, "TILT")
+            @JvmField
+            public val ORIENTATION: OptionalInputProperty = OptionalInputProperty(2, "ORIENTATION")
             /** Tilt-x and tilt-y require both tilt and orientation to be reported. */
-            @JvmField public val TILT_X_AND_Y: OptionalInputProperty = OptionalInputProperty(3)
-            private const val PREFIX = "BrushBehavior.OptionalInputProperty."
+            @JvmField
+            public val TILT_X_AND_Y: OptionalInputProperty =
+                OptionalInputProperty(3, "TILT_X_AND_Y")
         }
     }
 
     /** A binary operation for combining two values in a [BinaryOpNode]. */
-    public class BinaryOp internal constructor(@JvmField internal val value: Int) {
-
-        internal fun toSimpleString(): String =
-            when (this) {
-                PRODUCT -> "PRODUCT"
-                SUM -> "SUM"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is BinaryOp) return false
-            return value == other.value
+    public class BinaryOp
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate BinaryOp value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.BinaryOp." + name
 
         public companion object {
-            /** Evaluates to the product of the two input values, or null if either is null. */
-            @JvmField public val PRODUCT: BinaryOp = BinaryOp(0)
-            /** Evaluates to the sum of the two input values, or null if either is null. */
-            @JvmField public val SUM: BinaryOp = BinaryOp(1)
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<BinaryOp>()
 
-            private const val PREFIX = "BrushBehavior.BinaryOp."
+            internal fun fromInt(value: Int): BinaryOp =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid BinaryOp value: $value" }
+
+            /** Evaluates to the product of the two input values, or null if either is null. */
+            @JvmField public val PRODUCT: BinaryOp = BinaryOp(0, "PRODUCT")
+            /** Evaluates to the sum of the two input values, or null if either is null. */
+            @JvmField public val SUM: BinaryOp = BinaryOp(1, "SUM")
         }
     }
 
     /** Dimensions/units for measuring the [dampingGap] field of a [DampingNode] */
-    public class DampingSource internal constructor(@JvmField internal val value: Int) {
-
-        internal fun toSimpleString(): String =
-            when (this) {
-                DISTANCE_IN_CENTIMETERS -> "DISTANCE_IN_CENTIMETERS"
-                DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE -> "DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE"
-                TIME_IN_SECONDS -> "TIME_IN_SECONDS"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is DampingSource) return false
-            return value == other.value
+    public class DampingSource
+    internal constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate DampingSource value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.DampingSource.$name"
 
         public companion object {
+
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<DampingSource>()
+
+            internal fun fromInt(value: Int): DampingSource =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid DampingSource value: $value" }
+
             /**
              * Value damping occurs over distance traveled by the input pointer, and the
              * [dampingGap] is measured in centimeters. If the input data does not indicate the
@@ -925,55 +888,53 @@ private constructor(
              * programmatically-generated inputs), then no damping will be performed (i.e. the
              * [dampingGap] will be treated as zero).
              */
-            @JvmField public val DISTANCE_IN_CENTIMETERS: DampingSource = DampingSource(0)
+            @JvmField
+            public val DISTANCE_IN_CENTIMETERS: DampingSource =
+                DampingSource(0, "DISTANCE_IN_CENTIMETERS")
             /**
              * Value damping occurs over distance traveled by the input pointer, and the
              * [dampingGap] is measured in multiples of the brush size.
              */
             @JvmField
-            public val DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE: DampingSource = DampingSource(1)
+            public val DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE: DampingSource =
+                DampingSource(1, "DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE")
             /** Value damping occurs over time, and the [dampingGap] is measured in seconds. */
-            @JvmField public val TIME_IN_SECONDS: DampingSource = DampingSource(2)
-
-            private const val PREFIX = "BrushBehavior.DampingSource."
+            @JvmField
+            public val TIME_IN_SECONDS: DampingSource = DampingSource(2, "TIME_IN_SECONDS")
         }
     }
 
     /** Interpolation functions for use in an [InterpolationNode]. */
-    public class Interpolation internal constructor(@JvmField internal val value: Int) {
-
-        internal fun toSimpleString(): String =
-            when (this) {
-                LERP -> "LERP"
-                INVERSE_LERP -> "INVERSE_LERP"
-                else -> "INVALID"
-            }
-
-        override fun toString(): String = PREFIX + this.toSimpleString()
-
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other !is Interpolation) return false
-            return value == other.value
+    public class Interpolation
+    private constructor(@JvmField internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate Interpolation value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        internal fun toSimpleString(): String = name
+
+        override fun toString(): String = "BrushBehavior.Interpolation.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<Interpolation>()
+
+            internal fun fromInt(value: Int): Interpolation =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid Interpolation value: $value" }
+
             /**
              * Linear interpolation. Evaluates to the [InterpolationNode.startInput] value when the
              * [InterpolationNode.paramInput] value is 0, and to the [InterpolationNode.endInput]
              * value when the [InterpolationNode.paramInput] value is 1.
              */
-            @JvmField public val LERP: Interpolation = Interpolation(0)
+            @JvmField public val LERP: Interpolation = Interpolation(0, "LERP")
             /**
              * Inverse linear interpolation. Evaluates to 0 when the [InterpolationNode.paramInput]
              * value is equal to the [InterpolationNode.startInput] value, and to 1 when the
              * parameter is equal to the [InterpolationNode.endInput] value. Evaluates to null when
              * the [InterpolationNode.startInput] and [InterpolationNode.endInput] values are equal.
              */
-            @JvmField public val INVERSE_LERP: Interpolation = Interpolation(1)
-
-            private const val PREFIX = "BrushBehavior.Interpolation."
+            @JvmField public val INVERSE_LERP: Interpolation = Interpolation(1, "INVERSE_LERP")
         }
     }
 
@@ -991,11 +952,13 @@ private constructor(
 
         // NOMUTANTS -- Not tested post garbage collection.
         protected fun finalize() {
-            // TODO: b/423019041 - Investigate why this is failing in native code with
-            // nativePointer=0
-            if (nativePointer != 0L) {
-                BrushBehaviorNodeNative.free(nativePointer)
-            }
+            // Note that the instance becomes finalizable at the conclusion of the Object
+            // constructor,
+            // which in Kotlin is always before any non-default field initialization has been done
+            // by a
+            // derived class constructor.
+            if (nativePointer == 0L) return
+            BrushBehaviorNodeNative.free(nativePointer)
         }
 
         public companion object {
@@ -1803,7 +1766,7 @@ private object BrushBehaviorNodeNative {
     // SourceNode accessors:
 
     fun getSource(nativePointer: Long): BrushBehavior.Source =
-        BrushBehavior.Source(getSourceInt(nativePointer))
+        BrushBehavior.Source.fromInt(getSourceInt(nativePointer))
 
     @UsedByNative private external fun getSourceInt(nativePointer: Long): Int
 
@@ -1812,7 +1775,7 @@ private object BrushBehaviorNodeNative {
     @UsedByNative external fun getSourceValueRangeEnd(nativePointer: Long): Float
 
     fun getSourceOutOfRangeBehavior(nativePointer: Long): BrushBehavior.OutOfRange =
-        BrushBehavior.OutOfRange(getSourceOutOfRangeBehaviorInt(nativePointer))
+        BrushBehavior.OutOfRange.fromInt(getSourceOutOfRangeBehaviorInt(nativePointer))
 
     @UsedByNative private external fun getSourceOutOfRangeBehaviorInt(nativePointer: Long): Int
 
@@ -1825,7 +1788,7 @@ private object BrushBehaviorNodeNative {
     @UsedByNative external fun getNoiseSeed(nativePointer: Long): Int
 
     fun getNoiseVaryOver(nativePointer: Long): BrushBehavior.DampingSource =
-        BrushBehavior.DampingSource(getNoiseVaryOverInt(nativePointer))
+        BrushBehavior.DampingSource.fromInt(getNoiseVaryOverInt(nativePointer))
 
     @UsedByNative private external fun getNoiseVaryOverInt(nativePointer: Long): Int
 
@@ -1834,7 +1797,9 @@ private object BrushBehaviorNodeNative {
     // FallbackFilterNode accessors:
 
     fun getFallbackFilterIsFallbackFor(nativePointer: Long): BrushBehavior.OptionalInputProperty =
-        BrushBehavior.OptionalInputProperty(getFallbackFilterIsFallbackForInt(nativePointer))
+        BrushBehavior.OptionalInputProperty.fromInt(
+            getFallbackFilterIsFallbackForInt(nativePointer)
+        )
 
     @UsedByNative private external fun getFallbackFilterIsFallbackForInt(nativePointer: Long): Int
 
@@ -1851,7 +1816,7 @@ private object BrushBehaviorNodeNative {
     // DampingNode accessors:
 
     fun getDampingSource(nativePointer: Long): BrushBehavior.DampingSource =
-        BrushBehavior.DampingSource(getDampingSourceInt(nativePointer))
+        BrushBehavior.DampingSource.fromInt(getDampingSourceInt(nativePointer))
 
     @UsedByNative private external fun getDampingSourceInt(nativePointer: Long): Int
 
@@ -1864,21 +1829,21 @@ private object BrushBehaviorNodeNative {
     // BinaryOpNode accessors:
 
     fun getBinaryOperation(nativePointer: Long): BrushBehavior.BinaryOp =
-        BrushBehavior.BinaryOp(getBinaryOperationInt(nativePointer))
+        BrushBehavior.BinaryOp.fromInt(getBinaryOperationInt(nativePointer))
 
     @UsedByNative private external fun getBinaryOperationInt(nativePointer: Long): Int
 
     // InterpolationNode accessors:
 
     fun getInterpolation(nativePointer: Long): BrushBehavior.Interpolation =
-        BrushBehavior.Interpolation(getInterpolationInt(nativePointer))
+        BrushBehavior.Interpolation.fromInt(getInterpolationInt(nativePointer))
 
     @UsedByNative private external fun getInterpolationInt(nativePointer: Long): Int
 
     // TargetNode accessors:
 
     fun getTarget(nativePointer: Long): BrushBehavior.Target =
-        BrushBehavior.Target(getTargetInt(nativePointer))
+        BrushBehavior.Target.fromInt(getTargetInt(nativePointer))
 
     @UsedByNative private external fun getTargetInt(nativePointer: Long): Int
 
@@ -1889,7 +1854,7 @@ private object BrushBehaviorNodeNative {
     // PolarTargetNode accessors:
 
     fun getPolarTarget(nativePointer: Long): BrushBehavior.PolarTarget =
-        BrushBehavior.PolarTarget(getPolarTargetInt(nativePointer))
+        BrushBehavior.PolarTarget.fromInt(getPolarTargetInt(nativePointer))
 
     @UsedByNative private external fun getPolarTargetInt(nativePointer: Long): Int
 

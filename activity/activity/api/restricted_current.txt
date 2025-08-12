@@ -18,7 +18,7 @@ package androidx.activity {
     method @RequiresApi(34) public android.window.BackEvent toBackEvent();
     method public androidx.navigationevent.NavigationEvent toNavigationEvent();
     property public long frameTimeMillis;
-    property @FloatRange(from=0.0, to=1.0) public float progress;
+    property public float progress;
     property public int swipeEdge;
     property public float touchX;
     property public float touchY;
@@ -96,7 +96,6 @@ package androidx.activity {
     method public final androidx.activity.OnBackPressedDispatcher getOnBackPressedDispatcher();
     method public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
     method @CallSuper public void initializeViewTreeOwners();
-    method @CallSuper public void onBackPressed();
     property public androidx.lifecycle.Lifecycle lifecycle;
     property public androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher;
     property public final androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher;
@@ -348,8 +347,8 @@ package androidx.activity.result {
   public final class PickVisualMediaRequestKt {
     method @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.MediaCapabilities? mediaCapabilitiesForTranscoding, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType, optional @IntRange(from=2L) int maxItems, optional boolean isOrderedSelection, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.DefaultTab defaultTab);
     method @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.MediaCapabilities? mediaCapabilitiesForTranscoding, long accentColor, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType, optional @IntRange(from=2L) int maxItems, optional boolean isOrderedSelection, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.DefaultTab defaultTab);
-    method @Deprecated public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType);
-    method @Deprecated public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType, optional @IntRange(from=2L) int maxItems);
+    method @BytecodeOnly @Deprecated public static androidx.activity.result.PickVisualMediaRequest! PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType!);
+    method @BytecodeOnly @Deprecated public static androidx.activity.result.PickVisualMediaRequest! PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType!, @IntRange(from=2L) int);
     method public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType, optional @IntRange(from=2L) int maxItems, optional boolean isOrderedSelection, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.DefaultTab defaultTab);
     method public static androidx.activity.result.PickVisualMediaRequest PickVisualMediaRequest(long accentColor, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType, optional @IntRange(from=2L) int maxItems, optional boolean isOrderedSelection, optional androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.DefaultTab defaultTab);
   }
@@ -410,7 +409,7 @@ package androidx.activity.result.contract {
     method public final android.net.Uri? parseResult(int resultCode, android.content.Intent? intent);
   }
 
-  @RequiresApi(21) public static class ActivityResultContracts.OpenDocumentTree extends androidx.activity.result.contract.ActivityResultContract<android.net.Uri?,android.net.Uri?> {
+  public static class ActivityResultContracts.OpenDocumentTree extends androidx.activity.result.contract.ActivityResultContract<android.net.Uri?,android.net.Uri?> {
     ctor public ActivityResultContracts.OpenDocumentTree();
     method @CallSuper public android.content.Intent createIntent(android.content.Context context, android.net.Uri? input);
     method public final androidx.activity.result.contract.ActivityResultContract.SynchronousResult<android.net.Uri?>? getSynchronousResult(android.content.Context context, android.net.Uri? input);

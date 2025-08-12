@@ -101,9 +101,9 @@ package androidx.test.uiautomator {
     method @RequiresApi(30) public static androidx.test.uiautomator.ByWindowSelector displayId(int);
     method public static androidx.test.uiautomator.ByWindowSelector focused(boolean);
     method public static androidx.test.uiautomator.ByWindowSelector id(int);
-    method public static androidx.test.uiautomator.ByWindowSelector layer(int);
-    method public static androidx.test.uiautomator.ByWindowSelector layerAbove(int);
-    method public static androidx.test.uiautomator.ByWindowSelector layerBelow(int);
+    method public static androidx.test.uiautomator.ByWindowSelector layer(@IntRange(from=0) int);
+    method public static androidx.test.uiautomator.ByWindowSelector layerAbove(@IntRange(from=0) int);
+    method public static androidx.test.uiautomator.ByWindowSelector layerBelow(@IntRange(from=1) int);
     method public static androidx.test.uiautomator.ByWindowSelector pkg(String);
     method public static androidx.test.uiautomator.ByWindowSelector pkg(java.util.regex.Pattern);
     method public static androidx.test.uiautomator.ByWindowSelector title(String);

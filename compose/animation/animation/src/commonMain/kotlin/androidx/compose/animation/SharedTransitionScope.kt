@@ -98,8 +98,16 @@ import kotlinx.coroutines.launch
  * not introduce a new layout between [content] and the parent layout, consider using
  * [SharedTransitionScope] instead.
  *
+ * Below is an example of using [SharedTransitionLayout] to create a shared element transition and a
+ * shared bounds transition at the same time. Please see the API docs for
+ * [SharedTransitionScope.sharedElement] and [SharedTransitionScope.sharedBounds] for more
+ * simplified examples of using these APIs separately.
+ *
+ * @sample androidx.compose.animation.samples.SharedElementInAnimatedContentSample
  * @param modifier Modifiers to be applied to the layout.
  * @param content The children composable to be laid out.
+ * @see SharedTransitionScope.sharedElement
+ * @see SharedTransitionScope.sharedBounds
  */
 @ExperimentalSharedTransitionApi
 @Composable
@@ -182,7 +190,7 @@ private class SharedTransitionScopeRootModifierNode(sharedScope: SharedTransitio
                 if (!isLookingAhead) {
                     sharedScope.root = coords
                 } else {
-                    sharedScope.nullableLookaheadRoot = coords
+                    sharedScope.lookaheadRoot = coords
                 }
             }
             p.place(0, 0)
@@ -338,7 +346,7 @@ public interface SharedTransitionScope : LookaheadScope {
              */
             public fun scaleToBounds(
                 contentScale: ContentScale = ContentScale.FillWidth,
-                alignment: Alignment = Alignment.Center,
+                alignment: Alignment = Center,
             ): ResizeMode = ScaleToBoundsCached(contentScale, alignment)
 
             @Deprecated(
@@ -351,7 +359,7 @@ public interface SharedTransitionScope : LookaheadScope {
             )
             public fun ScaleToBounds(
                 contentScale: ContentScale = ContentScale.FillWidth,
-                alignment: Alignment = Alignment.Center,
+                alignment: Alignment = Center,
             ): ResizeMode = scaleToBounds()
         }
     }
@@ -450,18 +458,16 @@ public interface SharedTransitionScope : LookaheadScope {
      * [AnimatedVisibilityScope.animateEnterExit]) for the child layout to avoid any abrupt visual
      * changes.
      *
-     * [clipInOverlayDuringTransition] supports a custom clip path if clipping is desired. By
-     * default, no clipping is applied. Manual management of clipping can often be avoided by
-     * putting layouts with clipping as children of this modifier (i.e. to the right side of this
-     * modifier).
-     *
      * @sample androidx.compose.animation.samples.SharedElementWithFABInOverlaySample
+     * @param renderInOverlay [renderInOverlay] determines when the content should be rendered in
+     *   the overlay. Defaults to [SharedTransitionDefaults.RenderInOverlay], which renders the
+     *   content in the overlay only when the transition is active.
+     * @param zIndexInOverlay The zIndex of the content in the overlay. Defaults to 0f.
      */
     public fun Modifier.renderInSharedTransitionScopeOverlay(
-        renderInOverlay: () -> Boolean = { isTransitionActive },
         zIndexInOverlay: Float = 0f,
-        clipInOverlayDuringTransition: (LayoutDirection, Density) -> Path? =
-            DefaultClipInOverlayDuringTransition,
+        renderInOverlay: (SharedTransitionScope) -> Boolean =
+            SharedTransitionDefaults.RenderInOverlay,
     ): Modifier
 
     /**
@@ -470,7 +476,7 @@ public interface SharedTransitionScope : LookaheadScope {
      */
     public interface OverlayClip {
         /**
-         * Creates a clip path based using current animated [bounds] of the [sharedBounds] or
+         * Creates a clip path based on current animated [bounds] of the [sharedBounds] or
          * [sharedElement], their [sharedContentState] (to query parent state's bounds if needed),
          * and [layoutDirection] and [density]. The topLeft of the [bounds] is the local position of
          * the sharedElement/sharedBounds in the [SharedTransitionScope].
@@ -479,8 +485,8 @@ public interface SharedTransitionScope : LookaheadScope {
          * [SharedTransitionScope.lookaheadScopeCoordinates]'s coordinate space. For example, if the
          * path is created using [bounds], it needs to be offset-ed by [bounds].topLeft.
          *
-         * It is recommended to modify the same [Path] object and return it here, instead of
-         * creating new [Path]s.
+         * When implementing this method, it is recommended to modify the same [Path] object and
+         * return it here, instead of creating new [Path]s.
          */
         public fun getClipPath(
             sharedContentState: SharedContentState,
@@ -544,13 +550,33 @@ public interface SharedTransitionScope : LookaheadScope {
      * an animated size to create a visual effect where the parent layout dynamically adjusts the
      * layout to accommodate the animated size of the shared elements.
      *
-     * @sample androidx.compose.animation.samples.SharedElementInAnimatedContentSample
+     * Below is an example of using shared elements in a transition from a list to a details page.
+     * For a more complex example using [sharedElement] along with [sharedBounds], see the API
+     * documentation for [SharedTransitionLayout].
+     *
+     * @sample androidx.compose.animation.samples.ListToDetailSample
+     * @param sharedContentState The [SharedContentState] of the shared element. This defines the
+     *   key used for matching shared elements.
+     * @param animatedVisibilityScope The [AnimatedVisibilityScope] in which the shared element is
+     *   declared. This helps the system determine if the shared element is incoming or outgoing.
+     * @param boundsTransform A [BoundsTransform] to customize the animation specification based on
+     *   the shared element's initial and target bounds during the transition.
+     * @param placeHolderSize A [PlaceHolderSize] that defines the size the transforming layout
+     *   reports to the layout system during the transition. By default, this is the shared
+     *   element's content size (without any scaling or transformation).
+     * @param renderInOverlayDuringTransition Whether the shared element should be rendered in the
+     *   overlay during the transition. Defaults to `true`.
+     * @param zIndexInOverlay The `zIndex` of the shared element within the overlay, enabling custom
+     *   z-ordering for multiple shared elements.
+     * @param clipInOverlayDuringTransition The clipping path of the shared element in the overlay.
+     *   By default, it uses the resolved clip path from its parent `sharedBounds` (if applicable).
      * @see [sharedBounds]
+     * @see [SharedTransitionLayout]
      */
     public fun Modifier.sharedElement(
         sharedContentState: SharedContentState,
         animatedVisibilityScope: AnimatedVisibilityScope,
-        boundsTransform: BoundsTransform = DefaultBoundsTransform,
+        boundsTransform: BoundsTransform = SharedTransitionDefaults.BoundsTransform,
         placeHolderSize: PlaceHolderSize = contentSize,
         renderInOverlayDuringTransition: Boolean = true,
         zIndexInOverlay: Float = 0f,
@@ -616,7 +642,7 @@ public interface SharedTransitionScope : LookaheadScope {
      * an animated size to create a visual effect where the parent layout dynamically adjusts the
      * layout to accommodate the animated size of the shared elements.
      *
-     * @sample androidx.compose.animation.samples.SharedElementInAnimatedContentSample
+     * @sample androidx.compose.animation.samples.SharedBoundsSample
      *
      * Since [sharedBounds] show both incoming and outgoing content in its bounds, it affords
      * opportunities to do interesting transitions where additional [sharedElement] and
@@ -624,6 +650,28 @@ public interface SharedTransitionScope : LookaheadScope {
      * complex example with nested shared bounds/elements.
      *
      * @sample androidx.compose.animation.samples.NestedSharedBoundsSample
+     * @param sharedContentState The [SharedContentState] of the shared element. This defines the
+     *   key used for matching shared elements.
+     * @param animatedVisibilityScope The [AnimatedVisibilityScope] in which the shared element is
+     *   declared. This helps the system determine if the shared element is incoming or outgoing.
+     * @param enter The enter transition used for incoming content while it's displayed within the
+     *   transforming bounds. This defaults to a fade-in.
+     * @param exit The exit transition used for outgoing content while it's displayed within the
+     *   transforming bounds. This defaults to a fade-out.
+     * @param boundsTransform A [BoundsTransform] to customize the animation specification based on
+     *   the shared element's initial and target bounds for the transition.
+     * @param resizeMode A [ResizeMode] that defines how the child layout of [sharedBounds] should
+     *   be resized during [boundsTransform]. By default, [scaleToBounds] is used to scale the child
+     *   content to fit the transforming bounds.
+     * @param placeHolderSize A [PlaceHolderSize] that defines the size the transforming layout
+     *   reports to the layout system during the transition. By default, this is the shared bounds'
+     *   content size (without any scaling or transformation).
+     * @param renderInOverlayDuringTransition Whether the shared bounds should be rendered in the
+     *   overlay during the transition. Defaults to `true`.
+     * @param zIndexInOverlay The `zIndex` of the shared bounds within the overlay, enabling custom
+     *   z-ordering for multiple shared bounds or elements.
+     * @param clipInOverlayDuringTransition The clipping path of the shared bounds in the overlay.
+     *   By default, it uses the resolved clip path from its parent `sharedBounds` (if applicable).
      * @see [sharedBounds]
      */
     public fun Modifier.sharedBounds(
@@ -631,7 +679,7 @@ public interface SharedTransitionScope : LookaheadScope {
         animatedVisibilityScope: AnimatedVisibilityScope,
         enter: EnterTransition = fadeIn(),
         exit: ExitTransition = fadeOut(),
-        boundsTransform: BoundsTransform = DefaultBoundsTransform,
+        boundsTransform: BoundsTransform = SharedTransitionDefaults.BoundsTransform,
         resizeMode: ResizeMode = scaleToBounds(ContentScale.FillWidth, Center),
         placeHolderSize: PlaceHolderSize = contentSize,
         renderInOverlayDuringTransition: Boolean = true,
@@ -702,11 +750,25 @@ public interface SharedTransitionScope : LookaheadScope {
      * layout to accommodate the animated size of the shared elements.
      *
      * @sample androidx.compose.animation.samples.SharedElementWithMovableContentSample
+     * @param sharedContentState The [SharedContentState] of the shared element. This defines the
+     *   key used for matching shared elements.
+     * @param visible Whether the shared element is visible.
+     * @param boundsTransform A [BoundsTransform] to customize the animation specification based on
+     *   the shared element's initial and target bounds during the transition.
+     * @param placeHolderSize A [PlaceHolderSize] that defines the size the transforming layout
+     *   reports to the layout system during the transition. By default, this is the shared
+     *   element's content size (without any scaling or transformation).
+     * @param renderInOverlayDuringTransition Whether the shared element should be rendered in the
+     *   overlay during the transition. Defaults to `true`.
+     * @param zIndexInOverlay The `zIndex` of the shared element within the overlay, enabling custom
+     *   z-ordering for multiple shared elements.
+     * @param clipInOverlayDuringTransition The clipping path of the shared element in the overlay.
+     *   By default, it uses the resolved clip path from its parent `sharedBounds` (if applicable).
      */
     public fun Modifier.sharedElementWithCallerManagedVisibility(
         sharedContentState: SharedContentState,
         visible: Boolean,
-        boundsTransform: BoundsTransform = DefaultBoundsTransform,
+        boundsTransform: BoundsTransform = SharedTransitionDefaults.BoundsTransform,
         placeHolderSize: PlaceHolderSize = contentSize,
         renderInOverlayDuringTransition: Boolean = true,
         zIndexInOverlay: Float = 0f,
@@ -736,8 +798,11 @@ public interface SharedTransitionScope : LookaheadScope {
     @Composable
     public fun rememberSharedContentState(
         key: Any,
-        config: SharedContentConfig = DefaultConfig,
-    ): SharedContentState
+        config: SharedContentConfig = SharedTransitionDefaults.SharedContentConfig,
+    ): SharedContentState {
+        // Add default impl here to allow for a custom impl of SharedTransitionScope.
+        return remember(key) { SharedContentState(key, config) }.also { it.config = config }
+    }
 
     /**
      * [SharedContentState] is designed to allow access of the properties of
@@ -876,6 +941,22 @@ public interface SharedTransitionScope : LookaheadScope {
                 get() = isEnabled()
         }
     }
+
+    /**
+     * [SharedContentConfig] is a factory method that returns an [SharedContentConfig] object with
+     * default implementations for all the functions and properties defined in the
+     * [SharedContentConfig] interface. More specifically, the returned
+     * [SharedTransitionScope.SharedContentConfig] enables shared elements and bounds, and keeps
+     * them enabled while the animation is in-flight. It also sets the
+     * [SharedContentConfig.alternativeTargetBoundsInTransitionScopeAfterRemoval] to null, ensuring
+     * the shared element transition is canceled immediately if the incoming shared element is
+     * removed during the animation.
+     *
+     * @see SharedContentConfig
+     */
+    public fun SharedContentConfig(): SharedContentConfig {
+        return CachedSharedContentConfig
+    }
 }
 
 @ExperimentalSharedTransitionApi
@@ -892,16 +973,14 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     override fun Modifier.skipToLookaheadSize(): Modifier = this.then(SkipToLookaheadElement())
 
     override fun Modifier.renderInSharedTransitionScopeOverlay(
-        renderInOverlay: () -> Boolean,
         zIndexInOverlay: Float,
-        clipInOverlayDuringTransition: (LayoutDirection, Density) -> Path?,
+        renderInOverlay: (SharedTransitionScope) -> Boolean,
     ): Modifier =
         this.then(
             RenderInTransitionOverlayNodeElement(
                 this@SharedTransitionScopeImpl,
                 renderInOverlay,
                 zIndexInOverlay,
-                clipInOverlayDuringTransition,
             )
         )
 
@@ -932,7 +1011,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         enter: EnterTransition,
         exit: ExitTransition,
         boundsTransform: BoundsTransform,
-        resizeMode: SharedTransitionScope.ResizeMode,
+        resizeMode: ResizeMode,
         placeHolderSize: PlaceHolderSize,
         renderInOverlayDuringTransition: Boolean,
         zIndexInOverlay: Float,
@@ -1066,7 +1145,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     internal fun Modifier.sharedBoundsWithCallerManagedVisibility(
         sharedContentState: SharedContentState,
         visible: Boolean,
-        boundsTransform: BoundsTransform = DefaultBoundsTransform,
+        boundsTransform: BoundsTransform = SharedTransitionDefaults.BoundsTransform,
         placeHolderSize: PlaceHolderSize = contentSize,
         renderInOverlayDuringTransition: Boolean = true,
         zIndexInOverlay: Float = 0f,
@@ -1241,17 +1320,33 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                 it.userState = sharedContentState
             }
 
-    internal lateinit var root: LayoutCoordinates
-    internal val lookaheadRoot: LayoutCoordinates
+    internal var root: LayoutCoordinates
         get() =
-            requireNotNull(nullableLookaheadRoot) {
+            requireNotNull(_nullableRoot) {
                 "Error: Uninitialized LayoutCoordinates." +
                     " Please make sure when using the SharedTransitionScope composable function," +
                     " the modifier passed to the child content is being used, or use" +
                     " SharedTransitionLayout instead."
             }
+        set(value) {
+            _nullableRoot = value
+        }
 
-    internal var nullableLookaheadRoot: LayoutCoordinates? = null
+    private var _nullableRoot: LayoutCoordinates? = null
+
+    internal var lookaheadRoot: LayoutCoordinates
+        get() =
+            requireNotNull(_nullableLookaheadRoot) {
+                "Error: Uninitialized LayoutCoordinates." +
+                    " Please make sure when using the SharedTransitionScope composable function," +
+                    " the modifier passed to the child content is being used, or use" +
+                    " SharedTransitionLayout instead."
+            }
+        set(value) {
+            _nullableLookaheadRoot = value
+        }
+
+    private var _nullableLookaheadRoot: LayoutCoordinates? = null
 
     // TODO: Use MutableObjectList and impl sort
     private val renderers = mutableStateListOf<LayerRenderer>()
@@ -1366,13 +1461,6 @@ private val ParentClip: OverlayClip =
         }
     }
 
-private val DefaultClipInOverlayDuringTransition: (LayoutDirection, Density) -> Path? = { _, _ ->
-    null
-}
-
-@ExperimentalSharedTransitionApi
-private val DefaultBoundsTransform = BoundsTransform { _, _ -> DefaultSpring }
-
 internal const val VisualDebugging = false
 
 /** Caching immutable ScaleToBoundsImpl objects to avoid extra allocation */
@@ -1422,7 +1510,45 @@ private val cachedScaleToBoundsImplMap =
 internal class ScaleToBoundsImpl(val contentScale: ContentScale, val alignment: Alignment) :
     ResizeMode
 
+@ExperimentalSharedTransitionApi
+private object CachedSharedContentConfig : SharedTransitionScope.SharedContentConfig
+
 @ExperimentalSharedTransitionApi private object RemeasureImpl : ResizeMode
 
 @ExperimentalSharedTransitionApi
-private object DefaultConfig : SharedTransitionScope.SharedContentConfig
+/**
+ * Default values for [SharedTransitionScope.sharedElement], [SharedTransitionScope.sharedBounds]
+ * and [SharedTransitionScope.renderInSharedTransitionScopeOverlay] related configurations.
+ */
+public object SharedTransitionDefaults {
+
+    /**
+     * Default bounds transform used in [SharedTransitionScope.sharedBounds]. This default lambda
+     * employs a [spring] for the animation.
+     */
+    public val BoundsTransform: BoundsTransform = BoundsTransform { _, _ -> DefaultSpring }
+
+    /**
+     * Default SharedContentConfig used in [SharedTransitionScope.rememberSharedContentState]. This
+     * default [SharedTransitionScope.SharedContentConfig] enables shared elements and bounds, and
+     * keeps them enabled while the animation is in-flight. It also sets the
+     * [alternativeTargetBoundsInTransitionScopeAfterRemoval] to null, ensuring the shared element
+     * transition is canceled immediately if the incoming shared element is removed during the
+     * animation.
+     *
+     * @see SharedTransitionScope.SharedContentConfig
+     */
+    public object SharedContentConfig : SharedTransitionScope.SharedContentConfig
+
+    /**
+     * Default configuration for [SharedTransitionScope.renderInSharedTransitionScopeOverlay] to
+     * determine when the layout using this modifier should be rendered in the overlay. This
+     * configuration specifies that the layout should be rendered in the overlay until all shared
+     * element transitions complete (i.e., while [SharedTransitionScope.isTransitionActive] is
+     * true).
+     *
+     * @see SharedTransitionScope.renderInSharedTransitionScopeOverlay
+     * @see SharedTransitionScope.isTransitionActive
+     */
+    public val RenderInOverlay: (SharedTransitionScope) -> Boolean = { it.isTransitionActive }
+}

@@ -947,13 +947,13 @@ class SpatialPopupTest {
 
     // TODO(b/431085506): Test if elevation parameter is applied.
     @Test
-    fun spatialPopup_withSpatialElevation_layersCorrectly() {
+    fun spatialPopup_withMultiplePopups_layersCorrectly() {
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
                     SpatialPanel(SubspaceModifier.testTag("panel")) {
                         Box(modifier = Modifier.fillMaxSize()) {
-                            SpatialElevation(elevation = SpatialElevationLevel.Level2) {
+                            SpatialPopup(elevation = SpatialElevationLevel.Level2) {
                                 Box(modifier = Modifier.size(200.dp).background(Color.Blue)) {
                                     Text("Elevated Content", color = Color.White)
                                 }

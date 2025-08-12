@@ -19,8 +19,10 @@ package androidx.xr.projected.permissions
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.annotation.RequiresApi
 
 /**
  * An [ActivityResultContract] to request permissions from a Projected [Activity].
@@ -55,6 +57,7 @@ import androidx.activity.result.contract.ActivityResultContract
 public class ProjectedPermissionsResultContract :
     ActivityResultContract<List<ProjectedPermissionsRequestParams>, Map<String, Boolean>>() {
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun createIntent(
         context: Context,
         input: List<ProjectedPermissionsRequestParams>,

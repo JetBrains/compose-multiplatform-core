@@ -16,24 +16,16 @@
 
 package androidx.xr.compose.subspace.layout
 
-import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.View
-import android.view.View.MeasureSpec
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposeNode
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -44,27 +36,16 @@ import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
-import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.node.ComposeSubspaceNode
-import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompositionLocalMap
-import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
-import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
-import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
-import androidx.xr.compose.subspace.rememberCorePanelEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import org.hamcrest.Matchers.containsString
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -144,258 +125,107 @@ class CoreEntityTest {
     }
 
     @Test
-    fun coreBasePanelEntity_androidViewBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.width(100.dp).height(100.dp).testTag("panel"),
-                    )
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
-    }
-
-    @Test
-    fun coreBasePanelEntity_contentBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialPanel(SubspaceModifier.width(100.dp).height(100.dp).testTag("panel")) {}
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
-    }
-
-    @Test
-    fun coreBasePanelEntity_mainPanelSizeNonZero_shouldBeEnabled() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialMainPanel(
-                        SubspaceModifier.width(100.dp).height(100.dp).testTag("mainPanel")
-                    )
-                }
-            }
-        }
-
-        val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
-        val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as PanelEntity?
-        assertNotNull(mainPanelSceneCoreEntity)
-        assertThat(mainPanelSceneCoreEntity.isEnabled()).isTrue()
-    }
-
-    @Test
-    fun coreBasePanelEntity_intentBasedSpatialPanelSizeNonZero_shouldBeEnabled() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialActivityPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        SubspaceModifier.width(100.dp).height(100.dp).testTag("panel"),
-                    )
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isTrue()
-    }
-
-    @Test
-    fun coreBasePanelEntity_androidViewBasedPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.width(0.dp).height(0.dp).testTag("panel"),
-                    )
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
-        expectedLogMessagesRule.expectLogMessage(
-            Log.WARN,
-            "CoreBasePanelEntity",
-            containsString("The panel will be hidden."),
-        )
-    }
-
-    @Test
-    fun coreBasePanelEntity_contentBasedSpatialPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.width(0.dp).height(0.dp).testTag("panel"),
-                    )
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
-        expectedLogMessagesRule.expectLogMessage(
-            Log.WARN,
-            "CoreBasePanelEntity",
-            containsString("The panel will be hidden."),
-        )
-    }
-
-    @Test
-    fun coreBasePanelEntity_mainPanelSizeZeroAfterMeasurement_shouldBeDisabledAndNotCrash() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialMainPanel(SubspaceModifier.width(0.dp).height(0.dp).testTag("mainPanel"))
-                }
-            }
-        }
-
-        val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
-        val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as PanelEntity?
-        assertNotNull(mainPanelSceneCoreEntity)
-        assertThat(mainPanelSceneCoreEntity.isEnabled()).isFalse()
-        expectedLogMessagesRule.expectLogMessage(
-            Log.WARN,
-            "CoreBasePanelEntity",
-            containsString("The panel will be hidden."),
-        )
-    }
-
-    @Test
-    fun coreBasePanelEntity_intentBasedPanelSizeZeroAfterMeasure_shouldBeDisabledAndNotCrash() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialActivityPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        SubspaceModifier.width(0.dp).height(0.dp).testTag("panel"),
-                    )
-                }
-            }
-        }
-
-        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
-        assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.isEnabled()).isFalse()
-        expectedLogMessagesRule.expectLogMessage(
-            Log.WARN,
-            "CoreBasePanelEntity",
-            containsString("The panel will be hidden."),
-        )
-    }
-
-    @Test
-    fun coreBasePanelEntity_composeBasedPanelWhenResizedToZeroAndBack_remainsDisabled() {
+    fun coreBasePanelEntity_androidViewPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
-
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    DisabledPanel(
+                    SpatialAndroidViewPanel(
                         factory = { View(it) },
-                        modifier = SubspaceModifier.testTag("panel").size(size),
+                        SubspaceModifier.width(size).height(size).testTag("panel"),
                     )
                 }
             }
         }
 
-        var panelEntity =
-            assertNotNull(
-                composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
-                    as? PanelEntity
-            )
-        assertThat(panelEntity.sizeInPixels).isEqualTo(IntSize2d(100, 100))
+        // Initial non-zero size should be enabled.
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        // Recompose with zero size, should be disabled.
+        size = 0.dp
+        composeTestRule.waitForIdle()
         assertThat(panelEntity.isEnabled()).isFalse()
+
+        // Recompose with non-zero size, should be enabled again.
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
+    fun coreBasePanelEntity_spatialPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {}
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
 
         size = 0.dp
-
-        panelEntity =
-            assertNotNull(
-                composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
-                    as? PanelEntity
-            )
-        assertThat(panelEntity.sizeInPixels).isEqualTo(IntSize2d(0, 0))
+        composeTestRule.waitForIdle()
         assertThat(panelEntity.isEnabled()).isFalse()
 
-        size = 100.dp
-
-        panelEntity =
-            assertNotNull(
-                composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
-                    as? PanelEntity
-            )
-        assertThat(panelEntity.sizeInPixels).isEqualTo(IntSize2d(100, 100))
-        assertThat(panelEntity.isEnabled()).isFalse()
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
     }
-}
 
-@Composable
-@SubspaceComposable
-private fun <T : View> DisabledPanel(
-    factory: (Context) -> T,
-    modifier: SubspaceModifier = SubspaceModifier,
-    update: (T) -> Unit = {},
-    shape: SpatialShape = SpatialRoundedCornerShape(CornerSize(32.dp)),
-) {
-    val context = LocalContext.current
-    val view = remember { factory(context) }
-
-    val corePanelEntity =
-        rememberCorePanelEntity(shape = shape) {
-                PanelEntity.create(
-                    session = this,
-                    view = view,
-                    dimensions = FloatSize2d(0.1f, 0.1f),
-                    name = "ViewPanel",
-                    pose = Pose.Identity,
-                )
+    @Test
+    fun coreBasePanelEntity_mainPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialMainPanel(SubspaceModifier.width(size).height(size).testTag("panel"))
+                }
             }
-            .also { it.enabled = false }
+        }
 
-    val measurePolicy = SubspaceMeasurePolicy { _, constraints ->
-        view.measure(
-            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
-            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
-        )
-        val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
-        val height = view.measuredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
-        val depth = constraints.minDepth.coerceAtLeast(0)
-        layout(width, height, depth) {}
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
     }
 
-    val compositionLocalMap = currentComposer.currentCompositionLocalMap
-    ComposeNode<ComposeSubspaceNode, Applier<Any>>(
-        factory = ComposeSubspaceNode.Constructor,
-        update = {
-            set(compositionLocalMap, SetCompositionLocalMap)
-            set(corePanelEntity, SetCoreEntity)
-            set(measurePolicy, SetMeasurePolicy)
-            set(modifier, SetModifier)
-            update(view)
-        },
-    )
+    @Test
+    fun coreBasePanelEntity_activityPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace {
+                    SpatialActivityPanel(
+                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                        SubspaceModifier.width(size).height(size).testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
 }

@@ -227,14 +227,14 @@ class InProgressStrokeTest {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs =
-            buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f)).asImmutable()
+            buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f)).toImmutable()
         val predictedInputs =
             buildStrokeInputBatchFromPoints(
                     floatArrayOf(40f, 9f, 50f, 11f, 60f, 13f),
                     InputToolType.STYLUS,
                     startTime = 3L,
                 )
-                .asImmutable()
+                .toImmutable()
 
         inProgressStroke.enqueueInputs(realInputs, predictedInputs)
     }
@@ -573,6 +573,11 @@ class InProgressStrokeTest {
         assertThat(stroke.getMeshPartitionCount(0)).isEqualTo(1)
 
         val triangleIndexBuffer = stroke.getRawTriangleIndexBuffer(0, 0)
+        assertThat(triangleIndexBuffer.isDirect).isTrue()
+        assertThat(triangleIndexBuffer.isReadOnly).isTrue()
+        // There aren't valid writes to make, so can't assert that this fails reads with
+        // ReadOnlyBufferException. put() fails with BufferOverflowException first, clear doesn't
+        // object to the no-op call.
 
         assertThat(triangleIndexBuffer.limit()).isEqualTo(0)
         assertThat(triangleIndexBuffer.capacity()).isEqualTo(0)
@@ -585,19 +590,18 @@ class InProgressStrokeTest {
         assertThat(stroke.getMeshPartitionCount(0)).isEqualTo(1)
 
         val triangleIndexBuffer = stroke.getRawTriangleIndexBuffer(0, 0)
+        assertThat(triangleIndexBuffer.isDirect).isTrue()
+        assertThat(triangleIndexBuffer.isReadOnly).isTrue()
+        assertFailsWith<ReadOnlyBufferException> { triangleIndexBuffer.put(5) }
 
         assertThat(triangleIndexBuffer.limit()).isNotEqualTo(0)
         assertThat(triangleIndexBuffer.capacity()).isNotEqualTo(0)
     }
 
     @Test
-    fun getRawTriangleIndexBuffer_withIncreasingStrokeSize_eventuallyMaxesBufferSize() {
+    fun getRawTriangleIndexBuffer_withIncreasingStrokeSize_eventuallyPartitionsBuffer() {
         val stroke = InProgressStroke()
         stroke.start(makeBrush())
-
-        var inputsAdded = 0
-        var previousBufferSize = Int.MIN_VALUE
-        var bufferMatchesPreviousSizeCount = 0
         // The condition that this test is exercising is where a triangle index value would start
         // overflowing a ushort, which is related to the number of vertices in the stroke rather
         // than
@@ -610,41 +614,32 @@ class InProgressStrokeTest {
         // input points themselves, the extrusion/tessellation code, and possibly more factors, so a
         // fixed-length loop is not appropriate here. The test will fail if it crashes due to an
         // internal logic error or running out of memory to allocate more ShortBuffers.
-        while (true) {
+        while (stroke.getMeshPartitionCount(0) <= 1) {
             // Draw the stroke as a spiral that gets bigger and bigger. Drawing a straight line
             // would take
             // longer to reach the goal because there would be fewer triangles.
+            val inputsAdded = stroke.getInputCount()
             val spiralRadius = 100 * sqrt(inputsAdded.toFloat())
             val angle = inputsAdded.toFloat() % (2 * PI.toFloat())
             val x = spiralRadius * cos(angle)
             val y = spiralRadius * sin(angle)
             val time = inputsAdded.toLong()
             stroke.enqueueInputs(
-                MutableStrokeInputBatch().add(StrokeInput.create(x, y, time)).asImmutable(),
+                MutableStrokeInputBatch().add(StrokeInput.create(x, y, time)).toImmutable(),
                 ImmutableStrokeInputBatch.EMPTY,
             )
             stroke.updateShape(time)
-            inputsAdded++
-            // Failure case: internal crash.
-            val bufferSize = stroke.getRawTriangleIndexBuffer(0, 0).remaining()
-            // Must be a multiple of 3 - each group of 3 makes up a triangle.
-            assertThat(bufferSize % 3).isEqualTo(0)
-            if (bufferSize == previousBufferSize) {
-                bufferMatchesPreviousSizeCount++
-                if (bufferMatchesPreviousSizeCount > 10) {
-                    // To make sure this isn't trivially succeeding.
-                    assertThat(inputsAdded).isGreaterThan(1000)
-                    break
-                }
-            } else {
-                bufferMatchesPreviousSizeCount = 0
-                previousBufferSize = bufferSize
-            }
         }
-
-        // The dry stroke has all the inputs added, even after the triangle index buffer stopped
-        // growing
-        assertThat(stroke.toImmutable().inputs.size).isEqualTo(inputsAdded)
+        // Takes a while before the partition happens.
+        assertThat(stroke.getInputCount()).isGreaterThan(1000)
+        // At that point there's a long first partition and a shorter second one.
+        assertThat(stroke.getMeshPartitionCount(0)).isEqualTo(2)
+        assertThat(stroke.getRawTriangleIndexBuffer(0, 0).capacity())
+            .isGreaterThan(stroke.getRawTriangleIndexBuffer(0, 1).capacity())
+        assertThat(stroke.getRawVertexBuffer(0, 0).capacity())
+            .isGreaterThan(stroke.getRawVertexBuffer(0, 1).capacity())
+        // The dry stroke has all the inputs added.
+        assertThat(stroke.toImmutable().inputs.size).isEqualTo(stroke.getInputCount())
     }
 
     @Test

@@ -21,6 +21,7 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Plane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
@@ -42,7 +43,7 @@ internal constructor(
     override var vertices: List<Vector2> = emptyList()
         private set
 
-    override var extents: Vector2 = Vector2.Zero
+    override var extents: FloatSize2d = FloatSize2d()
         private set
 
     override var subsumedBy: Plane? = null

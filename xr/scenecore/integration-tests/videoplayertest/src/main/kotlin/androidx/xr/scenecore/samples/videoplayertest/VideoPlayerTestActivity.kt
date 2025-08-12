@@ -783,12 +783,15 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         }
 
                         override fun onPlaybackStateChanged(playbackState: Int) {
-                            // Update videoPlaying based on ExoPlayer's isPlaying property.
-                            videoPlaying =
-                                exoPlayer?.isPlaying ?: false // Use safe call and elvis operator
+                            Log.i(TAG, "onPlaybackStateChanged: $playbackState")
 
                             if (playbackState == Player.STATE_ENDED) {
                                 destroySurfaceEntity()
+                            } else {
+                                // Note that this doesn't exactly line up with the ExoPlayer
+                                // isPlaying property, because the UI (for this app) counts as
+                                // "playing" even when buffering or paused.
+                                videoPlaying = true
                             }
                         }
 

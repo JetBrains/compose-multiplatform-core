@@ -99,6 +99,12 @@ public final class OptimizeStats extends BaseStats {
     //Number of namespaces deleted.
     private final int mNumDeletedNamespaces;
 
+    private final long mCallReceivedTimestampMillis;
+
+    private final int mExecutorAcquisitionLatencyMillis;
+
+    private final int mOnExecutorLatencyMillis;
+
     OptimizeStats(@NonNull Builder builder) {
         super(builder);
         mStatusCode = builder.mStatusCode;
@@ -116,6 +122,9 @@ public final class OptimizeStats extends BaseStats {
         mIndexRestorationMode = builder.mIndexRestorationMode;
         mNumOriginalNamespaces = builder.mNumOriginalNamespaces;
         mNumDeletedNamespaces = builder.mNumDeletedNamespaces;
+        mCallReceivedTimestampMillis = builder.mCallReceivedTimestampMillis;
+        mExecutorAcquisitionLatencyMillis = builder.mExecutorAcquisitionLatencyMillis;
+        mOnExecutorLatencyMillis = builder.mOnExecutorLatencyMillis;
     }
 
     /** Returns status code for this optimization. */
@@ -193,6 +202,21 @@ public final class OptimizeStats extends BaseStats {
         return mNumDeletedNamespaces;
     }
 
+    /** Returns the wall-clock timestamp in milliseconds when the API call was received. */
+    public long getCallReceivedTimestampMillis() {
+        return mCallReceivedTimestampMillis;
+    }
+
+    /** Gets total latency for creating or waiting the user executor. */
+    public int getExecutorAcquisitionLatencyMillis() {
+        return mExecutorAcquisitionLatencyMillis;
+    }
+
+    /** Gets total latency while the task is running on the user executor. */
+    public int getOnExecutorLatencyMillis() {
+        return mOnExecutorLatencyMillis;
+    }
+
     /** Builder for {@link RemoveStats}. */
     public static class Builder extends BaseStats.Builder<OptimizeStats.Builder> {
         /**
@@ -215,6 +239,9 @@ public final class OptimizeStats extends BaseStats {
         int mIndexRestorationMode;
         int mNumOriginalNamespaces;
         int mNumDeletedNamespaces;
+        long mCallReceivedTimestampMillis;
+        int mExecutorAcquisitionLatencyMillis;
+        int mOnExecutorLatencyMillis;
 
         /** Sets the status code. */
         @CanIgnoreReturnValue
@@ -316,6 +343,28 @@ public final class OptimizeStats extends BaseStats {
         @CanIgnoreReturnValue
         public @NonNull Builder setNumDeletedNamespaces(int numDeletedNamespaces) {
             mNumDeletedNamespaces = numDeletedNamespaces;
+            return this;
+        }
+
+        /** Sets the wall-clock timestamp in milliseconds when the API call was received. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setCallReceivedTimestampMillis(long callReceivedTimestampMillis) {
+            mCallReceivedTimestampMillis = callReceivedTimestampMillis;
+            return this;
+        }
+
+        /** Sets total latency while the task is running on the user executor. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setExecutorAcquisitionLatencyMillis(
+                int executorAcquisitionLatencyMillis) {
+            mExecutorAcquisitionLatencyMillis = executorAcquisitionLatencyMillis;
+            return this;
+        }
+
+        /** Sets total latency on running in the user executor. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setOnExecutorLatencyMillis(int executorLatencyMillis) {
+            mOnExecutorLatencyMillis = executorLatencyMillis;
             return this;
         }
 

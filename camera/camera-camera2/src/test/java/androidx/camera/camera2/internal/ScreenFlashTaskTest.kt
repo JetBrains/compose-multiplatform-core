@@ -48,7 +48,6 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowTotalCaptureResult
 
-@Config(minSdk = 21)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class ScreenFlashTaskTest {

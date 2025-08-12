@@ -17,13 +17,14 @@
 package androidx.compose.ui.autofill
 
 /**
- * Represents a data object that can be filled with different types of data for autofill.
+ * Represents a single piece of data for autofill purposes.
  *
- * Implementations of this interface provide a way to access data as various primitive types. If a
- * specific data type is not available or supported by the implementation, the corresponding `get`
- * method will return `null`.
+ * An instance of `FillableData` is expected to hold a value of a single specific type. Consumers
+ * can use the corresponding `get` method to retrieve the value. For any given instance, only the
+ * method that matches the underlying data's type will return a non-null value. All other `get`
+ * methods will return `null`.
  */
-internal interface FillableData {
+interface FillableData {
     /**
      * Retrieves the `CharSequence` (text) representation of the data.
      *
@@ -38,6 +39,7 @@ internal interface FillableData {
      *
      * @return The `Boolean` data, or `null` if none is available.
      */
+    @Suppress("AutoBoxing")
     fun getBool(): Boolean? {
         return null
     }
@@ -47,6 +49,7 @@ internal interface FillableData {
      *
      * @return The `Int` data, or `null` if none is available.
      */
+    @Suppress("AutoBoxing")
     fun getInt(): Int? {
         return null
     }
@@ -55,3 +58,5 @@ internal interface FillableData {
 internal expect fun FillableData(booleanValue: Boolean): FillableData
 
 internal expect fun FillableData(charSequenceValue: CharSequence): FillableData
+
+internal expect fun FillableData(intValue: Int): FillableData

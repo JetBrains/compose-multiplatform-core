@@ -26,13 +26,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 
 /**
@@ -56,9 +59,19 @@ import androidx.compose.ui.unit.dp
  * A Card with a title, subtitle, and a leading icon:
  *
  * @sample androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconSample
+ *
+ * A card with a title and a header image:
+ *
+ * @sample androidx.xr.glimmer.samples.CardWithTitleAndHeaderSample
  * @param modifier the [Modifier] to be applied to this card
- * @param title optional title to be placed above [subtitle] and [content]
+ * @param title optional title to be placed above [subtitle] and [content], below [header]
  * @param subtitle optional subtitle to be placed above [content], below [title]
+ * @param header optional header image to be placed at the top of the card. This image should
+ *   typically fill the max width available, for example using
+ *   [androidx.compose.ui.layout.ContentScale.FillWidth]. Headers are constrained to a maximum
+ *   aspect ratio (1.6) to avoid taking up too much vertical space, so using a modifier such as
+ *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
+ *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
  *   [Icon]. [Colors.primary] is provided as the content color by default.
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
@@ -82,6 +95,7 @@ public fun Card(
     modifier: Modifier = Modifier,
     title: @Composable (() -> Unit)? = null,
     subtitle: @Composable (() -> Unit)? = null,
+    header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     shape: Shape = GlimmerTheme.shapes.medium,
@@ -98,6 +112,7 @@ public fun Card(
         focusable = true,
         title = title,
         subtitle = subtitle,
+        header = header,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         shape = shape,
@@ -132,10 +147,20 @@ public fun Card(
  * A clickable Card with a title, subtitle, and a leading icon:
  *
  * @sample androidx.xr.glimmer.samples.ClickableCardWithTitleAndSubtitleAndLeadingIconSample
+ *
+ * A clickable Card with a title and a header image:
+ *
+ * @sample androidx.xr.glimmer.samples.ClickableCardWithTitleAndHeaderSample
  * @param onClick called when this card item is clicked
  * @param modifier the [Modifier] to be applied to this card
- * @param title optional title to be placed above [subtitle] and [content]
+ * @param title optional title to be placed above [subtitle] and [content], below [header]
  * @param subtitle optional subtitle to be placed above [content], below [title]
+ * @param header optional header image to be placed at the top of the card. This image should
+ *   typically fill the max width available, for example using
+ *   [androidx.compose.ui.layout.ContentScale.FillWidth]. Headers are constrained to a maximum
+ *   aspect ratio (1.6) to avoid taking up too much vertical space, so using a modifier such as
+ *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
+ *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
  *   [Icon]. [Colors.primary] is provided as the content color by default.
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
@@ -160,6 +185,7 @@ public fun Card(
     modifier: Modifier = Modifier,
     title: @Composable (() -> Unit)? = null,
     subtitle: @Composable (() -> Unit)? = null,
+    header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     shape: Shape = GlimmerTheme.shapes.medium,
@@ -176,6 +202,7 @@ public fun Card(
         focusable = true,
         title = title,
         subtitle = subtitle,
+        header = header,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         shape = shape,
@@ -195,6 +222,7 @@ private fun CardImpl(
     focusable: Boolean,
     title: @Composable (() -> Unit)?,
     subtitle: @Composable (() -> Unit)?,
+    header: @Composable (() -> Unit)?,
     leadingIcon: @Composable (() -> Unit)?,
     trailingIcon: @Composable (() -> Unit)?,
     shape: Shape,
@@ -228,58 +256,125 @@ private fun CardImpl(
                 interactionSource = interactionSource,
             )
         }
-    Row(
+    Column(
         modifier =
             modifier
                 .then(surfaceModifier)
-                .fillMaxWidth()
                 .defaultMinSize(minHeight = MinimumHeight)
-                .padding(contentPadding)
-                .padding(InnerPadding),
-        verticalAlignment = CenterVertically,
+                .padding(contentPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        if (leadingIcon != null) {
+        header?.let {
             Box(
-                Modifier.align(Alignment.Top)
-                    .padding(end = IconSpacing)
-                    .contentColorProvider(colors.primary),
-                contentAlignment = Alignment.TopStart,
+                Modifier.constrainHeightToAspectRatio(HeaderMaximumAspectRatio).clip(HeaderShape),
+                contentAlignment = Alignment.Center,
             ) {
-                CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
+                it()
             }
         }
-        Column(
-            Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(TextVerticalSpacing),
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(InnerPadding),
+            verticalAlignment = CenterVertically,
         ) {
-            if (title != null) {
-                CompositionLocalProvider(
-                    LocalTextStyle provides typography.bodyMedium,
-                    content = title,
-                )
+            if (leadingIcon != null) {
+                Box(
+                    Modifier.align(Alignment.Top)
+                        .padding(end = IconSpacing)
+                        .contentColorProvider(colors.primary),
+                    contentAlignment = Alignment.TopStart,
+                ) {
+                    CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
+                }
             }
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(TextVerticalSpacing),
+            ) {
+                if (title != null) {
+                    CompositionLocalProvider(
+                        LocalTextStyle provides typography.bodyMedium,
+                        content = title,
+                    )
+                }
 
-            if (subtitle != null) {
+                if (subtitle != null) {
+                    CompositionLocalProvider(
+                        LocalTextStyle provides typography.bodySmall,
+                        content = subtitle,
+                    )
+                }
+
                 CompositionLocalProvider(
                     LocalTextStyle provides typography.bodySmall,
-                    content = subtitle,
+                    content = content,
                 )
             }
-
-            CompositionLocalProvider(
-                LocalTextStyle provides typography.bodySmall,
-                content = content,
-            )
-        }
-        if (trailingIcon != null) {
-            Box(
-                Modifier.align(Alignment.Top)
-                    .padding(start = IconSpacing)
-                    .contentColorProvider(colors.primary),
-                Alignment.TopEnd,
-            ) {
-                CompositionLocalProvider(LocalIconSize provides iconSize, content = trailingIcon)
+            if (trailingIcon != null) {
+                Box(
+                    Modifier.align(Alignment.Top)
+                        .padding(start = IconSpacing)
+                        .contentColorProvider(colors.primary),
+                    Alignment.TopEnd,
+                ) {
+                    CompositionLocalProvider(
+                        LocalIconSize provides iconSize,
+                        content = trailingIcon,
+                    )
+                }
             }
+        }
+    }
+}
+
+/**
+ * Constrains the content's height to a maximum aspect ratio, based on the maximum width.
+ *
+ * This modifier is similar to [Modifier.aspectRatio], but it only enforces a maximum size, allowing
+ * the content to be smaller than the bounds defined by the aspect ratio. It also only constrains
+ * the height based on the width, it does not constrain the width based on the height.
+ *
+ * @param widthToHeightRatio the maximum aspect ratio allowed for the height. This is defined as the
+ *   ratio of width / height
+ */
+private fun Modifier.constrainHeightToAspectRatio(widthToHeightRatio: Float): Modifier {
+    require(widthToHeightRatio > 0) { "Ratio must be positive" }
+    return this.layout { measurable, constraints ->
+        // We only want to constrain height, based on width. If width is unbounded and there is a
+        // bounded height, we don't want to constrain the width based on height. So do nothing if
+        // we don't have a constrained width
+        if (!constraints.hasBoundedWidth) {
+            val placeable = measurable.measure(constraints)
+            return@layout layout(placeable.width, placeable.height) {
+                placeable.placeRelative(0, 0)
+            }
+        }
+
+        val height =
+            (constraints.maxWidth / widthToHeightRatio)
+                .toInt()
+                // Handle the case where the width is more than ratio times larger than available
+                // height
+                .coerceAtMost(constraints.maxHeight)
+
+        val newConstraints =
+            constraints.copy(
+                // Relax minimum height to let the content be smaller than constraints.minHeight if
+                // the aspect ratio results in a height smaller than min height
+                minHeight = 0,
+                maxHeight = height,
+            )
+
+        val placeable = measurable.measure(newConstraints)
+
+        // We relaxed the constraints earlier, but we still need to respect the incoming constraints
+        // ourselves.
+        val layoutHeight = placeable.height.coerceIn(constraints.minHeight, constraints.maxHeight)
+
+        layout(placeable.width, layoutHeight) {
+            // Center the content within the final layout height if needed
+            val y = (layoutHeight - placeable.height) / 2
+            placeable.placeRelative(0, y)
         }
     }
 }
@@ -307,3 +402,12 @@ private val InnerPadding = 8.dp
 
 /** Spacing between title / subtitle / body text */
 private val TextVerticalSpacing = 3.dp
+
+/** Shape used to clip the header image */
+private val HeaderShape = RoundedCornerShape(24.dp)
+
+/**
+ * Width / height aspect ratio for header images, to prevent the images from taking up too much
+ * vertical space
+ */
+private const val HeaderMaximumAspectRatio = 1.6f

@@ -17,6 +17,8 @@
 package androidx.sqlite.driver.test
 
 import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
+import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_CREATE
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_FULLMUTEX
@@ -99,7 +101,7 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
 
     @Test
     fun loadExtension() {
-        val extensionPath = getTestExtensionPath() ?: return
+        val extensionPath = getTestExtensionPath()
 
         val driver =
             BundledSQLiteDriver().apply {
@@ -112,6 +114,28 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
                 assertThat(stmt.getText(0)).isEqualTo("Hello from sqlite_extension.cpp!")
             }
         }
+    }
+
+    @Test
+    fun loadExtensionMissingFile() {
+        val driver = BundledSQLiteDriver().apply { addExtension("bad path") }
+
+        assertThrows<SQLiteException> { driver.open(":memory:") }
+            .hasMessageThat()
+            .containsMatch(
+                Regex(pattern = "(not found)|(no such file)", option = RegexOption.IGNORE_CASE)
+            )
+    }
+
+    @Test
+    fun loadExtensionAlreadyAdded() {
+        val extensionPath = getTestExtensionPath()
+        val driver = BundledSQLiteDriver()
+        driver.addExtension(extensionPath)
+
+        assertThrows<IllegalStateException> { driver.addExtension(extensionPath) }
+            .hasMessageThat()
+            .contains("Extension '$extensionPath' is already added.")
     }
 
     companion object {

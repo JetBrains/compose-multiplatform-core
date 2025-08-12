@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.protobufGradlePlugin) // needed to compile inspection plugin
     implementation(libs.kotlinPoet) // needed to compile glance-layout-generator
 
-    implementation("com.google.protobuf:protobuf-java:3.22.3") // needed to compile baseline-profile gradle plugins
+    implementation("com.google.protobuf:protobuf-java:3.25.5") // needed to compile baseline-profile gradle plugins
     implementation(libs.agpTestingPlatformCoreProto) // needed to compile baseline-profile gradle plugins
 
     // dependencies that aren't used by buildSrc directly but that we resolve here so that the
@@ -80,4 +80,6 @@ dependencies {
 
     // Plugin for analyzing dependencies
     implementation(libs.dependency.analysis.gradle.plugin)
+
+    implementation("com.google.cloud:google-cloud-secretmanager:2.67.0")
 }

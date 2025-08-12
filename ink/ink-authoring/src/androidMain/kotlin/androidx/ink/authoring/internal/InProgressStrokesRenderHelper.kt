@@ -137,6 +137,9 @@ internal interface InProgressStrokesRenderHelper {
          * rendered by a higher level in HWUI. This must happen synchronously, in the same HWUI
          * frame. Failure to do so will result in a flicker on handoff, where the stroke is
          * temporarily not rendered. Initiated by [requestStrokeCohortHandoffToHwui].
+         *
+         * @param strokeCohort The finished strokes, with map iteration order in stroke z-order from
+         *   back to front.
          */
         @UiThread
         fun onStrokeCohortHandoffToHwui(strokeCohort: Map<InProgressStrokeId, FinishedStroke>)
@@ -184,6 +187,9 @@ internal interface InProgressStrokesRenderHelper {
      * [Callback.onStrokeCohortHandoffToHwui], which is responsible for initiating HWUI rendering.
      * Between this and [Callback.onStrokeCohortHandoffToHwuiComplete], any calls to [requestDraw]
      * may not (and may never become) visible.
+     *
+     * @param handingOff The finished strokes, with map iteration order in stroke z-order from back
+     *   to front.
      */
     @UiThread
     fun requestStrokeCohortHandoffToHwui(handingOff: Map<InProgressStrokeId, FinishedStroke>)

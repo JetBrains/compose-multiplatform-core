@@ -17,6 +17,7 @@
 package androidx.wear.protolayout;
 
 import static androidx.annotation.Dimension.PX;
+import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
 
@@ -27,9 +28,12 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RawRes;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.annotation.VisibleForTesting;
+import androidx.wear.protolayout.ColorBuilders.ColorProp;
 import androidx.wear.protolayout.TriggerBuilders.Trigger;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
+import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.ResourceProto;
@@ -40,9 +44,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -505,11 +511,11 @@ public final class ResourceBuilders {
             return that.getResourceId() == getResourceId()
                     && that.getAnimatedImageFormat() == getAnimatedImageFormat()
                     && (thatProgress == progress
-                    || (thatProgress != null
-                    && progress != null
-                    && Arrays.equals(
-                    thatProgress.toDynamicFloatByteArray(),
-                    progress.toDynamicFloatByteArray())));
+                            || (thatProgress != null
+                                    && progress != null
+                                    && Arrays.equals(
+                                            thatProgress.toDynamicFloatByteArray(),
+                                            progress.toDynamicFloatByteArray())));
         }
 
         /** Creates a new wrapper instance from the proto. */
@@ -622,6 +628,20 @@ public final class ResourceBuilders {
             }
         }
 
+        /**
+         * Gets the collection of properties to customize Lottie further.
+         *
+         * <p>There shouldn't be more than 10 of properties in this collection. Each property can be
+         * applied to one or more elements in Lottie file.
+         */
+        public @NonNull List<LottieProperty> getProperties() {
+            List<LottieProperty> list = new ArrayList<>();
+            for (ResourceProto.LottieProperty item : mImpl.getPropertiesList()) {
+                list.add(ResourceBuilders.lottiePropertyFromProto(item));
+            }
+            return Collections.unmodifiableList(list);
+        }
+
         @Override
         public int hashCode() {
             DynamicFloat progress = getProgress();
@@ -645,11 +665,11 @@ public final class ResourceBuilders {
             return that.getRawResourceId() == getRawResourceId()
                     && Trigger.equal(that.getStartTrigger(), getStartTrigger())
                     && (thatProgress == progress
-                    || (thatProgress != null
-                    && progress != null
-                    && Arrays.equals(
-                    thatProgress.toDynamicFloatByteArray(),
-                    progress.toDynamicFloatByteArray())));
+                            || (thatProgress != null
+                                    && progress != null
+                                    && Arrays.equals(
+                                            thatProgress.toDynamicFloatByteArray(),
+                                            progress.toDynamicFloatByteArray())));
         }
 
         /** Creates a new wrapper instance from the proto. */
@@ -674,6 +694,8 @@ public final class ResourceBuilders {
                     + getProgress()
                     + ", startTrigger="
                     + getStartTrigger()
+                    + ", properties="
+                    + getProperties()
                     + "}";
         }
 
@@ -728,6 +750,48 @@ public final class ResourceBuilders {
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setStartTrigger(@NonNull Trigger startTrigger) {
                 mImpl.setStartTrigger(startTrigger.toTriggerProto());
+                return this;
+            }
+
+            /**
+             * Adds one item to the collection of properties to customize Lottie further.
+             *
+             * <p>There shouldn't be more than 10 of properties in this collection. Each property
+             * can be applied to one or more elements in Lottie file.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            @NonNull Builder addProperty(@NonNull LottieProperty property) {
+                mImpl.addProperties(property.toLottiePropertyProto());
+                return this;
+            }
+
+            @VisibleForTesting static final int LOTTIE_PROPERTIES_LIMIT = 10;
+
+            /**
+             * Adds customizations for Lottie animation, for example to apply a color to a slot with
+             * specified ID.
+             *
+             * <p>Only up to 10 properties are allowed to be added for customization of one Lottie
+             * animation.
+             *
+             * <p>If more than one {@link LottieProperty} with the same filter and different value
+             * (for example, with the same slot ID and different color in case of {@link
+             * LottieProperty#colorForSlot}) is added, the last filter will be applied.
+             *
+             * @throws IllegalArgumentException if the number of properties added is larger than 10.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setProperties(LottieProperty @NonNull ... properties) {
+                if (properties.length > LOTTIE_PROPERTIES_LIMIT) {
+                    throw new IllegalArgumentException(
+                            "Number of given LottieProperty can't be larger than "
+                                    + LOTTIE_PROPERTIES_LIMIT
+                                    + ".");
+                }
+
+                for (LottieProperty property : properties) {
+                    addProperty(property);
+                }
                 return this;
             }
 
@@ -838,14 +902,14 @@ public final class ResourceBuilders {
             ImageResource that = (ImageResource) obj;
             return Objects.equals(that.getAndroidResourceByResId(), getAndroidResourceByResId())
                     && Objects.equals(
-                    that.getAndroidAnimatedResourceByResId(),
-                    getAndroidAnimatedResourceByResId())
+                            that.getAndroidAnimatedResourceByResId(),
+                            getAndroidAnimatedResourceByResId())
                     && Objects.equals(
-                    that.getAndroidSeekableAnimatedResourceByResId(),
-                    getAndroidSeekableAnimatedResourceByResId())
+                            that.getAndroidSeekableAnimatedResourceByResId(),
+                            getAndroidSeekableAnimatedResourceByResId())
                     && Objects.equals(
-                    that.getAndroidLottieResourceByResId(),
-                    getAndroidLottieResourceByResId())
+                            that.getAndroidLottieResourceByResId(),
+                            getAndroidLottieResourceByResId())
                     && Objects.equals(that.getInlineResource(), getInlineResource());
         }
 
@@ -1035,6 +1099,176 @@ public final class ResourceBuilders {
             /** Builds an instance from accumulated values. */
             public @NonNull Resources build() {
                 return Resources.fromProto(mImpl.build());
+            }
+        }
+    }
+
+    /**
+     * A single point of customization in a Lottie file.
+     *
+     * <p>Property can be applicable to one or more elements.
+     */
+    @RequiresSchemaVersion(major = 1, minor = 600)
+    public abstract static class LottieProperty {
+        private LottieProperty() {}
+
+        /**
+         * {@link LottieProperty} customization for applying the given color on all slots with the
+         * specified slot ID.
+         *
+         * @param sid the slot ID to which color filter should be applied. The same ID can
+         *     correspond to multiple slots, however, for each of those, all parents in the path
+         *     should have names.
+         * @param color the color to be applied on slots with this slot ID
+         */
+        @RequiresSchemaVersion(major = 1, minor = 600)
+        public static @NonNull LottieProperty colorForSlot(
+                @NonNull String sid, @NonNull ColorProp color) {
+            return new LottieSlotColorFilter.Builder().setSid(sid).setColor(color).build();
+        }
+
+        /** Get the protocol buffer representation of this object. */
+        abstract ResourceProto.@NonNull LottieProperty toLottiePropertyProto();
+
+        /** Get the fingerprint for this object or null if unknown. */
+        abstract @Nullable Fingerprint getFingerprint();
+
+        /** Builder to create {@link LottieProperty} objects. */
+        interface Builder {
+
+            /** Builds an instance with values accumulated in this Builder. */
+            @NonNull LottieProperty build();
+        }
+    }
+
+    /** Creates a new wrapper instance from the proto. */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public static @NonNull LottieProperty lottiePropertyFromProto(
+            ResourceProto.@NonNull LottieProperty proto, @Nullable Fingerprint fingerprint) {
+        if (proto.hasSlotColor()) {
+            return LottieSlotColorFilter.fromProto(proto.getSlotColor(), fingerprint);
+        }
+        throw new IllegalStateException("Proto was not a recognised instance of LottieProperty");
+    }
+
+    static @NonNull LottieProperty lottiePropertyFromProto(
+            ResourceProto.@NonNull LottieProperty proto) {
+        return lottiePropertyFromProto(proto, null);
+    }
+
+    /**
+     * A single point of customization for Lottie file, that applies given color on all slots with
+     * the specified slot ID.
+     */
+    @RequiresSchemaVersion(major = 1, minor = 600)
+    static final class LottieSlotColorFilter extends LottieProperty {
+        private final ResourceProto.LottieSlotColorFilter mImpl;
+        private final @Nullable Fingerprint mFingerprint;
+
+        LottieSlotColorFilter(
+                ResourceProto.LottieSlotColorFilter impl, @Nullable Fingerprint fingerprint) {
+            this.mImpl = impl;
+            this.mFingerprint = fingerprint;
+        }
+
+        /**
+         * Gets the slot ID to which color filter should be applied. The same ID can correspond to
+         * multiple slots, however, for each of those, all parents in the path should have names and
+         * the last name needs to have the same value as this slot ID.
+         */
+        public @NonNull String getSid() {
+            return mImpl.getSid();
+        }
+
+        /** Gets the color to be applied on slots with this slot ID. */
+        public @Nullable ColorProp getColor() {
+            if (mImpl.hasColor()) {
+                return ColorProp.fromProto(mImpl.getColor());
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public @Nullable Fingerprint getFingerprint() {
+            return mFingerprint;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull LottieSlotColorFilter fromProto(
+                ResourceProto.@NonNull LottieSlotColorFilter proto,
+                @Nullable Fingerprint fingerprint) {
+            return new LottieSlotColorFilter(proto, fingerprint);
+        }
+
+        static @NonNull LottieSlotColorFilter fromProto(
+                ResourceProto.@NonNull LottieSlotColorFilter proto) {
+            return fromProto(proto, null);
+        }
+
+        /** Returns the internal proto instance. */
+        ResourceProto.@NonNull LottieSlotColorFilter toProto() {
+            return mImpl;
+        }
+
+        @Override
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ResourceProto.@NonNull LottieProperty toLottiePropertyProto() {
+            return ResourceProto.LottieProperty.newBuilder().setSlotColor(mImpl).build();
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "LottieSlotColorFilter{" + "sid=" + getSid() + ", color=" + getColor() + "}";
+        }
+
+        /** Builder for {@link LottieSlotColorFilter}. */
+        @SuppressWarnings("HiddenSuperclass")
+        public static final class Builder implements LottieProperty.Builder {
+            private final ResourceProto.LottieSlotColorFilter.Builder mImpl =
+                    ResourceProto.LottieSlotColorFilter.newBuilder();
+            private final Fingerprint mFingerprint = new Fingerprint(-1002991796);
+
+            /** Creates an instance of {@link Builder}. */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            Builder() {}
+
+            /**
+             * Sets the slot ID to which color filter should be applied. The same ID can correspond
+             * to multiple slots, however, for each of those, all parents in the path should have
+             * names and the last name needs to have the same value as this slot ID.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setSid(@NonNull String sid) {
+                mImpl.setSid(sid);
+                mFingerprint.recordPropertyUpdate(1, sid.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the color to be applied on slots with this slot ID.
+             *
+             * <p>Note that this field only supports static values.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setColor(@NonNull ColorProp color) {
+                if (color.getDynamicValue() != null) {
+                    throw new IllegalArgumentException(
+                            "LottieSlotColorFilter.Builder.setColor doesn't support dynamic"
+                                    + " values.");
+                }
+                mImpl.setColor(color.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(color.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /** Builds an instance from accumulated values. */
+            @Override
+            public @NonNull LottieSlotColorFilter build() {
+                return new LottieSlotColorFilter(mImpl.build(), mFingerprint);
             }
         }
     }

@@ -202,7 +202,6 @@ public class WebViewProviderAdapter {
      * {@link WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor,
      * PrerenderOperationCallback)}.
      */
-    @WebViewCompat.ExperimentalUrlPrerender
     public void prerenderUrlAsync(
             @NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -229,7 +228,6 @@ public class WebViewProviderAdapter {
      * {@link WebViewCompat#prerenderUrl(WebView, String, CancellationSignal, Executor,
      * SpeculativeLoadingParameters, PrerenderOperationCallback)}.
      */
-    @WebViewCompat.ExperimentalUrlPrerender
     @Profile.ExperimentalUrlPrefetch
     public void prerenderUrlAsync(
             @NonNull String url,

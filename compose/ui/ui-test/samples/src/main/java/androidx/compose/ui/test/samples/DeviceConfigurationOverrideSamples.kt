@@ -34,15 +34,12 @@ import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.Keyboard
-import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.Navigation
-import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.Touchscreen
 import androidx.compose.ui.test.UiMode
-import androidx.compose.ui.test.UiModeType
 import androidx.compose.ui.test.WindowInsets
 import androidx.compose.ui.test.then
 import androidx.compose.ui.text.intl.LocaleList
@@ -124,7 +121,9 @@ fun DeviceConfigurationOverrideRoundScreenSample() {
 @Sampled
 @Composable
 fun DeviceConfigurationOverrideKeyboard() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.Keyboard(KeyboardType.Qwerty)) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride.Keyboard(Configuration.KEYBOARD_QWERTY)
+    ) {
         LocalConfiguration.current.keyboard // will be Configuration.KEYBOARD_QWERTY
     }
 }
@@ -134,7 +133,7 @@ fun DeviceConfigurationOverrideKeyboard() {
 fun DeviceConfigurationOverrideNavigation() {
     DeviceConfigurationOverride(
         DeviceConfigurationOverride.Navigation(
-            navigationType = NavigationType.Dpad,
+            navigationType = Configuration.NAVIGATION_DPAD,
             isHidden = false,
         )
     ) {
@@ -154,7 +153,9 @@ fun DeviceConfigurationOverrideTouchscreen() {
 @Sampled
 @Composable
 fun DeviceConfigurationOverrideUiMode() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.UiMode(UiModeType.Car)) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride.UiMode(Configuration.UI_MODE_TYPE_CAR)
+    ) {
         // will be Configuration.UI_MODE_TYPE_CAR
         LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK
     }

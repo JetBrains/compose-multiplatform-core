@@ -39,7 +39,6 @@ import androidx.camera.video.VideoCapabilities
 import androidx.camera.video.internal.audio.AudioSettings
 import androidx.camera.video.internal.audio.AudioSource
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
@@ -62,7 +61,6 @@ import org.junit.runners.Parameterized
  */
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class AudioSettingsAudioProfileResolverTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,

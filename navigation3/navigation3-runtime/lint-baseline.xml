@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
-
-    <issue
-        id="LifecycleCurrentStateInComposition"
-        message="Lifecycle.currentState should not be called within composition"
-        errorLine1="        childRegistry.lifecycle.currentState = Lifecycle.State.RESUMED"
-        errorLine2="                                ~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/navigation3/runtime/SavedStateNavEntryDecorator.kt"/>
-    </issue>
+<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
 
     <issue
         id="MutableCollectionMutableState"

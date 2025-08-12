@@ -95,12 +95,14 @@ class SearchResultsImpl implements SearchResults {
                     mVisibilityScope = QueryStats.VISIBILITY_SCOPE_GLOBAL;
                     // Global queries aren't restricted to a single database
                     searchResultPage = mAppSearchImpl.globalQuery(
-                            mQueryExpression, mSearchSpec, mSelfCallerAccess, mLogger);
+                            mQueryExpression, mSearchSpec, mSelfCallerAccess, mLogger,
+                            /*callStatsBuilder=*/null);
                 } else {
                     mVisibilityScope = QueryStats.VISIBILITY_SCOPE_LOCAL;
                     // Normal local query, pass in specified database.
                     searchResultPage = mAppSearchImpl.query(
-                            mPackageName, mDatabaseName, mQueryExpression, mSearchSpec, mLogger);
+                            mPackageName, mDatabaseName, mQueryExpression, mSearchSpec, mLogger,
+                            /*callStatsBuilder=*/null);
                 }
             } else {
                 if (mNextPageToken == SearchResultPage.EMPTY_PAGE_TOKEN) {
@@ -118,7 +120,8 @@ class SearchResultsImpl implements SearchResults {
                     }
                 }
                 searchResultPage = mAppSearchImpl.getNextPage(mPackageName, mNextPageToken,
-                        sStatsBuilder);
+                        sStatsBuilder,
+                        /*callStatsBuilder=*/null);
                 if (mLogger != null && sStatsBuilder != null) {
                     if (mSearchSpec.getJoinSpec() != null
                             && !mSearchSpec.getJoinSpec().getChildPropertyExpression().isEmpty()) {

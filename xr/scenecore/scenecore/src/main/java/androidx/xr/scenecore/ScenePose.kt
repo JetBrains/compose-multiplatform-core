@@ -93,10 +93,8 @@ public interface ScenePose {
 }
 
 /** The BaseScenePose implements the [ScenePose] interface. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public abstract class BaseScenePose<out RtActivityPoseType : RtActivityPose>(
-    internal val rtActivityPose: RtActivityPoseType
-) : ScenePose {
+public abstract class BaseScenePose<out RtActivityPoseType : RtActivityPose>
+protected constructor(internal val rtActivityPose: RtActivityPoseType) : ScenePose {
     private companion object {
         private const val TAG = "BaseScenePose"
     }
@@ -129,7 +127,6 @@ public abstract class BaseScenePose<out RtActivityPoseType : RtActivityPose>(
 }
 
 /** An [ScenePose] which tracks a camera view's position and view into physical space. */
-@Suppress("HiddenSuperclass")
 public class CameraView
 private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPose) :
     BaseScenePose<RtCameraViewActivityPose>(rtCameraViewActivityPose) {
@@ -178,7 +175,6 @@ private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPo
  * Head is an [ScenePose] used to track the position of the user's head. If there is a left and
  * right camera it is calculated as the position between the two.
  */
-@Suppress("HiddenSuperclass")
 public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
     BaseScenePose<RtHeadActivityPose>(rtActivityPose) {
 
@@ -195,7 +191,6 @@ public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
  * PerceptionSpace is an [ScenePose] used to track the origin of the space used by ARCore for
  * Jetpack XR APIs.
  */
-@Suppress("HiddenSuperclass")
 public class PerceptionSpace private constructor(rtActivityPose: RtPerceptionSpaceActivityPose) :
     BaseScenePose<RtPerceptionSpaceActivityPose>(rtActivityPose) {
 

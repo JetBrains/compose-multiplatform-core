@@ -17,6 +17,7 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
@@ -292,5 +293,15 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         // Assert.
         assertThat(supportedFpsForSessionConfig).isNotEmpty()
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
+    }
+
+    @Test
+    fun canReturnSupportedOutputFormats() {
+        val formats = cameraInfo.supportedOutputFormats
+        val cameraCharacteristics =
+            CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)!!
+        val streamConfigurationMap = cameraCharacteristics.get(SCALER_STREAM_CONFIGURATION_MAP)!!
+
+        assertThat(formats).containsExactlyElementsIn(streamConfigurationMap.outputFormats.toSet())
     }
 }

@@ -63,7 +63,6 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
      * the Window.
      */
     var isVisible by mutableStateOf(true)
-        private set
 
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int {
         return insets.left
@@ -411,10 +410,8 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
             WindowInsetsCompat.Type.tappableElement(),
             "tappableElementIgnoringVisibility",
         )
-    val imeAnimationTarget =
-        valueInsetsIgnoringVisibility(insets, WindowInsetsCompat.Type.ime(), "imeAnimationTarget")
-    val imeAnimationSource =
-        valueInsetsIgnoringVisibility(insets, WindowInsetsCompat.Type.ime(), "imeAnimationSource")
+    val imeAnimationTarget = ValueInsets(AndroidXInsets.NONE, "imeAnimationTarget")
+    val imeAnimationSource = ValueInsets(AndroidXInsets.NONE, "imeAnimationSource")
 
     /**
      * `true` unless the `AbstractComposeView` [AbstractComposeView.consumeWindowInsets] is set to
@@ -431,6 +428,27 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
     private var accessCount = 0
 
     private val insetsListener = InsetsListener(this)
+
+    init {
+        val rootWindowInsets = ViewCompat.getRootWindowInsets(view)
+        if (rootWindowInsets != null) {
+            // set the initial state of visibility
+            captionBar.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.captionBar())
+            displayCutout.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.displayCutout())
+            ime.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.ime())
+            mandatorySystemGestures.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.mandatorySystemGestures())
+            navigationBars.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.navigationBars())
+            statusBars.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.statusBars())
+            systemBars.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.systemBars())
+            systemGestures.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.systemGestures())
+            tappableElement.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.tappableElement())
+        }
+    }
 
     /**
      * A usage of [WindowInsetsHolder.current] was added. We must track so that when the first one
@@ -568,7 +586,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         /**
          * Returns the [WindowInsetsHolder] associated with [view] or creates one and associates it.
          */
-        private fun getOrCreateFor(view: View): WindowInsetsHolder {
+        fun getOrCreateFor(view: View): WindowInsetsHolder {
             return synchronized(viewMap) {
                 viewMap.getOrPut(view) {
                     val insets = null

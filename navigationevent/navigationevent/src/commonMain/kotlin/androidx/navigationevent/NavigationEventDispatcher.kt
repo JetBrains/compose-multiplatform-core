@@ -19,6 +19,14 @@ package androidx.navigationevent
 import androidx.annotation.MainThread
 import androidx.navigationevent.NavigationEventPriority.Companion.Default
 import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
+import androidx.navigationevent.NavigationEventState.Idle
+import androidx.navigationevent.NavigationEventState.InProgress
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * A dispatcher for navigation events that can be organized hierarchically.
@@ -176,7 +184,59 @@ private constructor(
      *
      * **This is primarily for cleanup when this dispatcher is no longer needed.**
      */
-    private val callbacks = mutableSetOf<NavigationEventCallback>()
+    private val callbacks = mutableSetOf<NavigationEventCallback<*>>()
+
+    /**
+     * A set of [NavigationEventInputHandler] instances that are directly managed by this
+     * dispatcher.
+     *
+     * This dispatcher controls the lifecycle of its registered handlers, calling `onAttach` and
+     * `onDetach` as its own state changes.
+     *
+     * **This is primarily for cleanup when this dispatcher is no longer needed.**
+     */
+    private val inputHandlers = mutableSetOf<NavigationEventInputHandler>()
+
+    /**
+     * The [StateFlow] from the highest-priority, enabled navigation callback.
+     *
+     * This represents the navigation state of the currently active component.
+     */
+    public val state: StateFlow<NavigationEventState<NavigationEventInfo>> = sharedProcessor.state
+
+    /**
+     * Creates a [StateFlow] that only emits states for a specific [NavigationEventInfo] type.
+     *
+     * @param T The [NavigationEventInfo] type to filter for.
+     * @param scope The [CoroutineScope] in which the new [StateFlow] is created.
+     * @param initialInfo The initial [NavigationEventInfo] of type [T] to be used when the
+     *   [StateFlow] starts.
+     * @return A [StateFlow] that emits values only when the state's destination is of type [T].
+     */
+    public inline fun <reified T : NavigationEventInfo> getState(
+        scope: CoroutineScope,
+        initialInfo: T,
+    ): StateFlow<NavigationEventState<T>> {
+        // We can't use filterIsInstance<NavigationEventState<T>> because the type argument `T`
+        // is erased at runtime — so the JVM only sees NavigationEventState<*>. Instead, we filter
+        // by checking whether the state's contained `currentInfo` is of type `T`.
+        return state
+            .filter { state ->
+                when (state) {
+                    is Idle -> state.currentInfo is T
+                    is InProgress -> state.currentInfo is T
+                }
+            }
+            .mapNotNull { state ->
+                @Suppress("UNCHECKED_CAST")
+                state as? NavigationEventState<T>
+            }
+            .stateIn(
+                scope = scope,
+                started = SharingStarted.Eagerly,
+                initialValue = Idle(currentInfo = initialInfo),
+            )
+    }
 
     init {
         // If a parent dispatcher is provided, register this dispatcher as its child.
@@ -188,7 +248,10 @@ private constructor(
         // shared processor. This allows this specific dispatcher instance (or its consumers)
         // to be notified of global changes in the callback enablement state.
         if (onHasEnabledCallbacksChanged != null) {
-            sharedProcessor.addOnHasEnabledCallbacksChangedCallback(onHasEnabledCallbacksChanged)
+            sharedProcessor.addOnHasEnabledCallbacksChangedCallback(
+                inputHandler = null,
+                callback = onHasEnabledCallbacksChanged,
+            )
         }
     }
 
@@ -196,11 +259,15 @@ private constructor(
      * Adds a callback that will be notified when the overall enabled state of registered callbacks
      * changes.
      *
+     * @param inputHandler The [NavigationEventInputHandler] registering the callback.
      * @param callback The callback to invoke when the enabled state changes.
      */
     @Suppress("PairedRegistration") // No removal for now.
-    public fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
-        sharedProcessor.addOnHasEnabledCallbacksChangedCallback(callback)
+    internal fun addOnHasEnabledCallbacksChangedCallback(
+        inputHandler: NavigationEventInputHandler,
+        callback: (Boolean) -> Unit,
+    ) {
+        sharedProcessor.addOnHasEnabledCallbacksChangedCallback(inputHandler, callback)
     }
 
     /**
@@ -240,7 +307,7 @@ private constructor(
     @Suppress("PairedRegistration") // Callback is removed via `NavigationEventCallback.remove()`
     @MainThread
     public fun addCallback(
-        callback: NavigationEventCallback,
+        callback: NavigationEventCallback<*>,
         priority: NavigationEventPriority = Default,
     ) {
         checkInvariants()
@@ -249,67 +316,124 @@ private constructor(
         callbacks += callback
     }
 
-    internal fun removeCallback(callback: NavigationEventCallback) {
+    internal fun removeCallback(callback: NavigationEventCallback<*>) {
         sharedProcessor.removeCallback(callback)
         callbacks -= callback
+    }
+
+    /**
+     * Adds an input handler and binds it to this dispatcher's lifecycle.
+     *
+     * The handler is immediately attached via its `onAttach()` method. The dispatcher will then
+     * invoke `onEnabled()`, `onDisabled()`, and `onDispose()` on the handler to mirror its own
+     * state changes.
+     *
+     * @param inputHandler The handler to add.
+     * @throws IllegalStateException if the dispatcher has already been disposed.
+     * @see removeInputHandler
+     */
+    public fun addInputHandler(inputHandler: NavigationEventInputHandler) {
+        checkInvariants()
+
+        inputHandlers += inputHandler
+        inputHandler.onAttach(dispatcher = this)
+    }
+
+    /**
+     * Removes and detaches an input handler from this dispatcher.
+     *
+     * This severs the lifecycle link. The handler's `onDetached()` method is invoked, and it will
+     * no longer receive events or lifecycle calls from this dispatcher.
+     *
+     * @param inputHandler The handler to remove.
+     * @throws IllegalStateException if the dispatcher has already been disposed.
+     * @see addInputHandler
+     */
+    public fun removeInputHandler(inputHandler: NavigationEventInputHandler) {
+        checkInvariants()
+
+        inputHandlers -= inputHandler
+        inputHandler.onDetach()
     }
 
     /**
      * Dispatch an [NavigationEventCallback.onEventStarted] event with the given event. This call is
      * delegated to the shared [NavigationEventProcessor].
      *
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
      * @param event [NavigationEvent] to dispatch to the callbacks.
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    internal fun dispatchOnStarted(event: NavigationEvent) {
+    internal fun dispatchOnStarted(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+        event: NavigationEvent,
+    ) {
         checkInvariants()
 
         if (!isEnabled) return
-        sharedProcessor.dispatchOnStarted(event)
+        sharedProcessor.dispatchOnStarted(inputHandler, direction, event)
     }
 
     /**
      * Dispatch an [NavigationEventCallback.onEventProgressed] event with the given event. This call
      * is delegated to the shared [NavigationEventProcessor].
      *
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
      * @param event [NavigationEvent] to dispatch to the callbacks.
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    internal fun dispatchOnProgressed(event: NavigationEvent) {
+    internal fun dispatchOnProgressed(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+        event: NavigationEvent,
+    ) {
         checkInvariants()
 
         if (!isEnabled) return
-        sharedProcessor.dispatchOnProgressed(event)
+        sharedProcessor.dispatchOnProgressed(inputHandler, direction, event)
     }
 
     /**
      * Dispatch an [NavigationEventCallback.onEventCompleted] event. This call is delegated to the
      * shared [NavigationEventProcessor], passing the fallback action.
      *
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    internal fun dispatchOnCompleted() {
+    internal fun dispatchOnCompleted(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+    ) {
         checkInvariants()
 
         if (!isEnabled) return
-        sharedProcessor.dispatchOnCompleted(fallbackOnBackPressed)
+        sharedProcessor.dispatchOnCompleted(inputHandler, direction, fallbackOnBackPressed)
     }
 
     /**
      * Dispatch an [NavigationEventCallback.onEventCancelled] event. This call is delegated to the
      * shared [NavigationEventProcessor].
      *
+     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param direction The direction of the navigation event being started.
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @MainThread
-    internal fun dispatchOnCancelled() {
+    internal fun dispatchOnCancelled(
+        inputHandler: NavigationEventInputHandler,
+        direction: NavigationEventDirection,
+    ) {
         checkInvariants()
 
         if (!isEnabled) return
-        sharedProcessor.dispatchOnCancelled()
+        sharedProcessor.dispatchOnCancelled(inputHandler, direction)
     }
 
     /**
@@ -356,8 +480,16 @@ private constructor(
             // own cleanup. This ensures a complete traversal of the sub-hierarchy.
             dispatchersToDispose += currentDispatcher.childDispatchers
 
+            // Notify all registered input handlers that this dispatcher is being disposed.
+            // This gives them a chance to clean up their own state, severing the lifecycle link
+            // and preventing them from interacting with a disposed object.
+            for (inputHandler in currentDispatcher.inputHandlers) {
+                inputHandler.onDetach()
+            }
+            inputHandlers.clear()
+
             // Remove callbacks directly owned by the currentDispatcher from the shared processor.
-            for (callback in currentDispatcher.callbacks.toList()) {
+            for (callback in currentDispatcher.callbacks) {
                 // Always use the public API for removal. This ensures the component's internal
                 // state is handled correctly and prevents unexpected behavior.
                 callback.remove()

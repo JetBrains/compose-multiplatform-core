@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
+<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
 
     <issue
         id="ModifierNodeElementDataClassWithLambda"
@@ -31,15 +31,6 @@
     <issue
         id="ModifierNodeElementDataClassWithLambda"
         message="ModifierNodeElement implementations using a data class with lambda properties will result in incorrect equals implementations"
-        errorLine1="    var renderInOverlay: () -> Boolean,"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/animation/RenderInTransitionOverlayNodeElement.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierNodeElementDataClassWithLambda"
-        message="ModifierNodeElement implementations using a data class with lambda properties will result in incorrect equals implementations"
         errorLine1="    val isEnabled: () -> Boolean = DefaultEnabled,"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -49,17 +40,8 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        val target = states.firstOrNull { it.target }"
-        errorLine2="                            ~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/animation/SharedElement.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    private var targetBoundsProviderUpdateRequestId by mutableStateOf(0)"
-        errorLine2="                                                       ~~~~~~~~~~~~~~">
+        errorLine1="        allEntries.any { it.target &amp;&amp; it.isEnabled }"
+        errorLine2="                   ~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/animation/SharedElement.kt"/>
     </issue>

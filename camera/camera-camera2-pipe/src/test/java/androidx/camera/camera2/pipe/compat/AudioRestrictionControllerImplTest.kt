@@ -33,7 +33,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
@@ -224,7 +223,6 @@ class AudioRestrictionControllerImplTest {
         }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
     fun belowRBuild_addListenerNoOp() =
         testScope.runTest {
             val mode = AUDIO_RESTRICTION_VIBRATION

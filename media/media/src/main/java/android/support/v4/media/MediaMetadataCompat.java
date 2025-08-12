@@ -22,7 +22,6 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadata;
 import android.media.Rating;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -598,7 +597,7 @@ public final class MediaMetadataCompat implements Parcelable {
      *         none.
      */
     public static MediaMetadataCompat fromMediaMetadata(Object metadataObj) {
-        if (metadataObj != null && Build.VERSION.SDK_INT >= 21) {
+        if (metadataObj != null) {
             Parcel p = Parcel.obtain();
             ((MediaMetadata) metadataObj).writeToParcel(p, 0);
             p.setDataPosition(0);
@@ -623,7 +622,7 @@ public final class MediaMetadataCompat implements Parcelable {
      */
     @SuppressWarnings("nullness") // MediaMetadata.Builder accepts null values but is not annotated.
     public Object getMediaMetadata() {
-        if (mMetadataFwk == null && Build.VERSION.SDK_INT >= 21) {
+        if (mMetadataFwk == null) {
             MediaMetadata.Builder builder = new MediaMetadata.Builder();
             for (String key : mBundle.keySet()) {
                 Integer type = METADATA_KEYS_TYPE.get(key);

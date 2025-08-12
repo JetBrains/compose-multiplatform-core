@@ -1027,30 +1027,27 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     }
 
     @Test
-    fun onStateOffline_abortAllCaptureRequests() = runBlocking {
+    fun lifecycleStopped_abortAllCaptureRequests() = runBlocking {
         val imageCapture = ImageCapture.Builder().build()
         withContext(Dispatchers.Main) {
             cameraProvider.bindToLifecycle(fakeLifecycleOwner, BACK_SELECTOR, imageCapture)
         }
 
-        // After the use case can be reused, the capture requests can only be cancelled after the
-        // onStateAttached() callback has been received. In the normal code flow, the
-        // onStateDetached() should also come after onStateAttached(). There is no API to
-        // directly know  onStateAttached() callback has been received. Therefore, taking a
-        // picture and waiting for the capture success callback to know the use case's
-        // onStateAttached() callback has been received.
+        // Ensure image capture can succeed.
         val callback = FakeOnImageCapturedCallback(captureCount = 1)
         imageCapture.takePicture(mainExecutor, callback)
-
-        // Wait for the signal that the image has been captured.
         callback.awaitCapturesAndAssert(capturedImagesCount = 1)
 
+        // Enqueue multiple image capture requests so that there is at least one image capture that
+        // is still incomplete by the time ImageCapture use case is detached.
         val callback2 = FakeOnImageCapturedCallback(captureCount = 3)
         imageCapture.takePicture(mainExecutor, callback2)
         imageCapture.takePicture(mainExecutor, callback2)
         imageCapture.takePicture(mainExecutor, callback2)
 
-        withContext(Dispatchers.Main) { imageCapture.onStateDetached() }
+        // A lifecycle stop should lead to ImageCapture#onSessionStop call which should abort all
+        // captures.
+        withContext(Dispatchers.Main) { fakeLifecycleOwner.pauseAndStop() }
 
         callback2.awaitCaptures()
         assertThat(callback2.results.size + callback2.errors.size).isEqualTo(3)
@@ -2269,6 +2266,25 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
             // Detach the surface provider, stopping the preview stream for this iteration.
             withContext(Dispatchers.Main) { preview.surfaceProvider = null }
         }
+    }
+
+    @Test
+    fun imageCaptureCompletesWithError_whenLifecycleIsNotStarted() = runBlocking {
+        // Arrange: Set up resources with a lifecycle that is only initialized, but not started.
+        val imageCapture = ImageCapture.Builder().build()
+        val callback = FakeOnImageCapturedCallback(captureCount = 1)
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(FakeLifecycleOwner(), BACK_SELECTOR, imageCapture)
+        }
+
+        // Act: Take a picture.
+        imageCapture.takePicture(mainExecutor, callback)
+
+        // Assert: Verify that the image capture has failed correctly.
+        callback.awaitCapturesAndAssert(errorsCount = 1)
+        assertThat(callback.errors.size).isEqualTo(1)
+        assertThat(callback.errors.first().imageCaptureError)
+            .isEqualTo(ImageCapture.ERROR_INVALID_CAMERA)
     }
 
     /**

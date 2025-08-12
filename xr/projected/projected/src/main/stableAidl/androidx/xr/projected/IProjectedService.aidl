@@ -16,5 +16,9 @@
 
 package androidx.xr.projected;
 
+import androidx.xr.projected.SupportedCaptureAudioConfig;
+
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
-interface IProjectedService {}
+interface IProjectedService {
+  SupportedCaptureAudioConfig[] getSupportedCaptureAudioConfigs();
+}

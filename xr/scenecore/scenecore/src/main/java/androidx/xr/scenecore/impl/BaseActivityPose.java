@@ -85,20 +85,22 @@ abstract class BaseActivityPose implements ActivityPose {
                 new Pose(
                                 activityToDestination
                                         .getTranslation()
-                                        .times(inverseDestinationScale),
+                                        .scale(inverseDestinationScale),
                                 activityToDestination.getRotation())
                         .getInverse();
         Pose destinationToLocal =
                 destinationToActivity.compose(
                         new Pose(
-                                activityToLocal.getTranslation().times(inverseDestinationScale),
+                                activityToLocal.getTranslation()
+                                        .scale(inverseDestinationScale),
                                 activityToLocal.getRotation()));
 
         // Apply the transformation to the destination entity, from this entity, on the local pose.
         return destinationToLocal.compose(
                 new Pose(
                         pose.getTranslation()
-                                .times(this.getActivitySpaceScale().times(inverseDestinationScale)),
+                                .scale(this.getActivitySpaceScale()
+                                        .scale(inverseDestinationScale)),
                         pose.getRotation()));
     }
 }

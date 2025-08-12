@@ -1,8 +1,8 @@
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXImplPlugin.kt b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXImplPlugin.kt
-index 0ba07fb88ac..2d2a4d2d0f3 100644
+index 5c12e771e79..46433de733e 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXImplPlugin.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXImplPlugin.kt
-@@ -744,7 +744,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
+@@ -736,7 +736,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
              project.addToBuildOnServer("lint")
              // Created to be consumed by docs-tip-of-tree
              project.configurations.register("androidIntermediates") {
@@ -35,13 +35,13 @@ index 7e79c6847e3..b4b3a4181d1 100644
              it.isCanBeResolved = true
              it.setResolveSources()
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/metalava/GenerateApiLevels.kt b/buildSrc/private/src/main/kotlin/androidx/build/metalava/GenerateApiLevels.kt
-index 817b8d6e82c..01ba310cd90 100644
+index 394b666b21d..292ec6240aa 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/metalava/GenerateApiLevels.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/metalava/GenerateApiLevels.kt
-@@ -91,7 +91,6 @@ internal fun Project.registerVersionMetadataComponent(
-     generateApiTask: TaskProvider<GenerateApiTask>
- ) {
-     configurations.register("libraryVersionMetadata") { configuration ->
+@@ -94,7 +94,6 @@ internal fun Project.registerVersionMetadataComponent(
+     // which has an enforced timing when we are allowed to add new artifacts
+     // https://github.com/gradle/gradle/issues/34570
+     configurations.create("libraryVersionMetadata") { configuration ->
 -        configuration.isVisible = false
          configuration.isCanBeResolved = false
  

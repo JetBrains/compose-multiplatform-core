@@ -19,6 +19,7 @@ package androidx.appsearch.compiler;
 import static androidx.appsearch.compiler.CodegenUtils.createNewArrayExpr;
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
 
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
@@ -29,7 +30,6 @@ import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.SerializerClass;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
@@ -77,7 +77,7 @@ class ToGenericDocumentCodeGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(GENERIC_DOCUMENT_CLASS)
                 .addAnnotation(Override.class)
-                .addParameter(ClassName.get(mModel.getClassElement()), "document")
+                .addParameter(toJavaPoet(mModel.getClassElement().asClassName()), "document")
                 .addException(APPSEARCH_EXCEPTION_CLASS);
 
         // Construct a new GenericDocument.Builder with the namespace, id, and schema type

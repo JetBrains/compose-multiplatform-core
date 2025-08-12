@@ -19,9 +19,12 @@ package androidx.camera.camera2.internal;
 import android.content.Context;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Size;
 import android.view.Display;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.workaround.DisplaySizeCorrector;
 import androidx.camera.camera2.internal.compat.workaround.MaxPreviewSize;
@@ -32,6 +35,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A singleton class to retrieve display related information.
+ *
+ * <p>This class uses a caching strategy to reduce calls to the system's {@link DisplayManager}.
+ *
+ * <p>The cached information is lazy-loaded. It is only fetched from the {@link DisplayManager}
+ * when first needed. A {@link DisplayManager.DisplayListener} invalidates the cache (by setting
+ * it to null) whenever the display configuration changes. The next call to
+ * {@link #getDisplays()} or {@link #getPreviewSize()} will then fetch the fresh data.
  */
 public class DisplayInfoManager {
     private static final Size MAX_PREVIEW_SIZE = new Size(1920, 1080);
@@ -44,9 +54,62 @@ public class DisplayInfoManager {
      * and no correct display size can be retrieved from DisplaySizeCorrector.
      */
     private static final Size FALLBACK_DISPLAY_SIZE = new Size(640, 480);
+
+    /**
+     * A lock to ensure thread-safe access to the singleton instance and the cached display
+     * information. Using a static lock is a robust way to protect the singleton's shared
+     * resources, even if the singleton pattern is accidentally violated.
+     */
     private static final Object INSTANCE_LOCK = new Object();
+
+    @GuardedBy("INSTANCE_LOCK")
     private static volatile DisplayInfoManager sInstance;
+
     private final @NonNull DisplayManager mDisplayManager;
+
+    /**
+     * A listener to detect display changes.
+     *
+     * <p>This listener invalidates the cached display information (by setting it to null)
+     * whenever the display configuration changes. The next call to {@link #getDisplays()} or
+     * {@link #getPreviewSize()} will then fetch the fresh data.
+     */
+    private final DisplayManager.DisplayListener mDisplayListener =
+            new DisplayManager.DisplayListener() {
+                @Override
+                public void onDisplayAdded(int displayId) {
+                    synchronized (INSTANCE_LOCK) {
+                        mDisplays = null;
+                        mPreviewSize = null;
+                    }
+                }
+
+                @Override
+                public void onDisplayRemoved(int displayId) {
+                    synchronized (INSTANCE_LOCK) {
+                        mDisplays = null;
+                        mPreviewSize = null;
+                    }
+                }
+
+                @Override
+                public void onDisplayChanged(int displayId) {
+                    synchronized (INSTANCE_LOCK) {
+                        mDisplays = null;
+                        mPreviewSize = null;
+                    }
+                }
+            };
+
+    /**
+     * A cache for the array of {@link Display} objects.
+     * It is invalidated (set to null) by the {@link #mDisplayListener} and re-populated on the
+     * next call to {@link #getDisplays()}.
+     */
+    @GuardedBy("INSTANCE_LOCK")
+    private volatile Display[] mDisplays = null;
+
+    @GuardedBy("INSTANCE_LOCK")
     private volatile Size mPreviewSize = null;
     private final MaxPreviewSize mMaxPreviewSize = new MaxPreviewSize();
     private final DisplaySizeCorrector mDisplaySizeCorrector = new DisplaySizeCorrector();
@@ -63,6 +126,8 @@ public class DisplayInfoManager {
             synchronized (INSTANCE_LOCK) {
                 if (sInstance == null) {
                     sInstance = new DisplayInfoManager(context);
+                    sInstance.mDisplayManager.registerDisplayListener(sInstance.mDisplayListener,
+                            new Handler(Looper.getMainLooper()));
                 }
             }
         }
@@ -70,18 +135,25 @@ public class DisplayInfoManager {
     }
 
     /**
-     * Test purpose only. To release the instance so that the test can create a new instance.
+     * Releases the instance so that tests can create new instances.
      */
     @VisibleForTesting
     static void releaseInstance() {
-        sInstance = null;
+        synchronized (INSTANCE_LOCK) {
+            if (sInstance != null) {
+                sInstance.mDisplayManager.unregisterDisplayListener(sInstance.mDisplayListener);
+                sInstance = null;
+            }
+        }
     }
 
     /**
-     * Update the preview size according to current display size.
+     * Refreshes the preview size.
      */
-    void refresh() {
-        mPreviewSize = calculatePreviewSize();
+    void refreshPreviewSize() {
+        synchronized (INSTANCE_LOCK) {
+            mPreviewSize = calculatePreviewSize();
+        }
     }
 
     /**
@@ -90,7 +162,8 @@ public class DisplayInfoManager {
      * @param skipStateOffDisplay true to skip the displays with off state
      */
     public @NonNull Display getMaxSizeDisplay(boolean skipStateOffDisplay) {
-        Display[] displays = mDisplayManager.getDisplays();
+        Display[] displays = getDisplays();
+
         if (displays.length == 1) {
             return displays[0];
         }
@@ -111,6 +184,19 @@ public class DisplayInfoManager {
         }
 
         return maxDisplay;
+    }
+
+    /**
+     * Gets the array of displays, using a cache to avoid unnecessary calls to the system.
+     * The cache is lazily populated.
+     */
+    private Display[] getDisplays() {
+        synchronized (INSTANCE_LOCK) {
+            if (mDisplays == null) {
+                mDisplays = mDisplayManager.getDisplays();
+            }
+            return mDisplays;
+        }
     }
 
     @SuppressWarnings("deprecation") /* getRealSize */
@@ -141,13 +227,15 @@ public class DisplayInfoManager {
      * (1920x1080), whichever is smaller.
      */
     @NonNull Size getPreviewSize() {
-        // Use cached value to speed up since this would be called multiple times.
-        if (mPreviewSize != null) {
+        synchronized (INSTANCE_LOCK) {
+            // Use cached value to speed up since this would be called multiple times.
+            if (mPreviewSize != null) {
+                return mPreviewSize;
+            }
+
+            mPreviewSize = calculatePreviewSize();
             return mPreviewSize;
         }
-
-        mPreviewSize = calculatePreviewSize();
-        return mPreviewSize;
     }
 
     private Size calculatePreviewSize() {

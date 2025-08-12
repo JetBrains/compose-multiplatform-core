@@ -28,7 +28,6 @@ internal data class NetworkRequestCompat(val wrapped: Any? = null) {
         val TAG = Logger.tagWithPrefix("NetworkRequestCompat")
     }
 
-    @get:RequiresApi(21)
     val networkRequest: NetworkRequest?
         get() = wrapped as NetworkRequest?
 }

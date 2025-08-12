@@ -18,6 +18,32 @@ package androidx.navigationevent.testing
 
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.NavigationEventInfo
+
+/**
+ * Creates an instance of [TestNavigationEventCallback] without requiring an explicit generic type.
+ *
+ * This function is a convenience wrapper around the [TestNavigationEventCallback] constructor that
+ * defaults its info type to `*`. Use this in tests where the specific type of [NavigationEventInfo]
+ * is not relevant.
+ */
+public fun TestNavigationEventCallback(
+    isEnabled: Boolean = true,
+    onEventStarted: TestNavigationEventCallback<*>.(event: NavigationEvent) -> Unit = {},
+    onEventProgressed: TestNavigationEventCallback<*>.(event: NavigationEvent) -> Unit = {},
+    onEventCancelled: TestNavigationEventCallback<*>.() -> Unit = {},
+    onEventCompleted: TestNavigationEventCallback<*>.() -> Unit = {},
+): TestNavigationEventCallback<*> {
+    return TestNavigationEventCallback(
+        currentInfo = NavigationEventInfo.NotProvided,
+        previousInfo = null,
+        isEnabled = isEnabled,
+        onEventStarted = onEventStarted,
+        onEventProgressed = onEventProgressed,
+        onEventCancelled = onEventCancelled,
+        onEventCompleted = onEventCompleted,
+    )
+}
 
 /**
  * A test implementation of [NavigationEventCallback] that records received events and invocation
@@ -27,23 +53,30 @@ import androidx.navigationevent.NavigationEventCallback
  * triggered as expected. It captures the [NavigationEvent] objects and counts how many times each
  * callback is fired.
  *
+ * @param T The type of [NavigationEventInfo] this callback handles.
+ * @param currentInfo The initial **current** navigation information for the callback.
+ * @param previousInfo The initial **previous** navigation information. Defaults to `null`.
  * @param isEnabled Determines if the callback should process events. Defaults to `true`.
- * @param isPassThrough If `true`, events are passed to the next callback in the chain. Defaults to
- *   `false`.
  * @param onEventStarted An optional lambda to execute when `onEventStarted` is called.
  * @param onEventProgressed An optional lambda to execute when `onEventProgressed` is called.
  * @param onEventCancelled An optional lambda to execute when `onEventCancelled` is called.
  * @param onEventCompleted An optional lambda to execute when `onEventCompleted` is called.
  */
-public class TestNavigationEventCallback(
+public class TestNavigationEventCallback<T : NavigationEventInfo>(
+    currentInfo: T,
+    previousInfo: T? = null,
     isEnabled: Boolean = true,
-    isPassThrough: Boolean = false,
-    private val onEventStarted: TestNavigationEventCallback.(event: NavigationEvent) -> Unit = {},
-    private val onEventProgressed: TestNavigationEventCallback.(event: NavigationEvent) -> Unit =
+    private val onEventStarted: TestNavigationEventCallback<T>.(event: NavigationEvent) -> Unit =
         {},
-    private val onEventCancelled: TestNavigationEventCallback.() -> Unit = {},
-    private val onEventCompleted: TestNavigationEventCallback.() -> Unit = {},
-) : NavigationEventCallback(isEnabled, isPassThrough) {
+    private val onEventProgressed: TestNavigationEventCallback<T>.(event: NavigationEvent) -> Unit =
+        {},
+    private val onEventCancelled: TestNavigationEventCallback<T>.() -> Unit = {},
+    private val onEventCompleted: TestNavigationEventCallback<T>.() -> Unit = {},
+) : NavigationEventCallback<T>(isEnabled) {
+
+    init {
+        setInfo(currentInfo = currentInfo, previousInfo = previousInfo)
+    }
 
     private val _startedEvents = mutableListOf<NavigationEvent>()
 
@@ -61,15 +94,15 @@ public class TestNavigationEventCallback(
     public val progressedEvents: List<NavigationEvent>
         get() = _progressedEvents.toList()
 
-    /** The number of times [progressedInvocations] has been invoked. */
+    /** The number of times [onEventProgressed] has been invoked. */
     public val progressedInvocations: Int
         get() = _progressedEvents.size
 
-    /** The number of times [completedInvocations] has been invoked. */
+    /** The number of times [onEventCompleted] has been invoked. */
     public var completedInvocations: Int = 0
         private set
 
-    /** The number of times [cancelledInvocations] has been invoked. */
+    /** The number of times [onEventCancelled] has been invoked. */
     public var cancelledInvocations: Int = 0
         private set
 

@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.Identifier
 import androidx.camera.testing.fakes.FakeCamera
@@ -36,10 +35,7 @@ private const val CAMERA_ID_2 = "2"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.core"],
-)
+@org.robolectric.annotation.Config(instrumentedPackages = ["androidx.camera.core"])
 class CameraIdentifierTest {
 
     private lateinit var fakeCameraInfo0: FakeCameraInfoInternal

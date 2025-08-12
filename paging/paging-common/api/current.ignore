@@ -1,8 +1,28 @@
 // Baseline format: 1.0
+RemovedFromJava: androidx.paging.DataSource#map(kotlin.jvm.functions.Function1<? super Value,? extends ToValue>):
+    Source breaking change: method androidx.paging.DataSource.map(kotlin.jvm.functions.Function1<Value,ToValue>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.DataSource#mapByPage(kotlin.jvm.functions.Function1<? super java.util.List<? extends Value>,? extends java.util.List<? extends ToValue>>):
+    Source breaking change: method androidx.paging.DataSource.mapByPage(kotlin.jvm.functions.Function1<java.util.List<Value>,java.util.List<ToValue>>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.DataSource.Factory#map(kotlin.jvm.functions.Function1<? super Value,? extends ToValue>):
+    Source breaking change: method androidx.paging.DataSource.Factory.map(kotlin.jvm.functions.Function1<Value,ToValue>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.DataSource.Factory#mapByPage(kotlin.jvm.functions.Function1<? super java.util.List<? extends Value>,? extends java.util.List<? extends ToValue>>):
+    Source breaking change: method androidx.paging.DataSource.Factory.mapByPage(kotlin.jvm.functions.Function1<java.util.List<Value>,java.util.List<ToValue>>) can no longer be resolved from Java source
 RemovedFromJava: androidx.paging.PagedList#remove(int):
     Source breaking change: method androidx.paging.PagedList.remove(int) can no longer be resolved from Java source
 RemovedFromJava: androidx.paging.PagedList#size():
     Source breaking change: method androidx.paging.PagedList.size() can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagedListConfigKt#Config(int, int, boolean, int, int):
+    Source breaking change: method androidx.paging.PagedListConfigKt.Config(int,int,boolean,int,int) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagedListKt#PagedList(androidx.paging.DataSource<Key,Value>, androidx.paging.PagedList.Config, java.util.concurrent.Executor, java.util.concurrent.Executor, androidx.paging.PagedList.BoundaryCallback<Value>, Key):
+    Source breaking change: method androidx.paging.PagedListKt.PagedList(androidx.paging.DataSource<Key,Value>,androidx.paging.PagedList.Config,java.util.concurrent.Executor,java.util.concurrent.Executor,androidx.paging.PagedList.BoundaryCallback<Value>,Key) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagingDataTransforms#filter(androidx.paging.PagingData<T>, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super java.lang.Boolean>,?>):
+    Source breaking change: method androidx.paging.PagingDataTransforms.filter(androidx.paging.PagingData<T>,kotlin.jvm.functions.Function2<T,kotlin.coroutines.Continuation<? super java.lang.Boolean>,?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagingDataTransforms#flatMap(androidx.paging.PagingData<T>, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super java.lang.Iterable<? extends R>>,?>):
+    Source breaking change: method androidx.paging.PagingDataTransforms.flatMap(androidx.paging.PagingData<T>,kotlin.jvm.functions.Function2<T,kotlin.coroutines.Continuation<? super java.lang.Iterable<R>>,?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagingDataTransforms#insertSeparators(androidx.paging.PagingData<T>, androidx.paging.TerminalSeparatorType, kotlin.jvm.functions.Function3<? super T,? super T,? super kotlin.coroutines.Continuation<? super R>,?>):
+    Source breaking change: method androidx.paging.PagingDataTransforms.insertSeparators(androidx.paging.PagingData<T>,androidx.paging.TerminalSeparatorType,kotlin.jvm.functions.Function3<T,T,kotlin.coroutines.Continuation<? super R>,?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.paging.PagingDataTransforms#map(androidx.paging.PagingData<T>, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super R>,?>):
+    Source breaking change: method androidx.paging.PagingDataTransforms.map(androidx.paging.PagingData<T>,kotlin.jvm.functions.Function2<T,kotlin.coroutines.Continuation<? super R>,?>) can no longer be resolved from Java source
 
 
 RemovedFromKotlin: androidx.paging.PagedList#remove(int):

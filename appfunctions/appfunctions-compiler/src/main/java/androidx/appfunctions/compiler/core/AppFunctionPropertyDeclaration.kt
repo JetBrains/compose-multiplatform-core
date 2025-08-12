@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.compiler.core
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
@@ -27,6 +28,7 @@ data class AppFunctionPropertyDeclaration(
     val type: KSTypeReference,
     val description: String,
     val isRequired: Boolean,
+    val propertyAnnotations: Sequence<KSAnnotation> = emptySequence(),
 ) {
     /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
     constructor(
@@ -42,6 +44,7 @@ data class AppFunctionPropertyDeclaration(
             ""
         },
         isRequired,
+        property.annotations,
     )
 
     /** Indicates whether the [type] is a generic type or not. */

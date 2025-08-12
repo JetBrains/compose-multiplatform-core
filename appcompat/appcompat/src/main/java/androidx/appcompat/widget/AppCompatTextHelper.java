@@ -231,7 +231,7 @@ class AppCompatTextHelper {
         if (localeListString != null) {
             if (Build.VERSION.SDK_INT >= 24) {
                 Api24Impl.setTextLocales(mView, Api24Impl.forLanguageTags(localeListString));
-            } else if (Build.VERSION.SDK_INT >= 21) {
+            } else {
                 @SuppressWarnings("StringSplitter")
                 final String firstLanTag = localeListString.split(",")[0];
                 mView.setTextLocale(Api21Impl.forLanguageTag(firstLanTag));
@@ -965,7 +965,6 @@ class AppCompatTextHelper {
         }
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

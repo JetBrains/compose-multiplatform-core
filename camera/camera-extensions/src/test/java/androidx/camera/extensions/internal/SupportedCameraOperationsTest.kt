@@ -50,10 +50,7 @@ import org.robolectric.shadows.ShadowCameraManager
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
-)
+@Config(instrumentedPackages = arrayOf("androidx.camera.extensions.internal"))
 class SupportedCameraOperationsTest(private val extenderType: String) {
     val context = RuntimeEnvironment.getApplication()
 

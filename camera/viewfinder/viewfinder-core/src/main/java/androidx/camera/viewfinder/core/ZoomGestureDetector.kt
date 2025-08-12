@@ -27,8 +27,6 @@ import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.annotation.Px
 import androidx.annotation.UiThread
-import androidx.camera.viewfinder.core.ZoomGestureDetector.OnZoomGestureListener
-import androidx.camera.viewfinder.core.ZoomGestureDetector.ZoomEvent
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.roundToInt

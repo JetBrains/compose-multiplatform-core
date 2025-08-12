@@ -17,7 +17,9 @@
 package androidx.xr.arcore.playservices
 
 import android.app.Activity
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
@@ -29,6 +31,7 @@ import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
+import com.google.ar.core.Config as ArConfig
 import com.google.ar.core.Config.GeospatialMode
 import com.google.ar.core.Config.PlaneFindingMode
 import com.google.ar.core.Config.TextureUpdateMode
@@ -86,7 +89,11 @@ internal constructor(
     override fun configure(config: Config) {
         val arConfig = _session.config
 
-        arConfig.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
+        if (Build.VERSION.SDK_INT >= 27) {
+            setTextureUpdateModeToHardwareBuffer(arConfig)
+        } else {
+            setTextureUpdateModeToExternalOES(arConfig)
+        }
 
         arConfig.planeFindingMode =
             if (config.planeTracking == Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL) {
@@ -187,6 +194,15 @@ internal constructor(
                 throw ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
             }
         }
+    }
+
+    private fun setTextureUpdateModeToExternalOES(config: ArConfig) {
+        config.textureUpdateMode = TextureUpdateMode.BIND_TO_TEXTURE_EXTERNAL_OES
+    }
+
+    @RequiresApi(27)
+    private fun setTextureUpdateModeToHardwareBuffer(config: ArConfig) {
+        config.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
     }
 
     private companion object {

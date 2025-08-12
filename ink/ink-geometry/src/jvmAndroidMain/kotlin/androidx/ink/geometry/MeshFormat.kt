@@ -47,7 +47,17 @@ private constructor(
             MeshFormatNative.isUnpackedEquivalent(this.nativePointer, other.nativePointer)
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun attributeCount(): Int = MeshFormatNative.attributeCount(nativePointer)
+
+    // NOMUTANTS--Not tested post garbage collection.
     protected fun finalize() {
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         MeshFormatNative.free(nativePointer)
     }
 
@@ -78,6 +88,8 @@ private object MeshFormatNative {
 
     @UsedByNative
     external fun isUnpackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
+
+    @UsedByNative external fun attributeCount(nativePointer: Long): Int
 
     @UsedByNative external fun free(nativePointer: Long)
 }

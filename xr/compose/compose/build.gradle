@@ -83,5 +83,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Compose libraries for the androidx.xr namespace."
+    samples(project(":xr:compose:compose:compose-samples"))
     enableRobolectric()
 }

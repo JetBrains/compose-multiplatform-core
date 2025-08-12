@@ -54,7 +54,7 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
                 .add(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
                 .add(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
                 .add(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .toImmutable()
 
         // Pink twist stroke.
         private val brush =

@@ -128,6 +128,7 @@ class DaoBoxedPrimitiveDelegateTest {
         assertThat(db.longFooDao().getItem(1)).isEqualTo(foo)
         db.longFooDao().delete(1)
         assertThat(db.longFooDao().getItem(1)).isNull()
+        db.close()
     }
 
     @Test
@@ -145,6 +146,7 @@ class DaoBoxedPrimitiveDelegateTest {
         assertThat(db.stringFooDao().getItem("Key")).isEqualTo(foo)
         db.stringFooDao().delete("Key")
         assertThat(db.stringFooDao().getItem("Key")).isNull()
+        db.close()
     }
 
     @Test
@@ -158,5 +160,6 @@ class DaoBoxedPrimitiveDelegateTest {
         val foo = ByteArrayFoo(ByteArray(16), "Elif")
         db.byteArrayFooDao().insert(foo)
         assertThat(db.byteArrayFooDao().getByteArray()).isEqualTo(ByteArray(16))
+        db.close()
     }
 }

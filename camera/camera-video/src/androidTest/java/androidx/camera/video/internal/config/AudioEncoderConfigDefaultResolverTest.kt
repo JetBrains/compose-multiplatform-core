@@ -23,7 +23,6 @@ import androidx.camera.core.impl.Timebase
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.video.AudioSpec
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume.assumeFalse
@@ -32,7 +31,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class AudioEncoderConfigDefaultResolverTest {
 
     companion object {

@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -327,7 +326,7 @@ class SpatialCompose : ComponentActivity() {
             modifier = modifier.anchorable(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
         ) {
             Column(
-                modifier = Modifier.background(Color.LightGray).padding(24.dp),
+                modifier = Modifier.background(Color.LightGray).padding(24.dp).fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -446,7 +445,7 @@ class SpatialCompose : ComponentActivity() {
             modifier = SubspaceModifier.fillMaxWidth().height(1000.dp).aspectRatio(aspectRatioValue)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().background(Color.LightGray).padding(16.dp),
+                modifier = Modifier.fillMaxSize().background(Color.LightGray).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {

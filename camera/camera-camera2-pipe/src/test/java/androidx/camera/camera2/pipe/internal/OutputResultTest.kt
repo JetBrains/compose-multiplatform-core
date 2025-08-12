@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.internal.OutputResult.Companion.completeWithFailure
 import androidx.camera.camera2.pipe.internal.OutputResult.Companion.completeWithOutput
@@ -27,10 +26,8 @@ import kotlinx.coroutines.CompletableDeferred
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class OutputResultTest {
 
     @Test

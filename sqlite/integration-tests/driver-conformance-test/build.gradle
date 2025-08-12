@@ -82,6 +82,8 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.sqlite.driver.test"
         addNativeLibrariesToJniLibs(it, extensionCompilation)
+        // b/435705223
+        packaging.jniLibs.useLegacyPackaging = true
     }
     ios()
     jvm() {

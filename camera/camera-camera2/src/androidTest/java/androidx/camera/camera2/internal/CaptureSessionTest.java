@@ -147,7 +147,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("unchecked")
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class CaptureSessionTest {
 
     // Enumerate possible SDR transfer functions. This may need to be updated if more transfer
@@ -328,7 +327,7 @@ public final class CaptureSessionTest {
     }
 
     // Set stream use case is not supported before API 33
-    @SdkSuppress(maxSdkVersion = 32, minSdkVersion = 21)
+    @SdkSuppress(maxSdkVersion = 32)
     @Test
     public void setStreamUseCaseNotSupported() {
         ImageReader imageReader0 = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2);
@@ -1184,7 +1183,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_whenOpeningCaptureSessions_onClosedShouldBeCalled()
             throws CameraAccessException, InterruptedException, ExecutionException,
             TimeoutException {
@@ -1255,7 +1253,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_captureSessionsOnClosedShouldBeCalled_repeatingStarted()
             throws ExecutionException, InterruptedException, TimeoutException,
             CameraAccessException {
@@ -1307,7 +1304,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_captureSessionsOnClosedShouldBeCalled_withoutRepeating()
             throws CameraAccessException, InterruptedException, ExecutionException,
             TimeoutException {

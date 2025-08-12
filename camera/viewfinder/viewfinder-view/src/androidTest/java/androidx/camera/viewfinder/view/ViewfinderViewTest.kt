@@ -20,7 +20,6 @@ import android.view.Surface
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -42,7 +41,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
 
     companion object {

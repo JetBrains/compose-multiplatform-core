@@ -90,13 +90,11 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [StreamSharing]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StreamSharingTest {
 
     companion object {
@@ -366,6 +364,7 @@ class StreamSharingTest {
                 useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
+        streamSharing.onSessionStart()
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
         imageCapture.targetRotation = Surface.ROTATION_90
 
@@ -869,12 +868,12 @@ class StreamSharingTest {
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)
         // Act: attach.
-        streamSharing.onStateAttached()
+        streamSharing.onSessionStart()
         // Assert: children attached.
         assertThat(child1.stateAttachedCount).isEqualTo(1)
         assertThat(child2.stateAttachedCount).isEqualTo(1)
         // Act: detach.
-        streamSharing.onStateDetached()
+        streamSharing.onSessionStop()
         // Assert: children not attached.
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)

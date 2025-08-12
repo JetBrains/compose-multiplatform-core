@@ -23,6 +23,7 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Plane as RuntimePlane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +93,7 @@ internal constructor(
         public override val trackingState: TrackingState,
         public val label: Label,
         public val centerPose: Pose,
-        public val extents: Vector2,
+        public val extents: FloatSize2d,
         public val vertices: List<Vector2>,
         public val subsumedBy: Plane?,
     ) : Trackable.State {

@@ -21,7 +21,6 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import androidx.camera.camera2.Camera2Config
@@ -46,7 +45,6 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.IdlingResource
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
@@ -177,7 +175,6 @@ class CameraDisconnectTest(
      */
     @LabTestRule.LabTestOnly
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterSecondCamera2ImplementationActivityIsClosed() {
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)
@@ -239,7 +236,6 @@ class CameraDisconnectTest(
      */
     @LabTestRule.LabTestOnly
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterReceivingCameraOnDisconnectedEvent() {
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)

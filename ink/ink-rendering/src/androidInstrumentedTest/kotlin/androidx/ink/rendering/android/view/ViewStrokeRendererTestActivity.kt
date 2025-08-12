@@ -61,7 +61,7 @@ class ViewStrokeRendererTestActivity : Activity() {
                 .add(InputToolType.UNKNOWN, x = 0F, y = 40F, elapsedTimeMillis = 150)
                 .add(InputToolType.UNKNOWN, x = 40F, y = 70F, elapsedTimeMillis = 200)
                 .add(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .toImmutable()
 
         private val stroke =
             Stroke(

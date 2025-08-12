@@ -815,6 +815,32 @@ public class SearchSpecCtsTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_PROPERTIES)
+    public void testAddFilterPropertyPaths() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
+                .addFilterProperties("TypeA", ImmutableList.of("field1", "field2.subfield2"))
+                .addFilterPropertyPaths(
+                        "TypeB",
+                        ImmutableList.of(
+                                new PropertyPath("field3"), new PropertyPath("field4.field5")))
+                .addFilterPropertyPaths("TypeC", ImmutableList.of(new PropertyPath("field6")))
+                .addFilterProperties("TypeD", ImmutableList.of("field7"))
+                .addFilterPropertyPaths("TypeE", ImmutableList.of(new PropertyPath("field8")))
+                .addFilterProperties("TypeE", ImmutableList.of())
+                .build();
+
+        Map<String, List<String>> typePropertyPathMap = searchSpec.getFilterProperties();
+        assertThat(typePropertyPathMap.keySet())
+                .containsExactly("TypeA", "TypeB", "TypeC", "TypeD", "TypeE");
+        assertThat(typePropertyPathMap.get("TypeA")).containsExactly("field1", "field2.subfield2");
+        assertThat(typePropertyPathMap.get("TypeB")).containsExactly("field3", "field4.field5");
+        assertThat(typePropertyPathMap.get("TypeC")).containsExactly("field6");
+        assertThat(typePropertyPathMap.get("TypeD")).containsExactly("field7");
+        assertThat(typePropertyPathMap.get("TypeE")).isEmpty();
+    }
+
+    @Test
     public void testFilterSchemas_wildcardProjection() {
         // Should not crash
         SearchSpec searchSpec = new SearchSpec.Builder()

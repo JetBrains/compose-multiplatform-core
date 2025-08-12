@@ -26,7 +26,6 @@ import androidx.camera.core.ViewPort
 import androidx.camera.core.internal.ViewPorts
 import androidx.camera.testing.impl.ConstraintEnclosedTestRunner
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import org.junit.Test
@@ -37,7 +36,6 @@ import org.junit.runners.Parameterized
 @SmallTest
 @SuppressLint("UnsupportedTestRunner")
 @RunWith(ConstraintEnclosedTestRunner::class)
-@SdkSuppress(minSdkVersion = 21)
 object ViewPortsTest {
     // Rotation degrees.
     private const val R0 = 0

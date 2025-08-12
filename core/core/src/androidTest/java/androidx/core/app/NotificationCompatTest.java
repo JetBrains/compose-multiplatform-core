@@ -371,11 +371,7 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext);
 
         Notification notification = builder.setColor(Color.GREEN).build();
-        if (Build.VERSION.SDK_INT >= 21) {
-            assertEquals(Color.GREEN, NotificationCompat.getColor(notification));
-        } else {
-            assertEquals(Color.TRANSPARENT, NotificationCompat.getColor(notification));
-        }
+        assertEquals(Color.GREEN, NotificationCompat.getColor(notification));
     }
 
     @Test
@@ -411,13 +407,8 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext);
 
         Notification n = builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build();
-        if (Build.VERSION.SDK_INT >= 21) {
-            assertEquals(NotificationCompat.VISIBILITY_PUBLIC,
-                    NotificationCompat.getVisibility(n));
-        } else {
-            assertEquals(NotificationCompat.VISIBILITY_PRIVATE,
-                    NotificationCompat.getVisibility(n));
-        }
+        assertEquals(NotificationCompat.VISIBILITY_PUBLIC,
+                NotificationCompat.getVisibility(n));
     }
 
     @Test
@@ -426,14 +417,9 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         Notification pub = builder.setContentTitle("public title").build();
         Notification priv = builder.setContentTitle("private title").setPublicVersion(pub).build();
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            assertNull(NotificationCompat.getPublicVersion(pub));
-            assertNotSame(pub, NotificationCompat.getPublicVersion(priv));
-            assertNotificationEquals(pub, NotificationCompat.getPublicVersion(priv));
-        } else {
-            assertNull(NotificationCompat.getPublicVersion(pub));
-            assertNull(NotificationCompat.getPublicVersion(priv));
-        }
+        assertNull(NotificationCompat.getPublicVersion(pub));
+        assertNotSame(pub, NotificationCompat.getPublicVersion(priv));
+        assertNotificationEquals(pub, NotificationCompat.getPublicVersion(priv));
     }
 
     /**
@@ -583,7 +569,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertThat(recovered.largeIcon).isEqualTo(largeIcon);
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBuilderFromNotification_withSmallAndLargeIcons() {
         IconCompat smallIcon = IconCompat.createWithResource(mContext, R.drawable.ic_call_answer);
@@ -979,7 +964,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertFalse(action.getShowsUserInterface());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testGetActionCompatFromAction_sameIconResourceId() {
         NotificationCompat.Action action = new NotificationCompat.Action.Builder(
@@ -993,7 +977,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertEquals(R.drawable.notification_bg, result.getIconCompat().getResId());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testGetActionCompatFromAction_showsUserInterface() {
         NotificationCompat.Action action = newActionBuilder()
@@ -1007,7 +990,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertFalse(result.getShowsUserInterface());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testGetActionCompatFromAction_withRemoteInputs_doesntCrash() {
         NotificationCompat.Action action = newActionBuilder()
@@ -1077,7 +1059,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void testNotificationSmallIcon() {
         IconCompat icon = IconCompat.createWithResource(mContext,
                 R.drawable.notification_action_background);
@@ -1231,7 +1212,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testSetNotification_setLargeIconNullIcon() {
         Notification n = new NotificationCompat.Builder(mContext, "channelId")
@@ -1256,7 +1236,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
 
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testSetNotification_setLargeIconIcon() {
         IconCompat iconCompat = IconCompat.createWithResource(mContext,
@@ -1279,7 +1258,7 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 26)
+    @SdkSuppress(maxSdkVersion = 26)
     @Test
     public void testSetNotification_setLargeIconBitmapScales() {
         // Original icon is 860x860
@@ -1546,7 +1525,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void testHasAudioAttributesFrom21() throws Throwable {
         Notification n = new NotificationCompat.Builder(mActivityTestRule.getActivity())
                 .setSound(Uri.EMPTY)
@@ -1561,16 +1539,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertNotNull(n.audioAttributes);
         assertEquals(AudioAttributes.USAGE_NOTIFICATION_RINGTONE, n.audioAttributes.getUsage());
         assertEquals(-1, n.audioStreamType);
-        assertEquals(Uri.EMPTY, n.sound);
-    }
-
-    @Test
-    @SdkSuppress(maxSdkVersion = 20)
-    public void testHasStreamTypePre21() throws Throwable {
-        Notification n = new NotificationCompat.Builder(mActivityTestRule.getActivity())
-                .setSound(Uri.EMPTY, 34)
-                .build();
-        assertEquals(34, n.audioStreamType);
         assertEquals(Uri.EMPTY, n.sound);
     }
 
@@ -1629,7 +1597,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertNull(extras.get(NotificationCompat.EXTRA_LARGE_ICON_BIG));
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBigPictureStyle_withIconNullBigLargeIcon() {
         Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(),
@@ -1648,7 +1615,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertNull(extras.get(NotificationCompat.EXTRA_LARGE_ICON_BIG));
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBigPictureStyle_withIconBigLargeIcon() {
         Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(),
@@ -1778,7 +1744,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @SuppressWarnings("deprecation")
     @Test
     public void testBigPictureStyle_recoverStyleWithResIcon() {
@@ -2486,7 +2451,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public void testCallStyle_preservesOneCustomAction() {
         PendingIntent hangupIntent = createIntent("hangup");
         Person person = new Person.Builder().setName("test name").build();
@@ -2532,7 +2496,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public void testCallStyle_preservesTwoCustomActions() {
         PendingIntent hangupIntent = createIntent("hangup");
         Person person = new Person.Builder().setName("test name").build();
@@ -2584,7 +2547,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         }
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testCallStyle_getActionsListWithSystemAndContextualActionsForIncoming() {
         PendingIntent positiveIntent = createIntent("answerIntent");
@@ -2635,7 +2597,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertEquals("baz", resultActions.get(4).getTitle().toString());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testCallStyle_getActionsListWithSystemAndContextualActionsForOngoing() {
         PendingIntent negativeIntent = createIntent("hang up");
@@ -2679,7 +2640,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertEquals("bbq", resultActions.get(4).getTitle().toString());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testCallStyle_getActionsListWithSystemAndContextualActionsForScreening() {
         PendingIntent positiveIntent = createIntent("answer");
@@ -2727,7 +2687,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertEquals("baz", resultActions.get(4).getTitle().toString());
     }
 
-    @SdkSuppress(minSdkVersion = 20)
     @Test
     public void testCallStyle_getActionsListForIncomingVideo() {
         PendingIntent positiveIntent = createIntent("answerIntent");
@@ -3133,7 +3092,7 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 27)
+    @SdkSuppress(maxSdkVersion = 27)
     @Test
     public void testCallStyle_callStyleLegacyNotificationImportantPeopleUri() {
         PendingIntent answerIntent = createIntent("answer");
@@ -3194,7 +3153,7 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertTrue(foundPerson);
     }
 
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 30)
+    @SdkSuppress(maxSdkVersion = 30)
     @Test
     public void testCallStyle_callStyleLegacySetsCategory() {
         PendingIntent answerIntent = createIntent("answer");
@@ -3265,7 +3224,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public void action_builder_fromAndroidActionAllowsZeroResIcon() {
         // Create action with a 0 resId Icon.
         Notification.Action action = new Notification.Action.Builder(0, "title", null)
@@ -3279,7 +3237,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public void action_semanticAction_toAndFromNotification() {
         NotificationCompat.Action action =
                 newActionBuilder()
@@ -3298,7 +3255,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
                     .build();
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void getInvisibleActions() {
         Notification notification =
                 newNotificationBuilder().addInvisibleAction(TEST_INVISIBLE_ACTION).build();
@@ -3306,7 +3262,6 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void getInvisibleActions_withCarExtender() {
         NotificationCompat.CarExtender carExtender = new NotificationCompat.CarExtender();
         Notification notification = newNotificationBuilder()

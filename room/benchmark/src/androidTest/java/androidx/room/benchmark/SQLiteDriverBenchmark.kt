@@ -24,7 +24,6 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -37,7 +36,6 @@ import org.junit.runners.Parameterized.Parameters
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 23)
 class SQLiteDriverBenchmark(private val useDriver: UseDriver) {
 
     @get:Rule val benchmarkRule = BenchmarkRule()

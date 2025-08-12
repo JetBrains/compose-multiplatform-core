@@ -119,7 +119,7 @@ public abstract class Vec internal constructor() {
      * Returns an immutable copy of this object. This will return itself if called on an immutable
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun asImmutable(): ImmutableVec
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableVec
 
     /**
      * Returns true if the angle formed by `this` and [other] is within [angleTolerance] of 0
@@ -152,7 +152,7 @@ public abstract class Vec internal constructor() {
     public fun isAlmostEqual(
         other: Vec,
         @FloatRange(from = 0.0) tolerance: Float = 0.0001f,
-    ): Boolean = (abs(x - other.x) < tolerance) && (abs(y - other.y) < tolerance)
+    ): Boolean = this === other || (abs(x - other.x) < tolerance && abs(y - other.y) < tolerance)
 
     public companion object {
 
@@ -222,9 +222,15 @@ public abstract class Vec internal constructor() {
          * from a to b.
          */
         @JvmStatic
-        public fun determinant(lhs: Vec, rhs: Vec): Float {
-            return lhs.x * rhs.y - lhs.y * rhs.x
-        }
+        public fun determinant(lhs: Vec, rhs: Vec): Float = determinant(lhs.x, lhs.y, rhs.x, rhs.y)
+
+        /**
+         * Overload that just takes the x and y components of the vectors. This isn't part of the
+         * public API, but allows internal callers to avoid unnecessary allocations.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun determinant(lhx: Float, lhy: Float, rhx: Float, rhy: Float): Float =
+            lhx * rhy - lhy * rhx
 
         /**
          * Returns the absolute angle between the given vectors. The return value will lie in the

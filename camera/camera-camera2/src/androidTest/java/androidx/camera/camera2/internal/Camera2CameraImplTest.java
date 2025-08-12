@@ -154,7 +154,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class Camera2CameraImplTest {
     @CameraSelector.LensFacing
     private static final int DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK;
@@ -1131,7 +1130,7 @@ public final class Camera2CameraImplTest {
     }
 
     @Test
-    public void useCaseOnStateAttached_isCalled() throws InterruptedException {
+    public void useCaseOnSessionStart_isCalled() throws InterruptedException {
         TestUseCase useCase1 = spy((TestUseCase) createUseCase());
         TestUseCase useCase2 = spy((TestUseCase) createUseCase());
 
@@ -1143,14 +1142,14 @@ public final class Camera2CameraImplTest {
         Handler uiThreadHandler = new Handler(Looper.getMainLooper());
         HandlerUtil.waitForLooperToIdle(uiThreadHandler);
 
-        verify(useCase1, times(1)).onStateAttached();
-        verify(useCase2, times(1)).onStateAttached();
+        verify(useCase1, times(1)).onSessionStart();
+        verify(useCase2, times(1)).onSessionStart();
 
         mCamera2CameraImpl.detachUseCases(asList(useCase1, useCase2));
     }
 
     @Test
-    public void useCaseOnStateDetached_isCalled() throws InterruptedException {
+    public void useCaseOnSessionStop_isCalled() throws InterruptedException {
         TestUseCase useCase1 = spy((TestUseCase) createUseCase());
         TestUseCase useCase2 = spy((TestUseCase) createUseCase());
         TestUseCase useCase3 = spy((TestUseCase) createUseCase());
@@ -1164,9 +1163,9 @@ public final class Camera2CameraImplTest {
         Handler uiThreadHandler = new Handler(Looper.getMainLooper());
         HandlerUtil.waitForLooperToIdle(uiThreadHandler);
 
-        verify(useCase1, times(1)).onStateDetached();
-        verify(useCase2, times(1)).onStateDetached();
-        verify(useCase3, times(0)).onStateDetached();
+        verify(useCase1, times(1)).onSessionStop();
+        verify(useCase2, times(1)).onSessionStop();
+        verify(useCase3, times(0)).onSessionStop();
     }
 
     private boolean isCameraControlActive(Camera2CameraControlImpl camera2CameraControlImpl) {
@@ -1268,7 +1267,6 @@ public final class Camera2CameraImplTest {
         mCamera2CameraImpl.detachUseCases(asList(preview, record));
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void attachUseCaseWithTemplateZSLNoRecord() throws InterruptedException {
         if (!mCamera2CameraImpl.getCameraInfo().isZslSupported()) {
@@ -1302,7 +1300,6 @@ public final class Camera2CameraImplTest {
                 .isZslDisabledByByUserCaseConfig()).isFalse();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void attachUseCaseWithTemplateZSLHasRecord() throws InterruptedException {
         if (!mCamera2CameraImpl.getCameraInfo().isZslSupported()) {
@@ -1345,7 +1342,6 @@ public final class Camera2CameraImplTest {
                 .isFalse();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void attachAndDetachUseCasesMultipleTimes() throws InterruptedException {
         if (!mCamera2CameraImpl.getCameraInfo().isZslSupported()) {
@@ -1405,7 +1401,6 @@ public final class Camera2CameraImplTest {
                 .isFalse();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void zslDisabled_whenHighResolutionIsEnabled() throws InterruptedException {
         UseCase zsl = createUseCase(CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG);

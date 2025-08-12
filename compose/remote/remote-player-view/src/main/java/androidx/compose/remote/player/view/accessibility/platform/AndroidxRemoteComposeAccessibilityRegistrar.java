@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.accessibility.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.view.View;
 
 import androidx.compose.remote.core.CoreDocument;
@@ -33,6 +37,7 @@ import org.jspecify.annotations.NonNull;
  * accessibility support. {@link AndroidxRemoteComposeTouchHelper} implements {@link
  * androidx.core.view.AccessibilityDelegateCompat} to provide accessibility services.
  */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidxRemoteComposeAccessibilityRegistrar
         implements RemoteComposeAccessibilityRegistrar {
     /**

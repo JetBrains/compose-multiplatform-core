@@ -25,6 +25,7 @@ import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV33.Bounds
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.MutableBox
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
@@ -57,7 +58,7 @@ import org.mockito.kotlin.whenever
  * level but covers the functionality of [CanvasInProgressStrokesRenderHelperV33] in a different way
  * than this test.
  */
-@OptIn(ExperimentalLatencyDataApi::class)
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @SdkSuppress(
@@ -283,9 +284,8 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ) {
             assertThat(bufferWidth).isEqualTo(mainViewWidth)
             assertThat(bufferHeight).isEqualTo(mainViewHeight)
-            assertThat(bufferTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_IDENTITY)
-            assertThat(bufferTransformInverse)
-                .isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_IDENTITY)
+            assertThat(rendererTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_IDENTITY)
+            assertThat(surfaceTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_IDENTITY)
         }
 
         with(
@@ -297,9 +297,9 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ) {
             assertThat(bufferWidth).isEqualTo(mainViewWidth)
             assertThat(bufferHeight).isEqualTo(mainViewHeight)
-            assertThat(bufferTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_180)
-            assertThat(bufferTransformInverse)
+            assertThat(rendererTransform)
                 .isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_180)
+            assertThat(surfaceTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_180)
         }
 
         with(
@@ -311,9 +311,8 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ) {
             assertThat(bufferWidth).isEqualTo(mainViewHeight)
             assertThat(bufferHeight).isEqualTo(mainViewWidth)
-            assertThat(bufferTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_90)
-            assertThat(bufferTransformInverse)
-                .isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_270)
+            assertThat(rendererTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_90)
+            assertThat(surfaceTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_270)
         }
 
         with(
@@ -325,9 +324,9 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ) {
             assertThat(bufferWidth).isEqualTo(mainViewHeight)
             assertThat(bufferHeight).isEqualTo(mainViewWidth)
-            assertThat(bufferTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_270)
-            assertThat(bufferTransformInverse)
-                .isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_90)
+            assertThat(rendererTransform)
+                .isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_270)
+            assertThat(surfaceTransform).isEqualTo(SurfaceControlCompat.BUFFER_TRANSFORM_ROTATE_90)
         }
 
         with(
@@ -340,8 +339,8 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ) {
             assertThat(bufferWidth).isEqualTo(mainViewWidth)
             assertThat(bufferHeight).isEqualTo(mainViewHeight)
-            assertThat(bufferTransform).isNull()
-            assertThat(bufferTransformInverse).isNull()
+            assertThat(rendererTransform).isNull()
+            assertThat(surfaceTransform).isNull()
         }
     }
 

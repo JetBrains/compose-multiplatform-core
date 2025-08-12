@@ -529,40 +529,33 @@ public class RecyclerViewBasicTest {
         mRecyclerView.setLayoutManager(mlm);
         assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // layout, so prefetches can occur
-            mRecyclerView.measure(View.MeasureSpec.EXACTLY | 100, View.MeasureSpec.EXACTLY | 100);
-            mRecyclerView.layout(0, 0, 100, 100);
+        // layout, so prefetches can occur
+        mRecyclerView.measure(View.MeasureSpec.EXACTLY | 100, View.MeasureSpec.EXACTLY | 100);
+        mRecyclerView.layout(0, 0, 100, 100);
 
-            // prefetch gets 3 items, so expands cache by 3
-            mRecyclerView.mPrefetchRegistry.collectPrefetchPositionsFromView(mRecyclerView, false);
-            assertEquals(3, mRecyclerView.mPrefetchRegistry.mCount);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
+        // prefetch gets 3 items, so expands cache by 3
+        mRecyclerView.mPrefetchRegistry.collectPrefetchPositionsFromView(mRecyclerView, false);
+        assertEquals(3, mRecyclerView.mPrefetchRegistry.mCount);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
 
-            // Reset to default by removing layout
-            mRecyclerView.setLayoutManager(null);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
+        // Reset to default by removing layout
+        mRecyclerView.setLayoutManager(null);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
 
-            // And restore by restoring layout
-            mRecyclerView.setLayoutManager(mlm);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
-        }
+        // And restore by restoring layout
+        mRecyclerView.setLayoutManager(mlm);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
     }
 
     @Test
     public void getNanoTime() throws InterruptedException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // check that it looks vaguely time-ish
-            long time = mRecyclerView.getNanoTime();
-            assertNotEquals(0, time);
+        // check that it looks vaguely time-ish
+        long time = mRecyclerView.getNanoTime();
+        assertNotEquals(0, time);
 
-            // Sleep for 1 nano to ensure next call won't have the same measurement.
-            Thread.sleep(0, 1);
-            assertNotEquals(time, mRecyclerView.getNanoTime());
-        } else {
-            // expect to avoid cost of system.nanoTime on older platforms that don't do prefetch
-            assertEquals(0, mRecyclerView.getNanoTime());
-        }
+        // Sleep for 1 nano to ensure next call won't have the same measurement.
+        Thread.sleep(0, 1);
+        assertNotEquals(time, mRecyclerView.getNanoTime());
     }
 
     @Test

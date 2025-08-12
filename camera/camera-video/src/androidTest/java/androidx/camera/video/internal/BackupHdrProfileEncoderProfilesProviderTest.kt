@@ -57,7 +57,6 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class BackupHdrProfileEncoderProfilesProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,

@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.core;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.ScrollableComponent;
 
@@ -25,6 +29,7 @@ import org.jspecify.annotations.NonNull;
  *
  * <p>PlayerViews should implement to provide access to the RemoteContext.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface RemoteContextActions {
 
     /**

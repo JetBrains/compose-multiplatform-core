@@ -19,7 +19,6 @@ package androidx.activity.compose
 import android.annotation.SuppressLint
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,31 +40,51 @@ import kotlinx.coroutines.launch
 /**
  * An effect for handling predictive system back gestures.
  *
- * Calling this in your composable adds the given lambda to the [OnBackPressedDispatcher] of the
- * [LocalOnBackPressedDispatcherOwner]. The lambda passes in a Flow<BackEventCompat> where each
- * [BackEventCompat] reflects the progress of current gesture back. The lambda content should follow
- * this structure:
- * ```
+ * This effect registers a callback to receive updates on the progress of system back gestures as a
+ * [Flow] of [BackEventCompat].
+ *
+ * The [onBack] lambda should be structured to handle the start, progress, completion, and
+ * cancellation of the gesture:
+ * ```kotlin
  * PredictiveBackHandler { progress: Flow<BackEventCompat> ->
- *      // code for gesture back started
- *      try {
- *         progress.collect { backevent ->
- *              // code for progress
- *         }
- *         // code for completion
- *      } catch (e: CancellationException) {
- *         // code for cancellation
- *      }
+ *   // This block is executed when the back gesture begins.
+ *     try {
+ *       progress.collect { backEvent ->
+ *         // Handle gesture progress updates here.
+ *       }
+ *       // This block is executed if the gesture completes successfully.
+ *     } catch (e: CancellationException) {
+ *       // This block is executed if the gesture is cancelled.
+ *       throw e
+ *     } finally {
+ *       // This block is executed either the gesture is completed or cancelled.
+ *   }
  * }
  * ```
  *
- * If this is called by nested composables, if enabled, the inner most composable will consume the
- * call to system back and invoke its lambda. The call will continue to propagate up until it finds
- * an enabled BackHandler.
+ * ## Precedence
+ * If multiple [PredictiveBackHandler] are present in the composition, the one that is composed
+ * **last** among all enabled handlers will be invoked.
+ *
+ * ## Usage
+ * It is important to call this composable **unconditionally**. Use the `enabled` parameter to
+ * control whether the handler is active. This is preferable to conditionally calling
+ * [PredictiveBackHandler] (e.g., inside an `if` block), as conditional calls can change the order
+ * of composition, leading to unpredictable behavior where different handlers are invoked after
+ * recomposition.
+ *
+ * ## Timing Consideration
+ * There are cases where a predictive back gesture may be dispatched within a rendering frame before
+ * the [enabled] flag is updated, which can cause unexpected behavior (see b/375343407,
+ * b/384186542). For example, if `enabled` is set to `false`, a gesture initiated in the same frame
+ * may still trigger this handler because the system sees the stale `true` value.
  *
  * @sample androidx.activity.compose.samples.PredictiveBack
- * @param enabled if this BackHandler should be enabled, true by default
- * @param onBack the action invoked by back gesture
+ * @param enabled Controls whether this handler is active. **Important**: Due to the timing issue
+ *   described above, a gesture starting immediately after `enabled` is set to `false` may still
+ *   trigger this handler.
+ * @param onBack The suspending lambda to be invoked by the back gesture. It receives a `Flow` that
+ *   can be collected to track the gesture's progress.
  */
 @SuppressLint("RememberReturnType") // TODO: b/372566999
 @Composable

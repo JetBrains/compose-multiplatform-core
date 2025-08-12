@@ -17,9 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** Used by the system when the request fails to reach the provider */
-public class GetCredentialTransferCapabilitiesSystemErrorException(
-    errorMessage: CharSequence? = null
-) :
+public class GetCredentialTransferCapabilitiesSystemErrorException(errorMessage: String? = null) :
     GetCredentialTransferCapabilitiesException(
         TYPE_GET_CREDENTIAL_TRANSFER_CAPABILITIES_SYSTEM_ERROR_EXCEPTION,
         errorMessage,

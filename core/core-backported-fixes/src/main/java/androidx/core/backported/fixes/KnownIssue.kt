@@ -19,17 +19,16 @@ package androidx.core.backported.fixes
 import androidx.annotation.IntRange
 
 /**
- * A public issue from the [Google Issue Tracker](https://issuetracker.google.com) with a fix that
- * may be backported.
+ * A known issue is a public issue from the [Google Issue Tracker](https://issuetracker.google.com)
+ * which has a fix that might be backported to released devices, instead of only in the next Android
+ * release.
  *
  * Some known issues are specific to certain form factors or even particular devices, not merely a
  * function of the OS version or the security patch level.
  *
  * [BackportedFixManager.isFixed] will report if the issue is fixed on a device.
  *
- * [KnownIssues] contains constants for all issues in the Android Compatibility Test source
- * directory
- * [cts/backported_fixes/approved](https://cs.android.com/android/platform/superproject/+/android-latest-release:cts/backported_fixes/approved/).
+ * [KnownIssues] contains constants for all known issues at the time the library was built.
  *
  * @property id The public id of this issue in the
  *   [Google Issue Tracker](https://issuetracker.google.com)
@@ -42,7 +41,7 @@ internal constructor(
      *
      * Details of the issue can be found at the Google issue tracker using this id.
      *
-     * Ids 1 to 1023 are reserved so an 'id' never overlap with an internal `alias`.
+     * Ids `1` to `1023` are reserved so an 'id' never overlaps with an internal `alias`.
      */
     @IntRange(from = 1024) public val id: Long,
 

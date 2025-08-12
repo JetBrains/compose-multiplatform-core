@@ -21,10 +21,10 @@ package androidx.navigation {
     method public void setExit(int);
     method public void setPopEnter(int);
     method public void setPopExit(int);
-    property @AnimRes @AnimatorRes public int enter;
-    property @AnimRes @AnimatorRes public int exit;
-    property @AnimRes @AnimatorRes public int popEnter;
-    property @AnimRes @AnimatorRes public int popExit;
+    property public int enter;
+    property public int exit;
+    property public int popEnter;
+    property public int popExit;
   }
 
   public abstract class CollectionNavType<T> extends androidx.navigation.NavType<T> {
@@ -286,7 +286,7 @@ package androidx.navigation {
     method public final String? getRoute();
     method protected D instantiateDestination();
     method public final void setLabel(CharSequence?);
-    property @IdRes public final int id;
+    property public final int id;
     property public final CharSequence? label;
     property protected final androidx.navigation.Navigator<? extends D> navigator;
     property public final String? route;
@@ -323,8 +323,8 @@ package androidx.navigation {
     method @KotlinOnly public final inline <reified T> void setStartDestination();
     method public final void setStartDestination(int startDestId);
     method public final void setStartDestination(String startDestRoute);
-    method @kotlin.jvm.JvmSynthetic public final <T> void setStartDestination(kotlin.reflect.KClass<T> startDestRoute);
-    method @kotlin.jvm.JvmSynthetic public final <T> void setStartDestination(T startDestRoute);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public final <T> void setStartDestination(kotlin.reflect.KClass<T> startDestRoute);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public final <T> void setStartDestination(T startDestRoute);
     property @IdRes public final int startDestinationId;
     property public final String? startDestinationRoute;
     field public static final androidx.navigation.NavGraph.Companion Companion;
@@ -446,7 +446,7 @@ package androidx.navigation {
     method public void setRestoreState(boolean);
     property public boolean launchSingleTop;
     property @Deprecated public int popUpTo;
-    property @IdRes public int popUpToId;
+    property public int popUpToId;
     property public String? popUpToRoute;
     property public kotlin.reflect.KClass<? extends java.lang.Object?>? popUpToRouteClass;
     property public Object? popUpToRouteObject;

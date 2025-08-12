@@ -46,7 +46,6 @@ import android.media.MediaRecorder.VideoEncoder.HEVC
 import android.media.MediaRecorder.VideoEncoder.MPEG_4_SP
 import android.media.MediaRecorder.VideoEncoder.VP8
 import android.media.MediaRecorder.VideoEncoder.VP9
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -76,7 +75,6 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CountDownLatch
@@ -94,7 +92,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
 class HighSpeedCaptureSessionTest {
 
     @get:Rule

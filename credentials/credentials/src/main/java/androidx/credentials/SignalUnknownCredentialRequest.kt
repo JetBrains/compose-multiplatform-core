@@ -16,8 +16,9 @@
 
 package androidx.credentials
 
+import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RestrictTo
+import androidx.credentials.SignalAllAcceptedCredentialIdsRequest.Companion.toRequestData
 import androidx.credentials.internal.isValidBase64Url
 import org.json.JSONObject
 
@@ -28,14 +29,18 @@ import org.json.JSONObject
  *   [WebAuthn Spec](https://w3c.github.io/webauthn/#sctn-signalUnknownCredential). Throws
  *   SignalCredentialStateException if base64Url decoding fails for the credential id
  * @param origin the origin of a different application if the request is being made on behalf of
- *   that application (Note: for API level >=34, setting a non-null value for this parameter will
- *   throw a SecurityException if android.permission.CREDENTIAL_MANAGER_SET_ORIGIN is not present)
+ *   that application, to be used only by browsers or privileged apps recognized by the target
+ *   credential provider (Note: if a non-browser/non-privileged app sets an origin, it will be
+ *   rejected across all API levels, and for API level >=34, the calling party must also have the
+ *   android.permission.CREDENTIAL_MANAGER_SET_ORIGIN permission otherwise a SecurityException will
+ *   be thrown)
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-class SignalUnknownCredentialRequest(requestJson: String, origin: String? = null) :
+class SignalUnknownCredentialRequest
+internal constructor(requestJson: String, requestData: Bundle, origin: String? = null) :
     SignalCredentialStateRequest(
         SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE,
         requestJson,
+        requestData,
         origin,
     ) {
     init {
@@ -43,6 +48,25 @@ class SignalUnknownCredentialRequest(requestJson: String, origin: String? = null
             "Structural/type validation failed for JSON: '${requestJson}'"
         }
     }
+
+    /**
+     * Constructs a request to signal that a credential ID was not recognized by the relying party.
+     *
+     * @param requestJson the request in JSON format. The format of the JSON should follow the
+     *   [WebAuthn Spec](https://w3c.github.io/webauthn/#sctn-signalUnknownCredential). Throws
+     *   SignalCredentialStateException if base64Url decoding fails for the credential id
+     * @param origin the origin of a different application if the request is being made on behalf of
+     *   that application, to be used only by browsers or privileged apps recognized by the target
+     *   credential provider (Note: if a non-browser/non-privileged app sets an origin, it will be
+     *   rejected across all API levels, and for API level >=34, the calling party must also have
+     *   the android.permission.CREDENTIAL_MANAGER_SET_ORIGIN permission otherwise a
+     *   SecurityException will be thrown)
+     */
+    @JvmOverloads
+    constructor(
+        requestJson: String,
+        origin: String? = null,
+    ) : this(requestJson, toRequestData(requestJson), origin)
 
     internal companion object {
         internal const val SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE =
@@ -65,14 +89,10 @@ class SignalUnknownCredentialRequest(requestJson: String, origin: String? = null
                 }
 
                 if (!isValidBase64Url(jsonObject.getString(CREDENTIAL_ID_KEY))) {
-                    Log.e(TAG, "Credential ID is not in base64 url format")
                     return false
                 }
             } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Structural/type validation failed for JSON: '${requestJson}'. Error: ${e.message}",
-                )
+                return false
             }
             return true
         }

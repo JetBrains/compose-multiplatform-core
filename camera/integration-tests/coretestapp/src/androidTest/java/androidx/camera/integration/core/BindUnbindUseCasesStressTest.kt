@@ -56,7 +56,6 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
@@ -83,7 +82,6 @@ private var texId = INVALID_TEX_ID
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class BindUnbindUseCasesStressTest(
     val implName: String,
     val cameraConfig: CameraXConfig,

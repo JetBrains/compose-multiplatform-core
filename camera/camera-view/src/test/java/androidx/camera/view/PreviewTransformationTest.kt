@@ -19,7 +19,6 @@ package androidx.camera.view
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
-import android.os.Build
 import android.util.LayoutDirection
 import android.util.Size
 import android.view.Surface
@@ -37,7 +36,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 // Size of the PreviewView. Aspect ratio 2:1.
@@ -69,7 +67,6 @@ private const val ARBITRARY_ROTATION = Surface.ROTATION_0
 /** Instrument tests for [PreviewTransformation]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class PreviewTransformationTest {
 
     private lateinit var mPreviewTransform: PreviewTransformation

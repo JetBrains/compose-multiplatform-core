@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Plane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
@@ -37,7 +38,7 @@ internal data class PlaneState(
     val trackingState: TrackingState = TrackingState.PAUSED,
     val label: Plane.Label = Plane.Label.UNKNOWN,
     val centerPose: Pose = Pose(),
-    val extents: Vector2 = Vector2.Zero,
+    val extents: FloatSize2d = FloatSize2d(),
     val vertices: Array<Vector2> = emptyArray(),
     val subsumedByPlaneId: Long = 0,
 ) {}

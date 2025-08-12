@@ -77,6 +77,10 @@ public class TrustedWebActivityIntentBuilder {
     /** Extra for the {@link TrustedWebActivityDisplayMode}, see {@link #setDisplayMode}. */
     public static final String EXTRA_DISPLAY_MODE = "androidx.browser.trusted.extra.DISPLAY_MODE";
 
+    /** Extra for the display override list, see {@link #setDisplayOverrideList} */
+    public static final String EXTRA_DISPLAY_OVERRIDE =
+            "androidx.browser.trusted.extra.DISPLAY_OVERRIDE";
+
     /** Extra for the screenOrientation, see {@link #setScreenOrientation}. */
     public static final String EXTRA_SCREEN_ORIENTATION =
             "androidx.browser.trusted.extra.SCREEN_ORIENTATION";
@@ -115,6 +119,7 @@ public class TrustedWebActivityIntentBuilder {
 
     private @NonNull TrustedWebActivityDisplayMode mDisplayMode =
             new TrustedWebActivityDisplayMode.DefaultMode();
+    private @NonNull List<TrustedWebActivityDisplayMode> mDisplayOverrideList;
 
     @ScreenOrientation.LockType
     private int mScreenOrientation = ScreenOrientation.DEFAULT;
@@ -300,6 +305,28 @@ public class TrustedWebActivityIntentBuilder {
     }
 
     /**
+     * Sets the display override fallback list for a Trusted Web Activity.
+     *
+     * Web applications can declare a "display_override" list to specify the preferred order of
+     * display modes. This is useful for more advanced display modes that may have limited browser
+     * support ({@see https://wicg.github.io/manifest-incubations/#display_override-member}). The
+     * browser will use the first display mode in the list that it supports, and fall back to the
+     * `display` manifest field if none are supported.
+     *
+     * @param displayOverrideList A list of {@link TrustedWebActivityDisplayMode} that represents
+     * the fallback order of display modes.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setDisplayOverrideList(
+            @Nullable List<TrustedWebActivityDisplayMode> displayOverrideList) {
+        if (displayOverrideList == null) {
+            mDisplayOverrideList = new ArrayList<>();
+        } else {
+            mDisplayOverrideList = displayOverrideList;
+        }
+        return this;
+    }
+
+    /**
      * Sets a screenOrientation. This can be used e.g. to enable the locking of an orientation
      * lock type {@link ScreenOrientation}.
      *
@@ -378,6 +405,13 @@ public class TrustedWebActivityIntentBuilder {
             }
         }
         intent.putExtra(EXTRA_DISPLAY_MODE, mDisplayMode.toBundle());
+        if (mDisplayOverrideList != null) {
+            ArrayList<Bundle> bundles = new ArrayList<>();
+            for (TrustedWebActivityDisplayMode displayMode : mDisplayOverrideList) {
+                bundles.add(displayMode.toBundle());
+            }
+            intent.putExtra(EXTRA_DISPLAY_OVERRIDE, bundles);
+        }
         intent.putExtra(EXTRA_SCREEN_ORIENTATION, mScreenOrientation);
         if (mOriginalLaunchUrl != null) {
             intent.putExtra(EXTRA_ORIGINAL_LAUNCH_URL, mOriginalLaunchUrl);

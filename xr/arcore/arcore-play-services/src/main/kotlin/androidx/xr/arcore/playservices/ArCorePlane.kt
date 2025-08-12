@@ -22,6 +22,7 @@ import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorNotTrackingException
 import androidx.xr.runtime.internal.Plane
 import androidx.xr.runtime.internal.Trackable
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import com.google.ar.core.Plane as ARCorePlane
@@ -75,8 +76,8 @@ internal constructor(internal val _arCorePlane: ARCorePlane, private val resourc
      *
      * @return The extents of the plane.
      */
-    override val extents: Vector2
-        get() = Vector2(_arCorePlane.extentX, _arCorePlane.extentZ)
+    override val extents: FloatSize2d
+        get() = FloatSize2d(_arCorePlane.extentX, _arCorePlane.extentZ)
 
     /**
      * ARCore 1.x does not support plane labels; this property is always [UNKNOWN].

@@ -19,7 +19,7 @@ package androidx.pdf.compose {
   public final class PdfViewerState {
     ctor public PdfViewerState();
     method public void clearSelection();
-    method public androidx.pdf.view.Selection? getCurrentSelection();
+    method public androidx.pdf.selection.Selection? getCurrentSelection();
     method public int getFirstVisiblePage();
     method @BytecodeOnly @androidx.compose.runtime.annotation.FrequentlyChangingValue public long getFirstVisiblePageOffset-F1C5BW0();
     method public int getGestureState();
@@ -35,7 +35,7 @@ package androidx.pdf.compose {
     method public androidx.pdf.PdfPoint? visibleOffsetToPdfPoint(long offset);
     method @BytecodeOnly public androidx.pdf.PdfPoint? visibleOffsetToPdfPoint-k-4lQ0M(long);
     method public suspend Object? zoomScroll(kotlin.jvm.functions.Function1<? super androidx.pdf.compose.PdfZoomScrollScope,kotlin.Unit> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    property public androidx.pdf.view.Selection? currentSelection;
+    property public androidx.pdf.selection.Selection? currentSelection;
     property public int firstVisiblePage;
     property public androidx.compose.ui.geometry.Offset firstVisiblePageOffset;
     property public int gestureState;

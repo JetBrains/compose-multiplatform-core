@@ -204,10 +204,12 @@ class UpsertTest : TestDatabaseTest() {
     fun upsertSingleWithFlowableQuery() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         val testObserver = booksDao.upsertBookSingle(TestUtil.BOOK_1).subscribeWith(TestObserver())
+        drain()
+        testObserver.await()
+        testObserver.assertComplete()
         val subscriber =
             booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(TestSubscriber())
         drain()
-        testObserver.assertComplete()
         subscriber.awaitCount(1)
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)
@@ -247,11 +249,12 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         val testObserver: TestObserver<Long> =
             booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(TestObserver())
-        val subscriber: TestSubscriber<Book> =
-            booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(TestSubscriber())
         drain()
         testObserver.await()
         testObserver.assertComplete()
+        val subscriber: TestSubscriber<Book> =
+            booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(TestSubscriber())
+        drain()
         subscriber.awaitCount(1)
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)

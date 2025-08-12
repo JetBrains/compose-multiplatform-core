@@ -16,7 +16,6 @@
 
 package androidx.camera.core.impl
 
-import android.os.Build
 import androidx.camera.core.CameraIdentifier
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.testutils.assertThrows
@@ -35,12 +34,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class AbstractCameraPresenceSourceTest {
 
     // A fake implementation of the abstract class for testing.

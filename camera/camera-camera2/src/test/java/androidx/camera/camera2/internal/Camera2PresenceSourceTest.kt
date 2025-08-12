@@ -19,7 +19,6 @@ package androidx.camera.camera2.internal
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat
 import androidx.camera.camera2.internal.compat.CameraManagerCompat
 import androidx.camera.core.CameraIdentifier
@@ -40,12 +39,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Camera2PresenceSourceTest {
 
     /** A fake implementation of [CameraManagerCompat] for direct control in tests. */

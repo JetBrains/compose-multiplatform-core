@@ -29,7 +29,6 @@ import android.media.MediaRecorder.OutputFormat.THREE_GPP
 import android.media.MediaRecorder.OutputFormat.WEBM
 import android.media.MediaRecorder.VideoEncoder.H263
 import android.media.MediaRecorder.VideoEncoder.MPEG_4_SP
-import android.os.Build
 import android.util.Range
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HDR10_10_BIT
@@ -59,12 +58,10 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class QualityExploredEncoderProfilesProviderTest {
 
     private val allQualities = Quality.getSortedQualities()

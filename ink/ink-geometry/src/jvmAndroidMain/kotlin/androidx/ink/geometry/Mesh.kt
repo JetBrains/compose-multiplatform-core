@@ -142,8 +142,14 @@ private constructor(
         return "Mesh(bounds=$bounds, vertexCount=$vertexCount, nativePointer=$nativePointer)"
     }
 
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS--Not tested post garbage collection.
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         MeshNative.free(nativePointer)
     }
 

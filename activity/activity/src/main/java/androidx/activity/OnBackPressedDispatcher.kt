@@ -24,9 +24,9 @@ import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigationevent.DirectNavigationEventInputHandler
 import androidx.navigationevent.NavigationEventCallback
 import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventInputHandler
 import androidx.navigationevent.OnBackInvokedInputHandler
 
 /**
@@ -70,7 +70,7 @@ class OnBackPressedDispatcher(
      * which provides a KMP-compatible API while preserving behavior compatibility with existing
      * callback mechanisms.
      *
-     * @see [OnBackPressedCallback.eventCallback]
+     * @see [OnBackPressedCallback.eventCallbacks]
      */
     internal val eventDispatcher: NavigationEventDispatcher by lazy {
         NavigationEventDispatcher(
@@ -81,7 +81,9 @@ class OnBackPressedDispatcher(
         )
     }
 
-    private val manualDispatchInputHandler by lazy { NavigationEventInputHandler(eventDispatcher) }
+    private val manualDispatchInputHandler by lazy {
+        DirectNavigationEventInputHandler(eventDispatcher)
+    }
 
     @JvmOverloads
     constructor(fallbackOnBackPressed: Runnable? = null) : this(fallbackOnBackPressed, null)
@@ -145,7 +147,7 @@ class OnBackPressedDispatcher(
         // This observer manages the callback's lifecycle-aware registration.
         val lifecycleObserver =
             object : LifecycleEventObserver, AutoCloseable {
-                private val eventCallback: NavigationEventCallback =
+                private val eventCallback: NavigationEventCallback<*> =
                     onBackPressedCallback.createNavigationEventCallback()
 
                 /**
@@ -200,13 +202,13 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackStarted(backEvent: BackEventCompat) {
-        manualDispatchInputHandler.sendOnStarted(backEvent.toNavigationEvent())
+        manualDispatchInputHandler.handleOnStarted(backEvent.toNavigationEvent())
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackProgressed(backEvent: BackEventCompat) {
-        manualDispatchInputHandler.sendOnProgressed(backEvent.toNavigationEvent())
+        manualDispatchInputHandler.handleOnProgressed(backEvent.toNavigationEvent())
     }
 
     /**
@@ -219,13 +221,13 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun onBackPressed() {
-        manualDispatchInputHandler.sendOnCompleted()
+        manualDispatchInputHandler.handleOnCompleted()
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackCancelled() {
-        manualDispatchInputHandler.sendOnCancelled()
+        manualDispatchInputHandler.handleOnCancelled()
     }
 }
 

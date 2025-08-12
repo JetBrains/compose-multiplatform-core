@@ -331,7 +331,7 @@ package androidx.core.app {
     method @Deprecated public static android.os.Bundle? getExtras(android.app.Notification);
     method public static String? getGroup(android.app.Notification);
     method @androidx.core.app.NotificationCompat.GroupAlertBehavior public static int getGroupAlertBehavior(android.app.Notification);
-    method @RequiresApi(21) public static java.util.List<androidx.core.app.NotificationCompat.Action!> getInvisibleActions(android.app.Notification);
+    method public static java.util.List<androidx.core.app.NotificationCompat.Action!> getInvisibleActions(android.app.Notification);
     method public static boolean getLocalOnly(android.app.Notification);
     method public static androidx.core.content.LocusIdCompat? getLocusId(android.app.Notification);
     method public static boolean getOngoing(android.app.Notification);
@@ -607,8 +607,8 @@ package androidx.core.app {
     method public androidx.core.app.NotificationCompat.Builder addAction(androidx.core.app.NotificationCompat.Action?);
     method public androidx.core.app.NotificationCompat.Builder addAction(int, CharSequence?, android.app.PendingIntent?);
     method public androidx.core.app.NotificationCompat.Builder addExtras(android.os.Bundle?);
-    method @RequiresApi(21) public androidx.core.app.NotificationCompat.Builder addInvisibleAction(androidx.core.app.NotificationCompat.Action?);
-    method @RequiresApi(21) public androidx.core.app.NotificationCompat.Builder addInvisibleAction(int, CharSequence?, android.app.PendingIntent?);
+    method public androidx.core.app.NotificationCompat.Builder addInvisibleAction(androidx.core.app.NotificationCompat.Action?);
+    method public androidx.core.app.NotificationCompat.Builder addInvisibleAction(int, CharSequence?, android.app.PendingIntent?);
     method public androidx.core.app.NotificationCompat.Builder addPerson(androidx.core.app.Person?);
     method @Deprecated public androidx.core.app.NotificationCompat.Builder addPerson(String?);
     method public android.app.Notification build();
@@ -702,7 +702,7 @@ package androidx.core.app {
     method public static androidx.core.app.NotificationCompat.CallStyle forIncomingCall(androidx.core.app.Person, android.app.PendingIntent, android.app.PendingIntent);
     method public static androidx.core.app.NotificationCompat.CallStyle forOngoingCall(androidx.core.app.Person, android.app.PendingIntent);
     method public static androidx.core.app.NotificationCompat.CallStyle forScreeningCall(androidx.core.app.Person, android.app.PendingIntent, android.app.PendingIntent);
-    method @RequiresApi(20) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.ArrayList<androidx.core.app.NotificationCompat.Action!> getActionsListWithSystemActions();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.ArrayList<androidx.core.app.NotificationCompat.Action!> getActionsListWithSystemActions();
     method public androidx.core.app.NotificationCompat.CallStyle setAnswerButtonColorHint(@ColorInt int);
     method public androidx.core.app.NotificationCompat.CallStyle setDeclineButtonColorHint(@ColorInt int);
     method public androidx.core.app.NotificationCompat.CallStyle setIsVideo(boolean);
@@ -2357,10 +2357,10 @@ package androidx.core.os {
     method @Deprecated @ChecksSdkIntAtLeast(api=33, codename="Tiramisu") public static boolean isAtLeastT();
     method @Deprecated @ChecksSdkIntAtLeast(api=34, codename="UpsideDownCake") public static boolean isAtLeastU();
     method @Deprecated @ChecksSdkIntAtLeast(api=35, codename="VanillaIceCream") public static boolean isAtLeastV();
-    property @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public int AD_SERVICES_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public int R_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.S) public int S_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.TIRAMISU) public int T_EXTENSION_INT;
+    property public int AD_SERVICES_EXTENSION_INT;
+    property public int R_EXTENSION_INT;
+    property public int S_EXTENSION_INT;
+    property public int T_EXTENSION_INT;
     field @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public static final int AD_SERVICES_EXTENSION_INT;
     field public static final androidx.core.os.BuildCompat INSTANCE;
     field @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public static final int R_EXTENSION_INT;
@@ -2444,7 +2444,7 @@ package androidx.core.os {
     method public java.util.Locale? getFirstMatch(String![]);
     method @IntRange(from=0xffffffff) public int indexOf(java.util.Locale?);
     method public boolean isEmpty();
-    method @RequiresApi(21) public static boolean matchesLanguageAndScript(java.util.Locale, java.util.Locale);
+    method public static boolean matchesLanguageAndScript(java.util.Locale, java.util.Locale);
     method @IntRange(from=0) public int size();
     method public String toLanguageTags();
     method public Object? unwrap();
@@ -2846,7 +2846,7 @@ package androidx.core.text.util {
   @IntDef(flag=true, value={android.text.util.Linkify.WEB_URLS, android.text.util.Linkify.EMAIL_ADDRESSES, android.text.util.Linkify.PHONE_NUMBERS, android.text.util.Linkify.MAP_ADDRESSES, android.text.util.Linkify.ALL}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface LinkifyCompat.LinkifyMask {
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public final class LocalePreferences {
+  public final class LocalePreferences {
     method public static String getCalendarType();
     method public static String getCalendarType(boolean);
     method public static String getCalendarType(java.util.Locale);
@@ -3017,8 +3017,8 @@ package androidx.core.util {
     ctor public SizeFCompat(float, float);
     method public float getHeight();
     method public float getWidth();
-    method @RequiresApi(21) public android.util.SizeF toSizeF();
-    method @RequiresApi(21) public static androidx.core.util.SizeFCompat toSizeFCompat(android.util.SizeF);
+    method public android.util.SizeF toSizeF();
+    method public static androidx.core.util.SizeFCompat toSizeFCompat(android.util.SizeF);
   }
 
   public fun interface Supplier<T> {
@@ -4057,9 +4057,9 @@ package androidx.core.view {
     method public boolean isVisible(@androidx.core.view.WindowInsetsCompat.Type.InsetsType int);
     method @Deprecated public androidx.core.view.WindowInsetsCompat replaceSystemWindowInsets(android.graphics.Rect);
     method @Deprecated public androidx.core.view.WindowInsetsCompat replaceSystemWindowInsets(int, int, int, int);
-    method @RequiresApi(20) public android.view.WindowInsets? toWindowInsets();
-    method @RequiresApi(20) public static androidx.core.view.WindowInsetsCompat toWindowInsetsCompat(android.view.WindowInsets);
-    method @RequiresApi(20) public static androidx.core.view.WindowInsetsCompat toWindowInsetsCompat(android.view.WindowInsets, android.view.View?);
+    method public android.view.WindowInsets? toWindowInsets();
+    method public static androidx.core.view.WindowInsetsCompat toWindowInsetsCompat(android.view.WindowInsets);
+    method public static androidx.core.view.WindowInsetsCompat toWindowInsetsCompat(android.view.WindowInsets, android.view.View?);
     field public static final androidx.core.view.WindowInsetsCompat CONSUMED;
   }
 

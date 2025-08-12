@@ -22,14 +22,22 @@ package androidx.ink.storage.proto;
 // input response and the shading of the stroke geometry. The `BrushFamily` can
 // optionally be identified by setting a non-empty `client_brush_family_id`.
 message BrushFamily {
+
   // Spring-based input modeler. Stored in the `InputModel` variant below to
   // allow future input models to be added without changing the shape of
   // existing strokes.
   message SpringModel {}
 
+  // Model that attempts to preserve input positions as closely as possible.
+  // This is an experimental configuration which may be adjusted or removed
+  // later. Strokes generated with this input model might change shape if read
+  // with a later version of the code that has removed this feature.
+  message ExperimentalRawPositionModel {}
+
   message InputModel {
     oneof input_model {
       SpringModel spring_model = 2;
+      ExperimentalRawPositionModel experimental_raw_position_model = 3;
     }
     // Was legacy InputModel type, reserved needs to be outside oneof
     reserved 1;
@@ -396,6 +404,7 @@ message BrushPaint {
     reserved 20;
     reserved 21;
     reserved 22;
+    reserved 23;
   }
 
   // Zero or more textures to blend together to affect this coat's appearance.

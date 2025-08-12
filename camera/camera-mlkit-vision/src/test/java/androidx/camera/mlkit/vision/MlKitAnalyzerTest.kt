@@ -19,7 +19,6 @@ package androidx.camera.mlkit.vision
 import android.graphics.Rect
 import android.graphics.RectF
 import android.media.Image
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.COORDINATE_SYSTEM_SENSOR
@@ -38,13 +37,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit test for [MlKitAnalyzer]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class MlKitAnalyzerTest {
 
     companion object {

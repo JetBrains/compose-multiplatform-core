@@ -45,7 +45,6 @@ import org.junit.runner.RunWith
 /** Unit tests for [TestImageUtil] */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class TestImageUtilDeviceTest {
 
     companion object {

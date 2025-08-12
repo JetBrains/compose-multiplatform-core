@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.profile.PlatformProfile
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.frontend.layout.RemoteComposable
 import androidx.compose.remote.frontend.state.FallbackCreationState
@@ -281,7 +282,7 @@ fun RemoteComposeExecution(
  */
 @Composable
 fun RememberRemoteDocumentInline(
-    profile: Profile = Profile.ANDROIDX,
+    profile: Profile = PlatformProfile.ANDROIDX,
     onDocument: (CoreDocument) -> Unit,
     content: @RemoteComposable @Composable () -> Unit,
 ) {

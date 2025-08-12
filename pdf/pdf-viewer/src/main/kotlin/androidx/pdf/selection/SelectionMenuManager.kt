@@ -17,8 +17,7 @@
 package androidx.pdf.selection
 
 import android.content.Context
-import androidx.pdf.view.Selection
-import androidx.pdf.view.TextSelection
+import androidx.pdf.selection.model.TextSelection
 
 /**
  * Manages the retrieval and caching of context menu items for various types of selections within a

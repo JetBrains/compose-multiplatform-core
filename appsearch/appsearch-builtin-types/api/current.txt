@@ -1,7 +1,7 @@
 // Signature format: 4.0
 package androidx.appsearch.app {
 
-  @SuppressCompatibility @RequiresApi(api=android.os.Build.VERSION_CODES.LOLLIPOP) @androidx.appsearch.app.ExperimentalAppSearchApi public class ShortcutAdapter {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public class ShortcutAdapter {
     method public static androidx.core.content.pm.ShortcutInfoCompat.Builder createShortcutBuilderFromDocument(android.content.Context, Object) throws androidx.appsearch.exceptions.AppSearchException;
     method public static android.net.Uri getDocumentUri(Object) throws androidx.appsearch.exceptions.AppSearchException;
     method public static android.net.Uri getDocumentUri(String);

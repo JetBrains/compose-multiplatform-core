@@ -102,8 +102,7 @@ import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = {"androidx.camera.camera2.internal"})
+@Config(instrumentedPackages = {"androidx.camera.camera2.internal"})
 public class Camera2CameraInfoImplTest {
     private static final String CAMERA0_ID = "0";
     private static final int CAMERA0_SUPPORTED_HARDWARE_LEVEL =
@@ -636,7 +635,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isPrivateReprocessingSupported()).isTrue();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_apiVersionMet_returnTrue() throws CameraAccessExceptionCompat {
         init(/* hasAvailableCapabilities = */ true);
@@ -645,17 +643,6 @@ public class Camera2CameraInfoImplTest {
                 CAMERA0_ID, mCameraManagerCompat);
 
         assertThat(cameraInfo.isZslSupported()).isTrue();
-    }
-
-    @Config(maxSdk = 22)
-    @Test
-    public void isZslSupported_apiVersionNotMet_returnFalse() throws CameraAccessExceptionCompat {
-        init(/* hasAvailableCapabilities = */ true);
-
-        final Camera2CameraInfoImpl cameraInfo = new Camera2CameraInfoImpl(
-                CAMERA0_ID, mCameraManagerCompat);
-
-        assertThat(cameraInfo.isZslSupported()).isFalse();
     }
 
     @Test
@@ -669,7 +656,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isZslSupported()).isFalse();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_hasZslDisablerQuirkSamsungFold_returnFalse()
             throws CameraAccessExceptionCompat {
@@ -684,7 +670,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isZslSupported()).isFalse();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_hasZslDisablerQuirkSamsungS22_returnFalse()
             throws CameraAccessExceptionCompat {
@@ -699,7 +684,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isZslSupported()).isFalse();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_hasNoZslDisablerQuirkSamsung_returnTrue()
             throws CameraAccessExceptionCompat {
@@ -714,7 +698,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isZslSupported()).isTrue();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_hasZslDisablerQuirkXiaomi_returnFalse()
             throws CameraAccessExceptionCompat {
@@ -729,7 +712,6 @@ public class Camera2CameraInfoImplTest {
         assertThat(cameraInfo.isZslSupported()).isFalse();
     }
 
-    @Config(minSdk = 23)
     @Test
     public void isZslSupported_hasNoZslDisablerQuirkXiaomi_returnTrue()
             throws CameraAccessExceptionCompat {

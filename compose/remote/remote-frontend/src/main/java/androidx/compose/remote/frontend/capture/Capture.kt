@@ -18,6 +18,7 @@ package androidx.compose.remote.frontend.capture
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Platform
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.RemoteComposeWriterAndroid
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.frontend.state.AnimatedRemoteFloat
 import androidx.compose.remote.frontend.state.BaseRemoteState
@@ -52,7 +53,8 @@ open class RemoteComposeCreationState {
         this.size = size
         this.apiLevel = CoreDocument.DOCUMENT_API_LEVEL
         this.profiles = 0
-        document = RemoteComposeWriter(size.width.toInt(), size.height.toInt(), "default", platform)
+        document =
+            RemoteComposeWriterAndroid(size.width.toInt(), size.height.toInt(), "default", platform)
     }
 
     constructor(platform: Platform, density: Float, size: Size, apiLevel: Int, profiles: Int) {
@@ -63,10 +65,15 @@ open class RemoteComposeCreationState {
         this.profiles = profiles
         if (this.apiLevel == CoreDocument.DOCUMENT_API_LEVEL && this.profiles == 0) {
             document =
-                RemoteComposeWriter(size.width.toInt(), size.height.toInt(), "default", platform)
+                RemoteComposeWriterAndroid(
+                    size.width.toInt(),
+                    size.height.toInt(),
+                    "default",
+                    platform,
+                )
         } else {
             document =
-                RemoteComposeWriter(
+                RemoteComposeWriterAndroid(
                     size.width.toInt(),
                     size.height.toInt(),
                     "default",

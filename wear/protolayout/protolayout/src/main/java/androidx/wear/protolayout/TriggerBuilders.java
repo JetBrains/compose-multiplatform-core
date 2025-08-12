@@ -356,10 +356,10 @@ public final class TriggerBuilders {
             DynamicBool thatCondition = that.getCondition();
             return (condition == thatCondition)
                     || (condition != null
-                    && thatCondition != null
-                    && Arrays.equals(
-                    condition.toDynamicBoolByteArray(),
-                    thatCondition.toDynamicBoolByteArray()));
+                            && thatCondition != null
+                            && Arrays.equals(
+                                    condition.toDynamicBoolByteArray(),
+                                    thatCondition.toDynamicBoolByteArray()));
         }
 
         @Override

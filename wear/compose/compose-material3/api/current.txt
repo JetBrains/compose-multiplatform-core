@@ -2221,11 +2221,11 @@ package androidx.wear.compose.material3.lazy {
     method public float getTopValue();
     method public float getTransformationZoneEnterFraction();
     method public float getTransformationZoneExitFraction();
-    property @FloatRange(from=0.0, to=1.0) public float bottomValue;
-    property @FloatRange(from=0.0, to=1.0) public float targetValue;
-    property @FloatRange(from=0.0, to=1.0) public float topValue;
-    property @FloatRange(from=0.0, to=1.0) public float transformationZoneEnterFraction;
-    property @FloatRange(from=0.0, to=1.0) public float transformationZoneExitFraction;
+    property public float bottomValue;
+    property public float targetValue;
+    property public float topValue;
+    property public float transformationZoneEnterFraction;
+    property public float transformationZoneExitFraction;
   }
 
   public interface TransformedContainerPainterScope {

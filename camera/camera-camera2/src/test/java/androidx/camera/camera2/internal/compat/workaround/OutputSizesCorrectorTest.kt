@@ -61,7 +61,6 @@ private val outputSizes =
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class OutputSizesCorrectorTest {
     @Test
     fun canAddExtraSupportedSizesForMotoE5PlayByFormat() {

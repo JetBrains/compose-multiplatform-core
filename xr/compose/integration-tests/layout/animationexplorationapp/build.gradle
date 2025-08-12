@@ -41,7 +41,7 @@ android {
 
 dependencies {
     implementation(project(":xr:compose:compose"))
-    implementation("com.google.ar:impress:0.0.4")
+    implementation("com.google.ar:impress:0.0.5")
 
     implementation("androidx.activity:activity-compose:1.10.0-beta01")
     implementation("androidx.compose.ui:ui:1.7.0")

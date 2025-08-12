@@ -45,7 +45,7 @@ package androidx.xr.arcore.projected {
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;
     property public java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.runtime.internal.Face? userFace;
+    property public androidx.xr.runtime.internal.Face? userFace;
     property public java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 

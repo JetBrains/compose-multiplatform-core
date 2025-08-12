@@ -442,10 +442,6 @@ class MainActivity : AppCompatActivity() {
 }
 
 private fun enqueueWithNetworkRequest(workManager: WorkManager) {
-    if (Build.VERSION.SDK_INT < 21) {
-        Log.w(TAG, "Ignoring enqueueWithNetworkRequest on old API levels")
-        return
-    }
     val networkRequest =
         NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

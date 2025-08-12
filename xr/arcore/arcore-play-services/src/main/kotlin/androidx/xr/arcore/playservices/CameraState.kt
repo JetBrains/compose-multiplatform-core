@@ -17,7 +17,10 @@
 package androidx.xr.arcore.playservices
 
 import android.hardware.HardwareBuffer
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
@@ -48,7 +51,7 @@ internal constructor(
     public val displayOrientedPose: Pose? = null,
     public val projectionMatrix: Matrix4? = null,
     public val viewMatrix: Matrix4? = null,
-    public val hardwareBuffer: HardwareBuffer? = null,
+    @RequiresApi(27) public val hardwareBuffer: HardwareBuffer? = null,
     public val transformCoordinates2D: ((FloatBuffer) -> FloatBuffer)? = null,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -60,7 +63,7 @@ internal constructor(
         if (displayOrientedPose != other.displayOrientedPose) return false
         if (projectionMatrix != other.projectionMatrix) return false
         if (viewMatrix != other.viewMatrix) return false
-        if (hardwareBuffer != other.hardwareBuffer) return false
+        if (Build.VERSION.SDK_INT >= 27 && hardwareBuffer != other.hardwareBuffer) return false
         if (transformCoordinates2D != other.transformCoordinates2D) return false
         return true
     }
@@ -72,7 +75,9 @@ internal constructor(
         result = 31 * result + displayOrientedPose.hashCode()
         result = 31 * result + projectionMatrix.hashCode()
         result = 31 * result + viewMatrix.hashCode()
-        result = 31 * result + hardwareBuffer.hashCode()
+        if (Build.VERSION.SDK_INT >= 27) {
+            result = 31 * result + hardwareBuffer.hashCode()
+        }
         result = 31 * result + transformCoordinates2D.hashCode()
         return result
     }

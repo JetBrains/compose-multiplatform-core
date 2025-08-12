@@ -74,7 +74,6 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ExtensionsManagerTest(
     private val implName: String,
     private val cameraXConfig: CameraXConfig,

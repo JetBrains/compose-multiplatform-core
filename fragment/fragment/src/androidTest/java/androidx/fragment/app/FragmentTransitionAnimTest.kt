@@ -45,7 +45,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 class FragmentTransitionAnimTest(private val reorderingAllowed: ReorderingAllowed) {
     private var onBackStackChangedTimes: Int = 0
 

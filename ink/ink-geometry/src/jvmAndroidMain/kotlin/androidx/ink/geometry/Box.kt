@@ -55,7 +55,6 @@ public abstract class Box internal constructor() {
      * Performance-sensitive code should use the [computeCenter] overload that takes a pre-allocated
      * [MutableVec], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeCenter(): ImmutableVec {
         return BoxNative.createCenter(xMin, yMin, xMax, yMax)
     }
@@ -70,7 +69,6 @@ public abstract class Box internal constructor() {
      * Returns a list containing the 4 corners of the [Box]. The order of the corners is: (x_min,
      * y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max).
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeCorners(): List<ImmutableVec> =
         listOf(
             ImmutableVec(xMin, yMin),
@@ -126,17 +124,18 @@ public abstract class Box internal constructor() {
      * Returns an immutable copy of this object. This will return itself if called on an immutable
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun asImmutable(): ImmutableBox
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableBox
 
     /**
      * Compares this [Box] with [other], and returns true if the difference between [xMin] and
      * [other.xMin] is less than [tolerance], and likewise for [xMax], [yMin], and [yMax].
      */
     public fun isAlmostEqual(other: Box, @FloatRange(from = 0.0) tolerance: Float): Boolean =
-        (abs(xMin - other.xMin) < tolerance) &&
-            (abs(yMin - other.yMin) < tolerance) &&
-            (abs(xMax - other.xMax) < tolerance) &&
-            (abs(yMax - other.yMax) < tolerance)
+        this === other ||
+            (abs(xMin - other.xMin) < tolerance &&
+                abs(yMin - other.yMin) < tolerance &&
+                abs(xMax - other.xMax) < tolerance &&
+                abs(yMax - other.yMax) < tolerance)
 
     internal companion object {
         /**

@@ -397,8 +397,10 @@ internal constructor(
 ) {
     /** Transfer any invalidations that may have accumulated since this reference was created. */
     internal fun transferPendingInvalidations() {
-        invalidations =
-            invalidations + (composition as CompositionImpl).extractInvalidationsOf(anchor)
+        if (anchor.valid) {
+            invalidations =
+                invalidations + (composition as CompositionImpl).extractInvalidationsOf(anchor)
+        }
     }
 }
 
@@ -1200,6 +1202,25 @@ public sealed interface Composer {
     public fun collectParameterInformation()
 
     /**
+     * Schedules an [action] to be invoked when the recomposer finishes the next execution of a
+     * frame. If a frame is currently in-progress, [action] will be invoked when the current frame
+     * finishes. If a frame isn't currently in-progress, a new frame will be scheduled (if one
+     * hasn't been already) and [action] will execute at the completion of the next frame.
+     *
+     * [action] will always execute on the applier thread.
+     *
+     * Note that [action] runs at the end of a frame scheduled by the recomposer. If a callback is
+     * scheduled via this method during the initial composition, it will not execute until the
+     * _next_ frame.
+     *
+     * @return A [CancellationHandle] that can be used to unregister the [action]. The returned
+     *   handle is thread-safe and may be cancelled from any thread. Cancelling the handle only
+     *   removes the callback from the queue. If [action] is currently executing, it will not be
+     *   cancelled by this handle.
+     */
+    public fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle
+
+    /**
      * A Compose internal function. DO NOT call directly.
      *
      * Build a composition context that can be used to created a subcomposition. A composition
@@ -1805,6 +1826,10 @@ internal class ComposerImpl(
         slotTable.collectSourceInformation()
         insertTable.collectSourceInformation()
         writer.updateToTableMaps()
+    }
+
+    override fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle {
+        return parentContext.scheduleFrameEndCallback(action)
     }
 
     @OptIn(InternalComposeApi::class)
@@ -3255,7 +3280,7 @@ internal class ComposerImpl(
             val callback = shouldPauseCallback ?: return true
             val scope = currentRecomposeScope ?: return true
             val pausing = callback.shouldPause()
-            if (pausing) {
+            if (pausing && !scope.resuming) {
                 scope.used = true
                 // Force the composer back into the reusing state when this scope restarts.
                 scope.reusing = reusing
@@ -3733,11 +3758,12 @@ internal class ComposerImpl(
     }
 
     fun parentStackTrace(): List<ComposeStackTraceFrame> {
-        val composition = parentContext.composition as? CompositionImpl ?: return emptyList()
-        val position = composition.slotTable.findSubcompositionContextGroup(parentContext)
+        val parentComposition = parentContext.composition as? CompositionImpl ?: return emptyList()
+        val position = parentComposition.slotTable.findSubcompositionContextGroup(parentContext)
 
         return if (position != null) {
-            composition.slotTable.read { reader -> reader.traceForGroup(position, 0) }
+            parentComposition.slotTable.read { reader -> reader.traceForGroup(position, 0) } +
+                parentComposition.composer.parentStackTrace()
         } else {
             emptyList()
         }
@@ -4287,6 +4313,10 @@ internal class ComposerImpl(
 
         override val composition: Composition
             get() = this@ComposerImpl.composition
+
+        override fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle {
+            return parentContext.scheduleFrameEndCallback(action)
+        }
     }
 
     private inline fun updateCompositeKeyWhenWeEnterGroup(

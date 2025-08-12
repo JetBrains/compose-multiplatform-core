@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
@@ -63,7 +62,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class RequestProcessorAdapterTest {
     private val context = ApplicationProvider.getApplicationContext() as Context

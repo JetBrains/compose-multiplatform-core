@@ -124,6 +124,7 @@ class InTransactionTest {
             assertThat(roomDb.inTransaction()).isTrue()
             assertThat(supportDb.inTransaction()).isTrue()
         }
+        roomDb.close()
     }
 
     @Test

@@ -462,8 +462,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     @SuppressWarnings("unchecked")
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
-    public void onStateAttached() {
-        super.onStateAttached();
+    @MainThread
+    public void onSessionStart() {
+        super.onSessionStart();
 
         Logger.d(TAG, "VideoCapture#onStateAttached: cameraID = " + getCameraId());
 
@@ -511,7 +512,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
-    public void onStateDetached() {
+    @MainThread
+    public void onSessionStop() {
         Logger.d(TAG, "VideoCapture#onStateDetached");
 
         checkState(isMainThread(), "VideoCapture can only be detached on the main thread.");

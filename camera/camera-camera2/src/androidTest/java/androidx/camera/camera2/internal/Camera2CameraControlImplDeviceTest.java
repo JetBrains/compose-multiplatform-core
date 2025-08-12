@@ -119,7 +119,6 @@ import java.util.concurrent.TimeoutException;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class Camera2CameraControlImplDeviceTest {
     @Rule
     public TestRule mUseCamera = CameraUtil.grantCameraPermissionAndPreTestAndPostTest(

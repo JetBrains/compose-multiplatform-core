@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
 import android.media.MediaCodec
-import android.os.Build
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.pipe.OutputStream.StreamUseHint
@@ -47,7 +46,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class SessionConfigAdapterTest {
 

@@ -67,8 +67,20 @@ androidXMultiplatform {
             }
         }
 
-        jvmTest {
+        nonJsMain {
+            dependsOn(commonMain)
+        }
+
+        nonJsTest {
             dependsOn(commonTest)
+        }
+
+        jvmMain {
+            dependsOn(nonJsMain)
+        }
+
+        jvmTest {
+            dependsOn(nonJsTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
@@ -81,11 +93,12 @@ androidXMultiplatform {
         }
 
         nativeMain {
+            dependsOn(nonJsMain)
             dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonJsTest)
         }
 
         unixMain {
@@ -113,6 +126,7 @@ androidXMultiplatform {
         }
 
         wasmJsMain {
+            dependsOn(nonJsMain)
             dependsOn(webMain)
             dependencies {
                 implementation(libs.kotlinStdlibWasm)
@@ -120,6 +134,7 @@ androidXMultiplatform {
         }
 
         wasmJsTest {
+            dependsOn(nonJsTest)
             dependsOn(webTest)
         }
 

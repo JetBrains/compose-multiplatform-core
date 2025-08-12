@@ -18,6 +18,7 @@ package androidx.xr.projected.permissions
 
 import android.app.ActivityOptions
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -49,10 +50,17 @@ public class GoToHostProjectedActivity :
         setContent { GlimmerTheme { Ui() } }
 
         val storedPermissionResultReceiver =
-            savedInstanceState?.getParcelable(
-                INSTANCE_STATE_PERMISSION_RESULT_RECEIVER_KEY,
-                PermissionResultReceiver::class.java,
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState?.getParcelable(
+                    INSTANCE_STATE_PERMISSION_RESULT_RECEIVER_KEY,
+                    PermissionResultReceiver::class.java,
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState?.getParcelable<PermissionResultReceiver>(
+                    INSTANCE_STATE_PERMISSION_RESULT_RECEIVER_KEY
+                )
+            }
 
         if (storedPermissionResultReceiver != null) {
             // This activity instance is re-created, e.g. from a configuration change
@@ -66,7 +74,11 @@ public class GoToHostProjectedActivity :
                     localCallback = this@GoToHostProjectedActivity
                 }
             val activityOptions =
-                ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
+                } else {
+                    ActivityOptions.makeBasic()
+                }
             startActivity(
                 Intent()
                     .setClass(this, HOST_ACTIVITY_CLASS)
@@ -110,7 +122,11 @@ public class GoToHostProjectedActivity :
 
     private fun finishHostActivity() {
         val activityOptions =
-            ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
+            } else {
+                ActivityOptions.makeBasic()
+            }
         startActivity(
             Intent()
                 .setClass(this, HOST_ACTIVITY_CLASS)

@@ -73,7 +73,6 @@ internal open class FakePdfDocument(
     internal val pages: List<Point?> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val isLinearized: Boolean = false,
-    override val formEditRecords: List<FormEditRecord> = emptyList(),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
@@ -83,6 +82,9 @@ internal open class FakePdfDocument(
     override val pageCount: Int = pages.size
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
+
+    override val formEditRecords: List<FormEditRecord>
+        get() = editHistory.toList()
 
     private val bitmapRequestsLock = Object()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
@@ -415,6 +417,20 @@ internal suspend fun FakePdfDocument.waitForFormDataFetch(
     withContext(Dispatchers.Default.limitedParallelism(1)) {
         withTimeout(timeoutMillis) {
             while (!(0..untilPage).all { pageNum -> formWidgetRequests.contains(pageNum) }) {
+                delay(100)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun FakePdfDocument.waitForApplyEdit(
+    expectedNumEdits: Int,
+    timeoutMillis: Long = 1000,
+) {
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(timeoutMillis) {
+            while (editHistory.size < expectedNumEdits) {
                 delay(100)
             }
         }

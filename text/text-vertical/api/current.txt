@@ -2,37 +2,36 @@
 package androidx.text.vertical {
 
   public final class EmphasisSpan extends android.text.style.MetricAffectingSpan {
-    ctor public EmphasisSpan(optional int style, optional boolean filled, optional float scale);
-    method public String getLetter();
+    ctor public EmphasisSpan();
+    ctor public EmphasisSpan(optional int style, optional boolean isFilled, optional float scale);
     method public float getScale();
+    method public int getStyle();
+    method public boolean isFilled();
     method public void updateDrawState(android.text.TextPaint? p0);
     method public void updateMeasureState(android.text.TextPaint p0);
-    property public String letter;
+    property public boolean isFilled;
     property public float scale;
+    property public int style;
     field public static final androidx.text.vertical.EmphasisSpan.Companion Companion;
     field public static final boolean DEFAULT_EMPHASIS_FILL = true;
     field public static final int DEFAULT_EMPHASIS_STYLE = 0; // 0x0
     field public static final float DEFAULT_SCALE = 0.5f;
+    field public static final int STYLE_CIRCLE = 1; // 0x1
+    field public static final int STYLE_DOT = 0; // 0x0
+    field public static final int STYLE_DOUBLE_CIRCLE = 2; // 0x2
+    field public static final int STYLE_SESAME = 4; // 0x4
+    field public static final int STYLE_TRIANGLE = 3; // 0x3
   }
 
   public static final class EmphasisSpan.Companion {
     property public static boolean DEFAULT_EMPHASIS_FILL;
     property public static int DEFAULT_EMPHASIS_STYLE;
     property public static float DEFAULT_SCALE;
-  }
-
-  public final class EmphasisStyle {
-    property public static int CIRCLE;
-    property public static int DOT;
-    property public static int DOUBLE_CIRCLE;
-    property public static int SESAME;
-    property public static int TRIANGLE;
-    field public static final int CIRCLE = 1; // 0x1
-    field public static final int DOT = 0; // 0x0
-    field public static final int DOUBLE_CIRCLE = 2; // 0x2
-    field public static final androidx.text.vertical.EmphasisStyle INSTANCE;
-    field public static final int SESAME = 4; // 0x4
-    field public static final int TRIANGLE = 3; // 0x3
+    property public static int STYLE_CIRCLE;
+    property public static int STYLE_DOT;
+    property public static int STYLE_DOUBLE_CIRCLE;
+    property public static int STYLE_SESAME;
+    property public static int STYLE_TRIANGLE;
   }
 
   public final class FontShearSpan extends android.text.style.MetricAffectingSpan {
@@ -43,7 +42,7 @@ package androidx.text.vertical {
     method public void updateMeasureState(android.text.TextPaint p0);
     property public float fontShear;
     field public static final androidx.text.vertical.FontShearSpan.Companion Companion;
-    field public static final float DEFAULT_FONT_SHEAR = 0.1678842f;
+    field public static final float DEFAULT_FONT_SHEAR = 0.2679492f;
   }
 
   public static final class FontShearSpan.Companion {
@@ -101,7 +100,7 @@ package androidx.text.vertical {
     method public CharSequence getText();
     method @Px public float getWidth();
     property public int end;
-    property @Px public float height;
+    property public float height;
     property public int orientation;
     property public android.text.TextPaint paint;
     property public int start;

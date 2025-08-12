@@ -50,7 +50,6 @@ import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SessionData
-import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AUTOMATED_TEST_CALLBACK
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
@@ -58,16 +57,12 @@ import java.util.concurrent.Executor
 import kotlin.random.Random
 
 class TestAdapters(private val sdkContext: Context) {
-    abstract class BannerAd(automatedTestCallbackBundle: Bundle = Bundle()) :
+    abstract class BannerAd(val automatedTestCallback: AutomatedTestCallback? = null) :
         AbstractSandboxedUiAdapter() {
         lateinit var sessionClientExecutor: Executor
         lateinit var sessionClient: SandboxedUiAdapter.SessionClient
         lateinit var adViewWithConsumeScrollOverlay: AdViewWithConsumeScrollOverlay
         val mainLooperHandler = Handler(Looper.getMainLooper())
-        val automatedTestCallbackBinder =
-            automatedTestCallbackBundle.getBinder(AUTOMATED_TEST_CALLBACK)
-        val automatedTestCallback: IAutomatedTestCallback? =
-            automatedTestCallbackBinder?.let { IAutomatedTestCallback.Stub.asInterface(it) }
         var shouldAddAllowAppToScrollOverlay = true
 
         abstract fun buildAdView(sessionContext: Context, width: Int, height: Int): View?
@@ -215,8 +210,8 @@ class TestAdapters(private val sdkContext: Context) {
     inner class TestBannerAd(
         private val text: String,
         private val withSlowDraw: Boolean,
-        automatedTestCallbackBundle: Bundle = Bundle(),
-    ) : BannerAd(automatedTestCallbackBundle) {
+        automatedTestCallback: AutomatedTestCallback? = null,
+    ) : BannerAd(automatedTestCallback) {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
             return TestView(sessionContext, withSlowDraw, text, automatedTestCallback)
         }
@@ -300,9 +295,9 @@ class TestAdapters(private val sdkContext: Context) {
     }
 
     inner class ScrollViewAd(
-        automatedTestCallbackBundle: Bundle = Bundle(),
+        automatedTestCallback: AutomatedTestCallback?,
         private val appCanScroll: Boolean = true,
-    ) : BannerAd(automatedTestCallbackBundle) {
+    ) : BannerAd(automatedTestCallback) {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
             shouldAddAllowAppToScrollOverlay = false
             val scrollView =
@@ -372,7 +367,7 @@ class TestAdapters(private val sdkContext: Context) {
         context: Context,
         private val withSlowDraw: Boolean,
         private val text: String,
-        private val automatedTestCallback: IAutomatedTestCallback? = null,
+        private val automatedTestCallback: AutomatedTestCallback? = null,
     ) : View(context) {
 
         init {

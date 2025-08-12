@@ -43,7 +43,7 @@ package androidx.wear.protolayout.material3 {
 
   public final class ButtonGroupDefaults {
     property public androidx.wear.protolayout.LayoutElementBuilders.Spacer DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS;
-    property @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public static float DEFAULT_SPACER_WIDTH_DP;
+    property public static float DEFAULT_SPACER_WIDTH_DP;
     field public static final androidx.wear.protolayout.LayoutElementBuilders.Spacer DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS;
     field @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public static final float DEFAULT_SPACER_WIDTH_DP = 4.0f;
     field public static final androidx.wear.protolayout.material3.ButtonGroupDefaults INSTANCE;
@@ -124,8 +124,8 @@ package androidx.wear.protolayout.material3 {
     method public androidx.wear.protolayout.material3.ProgressIndicatorColors filledTonalProgressIndicatorColors(androidx.wear.protolayout.material3.MaterialScope);
     method public androidx.wear.protolayout.material3.ProgressIndicatorColors filledVariantProgressIndicatorColors(androidx.wear.protolayout.material3.MaterialScope);
     method public androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec getRecommendedAnimationSpec();
-    property @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public static float LARGE_STROKE_WIDTH;
-    property @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public static float SMALL_STROKE_WIDTH;
+    property public static float LARGE_STROKE_WIDTH;
+    property public static float SMALL_STROKE_WIDTH;
     property public androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec recommendedAnimationSpec;
     field public static final androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults INSTANCE;
     field @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public static final float LARGE_STROKE_WIDTH = 8.0f;
@@ -336,7 +336,7 @@ package androidx.wear.protolayout.material3 {
   }
 
   public final class TextKt {
-    method @Deprecated public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement text(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.types.LayoutString text, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional int typography, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) androidx.wear.protolayout.types.LayoutColor color, optional boolean italic, optional boolean underline, optional boolean scalable, optional int maxLines, optional int alignment, optional int overflow, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) java.util.List<? extends androidx.wear.protolayout.LayoutElementBuilders.FontSetting> settings);
+    method @BytecodeOnly @Deprecated public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement! text(androidx.wear.protolayout.material3.MaterialScope!, androidx.wear.protolayout.types.LayoutString!, androidx.wear.protolayout.modifiers.LayoutModifier!, int, @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) androidx.wear.protolayout.types.LayoutColor!, boolean, boolean, boolean, int, int, int, @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) java.util.List!);
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement text(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.types.LayoutString text, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional int typography, optional androidx.wear.protolayout.types.LayoutColor color, optional boolean italic, optional boolean underline, optional boolean scalable, optional int maxLines, optional int alignment, optional int overflow, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) java.util.List<? extends androidx.wear.protolayout.LayoutElementBuilders.FontSetting> settings, optional java.util.List<java.lang.Float> incrementsForTypographySize);
   }
 

@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.annotation.RestrictTo
+import androidx.ink.geometry.MeshFormat
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import kotlin.jvm.JvmOverloads
@@ -68,6 +69,15 @@ private constructor(
     }
 
     /**
+     * Whether the brush can be supported by the attributes in the given [MeshFormat]. For use in
+     * Stroke.copy to determine if mesh regeneration is needed when the brush is changed.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isCompatibleWithMeshFormat(meshFormat: MeshFormat): Boolean {
+        return BrushCoatNative.isCompatibleWithMeshFormat(nativePointer, meshFormat.nativePointer)
+    }
+
+    /**
      * Returns a [Builder] with values set equivalent to `this`. Java developers, use the returned
      * builder to build a copy of a BrushCoat.
      */
@@ -113,10 +123,13 @@ private constructor(
     /** Deletes native BrushCoat memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushCoatNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushCoatNative.free(nativePointer)
     }
 
     // Companion object gets initialized before anything else.
@@ -151,6 +164,12 @@ private object BrushCoatNative {
 
     /** Release the underlying memory allocated in [create]. */
     @UsedByNative external fun free(nativePointer: Long)
+
+    @UsedByNative
+    external fun isCompatibleWithMeshFormat(
+        nativePointer: Long,
+        meshFormatNativePointer: Long,
+    ): Boolean
 
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushTip` in the pointed-at

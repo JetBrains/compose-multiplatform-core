@@ -20,7 +20,6 @@ import android.content.ContextWrapper
 import androidx.core.getAttributeSet
 import androidx.core.ktx.test.R
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -31,7 +30,6 @@ import org.junit.Test
 class ContextTest {
     private val context = ApplicationProvider.getApplicationContext() as android.content.Context
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun systemService() {
         var lookup: Class<*>? = null

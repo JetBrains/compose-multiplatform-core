@@ -15,7 +15,6 @@
  */
 package androidx.camera.core.impl
 
-import android.os.Build
 import android.os.Looper
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraPresenceListener
@@ -35,12 +34,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CameraPresenceProviderTest {
 
     private val sourceObservable = MutableObservable<List<CameraIdentifier>>()

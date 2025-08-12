@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.AccessibilitySemantics;
 
@@ -37,6 +41,7 @@ import java.util.List;
  * @param <N> The type representing information about the node. This could be an Androidx
  *     `AccessibilityNodeInfoCompat`, or potentially a platform `AccessibilityNodeInfo`.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface SemanticNodeApplier<N> {
     /**
      * This method applies semantic information from a list of {@link AccessibilitySemantics} to a

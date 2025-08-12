@@ -19,6 +19,7 @@ package androidx.xr.glimmer
 import android.os.Build
 import android.os.SystemClock
 import android.view.MotionEvent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,11 +28,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.testutils.assertShape
@@ -42,9 +46,12 @@ import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.
 import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component2
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -68,6 +75,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.xr.glimmer.samples.placeholderImagePainter
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -335,7 +343,14 @@ class CardTest {
                 0,
             )
         down.source = SOURCE_TOUCH_NAVIGATION
-        rule.onNodeWithTag("card").performIndirectTouchEvent(IndirectTouchEvent(down))
+        rule
+            .onNodeWithTag("card")
+            .performIndirectTouchEvent(
+                IndirectTouchEvent(
+                    motionEvent = down,
+                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                )
+            )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
@@ -352,7 +367,14 @@ class CardTest {
                 0,
             )
         up.source = SOURCE_TOUCH_NAVIGATION
-        rule.onNodeWithTag("card").performIndirectTouchEvent(IndirectTouchEvent(up))
+        rule
+            .onNodeWithTag("card")
+            .performIndirectTouchEvent(
+                IndirectTouchEvent(
+                    motionEvent = up,
+                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                )
+            )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -360,6 +382,132 @@ class CardTest {
             assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
             assertThat((interactions[1] as PressInteraction.Release).press)
                 .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun header_appliesAspectRatioToMaximumHeight_fillMaxSize() {
+        rule.setGlimmerThemeContent {
+            Card(
+                modifier = Modifier.testTag("card"),
+                header = { Box(Modifier.fillMaxSize().testTag("header")) },
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - 16.dp - 16.dp, "width")
+                height.assertIsEqualTo(width / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun header_appliesAspectRatioToMaximumHeight_fixedLargeSize() {
+        rule.setGlimmerThemeContent {
+            Card(
+                modifier = Modifier.testTag("card"),
+                header = { Box(Modifier.size(1000.dp).testTag("header")) },
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - 16.dp - 16.dp, "width")
+                height.assertIsEqualTo(width / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun header_doesNotEnforceFillingHeight_fillMaxWidth() {
+        rule.setGlimmerThemeContent {
+            Card(
+                modifier = Modifier.testTag("card"),
+                header = { Box(Modifier.fillMaxWidth().height(10.dp).testTag("header")) },
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - 16.dp - 16.dp, "width")
+                height.assertIsEqualTo(10.dp, "height")
+            }
+        }
+    }
+
+    @Test
+    fun header_doesNotEnforceFillingWidth_fillMaxHeight() {
+        rule.setGlimmerThemeContent {
+            Card(
+                modifier = Modifier.testTag("card"),
+                header = { Box(Modifier.fillMaxHeight().width(10.dp).testTag("header")) },
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(10.dp, "width")
+                height.assertIsEqualTo((cardBounds.width - 16.dp - 16.dp) / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun header_doesNotEnforceFillingWidthOrHeight_fixedSize() {
+        rule.setGlimmerThemeContent {
+            Card(header = { Box(Modifier.size(10.dp).testTag("header")) }) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(10.dp, "width")
+                height.assertIsEqualTo(10.dp, "height")
+            }
+        }
+    }
+
+    @Test
+    fun header_doesNotApplyAspectRatio_whenHeightIsLimited() {
+        val cardWidth = 150.dp
+        // Height is smaller than cardWidth / 1.6, so the aspect ratio cannot be reached.
+        // Modifier.aspectRatio would reduce the width to satisfy this, but we don't want to reduce
+        // width in this case, so this should no-op.
+        val cardHeight = 50.dp
+
+        rule.setGlimmerThemeContent {
+            Card(
+                modifier = Modifier.size(cardWidth, cardHeight).testTag("card"),
+                header = { Box(Modifier.fillMaxSize().testTag("header")) },
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        rule.onNodeWithTag("header").apply {
+            with(getBoundsInRoot()) {
+                // Height and width should be unmodified
+                height.assertIsEqualTo(50.dp - 16.dp - 16.dp, "height")
+                width.assertIsEqualTo(150.dp - 16.dp - 16.dp, "width")
+            }
         }
     }
 
@@ -547,6 +695,72 @@ class CardTest {
     }
 
     @Test
+    fun positioning_header() {
+        rule.setGlimmerThemeContent {
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    header = {
+                        Image(
+                            placeholderImagePainter(Size(1000f, 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("header"),
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val headerBounds =
+            rule.onNodeWithTag("header", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (headerBounds.top - cardBounds.top).assertIsEqualTo(
+            16.dp,
+            "Padding between top of card and top of header image.",
+        )
+
+        (headerBounds.left - cardBounds.left).assertIsEqualTo(
+            16.dp,
+            "Padding between the start of the card and the start of the header image.",
+        )
+
+        (cardBounds.right - headerBounds.right).assertIsEqualTo(
+            16.dp,
+            "Padding between the end of the header image and the end of the card.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            24.dp,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        (contentBounds.top - headerBounds.bottom).assertIsEqualTo(
+            8.dp,
+            "Padding between the bottom of the header image and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            24.dp,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+        headerBounds.height.assertIsEqualTo(headerBounds.width / 1.6f, "height of header image")
+    }
+
+    @Test
     fun positioning_titleAndSubtitle_withIcons() {
         rule.setGlimmerThemeContent {
             Column {
@@ -652,6 +866,136 @@ class CardTest {
         // Title and subtitle will likely make the item taller than the minimum height, so just
         // assert we are at least the minimum height
         assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_titleAndSubtitle_withImageAndIcons() {
+        rule.setGlimmerThemeContent {
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                    header = {
+                        Image(
+                            placeholderImagePainter(Size(1000f, 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("header"),
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val headerBounds =
+            rule.onNodeWithTag("header", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (headerBounds.top - cardBounds.top).assertIsEqualTo(
+            16.dp,
+            "Padding between top of card and top of header image.",
+        )
+
+        (headerBounds.left - cardBounds.left).assertIsEqualTo(
+            16.dp,
+            "Padding between the start of the card and the start of the header image.",
+        )
+
+        (cardBounds.right - headerBounds.right).assertIsEqualTo(
+            16.dp,
+            "Padding between the end of the header image and the end of the card.",
+        )
+
+        (leadingIconBounds.top - headerBounds.bottom).assertIsEqualTo(
+            8.dp,
+            "Padding between the bottom of header image and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            24.dp,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        (titleBounds.top - headerBounds.bottom).assertIsEqualTo(
+            8.dp,
+            "Padding between the bottom of header image and top of title.",
+        )
+
+        (titleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            12.dp,
+            "Padding between end of leading icon and start of title.",
+        )
+
+        (subtitleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            12.dp,
+            "Padding between end of leading icon and start of subtitle.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            12.dp,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            24.dp,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        (trailingIconBounds.top - headerBounds.bottom).assertIsEqualTo(
+            8.dp,
+            "Padding between the bottom of header image and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            24.dp,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+        headerBounds.height.assertIsEqualTo(headerBounds.width / 1.6f, "height of header image")
     }
 
     @Test

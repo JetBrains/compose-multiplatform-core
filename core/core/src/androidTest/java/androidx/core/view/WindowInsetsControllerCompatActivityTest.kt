@@ -50,7 +50,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @Suppress("DEPRECATION")
-@SdkSuppress(minSdkVersion = 23) // ViewCompat.getRootWindowInsets()
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 public class WindowInsetsControllerCompatActivityTest {
@@ -80,7 +79,6 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("b/294556594")
     @Test
     public fun toggleIME() {
@@ -98,7 +96,6 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("b/294556594")
     @Test
     fun show_IME_fromEditText() {
@@ -118,7 +115,6 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("b/294556594")
     @Test
     fun show_IME_fromEditText_in_dialog() {
@@ -144,8 +140,7 @@ public class WindowInsetsControllerCompatActivityTest {
         editText.assertInsetsVisibility(type, true)
     }
 
-    /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23, excludedSdks = [28]) // Excluded due to flakes (b/324904606)
+    @SdkSuppress(excludedSdks = [28]) // Excluded due to flakes (b/324904606)
     @Test
     public fun hide_IME() {
         // Test do not currently work on Cuttlefish
@@ -181,7 +176,6 @@ public class WindowInsetsControllerCompatActivityTest {
         container.assertInsetsVisibility(type, true)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public fun statusBar_light() {
         scenario.onActivity { windowInsetsController.setAppearanceLightStatusBars(true) }
@@ -196,7 +190,6 @@ public class WindowInsetsControllerCompatActivityTest {
         assertThat(windowInsetsController.isAppearanceLightStatusBars(), `is`(true))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public fun statusBar_dark() {
         val decorView = scenario.withActivity { window.decorView }
@@ -251,7 +244,6 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("The listener isn't called when changing the visibility")
     @Test
     public fun ime_toggle_check_with_listener() {
@@ -312,8 +304,7 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     @Test
-    // minSdkVersion = 21 due to b/189492236
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 29) // Flag deprecated in 30+
+    @SdkSuppress(maxSdkVersion = 29) // Flag deprecated in 30+
     public fun systemBarsBehavior_default() {
         scenario.onActivity {
             windowInsetsController.systemBarsBehavior =
@@ -326,8 +317,7 @@ public class WindowInsetsControllerCompatActivityTest {
     }
 
     @Test
-    // minSdkVersion = 21 due to b/189492236
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 29) // Flag deprecated in 30+
+    @SdkSuppress(maxSdkVersion = 29) // Flag deprecated in 30+
     public fun systemBarsBehavior_transient() {
         scenario.onActivity {
             windowInsetsController.systemBarsBehavior =

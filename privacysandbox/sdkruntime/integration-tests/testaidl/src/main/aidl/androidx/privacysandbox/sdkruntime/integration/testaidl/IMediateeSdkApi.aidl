@@ -18,4 +18,7 @@ package androidx.privacysandbox.sdkruntime.integration.testaidl;
 
 interface IMediateeSdkApi {
     String doSomething(String param);
+
+    void writeToFile(String filename, String data);
+    @nullable String readFromFile(String filename);
 }

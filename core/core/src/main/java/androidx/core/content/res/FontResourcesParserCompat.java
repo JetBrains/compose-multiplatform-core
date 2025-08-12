@@ -21,7 +21,6 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.content.res.Resources;
 import android.content.res.TypedArray;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Base64;
 import android.util.TypedValue;
@@ -29,7 +28,6 @@ import android.util.Xml;
 
 import androidx.annotation.ArrayRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
 import androidx.core.provider.FontRequest;
@@ -295,13 +293,7 @@ public class FontResourcesParserCompat {
 
     @SuppressWarnings("SameParameterValue")
     private static int getType(TypedArray typedArray, int index) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return Api21Impl.getType(typedArray, index);
-        } else {
-            TypedValue tv = new TypedValue();
-            typedArray.getValue(index, tv);
-            return tv.type;
-        }
+        return typedArray.getType(index);
     }
 
     /**
@@ -420,16 +412,5 @@ public class FontResourcesParserCompat {
     }
 
     private FontResourcesParserCompat() {
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static int getType(TypedArray typedArray, int index) {
-            return typedArray.getType(index);
-        }
     }
 }

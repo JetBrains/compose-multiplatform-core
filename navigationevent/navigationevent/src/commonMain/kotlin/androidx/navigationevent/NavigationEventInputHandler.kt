@@ -17,25 +17,77 @@
 package androidx.navigationevent
 
 import androidx.annotation.MainThread
+import androidx.navigationevent.NavigationEventDirection.Companion.Backward
 
-public open class NavigationEventInputHandler(protected val dispatcher: NavigationEventDispatcher) {
+/**
+ * An input handler that can send events to a [NavigationEventDispatcher].
+ *
+ * @param dispatcher The [NavigationEventDispatcher] to send events to.
+ */
+public abstract class NavigationEventInputHandler(
+    private val dispatcher: NavigationEventDispatcher
+) {
+    /**
+     * Attaches this input handler to the [NavigationEventDispatcher].
+     *
+     * @param dispatcher The [NavigationEventDispatcher] to attach to.
+     */
     @MainThread
-    public fun sendOnStarted(event: NavigationEvent) {
-        dispatcher.dispatchOnStarted(event)
+    internal fun onAttach(dispatcher: NavigationEventDispatcher) {
+        // TODO(kuanyingchou): fill in implementation. Also consider making this open and public.
     }
 
+    /** Detaches this input handler from the attached [NavigationEventDispatcher]. */
     @MainThread
-    public fun sendOnProgressed(event: NavigationEvent) {
-        dispatcher.dispatchOnProgressed(event)
+    internal fun onDetach() {
+        // TODO(kuanyingchou): fill in implementation. Also consider making this open and public.
     }
 
+    /**
+     * Adds a callback that will be notified when the connected dispatcher's `hasEnabledCallbacks`
+     * changes.
+     *
+     * @param callback The callback to invoke.
+     */
+    @Suppress("PairedRegistration")
     @MainThread
-    public fun sendOnCompleted() {
-        dispatcher.dispatchOnCompleted()
+    protected fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
+        dispatcher.addOnHasEnabledCallbacksChangedCallback(inputHandler = this, callback)
     }
 
+    /**
+     * Call `dispatchOnStarted` on the connected dispatcher.
+     *
+     * @param event The event to dispatch.
+     */
     @MainThread
-    public fun sendOnCancelled() {
-        dispatcher.dispatchOnCancelled()
+    protected fun dispatchOnStarted(event: NavigationEvent) {
+        // TODO(kuanyingchou): Accept a direction parameter instead of hardcoding `Backward`.
+        dispatcher.dispatchOnStarted(inputHandler = this, direction = Backward, event)
+    }
+
+    /**
+     * Call `dispatchOnProgressed` on the connected dispatcher.
+     *
+     * @param event The event to dispatch.
+     */
+    @MainThread
+    protected fun dispatchOnProgressed(event: NavigationEvent) {
+        // TODO(kuanyingchou): Accept a direction parameter instead of hardcoding `Backward`.
+        dispatcher.dispatchOnProgressed(inputHandler = this, direction = Backward, event)
+    }
+
+    /** Call `dispatchOnCancelled` on the connected dispatcher. */
+    @MainThread
+    protected fun dispatchOnCancelled() {
+        // TODO(kuanyingchou): Accept a direction parameter instead of hardcoding `Backward`.
+        dispatcher.dispatchOnCancelled(inputHandler = this, direction = Backward)
+    }
+
+    /** Call `dispatchOnCompleted` on the connected dispatcher. */
+    @MainThread
+    protected fun dispatchOnCompleted() {
+        // TODO(kuanyingchou): Accept a direction parameter instead of hardcoding `Backward`.
+        dispatcher.dispatchOnCompleted(inputHandler = this, direction = Backward)
     }
 }

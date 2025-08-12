@@ -1,24 +1,4 @@
 // Baseline format: 1.0
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#createID(int):
-    Acronyms should not be capitalized in method names: was `createID`, should this be `createId`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#getFONT_TYPE_DEFAULT():
-    Acronyms should not be capitalized in method names: was `getFONT_TYPE_DEFAULT`, should this be `getFont_Type_Default`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#getFONT_TYPE_MONOSPACE():
-    Acronyms should not be capitalized in method names: was `getFONT_TYPE_MONOSPACE`, should this be `getFont_Type_Monospace`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#getFONT_TYPE_SANS_SERIF():
-    Acronyms should not be capitalized in method names: was `getFONT_TYPE_SANS_SERIF`, should this be `getFont_Type_Sans_Serif`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#getFONT_TYPE_SERIF():
-    Acronyms should not be capitalized in method names: was `getFONT_TYPE_SERIF`, should this be `getFont_Type_Serif`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeContext#getTIME_IN_SEC():
-    Acronyms should not be capitalized in method names: was `getTIME_IN_SEC`, should this be `getTime_In_Sec`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeShader#getShaderID():
-    Acronyms should not be capitalized in method names: was `getShaderID`, should this be `getShaderId`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeShader#getShaderTextID():
-    Acronyms should not be capitalized in method names: was `getShaderTextID`, should this be `getShaderTextId`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeShader#setShaderID(int):
-    Acronyms should not be capitalized in method names: was `setShaderID`, should this be `setShaderId`?
-AcronymName: androidx.compose.remote.creation.RemoteComposeWriter#createID(int):
-    Acronyms should not be capitalized in method names: was `createID`, should this be `createId`?
 AcronymName: androidx.compose.remote.creation.platform.RCLogger:
     Acronyms should not be capitalized in class names: was `RCLogger`, should this be `RcLogger`?
 
@@ -31,286 +11,38 @@ AllUpper: androidx.compose.remote.creation.Painter#FONT_TYPE_SANS_SERIF:
     Constant FONT_TYPE_SANS_SERIF must be marked static final
 AllUpper: androidx.compose.remote.creation.Painter#FONT_TYPE_SERIF:
     Constant FONT_TYPE_SERIF must be marked static final
-AllUpper: androidx.compose.remote.creation.profile.Profile#ANDROIDX:
-    Constant ANDROIDX must be marked static final
-AllUpper: androidx.compose.remote.creation.profile.Profile#WIDGETS_V6:
-    Constant WIDGETS_V6 must be marked static final
 
 
 ArrayReturn: androidx.compose.remote.creation.FontUtils#createGlyphs(androidx.compose.remote.creation.RemoteComposeWriter, String, android.graphics.Paint):
     Method should return Collection<Glyph> (or subclass) instead of raw array; was `androidx.compose.remote.core.operations.BitmapFontData.Glyph[]`
 ArrayReturn: androidx.compose.remote.creation.FontUtils#extractKerningTable(androidx.compose.remote.core.operations.BitmapFontData.Glyph[], android.graphics.Paint) parameter #0:
     Method parameter should be Collection<Glyph> (or subclass) instead of raw array; was `androidx.compose.remote.core.operations.BitmapFontData.Glyph[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContext#addBitmapFont(androidx.compose.remote.core.operations.BitmapFontData.Glyph[]) parameter #0:
-    Method parameter should be Collection<Glyph> (or subclass) instead of raw array; was `androidx.compose.remote.core.operations.BitmapFontData.Glyph[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContext#createParticles(float[], float[][], int) parameter #1:
-    Method parameter should be Collection<> (or subclass) instead of raw array; was `float[][]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContext#particlesLoop(float, float[], float[][], Runnable) parameter #2:
-    Method parameter should be Collection<> (or subclass) instead of raw array; was `float[][]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContextKt#component6(RFloat[]) parameter #0:
-    Method parameter should be Collection<Object> (or subclass) instead of raw array; was `RFloat[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContextKt#component7(RFloat[]) parameter #0:
-    Method parameter should be Collection<Object> (or subclass) instead of raw array; was `RFloat[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContextKt#createParticles(androidx.compose.remote.creation.RemoteComposeWriter, androidx.compose.remote.creation.RFloat[], Number[], int) parameter #1:
-    Method parameter should be Collection<RFloat> (or subclass) instead of raw array; was `androidx.compose.remote.creation.RFloat[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContextKt#createParticles(androidx.compose.remote.creation.RemoteComposeWriter, androidx.compose.remote.creation.RFloat[], Number[], int) parameter #2:
-    Method parameter should be Collection<Number> (or subclass) instead of raw array; was `java.lang.Number[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeContextKt#particlesLoops(androidx.compose.remote.creation.RemoteComposeWriter, float, androidx.compose.remote.creation.RFloat, Number[], Runnable) parameter #3:
-    Method parameter should be Collection<Number> (or subclass) instead of raw array; was `java.lang.Number[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeWriter#addBitmapFont(androidx.compose.remote.core.operations.BitmapFontData.Glyph[]) parameter #0:
-    Method parameter should be Collection<Glyph> (or subclass) instead of raw array; was `androidx.compose.remote.core.operations.BitmapFontData.Glyph[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeWriter#addBitmapFont(androidx.compose.remote.core.operations.BitmapFontData.Glyph[], java.util.Map<java.lang.String,java.lang.Short>) parameter #0:
-    Method parameter should be Collection<Glyph> (or subclass) instead of raw array; was `androidx.compose.remote.core.operations.BitmapFontData.Glyph[]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeWriter#createParticles(float[], float[][], int) parameter #1:
-    Method parameter should be Collection<> (or subclass) instead of raw array; was `float[][]`
-ArrayReturn: androidx.compose.remote.creation.RemoteComposeWriter#particlesLoop(float, float[], float[][], Runnable) parameter #2:
-    Method parameter should be Collection<> (or subclass) instead of raw array; was `float[][]`
 
 
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#clamp(Number, Number, Number) parameter #0:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #1:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#clamp(Number, Number, Number) parameter #1:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #2:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#clamp(Number, Number, Number) parameter #2:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #3:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #1:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #4:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #2:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #5:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #3:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #6:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #4:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#lineTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #1:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #5:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#lineTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #2:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#cubicTo(androidx.compose.remote.creation.RemotePath, Number, Number, Number, Number, Number, Number) parameter #6:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#moveTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #1:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#ifElse(androidx.compose.remote.creation.RemoteComposeWriter, Number, Number, Number) parameter #1:
+AutoBoxing: androidx.compose.remote.creation.RFloatPathsKt#moveTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #2:
     Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#ifElse(androidx.compose.remote.creation.RemoteComposeWriter, Number, Number, Number) parameter #2:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#ifElse(androidx.compose.remote.creation.RemoteComposeWriter, Number, Number, Number) parameter #3:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#lineTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #1:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#lineTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #2:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#mad(Number, Number, Number) parameter #0:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#mad(Number, Number, Number) parameter #1:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#mad(Number, Number, Number) parameter #2:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#moveTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #1:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#moveTo(androidx.compose.remote.creation.RemotePath, Number, Number) parameter #2:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#rf(androidx.compose.remote.creation.RemoteComposeWriter, Number) parameter #1:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#toArray(Number) parameter #0:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RFloatKt#toFloat(Number) parameter #0:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeContext#rf(Number) parameter #0:
-    Must avoid boxed primitives (`java.lang.Number`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#addComponentHeightValue():
-    Must avoid boxed primitives (`java.lang.Float`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#addComponentWidthValue():
-    Must avoid boxed primitives (`java.lang.Float`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#addFloatConstant(float):
-    Must avoid boxed primitives (`java.lang.Float`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#drawTextRun(String, int, int, int, int, float, float, Boolean) parameter #7:
-    Must avoid boxed primitives (`java.lang.Boolean`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#drawTextRun(int, int, int, int, int, float, float, Boolean) parameter #7:
-    Must avoid boxed primitives (`java.lang.Boolean`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter#floatExpression(float...):
-    Must avoid boxed primitives (`java.lang.Float`)
-AutoBoxing: androidx.compose.remote.creation.RemoteComposeWriter.HTag#HTag(Short, Object) parameter #0:
-    Must avoid boxed primitives (`java.lang.Short`)
 AutoBoxing: androidx.compose.remote.creation.profile.WidgetsProfileWriterV6#floatExpression(float...):
     Must avoid boxed primitives (`java.lang.Float`)
 
 
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ABS:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ABS
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ACOS:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ACOS
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ADD:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ADD
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ASIN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ASIN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ATAN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ATAN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ATAN2:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ATAN2
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_AVG:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_AVG
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_DEREF:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_DEREF
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_LEN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_LEN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_MAX:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_MAX
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_MIN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_MIN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_SPLINE:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_SPLINE
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#A_SUM:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#A_SUM
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#CBRT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#CBRT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#CEIL:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#CEIL
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#CLAMP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#CLAMP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#COPY_SIGN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#COPY_SIGN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#COS:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#COS
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#DEG:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#DEG
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#DIV:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#DIV
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#DUP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#DUP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#EXP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#EXP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#FLOOR:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#FLOOR
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#FRACT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#FRACT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#HYPOT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#HYPOT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#IFELSE:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#IFELSE
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#INV:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#INV
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#LERP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#LERP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#LN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#LN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#LOG:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#LOG
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#LOG2:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#LOG2
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#MAD:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#MAD
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#MAX:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#MAX
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#MIN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#MIN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#MOD:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#MOD
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#MUL:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#MUL
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#NOISE_FROM:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#NOISE_FROM
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#PINGPONG:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#PINGPONG
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#POW:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#POW
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#RAD:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#RAD
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#RAND:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#RAND
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#RAND_IN_RANGE:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#RAND_IN_RANGE
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#RAND_SEED:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#RAND_SEED
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#ROUND:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#ROUND
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SIGN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SIGN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SIN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SIN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SMOOTH_STEP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SMOOTH_STEP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SQRT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SQRT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SQUARE:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SQUARE
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SQUARE_SUM:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SQUARE_SUM
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#STEP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#STEP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SUB:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SUB
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#SWAP:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#SWAP
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#TAN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#TAN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#VAR1:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#VAR1
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#VAR2:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#VAR2
-CompileTimeConstant: androidx.compose.remote.creation.Rc.FloatExpression#VAR3:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.FloatExpression#VAR3
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_X:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_X
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_Y:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_Y
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_Z:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#ACCELERATION_Z
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_X:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_X
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_Y:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_Y
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_Z:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#GYRO_ROT_Z
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#LIGHT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#LIGHT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_X:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_X
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_Y:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_Y
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_Z:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Sensor#MAGNETIC_Z
-CompileTimeConstant: androidx.compose.remote.creation.Rc.System#API_LEVEL:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.System#API_LEVEL
-CompileTimeConstant: androidx.compose.remote.creation.Rc.System#DENSITY:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.System#DENSITY
-CompileTimeConstant: androidx.compose.remote.creation.Rc.System#FONT_SIZE:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.System#FONT_SIZE
-CompileTimeConstant: androidx.compose.remote.creation.Rc.System#WINDOW_HEIGHT:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.System#WINDOW_HEIGHT
-CompileTimeConstant: androidx.compose.remote.creation.Rc.System#WINDOW_WIDTH:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.System#WINDOW_WIDTH
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#ANIMATION_DELTA_TIME:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#ANIMATION_DELTA_TIME
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#ANIMATION_TIME:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#ANIMATION_TIME
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#CALENDAR_MONTH:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#CALENDAR_MONTH
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#CONTINUOUS_SEC:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#CONTINUOUS_SEC
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#DAY_OF_MONTH:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#DAY_OF_MONTH
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#DAY_OF_YEAR:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#DAY_OF_YEAR
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#OFFSET_TO_UTC:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#OFFSET_TO_UTC
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#TIME_IN_HR:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#TIME_IN_HR
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#TIME_IN_MIN:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#TIME_IN_MIN
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#TIME_IN_SEC:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#TIME_IN_SEC
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#WEEK_DAY:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#WEEK_DAY
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Time#YEAR:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Time#YEAR
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Touch#POSITION_X:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Touch#POSITION_X
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Touch#POSITION_Y:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Touch#POSITION_Y
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Touch#TOUCH_EVENT_TIME:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Touch#TOUCH_EVENT_TIME
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Touch#VELOCITY_X:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Touch#VELOCITY_X
-CompileTimeConstant: androidx.compose.remote.creation.Rc.Touch#VELOCITY_Y:
-    All constants must be defined at compile time: androidx.compose.remote.creation.Rc.Touch#VELOCITY_Y
-CompileTimeConstant: androidx.compose.remote.creation.RemoteComposeWriter#TIME_IN_CONTINUOUS_SEC:
-    All constants must be defined at compile time: androidx.compose.remote.creation.RemoteComposeWriter#TIME_IN_CONTINUOUS_SEC
 CompileTimeConstant: androidx.compose.remote.creation.RemotePath#CLOSE_NAN:
     All constants must be defined at compile time: androidx.compose.remote.creation.RemotePath#CLOSE_NAN
 CompileTimeConstant: androidx.compose.remote.creation.RemotePath#CONIC_NAN:
@@ -331,38 +63,6 @@ ConcreteCollection: androidx.compose.remote.creation.FontUtils#extractKerningTab
     Return type is concrete collection (`java.util.HashMap`); must be higher-level interface
 
 
-DataClassDefinition: androidx.compose.remote.creation.Matrix.Vector2:
-    Exposing data classes as public API is discouraged because they are difficult to update while maintaining binary compatibility.
-DataClassDefinition: androidx.compose.remote.creation.Matrix.Vector3:
-    Exposing data classes as public API is discouraged because they are difficult to update while maintaining binary compatibility.
-DataClassDefinition: androidx.compose.remote.creation.Matrix.Vector4:
-    Exposing data classes as public API is discouraged because they are difficult to update while maintaining binary compatibility.
-
-
-InternalField: androidx.compose.remote.creation.RemoteComposeContext#mRemoteWriter:
-    Internal field mRemoteWriter must not be exposed
-InternalField: androidx.compose.remote.creation.RemoteComposeWriter#mBuffer:
-    Internal field mBuffer must not be exposed
-InternalField: androidx.compose.remote.creation.RemoteComposeWriter#mMaxValidFloatExpressionOperation:
-    Internal field mMaxValidFloatExpressionOperation must not be exposed
-InternalField: androidx.compose.remote.creation.RemoteComposeWriter#mPainter:
-    Internal field mPainter must not be exposed
-InternalField: androidx.compose.remote.creation.RemoteComposeWriter#mPlatform:
-    Internal field mPlatform must not be exposed
-InternalField: androidx.compose.remote.creation.RemoteComposeWriter#mState:
-    Internal field mState must not be exposed
-
-
-MissingJvmstatic: androidx.compose.remote.creation.RFloat.Companion#invoke(float, androidx.compose.remote.creation.RemoteComposeWriter):
-    A Kotlin method with default parameter values should be annotated with @JvmOverloads for better Java interoperability; see https://android.github.io/kotlin-guides/interop.html#function-overloads-for-defaults
-MissingJvmstatic: androidx.compose.remote.creation.RemoteComposeContext#box(androidx.compose.remote.creation.modifiers.RecordingModifier, int, int, kotlin.jvm.functions.Function1<? super androidx.compose.remote.creation.RemoteComposeContext,kotlin.Unit>):
-    A Kotlin method with default parameter values should be annotated with @JvmOverloads for better Java interoperability; see https://android.github.io/kotlin-guides/interop.html#function-overloads-for-defaults
-MissingJvmstatic: androidx.compose.remote.creation.RemoteComposeContext#column(androidx.compose.remote.creation.modifiers.RecordingModifier, int, int, kotlin.jvm.functions.Function1<? super androidx.compose.remote.creation.RemoteComposeContext,kotlin.Unit>):
-    A Kotlin method with default parameter values should be annotated with @JvmOverloads for better Java interoperability; see https://android.github.io/kotlin-guides/interop.html#function-overloads-for-defaults
-MissingJvmstatic: androidx.compose.remote.creation.RemoteComposeContext#row(androidx.compose.remote.creation.modifiers.RecordingModifier, int, int, kotlin.jvm.functions.Function1<? super androidx.compose.remote.creation.RemoteComposeContext,kotlin.Unit>):
-    A Kotlin method with default parameter values should be annotated with @JvmOverloads for better Java interoperability; see https://android.github.io/kotlin-guides/interop.html#function-overloads-for-defaults
-
-
 MutableBareField: androidx.compose.remote.creation.Painter#FONT_TYPE_DEFAULT:
     Bare field FONT_TYPE_DEFAULT must be marked final, or moved behind accessors if mutable
 MutableBareField: androidx.compose.remote.creation.Painter#FONT_TYPE_MONOSPACE:
@@ -371,22 +71,6 @@ MutableBareField: androidx.compose.remote.creation.Painter#FONT_TYPE_SANS_SERIF:
     Bare field FONT_TYPE_SANS_SERIF must be marked final, or moved behind accessors if mutable
 MutableBareField: androidx.compose.remote.creation.Painter#FONT_TYPE_SERIF:
     Bare field FONT_TYPE_SERIF must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeContext#mRemoteWriter:
-    Bare field mRemoteWriter must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeWriter#mBuffer:
-    Bare field mBuffer must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeWriter#mMaxValidFloatExpressionOperation:
-    Bare field mMaxValidFloatExpressionOperation must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeWriter#mPainter:
-    Bare field mPainter must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeWriter#mPlatform:
-    Bare field mPlatform must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.RemoteComposeWriter#mState:
-    Bare field mState must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.profile.Profile#ANDROIDX:
-    Bare field ANDROIDX must be marked final, or moved behind accessors if mutable
-MutableBareField: androidx.compose.remote.creation.profile.Profile#WIDGETS_V6:
-    Bare field WIDGETS_V6 must be marked final, or moved behind accessors if mutable
 
 
 NoByteOrShort: androidx.compose.remote.creation.Painter#setTextureShader(int, short, short, short, short) parameter #1:
@@ -397,217 +81,7 @@ NoByteOrShort: androidx.compose.remote.creation.Painter#setTextureShader(int, sh
     Should avoid odd sized primitives; use `int` instead of `short` in parameter filterMode in androidx.compose.remote.creation.Painter.setTextureShader(int texture, short tileModeX, short tileModeY, short filterMode, short maxAnisotropy)
 NoByteOrShort: androidx.compose.remote.creation.Painter#setTextureShader(int, short, short, short, short) parameter #4:
     Should avoid odd sized primitives; use `int` instead of `short` in parameter maxAnisotropy in androidx.compose.remote.creation.Painter.setTextureShader(int texture, short tileModeX, short tileModeY, short filterMode, short maxAnisotropy)
-NoByteOrShort: androidx.compose.remote.creation.RFloat#toByte():
-    Should avoid odd sized primitives; use `int` instead of `byte` in method androidx.compose.remote.creation.RFloat.toByte()
-NoByteOrShort: androidx.compose.remote.creation.RFloat#toShort():
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RFloat.toShort()
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#ALPHA:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.ALPHA
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#BLUE:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.BLUE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#BRIGHTNESS:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.BRIGHTNESS
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#GREEN:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.GREEN
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#HUE:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.HUE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#RED:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.RED
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorAttribute#SATURATION:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.ColorAttribute.SATURATION
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#ARGB_MODE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.ARGB_MODE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#COLOR_COLOR_INTERPOLATE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.COLOR_COLOR_INTERPOLATE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#COLOR_ID_INTERPOLATE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.COLOR_ID_INTERPOLATE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#HSV_MODE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.HSV_MODE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#IDARGB_MODE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.IDARGB_MODE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#ID_COLOR_INTERPOLATE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.ID_COLOR_INTERPOLATE
-NoByteOrShort: androidx.compose.remote.creation.Rc.ColorExpression#ID_ID_INTERPOLATE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.ColorExpression.ID_ID_INTERPOLATE
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#EQ:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.EQ
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#GT:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.GT
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#GTE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.GTE
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#LT:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.LT
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#LTE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.LTE
-NoByteOrShort: androidx.compose.remote.creation.Rc.Condition#NEQ:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.Rc.Condition.NEQ
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_CONTENT_DESCRIPTION:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_CONTENT_DESCRIPTION
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_DATA_UPDATE:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_DATA_UPDATE
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_DENSITY_AT_GENERATION:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_DENSITY_AT_GENERATION
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_DESIRED_FPS:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_DESIRED_FPS
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_HEIGHT:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_HEIGHT
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_PROFILES:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_PROFILES
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_SOURCE:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_SOURCE
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#DOC_WIDTH:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.DOC_WIDTH
-NoByteOrShort: androidx.compose.remote.creation.Rc.DocHeader#HOST_EXCEPTION_HANDLER:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.DocHeader.HOST_EXCEPTION_HANDLER
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#FILTER_DEFAULT:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.FILTER_DEFAULT
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#FILTER_LINEAR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.FILTER_LINEAR
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#FILTER_NEAREST:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.FILTER_NEAREST
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#TILE_CLAMP:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.TILE_CLAMP
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#TILE_DECAL:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.TILE_DECAL
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#TILE_MIRROR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.TILE_MIRROR
-NoByteOrShort: androidx.compose.remote.creation.Rc.Texture#TILE_REPEAT:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.Texture.TILE_REPEAT
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_DAY_OF_MONTH:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_DAY_OF_MONTH
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_DAY_OF_WEEK:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_DAY_OF_WEEK
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_ARG_HR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_ARG_HR
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_ARG_MIN:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_ARG_MIN
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_ARG_SEC:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_ARG_SEC
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_LOAD_SEC:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_LOAD_SEC
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_NOW_HR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_NOW_HR
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_NOW_MIN:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_NOW_MIN
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_FROM_NOW_SEC:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_FROM_NOW_SEC
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_IN_HR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_IN_HR
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_IN_MIN:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_IN_MIN
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_IN_SEC:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_IN_SEC
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_MONTH_VALUE:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_MONTH_VALUE
-NoByteOrShort: androidx.compose.remote.creation.Rc.TimeAttributes#TIME_YEAR:
-    Should avoid odd sized primitives; use `int` instead of `short` in field androidx.compose.remote.creation.Rc.TimeAttributes.TIME_YEAR
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#MatrixMultiply(float, short, float[], float[]) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeContext.MatrixMultiply(float matrixId, short type, float[] from, float[] out)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(float, float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(float,float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(int, float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(int,float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(int, int, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(int,int,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(int, short, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(int,short,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(int, short, float) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId2 in androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(int color1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(short, int, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(short,int,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(short, int, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId1 in androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(short colorId1, int color2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(short, short, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(short,short,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(short, short, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId1 in androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(short colorId1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#addColorExpression(short, short, float) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId2 in androidx.compose.remote.creation.RemoteComposeContext.addColorExpression(short colorId1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#bitmapAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter attribute in androidx.compose.remote.creation.RemoteComposeContext.bitmapAttribute(int bitmapId, short attribute)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#conditionalOperations(byte, float, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter type in androidx.compose.remote.creation.RemoteComposeContext.conditionalOperations(byte type, float a, float b)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#conditionalOperations(byte, float, float, androidx.compose.remote.creation.RemoteComposeWriterInterface) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter type in androidx.compose.remote.creation.RemoteComposeContext.conditionalOperations(byte type, float a, float b, androidx.compose.remote.creation.RemoteComposeWriterInterface content)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#getColorAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeContext.getColorAttribute(int baseColor, short type)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#pathCombine(int, int, byte) parameter #2:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter op in androidx.compose.remote.creation.RemoteComposeContext.pathCombine(int path1, int path2, byte op)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#textAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter attribute in androidx.compose.remote.creation.RemoteComposeContext.textAttribute(int textId, short attribute)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeContext#timeAttribute(int, short, int...) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeContext.timeAttribute(int longID, short type, int... args)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#COMBINE_DIFFERENCE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.COMBINE_DIFFERENCE
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#COMBINE_INTERSECT:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.COMBINE_INTERSECT
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#COMBINE_REVERSE_DIFFERENCE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.COMBINE_REVERSE_DIFFERENCE
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#COMBINE_UNION:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.COMBINE_UNION
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#COMBINE_XOR:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.COMBINE_XOR
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_ABSOLUTE_POS:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_ABSOLUTE_POS
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_ENDS:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_ENDS
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_GENTLY:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_GENTLY
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_INSTANTLY:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_INSTANTLY
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_NOTCHES_ABSOLUTE:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_NOTCHES_ABSOLUTE
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_NOTCHES_EVEN:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_NOTCHES_EVEN
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#STOP_NOTCHES_PERCENTS:
-    Should avoid odd sized primitives; use `int` instead of `byte` in field androidx.compose.remote.creation.RemoteComposeWriter.STOP_NOTCHES_PERCENTS
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(float, float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(float,float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(int, float, float, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(int,float,float,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(int, int, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(int,int,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(int, short, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(int,short,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(int, short, float) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId2 in androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(int color1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(short, int, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(short,int,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(short, int, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId1 in androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(short colorId1, int color2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(short, short, float):
-    Should avoid odd sized primitives; use `int` instead of `short` in method androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(short,short,float)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(short, short, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId1 in androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(short colorId1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addColorExpression(short, short, float) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter colorId2 in androidx.compose.remote.creation.RemoteComposeWriter.addColorExpression(short colorId1, short colorId2, float tween)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#addMatrixMultiply(float, short, float[], float[]) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeWriter.addMatrixMultiply(float matrixId, short type, float[] from, float[] out)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#bitmapAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter attribute in androidx.compose.remote.creation.RemoteComposeWriter.bitmapAttribute(int bitmapId, short attribute)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#conditionalOperations(byte, float, float) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter type in androidx.compose.remote.creation.RemoteComposeWriter.conditionalOperations(byte type, float a, float b)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#conditionalOperations(byte, float, float, androidx.compose.remote.creation.RemoteComposeWriterInterface) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter type in androidx.compose.remote.creation.RemoteComposeWriter.conditionalOperations(byte type, float a, float b, androidx.compose.remote.creation.RemoteComposeWriterInterface content)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#getColorAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeWriter.getColorAttribute(int baseColor, short type)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#hTag(short, Object) parameter #0:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter tag in androidx.compose.remote.creation.RemoteComposeWriter.hTag(short tag, Object value)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#pathCombine(int, int, byte) parameter #2:
-    Should avoid odd sized primitives; use `int` instead of `byte` in parameter op in androidx.compose.remote.creation.RemoteComposeWriter.pathCombine(int path1, int path2, byte op)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#textAttribute(int, short) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter attribute in androidx.compose.remote.creation.RemoteComposeWriter.textAttribute(int textId, short attribute)
-NoByteOrShort: androidx.compose.remote.creation.RemoteComposeWriter#timeAttribute(int, short, int...) parameter #1:
-    Should avoid odd sized primitives; use `int` instead of `short` in parameter type in androidx.compose.remote.creation.RemoteComposeWriter.timeAttribute(int longID, short type, int... args)
 
 
 NotCloseable: androidx.compose.remote.creation.RemotePath:
     Classes that release resources (close()) should implement AutoCloseable and CloseGuard: class androidx.compose.remote.creation.RemotePath
-
-
-NullableCollection: androidx.compose.remote.creation.profile.Profile#getSupportedOperations():
-    Return type of method androidx.compose.remote.creation.profile.Profile.getSupportedOperations() uses a nullable collection (`java.util.Set`); must be non-null

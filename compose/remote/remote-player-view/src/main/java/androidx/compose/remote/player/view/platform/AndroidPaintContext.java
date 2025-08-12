@@ -17,6 +17,10 @@ package androidx.compose.remote.player.view.platform;
 
 import static androidx.compose.remote.core.RemoteComposeState.BITMAP_TEXTURE_ID_OFFSET;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
@@ -77,6 +81,7 @@ import java.util.Objects;
  * An implementation of PaintContext for the Android Canvas. This is used to play the RemoteCompose
  * operations on Android.
  */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidPaintContext extends PaintContext {
     private static final String SYSTEM_FONTS_PATH = "/system/fonts/";
     Paint mPaint = new Paint();

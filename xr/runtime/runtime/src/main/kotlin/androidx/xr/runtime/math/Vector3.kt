@@ -64,18 +64,10 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
      * Returns a new vector with each component of this vector multiplied by each corresponding
      * component of the [other] vector.
      */
-    public operator fun times(other: Vector3): Vector3 =
-        Vector3(x * other.x, y * other.y, z * other.z)
+    public fun scale(other: Vector3): Vector3 = Vector3(x * other.x, y * other.y, z * other.z)
 
     /** Returns a new vector with this vector divided by a scalar amount. */
     public operator fun div(c: Float): Vector3 = Vector3(x / c, y / c, z / c)
-
-    /**
-     * Returns a new vector with each component of this vector divided by each corresponding
-     * component of the [other] vector.
-     */
-    public operator fun div(other: Vector3): Vector3 =
-        Vector3(x / other.x, y / other.y, z / other.z)
 
     /** Returns the dot product of this vector and the [other] vector. */
     public infix fun dot(other: Vector3): Float = x * other.x + y * other.y + z * other.z
@@ -83,6 +75,16 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
     /** Returns the cross product of this vector and the [other] vector. */
     public infix fun cross(other: Vector3): Vector3 =
         Vector3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x)
+
+    /** Returns the component-wise multiplicative inverse of this vector. */
+    public fun inverse(): Vector3 {
+        if (this.x == 0f || this.y == 0f || this.z == 0f) {
+            throw IllegalArgumentException(
+                "Cannot take the multiplicative inverse if any component of the Vector3 is zero."
+            )
+        }
+        return Vector3(1 / this.x, 1 / this.y, 1 / this.z)
+    }
 
     /** Returns the normalized version of this vector. */
     public fun toNormalized(): Vector3 {

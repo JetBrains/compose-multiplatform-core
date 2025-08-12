@@ -19,7 +19,9 @@ package androidx.compose.ui.input.pointer
 import android.content.Context
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.IndirectTouchNavigationGestureDetector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,7 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-// TODO: Investigate/add mockito + ComposeContentTestRule.
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 @RunWith(JUnit4::class)
 class IndirectTouchNavigationGestureDetectorTest {
     private lateinit var context: Context
@@ -63,6 +65,9 @@ class IndirectTouchNavigationGestureDetectorTest {
                     context,
                     { focusDirection: FocusDirection -> currentFocusDirection = focusDirection },
                 )
+            // All tests in file require the primary axis to be X:
+            indirectTouchNavigationGestureDetector.primaryDirectionalMotionAxis =
+                IndirectTouchEventPrimaryDirectionalMotionAxis.X
         }
     }
 

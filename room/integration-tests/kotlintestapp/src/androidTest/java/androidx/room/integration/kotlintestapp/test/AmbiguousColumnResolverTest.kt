@@ -37,11 +37,13 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
 import java.nio.ByteBuffer
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
 class AmbiguousColumnResolverTest {
 
+    private lateinit var db: TestDatabase
     private lateinit var dao: TestDao
 
     private val user1 = User(1, "Juan")
@@ -54,7 +56,7 @@ class AmbiguousColumnResolverTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
+        db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
         dao = db.getDao()
         dao.insertUser(user1)
         dao.insertUser(user2)
@@ -62,6 +64,11 @@ class AmbiguousColumnResolverTest {
         dao.insertComment(comment2)
         dao.insertComment(comment3)
         dao.insertAvatar(avatar1)
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test

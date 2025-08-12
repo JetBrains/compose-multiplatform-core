@@ -16,19 +16,16 @@
 
 package androidx.camera.integration.core
 
-import android.os.Build
 import androidx.camera.camera2.internal.GuaranteedConfigurationsUtil as Camera2GuaranteedConfigurationsUtil
 import androidx.camera.camera2.pipe.integration.adapter.GuaranteedConfigurationsUtil
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class GuaranteedConfigurationsUtilTest {
     @Test
     fun queryableFcqCombinations_sameInBothCameraPipeAndCamera2() {

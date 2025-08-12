@@ -17,7 +17,6 @@
 package androidx.camera.camera2.internal.compat.workaround
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.camera2.internal.compat.quirk.CameraNoResponseWhenEnablingFlashQuirk
 import androidx.camera.camera2.internal.compat.quirk.CameraQuirks
@@ -26,7 +25,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowBuild
@@ -36,7 +34,6 @@ private const val ANY_CAMERA_ID = "0"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class UseTorchAsFlashTest {
 
     @Test

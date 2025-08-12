@@ -65,7 +65,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalFocusManager
@@ -1264,7 +1264,7 @@ class CombinedClickableTest {
                 pressPosition,
                 16L,
                 Offset(50f, 0f),
-                IndirectTouchEventPrimaryAxis.X,
+                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
 
         // The press should fire, and then the drag should instantly cancel it
@@ -1664,7 +1664,7 @@ class CombinedClickableTest {
                 pressPosition,
                 16L,
                 Offset(50f, 0f),
-                IndirectTouchEventPrimaryAxis.X,
+                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -1781,7 +1781,7 @@ class CombinedClickableTest {
                 pressPosition,
                 16L,
                 Offset(50f, 0f),
-                IndirectTouchEventPrimaryAxis.X,
+                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
 
         // The drag should cancel the press

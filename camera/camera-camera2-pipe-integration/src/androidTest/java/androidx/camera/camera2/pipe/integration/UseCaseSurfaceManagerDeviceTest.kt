@@ -70,7 +70,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class UseCaseSurfaceManagerDeviceTest {
 
     @get:Rule
@@ -156,7 +155,7 @@ class UseCaseSurfaceManagerDeviceTest {
      * set the maximum SDK version to S_V2.
      */
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M, maxSdkVersion = Build.VERSION_CODES.S_V2)
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.S_V2)
     fun disconnectOpenedCameraGraph_deferrableSurfaceUsageCountTest() = runBlocking {
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
 

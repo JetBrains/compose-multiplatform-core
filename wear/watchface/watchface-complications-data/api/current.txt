@@ -5,7 +5,7 @@ package androidx.wear.watchface.complications.data {
     ctor public ColorRamp(@ColorInt int[] colors, boolean interpolated);
     method public int[] getColors();
     method public boolean isInterpolated();
-    property @ColorInt public int[] colors;
+    property public int[] colors;
     property public boolean interpolated;
   }
 
@@ -566,7 +566,7 @@ package androidx.wear.watchface.complications.data {
     method public androidx.wear.watchface.complications.data.ComplicationText? getText();
     method public androidx.wear.watchface.complications.data.ComplicationText? getTitle();
     property public androidx.wear.watchface.complications.data.ComplicationText? contentDescription;
-    property @ColorInt public int elementBackgroundColor;
+    property public int elementBackgroundColor;
     property public java.util.List<androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Element> elements;
     property public androidx.wear.watchface.complications.data.MonochromaticImage? monochromaticImage;
     property public androidx.wear.watchface.complications.data.SmallImage? smallImage;
@@ -604,8 +604,8 @@ package androidx.wear.watchface.complications.data {
     ctor public WeightedElementsComplicationData.Element(@FloatRange(from=0.0, fromInclusive=false) float weight, @ColorInt int color);
     method public int getColor();
     method public float getWeight();
-    property @ColorInt public int color;
-    property @FloatRange(from=0.0, fromInclusive=false) public float weight;
+    property public int color;
+    property public float weight;
   }
 
 }

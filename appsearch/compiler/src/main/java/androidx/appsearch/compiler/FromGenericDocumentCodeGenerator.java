@@ -21,6 +21,7 @@ import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTIO
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.isNonNullKotlinField;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
 
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
@@ -78,7 +79,7 @@ class FromGenericDocumentCodeGenerator {
 
     private MethodSpec createFromGenericDocumentMethod() {
         // Method header
-        TypeName documentClass = TypeName.get(mModel.getClassElement().asType());
+        TypeName documentClass = toJavaPoet(mModel.getClassElement().getType().asTypeName());
         MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("fromGenericDocument")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(documentClass)

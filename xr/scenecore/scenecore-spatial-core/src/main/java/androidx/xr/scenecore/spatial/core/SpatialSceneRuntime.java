@@ -17,10 +17,16 @@
 package androidx.xr.scenecore.spatial.core;
 
 import android.app.Activity;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.VisibleForTesting;
+import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.SceneRuntime;
+import androidx.xr.runtime.internal.Space;
+import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -28,6 +34,7 @@ import androidx.xr.scenecore.impl.perception.Session;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
+import com.android.extensions.xr.space.SpatialState;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -36,10 +43,15 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * Implementation of [SceneRuntime] for devices that support the [Feature.SPATIAL] system feature.
  */
+// Suppress BanSynchronizedMethods for onSpatialStateChanged().
+// Suppress BanConcurrentHashMap for mSpatialCapabilitiesChangedListeners since XR minSdk is 24.
+@SuppressWarnings({"BanSynchronizedMethods", "BanConcurrentHashMap"})
 class SpatialSceneRuntime implements SceneRuntime {
     private @Nullable Activity mActivity;
     private final ScheduledExecutorService mExecutor;
@@ -51,6 +63,16 @@ class SpatialSceneRuntime implements SceneRuntime {
     private final EntityManager mEntityManager;
     private final PerceptionLibrary mPerceptionLibrary;
 
+    // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
+    // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
+    private final AtomicReference<SpatialState> mSpatialState = new AtomicReference<>(null);
+
+    // Returns the currently-known spatial state, or fetches it from the extensions if it has never
+    // been set. The spatial state is kept updated in the SpatialStateCallback.
+    private final Supplier<SpatialState> mLazySpatialStateProvider;
+
+    private final ActivitySpaceImpl mActivitySpace;
+
     private SpatialSceneRuntime(
             @NonNull Activity activity,
             @NonNull ScheduledExecutorService executor,
@@ -58,7 +80,8 @@ class SpatialSceneRuntime implements SceneRuntime {
             @NonNull EntityManager entityManager,
             @NonNull PerceptionLibrary perceptionLibrary,
             @NonNull Node sceneRootNode,
-            @NonNull Node taskWindowLeashNode) {
+            @NonNull Node taskWindowLeashNode,
+            boolean unscaledGravityAlignedActivitySpace) {
         mActivity = activity;
         mExecutor = executor;
         mExtensions = extensions;
@@ -67,6 +90,28 @@ class SpatialSceneRuntime implements SceneRuntime {
         mEntityManager = entityManager;
         mPerceptionLibrary = perceptionLibrary;
         mOpenXrReferenceSpaceType = extensions.getOpenXrWorldReferenceSpaceType();
+
+        mLazySpatialStateProvider =
+                () ->
+                        mSpatialState.updateAndGet(
+                                oldSpatialState -> {
+                                    if (oldSpatialState == null) {
+                                        oldSpatialState = mExtensions.getSpatialState(activity);
+                                    }
+                                    return oldSpatialState;
+                                });
+        setSpatialStateCallback();
+
+        mActivitySpace =
+                new ActivitySpaceImpl(
+                        sceneRootNode,
+                        activity,
+                        extensions,
+                        entityManager,
+                        mLazySpatialStateProvider,
+                        unscaledGravityAlignedActivitySpace,
+                        executor);
+        mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
     }
 
     static @NonNull SpatialSceneRuntime create(
@@ -74,7 +119,8 @@ class SpatialSceneRuntime implements SceneRuntime {
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
             @NonNull EntityManager entityManager,
-            @NonNull PerceptionLibrary perceptionLibrary) {
+            @NonNull PerceptionLibrary perceptionLibrary,
+            boolean unscaledGravityAlignedActivitySpace) {
         Node sceneRootNode = extensions.createNode();
         Node taskWindowLeashNode = extensions.createNode();
         // TODO: b/376934871 - Check async results.
@@ -96,7 +142,8 @@ class SpatialSceneRuntime implements SceneRuntime {
                         entityManager,
                         perceptionLibrary,
                         sceneRootNode,
-                        taskWindowLeashNode);
+                        taskWindowLeashNode,
+                        unscaledGravityAlignedActivitySpace);
         runtime.initPerceptionLibrary();
         return runtime;
     }
@@ -109,7 +156,8 @@ class SpatialSceneRuntime implements SceneRuntime {
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 new EntityManager(),
-                new PerceptionLibrary());
+                new PerceptionLibrary(),
+                false);
     }
 
     private void initPerceptionLibrary() {
@@ -140,6 +188,7 @@ class SpatialSceneRuntime implements SceneRuntime {
         if (mIsDisposed) {
             return;
         }
+
         // TODO: b/376934871 - Check async results.
         mExtensions.detachSpatialScene(mActivity, Runnable::run, (result) -> {});
         mActivity = null;
@@ -156,5 +205,45 @@ class SpatialSceneRuntime implements SceneRuntime {
     @VisibleForTesting
     @NonNull Node getTaskWindowLeashNode() {
         return mTaskWindowLeashNode;
+    }
+
+    @Override
+    public @NonNull SpatialCapabilities getSpatialCapabilities() {
+        return RuntimeUtils.convertSpatialCapabilities(
+                mLazySpatialStateProvider.get().getSpatialCapabilities());
+    }
+
+    public @NonNull ActivitySpace getActivitySpace() {
+        return mActivitySpace;
+    }
+
+    @Override
+    public @NonNull Entity createGroupEntity(
+            @NonNull Pose pose, @NonNull String name, @NonNull Entity parent) {
+        Node node = mExtensions.createNode();
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction.setName(node, name).apply();
+        }
+
+        // This entity is used to back SceneCore's GroupEntity.
+        Entity entity =
+                new AndroidXrEntity(mActivity, node, mExtensions, mEntityManager, mExecutor) {};
+        entity.setParent(parent);
+        entity.setPose(pose, Space.PARENT);
+        return entity;
+    }
+
+    // Note that this is called on the Activity's UI thread so we should be careful to not block it.
+    // It is synchronized because we assume this.spatialState cannot be updated elsewhere during the
+    // execution of this method.
+    @VisibleForTesting
+    synchronized void onSpatialStateChanged(@NonNull SpatialState newSpatialState) {
+        mSpatialState.getAndSet(newSpatialState);
+    }
+
+    private void setSpatialStateCallback() {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mExtensions.setSpatialStateCallback(
+                mActivity, mainHandler::post, this::onSpatialStateChanged);
     }
 }

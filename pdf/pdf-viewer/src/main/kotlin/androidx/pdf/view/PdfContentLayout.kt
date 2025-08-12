@@ -24,6 +24,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RestrictTo
 import androidx.pdf.R
+import androidx.pdf.featureflag.PdfFeatureFlags
 
 /**
  * A [ViewGroup] that hosts [PdfView] for adding overlays on it using the [ViewGroup.addView]
@@ -37,8 +38,6 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
     public val pdfView: PdfView
         get() = _pdfView
 
-    public var shouldInterceptAllTouchEvents: Boolean = false
-
     init {
         LayoutInflater.from(context).inflate(R.layout.pdf_content_layout, this, true)
         _pdfView = findViewById(R.id.pdfView)
@@ -48,6 +47,6 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
         if (ev == null) {
             return super.onInterceptTouchEvent(ev)
         }
-        return shouldInterceptAllTouchEvents
+        return PdfFeatureFlags.isMultiTouchScrollEnabled
     }
 }

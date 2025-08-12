@@ -17,6 +17,10 @@ package androidx.compose.remote.player.view.accessibility.platform;
 
 import static androidx.compose.remote.player.view.accessibility.RemoteComposeDocumentAccessibility.RootId;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
@@ -75,6 +79,7 @@ import java.util.List;
  * @param <S> The type of the semantic information used by the {@link SemanticNodeApplier}
  *     (typically {@link AccessibilitySemantics}).
  */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHelper {
     private final RemoteComposeDocumentAccessibility mRemoteDocA11y;
 

@@ -20,17 +20,20 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
 
+import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.internal.SceneRuntimeFactory;
 import androidx.xr.runtime.testing.FakeSceneRuntimeFactory;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
+import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.After;
@@ -49,6 +52,8 @@ public class SpatialRenderingRuntimeTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
     private SceneRuntime mSceneRuntime;
     private SpatialRenderingRuntime mRuntime;
+
+    private final FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
     Activity mActivity;
     private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     SplitEngineSubspaceManager mSplitEngineSubspaceManager =
@@ -87,6 +92,32 @@ public class SpatialRenderingRuntimeTest {
         mSceneRuntime = null;
     }
 
+    MaterialResource createWaterMaterial() throws Exception {
+        ListenableFuture<MaterialResource> materialFuture =
+                mRuntime.createWaterMaterial(/* isAlphaMapVersion= */ false);
+        assertThat(materialFuture).isNotNull();
+        // This resolves the transformation of the Future from a SplitEngine token to the JXR
+        // Texture.  This is a hidden detail from the API surface's perspective.
+        mFakeExecutor.runAll();
+        return materialFuture.get();
+    }
+
+    @Test
+    public void createWaterMaterial_returnsWaterMaterial() throws Exception {
+        assertThat(createWaterMaterial()).isNotNull();
+    }
+
+    @Test
+    public void destroyWaterMaterial_removesWaterMaterial() throws Exception {
+        MaterialResourceImpl material = (MaterialResourceImpl) createWaterMaterial();
+        int initialMaterialCount = mFakeImpressApi.getMaterials().size();
+
+        mFakeImpressApi.destroyNativeObject(material.getMaterialToken());
+
+        int finalMaterialCount = mFakeImpressApi.getMaterials().size();
+        assertThat(finalMaterialCount).isEqualTo(initialMaterialCount - 1);
+    }
+
     @Test
     public void startAndStopRenderer_statusUpdated() {
         mRuntime.startRenderer();
@@ -96,4 +127,5 @@ public class SpatialRenderingRuntimeTest {
         mRuntime.startRenderer();
         assertThat(mRuntime.isFrameLoopStarted()).isTrue();
     }
+
 }

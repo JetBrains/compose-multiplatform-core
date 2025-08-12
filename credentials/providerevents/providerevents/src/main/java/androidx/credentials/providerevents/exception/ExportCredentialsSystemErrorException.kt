@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** Used by the system when the request fails to reach the provider */
-public class ExportCredentialsSystemErrorException(errorMessage: CharSequence? = null) :
+public class ExportCredentialsSystemErrorException(errorMessage: String? = null) :
     ExportCredentialsException(TYPE_EXPORT_CREDENTIALS_SYSTEM_ERROR_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_EXPORT_CREDENTIALS_SYSTEM_ERROR_EXCEPTION: String =

@@ -40,6 +40,7 @@ import java.util.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,6 +62,11 @@ class BoxedNonNullTypesTest {
                     MyDb::class.java,
                 )
                 .build()
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test

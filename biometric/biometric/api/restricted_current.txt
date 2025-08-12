@@ -20,7 +20,7 @@ package androidx.biometric {
     property public boolean isConfirmationRequired;
     property @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public android.graphics.Bitmap? logoBitmap;
     property @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public String? logoDescription;
-    property @DrawableRes @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public int logoRes;
+    property @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public int logoRes;
     property public androidx.biometric.AuthenticationRequest.Biometric.Strength minStrength;
     property public String? subtitle;
     property public String title;
@@ -92,8 +92,8 @@ package androidx.biometric {
   }
 
   public static final class AuthenticationRequest.Companion {
-    method @kotlin.jvm.JvmSynthetic public inline androidx.biometric.AuthenticationRequest.Biometric biometricRequest(String title, androidx.biometric.AuthenticationRequest.Biometric.Fallback authFallback, kotlin.jvm.functions.Function1<? super androidx.biometric.AuthenticationRequest.Biometric.Builder,kotlin.Unit> init);
-    method @RequiresApi(android.os.Build.VERSION_CODES.R) @kotlin.jvm.JvmSynthetic public androidx.biometric.AuthenticationRequest.Credential credentialRequest(String title, kotlin.jvm.functions.Function1<? super androidx.biometric.AuthenticationRequest.Credential.Builder,kotlin.Unit> init);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public inline androidx.biometric.AuthenticationRequest.Biometric biometricRequest(String title, androidx.biometric.AuthenticationRequest.Biometric.Fallback authFallback, kotlin.jvm.functions.Function1<androidx.biometric.AuthenticationRequest.Biometric.Builder,kotlin.Unit> init);
+    method @InaccessibleFromJava @RequiresApi(android.os.Build.VERSION_CODES.R) @kotlin.jvm.JvmSynthetic public androidx.biometric.AuthenticationRequest.Credential credentialRequest(String title, kotlin.jvm.functions.Function1<androidx.biometric.AuthenticationRequest.Credential.Builder,kotlin.Unit> init);
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.R) public static final class AuthenticationRequest.Credential extends androidx.biometric.AuthenticationRequest {

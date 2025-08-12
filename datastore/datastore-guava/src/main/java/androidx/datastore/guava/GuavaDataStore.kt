@@ -17,6 +17,8 @@
 package androidx.datastore.guava
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
 import androidx.datastore.core.CurrentDataProviderStore
 import androidx.datastore.core.DataMigration
@@ -61,8 +63,16 @@ internal constructor(
      * [transform] is given the latest persisted data to produce its output, which is then persisted
      * and returned. Concurrent updates are serialized (at most one update running at a time).
      */
+    // TODO(b/433318718): Change parameter type to be Function<T, T> after g3 migration.
     public fun updateDataAsync(transform: (input: T) -> T): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.updateData { transform(it) } }
+        return launchFuture(coroutineContext) { dataStore.updateData { transform.invoke(it) } }
+    }
+
+    // TODO(b/433318718): Remove this function before we go to stable as we want users to use the
+    //  `Function<T, T>` function parameter version.
+    @RequiresApi(Build.VERSION_CODES.N)
+    public fun updateDataFunctionAsync(transform: Function<T, T>): ListenableFuture<T> {
+        return launchFuture(coroutineContext) { dataStore.updateData { transform.apply(it) } }
     }
 
     /** Builder class for a [GuavaDataStore]. */

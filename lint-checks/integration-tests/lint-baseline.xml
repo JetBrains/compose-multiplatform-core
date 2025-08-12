@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha05)" variant="all" version="8.11.0-alpha05">
+<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
 
     <issue
         id="AndroidXFlaggedApi"
@@ -26,15 +26,6 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/flaggedapi/FlaggedUsageWithoutOutline.kt"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.view.View#getAccessibilityClassName`"
-        errorLine1="        return view.getAccessibilityClassName();"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/ClassVerificationFailureFromJava.java"/>
     </issue>
 
     <issue
@@ -299,42 +290,6 @@
     </issue>
 
     <issue
-        id="LongLogTag"
-        message="The logging tag can be at most 23 characters, was 24 (ActivityRecreatorChecked)"
-        errorLine1="                    Log.e(LOG_TAG, &quot;Exception while invoking performStopActivity&quot;, t);"
-        errorLine2="                          ~~~~~~~">
-        <location
-            file="src/main/java/androidx/sample/core/app/ActivityRecreatorChecked.java"/>
-    </issue>
-
-    <issue
-        id="LongLogTag"
-        message="The logging tag can be at most 23 characters, was 24 (ActivityRecreatorChecked)"
-        errorLine1="            Log.e(LOG_TAG, &quot;Exception while fetching field values&quot;, t);"
-        errorLine2="                  ~~~~~~~">
-        <location
-            file="src/main/java/androidx/sample/core/app/ActivityRecreatorChecked.java"/>
-    </issue>
-
-    <issue
-        id="LongLogTag"
-        message="The logging tag can be at most 23 characters, was 24 (ActivityRecreatorChecked)"
-        errorLine1="                    Log.e(LOG_TAG, &quot;Exception while invoking performStopActivity&quot;, t)"
-        errorLine2="                          ~~~~~~~">
-        <location
-            file="src/main/java/androidx/sample/core/app/ActivityRecreatorKtChecked.kt"/>
-    </issue>
-
-    <issue
-        id="LongLogTag"
-        message="The logging tag can be at most 23 characters, was 24 (ActivityRecreatorChecked)"
-        errorLine1="            Log.e(LOG_TAG, &quot;Exception while fetching field values&quot;, t)"
-        errorLine2="                  ~~~~~~~">
-        <location
-            file="src/main/java/androidx/sample/core/app/ActivityRecreatorKtChecked.kt"/>
-    </issue>
-
-    <issue
         id="MetadataTagInsideApplicationTag"
         message="Detected &lt;application>-level meta-data tag."
         errorLine1="        &lt;meta-data android:name=&quot;name&quot; android:value=&quot;value&quot; />"
@@ -534,7 +489,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -543,7 +498,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -552,7 +507,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -561,7 +516,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -570,7 +525,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -579,11 +534,47 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/AutofixUnsafeCallToThisKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeCallWithImplicitParamCast.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeCallWithImplicitParamCastKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 23) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeGenericMethodReferenceJava.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 23) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeGenericMethodReferenceKotlin.kt"/>
     </issue>
 
     <issue
@@ -606,7 +597,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -615,9 +606,27 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingClassJava.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingClassKotlin.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23) internal class Api23Impl private constructor()"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/AutofixUnsafeReferenceWithExistingClassKotlin.kt"/>
     </issue>
@@ -678,7 +687,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 17) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -687,7 +696,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 17) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -696,7 +705,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -705,7 +714,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -714,7 +723,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 17) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -723,7 +732,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 19) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -732,7 +741,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 19) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -741,7 +750,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        if (Build.VERSION.SDK_INT >= 19) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -750,7 +759,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
+        message="Unnecessary; `SDK_INT` is always >= 23"
         errorLine1="        return if (Build.VERSION.SDK_INT >= 19) {"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

@@ -120,7 +120,7 @@ object BundleInsideHelper {
         val repackage = configureRepackageTaskForType(relocations, bundle, null)
         val sourceSets = extensions.getByType(SourceSetContainer::class.java)
         repackage.configure { task ->
-            task.from(sourceSets.findByName("main")?.output)
+            task.from(sourceSets.findByName("main")!!.output)
             // kotlin-metadata-jvm has a service descriptor that needs transformation
             task.mergeServiceFiles()
             // Exclude Kotlin metadata files from kotlin-metadata-jvm

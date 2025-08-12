@@ -19,14 +19,17 @@ package androidx.navigation3.ui
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -664,6 +667,35 @@ class NavDisplayTest {
         assertThat(composeTestRule.onNodeWithText("nestedNumberOnScreen1: 1").isDisplayed())
             .isTrue()
     }
+
+    @Test
+    fun testMultiPaneDisplay() {
+        val leftText = "left screen"
+        val rightText = "right screen"
+        val singleText = "single screen"
+
+        val backStack = mutableStateListOf("left", "right")
+        composeTestRule.setContent {
+            NavDisplay(sceneStrategy = TestTwoPaneSceneStrategy(), backStack = backStack) { key ->
+                when (key) {
+                    "left" -> NavEntry("left") { Text(leftText) }
+                    "right" -> NavEntry("right") { Text(rightText) }
+                    "single" -> NavEntry("single") { Text(singleText) }
+                    else -> error("invalid key")
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(leftText).assertIsDisplayed()
+        composeTestRule.onNodeWithText(rightText).assertIsDisplayed()
+
+        backStack.clear()
+        backStack.add("single")
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(leftText).assertIsNotDisplayed()
+        composeTestRule.onNodeWithText(rightText).assertIsNotDisplayed()
+        composeTestRule.onNodeWithText(singleText).assertIsDisplayed()
+    }
 }
 
 private const val first = "first"
@@ -674,3 +706,31 @@ private const val forth = "forth"
 @Serializable object First : NavKey
 
 @Serializable object Second : NavKey
+
+class TestTwoPaneScene<T : Any>(
+    override val key: Any,
+    override val entries: List<NavEntry<T>>,
+    override val previousEntries: List<NavEntry<T>>,
+) : Scene<T> {
+    override val content: @Composable (() -> Unit) = {
+        val left = entries.first()
+        val right = entries.last()
+        Row {
+            Column { left.Content() }
+            Column { right.Content() }
+        }
+    }
+}
+
+class TestTwoPaneSceneStrategy<T : Any> : SceneStrategy<T> {
+    @Composable
+    override fun calculateScene(entries: List<NavEntry<T>>, onBack: (Int) -> Unit): Scene<T>? {
+        if (entries.size < 2) return null
+        val lastTwoEntries = entries.takeLast(2)
+        return TestTwoPaneScene(
+            key = lastTwoEntries.first().contentKey,
+            entries = entries.takeLast(2),
+            previousEntries = listOf(),
+        )
+    }
+}

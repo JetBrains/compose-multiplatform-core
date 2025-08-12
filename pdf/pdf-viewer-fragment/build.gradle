@@ -37,6 +37,8 @@ dependencies {
 
     implementation("androidx.fragment:fragment-ktx:1.8.1")
     implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.window:window:1.3.0")
+    implementation(project(":annotation:annotation-experimental"))
 
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)

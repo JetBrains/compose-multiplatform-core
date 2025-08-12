@@ -16,9 +16,7 @@
 
 package androidx.privacysandbox.ui.provider.impl
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.util.Consumer
 import androidx.core.util.Supplier
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
@@ -32,7 +30,6 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  *
  * Using [DeferredObjectHolder] to create actual client in background.
  */
-@RequiresApi(Build.VERSION_CODES.M)
 internal class DeferredSessionClient(
     private val objectHolder: ObjectHolder<SandboxedUiAdapter.SessionClient>
 ) : SandboxedUiAdapter.SessionClient {

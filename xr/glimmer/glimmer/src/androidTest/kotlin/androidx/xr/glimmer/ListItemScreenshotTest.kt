@@ -16,7 +16,15 @@
 
 package androidx.xr.glimmer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -106,7 +114,16 @@ class ListItemScreenshotTest {
     fun listItem_focused() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
-            ListItem(interactionSource = AlwaysFocusedInteractionSource) { Text("Primary Label") }
+            // Add an extra box with a white background around the list item to allow capturing
+            // depth
+            Box(
+                Modifier.background(color = Color.White, RectangleShape).padding(30.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                ListItem(interactionSource = AlwaysFocusedInteractionSource) {
+                    Text("Primary Label")
+                }
+            }
         }
         // Advance past the animation
         rule.mainClock.advanceTimeBy(10000)
@@ -135,8 +152,18 @@ class ListItemScreenshotTest {
     fun listItem_focused_and_pressed() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
-            ListItem(onClick = {}, interactionSource = AlwaysFocusedAndPressedInteractionSource) {
-                Text("Primary Label")
+            // Add an extra box with a white background around the list item to allow capturing
+            // depth
+            Box(
+                Modifier.background(color = Color.White, RectangleShape).padding(30.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                ListItem(
+                    onClick = {},
+                    interactionSource = AlwaysFocusedAndPressedInteractionSource,
+                ) {
+                    Text("Primary Label")
+                }
             }
         }
         // Advance past the animation

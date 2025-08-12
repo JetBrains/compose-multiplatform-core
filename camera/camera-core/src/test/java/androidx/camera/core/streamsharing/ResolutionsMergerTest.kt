@@ -17,7 +17,6 @@
 package androidx.camera.core.streamsharing
 
 import android.graphics.Rect
-import android.os.Build
 import android.util.Pair
 import android.util.Rational
 import android.util.Size
@@ -44,13 +43,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [ResolutionsMerger]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ResolutionsMergerTest {
 
     @Test

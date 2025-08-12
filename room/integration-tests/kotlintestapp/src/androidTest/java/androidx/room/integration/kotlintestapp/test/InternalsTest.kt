@@ -26,6 +26,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -98,6 +99,11 @@ class InternalsTest {
                     InternalDb::class.java,
                 )
                 .build()
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test

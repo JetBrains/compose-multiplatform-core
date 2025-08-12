@@ -136,10 +136,8 @@ public final class WindowInsetsControllerCompat {
             mImpl = new Impl26(window, softwareKeyboardControllerCompat);
         } else if (SDK_INT >= 23) {
             mImpl = new Impl23(window, softwareKeyboardControllerCompat);
-        } else if (SDK_INT >= 20) {
-            mImpl = new Impl20(window, softwareKeyboardControllerCompat);
         } else {
-            mImpl = new Impl();
+            mImpl = new Impl20(window, softwareKeyboardControllerCompat);
         }
     }
 
@@ -441,7 +439,6 @@ public final class WindowInsetsControllerCompat {
         }
     }
 
-    @RequiresApi(20)
     private static class Impl20 extends Impl {
 
         protected final @NonNull Window mWindow;

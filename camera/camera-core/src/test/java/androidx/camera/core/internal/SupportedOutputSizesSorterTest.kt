@@ -82,7 +82,6 @@ private val PORTRAIT_ACTIVE_ARRAY_SIZE = Size(1440, 1920)
 /** Unit tests for [SupportedOutputSizesSorter]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SupportedOutputSizesSorterTest {
     private val cameraInfoInternal =
         FakeCameraInfoInternal().apply {

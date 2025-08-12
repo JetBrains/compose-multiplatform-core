@@ -37,6 +37,7 @@ import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
+import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -57,13 +58,13 @@ public class DrawTextAnchoredTest {
     // ########################### TEST UTILS ######################################
 
     interface Callback {
-        void run(RemoteComposeContext foo);
+        void run(RemoteComposeContextAndroid foo);
     }
 
     private RemoteComposeDocument createDocument(RemoteContext context, final Callback cb) {
 
         RemoteComposeContext doc =
-                new RemoteComposeContext(
+                new RemoteComposeContextAndroid(
                         600,
                         600,
                         "Demo",

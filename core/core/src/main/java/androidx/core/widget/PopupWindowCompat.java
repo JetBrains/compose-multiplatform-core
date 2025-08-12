@@ -81,7 +81,7 @@ public final class PopupWindowCompat {
     public static void setOverlapAnchor(@NonNull PopupWindow popupWindow, boolean overlapAnchor) {
         if (Build.VERSION.SDK_INT >= 23) {
             Api23Impl.setOverlapAnchor(popupWindow, overlapAnchor);
-        } else if (Build.VERSION.SDK_INT >= 21) {
+        } else {
             if (!sOverlapAnchorFieldAttempted) {
                 try {
                     sOverlapAnchorField = PopupWindow.class.getDeclaredField("mOverlapAnchor");
@@ -112,7 +112,7 @@ public final class PopupWindowCompat {
     public static boolean getOverlapAnchor(@NonNull PopupWindow popupWindow) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getOverlapAnchor(popupWindow);
-        } else if (Build.VERSION.SDK_INT >= 21) {
+        } else {
             if (!sOverlapAnchorFieldAttempted) {
                 try {
                     sOverlapAnchorField = PopupWindow.class.getDeclaredField("mOverlapAnchor");

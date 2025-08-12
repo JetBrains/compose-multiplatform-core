@@ -1,4 +1,18 @@
 // Baseline format: 1.0
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.drawscope.CanvasDrawScope#drawImage(androidx.compose.ui.graphics.ImageBitmap, long, long, long, long, float, androidx.compose.ui.graphics.drawscope.DrawStyle, androidx.compose.ui.graphics.ColorFilter, int):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.drawscope.CanvasDrawScope.drawImage(androidx.compose.ui.graphics.ImageBitmap,long,long,long,long,float,androidx.compose.ui.graphics.drawscope.DrawStyle,androidx.compose.ui.graphics.ColorFilter,int)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.drawscope.DrawScope#drawImage(androidx.compose.ui.graphics.ImageBitmap, long, long, long, long, float, androidx.compose.ui.graphics.drawscope.DrawStyle, androidx.compose.ui.graphics.ColorFilter, int):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.drawscope.DrawScope.drawImage(androidx.compose.ui.graphics.ImageBitmap,long,long,long,long,float,androidx.compose.ui.graphics.drawscope.DrawStyle,androidx.compose.ui.graphics.ColorFilter,int)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.drawscope.DrawScopeKt#draw(androidx.compose.ui.graphics.drawscope.DrawScope, androidx.compose.ui.unit.Density, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.graphics.Canvas, long, kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.drawscope.DrawScopeKt.draw(androidx.compose.ui.graphics.drawscope.DrawScope,androidx.compose.ui.unit.Density,androidx.compose.ui.unit.LayoutDirection,androidx.compose.ui.graphics.Canvas,long,kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>)
+
+
+RemovedFromKotlin: androidx.compose.ui.graphics.Path#addOval(androidx.compose.ui.geometry.Rect):
+    Source breaking change: method androidx.compose.ui.graphics.Path.addOval(androidx.compose.ui.geometry.Rect) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.graphics.Path#addRect(androidx.compose.ui.geometry.Rect):
+    Source breaking change: method androidx.compose.ui.graphics.Path.addRect(androidx.compose.ui.geometry.Rect) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.graphics.Path#addRoundRect(androidx.compose.ui.geometry.RoundRect):
+    Source breaking change: method androidx.compose.ui.graphics.Path.addRoundRect(androidx.compose.ui.geometry.RoundRect) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.graphics.PathOperationKt#getDifference(androidx.compose.ui.graphics.PathOperation.Companion):
     Source breaking change: method androidx.compose.ui.graphics.PathOperationKt.getDifference(androidx.compose.ui.graphics.PathOperation.Companion) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.graphics.PathOperationKt#getIntersect(androidx.compose.ui.graphics.PathOperation.Companion):

@@ -23,6 +23,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
@@ -35,6 +36,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 
 @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 class ProjectedContextTest {
 
     val context: ContextWrapper = ApplicationProvider.getApplicationContext()

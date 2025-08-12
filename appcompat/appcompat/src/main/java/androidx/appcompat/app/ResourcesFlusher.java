@@ -51,12 +51,11 @@ class ResourcesFlusher {
             flushNougats(resources);
         } else if (Build.VERSION.SDK_INT >= 23) {
             flushMarshmallows(resources);
-        } else if (Build.VERSION.SDK_INT >= 21) {
+        } else {
             flushLollipops(resources);
         }
     }
 
-    @RequiresApi(21)
     private static void flushLollipops(final @NonNull Resources resources) {
         if (!sDrawableCacheFieldFetched) {
             try {

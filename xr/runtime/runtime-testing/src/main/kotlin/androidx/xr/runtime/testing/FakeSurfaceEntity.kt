@@ -16,12 +16,14 @@
 
 package androidx.xr.runtime.testing
 
-import android.graphics.SurfaceTexture
+import android.graphics.ImageFormat
+import android.media.ImageReader
 import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.PerceivedResolutionResult
 import androidx.xr.runtime.internal.SurfaceEntity
+import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape
 import androidx.xr.runtime.internal.TextureResource
 
 /**
@@ -43,7 +45,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
     override var stereoMode: Int = SurfaceEntity.StereoMode.SIDE_BY_SIDE
 
     /** Specifies the shape of the spatial canvas which the surface is texture mapped to. */
-    override var canvasShape: SurfaceEntity.CanvasShape = SurfaceEntity.CanvasShape.Quad(0f, 0f)
+    override var canvasShape: CanvasShape = CanvasShape.Quad(0f, 0f)
 
     /**
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
@@ -54,7 +56,8 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
     override val dimensions: Dimensions
         get() = canvasShape.dimensions
 
-    private var _surface: Surface = Surface(SurfaceTexture(123))
+    private var _surface: Surface =
+        ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1).surface
 
     /**
      * Retrieves the surface that the Entity will display. The app can write into this surface

@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.Plane as RuntimePlane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
@@ -50,7 +51,7 @@ public class FakeRuntimePlane(
     override val label: RuntimePlane.Label = RuntimePlane.Label.FLOOR,
     override var trackingState: TrackingState = TrackingState.TRACKING,
     override var centerPose: Pose = Pose(),
-    override var extents: Vector2 = Vector2.Zero,
+    override var extents: FloatSize2d = FloatSize2d(),
     override var vertices: List<Vector2> = emptyList(),
     override var subsumedBy: RuntimePlane? = null,
     /** The anchors that are attached to this plane. */

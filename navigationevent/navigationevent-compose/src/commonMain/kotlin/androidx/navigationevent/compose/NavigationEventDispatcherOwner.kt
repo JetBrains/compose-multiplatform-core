@@ -21,7 +21,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.NavigationEventInputHandler
@@ -41,16 +40,24 @@ import androidx.navigationevent.NavigationEventInputHandler
  * When used to create a root dispatcher, you must use a [NavigationEventInputHandler] to send it
  * events. Otherwise, the dispatcher will be detached and will not receive events.
  *
+ * **Null parent:** If [parent] is **EXPLICITLY** `null`, this creates a root dispatcher that runs
+ * independently. By default, it requires a parent from the [LocalNavigationEventDispatcherOwner]
+ * and will throw an [IllegalStateException] if one is not present.
+ *
  * @param enabled A lambda to dynamically control if the dispatcher is active. When `false`, this
  *   dispatcher and any of its children will ignore navigation events. Defaults to `true`.
- * @param parent The parent owner to link to. Defaults to the owner found in the current composition
- *   (`LocalNavigationEventDispatcherOwner`).
+ * @param parent The [NavigationEventDispatcherOwner] to use as the parent, or `null` if it is a
+ *   root. Defaults to the owner from [LocalNavigationEventDispatcherOwner].
  * @param content The child composable content that will receive the new dispatcher.
  */
 @Composable
 public fun NavigationEventDispatcherOwner(
-    enabled: () -> Boolean = { true },
-    parent: NavigationEventDispatcherOwner? = LocalNavigationEventDispatcherOwner.current,
+    enabled: Boolean = true,
+    parent: NavigationEventDispatcherOwner? =
+        checkNotNull(LocalNavigationEventDispatcherOwner.current) {
+            "No NavigationEventDispatcherOwner provided in LocalNavigationEventDispatcherOwner. " +
+                "If you intended to create a root dispatcher, explicitly pass null as the parent."
+        },
     content: @Composable () -> Unit,
 ) {
     val localDispatcher = remember {
@@ -58,22 +65,7 @@ public fun NavigationEventDispatcherOwner(
         parent?.navigationEventDispatcher ?: NavigationEventDispatcher()
     }
 
-    LaunchedEffect(enabled) {
-        // LaunchedEffect is not snapshot-aware by itself, so we use `snapshotFlow` to observe
-        // changes to `enabled()`. `snapshotFlow` converts snapshot state reads into a cold Flow
-        // that emits whenever the underlying snapshot-aware state changes.
-        //
-        // Note: `snapshotFlow` only works correctly when the lambda reads values from
-        // snapshot-aware state objects (e.g., `State`, `MutableState`, or Compose state APIs).
-        //
-        // We collect this Flow to update the callback whenever `enabled` changes.
-        //
-        // Because we collect this Flow inside a coroutine, the timing of emissions is also bound to
-        // the CoroutineDispatcher used by the composition. This means snapshot state changes are
-        // only observed and handled when the coroutine dispatcher schedules the collection, so
-        // updates might not be strictly synchronous with the state change.
-        snapshotFlow(enabled).collect { isEnabled -> localDispatcher.isEnabled = isEnabled }
-    }
+    LaunchedEffect(enabled) { localDispatcher.isEnabled = enabled }
 
     // Clean up the dispatcher on dispose to prevent memory leaks.
     DisposableEffect(Unit) { onDispose { localDispatcher.dispose() } }

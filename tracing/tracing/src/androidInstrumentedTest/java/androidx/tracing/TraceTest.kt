@@ -33,7 +33,6 @@ import org.junit.Ignore
 import org.junit.Test
 
 @LargeTest
-@SdkSuppress(minSdkVersion = 21) // Required for UiAutomation#executeShellCommand()
 class TraceTest {
     private var byteArrayOutputStream = ByteArrayOutputStream()
 

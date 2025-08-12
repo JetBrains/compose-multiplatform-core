@@ -15,6 +15,11 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -48,6 +53,7 @@ import java.util.stream.Stream;
  * list of modifiers that must be tagged with {@link AccessibilitySemantics} either incidentally
  * (see {@link ClickModifierOperation}) or explicitly (see {@link CoreSemantics}).
  */
+@RestrictTo(LIBRARY_GROUP)
 public class CoreDocumentAccessibility implements RemoteComposeDocumentAccessibility {
     private final CoreDocument mDocument;
     private final RemoteContextActions mRemoteContextActions;

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("AndroidXPlugin")
     id("androidx.privacysandboxplugin")
@@ -52,7 +54,6 @@ dependencies {
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
     implementation(project(":privacysandbox:ui:macrobenchmark:testapp:sdkproviderutils"))
     implementation(project(":privacysandbox:ui:ui-provider"))
-    implementation(project(":webkit:webkit"))
     implementation(project(":privacysandbox:ui:macrobenchmark:testapp:mediateesdkproviderwrapper"))
     implementation(project(":tracing:tracing"))
 
@@ -63,4 +64,9 @@ dependencies {
     implementation(project(":privacysandbox:ui:ui-core"))
     implementation(project(':privacysandbox:activity:activity-core'))
     implementation(project(':privacysandbox:activity:activity-provider'))
+}
+
+// TODO(b/430983364): Fix when incremental doesn't break compileReleaseKotlin
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
 }

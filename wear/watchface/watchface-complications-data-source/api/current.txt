@@ -32,7 +32,7 @@ package androidx.wear.watchface.complications.datasource {
     property public static String EXTRA_CONFIG_COMPLICATION_ID;
     property public static String EXTRA_CONFIG_COMPLICATION_TYPE;
     property public static String EXTRA_CONFIG_DATA_SOURCE_COMPONENT;
-    property @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String METADATA_KEY_CONFIG_RESTORE_SUPPORTED;
+    property public static String METADATA_KEY_CONFIG_RESTORE_SUPPORTED;
     property public static String METADATA_KEY_DATA_SOURCE_CONFIG_ACTION;
     property public static String METADATA_KEY_DATA_SOURCE_DEFAULT_CONFIG_SUPPORTED;
     property public static String METADATA_KEY_IMMEDIATE_UPDATE_PERIOD_MILLISECONDS;
@@ -77,7 +77,7 @@ package androidx.wear.watchface.complications.datasource {
     property public int complicationInstanceId;
     property public androidx.wear.watchface.complications.data.ComplicationType complicationType;
     property public boolean immediateResponseRequired;
-    property @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public int isForSafeWatchFace;
+    property public int isForSafeWatchFace;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public final class TargetWatchFaceSafety {

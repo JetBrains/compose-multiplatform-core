@@ -21,7 +21,6 @@ import android.graphics.ImageFormat.JPEG_R
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import android.util.Size
@@ -117,10 +116,7 @@ private const val SECONDARY_CAMERA_ID = "1"
 @OptIn(ExperimentalSessionConfig::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.core"],
-)
+@org.robolectric.annotation.Config(instrumentedPackages = ["androidx.camera.core"])
 class CameraUseCaseAdapterTest {
     private lateinit var effects: List<CameraEffect>
     private lateinit var executor: ExecutorService
@@ -465,7 +461,6 @@ class CameraUseCaseAdapterTest {
         assertThrows<CameraException> { adapter.addUseCases(setOf(imageCapture)) }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useRawWithExtensions_throwsException() {
         // Arrange: enable extensions.
@@ -696,7 +691,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndVideoCaptureExisted_streamSharingOn() {
         // Arrange: enable extensions.
@@ -713,7 +707,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNotNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndOnlyVideoCaptureAttached_streamSharingOn() {
         // Arrange: enable extensions.
@@ -1492,7 +1485,6 @@ class CameraUseCaseAdapterTest {
         assertThat(cameraInfoInternal.isCaptureProcessProgressSupported).isTrue()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun returnsCorrectSessionProcessorFromAdapterCameraControl() {
         val fakeSessionProcessor = FakeSessionProcessor()

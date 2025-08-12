@@ -229,11 +229,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowChoreographer;
 import org.robolectric.shadows.ShadowLooper;
@@ -264,6 +266,11 @@ public class ProtoLayoutInflaterTest {
 
     private final StateStore mStateStore = new StateStore(ImmutableMap.of());
     private ProtoLayoutDynamicDataPipeline mDataPipeline;
+
+    @After
+    public void tearDown() {
+        Renderer.cleanUp();
+    }
 
     @Test
     public void inflate_textView() {
@@ -5135,6 +5142,7 @@ public class ProtoLayoutInflaterTest {
     private static final class Renderer {
         final ProtoLayoutInflater mRenderer;
         final ProtoLayoutDynamicDataPipeline mDataPipeline;
+        static ActivityController<Activity> sActivityController = null;
 
         Renderer(
                 ProtoLayoutInflater.Config rendererConfig,
@@ -5143,10 +5151,20 @@ public class ProtoLayoutInflaterTest {
             this.mDataPipeline = dataPipeline;
         }
 
+        static void cleanUp() {
+            if (sActivityController != null) {
+                sActivityController.destroy();
+                sActivityController = null;
+            }
+        }
+
         FrameLayout inflate() {
+            cleanUp();
+
             FrameLayout rootLayout = new FrameLayout(getApplicationContext());
             // This needs to be an attached view to test animations in data pipeline.
-            Robolectric.buildActivity(Activity.class).setup().get().setContentView(rootLayout);
+            sActivityController = Robolectric.buildActivity(Activity.class).setup();
+            sActivityController.get().setContentView(rootLayout);
             InflateResult inflateResult = mRenderer.inflate(rootLayout);
             if (inflateResult != null) {
                 inflateResult.updateDynamicDataPipeline(/* isReattaching= */ false);

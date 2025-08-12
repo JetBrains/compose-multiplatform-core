@@ -58,6 +58,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
+import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
@@ -125,6 +126,10 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
     @get:[Input Optional]
     abstract val kmpChildren: SetProperty<String>
 
+    /** The list Gradle plugin IDs */
+    @get:[Input Optional]
+    abstract val gradlePluginIds: SetProperty<String>
+
     private fun writeJsonToFile(info: LibraryBuildInfoFile) {
         val resolvedOutputFile: File = outputFile.get().asFile
         val outputDir = resolvedOutputFile.parentFile
@@ -170,6 +175,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             if (kmpChildren.isPresent) kmpChildren.get() else emptySet()
         libraryBuildInfoFile.testModuleNames =
             if (testModuleNames.isPresent) testModuleNames.get() else emptySet()
+        libraryBuildInfoFile.gradlePluginIds =
+            if (gradlePluginIds.isPresent) gradlePluginIds.get() else emptySet()
         return libraryBuildInfoFile
     }
 
@@ -198,6 +205,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             target: String,
             kmpChildren: Set<String>,
             testModuleNames: Provider<Set<String>>,
+            gradlePluginIds: Set<String>,
         ): TaskProvider<CreateLibraryBuildInfoFileTask> {
             return project.tasks.register(
                 TASK_NAME + variant.taskSuffix,
@@ -240,6 +248,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 task.kmp.set(isKmp)
                 task.target.set(target)
                 task.kmpChildren.set(kmpChildren)
+                task.gradlePluginIds.set(gradlePluginIds)
 
                 // We only want test module names for the parent build info file for Gradle projects
                 // that have multiple build info files, like KMP.
@@ -401,6 +410,12 @@ private fun Project.createBuildInfoTask(
         target = buildTarget,
         kmpChildren = kmpChildren.map { modifyKmpChildrenForBuildInfo(it) }.toSet(),
         testModuleNames = testModuleNames,
+        gradlePluginIds =
+            project.extensions
+                .findByType(GradlePluginDevelopmentExtension::class.java)
+                ?.plugins
+                ?.map { it.id }
+                ?.toSet() ?: emptySet(),
     )
 }
 

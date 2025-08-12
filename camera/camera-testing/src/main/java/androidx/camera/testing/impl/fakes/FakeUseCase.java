@@ -16,6 +16,7 @@
 
 package androidx.camera.testing.impl.fakes;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
@@ -122,14 +123,16 @@ public class FakeUseCase extends UseCase {
     }
 
     @Override
-    public void onStateAttached() {
-        super.onStateAttached();
+    @MainThread
+    public void onSessionStart() {
+        super.onSessionStart();
         mStateAttachedCount.incrementAndGet();
     }
 
     @Override
-    public void onStateDetached() {
-        super.onStateDetached();
+    @MainThread
+    public void onSessionStop() {
+        super.onSessionStop();
         mStateAttachedCount.decrementAndGet();
     }
 
@@ -177,7 +180,7 @@ public class FakeUseCase extends UseCase {
     }
 
     /**
-     * Returns true if {@link #onStateAttached()} has been called previously.
+     * Returns true if {@link #onSessionStart()} has been called previously.
      */
     public int getStateAttachedCount() {
         return mStateAttachedCount.get();

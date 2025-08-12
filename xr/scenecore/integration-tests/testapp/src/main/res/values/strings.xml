@@ -116,7 +116,7 @@
     <string name="button_resize_in_fsm_portrait">Resize in FSM (Portrait)</string>
     <string name="button_resize_in_fsm_landscape">Resize in FSM (Landscape)</string>
     <string name="button_toggle_skybox">Toggle Skybox</string>
-    <string name="choice_any_aspect_ratio_in_hsm">Any Aspect Ragio in HSM</string>
+    <string name="choice_any_aspect_ratio_in_hsm">Any Aspect Ratio in HSM</string>
     <string name="choice_portrait_in_hsm">Portrait</string>
     <string name="choice_landscape_in_hsm">Landscape</string>
     <string name="text_activity_space_dimensions">Activity Space Dimensions</string>

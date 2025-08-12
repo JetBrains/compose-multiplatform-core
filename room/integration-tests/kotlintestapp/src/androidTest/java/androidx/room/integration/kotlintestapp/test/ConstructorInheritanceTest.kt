@@ -109,6 +109,7 @@ class ConstructorInheritanceTest {
         val child = dao.loadById2(1)
         assertThat(child.id, `is`(1L))
         assertThat(child.info!!.code, `is`(equalTo("123")))
+        db.close()
     }
 
     @Test
@@ -122,6 +123,7 @@ class ConstructorInheritanceTest {
         assertThat(childGroup.child1.id, `is`(1L))
         assertThat(childGroup.children2, hasSize(2))
         assertThat(childGroup.children2, hasItems(Child2(2, Info("123")), Child2(3, Info("123"))))
+        db.close()
     }
 
     private fun openDatabase(): EmbeddedDatabase {

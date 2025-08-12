@@ -4,7 +4,7 @@ package androidx.window {
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface RequiresWindowSdkExtension {
     ctor @KotlinOnly public RequiresWindowSdkExtension(@IntRange(from=1L) int version);
     method public abstract int version();
-    property @IntRange(from=1L) public abstract int version;
+    property public abstract int version;
   }
 
   public final class WindowProperties {
@@ -194,8 +194,8 @@ package androidx.window.embedding {
   public abstract class DividerAttributes {
     method public final int getColor();
     method public final int getWidthDp();
-    property @ColorInt public final int color;
-    property @IntRange(from=androidx.window.embedding.DividerAttributes.WIDTH_SYSTEM_DEFAULT.toLong()) public final int widthDp;
+    property public final int color;
+    property public final int widthDp;
     field public static final androidx.window.embedding.DividerAttributes.Companion Companion;
     field public static final androidx.window.embedding.DividerAttributes NO_DIVIDER;
     field public static final int WIDTH_SYSTEM_DEFAULT = -1; // 0xffffffff
@@ -219,8 +219,8 @@ package androidx.window.embedding {
     ctor public DividerAttributes.DragRange.SplitRatioDragRange(@FloatRange(from=0.0, to=1.0, fromInclusive=false, toInclusive=false) float minRatio, @FloatRange(from=0.0, to=1.0, fromInclusive=false, toInclusive=false) float maxRatio);
     method public float getMaxRatio();
     method public float getMinRatio();
-    property @FloatRange(from=0.0, to=1.0, fromInclusive=false, toInclusive=false) public float maxRatio;
-    property @FloatRange(from=0.0, to=1.0, fromInclusive=false, toInclusive=false) public float minRatio;
+    property public float maxRatio;
+    property public float minRatio;
   }
 
   public static final class DividerAttributes.DraggableDividerAttributes extends androidx.window.embedding.DividerAttributes {
@@ -268,7 +268,7 @@ package androidx.window.embedding {
 
   public static final class EmbeddingAnimationBackground.ColorBackground extends androidx.window.embedding.EmbeddingAnimationBackground {
     method public int getColor();
-    property @ColorInt @IntRange(from=android.graphics.Color.BLACK.toLong(), to=android.graphics.Color.WHITE.toLong()) public int color;
+    property public int color;
   }
 
   public static final class EmbeddingAnimationBackground.Companion {
@@ -696,9 +696,9 @@ package androidx.window.embedding {
     property public final androidx.window.embedding.SplitAttributes defaultSplitAttributes;
     property public final androidx.window.embedding.EmbeddingAspectRatio maxAspectRatioInLandscape;
     property public final androidx.window.embedding.EmbeddingAspectRatio maxAspectRatioInPortrait;
-    property @IntRange(from=0L) public final int minHeightDp;
-    property @IntRange(from=0L) public final int minSmallestWidthDp;
-    property @IntRange(from=0L) public final int minWidthDp;
+    property public final int minHeightDp;
+    property public final int minSmallestWidthDp;
+    property public final int minWidthDp;
     field public static final androidx.window.embedding.SplitRule.Companion Companion;
     field public static final androidx.window.embedding.EmbeddingAspectRatio SPLIT_MAX_ASPECT_RATIO_LANDSCAPE_DEFAULT;
     field public static final androidx.window.embedding.EmbeddingAspectRatio SPLIT_MAX_ASPECT_RATIO_PORTRAIT_DEFAULT;

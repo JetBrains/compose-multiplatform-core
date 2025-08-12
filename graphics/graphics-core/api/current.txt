@@ -278,7 +278,7 @@ package androidx.graphics.opengl.egl {
     method public androidx.graphics.opengl.egl.EGLConfigAttributes build();
     method public void include(androidx.graphics.opengl.egl.EGLConfigAttributes attributes);
     method public androidx.graphics.opengl.egl.EGLConfigAttributes.Builder setAttribute(int attribute, int value);
-    method @kotlin.jvm.JvmSynthetic public infix void to(int, int that);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public infix void to(int, int that);
   }
 
   public static final class EGLConfigAttributes.Companion {
@@ -291,7 +291,7 @@ package androidx.graphics.opengl.egl {
   }
 
   public final class EGLConfigAttributesKt {
-    method @kotlin.jvm.JvmSynthetic public static inline androidx.graphics.opengl.egl.EGLConfigAttributes EGLConfigAttributes(kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit> block);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public static inline androidx.graphics.opengl.egl.EGLConfigAttributes EGLConfigAttributes(kotlin.jvm.functions.Function1<androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit> block);
   }
 
   public final class EGLException extends java.lang.RuntimeException {

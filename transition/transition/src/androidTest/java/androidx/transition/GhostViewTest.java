@@ -287,8 +287,7 @@ public class GhostViewTest extends BaseTest {
                 Matrix matrix = new Matrix();
                 matrix.postTranslate(0f, offsetLargerThanSize);
                 GhostViewUtils.addGhost(view, parent2, matrix);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                        && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                     // this test uses setAnimationMatrix which applies the matrix for the
                     // RenderNode starting from 21 and RenderNode is only used with the
                     // hardware acceleration. and the logic we use in drawBitmap() is drawing

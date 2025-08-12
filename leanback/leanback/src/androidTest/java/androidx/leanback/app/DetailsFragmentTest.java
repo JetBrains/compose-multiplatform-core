@@ -1239,7 +1239,6 @@ public class DetailsFragmentTest extends SingleFragmentTestBase {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     public void startEntranceTransitionAfterDestroyed() {
         SingleFragmentTestActivity activity = launchAndWaitActivity(
                 DetailsFragmentEntranceTransition.class, new Options().uiVisibility(
@@ -1295,7 +1294,6 @@ public class DetailsFragmentTest extends SingleFragmentTestBase {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP) // API 17 retains local Variable
     @Test
     public void viewLeakTest() throws Throwable {
         SingleFragmentTestActivity activity = launchAndWaitActivity(

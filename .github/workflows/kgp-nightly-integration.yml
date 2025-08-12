@@ -74,5 +74,6 @@ jobs:
             -Dorg.gradle.internal.repository.initial.backoff=500
             --stacktrace
             -x validateIntegrationPatches
+            -x checkKotlinApiTarget
           # Disable the cache since this is the only build using the latest KGP.
           gradle-cache-disabled: true

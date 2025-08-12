@@ -92,7 +92,8 @@ private constructor(
          * @return The constructed [VerticalTextLayout].
          */
         public fun build(): VerticalTextLayout {
-            val lines = LineBreaker.breakTextIntoLines(text, start, end, paint, height)
+            val lines =
+                LineBreaker.breakTextIntoLines(text, start, end, paint, height, _orientation)
             return VerticalTextLayout(text, start, end, paint, height, _orientation, lines)
         }
     }

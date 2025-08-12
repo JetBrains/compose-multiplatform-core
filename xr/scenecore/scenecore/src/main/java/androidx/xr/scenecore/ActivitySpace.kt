@@ -35,7 +35,6 @@ import java.util.function.Consumer
  * the system might update it in response to the User moving it or entering or exiting Full Space
  * Mode.
  */
-@Suppress("HiddenSuperclass")
 public class ActivitySpace
 private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
     BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {

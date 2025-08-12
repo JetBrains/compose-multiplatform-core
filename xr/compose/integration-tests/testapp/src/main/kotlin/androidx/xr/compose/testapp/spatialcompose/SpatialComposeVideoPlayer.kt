@@ -44,6 +44,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -80,6 +82,7 @@ import androidx.xr.compose.subspace.SpatialExternalSurface180Hemisphere
 import androidx.xr.compose.subspace.SpatialExternalSurface360Sphere
 import androidx.xr.compose.subspace.SpatialExternalSurfaceDefaults
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SurfaceProtection
@@ -174,7 +177,30 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             mediaUriState.value = Uri.fromFile(file)
         }
 
-        setContent { Subspace { VideoOptionsContent(session) } }
+        if (!File(drmVideoUri).exists()) {
+            Toast.makeText(
+                    this@SpatialComposeVideoPlayer,
+                    "Drm file does not exist. Please adb push the asset if using drm.",
+                    Toast.LENGTH_LONG,
+                )
+                .show()
+        }
+
+        // For a transparent SpatialMainPanel.
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        setContent {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.25f))
+                        .padding(16.dp)
+            ) {
+                Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
+            }
+
+            Subspace { VideoOptionsContent(session) }
+        }
     }
 
     @OptIn(ExperimentalComposeApi::class)
@@ -188,6 +214,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         var featheringType by remember { mutableStateOf(FeatheringType.PERCENT) }
         var featheringValue by remember { mutableFloatStateOf(0f) }
         var surfaceType by remember { mutableStateOf(SpatialExternalSurfaceType.QUAD) }
+        var useMainPanelOverlay by remember { mutableStateOf(false) }
 
         if (useDrmState.value) {
             val file = File(drmVideoUri)
@@ -393,7 +420,11 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                 }
 
                                 VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE -> {
-                                    Column(modifier = Modifier.padding(24.dp)) {
+                                    val scrollState = rememberScrollState()
+                                    Column(
+                                        modifier =
+                                            Modifier.verticalScroll(scrollState).padding(24.dp)
+                                    ) {
                                         Button(
                                             onClick = {
                                                 videoPlayingState.value = false
@@ -413,26 +444,44 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                             }
                                         }
 
+                                        Button(
+                                            onClick = { useDrmState.value = !useDrmState.value }
+                                        ) {
+                                            if (useDrmState.value) {
+                                                Text("Use picker video uri")
+                                            } else {
+                                                Text("Use drm video uri")
+                                            }
+                                        }
+
                                         val text =
                                             "Current stereo mode: " +
                                                 when (stereoMode) {
-                                                    StereoMode.Mono -> {
-                                                        "Mono"
-                                                    }
-
                                                     StereoMode.TopBottom -> {
                                                         "Top Bottom"
                                                     }
 
-                                                    else -> {
+                                                    StereoMode.SideBySide -> {
                                                         "Side by Side"
+                                                    }
+
+                                                    StereoMode.MultiviewLeftPrimary -> {
+                                                        "Multiview Left Primary"
+                                                    }
+
+                                                    StereoMode.MultiviewRightPrimary -> {
+                                                        "Multiview Right Primary"
+                                                    }
+
+                                                    else -> {
+                                                        "Mono"
                                                     }
                                                 }
 
                                         Text(text)
 
                                         Row(
-                                            modifier = Modifier.padding(vertical = 16.dp),
+                                            modifier = Modifier.padding(top = 16.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Button(onClick = { stereoMode = StereoMode.Mono }) {
@@ -448,6 +497,25 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                                 onClick = { stereoMode = StereoMode.SideBySide }
                                             ) {
                                                 Text("Side by Side")
+                                            }
+                                        }
+                                        Row(
+                                            modifier = Modifier.padding(bottom = 16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    stereoMode = StereoMode.MultiviewLeftPrimary
+                                                }
+                                            ) {
+                                                Text("Multiview Left Primary")
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    stereoMode = StereoMode.MultiviewRightPrimary
+                                                }
+                                            ) {
+                                                Text("Multiview Right Primary")
                                             }
                                         }
 
@@ -559,6 +627,23 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                                 Text("Pixel")
                                             }
                                         }
+
+                                        Row(
+                                            modifier = Modifier.padding(vertical = 16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.padding(8.dp),
+                                                text = "Use Quad Main Panel Overlay",
+                                            )
+                                            Switch(
+                                                checked = useMainPanelOverlay,
+                                                enabled = !videoPlaying,
+                                                onCheckedChange = {
+                                                    useMainPanelOverlay = !useMainPanelOverlay
+                                                },
+                                            )
+                                        }
                                     }
                                 }
 
@@ -577,7 +662,12 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 } else if (
                     videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE
                 ) {
-                    VideoInSpatialExternalSurface(stereoMode, featheringType, featheringValue)
+                    VideoInSpatialExternalSurface(
+                        stereoMode,
+                        featheringType,
+                        featheringValue,
+                        useMainPanelOverlay,
+                    )
                 } else {
                     SpatialLayoutSpacer(SubspaceModifier.height(600.dp))
                 }
@@ -757,6 +847,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         stereoMode: StereoMode,
         featheringType: FeatheringType,
         featheringValue: Float,
+        useMainPanelOverlay: Boolean,
     ) {
         var videoWidth by remember { mutableStateOf(600.dp) }
         var videoHeight by remember { mutableStateOf(600.dp) }
@@ -814,12 +905,16 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 exoPlayer = null
             }
 
-            SpatialBox(
-                modifier = SubspaceModifier.fillMaxSize(),
-                alignment = SpatialAlignment.TopRight,
-            ) {
-                SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
-                    Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
+            if (useMainPanelOverlay) {
+                SpatialMainPanel(modifier = SubspaceModifier.fillMaxSize())
+            } else {
+                SpatialBox(
+                    modifier = SubspaceModifier.fillMaxSize(),
+                    alignment = SpatialAlignment.TopRight,
+                ) {
+                    SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
+                        Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
+                    }
                 }
             }
 

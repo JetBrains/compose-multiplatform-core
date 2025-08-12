@@ -102,9 +102,16 @@ internal abstract class AppFunctionDataSpec {
      * Validates if a write request to set a value of type [targetClass] to [targetKey] is valid.
      *
      * @param isCollection Indicates if the write request is a collection of [targetClass].
+     * @param targetValue The value to be validated against any constraints if specified by the
+     *   metadata.
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateWriteRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
+    fun validateWriteRequest(
+        targetKey: String,
+        targetClass: Class<*>,
+        isCollection: Boolean,
+        targetValue: Any? = null,
+    ) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -118,15 +125,24 @@ internal abstract class AppFunctionDataSpec {
                     "expecting a value matching $targetDataTypeMetadata"
             }
         }
+
+        targetDataTypeMetadata.requireConstraintsConformance(targetKey, targetValue)
     }
 
     /**
      * Validates if a read request to get a value of type [targetClass] from [targetKey] is valid.
      *
      * @param isCollection Indicates if the write request is a collection of [targetClass].
+     * @param targetValue The value to be validated against any constraints if specified by the
+     *   metadata.
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateReadRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
+    fun validateReadRequest(
+        targetKey: String,
+        targetClass: Class<*>,
+        isCollection: Boolean,
+        targetValue: Any? = null,
+    ) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -139,6 +155,44 @@ internal abstract class AppFunctionDataSpec {
                 "Unexpected read for $targetKey: expecting $targetClass, " +
                     "the actual value should be $targetDataTypeMetadata"
             }
+        }
+
+        targetDataTypeMetadata.requireConstraintsConformance(targetKey, targetValue)
+    }
+
+    private fun AppFunctionDataTypeMetadata.requireConstraintsConformance(
+        targetKey: String,
+        targetValue: Any?,
+    ) {
+        when (this) {
+            is AppFunctionIntTypeMetadata -> {
+                if (targetValue == null) return
+
+                require(enumValues == null || enumValues.contains(targetValue)) {
+                    "Invalid value for \"$targetKey\" got \"$targetValue\", expecting one of $enumValues"
+                }
+            }
+            is AppFunctionArrayTypeMetadata -> {
+                this.requireConstraintsConformance(targetKey, targetValue)
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun AppFunctionArrayTypeMetadata.requireConstraintsConformance(
+        targetKey: String,
+        targetValue: Any?,
+    ) {
+        when (itemType) {
+            is AppFunctionIntTypeMetadata -> {
+                val intArray = targetValue as? IntArray
+                for (item in intArray ?: intArrayOf()) {
+                    itemType.requireConstraintsConformance(targetKey, item)
+                }
+            }
+
+            else -> {}
         }
     }
 

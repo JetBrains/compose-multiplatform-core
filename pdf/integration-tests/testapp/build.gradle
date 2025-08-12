@@ -51,6 +51,7 @@ dependencies {
     androidTestImplementation(libs.espressoIdlingResource)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation('androidx.test.espresso:espresso-intents:3.6.1')
+    androidTestImplementation(libs.kotlinCoroutinesTest)
 
     debugImplementation("androidx.fragment:fragment-testing-manifest:1.8.1")
     debugImplementation("androidx.fragment:fragment-testing:1.7.1")

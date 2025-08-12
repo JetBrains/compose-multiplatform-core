@@ -25,7 +25,7 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
-import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BOOLEAN_ARRAY
@@ -203,26 +203,24 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
          */
         fun KSTypeReference.toAppFunctionDatatype(): Int {
             return when (this.toTypeName().ignoreNullable().toString()) {
-                String::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_STRING
-                Int::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_INT
-                Long::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_LONG
-                Float::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_FLOAT
-                Double::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_DOUBLE
-                Boolean::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BOOLEAN
-                Unit::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_UNIT
-                Byte::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_BYTES
-                IntArray::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_INT
-                LongArray::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_LONG
-                FloatArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_FLOAT
-                DoubleArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_DOUBLE
+                String::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_STRING
+                Int::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_INT
+                Long::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_LONG
+                Float::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_FLOAT
+                Double::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_DOUBLE
+                Boolean::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BOOLEAN
+
+                Unit::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_UNIT
+                Byte::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BYTES
+                IntArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_INT
+                LongArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_LONG
+                FloatArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_FLOAT
+                DoubleArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_DOUBLE
                 BooleanArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BOOLEAN
-                ByteArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BYTES
-                ANDROID_PENDING_INTENT -> AppFunctionPrimitiveTypeMetadata.TYPE_PENDING_INTENT
+                    AppFunctionDataTypeMetadata.TYPE_BOOLEAN
+                ByteArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BYTES
+
+                ANDROID_PENDING_INTENT -> AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT
                 else ->
                     throw ProcessingException(
                         "Unsupported type reference " + this.ensureQualifiedTypeName().asString(),

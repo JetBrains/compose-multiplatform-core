@@ -38,6 +38,7 @@ internal class PdfFormFillingStateManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val errorFlow: MutableSharedFlow<Throwable>,
+    private val onRestoreTaskStarted: () -> Unit,
     private val onRestoreTaskComplete: (pagesInvalidatedAreas: Map<Int, List<Rect>>) -> Unit,
 ) {
     private var applyEditJob: Job? = null
@@ -50,6 +51,7 @@ internal class PdfFormFillingStateManager(
         val compressedEditRecords = compressFormEdits(pdfEditRecords)
         val pagesInvalidatedAreas = mutableMapOf<Int, List<Rect>>()
         val previousApplyEditJob = applyEditJob
+        onRestoreTaskStarted()
         applyEditJob =
             backgroundScope.launch {
                 previousApplyEditJob?.cancelAndJoin()

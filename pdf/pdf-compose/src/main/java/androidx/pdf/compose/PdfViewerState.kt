@@ -32,9 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.core.util.keyIterator
 import androidx.pdf.PdfPoint
+import androidx.pdf.selection.Selection
 import androidx.pdf.view.Highlight
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.Selection
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

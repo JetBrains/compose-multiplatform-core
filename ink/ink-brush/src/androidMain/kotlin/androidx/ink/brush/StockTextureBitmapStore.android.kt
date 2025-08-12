@@ -27,7 +27,8 @@ import androidx.annotation.RestrictTo
  * Pass this to your stroke renderer (e.g. [CanvasStrokeRenderer] and/or [InProgressStrokesView]) to
  * give it access to the textures.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+// Not public until we're actually publishing stock brushes with stock textures.
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public class StockTextureBitmapStore(private val resources: Resources) : TextureBitmapStore {
     private val idToBitmap = mutableMapOf<String, Bitmap>()
 

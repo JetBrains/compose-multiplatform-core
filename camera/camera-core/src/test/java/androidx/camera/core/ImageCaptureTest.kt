@@ -20,7 +20,6 @@ import android.content.Context
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
@@ -79,7 +78,6 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.mocks.MockScreenFlashListener
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Collections
@@ -103,7 +101,6 @@ import org.robolectric.shadows.ShadowLooper
 /** Unit tests for [ImageCapture]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ImageCaptureTest {
     private val resolution = Size(640, 480)
 
@@ -626,20 +623,6 @@ class ImageCaptureTest {
             .isEqualTo(ImageFormat.JPEG_R)
     }
 
-    @Config(maxSdk = 22)
-    @Test
-    fun bindImageCaptureWithZslUnsupportedSdkVersion_notAddZslConfig() {
-        bindImageCapture(
-            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
-            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
-        )
-
-        assertThat(camera.cameraControlInternal).isInstanceOf(FakeCameraControl::class.java)
-        val cameraControl = camera.cameraControlInternal as FakeCameraControl
-        assertThat(cameraControl.isZslConfigAdded).isFalse()
-    }
-
-    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInRegularCaptureModeWithZslSupportedSdkVersion_notAddZslConfig() {
         bindImageCapture(
@@ -652,7 +635,6 @@ class ImageCaptureTest {
         assertThat(cameraControl.isZslConfigAdded).isFalse()
     }
 
-    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInZslCaptureModeWithZslSupportedSdkVersion_addZslConfig() {
         bindImageCapture(
@@ -990,7 +972,6 @@ class ImageCaptureTest {
             .isSameInstanceAs(resolutionSelector)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useMaximumSize_whenNotSettingPostviewResolutioSelector() {
         val imageCapture = ImageCapture.Builder().setPostviewEnabled(true).build()
@@ -1012,7 +993,6 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun postviewResolutioSelectorCanWork() {
         val resolutionSelector =
@@ -1046,7 +1026,6 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun throwException_whenPostviewResolutionSelectorCannotSelectSize() {
         val resolutionSelector =

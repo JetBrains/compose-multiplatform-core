@@ -17,6 +17,7 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.Pose
 
 /**
  * Defines the contract for a platform-agnostic runtime that manages the scene graph and spatial
@@ -32,6 +33,22 @@ import androidx.annotation.RestrictTo
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SceneRuntime {
+    /** Return the Spatial Capabilities set that are currently supported by the platform. */
+    public val spatialCapabilities: SpatialCapabilities
+
+    /** Returns the Activity Space entity at the root of the scene. */
+    public val activitySpace: ActivitySpace
+
+    /**
+     * A factory function to create a group entity. This entity is used as a connection point for
+     * attaching children entities and managing them (i.e. setPose()) as a group.
+     *
+     * @param pose Initial pose of the entity.
+     * @param name Name of the entity.
+     * @param parent Parent entity.
+     */
+    public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
+
     /** Disposes of the resources used by this runtime */
     public fun dispose()
 }

@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.interop
 
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraId
@@ -40,10 +39,8 @@ import com.google.common.truth.Truth
 import java.util.concurrent.Executor
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCamera2Interop::class)
 class Camera2CameraInfoTest {
 

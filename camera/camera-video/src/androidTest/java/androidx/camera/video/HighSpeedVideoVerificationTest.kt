@@ -56,7 +56,6 @@ import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.lang.Thread.sleep
@@ -75,7 +74,6 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalHighSpeedVideo::class)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class HighSpeedVideoVerificationTest(
     private val cameraConfig: CameraXConfig,
     private val implName: String,

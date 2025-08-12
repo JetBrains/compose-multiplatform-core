@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.text.vertical.EmphasisSpan
-import androidx.text.vertical.EmphasisStyle
 import androidx.text.vertical.FontShearSpan
 import androidx.text.vertical.FontShearSpan.Companion.DEFAULT_FONT_SHEAR
 import androidx.text.vertical.RubySpan
@@ -118,7 +117,7 @@ class VerticalTextBuilder {
 
     @Composable
     fun <R : Any> withEmphasis(
-        style: Int = EmphasisStyle.DOT,
+        style: Int = EmphasisSpan.STYLE_DOT,
         filled: Boolean = true,
         scale: Float = 0.5f,
         block: @Composable VerticalTextBuilder.() -> R,

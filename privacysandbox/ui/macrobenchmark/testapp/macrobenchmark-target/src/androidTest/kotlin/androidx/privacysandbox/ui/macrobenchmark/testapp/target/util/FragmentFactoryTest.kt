@@ -24,6 +24,7 @@ import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ResizeComposeFra
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ResizeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ScrollComposeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ScrollFragment
+import androidx.privacysandbox.ui.macrobenchmark.testapp.target.UserInteractionComposeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.UserInteractionFragment
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -121,6 +122,17 @@ class FragmentFactoryTest {
             )
 
         assertThat(fragment).isInstanceOf(LazyListFragment::class.java)
+    }
+
+    @Test
+    fun createFragment_uiFrameworkComposeAndCujTypeUserInteractions_createsUserInteractionComposeFragment() {
+        val fragment =
+            FragmentFactory.createFragment(
+                uiFramework = SdkApiConstants.Companion.UiFrameworkOption.COMPOSE,
+                cujType = SdkApiConstants.Companion.FragmentOption.USER_INTERACTIONS,
+            )
+
+        assertThat(fragment).isInstanceOf(UserInteractionComposeFragment::class.java)
     }
 
     @Test

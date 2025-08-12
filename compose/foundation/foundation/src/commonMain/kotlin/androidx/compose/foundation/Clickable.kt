@@ -40,7 +40,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.indirect.IndirectTouchEventType
 import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.Key
@@ -1471,14 +1471,14 @@ internal abstract class AbstractClickableNode(
         if (touchInputEventSmoother == null) touchInputEventSmoother = TouchInputEventSmoother()
         return processIndirectTouchEvent(
             event.type,
-            event.primaryAxis,
+            event.primaryDirectionalMotionAxis,
             touchInputEventSmoother!!.smoothEventPosition(event, orientation = null),
         )
     }
 
     private fun processIndirectTouchEvent(
         type: IndirectTouchEventType,
-        primaryAxis: IndirectTouchEventPrimaryAxis,
+        primaryAxis: IndirectTouchEventPrimaryDirectionalMotionAxis,
         position: Offset,
     ): Boolean {
         var consumedEvent = false
@@ -1498,8 +1498,8 @@ internal abstract class AbstractClickableNode(
                     // move too far, give up event
                     val adjustedDistance =
                         when (primaryAxis) {
-                            IndirectTouchEventPrimaryAxis.X -> distanceFromPress.x
-                            IndirectTouchEventPrimaryAxis.Y -> distanceFromPress.y
+                            IndirectTouchEventPrimaryDirectionalMotionAxis.X -> distanceFromPress.x
+                            IndirectTouchEventPrimaryDirectionalMotionAxis.Y -> distanceFromPress.y
                             else -> distanceFromPress.getDistance()
                         }
                     if (

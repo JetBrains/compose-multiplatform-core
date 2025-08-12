@@ -87,7 +87,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
@@ -97,7 +96,6 @@ private const val CAMERA_ID_0 = "0"
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
 
     private val context = ApplicationProvider.getApplicationContext() as Context
@@ -671,7 +669,6 @@ class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
             }
         }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslTemplate_templateZeroShutterLagSent(): Unit = runBlocking {
         // Arrange.
@@ -710,7 +707,6 @@ class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
         }
     }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByFlashMode_templateStillPictureSent(): Unit =
         runBlocking {
@@ -746,7 +742,6 @@ class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
             }
         }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByUseCaseConfig_templateStillPictureSent(): Unit =
         runBlocking {
@@ -782,7 +777,6 @@ class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
             }
         }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withNoTemplate_templateStillPictureSent(): Unit = runBlocking {
         // Arrange.

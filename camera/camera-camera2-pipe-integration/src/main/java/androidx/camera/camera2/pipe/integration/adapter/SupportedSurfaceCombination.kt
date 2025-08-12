@@ -127,7 +127,7 @@ public class SupportedSurfaceCombination(
     private val streamConfigurationMapCompat = getStreamConfigurationMapCompat()
     private val extraSupportedSurfaceCombinationsContainer =
         ExtraSupportedSurfaceCombinationsContainer()
-    private val displayInfoManager = DisplayInfoManager(context)
+    private val displayInfoManager = DisplayInfoManager.getInstance(context)
     private val resolutionCorrector = ResolutionCorrector()
     private val targetAspectRatio: TargetAspectRatio = TargetAspectRatio()
     private val dynamicRangeResolver: DynamicRangeResolver = DynamicRangeResolver(cameraMetadata)
@@ -1875,7 +1875,7 @@ public class SupportedSurfaceCombination(
 
     /** Refresh Preview Size based on current display configurations. */
     private fun refreshPreviewSize() {
-        displayInfoManager.refresh()
+        displayInfoManager.refreshPreviewSize()
         if (!::surfaceSizeDefinition.isInitialized) {
             generateSurfaceSizeDefinition()
         } else {

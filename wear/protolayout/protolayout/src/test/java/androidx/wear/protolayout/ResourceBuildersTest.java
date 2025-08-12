@@ -16,9 +16,15 @@
 
 package androidx.wear.protolayout;
 
+import static androidx.wear.protolayout.ColorBuilders.argb;
 import static androidx.wear.protolayout.ResourceBuilders.ANIMATED_IMAGE_FORMAT_AVD;
+import static androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId.Builder.LOTTIE_PROPERTIES_LIMIT;
 
 import static com.google.common.truth.Truth.assertThat;
+
+import static org.junit.Assert.assertThrows;
+
+import android.graphics.Color;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ResourceBuilders.AndroidAnimatedImageResourceByResId;
@@ -27,6 +33,7 @@ import androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId;
 import androidx.wear.protolayout.ResourceBuilders.AndroidSeekableAnimatedImageResourceByResId;
 import androidx.wear.protolayout.ResourceBuilders.ImageResource;
 import androidx.wear.protolayout.ResourceBuilders.InlineImageResource;
+import androidx.wear.protolayout.ResourceBuilders.LottieProperty;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.proto.ResourceProto;
@@ -105,6 +112,34 @@ public class ResourceBuildersTest {
         assertThat(lottieProto.getStartTrigger().hasOnVisibleTrigger()).isTrue();
         assertThat(lottieProto.getStartTrigger().hasOnVisibleOnceTrigger()).isFalse();
         assertThat(lottieProto.getStartTrigger().hasOnLoadTrigger()).isFalse();
+    }
+
+    @Test
+    public void lottieAnimation_hasProperty() {
+        AndroidLottieResourceByResId lottieResource =
+                new AndroidLottieResourceByResId.Builder(RESOURCE_ID)
+                        .setProperties(LottieProperty.colorForSlot("sid", argb(Color.YELLOW)))
+                        .build();
+
+        ResourceProto.AndroidLottieResourceByResId lottieProto = lottieResource.toProto();
+
+        assertThat(lottieProto.getRawResourceId()).isEqualTo(RESOURCE_ID);
+        assertThat(lottieProto.getPropertiesList().size()).isEqualTo(1);
+        assertThat(lottieProto.getPropertiesList().get(0).getSlotColor().getColor().getArgb())
+                .isEqualTo(Color.YELLOW);
+        assertThat(lottieProto.getPropertiesList().get(0).getSlotColor().getSid()).isEqualTo("sid");
+    }
+
+    @Test
+    public void lottieAnimation_moreThan10Properties_throws() {
+        LottieProperty[] properties = new LottieProperty[LOTTIE_PROPERTIES_LIMIT + 1];
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new AndroidLottieResourceByResId.Builder(RESOURCE_ID)
+                                .setProperties(properties)
+                                .build());
     }
 
     @Test

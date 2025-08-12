@@ -272,4 +272,35 @@ abstract class BaseBuilderTest {
 
         database.close()
     }
+
+    // Validates that the type of connection created by the given driver are used in callbacks.
+    @Test
+    fun customConnectionsOnCallbacks() = runTest {
+        class MyConnection(private val delegate: SQLiteConnection) : SQLiteConnection by delegate
+
+        val bundledDriver = BundledSQLiteDriver()
+        val db =
+            getRoomDatabaseBuilder()
+                .addCallback(
+                    object : RoomDatabase.Callback() {
+                        override fun onCreate(connection: SQLiteConnection) {
+                            assertThat(connection).isInstanceOf<MyConnection>()
+                        }
+
+                        override fun onOpen(connection: SQLiteConnection) {
+                            assertThat(connection).isInstanceOf<MyConnection>()
+                        }
+                    }
+                )
+                .setDriver(
+                    object : SQLiteDriver by bundledDriver {
+                        override fun open(fileName: String): SQLiteConnection {
+                            return MyConnection(bundledDriver.open(fileName))
+                        }
+                    }
+                )
+                .build()
+        db.dao().insertItem(1)
+        db.close()
+    }
 }

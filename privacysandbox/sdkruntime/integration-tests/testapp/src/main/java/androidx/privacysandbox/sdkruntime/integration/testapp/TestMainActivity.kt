@@ -28,7 +28,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.AppOwnedInterfacesFragment
 import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.BaseFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.ClientImportanceListenerFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.GetClientPackageNameFragment
 import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.LoadedSdksFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.SandboxDeathFragment
+import androidx.privacysandbox.sdkruntime.integration.testapp.fragments.SdkContextFragment
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
 
@@ -131,6 +135,11 @@ class TestMainActivity : AppCompatActivity() {
         when (menuItem.itemId) {
             R.id.itemLoadedSdksCuj -> switchContentFragment(LoadedSdksFragment())
             R.id.itemAppSdksCuj -> switchContentFragment(AppOwnedInterfacesFragment())
+            R.id.itemSandboxDeathCuj -> switchContentFragment(SandboxDeathFragment())
+            R.id.itemClientPackageCuj -> switchContentFragment(GetClientPackageNameFragment())
+            R.id.itemSdkContextCuj -> switchContentFragment(SdkContextFragment())
+            R.id.itemClientImportanceListenerCuj ->
+                switchContentFragment(ClientImportanceListenerFragment())
             else -> addLogMessage("Invalid CUJ option")
         }
     }

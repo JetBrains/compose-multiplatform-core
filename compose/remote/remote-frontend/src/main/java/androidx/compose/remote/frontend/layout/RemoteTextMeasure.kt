@@ -17,6 +17,9 @@ package androidx.compose.remote.frontend.layout
 
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.remote.core.operations.TextAttribute
+import androidx.compose.remote.creation.Painter
+import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.RemoteComposeWriterAndroid
 import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.frontend.state.RemoteFloat
 import androidx.compose.remote.frontend.state.RemoteString
@@ -29,6 +32,14 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.takeOrElse
+
+private val RemoteComposeWriter.painter: Painter
+    get() {
+        if (this is RemoteComposeWriterAndroid) {
+            this.painter
+        }
+        throw (Exception("Invalid Writer, painter inaccessible"))
+    }
 
 @Composable
 fun measureTextWidth(

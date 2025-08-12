@@ -48,7 +48,7 @@ dependencies {
     debugImplementation(project(":compose:ui:ui-test-manifest"))
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("com.google.protobuf:protobuf-javalite:3.19.4")
+    implementation("com.google.protobuf:protobuf-javalite:3.25.5")
 
     // For kotlin serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")

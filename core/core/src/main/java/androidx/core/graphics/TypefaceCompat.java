@@ -83,10 +83,8 @@ public class TypefaceCompat {
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                 && TypefaceCompatApi24Impl.isUsable()) {
             sTypefaceCompatImpl = new TypefaceCompatApi24Impl();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            sTypefaceCompatImpl = new TypefaceCompatApi21Impl();
         } else {
-            sTypefaceCompatImpl = new TypefaceCompatBaseImpl();
+            sTypefaceCompatImpl = new TypefaceCompatApi21Impl();
         }
     }
 
@@ -469,15 +467,6 @@ public class TypefaceCompat {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
         }
-
-        Typeface typefaceFromFamily = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            typefaceFromFamily = TypefaceCompat.getBestFontFromFamily(context, family, style);
-            if (typefaceFromFamily != null) {
-                return typefaceFromFamily;
-            }
-        }
-
         return Typeface.create(family, style);
     }
 

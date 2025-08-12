@@ -1000,7 +1000,6 @@ internal class BasicTextFieldTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun textField_showsKeyboardAgainWhenTapped_ifFocused() {
         val testKeyboardController = TestSoftwareKeyboardController(rule)

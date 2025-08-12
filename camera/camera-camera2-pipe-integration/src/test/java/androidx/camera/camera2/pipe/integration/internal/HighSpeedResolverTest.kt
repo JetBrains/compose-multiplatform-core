@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LE
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraId
@@ -56,7 +55,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class HighSpeedResolverTest {
 
     private companion object {

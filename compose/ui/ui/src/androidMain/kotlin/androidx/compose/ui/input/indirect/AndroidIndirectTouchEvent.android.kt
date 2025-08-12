@@ -31,7 +31,7 @@ constructor(
     override val position: Offset,
     override val uptimeMillis: Long,
     override val type: IndirectTouchEventType,
-    override val primaryAxis: IndirectTouchEventPrimaryAxis,
+    override val primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis,
     internal val nativeEvent: MotionEvent,
 ) : PlatformIndirectTouchEvent
 
@@ -47,17 +47,17 @@ val IndirectTouchEvent.nativeEvent: MotionEvent
  * If you have a system created [MotionEvent], you can call indirectScrollAxis() on your
  * [MotionEvent] to get the primary axis.
  */
-// TODO: Add detailed notes why we are passing primary axis vs. grabbing it from MotionEvent.
 @ExperimentalIndirectTouchTypeApi
 fun IndirectTouchEvent(
     motionEvent: MotionEvent,
-    primaryAxis: IndirectTouchEventPrimaryAxis = IndirectTouchEventPrimaryAxis.X,
+    primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis =
+        IndirectTouchEventPrimaryDirectionalMotionAxis.None,
 ): IndirectTouchEvent =
     AndroidIndirectTouchEvent(
         position = Offset(motionEvent.x, motionEvent.y),
         uptimeMillis = motionEvent.eventTime,
         type = convertActionToIndirectTouchEventType(motionEvent.actionMasked),
-        primaryAxis = primaryAxis,
+        primaryDirectionalMotionAxis = primaryDirectionalMotionAxis,
         nativeEvent = motionEvent,
     )
 
@@ -72,7 +72,9 @@ internal fun convertActionToIndirectTouchEventType(actionMasked: Int): IndirectT
 }
 
 @OptIn(ExperimentalIndirectTouchTypeApi::class)
-internal fun indirectScrollAxis(motionEvent: MotionEvent): IndirectTouchEventPrimaryAxis {
+internal fun indirectPrimaryDirectionalScrollAxis(
+    motionEvent: MotionEvent
+): IndirectTouchEventPrimaryDirectionalMotionAxis {
     require(motionEvent.isFromSource(SOURCE_TOUCH_NAVIGATION)) {
         "MotionEvent must be a touch navigation source"
     }
@@ -82,21 +84,21 @@ internal fun indirectScrollAxis(motionEvent: MotionEvent): IndirectTouchEventPri
         val yMotionRange = inputDevice.getMotionRange(MotionEvent.AXIS_Y)
 
         if (xMotionRange != null && yMotionRange == null) {
-            return IndirectTouchEventPrimaryAxis.X
+            return IndirectTouchEventPrimaryDirectionalMotionAxis.X
         } else if (yMotionRange != null && xMotionRange == null) {
-            return IndirectTouchEventPrimaryAxis.Y
+            return IndirectTouchEventPrimaryDirectionalMotionAxis.Y
         } else if (xMotionRange != null && yMotionRange != null) {
             val xRange = xMotionRange.range
             val yRange = yMotionRange.range
 
             if ((xRange > yRange) && ((yRange == 0f) || (xRange / yRange >= RATIO_CUTOFF))) {
-                return IndirectTouchEventPrimaryAxis.X
+                return IndirectTouchEventPrimaryDirectionalMotionAxis.X
             } else if ((yRange > xRange) && ((xRange == 0f) || (yRange / xRange >= RATIO_CUTOFF))) {
-                return IndirectTouchEventPrimaryAxis.Y
+                return IndirectTouchEventPrimaryDirectionalMotionAxis.Y
             }
         }
     }
-    return IndirectTouchEventPrimaryAxis.Unspecified
+    return IndirectTouchEventPrimaryDirectionalMotionAxis.None
 }
 
 // TODO: Remove once platform supports device specifying preferred axis for scrolling.

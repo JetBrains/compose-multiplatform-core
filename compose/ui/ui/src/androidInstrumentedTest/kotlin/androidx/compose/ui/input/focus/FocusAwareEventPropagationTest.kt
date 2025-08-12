@@ -36,7 +36,7 @@ import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.K
 import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.RotaryInput
 import androidx.compose.ui.input.indirect.AndroidIndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.indirect.IndirectTouchEventType
 import androidx.compose.ui.input.indirect.onIndirectTouchEvent
 import androidx.compose.ui.input.indirect.onPreIndirectTouchEvent
@@ -82,7 +82,7 @@ class FocusAwareEventPropagationTest(private val nodeType: NodeType) {
                     position = Offset.Zero,
                     uptimeMillis = 0L,
                     type = IndirectTouchEventType.Press,
-                    primaryAxis = IndirectTouchEventPrimaryAxis.X,
+                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
                     nativeEvent =
                         MotionEvent.obtain(
                             SystemClock.uptimeMillis(), // downTime,

@@ -28,6 +28,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
+import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -53,8 +54,8 @@ public class ContentBehaviorTest {
     private RemoteComposeContext remoteComposeWriter(
             int tw, int th, int scrolling, int alignment, int sizing, int mode) {
         Bitmap lightImage = createImage(tw, th, false);
-        RemoteComposeContext doc =
-                new RemoteComposeContext(
+        RemoteComposeContextAndroid doc =
+                new RemoteComposeContextAndroid(
                         tw,
                         th,
                         "demo",
@@ -74,8 +75,8 @@ public class ContentBehaviorTest {
         int tw = lightImage.getWidth();
         int th = lightImage.getHeight();
 
-        RemoteComposeContext doc =
-                new RemoteComposeContext(
+        RemoteComposeContextAndroid doc =
+                new RemoteComposeContextAndroid(
                         tw,
                         th,
                         "demo",

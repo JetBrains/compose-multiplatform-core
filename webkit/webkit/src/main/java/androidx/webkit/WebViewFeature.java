@@ -31,6 +31,7 @@ import android.webkit.WebView;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+import androidx.core.os.OutcomeReceiverCompat;
 import androidx.webkit.internal.WebViewFeatureInternal;
 
 import org.jspecify.annotations.NonNull;
@@ -109,6 +110,7 @@ public class WebViewFeature {
             GET_COOKIE_INFO,
             REQUESTED_WITH_HEADER_ALLOW_LIST,
             USER_AGENT_METADATA,
+            USER_AGENT_METADATA_FORM_FACTORS,
             MULTI_PROFILE,
             ATTRIBUTION_REGISTRATION_BEHAVIOR,
             WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
@@ -140,6 +142,8 @@ public class WebViewFeature {
             STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
+            STARTUP_FEATURE_SET_PROFILES_TO_LOAD,
+            STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -539,7 +543,8 @@ public class WebViewFeature {
 
     /**
      * Feature for {@link #isStartupFeatureSupported(Context, String)}.
-     * This feature covers {@link ProcessGlobalConfig#setDirectoryBasePaths(Context, File, File)}
+     * This feature covers
+     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, Boolean)}
      */
     public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
             "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
@@ -563,6 +568,16 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setUserAgentMetadata(WebSettings, UserAgentMetadata)}.
      */
     public static final String USER_AGENT_METADATA = "USER_AGENT_METADATA";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link UserAgentMetadata.Builder#setFormFactors(List)}, and
+     * {@link UserAgentMetadata#getFormFactors()}.
+     *
+     */
+    public static final String USER_AGENT_METADATA_FORM_FACTORS =
+            "USER_AGENT_METADATA_FORM_FACTORS";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -660,10 +675,8 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.WebViewCompat#prerenderUrl(WebView, String, CancellationSignal,
-     * Executor, SpeculativeLoadingParameters, PrerenderOperationCallback)}}
+     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}}
      */
-    @WebViewCompat.ExperimentalUrlPrerender
     public static final String PRERENDER_WITH_URL = "PRERENDER_URL_V2";
 
     /**
@@ -752,6 +765,21 @@ public class WebViewFeature {
      * {@link Profile#clearAllOriginMatchedHeaders()}.
      */
     public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)}.
+     */
+    public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
+            "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
+
+    /**
+     * Feature for {@link #isStartupFeatureSupported(Context, String)}.
+     * This feature covers
+     * {@link ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
+     */
+    public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
+            "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

@@ -19,7 +19,6 @@ package androidx.camera.video.internal.config
 import android.media.EncoderProfiles
 import android.media.MediaFormat
 import android.media.MediaRecorder
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.DynamicRange
@@ -34,12 +33,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class VideoConfigUtilTest {
 
     @Test

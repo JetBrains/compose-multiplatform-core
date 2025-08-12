@@ -16,18 +16,15 @@
 
 package androidx.camera.camera2.interop
 
-import android.os.Build
 import androidx.annotation.OptIn
 import androidx.camera.core.impl.CameraControlInternal
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCamera2Interop::class)
 class Camera2CameraControlTest {
 

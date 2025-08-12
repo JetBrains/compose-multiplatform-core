@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableIntObjectMap
 import androidx.ink.nativeloader.UsedByNative
 import kotlin.jvm.JvmStatic
 
@@ -27,52 +28,33 @@ import kotlin.jvm.JvmStatic
 @UsedByNative
 public class InputToolType
 private constructor(
-    @UsedByNative
-    @JvmField
-    @field:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public val value: Int
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    public val value: Int,
+    private val name: String,
 ) {
-
-    private fun toSimpleString(): String =
-        when (this) {
-            UNKNOWN -> "UNKNOWN"
-            MOUSE -> "MOUSE"
-            TOUCH -> "TOUCH"
-            STYLUS -> "STYLUS"
-            else -> "INVALID"
-        }
-
-    public override fun toString(): String = PREFIX + this.toSimpleString()
-
-    public override fun equals(other: Any?): Boolean {
-        if (other == null || other !is InputToolType) return false
-        return value == other.value
+    init {
+        check(value !in VALUE_TO_INSTANCE) { "Duplicate InputToolType value: $value." }
+        VALUE_TO_INSTANCE[value] = this
     }
 
-    public override fun hashCode(): Int = value.hashCode()
+    public override fun toString(): String = "InputToolType.$name"
 
     public companion object {
+        private val VALUE_TO_INSTANCE = MutableIntObjectMap<InputToolType>()
+
         /**
-         * Get InputToolType by Int. Accessible internally for conversion to and from C++
-         * representations of ToolType in JNI code and in internal Kotlin code.
+         * Get InputToolType by Int. Accessible internally for conversion from C++ representation of
+         * ToolType from JNI, also called by the JNI.
          */
         @JvmStatic
         @UsedByNative
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun from(value: Int): InputToolType {
-            return when (value) {
-                UNKNOWN.value -> UNKNOWN
-                MOUSE.value -> MOUSE
-                TOUCH.value -> TOUCH
-                STYLUS.value -> STYLUS
-                else -> throw IllegalArgumentException("Invalid value: $value")
-            }
-        }
+        public fun fromInt(value: Int): InputToolType =
+            checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid InputToolType value: $value" }
 
-        @JvmField public val UNKNOWN: InputToolType = InputToolType(0)
-        @JvmField public val MOUSE: InputToolType = InputToolType(1)
-        @JvmField public val TOUCH: InputToolType = InputToolType(2)
-        @JvmField public val STYLUS: InputToolType = InputToolType(3)
-        private const val PREFIX = "InputToolType."
+        @JvmField public val UNKNOWN: InputToolType = InputToolType(0, "UNKNOWN")
+        @JvmField public val MOUSE: InputToolType = InputToolType(1, "MOUSE")
+        @JvmField public val TOUCH: InputToolType = InputToolType(2, "TOUCH")
+        @JvmField public val STYLUS: InputToolType = InputToolType(3, "STYLUS")
     }
 }

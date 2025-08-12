@@ -16,6 +16,8 @@
 
 package androidx.pdf.view
 
+import android.view.MotionEvent
+
 /**
  * Performs actions in response to mouse shortcuts detected by [PdfViewExternalInputManager]
  *
@@ -25,6 +27,10 @@ internal class PdfViewMouseActionHandler(pdfView: PdfView) : PdfViewExternalInpu
 
     override val horizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR
     override val verticalScrollFactor = VERTICAL_SCROLL_FACTOR
+
+    fun dragSelection(event: MotionEvent): Boolean {
+        return pdfView.maybeDragSelection(event, isSourceMouse = true)
+    }
 
     private companion object {
         const val HORIZONTAL_SCROLL_FACTOR = 14

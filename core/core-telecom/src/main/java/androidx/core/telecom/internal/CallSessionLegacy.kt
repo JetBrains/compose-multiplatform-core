@@ -274,14 +274,14 @@ internal class CallSessionLegacy(
      * phase.
      *
      * @param prevEndpoint The audio endpoint active before the current change.
-     * @param nextEndpoint The new audio endpoint that has just become active.
+     * @param currentEndpoint The new audio endpoint that has just become active.
      */
     fun avoidSpeakerOverrideOnCallStart(
         prevEndpoint: CallEndpointCompat?,
-        nextEndpoint: CallEndpointCompat?,
+        currentEndpoint: CallEndpointCompat?,
     ) {
         if (mWasPreferredOverrideChecked) {
-            Log.d(TAG, "avoidSpeakerOverrideOnCallStart: Already checked." + "Skipping.")
+            Log.v(TAG, "avoidSpeakerOverrideOnCallStart: Already checked. Skipping.")
             return
         }
 
@@ -308,25 +308,25 @@ internal class CallSessionLegacy(
                 "mPreferredStartingCallEndpoint=[$preferredStartingCallEndpoint], " +
                 "mLastClientRequestedEndpoint=[$mLastClientRequestedEndpoint], " +
                 "prevEndpoint=[$prevEndpoint], " +
-                "nextEndpoint=[$nextEndpoint]",
+                "currentEndpoint=[$currentEndpoint]",
         )
 
-        // Check 1: Did the user explicitly request the current 'nextEndpoint' if it's SPEAKER?
+        // Check 1: Did the user explicitly request the current 'currentEndpoint' if it's SPEAKER?
         // `mLastClientRequestedEndpoint` would have been set by your app calling
         // `requestEndpointChange`. This value is cleared after the platform confirms the change
         // in `onCallEndpointChanged`, so it correctly reflects the *intent leading to the
-        // current `nextEndpoint`*.
+        // current `currentEndpoint`*.
         if (
             mLastClientRequestedEndpoint != null &&
                 isSpeakerEndpoint(
                     mLastClientRequestedEndpoint
                 ) && // User explicitly asked for SPEAKER
-                isSpeakerEndpoint(nextEndpoint) // And the current endpoint IS SPEAKER
+                isSpeakerEndpoint(currentEndpoint) // And the current endpoint IS SPEAKER
         ) {
             Log.i(
                 TAG,
                 "avoidSpeakerOverrideOnCallStart: User explicitly requested SPEAKER " +
-                    "($mLastClientRequestedEndpoint). Current endpoint is $nextEndpoint. " +
+                    "($mLastClientRequestedEndpoint). Current endpoint is $currentEndpoint. " +
                     "Assuming intentional. No override.",
             )
             return // Do not proceed with automatic override
@@ -337,9 +337,8 @@ internal class CallSessionLegacy(
         // for SPEAKER.
         if (
             preferredStartingCallEndpoint != null &&
-                preferredStartingCallEndpoint == prevEndpoint &&
-                preferredStartingCallEndpoint != nextEndpoint &&
-                isSpeakerEndpoint(nextEndpoint) // Current endpoint is SPEAKER
+                preferredStartingCallEndpoint != currentEndpoint &&
+                isSpeakerEndpoint(currentEndpoint) // Current endpoint is SPEAKER
         ) {
             CoroutineScope(coroutineContext).launch {
                 Log.i(
@@ -492,6 +491,7 @@ internal class CallSessionLegacy(
     // TODO:: verify the CallEndpoint change was successful. tracking bug: b/283324578
     @Suppress("deprecation")
     fun requestEndpointChange(callEndpoint: CallEndpointCompat): CallControlResult {
+        Log.d(TAG, "requestEndpointChange: endpoint=[$callEndpoint]")
         // cache the last CallEndpoint the user requested to reference in audio callbacks
         mLastClientRequestedEndpoint = callEndpoint
         return if (

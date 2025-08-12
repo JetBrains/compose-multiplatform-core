@@ -280,14 +280,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         anchorTask.configure { it.dependsOn(task) }
-        val ignoreFailuresProperty =
-            project.providers.gradleProperty(TEST_FAILURES_DO_NOT_FAIL_TEST_TASK)
-        val ignoreFailures = ignoreFailuresProperty.isPresent
-        if (ignoreFailures) {
-            task.ignoreFailures = true
-        }
-        task.inputs.property("ignoreFailures", ignoreFailures)
-
         val xmlReportDestDir = project.getHostTestResultDirectory()
         val testName = "${project.path}:${task.name}"
         project.addToModuleInfo(testName, buildFeatures.isIsolatedProjectsEnabled())
@@ -435,10 +427,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         if (plugin is KotlinMultiplatformPluginWrapper) {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
-                    t.compilations.configureEach {
-                        @Suppress("Deprecation") // Deprecated-replacement-not-yet-ready b/379315244
-                        it.compilerOptions.options.jvmTarget.set(defaultJvmTarget)
-                        // it.compileTaskProvider.configure { it.compilerOptions.jvmTarget.set(JT) }
+                    t.compilations.configureEach { compilation ->
+                        compilation.compileTaskProvider.configure {
+                            it.compilerOptions.jvmTarget.set(defaultJvmTarget)
+                        }
                     }
                 }
                 targets.withType(KotlinJvmTarget::class.java).configureEach { target ->

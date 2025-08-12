@@ -618,6 +618,7 @@ public class RxJava2Test extends TestDatabaseTest {
                 return mailList.equals(Lists.newArrayList(mail0, mail1));
             }
         });
+        db.close();
     }
 
     @Test

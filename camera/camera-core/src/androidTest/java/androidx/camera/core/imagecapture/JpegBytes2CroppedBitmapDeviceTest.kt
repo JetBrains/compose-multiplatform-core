@@ -30,7 +30,6 @@ import androidx.camera.testing.impl.ExifUtil.createExif
 import androidx.camera.testing.impl.TestImageUtil.createJpegBytes
 import androidx.camera.testing.impl.TestImageUtil.getAverageDiff
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith
 /** Unit tests for [JpegBytes2CroppedBitmap]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class JpegBytes2CroppedBitmapTest {
 
     private val operation = JpegBytes2CroppedBitmap()

@@ -118,25 +118,25 @@ package androidx.xr.runtime.testing {
 
   public final class FakeRuntimePlane {
     ctor public FakeRuntimePlane();
-    ctor public FakeRuntimePlane(optional androidx.xr.runtime.internal.Plane.Type type, optional androidx.xr.runtime.internal.Plane.Label label, optional androidx.xr.runtime.TrackingState trackingState, optional androidx.xr.runtime.math.Pose centerPose, optional androidx.xr.runtime.math.Vector2 extents, optional java.util.List<androidx.xr.runtime.math.Vector2> vertices, optional androidx.xr.runtime.internal.Plane? subsumedBy, optional java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors);
+    ctor public FakeRuntimePlane(optional androidx.xr.runtime.internal.Plane.Type type, optional androidx.xr.runtime.internal.Plane.Label label, optional androidx.xr.runtime.TrackingState trackingState, optional androidx.xr.runtime.math.Pose centerPose, optional androidx.xr.runtime.math.FloatSize2d extents, optional java.util.List<androidx.xr.runtime.math.Vector2> vertices, optional androidx.xr.runtime.internal.Plane? subsumedBy, optional java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors);
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public void detachAnchor(androidx.xr.runtime.internal.Anchor anchor);
     method public java.util.Collection<androidx.xr.runtime.internal.Anchor> getAnchors();
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector2 getExtents();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
     method public androidx.xr.runtime.internal.Plane.Label getLabel();
     method public androidx.xr.runtime.internal.Plane? getSubsumedBy();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     method public androidx.xr.runtime.internal.Plane.Type getType();
     method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     method public void setCenterPose(androidx.xr.runtime.math.Pose);
-    method public void setExtents(androidx.xr.runtime.math.Vector2);
+    method public void setExtents(androidx.xr.runtime.math.FloatSize2d);
     method public void setSubsumedBy(androidx.xr.runtime.internal.Plane?);
     method public void setTrackingState(androidx.xr.runtime.TrackingState);
     method public void setVertices(java.util.List<androidx.xr.runtime.math.Vector2>);
     property public java.util.Collection<androidx.xr.runtime.internal.Anchor> anchors;
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector2 extents;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.runtime.internal.Plane.Label label;
     property public androidx.xr.runtime.internal.Plane? subsumedBy;
     property public androidx.xr.runtime.TrackingState trackingState;

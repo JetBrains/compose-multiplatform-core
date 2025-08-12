@@ -48,10 +48,10 @@ package androidx.xr.runtime.openxr {
     method public void update(long xrTime);
     property public android.os.IBinder anchorToken;
     property public long nativePointer;
-    property @GuardedBy("lock") public androidx.xr.runtime.internal.Anchor.PersistenceState persistenceState;
+    property public androidx.xr.runtime.internal.Anchor.PersistenceState persistenceState;
     property public androidx.xr.runtime.math.Pose pose;
     property public androidx.xr.runtime.TrackingState trackingState;
-    property @GuardedBy("lock") public java.util.UUID? uuid;
+    property public java.util.UUID? uuid;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrAugmentedObject implements androidx.xr.runtime.internal.AugmentedObject {
@@ -166,7 +166,7 @@ package androidx.xr.runtime.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPlane implements androidx.xr.runtime.internal.Plane {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector2 getExtents();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
     method public androidx.xr.runtime.internal.Plane.Label getLabel();
     method public androidx.xr.runtime.internal.Plane? getSubsumedBy();
     method public androidx.xr.runtime.TrackingState getTrackingState();
@@ -174,7 +174,7 @@ package androidx.xr.runtime.openxr {
     method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     method public void update(long xrTime);
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector2 extents;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.runtime.internal.Plane.Label label;
     property public androidx.xr.runtime.internal.Plane? subsumedBy;
     property public androidx.xr.runtime.TrackingState trackingState;

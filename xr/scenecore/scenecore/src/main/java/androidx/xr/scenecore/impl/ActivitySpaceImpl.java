@@ -56,9 +56,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
- * Implementation of a RealityCore ActivitySpaceImpl.
+ * Implementation of SceneCore's ActivitySpace.
  *
- * <p>This is used to create an entity that contains the task node.
+ * <p>This Entity represents the origin of the Scene, and is positioned by the system.
  */
 @SuppressWarnings({"UnnecessarilyFullyQualified"})
 final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivitySpace {

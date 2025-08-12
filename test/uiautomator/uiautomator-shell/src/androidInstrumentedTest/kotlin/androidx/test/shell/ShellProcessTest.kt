@@ -17,12 +17,10 @@
 package androidx.test.shell
 
 import androidx.kruth.assertThat
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import java.io.DataInputStream
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = 23)
 @SmallTest
 class ShellProcessTest {
 

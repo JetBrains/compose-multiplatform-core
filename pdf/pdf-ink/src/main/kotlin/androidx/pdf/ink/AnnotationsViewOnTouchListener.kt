@@ -21,7 +21,7 @@ import android.view.View
 
 /** Routes touch events to either ink view or pdf view based on single or multi-touch gestures. */
 internal class AnnotationsViewOnTouchListener(
-    private val inkViewDispatcher: TouchEventDispatcher,
+    private val wetStrokesViewDispatcher: TouchEventDispatcher,
     private val pdfViewDispatcher: TouchEventDispatcher,
 ) : View.OnTouchListener {
 
@@ -34,7 +34,7 @@ internal class AnnotationsViewOnTouchListener(
 
                 // The ACTION_DOWN event is the first event of any touch event stream and needs to
                 // be intercepted by all underlying views so they can react to it.
-                inkViewDispatcher.dispatchTouchEvent(event)
+                wetStrokesViewDispatcher.dispatchTouchEvent(event)
                 pdfViewDispatcher.dispatchTouchEvent(event)
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -42,7 +42,7 @@ internal class AnnotationsViewOnTouchListener(
 
                 val cancelEvent =
                     MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-                inkViewDispatcher.dispatchTouchEvent(cancelEvent)
+                wetStrokesViewDispatcher.dispatchTouchEvent(cancelEvent)
                 pdfViewDispatcher.dispatchTouchEvent(event)
 
                 cancelEvent.recycle()
@@ -52,7 +52,7 @@ internal class AnnotationsViewOnTouchListener(
                 if (multiTouchTracking) {
                     pdfViewDispatcher.dispatchTouchEvent(event)
                 } else {
-                    inkViewDispatcher.dispatchTouchEvent(event)
+                    wetStrokesViewDispatcher.dispatchTouchEvent(event)
                 }
 
                 multiTouchTracking = false // Reset for the next gesture
@@ -61,7 +61,7 @@ internal class AnnotationsViewOnTouchListener(
                 if (multiTouchTracking) {
                     pdfViewDispatcher.dispatchTouchEvent(event)
                 } else {
-                    inkViewDispatcher.dispatchTouchEvent(event)
+                    wetStrokesViewDispatcher.dispatchTouchEvent(event)
                 }
             }
         }

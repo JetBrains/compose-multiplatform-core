@@ -42,7 +42,6 @@ import androidx.glance.semantics.semantics
 import androidx.glance.unit.ColorProvider
 import androidx.glance.unit.ResourceColorProvider
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -125,8 +124,6 @@ class ImageTranslatorTest {
         }
 
     @Test
-    @Config(minSdk = 23)
-    @SdkSuppress(minSdkVersion = 23)
     fun canTranslateImage_icon() =
         fakeCoroutineScope.runTest {
             val icon = Icon.createWithResource(context, R.drawable.oval)

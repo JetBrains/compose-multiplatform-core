@@ -101,7 +101,6 @@ public class InProgressStroke {
      * [enqueueInputs] or [updateShape].
      */
     @ExperimentalInkCustomBrushApi
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun start(brush: Brush, noiseSeed: Int) {
         InProgressStrokeNative.start(nativePointer, brush.nativePointer, noiseSeed)
         this.brush = brush
@@ -220,6 +219,14 @@ public class InProgressStroke {
         )
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toImmutableWithUnusedAttributesPruned(): Stroke {
+        return Stroke.wrapNative(
+            InProgressStrokeNative.newStrokeFromPrunedCopy(nativePointer),
+            requireNotNull(brush),
+        )
+    }
+
     /**
      * Returns the number of [StrokeInput]s in the stroke so far. This counts all of the real inputs
      * and the most-recently-processed sequence of predicted inputs.
@@ -284,12 +291,6 @@ public class InProgressStroke {
     @IntRange(from = 0)
     public fun getBrushCoatCount(): Int =
         InProgressStrokeNative.getBrushCoatCount(nativePointer).also { check(it >= 0) }
-
-    /** @see getBrushCoatCount */
-    @IntRange(from = 0)
-    @Deprecated("Renamed to getBrushCoatCount")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public fun brushCoatCount(): Int = getBrushCoatCount()
 
     /**
      * Writes to [outBoxAccumulator] the bounding box of the vertex positions of the mesh for brush
@@ -425,12 +426,7 @@ public class InProgressStroke {
     // accessors are made available via InProgressStroke because the underlying
     // native InProgressStroke manages the memory for its meshes.
 
-    /**
-     * Returns the number of individual meshes in the specified brush coat of this stroke.
-     *
-     * TODO: b/294561921 - Implement multiple meshes. This value is hard coded to 1 in
-     *   [in_progress_stroke_jni.cc].
-     */
+    /** Returns the number of individual meshes in the specified brush coat of this stroke. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMeshPartitionCount(@IntRange(from = 0) coatIndex: Int): Int {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
@@ -445,8 +441,9 @@ public class InProgressStroke {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getVertexCount(@IntRange(from = 0) coatIndex: Int, partitionIndex: Int): Int {
-        require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
-            "Cannot get vertex count at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
+        require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
+            "Cannot get vertex count at partitionIndex $partitionIndex out of range " +
+                "[0, ${getMeshPartitionCount(coatIndex)})."
         }
         return InProgressStrokeNative.getVertexCount(nativePointer, coatIndex, partitionIndex)
     }
@@ -454,51 +451,56 @@ public class InProgressStroke {
     /**
      * Gets the vertices of the mesh at [partitionIndex] for brush coat [coatIndex] which must be
      * less than that coat's [getMeshPartitionCount].
+     *
+     * Note that the returned direct [ByteBuffer] ceases to be valid after the next call to
+     * [updateShape] or after this [InProgressStroke] has been garbage collected. Continuing to use
+     * it after that point will result in incorrect and possibly undefined behavior.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getRawVertexBuffer(
         @IntRange(from = 0) coatIndex: Int,
         partitionIndex: Int,
     ): ByteBuffer {
-        require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
-            "Cannot get raw vertex buffer at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
+        require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
+            "Cannot get raw vertex buffer at partitionIndex $partitionIndex out of range " +
+                "[0, ${getMeshPartitionCount(coatIndex)})."
         }
-        return (InProgressStrokeNative.getRawVertexData(nativePointer, coatIndex, partitionIndex)
-                ?: ByteBuffer.allocate(0))
+        return (InProgressStrokeNative.getUnsafelyMutableRawVertexData(
+                nativePointer,
+                coatIndex,
+                partitionIndex,
+            ) ?: ByteBuffer.allocateDirect(0))
             .asReadOnlyBuffer()
     }
 
     /**
      * Gets the triangle indices of the mesh at [partitionIndex] for brush coat [coatIndex] which
      * must be less than that coat's [getMeshPartitionCount].
+     *
+     * Note that the returned direct [ShortBuffer] ceases to be valid after the next call to
+     * [updateShape] or after this [InProgressStroke] has been garbage collected. Continuing to use
+     * it after that point will result in incorrect and possibly undefined behavior.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getRawTriangleIndexBuffer(
         @IntRange(from = 0) coatIndex: Int,
         partitionIndex: Int,
     ): ShortBuffer {
-        require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
-            "Cannot get raw triangle index buffer at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
-        }
-        val triangleIndexStride =
-            InProgressStrokeNative.getTriangleIndexStride(nativePointer, coatIndex, partitionIndex)
-        check(triangleIndexStride == Short.SIZE_BYTES) {
-            "Only 16-bit triangle indices are supported, but got stride of $triangleIndexStride"
+        require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
+            "Cannot get raw triangle index buffer at partitionIndex $partitionIndex out of range " +
+                "[0, ${getMeshPartitionCount(coatIndex)})."
         }
         // The resulting buffer is writeable, so first make it readonly. Then, because Java
         // ByteBuffers
         // defaults to a fixed endianness instead of using the endianness of the device, insist on
         // ByteOrder.nativeOrder.
-        // TODO: b/302535371 - There is a bug in the combined use of .asReadOnlyBuffer() and
-        // .order(),
-        // such that the returned buffer is NOT readonly.
-        return (InProgressStrokeNative.getRawTriangleIndexData(
+        return (InProgressStrokeNative.getUnsafelyMutableRawTriangleIndexData(
                 nativePointer,
                 coatIndex,
                 partitionIndex,
-            ) ?: ByteBuffer.allocate(0))
-            .asReadOnlyBuffer()
+            ) ?: ByteBuffer.allocateDirect(0))
             .order(ByteOrder.nativeOrder())
+            .asReadOnlyBuffer()
             .asShortBuffer()
     }
 
@@ -508,16 +510,23 @@ public class InProgressStroke {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMeshFormat(@IntRange(from = 0) coatIndex: Int, partitionIndex: Int): MeshFormat {
-        require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
-            "Cannot get mesh format at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
+        require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
+            "Cannot get mesh format at partitionIndex $partitionIndex out of range " +
+                "[0, ${getMeshPartitionCount(coatIndex)})."
         }
         return MeshFormat.wrapNative(
             InProgressStrokeNative.newCopyOfMeshFormat(nativePointer, coatIndex, partitionIndex)
         )
     }
 
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         InProgressStrokeNative.free(nativePointer)
     }
 
@@ -557,6 +566,12 @@ private object InProgressStrokeNative {
 
     /** Returns the native pointer for an `ink::Stroke`, to be wrapped by a [Stroke]. */
     @UsedByNative external fun newStrokeFromCopy(nativePointer: Long): Long
+
+    /**
+     * Returns the native pointer for an `ink::Stroke`, to be wrapped by a [Stroke], with attributes
+     * that are not used by the brush that created the stroke removed.
+     */
+    @UsedByNative external fun newStrokeFromPrunedCopy(nativePointer: Long): Long
 
     @UsedByNative external fun getInputCount(nativePointer: Long): Int
 
@@ -602,7 +617,7 @@ private object InProgressStrokeNative {
      * [partitionIndex]. It will be writeable, so be sure to only expose a read-only wrapper of it.
      */
     @UsedByNative
-    external fun getRawVertexData(
+    external fun getUnsafelyMutableRawVertexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
@@ -614,7 +629,7 @@ private object InProgressStrokeNative {
      * it.
      */
     @UsedByNative
-    external fun getRawTriangleIndexData(
+    external fun getUnsafelyMutableRawTriangleIndexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,

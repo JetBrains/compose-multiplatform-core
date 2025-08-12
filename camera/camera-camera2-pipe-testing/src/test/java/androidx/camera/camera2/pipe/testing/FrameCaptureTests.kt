@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.content.Context
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
@@ -43,7 +42,6 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FrameCaptureTests {
     private val testScope = TestScope()
     private val testContext = ApplicationProvider.getApplicationContext() as Context

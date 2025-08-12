@@ -29,7 +29,9 @@ class ScatterSetTest {
     @Test
     fun emptyScatterSetConstructor() {
         val set = MutableScatterSet<String>()
-        assertEquals(7, set.capacity)
+        if (!isJs()) {
+            assertEquals(7, set.capacity)
+        }
         assertEquals(0, set.size)
     }
 
@@ -52,7 +54,9 @@ class ScatterSetTest {
         // When unloading the suggested capacity, we'll fall outside of the
         // expected bucket of 2047 entries, and we'll get 4095 instead
         val set = MutableScatterSet<String>(1800)
-        assertEquals(4095, set.capacity)
+        if (!isJs()) {
+            assertEquals(4095, set.capacity)
+        }
         assertEquals(0, set.size)
     }
 
@@ -378,6 +382,9 @@ class ScatterSetTest {
 
     @Test
     fun removeDoesNotCauseGrowthOnInsert() {
+        // JS does not track capacity.
+        if (isJs()) return
+
         val set = MutableScatterSet<String>(10) // Must be > GroupWidth (8)
         assertEquals(15, set.capacity)
 
@@ -803,6 +810,9 @@ class ScatterSetTest {
 
     @Test
     fun trim() {
+        // Trim is not supported on JS.
+        if (isJs()) return
+
         val set = mutableScatterSetOf("Hello", "World", "Hola", "Mundo", "Bonjour", "Monde")
         val capacity = set.capacity
         assertEquals(0, set.trim())
@@ -976,7 +986,9 @@ class ScatterSetTest {
             }
         }
 
-        assertEquals(127, set.capacity)
+        if (!isJs()) {
+            assertEquals(127, set.capacity)
+        }
         for (i in 0..100) {
             assertTrue(set.contains(i), "Set should contain element $i")
         }

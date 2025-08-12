@@ -41,6 +41,7 @@ import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.creation.Rc;
 import androidx.compose.remote.creation.RemoteComposeContext;
+import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.filters.SdkSuppress;
@@ -62,13 +63,13 @@ public class DrawImagePaintTest {
     // ########################### TEST UTILS ######################################
 
     interface Callback {
-        void run(RemoteComposeContext foo);
+        void run(RemoteComposeContextAndroid foo);
     }
 
     private RemoteComposeDocument createDocument(RemoteContext context, final Callback cb) {
 
         RemoteComposeContext doc =
-                new RemoteComposeContext(
+                new RemoteComposeContextAndroid(
                         600,
                         600,
                         "Demo",

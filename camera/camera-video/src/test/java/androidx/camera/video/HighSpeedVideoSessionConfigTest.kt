@@ -16,7 +16,6 @@
 
 package androidx.camera.video
 
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.AspectRatio
@@ -32,13 +31,11 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalHighSpeedVideo::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class HighSpeedVideoSessionConfigTest {
 
     private val defaultVideoCapture = createVideoCapture()

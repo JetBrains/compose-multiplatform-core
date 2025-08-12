@@ -30,8 +30,6 @@ import androidx.xr.runtime.math.Pose
  * Note: The size property of this Entity is always reported as {0, 0, 0}, regardless of the actual
  * size of the model.
  */
-// TODO: b/427566816 - Remove the HiddenSuperClass warning.
-@Suppress("HiddenSuperclass") // BaseEntity is an internal class
 public class GltfModelEntity
 private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     BaseEntity<RtGltfEntity>(rtEntity, entityManager) {

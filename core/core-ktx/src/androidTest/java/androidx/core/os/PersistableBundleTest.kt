@@ -19,7 +19,6 @@ package androidx.core.os
 import android.content.Context
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -29,7 +28,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = 21)
 @SmallTest
 class PersistableBundleTest {
     @Suppress("DEPRECATION")
@@ -66,7 +64,6 @@ class PersistableBundleTest {
         assertThat(bundle["stringArray"] as Array<*>).asList().containsExactly("hey")
     }
 
-    @SdkSuppress(minSdkVersion = 22)
     @Suppress("DEPRECATION")
     @Test
     fun persistableBundleOfValidApi22() {

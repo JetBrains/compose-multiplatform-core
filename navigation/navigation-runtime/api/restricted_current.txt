@@ -170,10 +170,6 @@ package androidx.navigation {
 
   public static final class NavController.Companion {
     method @SuppressCompatibility @androidx.navigation.NavDeepLinkSaveStateControl public void enableDeepLinkSaveState(boolean saveState);
-    property public static String KEY_DEEP_LINK_ARGS;
-    property public static String KEY_DEEP_LINK_EXTRAS;
-    property public static String KEY_DEEP_LINK_HANDLED;
-    property public static String KEY_DEEP_LINK_IDS;
     property public static String KEY_DEEP_LINK_INTENT;
   }
 

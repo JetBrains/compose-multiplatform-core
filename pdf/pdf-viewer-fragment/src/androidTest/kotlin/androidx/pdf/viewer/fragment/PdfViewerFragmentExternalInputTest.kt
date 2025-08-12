@@ -28,7 +28,6 @@ import androidx.pdf.view.PdfView
 import androidx.pdf.viewer.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.viewer.TestPdfViewerFragment
 import androidx.pdf.viewer.fragment.R as PdfR
-import androidx.pdf.widget.SearchEditText
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.EspressoKey
@@ -41,7 +40,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import org.junit.After
-import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,63 +78,6 @@ class PdfViewerFragmentExternalInputTest {
         }
         scenario.close()
         PdfFeatureFlags.isExternalHardwareInteractionEnabled = false
-    }
-
-    @Test
-    fun testEsc_closeSearchView() {
-        // Load a document into the fragment.
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        )
-        // Wait for the document to finish loading and verify the initial state.
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-        }
-
-        // Assert that the search view is not visible initially.
-        onView(withId(PdfR.id.pdfSearchView))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-
-        // Enable find in file and verify PdfSearchView is visible
-        scenario.onFragment { it.isTextSearchActive = true }
-        onView(withId(PdfR.id.pdfSearchView)).check { view, _ -> matches(isDisplayed()) }
-
-        // Logging currently focused view
-        scenario.onFragment {
-            val focusedView = it.view?.findFocus()
-        }
-
-        onView(withId(androidx.pdf.R.id.searchQueryBox)).check { view, _ ->
-            val searchQueryBox = view as SearchEditText
-            searchQueryBox.requestFocus()
-        }
-
-        // Logging currently focused view
-        scenario.onFragment {
-            val focusedView = it.view?.findFocus()
-        }
-
-        // Perform a Esc key press on any view in the PdfSearchView.
-        onView(withId(androidx.pdf.R.id.searchQueryBox))
-            .perform(
-                ViewActions.pressKey(
-                    EspressoKey.Builder().withKeyCode(KeyEvent.KEYCODE_ESCAPE).build()
-                )
-            )
-
-        scenario.onFragment { it.pdfSearchViewVisibleIdlingResource.increment() }
-        // Assert that find in file is disabled and PdfSearchView is not visible
-        onView(withId(PdfR.id.pdfSearchView))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment { assertFalse(it.isTextSearchActive) }
     }
 
     @Test

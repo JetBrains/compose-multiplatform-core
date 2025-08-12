@@ -16,8 +16,6 @@
 
 package androidx.pdf.selection
 
-import androidx.pdf.view.Selection
-
 /**
  * An interface for providing context menu items based on a given [Selection].
  *

@@ -34,6 +34,10 @@ import androidx.pdf.PdfDocument.BitmapSource
 import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
+import androidx.pdf.annotation.EditablePdfDocument
+import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
@@ -45,7 +49,6 @@ import androidx.pdf.utils.toContentClass
 import java.util.Collections
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -86,7 +89,7 @@ public class SandboxedPdfDocument(
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int,
-) : PdfDocument {
+) : EditablePdfDocument() {
 
     public override val formEditRecords: List<FormEditRecord>
         get() = _formEditRecords.toList()
@@ -378,6 +381,26 @@ public class SandboxedPdfDocument(
 
             return@withContext result
         }
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
+        return withDocument { pdfDocumentRemote -> pdfDocumentRemote.getPageAnnotations(pageNum) }
+    }
+
+    override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
+        // TODO: b/434620410 - Return success list after getting success IDs from service
+        return AnnotationResult(listOf(), listOf())
+    }
+
+    override suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult {
+        val annotationResult = withDocument { pdfDocumentRemote ->
+            pdfDocumentRemote.addAnnotations(sourcePfd)
+        }
+        if (annotationResult != null) {
+            return annotationResult
+        }
+
+        return AnnotationResult(listOf(), listOf())
     }
 
     private companion object {

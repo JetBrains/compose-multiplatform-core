@@ -25,9 +25,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.WorkerThread;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
+import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.CommitBlobResponse;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
@@ -53,6 +55,7 @@ import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.appsearch.app.StorageInfo;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
@@ -61,6 +64,7 @@ import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.appsearch.stats.BaseStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
 import androidx.appsearch.util.SchemaMigrationUtil;
+import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
@@ -84,6 +88,7 @@ import java.util.concurrent.Executor;
  * <p>Queries are executed multi-threaded, but a single thread is used for mutate requests (put,
  * delete, etc..).
  */
+// TODO(b/433816395) log call stats in this class
 class SearchSessionImpl implements AppSearchSession {
     private static final String TAG = "AppSearchSessionImpl";
 
@@ -173,7 +178,8 @@ class SearchSessionImpl implements AppSearchSession {
             }
             long getSchemaLatencyStartTimeMillis = SystemClock.elapsedRealtime();
             GetSchemaResponse getSchemaResponse = mAppSearchImpl.getSchema(
-                    mPackageName, mDatabaseName, mSelfCallerAccess);
+                    mPackageName, mDatabaseName, mSelfCallerAccess,
+                    /*callStatsBuilder=*/null);
             long getSchemaLatencyEndTimeMillis = SystemClock.elapsedRealtime();
             int currentVersion = getSchemaResponse.getVersion();
             int finalVersion = request.getVersion();
@@ -205,7 +211,8 @@ class SearchSessionImpl implements AppSearchSession {
                     visibilityConfigs,
                     /*forceOverride=*/false,
                     request.getVersion(),
-                    firstSetSchemaStatsBuilder);
+                    firstSetSchemaStatsBuilder,
+                    /*callStatsBuilder=*/null);
             long firstSetSchemaLatencyEndTimeMillis = SystemClock.elapsedRealtime();
             if (schemaMigrationStatsBuilder != null) {
                 schemaMigrationStatsBuilder
@@ -244,7 +251,8 @@ class SearchSessionImpl implements AppSearchSession {
                             visibilityConfigs,
                             /*forceOverride=*/ true,
                             request.getVersion(),
-                            secondSetSchemaStatsBuilder);
+                            secondSetSchemaStatsBuilder,
+                            /*callStatsBuilder=*/null);
                     if (!internalSetSchemaResponse.isSuccess()) {
                         // Impossible case, we just set forceOverride to be true, we should never
                         // fail in incompatible changes. And all other cases should failed during
@@ -339,14 +347,16 @@ class SearchSessionImpl implements AppSearchSession {
     public @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync() {
         Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(
-                () -> mAppSearchImpl.getSchema(mPackageName, mDatabaseName, mSelfCallerAccess));
+                () -> mAppSearchImpl.getSchema(mPackageName, mDatabaseName, mSelfCallerAccess,
+                        /*callStatsBuilder=*/null));
     }
 
     @Override
     public @NonNull ListenableFuture<Set<String>> getNamespacesAsync() {
         Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
-            List<String> namespaces = mAppSearchImpl.getNamespaces(mPackageName, mDatabaseName);
+            List<String> namespaces = mAppSearchImpl.getNamespaces(mPackageName, mDatabaseName,
+                    /*callStatsBuilder=*/null);
             return new ArraySet<>(namespaces);
         });
     }
@@ -374,7 +384,8 @@ class SearchSessionImpl implements AppSearchSession {
                     mLogger,
                     // PersistToDisk is not necessary to call here, since it will be called in
                     // the next batch put request below.
-                    PersistType.Code.UNKNOWN);
+                    PersistType.Code.UNKNOWN,
+                    /*callStatsBuilder=*/null);
 
             // TakenAction documents.
             mAppSearchImpl.batchPutDocuments(
@@ -385,7 +396,8 @@ class SearchSessionImpl implements AppSearchSession {
                     /*sendChangeNotifications=*/ true,
                     mLogger,
                     // Persist the newly written data.
-                    mAppSearchImpl.getConfig().getLightweightPersistType());
+                    mAppSearchImpl.getConfig().getLightweightPersistType(),
+                    /*callStatsBuilder=*/null);
 
             mIsMutated = true;
 
@@ -409,7 +421,8 @@ class SearchSessionImpl implements AppSearchSession {
         Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() ->
                 mAppSearchImpl.batchGetDocuments(
-                        mPackageName, mDatabaseName, request, /*callerAccess=*/ null));
+                        mPackageName, mDatabaseName, request, /*callerAccess=*/ null,
+                        /*callStatsBuilder=*/null));
     }
 
     @Override
@@ -427,7 +440,8 @@ class SearchSessionImpl implements AppSearchSession {
                     // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
                     // to compare with given handle to reduce code export delta.
                     ParcelFileDescriptor pfd =
-                            mAppSearchImpl.openWriteBlob(mPackageName, mDatabaseName, handle);
+                            mAppSearchImpl.openWriteBlob(mPackageName, mDatabaseName, handle,
+                                    /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, pfd);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -448,7 +462,8 @@ class SearchSessionImpl implements AppSearchSession {
                     new AppSearchBatchResult.Builder<>();
             for (AppSearchBlobHandle handle : handles) {
                 try {
-                    mAppSearchImpl.removeBlob(mPackageName, mDatabaseName, handle);
+                    mAppSearchImpl.removeBlob(mPackageName, mDatabaseName, handle,
+                            /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, null);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -472,7 +487,8 @@ class SearchSessionImpl implements AppSearchSession {
                 try {
                     // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
                     // to compare with given handle to reduce code export delta.
-                    mAppSearchImpl.commitBlob(mPackageName, mDatabaseName, handle);
+                    mAppSearchImpl.commitBlob(mPackageName, mDatabaseName, handle,
+                            /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, null);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -497,7 +513,8 @@ class SearchSessionImpl implements AppSearchSession {
                     // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
                     // to compare with given handle to reduce code export delta.
                     ParcelFileDescriptor pfd =
-                            mAppSearchImpl.openReadBlob(mPackageName, mDatabaseName, handle);
+                            mAppSearchImpl.openReadBlob(mPackageName, mDatabaseName, handle,
+                                    /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, pfd);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -519,7 +536,8 @@ class SearchSessionImpl implements AppSearchSession {
             mAppSearchImpl.setBlobNamespaceVisibility(
                     mPackageName,
                     mDatabaseName,
-                    visibilityConfigs);
+                    visibilityConfigs,
+                    /*callStatsBuilder=*/null);
             mIsMutated = true;
             return null;
         });
@@ -554,7 +572,8 @@ class SearchSessionImpl implements AppSearchSession {
                 mPackageName,
                 mDatabaseName,
                 suggestionQueryExpression,
-                searchSuggestionSpec));
+                searchSuggestionSpec,
+                /*callStatsBuilder=*/null));
     }
 
     @Override
@@ -568,12 +587,14 @@ class SearchSessionImpl implements AppSearchSession {
                     request.getNamespace(),
                     request.getDocumentId(),
                     request.getUsageTimestampMillis(),
-                    /*systemUsage=*/ false);
+                    /*systemUsage=*/ false,
+                    /*callStatsBuilder=*/null);
             mIsMutated = true;
             return null;
         });
     }
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     @Override
     public @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> removeAsync(
             @NonNull RemoveByDocumentIdRequest request) {
@@ -582,30 +603,77 @@ class SearchSessionImpl implements AppSearchSession {
         ListenableFuture<AppSearchBatchResult<String, Void>> future = execute(() -> {
             AppSearchBatchResult.Builder<String, Void> resultBuilder =
                     new AppSearchBatchResult.Builder<>();
-            for (String id : request.getIds()) {
-                RemoveStats.Builder removeStatsBuilder = null;
-                if (mLogger != null) {
-                    removeStatsBuilder = new RemoveStats.Builder(mPackageName, mDatabaseName);
-                }
+            RemoveStats.Builder removeStatsBuilder = null;
+            if (mLogger != null) {
+                removeStatsBuilder = new RemoveStats.Builder(mPackageName, mDatabaseName);
+            }
 
+            if (Flags.enableRemoveByIdUsesQuery()
+                    && mFeatures.isFeatureSupported(Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS)) {
+                if (request.getIds().isEmpty()) {
+                    Log.w(TAG, "Request to delete items in namespace " + request.getNamespace()
+                            + " specified no ids!");
+                    return resultBuilder.build();
+                }
                 try {
-                    mAppSearchImpl.remove(mPackageName, mDatabaseName, request.getNamespace(), id,
-                            removeStatsBuilder);
-                    resultBuilder.setSuccess(id, /*value=*/null);
+                    Map<String, Set<String>> deletedIds = new ArrayMap<>();
+                    SearchSpec searchSpec =
+                            new SearchSpec.Builder()
+                                    .addFilterDocumentIds(request.getIds())
+                                    .addFilterNamespaces(request.getNamespace())
+                                    .addFilterPackageNames(mPackageName)
+                                    .build();
+                    mAppSearchImpl.removeByQuery(mPackageName, mDatabaseName, /* queryExpression= */
+                            "",
+                            searchSpec, deletedIds, removeStatsBuilder,
+                            /* callStatsBuilder= */null);
+                    Set<String> deletionSet = deletedIds.get(request.getNamespace());
+                    for (String id : request.getIds()) {
+                        if (deletionSet != null && deletionSet.contains(id)) {
+                            resultBuilder.setSuccess(id, /*value=*/null);
+                        } else {
+                            resultBuilder.setResult(id, AppSearchResult.newFailedResult(
+                                    AppSearchResult.RESULT_NOT_FOUND, /*errorMessage=*/null));
+                        }
+                    }
                 } catch (Throwable t) {
-                    resultBuilder.setResult(id, throwableToFailedResult(t));
+                    AppSearchResult<Void> failure = throwableToFailedResult(t);
+                    for (String id : request.getIds()) {
+                        resultBuilder.setResult(id, failure);
+                    }
                 } finally {
                     if (mLogger != null) {
                         mLogger.logStats(removeStatsBuilder.build());
                     }
                 }
+            } else {
+                for (String id : request.getIds()) {
+                    if (mLogger != null) {
+                        removeStatsBuilder = new RemoveStats.Builder(mPackageName, mDatabaseName);
+                    }
+                    try {
+                        mAppSearchImpl.remove(mPackageName, mDatabaseName, request.getNamespace(),
+                                id,
+                                removeStatsBuilder,
+                                /*callStatsBuilder=*/null);
+                        resultBuilder.setSuccess(id, /*value=*/null);
+                    } catch (Throwable t) {
+                        resultBuilder.setResult(id, throwableToFailedResult(t));
+                    } finally {
+                        if (mLogger != null) {
+                            mLogger.logStats(removeStatsBuilder.build());
+                        }
+                    }
+                }
             }
+
             // Now that the batch has been written. Persist the newly written data.
             mAppSearchImpl.persistToDisk(
                     mPackageName,
                     BaseStats.CALL_TYPE_REMOVE_DOCUMENT_BY_ID,
                     mAppSearchImpl.getConfig().getLightweightPersistType(),
-                    mLogger);
+                    mLogger,
+                    /*callStatsBuilder=*/null);
             mIsMutated = true;
             // Schedule a task to dispatch change notifications. See requirements for where the
             // method is called documented in the method description.
@@ -634,13 +702,14 @@ class SearchSessionImpl implements AppSearchSession {
                 removeStatsBuilder = new RemoveStats.Builder(mPackageName, mDatabaseName);
             }
             mAppSearchImpl.removeByQuery(mPackageName, mDatabaseName, queryExpression,
-                    searchSpec, removeStatsBuilder);
+                    searchSpec, /*deletedIds=*/null, removeStatsBuilder, /*callStatsBuilder=*/null);
             // Now that the batch has been written. Persist the newly written data.
             mAppSearchImpl.persistToDisk(
                     mPackageName,
                     BaseStats.CALL_TYPE_REMOVE_DOCUMENTS_BY_SEARCH,
                     mAppSearchImpl.getConfig().getLightweightPersistType(),
-                    mLogger);
+                    mLogger,
+                    /*callStatsBuilder=*/null);
             mIsMutated = true;
             // Schedule a task to dispatch change notifications. See requirements for where the
             // method is called documented in the method description.
@@ -658,14 +727,16 @@ class SearchSessionImpl implements AppSearchSession {
     @ExperimentalAppSearchApi
     public @NonNull ListenableFuture<StorageInfo> getStorageInfoAsync() {
         Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
-        return execute(() -> mAppSearchImpl.getStorageInfoForDatabase(mPackageName, mDatabaseName));
+        return execute(() -> mAppSearchImpl.getStorageInfoForDatabase(mPackageName, mDatabaseName,
+                /*callStatsBuilder=*/null));
     }
 
     @Override
     public @NonNull ListenableFuture<Void> requestFlushAsync() {
         return execute(() -> {
             mAppSearchImpl.persistToDisk(mPackageName, BaseStats.CALL_TYPE_FLUSH,
-                    PersistType.Code.FULL, mLogger);
+                    PersistType.Code.FULL, mLogger,
+                    /*callStatsBuilder=*/null);
             return null;
         });
     }
@@ -681,8 +752,9 @@ class SearchSessionImpl implements AppSearchSession {
         if (mIsMutated && !mIsClosed) {
             // No future is needed here since the method is void.
             FutureUtil.execute(mExecutor, () -> {
-                mAppSearchImpl.persistToDisk(mPackageName, BaseStats.CALL_TYPE_CLOSE,
-                        PersistType.Code.FULL, mLogger);
+                mAppSearchImpl.persistToDisk(mPackageName, BaseStats.INTERNAL_CALL_TYPE_CLOSE,
+                        PersistType.Code.FULL, mLogger,
+                        /*callStatsBuilder=*/null);
                 mIsClosed = true;
                 return null;
             });
@@ -713,7 +785,8 @@ class SearchSessionImpl implements AppSearchSession {
                 visibilityConfigs,
                 request.isForceOverride(),
                 request.getVersion(),
-                setSchemaStatsBuilder);
+                setSchemaStatsBuilder,
+                /*callStatsBuilder=*/null);
         if (!internalSetSchemaResponse.isSuccess()) {
             // check is the set schema call failed because incompatible changes.
             // That's the only case we swallowed in the AppSearchImpl#setSchema().

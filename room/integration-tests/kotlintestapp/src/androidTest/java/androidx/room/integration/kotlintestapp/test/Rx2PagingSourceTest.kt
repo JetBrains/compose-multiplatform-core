@@ -88,6 +88,7 @@ class Rx2PagingSourceTest {
         assertThat(mainThreadQueries).isEmpty()
         coroutineScope.cancel()
         pagingSources.clear()
+        db.close()
     }
 
     @Test

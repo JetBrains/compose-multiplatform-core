@@ -17,9 +17,17 @@
 package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.BrushPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,6 +46,8 @@ fun CardSampleUsage() {
         item { CardSample() }
         item { CardWithTrailingIconSample() }
         item { CardWithTitleAndSubtitleAndLeadingIconSample() }
+        item { CardWithTitleAndHeaderSample() }
+        item { CardWithTitleAndLeadingIconAndHeader() }
         item { CardWithLongText() }
         item { CardWithTitleAndSubtitleAndLeadingIconLongText() }
         item { CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongText() }
@@ -72,6 +82,19 @@ fun CardWithTitleAndSubtitleAndLeadingIconSample() {
 
 @Sampled
 @Composable
+fun CardWithTitleAndHeaderSample() {
+    Card(
+        title = { Text("Title") },
+        header = {
+            Image(MyHeaderImage, "Localized description", contentScale = ContentScale.FillWidth)
+        },
+    ) {
+        Text("This is a card with a title and header image")
+    }
+}
+
+@Sampled
+@Composable
 fun ClickableCardSample() {
     Card(onClick = {}) { Text("This is a card") }
 }
@@ -94,6 +117,33 @@ fun ClickableCardWithTitleAndSubtitleAndLeadingIconSample() {
         leadingIcon = { Icon(FavoriteIcon, "Localized description") },
     ) {
         Text("This is a card with a title, subtitle, and leading icon")
+    }
+}
+
+@Sampled
+@Composable
+fun ClickableCardWithTitleAndHeaderSample() {
+    Card(
+        onClick = {},
+        title = { Text("Title") },
+        header = {
+            Image(MyHeaderImage, "Localized description", contentScale = ContentScale.FillWidth)
+        },
+    ) {
+        Text("This is a card with a title and header image")
+    }
+}
+
+@Composable
+fun CardWithTitleAndLeadingIconAndHeader() {
+    Card(
+        title = { Text("Title") },
+        leadingIcon = { Icon(FavoriteIcon, "Localized description") },
+        header = {
+            Image(MyHeaderImage, "Localized description", contentScale = ContentScale.FillWidth)
+        },
+    ) {
+        Text("This is a card with a title, leading icon, and header image")
     }
 }
 
@@ -164,3 +214,21 @@ private fun CardWithTitleAndSubtitleAndLeadingIconPreview() {
 private fun CardWithTitleAndSubtitleAndLeadingIconLongTextPreview() {
     GlimmerTheme { CardWithTitleAndSubtitleAndLeadingIconLongText() }
 }
+
+fun placeholderImagePainter(intrinsicSize: Size): Painter =
+    BrushPainter(
+        Brush.linearGradient(
+            0.0f to Color(0xFF3C8CDE),
+            0.4f to Color(0xFFED73A8),
+            0.6f to Color(0xFFED73A8),
+            1.0f to Color(0xFFE763F9),
+            start = Offset.Zero,
+            end = Offset(intrinsicSize.width, intrinsicSize.height),
+        )
+    )
+
+/**
+ * Placeholder image with a large intrinsic size, to simulate a real life use case of loading a
+ * bitmap
+ */
+private val MyHeaderImage = placeholderImagePainter(Size(1000f, 1000f))

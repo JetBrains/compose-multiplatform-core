@@ -27,21 +27,23 @@ import androidx.annotation.RestrictTo
  *
  * @property type the request type representing one of [SignalAllAcceptedCredentialIdsRequest],
  *   [SignalCurrentUserDetailsRequest] and [SignalUnknownCredentialRequest])
- * @property requestJson the request data
+ * @property requestJson the signal request data in the expected json format
+ * @property requestData the bundle to contain the request json and any additional info
  * @property origin the origin of a different application if the request is being made on behalf of
  *   that application (Note: for API level >=34, setting a non-null value for this parameter will
  *   throw a SecurityException if android.permission.CREDENTIAL_MANAGER_SET_ORIGIN is not present)
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 abstract class SignalCredentialStateRequest
 internal constructor(
     val type: String,
     val requestJson: String,
+    val requestData: Bundle,
     val origin: String? = null,
-    val bundle: Bundle = Bundle(),
 ) {
     companion object {
-        private const val SIGNAL_REQUEST_JSON_KEY = "androidx.credentials.signal_request_json_key"
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        protected const val SIGNAL_REQUEST_JSON_KEY = "androidx.credentials.signal_request_json_key"
+
         private const val SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE =
             "androidx.credentials.SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE"
 
@@ -53,7 +55,7 @@ internal constructor(
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        public fun createFrom(
+        fun createFrom(
             requestType: String,
             requestData: Bundle,
             origin: String?,
@@ -65,7 +67,7 @@ internal constructor(
         }
 
         @JvmStatic
-        public fun createFrom(
+        fun createFrom(
             requestType: String,
             requestJson: String,
             origin: String?,

@@ -25,6 +25,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component1
 import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component2
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -54,6 +56,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.platform.InspectableValue
@@ -92,6 +95,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -1086,6 +1090,350 @@ class SurfaceTest {
     }
 
     @Test
+    fun focusableSurface_depth_focusChange_newDepthIsRendered() {
+        val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
+
+        val surfaceDepth =
+            SurfaceDepth(
+                depth =
+                    Depth(
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                    ),
+                focusedDepth =
+                    Depth(
+                        layer1 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                        layer2 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                    ),
+            )
+
+        rule.setGlimmerThemeContent {
+            Box(Modifier.testTag("outerBox")) {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null)
+                )
+                Box(Modifier.size(100.dp).focusRequester(otherFocusRequester).focusTarget())
+            }
+        }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // Base depth should be rendered
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be rendered
+            assertColorsEqualWithTolerance(Color.Blue, outsideSurface)
+        }
+
+        // Request focus for the other target, moving focus away from the surface
+        rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // Base depth should be rendered again
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+    }
+
+    @Test
+    fun clickableSurface_depth_focusChange_newDepthIsRendered() {
+        val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
+
+        val surfaceDepth =
+            SurfaceDepth(
+                depth =
+                    Depth(
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                    ),
+                focusedDepth =
+                    Depth(
+                        layer1 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                        layer2 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                    ),
+            )
+
+        rule.setGlimmerThemeContent {
+            Box(Modifier.testTag("outerBox")) {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null, onClick = {})
+                )
+                Box(Modifier.size(100.dp).focusRequester(otherFocusRequester).focusTarget())
+            }
+        }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // Base depth should be rendered
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be rendered
+            assertColorsEqualWithTolerance(Color.Blue, outsideSurface)
+        }
+
+        // Request focus for the other target, moving focus away from the surface
+        rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // Base depth should be rendered again
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+    }
+
+    @Test
+    fun focusableSurface_depth_focusChange_depthChangesAreAnimated() {
+        rule.mainClock.autoAdvance = false
+
+        val focusRequester = FocusRequester()
+
+        val shadow = Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp)
+        val surfaceDepth =
+            SurfaceDepth(depth = null, focusedDepth = Depth(layer1 = shadow, layer2 = shadow))
+
+        rule.setGlimmerThemeContent {
+            Box(Modifier.testTag("outerBox")) {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null)
+                )
+            }
+        }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // No depth should be rendered
+            assertThat(outsideSurface).isEqualTo(Color.Black)
+        }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be partially rendered, so there should be some red channel.
+            assertThat(outsideSurface.red).isGreaterThan(0)
+            assertThat(outsideSurface.green).isEqualTo(0)
+            assertThat(outsideSurface.blue).isEqualTo(0)
+        }
+
+        // Advance past the animation
+        rule.mainClock.advanceTimeBy(1000)
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be fully rendered
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+    }
+
+    @Test
+    fun clickableSurface_depth_focusChange_depthChangesAreAnimated() {
+        rule.mainClock.autoAdvance = false
+
+        val focusRequester = FocusRequester()
+
+        val shadow = Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp)
+        val surfaceDepth =
+            SurfaceDepth(depth = null, focusedDepth = Depth(layer1 = shadow, layer2 = shadow))
+
+        rule.setGlimmerThemeContent {
+            Box(Modifier.testTag("outerBox")) {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null, onClick = {})
+                )
+            }
+        }
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // No depth should be rendered
+            assertThat(outsideSurface).isEqualTo(Color.Black)
+        }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be partially rendered, so there should be some red channel.
+            assertThat(outsideSurface.red).isGreaterThan(0)
+            assertThat(outsideSurface.green).isEqualTo(0)
+            assertThat(outsideSurface.blue).isEqualTo(0)
+        }
+
+        // Advance past the animation
+        rule.mainClock.advanceTimeBy(1000)
+
+        rule.onNodeWithTag("outerBox").captureToImage().run {
+            val map = toPixelMap()
+            val outsideSurface = map[width / 3, height / 2]
+            // The focused depth should be fully rendered
+            assertColorsEqualWithTolerance(Color.Red, outsideSurface)
+        }
+    }
+
+    @Test
+    fun focusableSurface_depth_focusedDepthHasHigherZIndex() {
+        val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
+
+        val surfaceDepth =
+            SurfaceDepth(
+                depth =
+                    Depth(
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                    ),
+                focusedDepth =
+                    Depth(
+                        layer1 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                        layer2 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                    ),
+            )
+
+        rule.setGlimmerThemeContent {
+            Column {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null)
+                )
+                Box(
+                    Modifier.testTag("greenBox")
+                        .size(100.dp)
+                        .background(Color.Green)
+                        .focusRequester(otherFocusRequester)
+                        .focusTarget()
+                )
+            }
+        }
+
+        // Default draw order is based on placement order. The green box is second in the column,
+        // so it should draw over the first box - as a result the depth will not be visible, and the
+        // entire box will be green.
+        rule.onNodeWithTag("greenBox").captureToImage().assertPixels { Color.Green }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // The surface is focused, so it should now have a higher zIndex set, which will cause it to
+        // draw over the sibling box. The blue shadow should now overlap the green box, causing the
+        // sampled pixel to have a blue channel.
+        rule.onNodeWithTag("greenBox").captureToImage().run {
+            val map = toPixelMap()
+            val topMiddle = map[width / 2, height / 4]
+            assertThat(topMiddle.blue).isGreaterThan(0)
+        }
+
+        // Request focus for the other target, moving focus away from the surface
+        rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        // zIndex should be reset so the green box should draw on top once again
+        rule.onNodeWithTag("greenBox").captureToImage().assertPixels { Color.Green }
+    }
+
+    @Test
+    fun clickableSurface_depth_focusedDepthHasHigherZIndex() {
+        val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
+
+        val surfaceDepth =
+            SurfaceDepth(
+                depth =
+                    Depth(
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                        Shadow(color = Color.Red, spread = 100.dp, radius = 100.dp),
+                    ),
+                focusedDepth =
+                    Depth(
+                        layer1 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                        layer2 = Shadow(color = Color.Blue, spread = 100.dp, radius = 100.dp),
+                    ),
+            )
+
+        rule.setGlimmerThemeContent {
+            Column {
+                Box(
+                    Modifier.padding(40.dp)
+                        .size(20.dp)
+                        .focusRequester(focusRequester)
+                        .surface(depth = surfaceDepth, border = null, onClick = {})
+                )
+                Box(
+                    Modifier.testTag("greenBox")
+                        .size(100.dp)
+                        .background(Color.Green)
+                        .focusRequester(otherFocusRequester)
+                        .focusTarget()
+                )
+            }
+        }
+
+        // Default draw order is based on placement order. The green box is second in the column,
+        // so it should draw over the first box - as a result the depth will not be visible, and the
+        // entire box will be green.
+        rule.onNodeWithTag("greenBox").captureToImage().assertPixels { Color.Green }
+
+        // Request focus for the surface
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // The surface is focused, so it should now have a higher zIndex set, which will cause it to
+        // draw over the sibling box. The blue shadow should now overlap the green box, causing the
+        // sampled pixel to have a blue channel.
+        rule.onNodeWithTag("greenBox").captureToImage().run {
+            val map = toPixelMap()
+            val topMiddle = map[width / 2, height / 4]
+            assertThat(topMiddle.blue).isGreaterThan(0)
+        }
+
+        // Request focus for the other target, moving focus away from the surface
+        rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        // zIndex should be reset so the green box should draw on top once again
+        rule.onNodeWithTag("greenBox").captureToImage().assertPixels { Color.Green }
+    }
+
+    @Test
     fun focusableSurface_emitsFocusInteractions() {
         val interactionSource = MutableInteractionSource()
         val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
@@ -2069,4 +2417,19 @@ private fun ImageBitmap.toIntArray(): IntArray {
     val bitmapArray = IntArray(width * height)
     asAndroidBitmap().getPixels(bitmapArray, 0, width, 0, 0, width, height)
     return bitmapArray
+}
+
+/**
+ * Asserts that [expected] and [actual] are mostly equal, to avoid test failures due to minor
+ * rendering differences across devices.
+ */
+private fun assertColorsEqualWithTolerance(
+    expected: Color,
+    actual: Color,
+    tolerance: Float = 0.05f,
+) {
+    assertEquals(expected.red, actual.red, tolerance)
+    assertEquals(expected.green, actual.green, tolerance)
+    assertEquals(expected.blue, actual.blue, tolerance)
+    assertEquals(expected.alpha, actual.alpha, tolerance)
 }

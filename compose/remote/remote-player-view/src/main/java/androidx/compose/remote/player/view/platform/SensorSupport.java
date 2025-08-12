@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -25,6 +29,7 @@ import androidx.compose.remote.core.RemoteContext;
 
 import org.jspecify.annotations.NonNull;
 
+@RestrictTo(LIBRARY_GROUP)
 /** Implements sensors management (used by RemoteComposePlayer) */
 public class SensorSupport {
     SensorManager mSensorManager;

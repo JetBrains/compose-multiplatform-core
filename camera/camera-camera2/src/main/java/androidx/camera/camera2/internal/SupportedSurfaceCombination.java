@@ -2056,7 +2056,7 @@ public final class SupportedSurfaceCombination {
     }
 
     private void refreshPreviewSize() {
-        mDisplayInfoManager.refresh();
+        mDisplayInfoManager.refreshPreviewSize();
         if (mSurfaceSizeDefinition == null) {
             generateSurfaceSizeDefinition();
         } else {

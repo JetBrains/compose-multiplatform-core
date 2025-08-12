@@ -23,7 +23,6 @@ import androidx.room.compiler.processing.XProcessingStep
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.compat.XConverters.toJavac
 import androidx.room.compiler.processing.javac.JavacBasicAnnotationProcessor
-import com.google.auto.common.MoreElements
 import com.google.auto.value.AutoValue
 import com.squareup.javapoet.JavaFile
 import java.io.File
@@ -34,8 +33,6 @@ import java.security.NoSuchAlgorithmException
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedOptions
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 /**
@@ -115,8 +112,8 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
         val classNames = mutableSetOf<String>()
         for (document in documentElements) {
             try {
-                processDocument(document.toJavac())
-            } catch (_: MissingTypeException) {
+                processDocument(document)
+            } catch (_: MissingXTypeException) {
                 // Save it for next round to wait for the AutoValue annotation processor to
                 // be run first.
                 nextRound.add(document)
@@ -194,46 +191,46 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
      * Process the document class by generating a factory class for it and properly update
      * [.mDocumentClassMap].
      */
-    @Throws(ProcessingException::class, MissingTypeException::class)
-    fun processDocument(element: TypeElement) {
-        if (element.kind != ElementKind.CLASS && element.kind != ElementKind.INTERFACE) {
-            throw ProcessingException(
+    @Throws(ProcessingException::class, MissingXTypeException::class)
+    fun processDocument(element: XTypeElement) {
+        if (!element.isClass() && !element.isInterface()) {
+            throw XProcessingException(
                 "@Document annotation on something other than a class or an interface",
                 element,
             )
         }
 
         val model: DocumentModel =
-            if (element.getAnnotation(AutoValue::class.java) != null) {
+            if (element.getAnnotation(AutoValue::class) != null) {
                 // Document class is annotated as AutoValue class. For processing the AutoValue
                 // class, we also need the generated class from AutoValue annotation processor.
-                val generatedElement =
-                    env.toJavac()
-                        .elementUtils
-                        .getTypeElement(getAutoValueGeneratedClassName(element))
+                val generatedElement: XTypeElement? =
+                    env.findTypeElement(getAutoValueGeneratedClassName(element))
                 if (generatedElement == null) {
                     // Generated class is not found.
-                    throw MissingTypeException(element)
+                    throw MissingXTypeException(element)
                 } else {
-                    DocumentModel.createAutoValueModel(env.toJavac(), element, generatedElement)
+                    DocumentModel.createAutoValueModel(env, element, generatedElement)
                 }
             } else {
                 // Non-AutoValue AppSearch Document class.
-                DocumentModel.createPojoModel(env.toJavac(), element)
+                DocumentModel.createPojoModel(env, element)
             }
 
-        val generator = CodeGenerator(env.toJavac(), model, restrictGeneratedCodeToLibOption)
+        val generator = CodeGenerator(env, model, restrictGeneratedCodeToLibOption)
         try {
             writeJavaFile(generator.createJavaFile())
         } catch (e: IOException) {
-            val pe = ProcessingException("Failed to write output", model.classElement)
+            val pe = XProcessingException("Failed to write output", model.classElement)
             pe.initCause(e)
             throw pe
         }
 
         val documentClassList =
             documentClassMap.computeIfAbsent(model.schemaName) { mutableListOf() }
-        documentClassList.add(env.toJavac().elementUtils.getBinaryName(element).toString())
+        documentClassList.add(
+            env.toJavac().elementUtils.getBinaryName(element.toJavac()).toString()
+        )
     }
 
     /**
@@ -241,14 +238,14 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
      *
      * This is the same naming strategy used by AutoValue's processor.
      */
-    fun getAutoValueGeneratedClassName(element: TypeElement): String {
+    fun getAutoValueGeneratedClassName(element: XTypeElement): String {
         var type = element
-        var name = type.simpleName.toString()
-        while (type.enclosingElement is TypeElement) {
-            type = type.enclosingElement as TypeElement
-            name = type.simpleName.toString() + "_" + name
+        var name = type.name
+        while (type.enclosingElement is XTypeElement) {
+            type = type.enclosingElement as XTypeElement
+            name = type.name + "_" + name
         }
-        val pkg = MoreElements.getPackage(type).qualifiedName.toString()
+        val pkg = type.packageElement.qualifiedName
         val dot = if (pkg.isEmpty()) "" else "."
         return pkg + dot + "AutoValue_" + name
     }

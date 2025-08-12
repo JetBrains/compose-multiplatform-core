@@ -137,13 +137,15 @@ class QueryInterceptorTest {
 
     @Test
     fun testLoggingSupportSQLiteQuery() = runTest {
-        database.openHelper.writableDatabase.query(
-            SimpleSQLiteQuery(
-                "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
-                    "VALUES (?,?)",
-                arrayOf("3", "Description"),
+        val c =
+            database.openHelper.writableDatabase.query(
+                SimpleSQLiteQuery(
+                    "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
+                        "VALUES (?,?)",
+                    arrayOf("3", "Description"),
+                )
             )
-        )
+        c.close()
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
@@ -167,13 +169,15 @@ class QueryInterceptorTest {
 
     @Test
     fun testNullBindArgument() = runTest {
-        database.openHelper.writableDatabase.query(
-            SimpleSQLiteQuery(
-                "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
-                    "VALUES (?,?)",
-                arrayOf("ID", null),
+        val c =
+            database.openHelper.writableDatabase.query(
+                SimpleSQLiteQuery(
+                    "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
+                        "VALUES (?,?)",
+                    arrayOf("ID", null),
+                )
             )
-        )
+        c.close()
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`," +
                 "`description`) VALUES (?,?)",

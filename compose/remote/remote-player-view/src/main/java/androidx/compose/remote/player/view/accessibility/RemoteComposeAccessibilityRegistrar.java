@@ -15,6 +15,11 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
+import androidx.annotation.RestrictTo;
+
 import android.view.View;
 
 import androidx.compose.remote.core.CoreDocument;
@@ -26,6 +31,7 @@ import androidx.compose.remote.core.CoreDocument;
  * compose player view. It allows for setting and clearing the delegate, which is used to handle
  * accessibility events and provide accessibility information for the remote compose content.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface RemoteComposeAccessibilityRegistrar {
 
     /**

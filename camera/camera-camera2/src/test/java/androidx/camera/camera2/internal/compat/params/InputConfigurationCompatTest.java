@@ -34,7 +34,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class InputConfigurationCompatTest {
 
     private static final int WIDTH = 1024;

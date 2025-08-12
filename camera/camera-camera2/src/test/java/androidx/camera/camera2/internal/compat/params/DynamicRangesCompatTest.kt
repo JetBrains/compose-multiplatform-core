@@ -48,7 +48,6 @@ import org.robolectric.shadows.ShadowCameraCharacteristics
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class DynamicRangesCompatTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test

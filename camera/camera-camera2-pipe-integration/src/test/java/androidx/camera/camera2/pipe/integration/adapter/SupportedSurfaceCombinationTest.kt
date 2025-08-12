@@ -162,7 +162,6 @@ import org.robolectric.util.ReflectionHelpers
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SupportedSurfaceCombinationTest {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
@@ -3480,7 +3479,6 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
-    @Config(minSdk = 23)
     fun correctMaximumSize_withHighResolutionOutputSizes() {
         setupCamera(highResolutionSupportedSizes = highResolutionSupportedSizes)
         val supportedSurfaceCombination =
@@ -3795,7 +3793,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
-    @Config(minSdk = 21, maxSdk = 32)
+    @Config(maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOs() {
         populateStreamUseCaseTypesForUseCases(
@@ -3806,7 +3804,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
-    @Config(minSdk = 21, maxSdk = 32)
+    @Config(maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOsWithOverrideStreamUseCase() {
         populateStreamUseCaseTypesForUseCases(
@@ -4042,21 +4040,6 @@ class SupportedSurfaceCombinationTest {
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             compareExpectedFps = Range.create(240, 240), // Find the closest max supported fps.
         )
-    }
-
-    @Config(minSdk = 21, maxSdk = 22)
-    @Test
-    fun getSuggestedStreamSpec_highSpeed_unsupportedSdkVersion_throwException() {
-        val useCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                sessionType = SESSION_TYPE_HIGH_SPEED,
-                targetFrameRate = Range.create(240, 240),
-            )
-        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
-        Assert.assertThrows(IllegalArgumentException::class.java) {
-            getSuggestedSpecsAndVerifyForHighSpeed(useCaseExpectedResultMap)
-        }
     }
 
     @Config(minSdk = Build.VERSION_CODES.M)

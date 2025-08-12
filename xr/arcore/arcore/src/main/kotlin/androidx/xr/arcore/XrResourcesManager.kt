@@ -62,7 +62,6 @@ internal class XrResourcesManager {
 
     /** The view camera data */
     lateinit var viewCameras: List<ViewCamera>
-        private set
 
     /** The data of the user's face */
     private var _userFace: RuntimeFace? = null

@@ -40,7 +40,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_ARG1_PRIMITIVE_DATA_TYPE: AppFunctionIntTypeMetadata =
         AppFunctionIntTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val ARG1_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -96,7 +97,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_ARG5_PRIMITIVE_DATA_TYPE: AppFunctionStringTypeMetadata =
         AppFunctionStringTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val ARG5_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -167,7 +169,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_ARG1_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_ARG1_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -251,7 +254,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_ARG5_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_ARG5_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -314,7 +318,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_ARG8_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = true,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_ARG8_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =

@@ -139,10 +139,6 @@ public final class RequestBuilders {
         /**
          * Returns {@link ProtoLayoutScope} object that is required for methods to create resources
          * or pending intents, and it will automatically register them for a tile.
-         *
-         * <p>{@link ProtoLayoutScope} shouldn't be manually created, and when object is needed as
-         * parameters, this method should be used, to get the correct scope for the tile with
-         * corresponding {@link #getTileId()}.
          */
         public @NonNull ProtoLayoutScope getScope() {
             return mScope;

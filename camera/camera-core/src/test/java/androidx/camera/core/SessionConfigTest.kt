@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import android.view.Surface
@@ -39,12 +38,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalSessionConfig::class)
 class SessionConfigTest {
     val useCases = listOf(Preview.Builder().build(), ImageCapture.Builder().build())

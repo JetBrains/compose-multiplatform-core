@@ -35,7 +35,7 @@ class AnnotationsViewOnTouchListenerTest {
     private var gestureDownTime = 0L
     private var currentEventTimeInGesture = 0L
 
-    private lateinit var inkViewEventTracker: TestTouchEventDispatcher
+    private lateinit var wetStrokesViewEventTracker: TestTouchEventDispatcher
     private lateinit var pdfViewEventTracker: TestTouchEventDispatcher
 
     @Before
@@ -45,18 +45,18 @@ class AnnotationsViewOnTouchListenerTest {
         gestureDownTime = System.currentTimeMillis()
         currentEventTimeInGesture = gestureDownTime
 
-        inkViewEventTracker = TestTouchEventDispatcher()
+        wetStrokesViewEventTracker = TestTouchEventDispatcher()
         pdfViewEventTracker = TestTouchEventDispatcher()
 
         listener =
             AnnotationsViewOnTouchListener(
-                inkViewDispatcher = inkViewEventTracker,
+                wetStrokesViewDispatcher = wetStrokesViewEventTracker,
                 pdfViewDispatcher = pdfViewEventTracker,
             )
     }
 
     private fun resetDispatchTrackers() {
-        inkViewEventTracker.reset()
+        wetStrokesViewEventTracker.reset()
         pdfViewEventTracker.reset()
     }
 
@@ -110,21 +110,21 @@ class AnnotationsViewOnTouchListenerTest {
     fun onTouch_actionDown_dispatchesToBothViewDispatchers() {
         listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
 
-        assertThat(inkViewEventTracker.wasCalled).isTrue()
-        assertThat(inkViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_DOWN)
+        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_DOWN)
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_DOWN)
     }
 
     @Test
-    fun onTouch_singleTouchMove_dispatchesOnlyToInkViewDispatcher() {
+    fun onTouch_singleTouchMove_dispatchesOnlyToWetStrokesViewDispatcher() {
         listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
         resetDispatchTrackers()
 
         listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_MOVE))
 
-        assertThat(inkViewEventTracker.wasCalled).isTrue()
-        assertThat(inkViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_MOVE)
+        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_MOVE)
         assertThat(pdfViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
     }
@@ -142,8 +142,9 @@ class AnnotationsViewOnTouchListenerTest {
             )
         listener.onTouch(view, pointerDownEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isTrue()
-        assertThat(inkViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_CANCEL)
+        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction)
+            .isEqualTo(MotionEvent.ACTION_CANCEL)
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction)
             .isEqualTo(MotionEvent.ACTION_POINTER_DOWN)
@@ -165,22 +166,22 @@ class AnnotationsViewOnTouchListenerTest {
         val multiMoveEvent = createMotionEvent(MotionEvent.ACTION_MOVE)
         listener.onTouch(view, multiMoveEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isFalse()
-        assertThat(inkViewEventTracker.lastReceivedAction).isNull()
+        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isNull()
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_MOVE)
     }
 
     @Test
-    fun onTouch_singleTouchUp_dispatchesOnlyToInkViewDispatcher() {
+    fun onTouch_singleTouchUp_dispatchesOnlyToWetStrokesViewDispatcher() {
         listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
         resetDispatchTrackers()
 
         val upEvent = createMotionEvent(MotionEvent.ACTION_UP)
         listener.onTouch(view, upEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isTrue()
-        assertThat(inkViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_UP)
+        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_UP)
         assertThat(pdfViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
     }
@@ -208,7 +209,7 @@ class AnnotationsViewOnTouchListenerTest {
             )
         listener.onTouch(view, pointerUpEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isFalse()
+        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_POINTER_UP)
     }
@@ -239,21 +240,22 @@ class AnnotationsViewOnTouchListenerTest {
         val lastUpEvent = createMotionEvent(MotionEvent.ACTION_UP)
         listener.onTouch(view, lastUpEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isFalse()
+        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_UP)
     }
 
     @Test
-    fun onTouch_actionCancelDuringSingleTouch_dispatchesToInkViewDispatcher() {
+    fun onTouch_actionCancelDuringSingleTouch_dispatchesToWetStrokesViewDispatcher() {
         listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
         resetDispatchTrackers()
 
         val cancelEvent = createMotionEvent(MotionEvent.ACTION_CANCEL)
         listener.onTouch(view, cancelEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isTrue()
-        assertThat(inkViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_CANCEL)
+        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction)
+            .isEqualTo(MotionEvent.ACTION_CANCEL)
         assertThat(pdfViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
     }
@@ -275,7 +277,7 @@ class AnnotationsViewOnTouchListenerTest {
             createMotionEvent(MotionEvent.ACTION_CANCEL, numPointers = 2) // numPointers for CANCEL
         listener.onTouch(view, cancelEvent)
 
-        assertThat(inkViewEventTracker.wasCalled).isFalse()
+        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
         assertThat(pdfViewEventTracker.wasCalled).isTrue()
         assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_CANCEL)
     }

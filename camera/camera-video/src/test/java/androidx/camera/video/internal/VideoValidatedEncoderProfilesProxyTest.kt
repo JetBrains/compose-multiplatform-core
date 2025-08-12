@@ -16,14 +16,12 @@
 
 package androidx.camera.video.internal
 
-import android.os.Build
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private const val DEFAULT_WIDTH = 1920
@@ -46,7 +44,6 @@ private val DEFAULT_VIDEO_PROFILE by lazy {
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class VideoValidatedEncoderProfilesProxyTest {
 
     @Test

@@ -274,7 +274,6 @@ public class ContextCompatTest extends BaseInstrumentationTestCase<ThemedYellowA
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void getSystemServiceNameApi21() {
         assertEquals(APPWIDGET_SERVICE,
                 ContextCompat.getSystemServiceName(mContext, AppWidgetManager.class));
@@ -299,7 +298,6 @@ public class ContextCompatTest extends BaseInstrumentationTestCase<ThemedYellowA
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 22)
     public void getSystemServiceNameApi22() {
         assertEquals(TELEPHONY_SUBSCRIPTION_SERVICE,
                 ContextCompat.getSystemServiceName(mContext, SubscriptionManager.class));
@@ -313,7 +311,6 @@ public class ContextCompatTest extends BaseInstrumentationTestCase<ThemedYellowA
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void getSystemServiceNameCallsRealMethodOn23() {
         // We explicitly test for platform delegation on API 23+ because the compat implementation
         // only handles pre-23 service types.
@@ -344,7 +341,6 @@ public class ContextCompatTest extends BaseInstrumentationTestCase<ThemedYellowA
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void getSystemServiceCallsRealMethodOn23() {
         // We explicitly test for platform delegation on API 23+ because the compat implementation
         // only handles pre-23 service types.

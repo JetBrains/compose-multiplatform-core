@@ -28,7 +28,6 @@ import androidx.annotation.RequiresApi
  *
  * @throws IllegalArgumentException When a value is not a supported type of [PersistableBundle].
  */
-@RequiresApi(21)
 fun persistableBundleOf(vararg pairs: Pair<String, Any?>): PersistableBundle {
     val persistableBundle = PersistableBundleApi21ImplKt.createPersistableBundle(pairs.size)
     pairs.forEach { (key, value) ->
@@ -38,7 +37,6 @@ fun persistableBundleOf(vararg pairs: Pair<String, Any?>): PersistableBundle {
 }
 
 /** Returns a new empty [PersistableBundle]. */
-@RequiresApi(21)
 fun persistableBundleOf(): PersistableBundle {
     return PersistableBundleApi21ImplKt.createPersistableBundle(0)
 }
@@ -51,7 +49,6 @@ fun persistableBundleOf(): PersistableBundle {
  *
  * @throws IllegalArgumentException When a value is not a supported type of [PersistableBundle].
  */
-@RequiresApi(21)
 fun Map<String, Any?>.toPersistableBundle(): PersistableBundle {
     val persistableBundle = PersistableBundleApi21ImplKt.createPersistableBundle(this.size)
 
@@ -65,7 +62,6 @@ fun Map<String, Any?>.toPersistableBundle(): PersistableBundle {
 // These classes ends up being top-level even though they're private. The PersistableBundle prefix
 // helps prevent clashes with other ApiImpls in androidx.core.os. And the Kt suffix is used by
 // Jetifier to keep them grouped with other members of the core-ktx module.
-@RequiresApi(21)
 private object PersistableBundleApi21ImplKt {
     @JvmStatic
     fun createPersistableBundle(capacity: Int): PersistableBundle = PersistableBundle(capacity)

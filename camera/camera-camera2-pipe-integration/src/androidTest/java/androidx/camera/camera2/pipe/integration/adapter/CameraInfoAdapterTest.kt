@@ -27,7 +27,6 @@ import androidx.camera.testing.impl.CameraXUtil
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import org.junit.After
@@ -40,7 +39,6 @@ import org.junit.runner.RunWith
 /** Contains tests for [CameraInfoAdapter]. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraInfoAdapterTest {
 
     @get:Rule val useCamera = CameraUtil.grantCameraPermissionAndPreTestAndPostTest()

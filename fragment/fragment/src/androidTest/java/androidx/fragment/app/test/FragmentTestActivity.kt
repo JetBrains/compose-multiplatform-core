@@ -95,7 +95,7 @@ class FragmentTestActivity : FragmentActivity(R.layout.activity_content) {
             onAttachListener.invoke(context)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             onActivityResultCalled = true
             onActivityResultRequestCode = requestCode

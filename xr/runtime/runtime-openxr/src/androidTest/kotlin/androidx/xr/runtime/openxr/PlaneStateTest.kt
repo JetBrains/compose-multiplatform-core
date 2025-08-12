@@ -39,8 +39,8 @@ class PlaneStateTest {
         assertThat(underTest.centerPose.rotation.y).isEqualTo(0)
         assertThat(underTest.centerPose.rotation.z).isEqualTo(0)
         assertThat(underTest.centerPose.rotation.w).isEqualTo(1)
-        assertThat(underTest.extents.x).isEqualTo(0)
-        assertThat(underTest.extents.y).isEqualTo(0)
+        assertThat(underTest.extents.width).isEqualTo(0)
+        assertThat(underTest.extents.height).isEqualTo(0)
         assertThat(underTest.vertices.size).isEqualTo(0)
     }
 

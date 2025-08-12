@@ -22,9 +22,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -37,6 +35,10 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
@@ -67,9 +70,11 @@ import org.intellij.lang.annotations.Language
  * 1) Clipping: a surface clips its children to the shape specified by [shape]
  * 2) Border: a surface draws an inner [border] to emphasize the boundary of the component.
  * 3) Background: a surface has a background color of [color].
- * 4) Content color: a surface provides a [contentColor] for text and icons inside the surface. By
+ * 4) Depth: a surface can have different [Depth] shadows for different states, as specified by
+ *    [depth].
+ * 5) Content color: a surface provides a [contentColor] for text and icons inside the surface. By
  *    default this is calculated from the provided background color.
- * 5) Interaction states: when focused, a surface displays draws a wider border with a focused
+ * 6) Interaction states: when focused, a surface displays draws a wider border with a focused
  *    highlight on top. When pressed, a surface draws a pressed overlay. This happens for
  *    interactions emitted from [interactionSource], whether this surface is [focusable] or not.
  *
@@ -94,6 +99,8 @@ import org.intellij.lang.annotations.Language
  *   border
  * @param color the background [Color] for this surface
  * @param contentColor the [Color] for content inside this surface
+ * @param depth the [SurfaceDepth] for this surface, representing the [Depth] shadows rendered in
+ *   different states.
  * @param border an optional inner border for this surface
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
  *   emitting [Interaction]s for this surface. Note that if `null` is provided, interactions will
@@ -105,11 +112,13 @@ public fun Modifier.surface(
     shape: Shape = GlimmerTheme.shapes.medium,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
+    depth: SurfaceDepth? = null,
     border: BorderStroke? = SurfaceDefaults.border(),
     interactionSource: MutableInteractionSource? = null,
 ): Modifier {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
-    return this.clip(shape)
+    return this.surfaceDepth(depth, shape, interactionSource)
+        .clip(shape)
         .contentColorProvider(contentColor)
         .then(SurfaceNodeElement(shape, border, interactionSource))
         .background(color = color, shape = shape)
@@ -124,9 +133,11 @@ public fun Modifier.surface(
  *    focused, a surface draws a wider border with a focused highlight on top to indicate the focus
  *    state.
  * 3) Background: a surface has a background color of [color].
- * 4) Content color: a surface provides a [contentColor] for text and icons inside the surface. By
+ * 4) Depth: a surface can have different [Depth] shadows for different states, as specified by
+ *    [depth].
+ * 5) Content color: a surface provides a [contentColor] for text and icons inside the surface. By
  *    default this is calculated from the provided background color.
- * 5) Interaction states: when focused, a surface displays draws a wider border with a focused
+ * 6) Interaction states: when focused, a surface displays draws a wider border with a focused
  *    highlight on top. When pressed, a surface draws a pressed overlay. This happens for
  *    interactions emitted from [interactionSource], whether this surface is [enabled] or not.
  *
@@ -141,6 +152,8 @@ public fun Modifier.surface(
  *   border
  * @param color the background [Color] for this surface
  * @param contentColor the [Color] for content inside this surface
+ * @param depth the [SurfaceDepth] for this surface, representing the [Depth] shadows rendered in
+ *   different states.
  * @param border an optional inner border for this surface
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
  *   emitting [Interaction]s for this surface. Note that if `null` is provided, interactions will
@@ -153,17 +166,48 @@ public fun Modifier.surface(
     shape: Shape = GlimmerTheme.shapes.medium,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
+    depth: SurfaceDepth? = null,
     border: BorderStroke? = SurfaceDefaults.border(),
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ): Modifier {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
-    return this.clip(shape)
+    return this.surfaceDepth(depth, shape, interactionSource)
+        .clip(shape)
         .contentColorProvider(contentColor)
         .then(SurfaceNodeElement(shape, border, interactionSource))
         .background(color = color, shape = shape)
         // TODO: b/423573184 align on disabled behavior / state
         .clickable(enabled = enabled, interactionSource = interactionSource, onClick = onClick)
+}
+
+/**
+ * Represents the [Depth] used by a [surface] in different states.
+ *
+ * Focused [surface]s with a [focusedDepth] will have a higher zIndex set so they can draw their
+ * focused depth over siblings.
+ *
+ * @property [depth] the [Depth] used when the [surface] is in its default state (no other
+ *   interactions are ongoing)
+ * @property [focusedDepth] the [Depth] used when the [surface] is focused
+ */
+@Immutable
+public class SurfaceDepth(public val depth: Depth?, public val focusedDepth: Depth?) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SurfaceDepth) return false
+
+        if (depth != other.depth) return false
+        if (focusedDepth != other.focusedDepth) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = depth?.hashCode() ?: 0
+        result = 31 * result + (focusedDepth?.hashCode() ?: 0)
+        return result
+    }
 }
 
 /** Default values used for [surface]. */
@@ -339,7 +383,7 @@ private class SurfaceNode(
                     coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                         pressedOverlayAlpha?.animateTo(
                             PressedOverlayAlpha,
-                            PressedOverlayAnimationSpec,
+                            PressedOverlayEnterAnimationSpec,
                         )
                     }
                 } else {
@@ -347,7 +391,7 @@ private class SurfaceNode(
                         pressReleaseAnimation =
                             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                                 minimumPressDuration?.join()
-                                progress.animateTo(0f, PressedOverlayAnimationSpec)
+                                progress.animateTo(0f, PressedOverlayExitAnimationSpec)
                             }
                     }
                 }
@@ -387,7 +431,7 @@ private class SurfaceNode(
             _focusedHighlightProgress?.snapTo(0f)
             _focusedHighlightProgress?.animateTo(
                 targetValue = 1f,
-                animationSpec = FocusedHighlightEnterAnimationSpec,
+                animationSpec = FocusedEnterAnimationSpec,
             )
         }
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -403,7 +447,7 @@ private class SurfaceNode(
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             _focusedHighlightProgress?.animateTo(
                 targetValue = 0f,
-                animationSpec = FocusedHighlightExitAnimationSpec,
+                animationSpec = FocusedExitAnimationSpec,
             )
             if (isActive) {
                 _focusedHighlightRotationProgress?.snapTo(0f)
@@ -420,7 +464,9 @@ private class SurfaceNode(
             val progress = focusedHighlightProgress
             if (progress > 0f) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val rotationRadians = focusedHighlightRotationProgress * Math.TAU
+                    val rotationRadians =
+                        FocusedHighlightRotationStartAngleRadians +
+                            focusedHighlightRotationProgress * Math.TAU
                     shader =
                         HighlightShaderHelper.configureShader(
                             shader = shader,
@@ -472,27 +518,80 @@ private class SurfaceNode(
     }
 }
 
+/**
+ * Renders and animates a [surface]'s [depth] for a given [shape], by observing [interactionSource].
+ */
+@Composable
+private fun Modifier.surfaceDepth(
+    depth: SurfaceDepth?,
+    shape: Shape,
+    interactionSource: InteractionSource,
+): Modifier {
+    if (depth == null) return this
+    val focusedProgress = remember { Animatable(0f) }
+    // If focused and there is focused depth, we need to draw the surface on top of
+    // other siblings to make sure the depth occludes siblings.
+    val zIndex by remember {
+        // Derived to avoid invalidating layout each frame of the animation
+        derivedStateOf {
+            if (depth.focusedDepth != null && focusedProgress.value >= 0.5f) 1f else 0f
+        }
+    }
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            when (interaction) {
+                is FocusInteraction.Focus ->
+                    launch(start = CoroutineStart.UNDISPATCHED) {
+                        focusedProgress.animateTo(1f, FocusedEnterAnimationSpec)
+                    }
+                is FocusInteraction.Unfocus ->
+                    launch(start = CoroutineStart.UNDISPATCHED) {
+                        focusedProgress.animateTo(0f, FocusedExitAnimationSpec)
+                    }
+            }
+        }
+    }
+
+    return layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0, zIndex = zIndex) }
+        }
+        .depth(
+            from = depth.depth,
+            to = depth.focusedDepth,
+            shape = shape,
+            progress = { focusedProgress.value },
+        )
+}
+
 /** Default border width for a [surface]. */
 private val DefaultSurfaceBorderWidth = 2.dp
 
 /** Focused border width for a [surface]. */
 private val FocusedSurfaceBorderWidth = 5.dp
 
-private val FocusedHighlightEnterAnimationSpec: AnimationSpec<Float> =
-    tween(50, easing = FastOutSlowInEasing)
+/** Enter animation for focus highlight and depth */
+private val FocusedEnterAnimationSpec: AnimationSpec<Float> =
+    spring(dampingRatio = 1f, stiffness = 600f)
 
-private val FocusedHighlightExitAnimationSpec: AnimationSpec<Float> =
-    tween(200, easing = FastOutSlowInEasing)
+/** Exit animation for focus highlight and depth */
+private val FocusedExitAnimationSpec: AnimationSpec<Float> =
+    spring(dampingRatio = 1f, stiffness = 100f)
 
 private val FocusedHighlightRotationAnimationSpec: AnimationSpec<Float> =
-    tween(durationMillis = 7000, easing = LinearOutSlowInEasing, delayMillis = 300)
+    tween(durationMillis = 3_000, easing = LinearOutSlowInEasing, delayMillis = 300)
+
+private val FocusedHighlightRotationStartAngleRadians: Double = Math.toRadians(40.0)
 
 private val PressedOverlayColor = Color.White
 
 private const val PressedOverlayAlpha = 0.16f
 
-private val PressedOverlayAnimationSpec: AnimationSpec<Float> =
-    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessVeryLow)
+private val PressedOverlayEnterAnimationSpec: AnimationSpec<Float> =
+    spring(dampingRatio = 0.84f, stiffness = 8000f)
+
+private val PressedOverlayExitAnimationSpec: AnimationSpec<Float> =
+    spring(dampingRatio = 0.85f, stiffness = 50f)
 
 private const val PressedOverlayMinimumDurationMillis = 300L
 

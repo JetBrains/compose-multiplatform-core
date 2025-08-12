@@ -128,8 +128,9 @@ class ProvidedAutoMigrationSpecTest {
     @Throws(IOException::class)
     fun testOnPostMigrate() {
         createFirstVersion()
-        helperWithSpec.runMigrationsAndValidate(TEST_DB, 2, true)
+        val db = helperWithSpec.runMigrationsAndValidate(TEST_DB, 2, true)
         MatcherAssert.assertThat(mProvidedSpec.mOnPostMigrateCalled, CoreMatchers.`is`(true))
+        db.close()
     }
 
     /** Verifies that the user defined migration is selected over using an autoMigration. */

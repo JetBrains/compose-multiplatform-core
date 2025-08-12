@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
@@ -45,11 +44,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CaptureSessionStateTest {
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceListener: CameraSurfaceManager.SurfaceListener = mock()

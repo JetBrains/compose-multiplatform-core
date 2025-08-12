@@ -653,6 +653,41 @@ class PausableCompositionTests {
 
         awaiter.await()
     }
+
+    @Test
+    fun tryPausingTheSameScopeTwice() = compositionTest {
+        val awaiter = Awaiter()
+        var textComposed = false
+        var text by mutableStateOf("blah")
+        val workflow = workflow {
+            setContent()
+            resumeTillComplete { false }
+            apply()
+            composition.deactivate()
+
+            setContent()
+            resumeOnce { textComposed }
+
+            text = "text"
+            advance()
+
+            resumeOnce { true }
+
+            resumeTillComplete { false }
+            apply()
+
+            awaiter.done()
+        }
+
+        compose {
+            PausableContent(workflow) {
+                textComposed = true
+                DefaultText(text)
+            }
+        }
+
+        awaiter.await()
+    }
 }
 
 fun String.splitRecording() = split(", ")
@@ -809,6 +844,8 @@ interface PausableContentWorkflowScope {
 
     fun resumeTillComplete(shouldPause: () -> Boolean)
 
+    fun resumeOnce(shouldPause: () -> Boolean)
+
     fun apply()
 
     fun cancel()
@@ -850,6 +887,12 @@ class PausableContentWorkflowDriver(
             pausedComposition.resume(shouldPause)
             iteration++
         }
+    }
+
+    override fun resumeOnce(shouldPause: () -> Boolean) {
+        val pausedComposition = pausedComposition
+        checkPrecondition(pausedComposition != null)
+        pausedComposition.resume(shouldPause)
     }
 
     override fun apply() {
@@ -916,4 +959,19 @@ private class Awaiter {
         done = true
         resume()
     }
+}
+
+val LocalColor = compositionLocalOf { -1 }
+
+@Composable
+fun DefaultText(
+    text: String,
+    minLines: Int = 1,
+    maxLines: Int = Int.MAX_VALUE,
+    color: Int = LocalColor.current,
+) {
+    assertEquals(1, minLines)
+    assertEquals(Int.MAX_VALUE, maxLines)
+    assertEquals(-1, color)
+    Text(text)
 }

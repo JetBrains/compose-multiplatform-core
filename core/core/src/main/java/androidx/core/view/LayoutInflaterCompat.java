@@ -17,7 +17,6 @@
 package androidx.core.view;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -110,22 +109,7 @@ public final class LayoutInflaterCompat {
     @Deprecated
     public static void setFactory(
             @NonNull LayoutInflater inflater, @NonNull LayoutInflaterFactory factory) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            inflater.setFactory2(new Factory2Wrapper(factory));
-        } else {
-            final LayoutInflater.Factory2 factory2 = new Factory2Wrapper(factory);
-            inflater.setFactory2(factory2);
-
-            final LayoutInflater.Factory f = inflater.getFactory();
-            if (f instanceof LayoutInflater.Factory2) {
-                // The merged factory is now set to getFactory(), but not getFactory2() (pre-v21).
-                // We will now try and force set the merged factory to mFactory2
-                forceSetFactory2(inflater, (LayoutInflater.Factory2) f);
-            } else {
-                // Else, we will force set the original wrapped Factory2
-                forceSetFactory2(inflater, factory2);
-            }
-        }
+        inflater.setFactory2(new Factory2Wrapper(factory));
     }
 
     /**
@@ -138,18 +122,6 @@ public final class LayoutInflaterCompat {
     public static void setFactory2(
             @NonNull LayoutInflater inflater, LayoutInflater.@NonNull Factory2 factory) {
         inflater.setFactory2(factory);
-
-        if (Build.VERSION.SDK_INT < 21) {
-            final LayoutInflater.Factory f = inflater.getFactory();
-            if (f instanceof LayoutInflater.Factory2) {
-                // The merged factory is now set to getFactory(), but not getFactory2() (pre-v21).
-                // We will now try and force set the merged factory to mFactory2
-                forceSetFactory2(inflater, (LayoutInflater.Factory2) f);
-            } else {
-                // Else, we will force set the original wrapped Factory2
-                forceSetFactory2(inflater, factory);
-            }
-        }
     }
 
     /**

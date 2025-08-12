@@ -270,16 +270,36 @@ class AndroidGraphicsConversionExtensionsTest {
         assertThat(path.isEmpty).isTrue()
     }
 
+    @Test
+    fun getBoundsRectF_whenNoBounds_returnsFalseAndDoesNotModifyOutParameter() {
+        val envelope = BoxAccumulator()
+
+        val outRect = RectF(1F, 2F, 3F, 4F)
+        assertThat(envelope.getBounds(outRect)).isFalse()
+        assertThat(outRect).isEqualTo(RectF(1F, 2F, 3F, 4F))
+    }
+
+    @Test
+    fun getBoundsRectF_whenHasBounds_returnsTrueAndOverwritesOutParameter() {
+        val envelope =
+            BoxAccumulator()
+                .add(MutableBox().populateFromTwoPoints(ImmutableVec(1f, 2f), ImmutableVec(3f, 4f)))
+
+        val outRect = RectF(5F, 6F, 7F, 8F)
+        assertThat(envelope.getBounds(outRect)).isTrue()
+        assertThat(outRect).isEqualTo(RectF(1F, 2F, 3F, 4F))
+    }
+
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
                 TEST_BRUSH,
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }
 
     private fun buildEmptyTestStrokeShape(): PartitionedMesh {
-        return Stroke(TEST_BRUSH, buildStrokeInputBatchFromPoints(floatArrayOf()).asImmutable())
+        return Stroke(TEST_BRUSH, buildStrokeInputBatchFromPoints(floatArrayOf()).toImmutable())
             .shape
     }
 

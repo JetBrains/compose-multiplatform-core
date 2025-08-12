@@ -17,7 +17,6 @@
 package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat.JPEG
-import android.os.Build
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.imagecapture.Utils.CAMERA_CAPTURE_RESULT
 import androidx.camera.core.imagecapture.Utils.CROP_RECT
@@ -35,13 +34,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [JpegImage2Result]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class JpegImage2ResultTest {
 
     private val operation = JpegImage2Result()

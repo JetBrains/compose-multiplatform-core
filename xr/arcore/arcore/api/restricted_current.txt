@@ -343,13 +343,13 @@ package androidx.xr.arcore {
 
   public static final class Plane.State implements androidx.xr.arcore.Trackable.State {
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector2 getExtents();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
     method public androidx.xr.arcore.Plane.Label getLabel();
     method public androidx.xr.arcore.Plane? getSubsumedBy();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector2 extents;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.arcore.Plane.Label label;
     property public androidx.xr.arcore.Plane? subsumedBy;
     property public androidx.xr.runtime.TrackingState trackingState;

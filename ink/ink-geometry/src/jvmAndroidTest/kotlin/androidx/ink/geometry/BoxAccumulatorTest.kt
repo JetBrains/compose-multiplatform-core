@@ -724,7 +724,7 @@ class BoxAccumulatorTest {
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
                 Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f),
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }

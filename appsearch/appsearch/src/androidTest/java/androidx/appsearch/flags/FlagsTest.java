@@ -299,4 +299,10 @@ public class FlagsTest {
                 .isEqualTo(
                         "com.android.appsearch.flags.enable_initialization_retries_before_reset");
     }
+
+    @Test
+    public void testFlagValue_enablePassingFilterToChildren() {
+        assertThat(Flags.FLAG_ENABLE_PASSING_FILTER_TO_CHILDREN)
+                .isEqualTo("com.android.appsearch.flags.enable_passing_filter_to_children");
+    }
 }

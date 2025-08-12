@@ -23,8 +23,8 @@ import android.os.LocaleList
 import android.view.textclassifier.TextClassificationManager
 import android.view.textclassifier.TextClassifier
 import androidx.pdf.featureflag.PdfFeatureFlags
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.ClipboardUtils
-import androidx.pdf.view.TextSelection
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 

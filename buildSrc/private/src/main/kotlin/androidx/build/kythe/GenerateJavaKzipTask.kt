@@ -15,7 +15,6 @@
  */
 package androidx.build.kythe
 
-import androidx.build.addToBuildOnServer
 import androidx.build.checkapi.CompilationInputs
 import androidx.build.getCheckoutRoot
 import androidx.build.getPrebuiltsRoot
@@ -153,37 +152,30 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                     }
                 }
 
-            project.tasks
-                .register("generateJavaKzip", GenerateJavaKzipTask::class.java) { task ->
-                    task.apply {
-                        javaExtractorJar.set(
-                            File(
-                                project.getPrebuiltsRoot(),
-                                "build-tools/common/javac_extractor.jar",
-                            )
+            project.tasks.register("generateJavaKzip", GenerateJavaKzipTask::class.java) { task ->
+                task.apply {
+                    javaExtractorJar.set(
+                        File(project.getPrebuiltsRoot(), "build-tools/common/javac_extractor.jar")
+                    )
+                    sourcePaths.setFrom(compilationInputs.sourcePaths)
+                    vnamesJson.set(project.getVnamesJson())
+                    dependencyClasspath.setFrom(
+                        compilationInputs.dependencyClasspath + compilationInputs.bootClasspath
+                    )
+                    this.compiledSources.setFrom(compiledSources)
+                    kzipOutputFile.set(
+                        project.layout.buildDirectory.file(
+                            "kzips/${project.group}-${project.name}.java.kzip"
                         )
-                        sourcePaths.setFrom(compilationInputs.sourcePaths)
-                        vnamesJson.set(project.getVnamesJson())
-                        dependencyClasspath.setFrom(
-                            compilationInputs.dependencyClasspath + compilationInputs.bootClasspath
-                        )
-                        this.compiledSources.setFrom(compiledSources)
-                        kzipOutputFile.set(
-                            project.layout.buildDirectory.file(
-                                "kzips/${project.group}-${project.name}.java.kzip"
-                            )
-                        )
-                        kytheBuildDirectory.set(
-                            project.layout.buildDirectory.dir("kythe-java-classes")
-                        )
-                        annotationProcessor.setFrom(annotationProcessorPaths)
-                        this.javacCompilerArgs.set(javacCompilerArgs)
-                        // Needed so generated files (e.g. protos) are present when generating kzip
-                        // Without this, javac_extractor will throw a compilation error
-                        dependsOn(project.tasks.withType(JavaCompile::class.java))
-                    }
+                    )
+                    kytheBuildDirectory.set(project.layout.buildDirectory.dir("kythe-java-classes"))
+                    annotationProcessor.setFrom(annotationProcessorPaths)
+                    this.javacCompilerArgs.set(javacCompilerArgs)
+                    // Needed so generated files (e.g. protos) are present when generating kzip
+                    // Without this, javac_extractor will throw a compilation error
+                    dependsOn(project.tasks.withType(JavaCompile::class.java))
                 }
-                .also { project.addToBuildOnServer(it) }
+            }
         }
     }
 }

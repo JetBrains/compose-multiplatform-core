@@ -28,7 +28,6 @@ import static org.mockito.Mockito.verify;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.OutputConfiguration;
-import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 
@@ -44,7 +43,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class OutputConfigurationCompatTest {
 
     private static final int TEST_GROUP_ID = 100;

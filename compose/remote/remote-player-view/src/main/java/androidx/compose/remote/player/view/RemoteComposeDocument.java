@@ -15,12 +15,18 @@
  */
 package androidx.compose.remote.player.view;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.SystemClock;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.serialize.MapSerializer;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,31 +35,33 @@ import java.time.Clock;
 /** Public API to create a new RemoteComposeDocument coming from an input stream */
 public class RemoteComposeDocument {
 
-    CoreDocument mDocument;
+    private @NonNull CoreDocument mDocument;
 
-    public RemoteComposeDocument(byte[] inputStream) {
+    public RemoteComposeDocument(byte @NonNull [] inputStream) {
         this(new ByteArrayInputStream(inputStream), new SystemClock());
     }
 
-    public RemoteComposeDocument(InputStream inputStream) {
+    @RestrictTo(LIBRARY_GROUP)
+    public RemoteComposeDocument(@NonNull InputStream inputStream) {
         this(inputStream, new SystemClock());
     }
 
-    public RemoteComposeDocument(InputStream inputStream, Clock clock) {
+    @RestrictTo(LIBRARY_GROUP)
+    public RemoteComposeDocument(@NonNull InputStream inputStream, @NonNull Clock clock) {
         mDocument = new CoreDocument(clock);
         RemoteComposeBuffer buffer = RemoteComposeBuffer.fromInputStream(inputStream);
         mDocument.initFromBuffer(buffer);
     }
 
-    public RemoteComposeDocument(CoreDocument document) {
+    public RemoteComposeDocument(@NonNull CoreDocument document) {
         mDocument = document;
     }
 
-    public CoreDocument getDocument() {
+    public @NonNull CoreDocument getDocument() {
         return mDocument;
     }
 
-    public void setDocument(CoreDocument document) {
+    public void setDocument(@NonNull CoreDocument document) {
         this.mDocument = document;
     }
 
@@ -61,16 +69,19 @@ public class RemoteComposeDocument {
      * Called when an initialization is needed, allowing the document to eg load resources / cache
      * them.
      */
+    @RestrictTo(LIBRARY_GROUP)
     public void initializeContext(RemoteContext context) {
         mDocument.initializeContext(context);
     }
 
     /** Returns the width of the document in pixels */
+    @RestrictTo(LIBRARY_GROUP)
     public int getWidth() {
         return mDocument.getWidth();
     }
 
     /** Returns the height of the document in pixels */
+    @RestrictTo(LIBRARY_GROUP)
     public int getHeight() {
         return mDocument.getHeight();
     }
@@ -85,7 +96,8 @@ public class RemoteComposeDocument {
      * @param context the provided PaintContext
      * @param theme the theme we want to use for this document.
      */
-    public void paint(RemoteContext context, int theme) {
+    @RestrictTo(LIBRARY_GROUP)
+    public void paint(@NonNull RemoteContext context, int theme) {
         mDocument.paint(context, theme);
     }
 
@@ -94,6 +106,7 @@ public class RemoteComposeDocument {
      *
      * @return delay in milliseconds to next repaint or -1
      */
+    @RestrictTo(LIBRARY_GROUP)
     public int needsRepaint() {
         return mDocument.needsRepaint();
     }
@@ -105,6 +118,7 @@ public class RemoteComposeDocument {
      * @param minorVersion the max minor version supported by the player
      * @param capabilities a bitmask of capabilities the player supports (unused for now)
      */
+    @RestrictTo(LIBRARY_GROUP)
     public boolean canBeDisplayed(int majorVersion, int minorVersion, long capabilities) {
         return mDocument.canBeDisplayed(majorVersion, minorVersion, capabilities);
     }
@@ -119,6 +133,7 @@ public class RemoteComposeDocument {
      *
      * @return
      */
+    @RestrictTo(LIBRARY_GROUP)
     public String[] getNamedColors() {
         return mDocument.getNamedColors();
     }
@@ -129,6 +144,7 @@ public class RemoteComposeDocument {
      * @param type the type of variable NamedVariable.COLOR_TYPE, STRING_TYPE, etc
      * @return array of name or null
      */
+    @RestrictTo(LIBRARY_GROUP)
     public String[] getNamedVariables(int type) {
         return mDocument.getNamedVariables(type);
     }
@@ -139,11 +155,13 @@ public class RemoteComposeDocument {
      * @param id the component id
      * @return the corresponding component or null if not found
      */
+    @RestrictTo(LIBRARY_GROUP)
     public Component getComponent(int id) {
         return mDocument.getComponent(id);
     }
 
     /** Invalidate the document for layout measures. This will trigger a layout remeasure pass. */
+    @RestrictTo(LIBRARY_GROUP)
     public void invalidate() {
         mDocument.invalidateMeasure();
     }
@@ -152,6 +170,7 @@ public class RemoteComposeDocument {
      * @hide Returns a list of useful statistics for the runtime document
      * @return array of strings representing some useful statistics
      */
+    @RestrictTo(LIBRARY_GROUP)
     public String[] getStats() {
         if (mDocument == null) {
             return new String[0];
@@ -164,6 +183,7 @@ public class RemoteComposeDocument {
      * @param ids
      * @return
      */
+    @RestrictTo(LIBRARY_GROUP)
     public int hasSensorListeners(int[] ids) {
         return 0;
     }
@@ -172,7 +192,7 @@ public class RemoteComposeDocument {
      * @hide Returns the current clock
      * @return
      */
-    public Clock getClock() {
+    public @NonNull Clock getClock() {
         return getDocument().getClock();
     }
 
@@ -180,6 +200,7 @@ public class RemoteComposeDocument {
      * @hide Returns true if the current document is an update-only document
      * @return
      */
+    @RestrictTo(LIBRARY_GROUP)
     public boolean isUpdateDoc() {
         return mDocument.isUpdateDoc();
     }
@@ -188,6 +209,7 @@ public class RemoteComposeDocument {
      * @hide Serialize the document
      * @param serializer
      */
+    @RestrictTo(LIBRARY_GROUP)
     public void serialize(MapSerializer serializer) {
         mDocument.serialize(serializer);
     }

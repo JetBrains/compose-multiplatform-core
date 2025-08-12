@@ -19,7 +19,6 @@ package androidx.privacysandbox.ui.integration.sdkproviderutils
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -62,7 +61,7 @@ class ViewabilityHandler {
                 override fun onSessionOpened(sessionObserverContext: SessionObserverContext) {
                     Log.i(TAG, "onSessionOpened $sessionObserverContext")
                     view = checkNotNull(sessionObserverContext.view)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && drawViewability) {
+                    if (drawViewability) {
                         view.setOnScrollChangeListener {
                             _: View,
                             scrollX: Int,

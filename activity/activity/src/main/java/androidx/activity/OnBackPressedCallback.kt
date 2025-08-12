@@ -18,6 +18,7 @@ package androidx.activity
 import androidx.annotation.MainThread
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.NavigationEventInfo.NotProvided
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.minusAssign
 import kotlin.collections.plusAssign
@@ -49,7 +50,7 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
      *
      * @see [OnBackPressedDispatcher.eventDispatcher]
      */
-    private val eventCallbacks: MutableList<NavigationEventCallback> = mutableListOf()
+    private val eventCallbacks: MutableList<NavigationEventCallback<*>> = mutableListOf()
 
     /**
      * The enabled state of the callback. Only when this callback is enabled will it receive
@@ -125,14 +126,15 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
         closeables -= closeable
     }
 
-    internal fun createNavigationEventCallback(): NavigationEventCallback {
+    internal fun createNavigationEventCallback(): NavigationEventCallback<*> {
         val newCallback = EventCallback(this)
         eventCallbacks += newCallback
         return newCallback
     }
 
     private class EventCallback(private val onBackPressedCallback: OnBackPressedCallback) :
-        NavigationEventCallback(isEnabled = onBackPressedCallback.isEnabled) {
+        NavigationEventCallback<NotProvided>(isEnabled = onBackPressedCallback.isEnabled) {
+
         override fun onEventStarted(event: NavigationEvent) {
             onBackPressedCallback.handleOnBackStarted(BackEventCompat(event))
         }

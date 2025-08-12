@@ -179,8 +179,7 @@ private object XrThreePaneScaffoldTokens {
     val TertiaryPanePanelWidth = 412.dp
 }
 
-@Suppress("BanInlineOptIn")
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@ExperimentalMaterial3AdaptiveApi
 private inline fun ThreePaneScaffoldHorizontalOrder.each(action: (ThreePaneScaffoldRole) -> Unit) {
     action(get(0))
     action(get(1))

@@ -30,7 +30,6 @@ import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.webkit.internal.ApiFeature;
-import androidx.webkit.internal.ApiHelperForM;
 import androidx.webkit.internal.ApiHelperForN;
 import androidx.webkit.internal.ApiHelperForO;
 import androidx.webkit.internal.ApiHelperForQ;
@@ -80,14 +79,7 @@ public class WebSettingsCompat {
     @RequiresFeature(name = WebViewFeature.OFF_SCREEN_PRERASTER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void setOffscreenPreRaster(@NonNull WebSettings settings, boolean enabled) {
-        ApiFeature.M feature = WebViewFeatureInternal.OFF_SCREEN_PRERASTER;
-        if (feature.isSupportedByFramework()) {
-            ApiHelperForM.setOffscreenPreRaster(settings, enabled);
-        } else if (feature.isSupportedByWebView()) {
-            getAdapter(settings).setOffscreenPreRaster(enabled);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
+        settings.setOffscreenPreRaster(enabled);
     }
 
     /**
@@ -105,14 +97,7 @@ public class WebSettingsCompat {
     @RequiresFeature(name = WebViewFeature.OFF_SCREEN_PRERASTER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static boolean getOffscreenPreRaster(@NonNull WebSettings settings) {
-        ApiFeature.M feature = WebViewFeatureInternal.OFF_SCREEN_PRERASTER;
-        if (feature.isSupportedByFramework()) {
-            return ApiHelperForM.getOffscreenPreRaster(settings);
-        } else if (feature.isSupportedByWebView()) {
-            return getAdapter(settings).getOffscreenPreRaster();
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
+        return settings.getOffscreenPreRaster();
     }
 
     /**

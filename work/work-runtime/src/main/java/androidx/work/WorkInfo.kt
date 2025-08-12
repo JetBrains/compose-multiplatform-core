@@ -20,7 +20,7 @@ import android.app.job.JobScheduler
 import androidx.annotation.IntDef
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresApi
-import androidx.work.WorkInfo.State
+import androidx.work.WorkInfo.Companion.STOP_REASON_NOT_STOPPED
 import java.util.UUID
 
 /**

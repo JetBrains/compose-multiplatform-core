@@ -31,6 +31,7 @@ import androidx.graphics.surface.SurfaceControlCompat
  */
 internal class BufferTransformHintResolver {
 
+    /** Equivalent to [android.view.AttachedSurfaceControl.getBufferTransformHint]. */
     fun getBufferTransformHint(view: View): Int {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
             return TransformHintHelper.resolveBufferTransformHint(view)

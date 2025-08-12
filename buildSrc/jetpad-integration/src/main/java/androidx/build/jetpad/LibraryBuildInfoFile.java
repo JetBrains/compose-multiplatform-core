@@ -56,6 +56,7 @@ public final class LibraryBuildInfoFile {
     public ArrayList<Check> checks;
     public Set<String> kmpChildren;
     public Set<String> testModuleNames;
+    public Set<String> gradlePluginIds;
 
     /**
      * @property isTipOfTree boolean that specifies whether the dependency is tip-of-tree

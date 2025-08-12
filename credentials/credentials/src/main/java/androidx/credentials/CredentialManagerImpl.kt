@@ -20,7 +20,9 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
 import androidx.credentials.exceptions.ClearCredentialException
@@ -30,7 +32,9 @@ import androidx.credentials.exceptions.CreateCredentialProviderConfigurationExce
 import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialSecurityException
 import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateProviderConfigurationException
 import androidx.credentials.internal.FormFactorHelper
 import java.util.concurrent.Executor
 
@@ -90,6 +94,7 @@ import java.util.concurrent.Executor
 internal class CredentialManagerImpl internal constructor(private val context: Context) :
     CredentialManager {
     companion object {
+        private const val ORIGIN_PERMISSION = "android.permission.CREDENTIAL_MANAGER_SET_ORIGIN"
         /**
          * An intent action that shows a screen that let user enable a Credential Manager provider.
          */
@@ -306,7 +311,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
     }
 
     /**
-     * Signals a user's credential/credentials state to all credential providers.
+     * Signals a user's public key credential/credentials state to all credential providers.
      *
      * This API uses callbacks instead of Kotlin coroutines.
      *
@@ -324,18 +329,29 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         callback:
             CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
     ) {
+        if (request.origin != null && !isOriginAllowed(context)) {
+            callback.onError(
+                SignalCredentialSecurityException(
+                    "Must have android.permissions.CREDENTIAL_MANAGER_SET_ORIGIN " + "permission"
+                )
+            )
+        }
         val provider: CredentialProvider? =
             CredentialProviderFactory(context).getBestAvailableProvider(request)
         if (provider == null) {
             callback.onError(
-                SignalCredentialStateException(
-                    SignalCredentialStateException.ERROR_TYPE_UNKNOWN,
-                    "No Credential Manager provider found",
+                SignalCredentialStateProviderConfigurationException(
+                    "No Credential Manager provider found"
                 )
             )
             return
         }
         provider.onSignalCredentialState(request, executor, callback)
+    }
+
+    private fun isOriginAllowed(context: Context): Boolean {
+        return !(Build.VERSION.SDK_INT >= 34 &&
+            context.checkSelfPermission(ORIGIN_PERMISSION) != PackageManager.PERMISSION_GRANTED)
     }
 
     /**

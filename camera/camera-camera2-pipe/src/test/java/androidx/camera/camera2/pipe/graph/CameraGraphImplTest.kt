@@ -21,7 +21,6 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.media.ImageReader
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraBackendFactory
 import androidx.camera.camera2.pipe.CameraGraph
@@ -73,7 +72,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class CameraGraphImplTest {
     private val testScope = TestScope()
 
@@ -137,6 +135,7 @@ internal class CameraGraphImplTest {
             graphId,
             CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope),
             sessionLock,
+            testScope,
         )
     private val stream1: CameraStream =
         checkNotNull(cameraGraph.streams[stream1Config]) {

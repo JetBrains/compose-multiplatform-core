@@ -83,7 +83,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [ImagePipeline]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ImagePipelineTest {
 
     companion object {

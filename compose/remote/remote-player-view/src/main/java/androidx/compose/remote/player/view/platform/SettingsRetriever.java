@@ -15,9 +15,14 @@
  */
 package androidx.compose.remote.player.view.player.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.content.Context;
 import android.provider.Settings;
 
+@RestrictTo(LIBRARY_GROUP)
 /** Class to retrieve values from {@link Settings}. */
 public class SettingsRetriever {
     /** Determines whether the Remove Animations accessibility setting is enabled. */

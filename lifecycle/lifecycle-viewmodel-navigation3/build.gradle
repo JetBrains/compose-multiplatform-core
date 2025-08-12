@@ -100,7 +100,6 @@ androidXMultiplatform {
 
 androidx {
     name = "Androidx Lifecycle Navigation3 ViewModel"
-    mavenVersion = LibraryVersions.LIFECYCLE_VIEWMODEL_NAV3
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Provides the ViewModel wrapper for nav3."

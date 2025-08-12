@@ -36,14 +36,13 @@ import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBefo
 import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.StateFlow
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface CameraGraph : CameraGraphBase<Session> {
+public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
     /**
      * This defines the configuration, flags, and pre-defined structure of a [CameraGraph] instance.
      * Note that for parameters, null is considered a valid value, and unset keys are ignored.
@@ -359,7 +358,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
      */
     @JvmDefaultWithCompatibility
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Session : AutoCloseable {
+    public interface Session : CameraControls3A, AutoCloseable {
         /**
          * Causes the CameraGraph to start or update the current repeating request with the provided
          * [Request] object. The [Request] object may be cached, and may be used for other
@@ -369,14 +368,6 @@ public interface CameraGraph : CameraGraphBase<Session> {
 
         /** Stop the current repeating request. */
         public fun stopRepeating()
-
-        /**
-         * Submit the [Request] to the camera. Requests are issued to the Camera, in order, on a
-         * background queue. Each call to submit will issue the [Request] to the camera exactly once
-         * unless the request is invalid, or unless the requests are aborted via [abort]. The same
-         * request can be submitted multiple times.
-         */
-        public fun submit(request: Request)
 
         /**
          * Submit the [Request]s to the camera. [Request]s are issued to the Camera, in order, on a
@@ -411,60 +402,12 @@ public interface CameraGraph : CameraGraphBase<Session> {
         public fun abort()
 
         /**
-         * Applies the given 3A parameters to the camera device.
-         *
-         * @return A [Deferred] of [Result3A] value which will contain the frame number for which
-         *   these parameters were applied. It may be cancelled with a [CancellationException] if a
-         *   newer request is submitted before completion.
+         * Submit the [Request] to the camera. Requests are issued to the Camera, in order, on a
+         * background queue. Each call to submit will issue the [Request] to the camera exactly once
+         * unless the request is invalid, or unless the requests are aborted via [abort]. The same
+         * request can be submitted multiple times.
          */
-        public fun update3A(
-            aeMode: AeMode? = null,
-            afMode: AfMode? = null,
-            awbMode: AwbMode? = null,
-            aeRegions: List<MeteringRectangle>? = null,
-            afRegions: List<MeteringRectangle>? = null,
-            awbRegions: List<MeteringRectangle>? = null,
-        ): Deferred<Result3A>
-
-        /**
-         * Applies the given 3A parameters to the camera device but for only one frame.
-         *
-         * @return the FrameNumber for which these parameters were applied.
-         */
-        public suspend fun submit3A(
-            aeMode: AeMode? = null,
-            afMode: AfMode? = null,
-            awbMode: AwbMode? = null,
-            aeRegions: List<MeteringRectangle>? = null,
-            afRegions: List<MeteringRectangle>? = null,
-            awbRegions: List<MeteringRectangle>? = null,
-        ): Deferred<Result3A>
-
-        /**
-         * Turns the torch to ON.
-         *
-         * This method has a side effect on the currently set AE mode. Ref:
-         * https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#FLASH_MODE
-         * To use the flash control, AE mode must be set to ON or OFF. So if the AE mode is already
-         * not either ON or OFF, we will need to update the AE mode to one of those states, here we
-         * will choose ON. It is the responsibility of the application layer above CameraPipe to
-         * restore the AE mode after the torch control has been used. The [setTorchOff] or
-         * [update3A] method can be used to restore the AE state to a previous value.
-         *
-         * @return the FrameNumber at which the turn was fully turned on if switch was ON, or the
-         *   FrameNumber at which it was completely turned off when the switch was OFF.
-         */
-        public fun setTorchOn(): Deferred<Result3A>
-
-        /**
-         * Turns the torch to OFF.
-         *
-         * @param aeMode The [AeMode] to set while disabling the torch value. If null which is the
-         *   default value, the current AE mode is used.
-         * @return the FrameNumber at which the turn was fully turned on if switch was ON, or the
-         *   FrameNumber at which it was completely turned off when the switch was OFF.
-         */
-        public fun setTorchOff(aeMode: AeMode? = null): Deferred<Result3A>
+        public fun submit(request: Request)
 
         /**
          * Locks the auto-exposure, auto-focus and auto-whitebalance as per the given desired
@@ -610,9 +553,18 @@ public interface CameraGraph : CameraGraphBase<Session> {
     }
 }
 
-/** A [CameraGraphBase] represents common properties and methods to operate a camera graph. */
+/**
+ * A [CameraGraphBase] represents common properties of CameraGraph and ways to acquire a session for
+ * exclusive access.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface CameraGraphBase<TSession : Session> : AutoCloseable {
+    /**
+     * A unique identifier for this camera graph instance. This can be used to identify the graph
+     * without holding a hard reference to the camera graph itself.
+     */
+    public val id: CameraGraphId
+
     /**
      * This will cause the camera graph to start opening the [CameraDevice] and configuring a
      * [CameraCaptureSession]. While the camera graph is alive it will attempt to keep the camera
@@ -629,10 +581,11 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
     public fun stop()
 
     /**
-     * A unique identifier for this camera graph instance. This can be used to identify the graph
-     * without holding a hard reference to the camera graph itself.
+     * This enables setting parameter values directly without having callers of camera graph to
+     * acquire sessions manually, but instead session is acquired on callers' behalf when making
+     * changes in [Parameters]. For detailed usage see [Parameters].
      */
-    public val id: CameraGraphId
+    public val parameters: Parameters
 
     /** The [StreamGraph] for this camera graph instance. */
     public val streams: StreamGraph
@@ -651,13 +604,6 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
     public var isForeground: Boolean
 
     /**
-     * This enables setting parameter values directly without having callers of camera graph to
-     * acquire sessions manually, but instead session is acquired on callers' behalf when making
-     * changes in [Parameters]. For detailed usage see [Parameters].
-     */
-    public val parameters: Parameters
-
-    /**
      * This configures the camera graph to use a specific Surface for the given stream.
      *
      * Changing a surface may cause the camera to stall and/or reconfigure.
@@ -673,6 +619,85 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      * Sets the audio restriction of camera graph.
      */
     public fun updateAudioRestrictionMode(mode: AudioRestrictionMode)
+
+    /**
+     * Locks the auto-exposure, auto-focus and auto-whitebalance as per the given desired behaviors.
+     * This given 3A parameters are applied before the lock is obtained. If 'null' value is passed
+     * for a parameter, that parameter is ignored, and the current value for that parameter
+     * continues to be applied.
+     *
+     * @param afTriggerStartAeMode the AeMode value that should override current AeMode for
+     *   AF_TRIGGER_START request, this value should not be retained for following requests
+     * @param convergedCondition an optional function can be used to identify if the result frame
+     *   with correct 3A converge state is received. Returns true to complete the 3A scan and going
+     *   to lock the 3A state, otherwise it will continue to receive the frame results until the
+     *   [frameLimit] or [convergedTimeLimitNs] is reached.
+     * @param lockedCondition an optional function can be used to identify if the result frame with
+     *   correct 3A lock states are received. Returns true to complete lock 3A task, otherwise it
+     *   will continue to receive the frame results until the [frameLimit] or [lockedTimeLimitNs] is
+     *   reached.
+     * @param frameLimit the maximum number of frames to wait before we give up waiting for this
+     *   operation to complete.
+     * @param convergedTimeLimitNs the maximum time limit in ns we wait before we give up waiting
+     *   for 3A convergence to complete.
+     * @param lockedTimeLimitNs the maximum time limit in ns we wait before we give up waiting for
+     *   3A locking to complete.
+     * @return [Result3A], which will contain the latest frame number at which the locks were
+     *   applied or the frame number at which the method returned early because either frame limit
+     *   or time limit was reached.
+     *
+     * TODO(sushilnath@): Add support for specifying the AE, AF and AWB modes as well. The update of
+     *   modes require special care if the desired lock behavior is immediate. In that case we have
+     *   to submit a combination of repeating and single requests so that the AF skips the initial
+     *   state of the new mode's state machine and stays locks in the new mode as well.
+     */
+    public fun lock3A(
+        aeMode: AeMode? = null,
+        afMode: AfMode? = null,
+        awbMode: AwbMode? = null,
+        aeRegions: List<MeteringRectangle>? = null,
+        afRegions: List<MeteringRectangle>? = null,
+        awbRegions: List<MeteringRectangle>? = null,
+        aeLockBehavior: Lock3ABehavior? = null,
+        afLockBehavior: Lock3ABehavior? = null,
+        awbLockBehavior: Lock3ABehavior? = null,
+        afTriggerStartAeMode: AeMode? = null,
+        convergedCondition: ((FrameMetadata) -> Boolean)? = null,
+        lockedCondition: ((FrameMetadata) -> Boolean)? = null,
+        frameLimit: Int = DEFAULT_FRAME_LIMIT,
+        convergedTimeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
+        lockedTimeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
+    ): Deferred<Result3A>
+
+    /**
+     * Unlocks auto-exposure, auto-focus, auto-whitebalance. Once they are unlocked they get back to
+     * their initial state or resume their auto scan depending on the current mode they are
+     * operating in.
+     *
+     * Providing 'true' for a parameter in this method will unlock that component and if 'false' is
+     * provided or the parameter is not specified then it will have no effect on the lock of that
+     * component, i.e. if it was locked earlier it will stay locked and if it was already unlocked,
+     * it will stay unlocked.
+     *
+     * @param unlockedCondition an optional function can be used to identify if the result frame
+     *   with correct ae, af and awb states are received. Returns true to complete the unlock 3A
+     *   task, otherwise it will continue to receive the frame results until the [frameLimit] or
+     *   [timeLimitNs] is reached.
+     * @param frameLimit the maximum number of frames to wait before we give up waiting for this
+     *   operation to complete.
+     * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for this
+     *   operation to complete.
+     * @return [Result3A], which will contain the latest frame number at which the auto-focus,
+     *   auto-exposure, auto-white balance were unlocked as per the method arguments.
+     */
+    public fun unlock3A(
+        ae: Boolean? = null,
+        af: Boolean? = null,
+        awb: Boolean? = null,
+        unlockedCondition: ((FrameMetadata) -> Boolean)? = null,
+        frameLimit: Int = DEFAULT_FRAME_LIMIT,
+        timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
+    ): Deferred<Result3A>
 
     /**
      * Used exclusively interact with the camera via a [TSession] from within an existing suspending

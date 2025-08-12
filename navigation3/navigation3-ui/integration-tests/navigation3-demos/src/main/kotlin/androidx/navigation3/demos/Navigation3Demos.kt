@@ -27,5 +27,6 @@ val Navigation3Demos =
         listOf(
             ComposableDemo("Basic Nav3") { SceneNav() },
             ComposableDemo("Nav3 Shared Element Demo") { SceneNavSharedElementSample() },
+            ComposableDemo("Hierarchical Scene Strategy Demo") { HierarchicalSceneSample() },
         ),
     )

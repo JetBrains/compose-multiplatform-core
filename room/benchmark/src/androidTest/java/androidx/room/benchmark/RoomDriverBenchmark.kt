@@ -29,7 +29,6 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -45,7 +44,6 @@ import org.junit.runners.Parameterized.Parameters
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 23)
 class RoomDriverBenchmark(private val useDriver: UseDriver) {
 
     @get:Rule val benchmarkRule = BenchmarkRule()

@@ -26,7 +26,6 @@ import android.view.ViewTreeObserver
 import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.test.core.app.takeScreenshot
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.test.uiautomator.UiDevice
@@ -143,7 +142,6 @@ public class SplashscreenParametrizedTest(
 
     // The vector drawable of the starting window isn't scaled
     // correctly pre 23
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public fun splashscreenViewScreenshotComparison() {
         val controller = startActivityWithSplashScreen {

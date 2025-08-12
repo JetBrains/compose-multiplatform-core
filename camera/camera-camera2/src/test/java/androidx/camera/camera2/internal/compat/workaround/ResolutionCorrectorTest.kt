@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.internal.compat.workaround
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk
 import androidx.camera.core.impl.SurfaceConfig
@@ -25,7 +24,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private val RESOLUTION_1 = Size(101, 100)
@@ -40,7 +38,6 @@ private val SUPPORTED_RESOLUTIONS = listOf(RESOLUTION_1, RESOLUTION_2)
 /** Unit test for [ResolutionCorrector]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ResolutionCorrectorTest {
 
     private val mResolutionCorrector =

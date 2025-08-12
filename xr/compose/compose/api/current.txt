@@ -821,12 +821,12 @@ package androidx.xr.compose.unit {
     property public boolean hasBoundedDepth;
     property public boolean hasBoundedHeight;
     property public boolean hasBoundedWidth;
-    property @IntRange(from=0L) public int maxDepth;
-    property @IntRange(from=0L) public int maxHeight;
-    property @IntRange(from=0L) public int maxWidth;
-    property @IntRange(from=0L) public int minDepth;
-    property @IntRange(from=0L) public int minHeight;
-    property @IntRange(from=0L) public int minWidth;
+    property public int maxDepth;
+    property public int maxHeight;
+    property public int maxWidth;
+    property public int minDepth;
+    property public int minHeight;
+    property public int minWidth;
     field public static final androidx.xr.compose.unit.VolumeConstraints.Companion Companion;
     field public static final int INFINITY = 2147483647; // 0x7fffffff
   }

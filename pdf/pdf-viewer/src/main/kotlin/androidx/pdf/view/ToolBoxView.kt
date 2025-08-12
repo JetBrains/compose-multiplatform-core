@@ -53,10 +53,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         inflate(context, R.layout.tool_box_view, this)
         editButton = findViewById(R.id.edit_fab)
 
-        editButton.setOnClickListener {
-            handleEditFabClick()
-            editClickListener?.onClick(this)
-        }
+        editButton.setOnClickListener { editClickListener?.onClick(this) ?: handleEditFabClick() }
     }
 
     /**

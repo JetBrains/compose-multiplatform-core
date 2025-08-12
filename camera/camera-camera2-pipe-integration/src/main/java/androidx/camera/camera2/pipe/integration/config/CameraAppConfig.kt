@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
+import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
@@ -59,6 +60,11 @@ public class CameraAppConfig(
         camera2InteropCallbacks
 
     @Provides public fun provideCameraCoordinator(): CameraCoordinator = cameraCoordinator
+
+    @Provides
+    public fun provideDisplayInfoManager(context: Context): DisplayInfoManager {
+        return DisplayInfoManager.getInstance(context)
+    }
 }
 
 /** Dagger component for Application (Process) scoped dependencies. */

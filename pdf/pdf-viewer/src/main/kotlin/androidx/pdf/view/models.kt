@@ -17,7 +17,6 @@
 package androidx.pdf.view
 
 import android.os.Parcel
-import android.text.TextUtils
 import androidx.annotation.ColorInt
 import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
@@ -99,70 +98,4 @@ public class Highlight(public val area: PdfRect, @ColorInt public val color: Int
     internal fun copy(): Highlight {
         return Highlight(PdfRect(area.pageNum, area.left, area.top, area.right, area.bottom), color)
     }
-}
-
-/** Represents PDF content that has been selected */
-public interface Selection {
-    /**
-     * The [PdfRect] bounds of this selection. May contain multiple [PdfRect] if this selection
-     * spans multiple discrete areas within the PDF. Consider for example any selection spanning
-     * multiple pages, or a text selection spanning multiple lines on the same page.
-     */
-    public val bounds: List<PdfRect>
-}
-
-/** Represents text content that has been selected */
-public class TextSelection(public val text: CharSequence, override val bounds: List<PdfRect>) :
-    Selection {
-
-    /** Returns [text] as a [String] */
-    public fun textAsString(): String = text.toString()
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || other !is TextSelection) return false
-
-        if (other.text != this.text) return false
-        if (other.bounds != this.bounds) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = text.hashCode()
-        result = 31 * result + bounds.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "TextSelection: text $text bounds $bounds"
-    }
-}
-
-/**
- * Writes a [TextSelection] to [dest].
- *
- * Not part of the public API because public APIs cannot be [android.os.Parcelable]
- */
-internal fun TextSelection.writeToParcel(dest: Parcel, flags: Int) {
-    TextUtils.writeToParcel(text, dest, flags)
-    dest.writeInt(bounds.size)
-    for (bound in bounds) {
-        bound.writeToParcel(dest)
-    }
-}
-
-/**
- * Reads a [TextSelection] from [source].
- *
- * Not part of the public API because public APIs cannot be [android.os.Parcelable]
- */
-internal fun textSelectionFromParcel(source: Parcel): TextSelection {
-    val text = requireNotNull(TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(source))
-    val boundsSize = source.readInt()
-    val bounds = mutableListOf<PdfRect>()
-    for (i in 0 until boundsSize) {
-        bounds.add(pdfRectFromParcel(source))
-    }
-    return TextSelection(text, bounds.toList())
 }

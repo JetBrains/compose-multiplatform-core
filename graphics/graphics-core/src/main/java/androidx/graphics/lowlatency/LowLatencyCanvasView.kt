@@ -139,7 +139,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var mHeight = -1
 
     /** Transform to be used for pre-rotation of content */
-    private var mTransform = BufferTransformHintResolver.UNKNOWN_TRANSFORM
+    private var mProducerBufferTransform = BufferTransformHintResolver.UNKNOWN_TRANSFORM
 
     /** Flag determining if the front buffered layer is the current render destination */
     private val mFrontBufferTarget = AtomicBoolean(false)
@@ -163,7 +163,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * Transform applied when drawing the scene to the View's Canvas to invert the pre-rotation
      * applied to the buffer when submitting to the front buffered SurfaceControl
      */
-    private val mInverseTransform = Matrix()
+    private val mConsumerBufferTransform = Matrix()
 
     /**
      * Flag to determine if the buffer has been drawn by this View on the last call to
@@ -227,22 +227,27 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     internal fun update(width: Int, height: Int) {
-        val transformHint = BufferTransformHintResolver().getBufferTransformHint(this)
-        if (mWidth == width && mHeight == height && mTransform == transformHint) {
+        val producerTransformHint = BufferTransformHintResolver().getBufferTransformHint(this)
+        if (
+            mWidth == width &&
+                mHeight == height &&
+                mProducerBufferTransform == producerTransformHint
+        ) {
             // Updating with same config, ignoring
             return
         }
         releaseInternal()
 
         val bufferTransformer = BufferTransformer()
-        val inverse = bufferTransformer.invertBufferTransform(transformHint)
-        bufferTransformer.computeTransform(width, height, inverse)
+        val consumerBufferTransform = bufferTransformer.invertBufferTransform(producerTransformHint)
+        bufferTransformer.computeTransform(width, height, producerTransformHint)
         BufferTransformHintResolver.configureTransformMatrix(
-                mInverseTransform,
+                mConsumerBufferTransform,
                 bufferTransformer.bufferWidth.toFloat(),
                 bufferTransformer.bufferHeight.toFloat(),
-                inverse,
+                producerTransformHint,
             )
+            // TODO shouldn't invert?
             .apply { invert(this) }
 
         val frontBufferSurfaceControl =
@@ -275,7 +280,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     bufferTransformer.bufferWidth,
                     bufferTransformer.bufferHeight,
                     HardwareBuffer.RGBA_8888,
-                    inverse,
+                    producerTransformHint,
                     mHandlerThread,
                     object : SingleBufferedCanvasRenderer.RenderCallbacks<Unit> {
 
@@ -325,11 +330,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                                         )
                                         .setVisibility(frontBufferSurfaceControl, true)
                                 if (
-                                    transformHint != BufferTransformHintResolver.UNKNOWN_TRANSFORM
+                                    consumerBufferTransform !=
+                                        BufferTransformHintResolver.UNKNOWN_TRANSFORM
                                 ) {
                                     transaction.setBufferTransform(
                                         frontBufferSurfaceControl,
-                                        transformHint,
+                                        consumerBufferTransform,
                                     )
                                 }
                                 if (isAndroidUPlus) {
@@ -383,7 +389,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         mFrontBufferedSurfaceControl = frontBufferSurfaceControl
         mWidth = width
         mHeight = height
-        mTransform = transformHint
+        mProducerBufferTransform = producerTransformHint
     }
 
     /**
@@ -493,7 +499,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         mSceneBitmapDrawn =
             if (!mClearPending.get() && !isRenderingToFrontBuffer() && sceneBitmap != null) {
                 canvas.save()
-                canvas.setMatrix(mInverseTransform)
+                canvas.setMatrix(mConsumerBufferTransform)
                 canvas.drawBitmap(sceneBitmap, 0f, 0f, null)
                 canvas.restore()
                 true
@@ -534,7 +540,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             mSceneBitmap = null
             mWidth = -1
             mHeight = -1
-            mTransform = BufferTransformHintResolver.UNKNOWN_TRANSFORM
+            mProducerBufferTransform = BufferTransformHintResolver.UNKNOWN_TRANSFORM
             mHardwareBuffer = null
             mBufferFence = null
             mSceneBitmapDrawn = false

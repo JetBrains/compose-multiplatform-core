@@ -75,5 +75,7 @@ class InterruptionTest {
         t.join()
 
         assertThat(result).isNotNull()
+
+        database.close()
     }
 }

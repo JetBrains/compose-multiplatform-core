@@ -40,9 +40,7 @@ import java.util.Objects
  * This class is not thread safe and should only be used from one thread, [MainThread].
  */
 @MainThread
-public class ProtoLayoutScope
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public constructor() {
+public class ProtoLayoutScope @RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public constructor() {
     /**
      * Maps String key to the [ImageResource] type describing it in ProtoLayout terms.
      *
@@ -106,8 +104,10 @@ public constructor() {
      *
      * Bundle contains (key, value) pairs of [android.os.Parcelable], where `key` is String ID
      * corresponding to the [ModifiersBuilders.Clickable] ID, and `value` is [PendingIntent].
+     *
+     * PendingIntent is registered when building a [ModifiersBuilders.Clickable] which sets a
+     * [PendingIntent] as its click response.
      */
-    // TODO: b/427954838 - Add example API in KDocs on where this is registered.
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
     /** Clears mappings for resources and pending intents. */
@@ -116,6 +116,9 @@ public constructor() {
         resources.clear()
         pendingIntents.clear()
     }
+
+    /** Returns whether this scope has any registered [Resources] or not. */
+    @RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public fun hasResources() = !resources.isEmpty()
 
     /**
      * Generates String version of hash codes for all [resources].

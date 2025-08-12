@@ -18,7 +18,6 @@
 
 package androidx.room
 
-import androidx.annotation.RequiresApi
 import kotlin.jvm.JvmName
 
 /** Available option values that can be used with [Fts3] & [Fts4]. */
@@ -88,5 +87,5 @@ public object FtsOptions {
      * @see Fts4.tokenizer
      * @see Fts4.tokenizerArgs
      */
-    @RequiresApi(21) public const val TOKENIZER_UNICODE61: String = "unicode61"
+    public const val TOKENIZER_UNICODE61: String = "unicode61"
 }

@@ -19,7 +19,6 @@ package androidx.camera.view
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.PointF
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Rational
@@ -86,8 +85,7 @@ import org.robolectric.shadows.ShadowSystemClock
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.view"], // required for shadow clock to work
+    instrumentedPackages = ["androidx.camera.view"] // required for shadow clock to work
 )
 class CameraControllerTest {
     companion object {

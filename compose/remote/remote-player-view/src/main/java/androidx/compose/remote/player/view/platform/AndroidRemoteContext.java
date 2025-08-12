@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -46,6 +50,7 @@ import java.util.HashMap;
  *
  * <p>This is used to play the RemoteCompose operations on Android.
  */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidRemoteContext extends RemoteContext {
     private static final boolean CHECK_DATA_SIZE = true;
 

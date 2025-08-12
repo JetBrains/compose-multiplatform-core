@@ -100,6 +100,8 @@ import java.io.File
 import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
+private const val TAG = "JXR-SurfaceEntity-VideoPlayerActivity"
+
 class VideoPlayerActivity : ComponentActivity() {
     private var exoPlayer: ExoPlayer? = null
     private val activity = this
@@ -178,7 +180,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
     private fun togglePassthrough(session: Session) {
         val passthroughOpacity: Float = session.scene.spatialEnvironment.currentPassthroughOpacity
-        Log.i("TogglePassthrough", "TogglePassthrough!")
+        Log.i(TAG, "TogglePassthrough!")
         when (passthroughOpacity) {
             0.0f -> session.scene.spatialEnvironment.preferredPassthroughOpacity = 1.0f
             1.0f -> session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
@@ -745,16 +747,19 @@ class VideoPlayerActivity : ComponentActivity() {
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
-                    // Update videoPlaying based on ExoPlayer's isPlaying property.
-                    videoPlaying = exoPlayer?.isPlaying ?: false // Use safe call and elvis operator
-
+                    Log.i(TAG, "onPlaybackStateChanged: $playbackState")
                     if (playbackState == Player.STATE_ENDED) {
                         destroySurfaceEntity()
+                    } else {
+                        // Note that this doesn't exactly line up with the ExoPlayer
+                        // isPlaying property, because the UI (for this app) counts as
+                        // "playing" even when buffering or paused.
+                        videoPlaying = true
                     }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Log.e("VideoPlayerTestActivity", "Player error: $error")
+                    Log.e(TAG, "Player error: $error")
                 }
             }
         )

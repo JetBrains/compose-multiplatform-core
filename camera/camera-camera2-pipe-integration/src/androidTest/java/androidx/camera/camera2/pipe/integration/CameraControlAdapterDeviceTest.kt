@@ -113,7 +113,6 @@ private val TIMEOUT = TimeUnit.SECONDS.toMillis(10)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCamera2Interop::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraControlAdapterDeviceTest {
     private lateinit var cameraSelector: CameraSelector
     private lateinit var context: Context

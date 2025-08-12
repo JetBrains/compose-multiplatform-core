@@ -30,18 +30,26 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 
+import androidx.core.os.BundleCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.wear.protolayout.LayoutElementBuilders.Box;
+import androidx.wear.protolayout.ModifiersBuilders.Clickable;
+import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.ResourceBuilders.Resources;
+import androidx.wear.protolayout.TimelineBuilders.Timeline;
 import androidx.wear.protolayout.expression.VersionBuilders;
 import androidx.wear.protolayout.expression.proto.VersionProto.VersionInfo;
 import androidx.wear.protolayout.proto.DeviceParametersProto.DeviceParameters;
@@ -94,6 +102,8 @@ public class TileServiceTest {
     private static final int TILE_ID = 42;
     private static final int TILE_ID_1 = 22;
     private static final int TILE_ID_2 = 33;
+    private static final int TILE_WITH_PENDING_INTENT_ID = 23425;
+    private static final String PENDING_INTENT_CLICK_ID = "PI_click_id";
     private static final long TIMESTAMP_MS = Duration.ofDays(65).toMillis();
     private static final long TIMESTAMP_MS_NEEDS_UPDATE =
             TIMESTAMP_MS - Duration.ofDays(1).toMillis();
@@ -953,6 +963,38 @@ public class TileServiceTest {
     }
 
     @Test
+    public void tileService_tileRequest_collectPendingIntent() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+
+        mTileProviderServiceStub.onTileRequest(
+                TILE_WITH_PENDING_INTENT_ID,
+                new TileRequestData(
+                        RequestProto.TileRequest.newBuilder()
+                                .setDeviceConfiguration(
+                                        DeviceParameters.newBuilder()
+                                                .setRendererSchemaVersion(
+                                                        VersionInfo.newBuilder()
+                                                                .setMajor(1)
+                                                                .setMinor(526)))
+                                .build()
+                                .toByteArray(),
+                        TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Bundle pendingIntents =
+                BundleCompat.getParcelable(
+                        tileCaptor.getValue().getExtras(),
+                        TileData.PENDING_INTENT_KEY,
+                        Bundle.class);
+        expect.that(pendingIntents.containsKey(PENDING_INTENT_CLICK_ID)).isTrue();
+        expect.that(BundleCompat.getParcelable(
+                        pendingIntents, PENDING_INTENT_CLICK_ID, PendingIntent.class))
+                .isNotNull();
+    }
+
+    @Test
     public void tileService_resourcesRequest_setsTileId() throws Exception {
         // Resources request needs to have DeviceParameters least to fill in the default.
         mTileProviderServiceStub.onResourcesRequest(
@@ -1149,7 +1191,12 @@ public class TileServiceTest {
             if (mRequestFailure != null) {
                 return Futures.immediateFailedFuture(mRequestFailure);
             }
-            return Futures.immediateFuture(DUMMY_TILE_TO_RETURN);
+            if (mTileId == TILE_WITH_PENDING_INTENT_ID) {
+                return Futures.immediateFuture(
+                        getTestTileWithPendingIntent(requestParams.getScope()));
+            } else {
+                return Futures.immediateFuture(DUMMY_TILE_TO_RETURN);
+            }
         }
 
         @Override
@@ -1263,5 +1310,31 @@ public class TileServiceTest {
         public SharedPreferences getSharedPreferences(String key, int flags) {
             return mSharedPreferences;
         }
+    }
+
+    private static TileBuilders.Tile getTestTileWithPendingIntent(ProtoLayoutScope scope) {
+        Clickable clickable = new Clickable.Builder(
+                scope,
+                PENDING_INTENT_CLICK_ID)
+                .setOnClick(
+                        PendingIntent
+                                .getActivity(
+                                        ApplicationProvider
+                                                .getApplicationContext(),
+                                        /* requestCode= */ 1,
+                                        new Intent(),
+                                        /* flags= */ 1))
+                .build();
+        return new TileBuilders.Tile.Builder()
+                .setResourcesVersion("5")
+                .setTileTimeline(
+                        Timeline.fromLayoutElement(
+                                new Box.Builder()
+                                        .setModifiers(
+                                                new Modifiers.Builder()
+                                                        .setClickable(clickable)
+                                                        .build())
+                                        .build()))
+                .build();
     }
 }

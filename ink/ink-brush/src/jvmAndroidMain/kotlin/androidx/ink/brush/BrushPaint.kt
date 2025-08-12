@@ -19,6 +19,7 @@ package androidx.ink.brush
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableIntObjectMap
 import androidx.ink.geometry.AngleRadiansFloat
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
@@ -79,106 +80,107 @@ private constructor(
     /** Delete native BrushPaint memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushPaintNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushPaintNative.free(nativePointer)
     }
 
     /** Specification of how the texture should apply to the stroke. */
-    public class TextureMapping internal constructor(v: Int) {
+    public class TextureMapping
+    private constructor(
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        public val value: Int,
+        private val name: String,
+    ) {
 
-        // Not declared in the constructor to avoid conflicting compile/lint errors/warnings.
-        @JvmField
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-        public val value: Int = v
-
-        override fun toString(): String =
-            when (this) {
-                TILING -> "BrushPaint.TextureMapping.TILING"
-                WINDING -> "BrushPaint.TextureMapping.WINDING"
-                else -> "BrushPaint.TextureMapping.INVALID($value)"
-            }
-
-        override fun equals(other: Any?): Boolean {
-            if (other === this) return true
-            if (other !is TextureMapping) return false
-            return value == other.value
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate TextureMapping value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        override fun toString(): String = "BrushPaint.TextureMapping.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<TextureMapping>()
+
+            internal fun fromInt(value: Int): TextureMapping =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) {
+                    "Invalid TextureMapping value: $value"
+                }
+
             /**
              * The texture will repeat according to a 2D affine transformation of vertex positions.
              * Each copy of the texture will have the same size and shape modulo reflections.
              */
-            @JvmField public val TILING: TextureMapping = TextureMapping(0)
+            @JvmField public val TILING: TextureMapping = TextureMapping(0, "TILING")
             /**
              * The texture will morph to "wind along the path of the stroke." The horizontal axis of
              * texture space will lie along the width of the stroke and the vertical axis will lie
              * along the direction of travel of the stroke at each point.
              */
-            @JvmField public val WINDING: TextureMapping = TextureMapping(1)
+            @JvmField public val WINDING: TextureMapping = TextureMapping(1, "WINDING")
         }
     }
 
     /** Specification of the origin point to use for the texture. */
-    public class TextureOrigin internal constructor(@JvmField internal val value: Int) {
-        override fun toString(): String =
-            when (this) {
-                STROKE_SPACE_ORIGIN -> "BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN"
-                FIRST_STROKE_INPUT -> "BrushPaint.TextureOrigin.FIRST_STROKE_INPUT"
-                LAST_STROKE_INPUT -> "BrushPaint.TextureOrigin.LAST_STROKE_INPUT"
-                else -> "BrushPaint.TextureOrigin.INVALID($value)"
-            }
-
-        override fun equals(other: Any?): Boolean {
-            if (other === this) return true
-            if (other !is TextureOrigin) return false
-            return value == other.value
+    public class TextureOrigin
+    private constructor(internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate TextureOrigin value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        override fun toString(): String = "BrushPaint.TextureOrigin.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<TextureOrigin>()
+
+            internal fun fromInt(value: Int): TextureOrigin =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid TextureOrigin value: $value" }
+
             /**
              * The texture origin is the origin of stroke space, however that happens to be defined
              * for a given stroke.
              */
-            @JvmField public val STROKE_SPACE_ORIGIN: TextureOrigin = TextureOrigin(0)
+            @JvmField
+            public val STROKE_SPACE_ORIGIN: TextureOrigin = TextureOrigin(0, "STROKE_SPACE_ORIGIN")
             /** The texture origin is the first input position for the stroke. */
-            @JvmField public val FIRST_STROKE_INPUT: TextureOrigin = TextureOrigin(1)
+            @JvmField
+            public val FIRST_STROKE_INPUT: TextureOrigin = TextureOrigin(1, "FIRST_STROKE_INPUT")
             /**
              * The texture origin is the last input position (including predicted inputs) for the
              * stroke. Note that this means that the texture origin for an in-progress stroke will
              * move as more inputs are added.
              */
-            @JvmField public val LAST_STROKE_INPUT: TextureOrigin = TextureOrigin(2)
+            @JvmField
+            public val LAST_STROKE_INPUT: TextureOrigin = TextureOrigin(2, "LAST_STROKE_INPUT")
         }
     }
 
     /** Units for specifying [TextureLayer.sizeX] and [TextureLayer.sizeY]. */
-    public class TextureSizeUnit internal constructor(@JvmField internal val value: Int) {
-        override fun toString(): String =
-            when (this) {
-                BRUSH_SIZE -> "BrushPaint.TextureSizeUnit.BRUSH_SIZE"
-                STROKE_SIZE -> "BrushPaint.TextureSizeUnit.STROKE_SIZE"
-                STROKE_COORDINATES -> "BrushPaint.TextureSizeUnit.STROKE_COORDINATES"
-                else -> "BrushPaint.TextureSizeUnit.INVALID($value)"
-            }
-
-        override fun equals(other: Any?): Boolean {
-            if (other === this) return true
-            if (other !is TextureSizeUnit) return false
-            return value == other.value
+    public class TextureSizeUnit
+    private constructor(internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate TextureSizeUnit value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        override fun toString(): String = "BrushPaint.TextureSizeUnit.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<TextureSizeUnit>()
+
+            internal fun fromInt(value: Int): TextureSizeUnit =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) {
+                    "Invalid TextureSizeUnit value: $value"
+                }
+
             /** As multiples of brush size. */
-            @JvmField public val BRUSH_SIZE: TextureSizeUnit = TextureSizeUnit(0)
+            @JvmField public val BRUSH_SIZE: TextureSizeUnit = TextureSizeUnit(0, "BRUSH_SIZE")
             /**
              * As multiples of the stroke "size". This has different meanings depending on the value
              * of [TextureMapping] for the given texture. For [TextureMapping.TILING] textures, the
@@ -187,44 +189,43 @@ private constructor(
              * width, which may change over the course of the stroke if behaviors affect the tip
              * geometry. y: the total distance traveled by the stroke.
              */
-            @JvmField public val STROKE_SIZE: TextureSizeUnit = TextureSizeUnit(1)
+            @JvmField public val STROKE_SIZE: TextureSizeUnit = TextureSizeUnit(1, "STROKE_SIZE")
             /** In the same units as the stroke's input positions and stored geometry. */
-            @JvmField public val STROKE_COORDINATES: TextureSizeUnit = TextureSizeUnit(2)
+            @JvmField
+            public val STROKE_COORDINATES: TextureSizeUnit =
+                TextureSizeUnit(2, "STROKE_COORDINATES")
         }
     }
 
     /** Wrap modes for specifying [TextureLayer.wrapX] and [TextureLayer.wrapY]. */
-    public class TextureWrap internal constructor(@JvmField internal val value: Int) {
-        override fun toString(): String =
-            when (this) {
-                REPEAT -> "BrushPaint.TextureWrap.REPEAT"
-                MIRROR -> "BrushPaint.TextureWrap.MIRROR"
-                CLAMP -> "BrushPaint.TextureWrap.CLAMP"
-                else -> "BrushPaint.TextureWrap.INVALID($value)"
-            }
-
-        override fun equals(other: Any?): Boolean {
-            if (other === this) return true
-            if (other !is TextureWrap) return false
-            return value == other.value
+    public class TextureWrap
+    private constructor(internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate TextureWrap value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        override fun toString(): String = "BrushPaint.TextureWrap.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<TextureWrap>()
+
+            internal fun fromInt(value: Int): TextureWrap =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid TextureWrap value: $value" }
+
             /** Repeats texture image horizontally/vertically. */
-            @JvmField public val REPEAT: TextureWrap = TextureWrap(0)
+            @JvmField public val REPEAT: TextureWrap = TextureWrap(0, "REPEAT")
             /**
              * Repeats texture image horizontally/vertically, alternating mirror images so that
              * adjacent edges always match.
              */
-            @JvmField public val MIRROR: TextureWrap = TextureWrap(1)
+            @JvmField public val MIRROR: TextureWrap = TextureWrap(1, "MIRROR")
             /**
              * Points outside of the texture have the color of the nearest texture edge point. This
              * mode is typically most useful when the edge pixels of the texture image are all the
              * same, e.g. either transparent or a single solid color.
              */
-            @JvmField public val CLAMP: TextureWrap = TextureWrap(2)
+            @JvmField public val CLAMP: TextureWrap = TextureWrap(2, "CLAMP")
         }
     }
 
@@ -234,32 +235,19 @@ private constructor(
      * color, and should typically be a mode whose output alpha is proportional to the destination
      * alpha, so that it can be adjusted by anti-aliasing.
      */
-    public class BlendMode internal constructor(@JvmField internal val value: Int) {
-        override fun toString(): String =
-            when (this) {
-                MODULATE -> "BrushPaint.BlendMode.MODULATE"
-                DST_IN -> "BrushPaint.BlendMode.DST_IN"
-                DST_OUT -> "BrushPaint.BlendMode.DST_OUT"
-                SRC_ATOP -> "BrushPaint.BlendMode.SRC_ATOP"
-                SRC_IN -> "BrushPaint.BlendMode.SRC_IN"
-                SRC_OVER -> "BrushPaint.BlendMode.SRC_OVER"
-                DST_OVER -> "BrushPaint.BlendMode.DST_OVER"
-                SRC -> "BrushPaint.BlendMode.SRC"
-                DST -> "BrushPaint.BlendMode.DST"
-                SRC_OUT -> "BrushPaint.BlendMode.SRC_OUT"
-                DST_ATOP -> "BrushPaint.BlendMode.DST_ATOP"
-                XOR -> "BrushPaint.BlendMode.XOR"
-                else -> "BrushPaint.BlendMode.INVALID($value)"
-            }
-
-        override fun equals(other: Any?): Boolean {
-            if (other === this) return true
-            return other is BlendMode && this.value == other.value
+    public class BlendMode private constructor(internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate BlendMode value: $value." }
+            VALUE_TO_INSTANCE[value] = this
         }
 
-        override fun hashCode(): Int = value.hashCode()
+        override fun toString(): String = "BrushPaint.BlendMode.$name"
 
         public companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<BlendMode>()
+
+            internal fun fromInt(value: Int): BlendMode =
+                checkNotNull(VALUE_TO_INSTANCE.get(value)) { "Invalid BlendMode value: $value" }
 
             /**
              * Source and destination are component-wise multiplied, including opacity.
@@ -269,7 +257,7 @@ private constructor(
              * Color = Color_src * Color_dst
              * ```
              */
-            @JvmField public val MODULATE: BlendMode = BlendMode(0)
+            @JvmField public val MODULATE: BlendMode = BlendMode(0, "MODULATE")
             /**
              * Keeps destination pixels that cover source pixels. Discards remaining source and
              * destination pixels.
@@ -279,7 +267,7 @@ private constructor(
              * Color = Alpha_src * Color_dst
              * ```
              */
-            @JvmField public val DST_IN: BlendMode = BlendMode(1)
+            @JvmField public val DST_IN: BlendMode = BlendMode(1, "DST_IN")
             /**
              * Keeps the destination pixels not covered by source pixels. Discards destination
              * pixels that are covered by source pixels and all source pixels.
@@ -289,7 +277,7 @@ private constructor(
              * Color = (1 - Alpha_src) * Color_dst
              * ```
              */
-            @JvmField public val DST_OUT: BlendMode = BlendMode(2)
+            @JvmField public val DST_OUT: BlendMode = BlendMode(2, "DST_OUT")
             /**
              * Discards source pixels that do not cover destination pixels. Draws remaining pixels
              * over destination pixels.
@@ -299,7 +287,7 @@ private constructor(
              * Color = Alpha_dst * Color_src + (1 - Alpha_src) * Color_dst
              * ```
              */
-            @JvmField public val SRC_ATOP: BlendMode = BlendMode(3)
+            @JvmField public val SRC_ATOP: BlendMode = BlendMode(3, "SRC_ATOP")
             /**
              * Keeps the source pixels that cover destination pixels. Discards remaining source and
              * destination pixels.
@@ -309,7 +297,7 @@ private constructor(
              * Color = Color_src * Alpha_dst
              * ```
              */
-            @JvmField public val SRC_IN: BlendMode = BlendMode(4)
+            @JvmField public val SRC_IN: BlendMode = BlendMode(4, "SRC_IN")
 
             /*
              * The following modes can't be used for the last TextureLayer, which defines the mode for
@@ -330,7 +318,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val SRC_OVER: BlendMode = BlendMode(5)
+            @JvmField public val SRC_OVER: BlendMode = BlendMode(5, "SRC_OVER")
             /**
              * The source pixels are drawn behind the destination pixels.
              *
@@ -343,7 +331,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val DST_OVER: BlendMode = BlendMode(6)
+            @JvmField public val DST_OVER: BlendMode = BlendMode(6, "DST_OVER")
             /**
              * Keeps the source pixels and discards the destination pixels.
              *
@@ -356,7 +344,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val SRC: BlendMode = BlendMode(7)
+            @JvmField public val SRC: BlendMode = BlendMode(7, "SRC")
             /**
              * Keeps the destination pixels and discards the source pixels.
              *
@@ -369,7 +357,7 @@ private constructor(
              * ignore this [TextureLayer] and all layers before it, but it is included for
              * completeness.
              */
-            @JvmField public val DST: BlendMode = BlendMode(8)
+            @JvmField public val DST: BlendMode = BlendMode(8, "DST")
             /**
              * Keeps the source pixels that do not cover destination pixels. Discards destination
              * pixels and all source pixels that cover destination pixels.
@@ -383,7 +371,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val SRC_OUT: BlendMode = BlendMode(9)
+            @JvmField public val SRC_OUT: BlendMode = BlendMode(9, "SRC_OUT")
             /**
              * Discards destination pixels that aren't covered by source pixels. Remaining
              * destination pixels are drawn over source pixels.
@@ -397,7 +385,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val DST_ATOP: BlendMode = BlendMode(10)
+            @JvmField public val DST_ATOP: BlendMode = BlendMode(10, "DST_ATOP")
             /**
              * Discards source and destination pixels that intersect; keeps source and destination
              * pixels that do not intersect.
@@ -411,7 +399,7 @@ private constructor(
              * alpha is not proportional to the destination alpha (so it wouldn't preserve alpha
              * adjustments from anti-aliasing).
              */
-            @JvmField public val XOR: BlendMode = BlendMode(11)
+            @JvmField public val XOR: BlendMode = BlendMode(11, "XOR")
         }
     }
 
@@ -448,6 +436,11 @@ private constructor(
          *   are close to each other, but just large enough such that [animationFrames] <=
          *   [animationRows] * [animationColumns].
          * @param animationColumns Like [animationRows], but for columns.
+         * @param animationDurationMillis The length of time in milliseconds that it takes to loop
+         *   through all of the [animationFrames] frames in the texture. This means that each frame
+         *   will be displayed (on average) for [animationDurationMillis] / [animationFrames]
+         *   milliseconds. Defaults to 1000 milliseconds, but ignored if [animationFrames] is 1 (its
+         *   default value) because that indicates that animation is disabled.
          * @param sizeUnit The units used to specify [sizeX] and [sizeY].
          * @param origin The origin point to be used for texture space.
          * @param mapping The method by which the coordinates of the [clientTextureId] image will
@@ -470,6 +463,7 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) animationRows: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = 1,
+            @IntRange(from = 1, to = 1 shl 24) animationDurationMillis: Long = 1000L,
             sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
             origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             mapping: TextureMapping = TextureMapping.TILING,
@@ -478,22 +472,23 @@ private constructor(
             blendMode: BlendMode = BlendMode.MODULATE,
         ) : this(
             TextureLayerNative.create(
-                clientTextureId,
-                sizeX,
-                sizeY,
-                offsetX,
-                offsetY,
-                rotation,
-                opacity,
-                animationFrames,
-                animationRows,
-                animationColumns,
-                sizeUnit.value,
-                origin.value,
-                mapping.value,
-                wrapX.value,
-                wrapY.value,
-                blendMode.value,
+                clientTextureId = clientTextureId,
+                sizeX = sizeX,
+                sizeY = sizeY,
+                offsetX = offsetX,
+                offsetY = offsetY,
+                rotation = rotation,
+                opacity = opacity,
+                animationFrames = animationFrames,
+                animationRows = animationRows,
+                animationColumns = animationColumns,
+                animationDurationMillis = animationDurationMillis,
+                sizeUnit = sizeUnit.value,
+                origin = origin.value,
+                mapping = mapping.value,
+                wrapX = wrapX.value,
+                wrapY = wrapY.value,
+                blendMode = blendMode.value,
             )
         )
 
@@ -527,6 +522,10 @@ private constructor(
 
         @IntRange(from = 1, to = 1 shl 12)
         public val animationColumns: Int = TextureLayerNative.getAnimationColumns(nativePointer)
+
+        @IntRange(from = 1, to = 1 shl 24)
+        public val animationDurationMillis: Long =
+            TextureLayerNative.getAnimationDurationMillis(nativePointer)
 
         public val sizeUnit: TextureSizeUnit = TextureLayerNative.getSizeUnit(nativePointer)
 
@@ -565,6 +564,8 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = this.animationFrames,
             @IntRange(from = 1, to = 1 shl 12) animationRows: Int = this.animationRows,
             @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = this.animationColumns,
+            @IntRange(from = 1, to = 1 shl 24)
+            animationDurationMillis: Long = this.animationDurationMillis,
             sizeUnit: TextureSizeUnit = this.sizeUnit,
             origin: TextureOrigin = this.origin,
             mapping: TextureMapping = this.mapping,
@@ -583,6 +584,7 @@ private constructor(
                     animationFrames == this.animationFrames &&
                     animationRows == this.animationRows &&
                     animationColumns == this.animationColumns &&
+                    animationDurationMillis == this.animationDurationMillis &&
                     sizeUnit == this.sizeUnit &&
                     origin == this.origin &&
                     mapping == this.mapping &&
@@ -593,22 +595,23 @@ private constructor(
                 return this
             }
             return TextureLayer(
-                clientTextureId,
-                sizeX,
-                sizeY,
-                offsetX,
-                offsetY,
-                rotation,
-                opacity,
-                animationFrames,
-                animationRows,
-                animationColumns,
-                sizeUnit,
-                origin,
-                mapping,
-                wrapX,
-                wrapY,
-                blendMode,
+                clientTextureId = clientTextureId,
+                sizeX = sizeX,
+                sizeY = sizeY,
+                offsetX = offsetX,
+                offsetY = offsetY,
+                rotation = rotation,
+                opacity = opacity,
+                animationFrames = animationFrames,
+                animationRows = animationRows,
+                animationColumns = animationColumns,
+                animationDurationMillis = animationDurationMillis,
+                sizeUnit = sizeUnit,
+                origin = origin,
+                mapping = mapping,
+                wrapX = wrapX,
+                wrapY = wrapY,
+                blendMode = blendMode,
             )
         }
 
@@ -628,6 +631,7 @@ private constructor(
                 animationFrames = this.animationFrames,
                 animationRows = this.animationRows,
                 animationColumns = this.animationColumns,
+                animationDurationMillis = this.animationDurationMillis,
                 sizeUnit = this.sizeUnit,
                 origin = this.origin,
                 mapping = this.mapping,
@@ -648,6 +652,7 @@ private constructor(
                 animationFrames == other.animationFrames &&
                 animationRows == other.animationRows &&
                 animationColumns == other.animationColumns &&
+                animationDurationMillis == other.animationDurationMillis &&
                 sizeUnit == other.sizeUnit &&
                 origin == other.origin &&
                 mapping == other.mapping &&
@@ -660,8 +665,9 @@ private constructor(
             "BrushPaint.TextureLayer(clientTextureId=$clientTextureId, sizeX=$sizeX, " +
                 "sizeY=$sizeY, offset=[$offsetX, $offsetY], rotation=$rotation, opacity=$opacity, " +
                 "animationFrames=$animationFrames, animationRows=$animationRows, " +
-                "animationColumns=$animationColumns, sizeUnit=$sizeUnit, origin=$origin, " +
-                "mapping=$mapping, wrapX=$wrapX, wrapY=$wrapY, blendMode=$blendMode)"
+                "animationColumns=$animationColumns, animationDurationMillis=$animationDurationMillis, " +
+                "sizeUnit=$sizeUnit, origin=$origin, mapping=$mapping, wrapX=$wrapX, wrapY=$wrapY, " +
+                "blendMode=$blendMode)"
 
         override fun hashCode(): Int {
             var result = clientTextureId.hashCode()
@@ -674,6 +680,7 @@ private constructor(
             result = 31 * result + animationFrames.hashCode()
             result = 31 * result + animationRows.hashCode()
             result = 31 * result + animationColumns.hashCode()
+            result = 31 * result + animationDurationMillis.hashCode()
             result = 31 * result + sizeUnit.hashCode()
             result = 31 * result + origin.hashCode()
             result = 31 * result + mapping.hashCode()
@@ -686,11 +693,13 @@ private constructor(
         /** Delete native TextureLayer memory. */
         // NOMUTANTS -- Not tested post garbage collection.
         protected fun finalize() {
-            // TODO: b/423019041 - Investigate why this is failing in native code with
-            // nativePointer=0
-            if (nativePointer != 0L) {
-                TextureLayerNative.free(nativePointer)
-            }
+            // Note that the instance becomes finalizable at the conclusion of the Object
+            // constructor,
+            // which in Kotlin is always before any non-default field initialization has been done
+            // by a
+            // derived class constructor.
+            if (nativePointer == 0L) return
+            TextureLayerNative.free(nativePointer)
         }
 
         /**
@@ -715,6 +724,7 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 24) private var animationFrames: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) private var animationRows: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) private var animationColumns: Int = 1,
+            @IntRange(from = 1, to = 1 shl 24) private var animationDurationMillis: Long = 1000,
             private var sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
             private var origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             private var mapping: TextureMapping = TextureMapping.TILING,
@@ -759,6 +769,10 @@ private constructor(
                 @IntRange(from = 1, to = 1 shl 12) animationColumns: Int
             ): Builder = apply { this.animationColumns = animationColumns }
 
+            public fun setAnimationDurationMillis(
+                @IntRange(from = 1, to = 1 shl 24) animationDurationMillis: Long
+            ): Builder = apply { this.animationDurationMillis = animationDurationMillis }
+
             public fun setSizeUnit(sizeUnit: TextureSizeUnit): Builder = apply {
                 this.sizeUnit = sizeUnit
             }
@@ -779,22 +793,23 @@ private constructor(
 
             public fun build(): TextureLayer =
                 TextureLayer(
-                    clientTextureId,
-                    sizeX,
-                    sizeY,
-                    offsetX,
-                    offsetY,
-                    rotation,
-                    opacity,
-                    animationFrames,
-                    animationRows,
-                    animationColumns,
-                    sizeUnit,
-                    origin,
-                    mapping,
-                    wrapX,
-                    wrapY,
-                    blendMode,
+                    clientTextureId = clientTextureId,
+                    sizeX = sizeX,
+                    sizeY = sizeY,
+                    offsetX = offsetX,
+                    offsetY = offsetY,
+                    rotation = rotation,
+                    opacity = opacity,
+                    animationFrames = animationFrames,
+                    animationRows = animationRows,
+                    animationColumns = animationColumns,
+                    animationDurationMillis = animationDurationMillis,
+                    sizeUnit = sizeUnit,
+                    origin = origin,
+                    mapping = mapping,
+                    wrapX = wrapX,
+                    wrapY = wrapY,
+                    blendMode = blendMode,
                 )
         }
 
@@ -889,6 +904,7 @@ private object TextureLayerNative {
         animationFrames: Int,
         animationRows: Int,
         animationColumns: Int,
+        animationDurationMillis: Long,
         sizeUnit: Int,
         origin: Int,
         mapping: Int,
@@ -917,33 +933,35 @@ private object TextureLayerNative {
 
     @UsedByNative external fun getAnimationColumns(nativePointer: Long): Int
 
+    @UsedByNative external fun getAnimationDurationMillis(nativePointer: Long): Long
+
     fun getSizeUnit(nativePointer: Long): BrushPaint.TextureSizeUnit =
-        BrushPaint.TextureSizeUnit(getSizeUnitInt(nativePointer))
+        BrushPaint.TextureSizeUnit.fromInt(getSizeUnitInt(nativePointer))
 
     @UsedByNative external fun getSizeUnitInt(nativePointer: Long): Int
 
     fun getOrigin(nativePointer: Long): BrushPaint.TextureOrigin =
-        BrushPaint.TextureOrigin(getOriginInt(nativePointer))
+        BrushPaint.TextureOrigin.fromInt(getOriginInt(nativePointer))
 
     @UsedByNative private external fun getOriginInt(nativePointer: Long): Int
 
     fun getMapping(nativePointer: Long): BrushPaint.TextureMapping =
-        BrushPaint.TextureMapping(getMappingInt(nativePointer))
+        BrushPaint.TextureMapping.fromInt(getMappingInt(nativePointer))
 
     @UsedByNative private external fun getMappingInt(nativePointer: Long): Int
 
     fun getWrapX(nativePointer: Long): BrushPaint.TextureWrap =
-        BrushPaint.TextureWrap(getWrapXInt(nativePointer))
+        BrushPaint.TextureWrap.fromInt(getWrapXInt(nativePointer))
 
     @UsedByNative private external fun getWrapXInt(nativePointer: Long): Int
 
     fun getWrapY(nativePointer: Long): BrushPaint.TextureWrap =
-        BrushPaint.TextureWrap(getWrapYInt(nativePointer))
+        BrushPaint.TextureWrap.fromInt(getWrapYInt(nativePointer))
 
     @UsedByNative private external fun getWrapYInt(nativePointer: Long): Int
 
     fun getBlendMode(nativePointer: Long): BrushPaint.BlendMode =
-        BrushPaint.BlendMode(getBlendModeInt(nativePointer))
+        BrushPaint.BlendMode.fromInt(getBlendModeInt(nativePointer))
 
     @UsedByNative private external fun getBlendModeInt(nativePointer: Long): Int
 

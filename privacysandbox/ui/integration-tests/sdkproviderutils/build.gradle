@@ -36,7 +36,7 @@ dependencies {
     implementation project(":privacysandbox:sdkruntime:sdkruntime-provider")
     implementation project(":privacysandbox:activity:activity-core")
     implementation project(":privacysandbox:activity:activity-provider")
-    implementation project(":webkit:webkit")
+    implementation("androidx.webkit:webkit:1.14.0")
     implementation(libs.media3Ui)
     implementation(libs.media3Common)
     implementation(libs.media3Exoplayer)

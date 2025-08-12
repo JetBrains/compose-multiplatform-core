@@ -44,11 +44,11 @@ public final class RemoveStats extends BaseStats {
             // It needs to be sync with DeleteType.Code in
             // external/icing/proto/icing/proto/logging.proto#DeleteStatsProto
             UNKNOWN,
-            SINGLE,
+            SINGLE,  // Remove a single id
             QUERY,
             NAMESPACE,
             SCHEMA_TYPE,
-
+            BATCHED_IDS,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface DeleteType {
@@ -64,6 +64,8 @@ public final class RemoveStats extends BaseStats {
     public static final int NAMESPACE = 3;
     /** Delete by schema type. */
     public static final int SCHEMA_TYPE = 4;
+    /** Delete ids in a single namespace in a batch. */
+    public static final int BATCHED_IDS = 5;
 
     private final @NonNull String mPackageName;
     private final @NonNull String mDatabase;

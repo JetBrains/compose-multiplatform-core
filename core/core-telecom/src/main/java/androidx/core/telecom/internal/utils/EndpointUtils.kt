@@ -65,7 +65,7 @@ internal class EndpointUtils {
             val endpoints: MutableList<CallEndpointCompat> = mutableListOf()
             var foundWiredHeadset = false
             val omittedDevices = StringBuilder("omitting devices =[")
-            adiArr.toList().forEach { audioDeviceInfo ->
+            adiArr.filterNotNull().forEach { audioDeviceInfo ->
                 val endpoint = getEndpointFromAudioDeviceInfo(c, flowId, audioDeviceInfo)
                 if (endpoint.type != CallEndpointCompat.TYPE_UNKNOWN) {
                     if (endpoint.type == CallEndpointCompat.TYPE_WIRED_HEADSET) {

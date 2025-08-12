@@ -23,6 +23,7 @@ import android.os.Parcelable.ClassLoaderCreator
 import androidx.core.os.ParcelCompat
 import androidx.customview.view.AbsSavedState
 import androidx.pdf.models.FormEditRecord
+import androidx.pdf.selection.SelectionModel
 
 /** [AbsSavedState] implementation for [PdfView] */
 internal class PdfViewSavedState : AbsSavedState {

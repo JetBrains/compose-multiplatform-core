@@ -35,7 +35,7 @@ index df41397197c..b3e51525fbf 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
-index 64ca70606b5..c948188bbf1 100644
+index 85a6355d6fe..fd6204a3536 100644
 --- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 +++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/jvmMain/kotlin/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 @@ -36,6 +36,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeNullability
@@ -46,7 +46,7 @@ index 64ca70606b5..c948188bbf1 100644
  import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
  import org.jetbrains.kotlin.library.abi.LibraryAbi
  import org.jetbrains.kotlin.library.abi.LibraryAbiReader
-@@ -844,6 +845,8 @@ private class DecoratedAbiProperty(abiProperty: AbiProperty, val parentClass: Ab
+@@ -869,6 +870,8 @@ private class DecoratedAbiProperty(abiProperty: AbiProperty, val parentClass: Ab
  private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
      AbiValueParameter by param
  
@@ -208,10 +208,10 @@ index 5e3d9d1ffef..d4f4b1850fb 100644
  
      @Test
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-index 6557853d536..8042bacdf98 100644
+index 14f9f849258..37f7e546f28 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-@@ -46,7 +46,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+@@ -46,7 +46,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
@@ -220,7 +220,7 @@ index 6557853d536..8042bacdf98 100644
  import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
  import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
  import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
-@@ -801,15 +801,17 @@ private fun Project.configureNode() {
+@@ -810,15 +810,17 @@ private fun Project.configureNode() {
      }
  }
  
@@ -243,10 +243,10 @@ index 6557853d536..8042bacdf98 100644
  
  private fun Project.configureKotlinJsTests() {
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt b/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
-index 625b034dc52..a60edaad68f 100644
+index e6b03ba9314..e4a730e986c 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
-@@ -139,6 +139,15 @@ val taskNamesKnownToDuplicateOutputs =
+@@ -140,6 +140,15 @@ val taskNamesKnownToDuplicateOutputs =
          "kotlinStorePackageLock",
          "kotlinStoreYarnLock",
  
@@ -262,7 +262,7 @@ index 625b034dc52..a60edaad68f 100644
          // The following tasks have the same output configFile file:
          // projectBuildDir/js/packages/projectName-wasm-js/webpack.config.js
          // Remove when https://youtrack.jetbrains.com/issue/KT-70029 / b/361319689 is resolved
-@@ -150,7 +159,15 @@ val taskNamesKnownToDuplicateOutputs =
+@@ -151,7 +160,15 @@ val taskNamesKnownToDuplicateOutputs =
          "jsTestTestDevelopmentExecutableCompileSync",
  
          // TODO file a bug
@@ -308,10 +308,10 @@ index 4469549334d..8e78cc82547 100644
      LATEST(KOTLIN_2_1);
  
 diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
-index e4fc41c8f5f..7f47c625aa9 100644
+index b27c1ab28af..5a315547cb1 100644
 --- a/buildSrc/shared.gradle
 +++ b/buildSrc/shared.gradle
-@@ -37,7 +37,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
+@@ -40,7 +40,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
      task.compilerOptions {
          jvmTarget.set(JvmTarget.JVM_17)
          freeCompilerArgs.addAll(
@@ -369,7 +369,7 @@ index 614f4b4706c..7fede95df9d 100644
  package androidx.compose.runtime.internal
  
 diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
-index 3ab8f8652d2..f70c428eea1 100644
+index ebf6646d3ff..5a26af7dced 100644
 --- a/gradle/libs.versions.toml
 +++ b/gradle/libs.versions.toml
 @@ -52,7 +52,8 @@ kotlin19 = "1.9.24"
@@ -382,55 +382,11 @@ index 3ab8f8652d2..f70c428eea1 100644
  kotlinBenchmark = "0.4.11"
  kotlinGradlePluginAnnotations = "1.9.24"
  kotlinGradlePluginApi = "1.9.24"
-diff --git a/gradle/verification-keyring.keys b/gradle/verification-keyring.keys
-index de864f10426..24841d9c58b 100644
---- a/gradle/verification-keyring.keys
-+++ b/gradle/verification-keyring.keys
-@@ -6233,6 +6233,31 @@ FJXLEW77wWHN+QpRD6BShYZDvUA2mtO0zlB8reU+VCxgnFfm66DkUg==
- =jYDe
- -----END PGP PUBLIC KEY BLOCK-----
- 
-+pub    17A27CE7A60FF5F0
-+sub    E86F52398AF20855
-+-----BEGIN PGP PUBLIC KEY BLOCK-----
-+
-+mQENBF/AfL8BCADpdkr7+1epRZLZJ6/si+Aj6fmELbzWHZmSSUYmRszcCgPq78xy
-+bsW/d0grOOEEn9I/5N22gOoEumcFAsN6hn1thjsZyXLmaBfRj+8vri/zigAqrE7W
-+zk7mKKK3IUuEi1rDqoEwGQbzHFP9UxiIouiWbYGhbkER0E8zDwmPlWZDXoQEzqWT
-+KcgxAXldiZ6l0FACtxgU3n9oOq0hNQBqfpn22BM2FPjZDrM4rEfbeSt8ztORIviw
-+7G9oUtYsbTbDvvADCL0wW05GcNz6BvcmDm79d+fk+5gb+GIaHurWuyTtmw5HCeXW
-+QcKN1S96Wfm5Dz6UMOMeXujlvK1rxmsIIl3BABEBAAG5AQ0EX8B8vwEIAOkm8U7a
-+QLAJ0FtUuY6ru+JQM3yHhIBA7dADpoyq+f/WN86Es9vw7gavO6tnJPnYh1IozEmQ
-+4/OaXfKir2G8geLR6hvCsclgXT+RUS9Z60XBFWWhYwX8OrkdfHNnZPeSM8pwiQbh
-+L8QGfF5AiJzG34ecIPekBWL0l0nYtVblAHQ5oKCv0h2e/cPylyBgJUGCtF0pLKuY
-+l/jeH44UPz6ZUfTL662zbz7AGn8yX62h5PXyH2ZVuuwA2+vuAZCeTP+cQ7OGlIj/
-+EDmggsSrcjVa/G/v+O9lPw9SGnnjoEzX+Ng+tEJNUEx22gvAISajFfM+XWVxVEqs
-+z0B4U6PLa2feuVsAEQEAAYkBNgQYAQgAIBYhBD8F3anzFzAeknE21BeifOemD/Xw
-+BQJfwHy/AhsMAAoJEBeifOemD/XwJ3cH/27Z8H7Bx53msUwaNO0RbWJNz65xrecM
-+w5dvRVjjERYm+5UA5oQdySozlgrpWCAx8q13OMVpGRhodebFEqDZDHsjvJgm10Q7
-+Q9fHkP56lCgxt68WPwmof8bkTYC8l9PmPfqdJgQlyX0zqOzxjETCfe+f1gc/m1lx
-+tgnUeD3/ktyTkYu1hTt8rWM1ceCnZ08bIcjwjFZJDHZl+BmQ52zxUHJ5JAExZNn3
-+vWkvn9JHGWPh6M7evaCcNAdv20A9AB45/aZlYRUN8hCI6xpHiMt4/tDbiImzko74
-+zzMvjuz0NEEhREM8f0ld3G/7Meh/OudSEgtQAmwJ0UMZWJWaZ0FhnLI=
-+=5I6i
-+-----END PGP PUBLIC KEY BLOCK-----
-+
- pub    1861C322C56014B2
- sub    9A347756830C4541
- -----BEGIN PGP PUBLIC KEY BLOCK-----
 diff --git a/gradle/verification-metadata.xml b/gradle/verification-metadata.xml
-index b2da13c4478..74fc731c175 100644
+index 9ffd12f2bf7..ddd798813a6 100644
 --- a/gradle/verification-metadata.xml
 +++ b/gradle/verification-metadata.xml
-@@ -201,6 +201,7 @@
-          <trusted-key id="3D11126EA77E4E07FBABB38614A84C976D265B25" group="com.google.protobuf"/>
-          <trusted-key id="3DBC5D7DC2FB8DD68AA429BD353A436E043E3145" group="com.google.code.findbugs"/>
-          <trusted-key id="3EB3846B3DC004C13883753CEEF9ECC7D5D90518" group="com.google.dagger"/>
-+         <trusted-key id="3F05DDA9F317301E927136D417A27CE7A60FF5F0" group="io.opentelemetry"/>
-          <trusted-key id="4021EEEAFF5DE8404DCD0A270AA3E5C3D232E79B" group="jakarta.inject" name="jakarta.inject-api"/>
-          <trusted-key id="41A1A08C62FCA78B79D3081164A16FAAEC16A4BE" group="org.apache.commons" name="commons-math3"/>
-          <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4">
-@@ -725,6 +726,17 @@
+@@ -727,6 +727,17 @@
              <sha256 value="74bb0f3a80307c529421c3ed84517b8f543867709f41e53cd73df99e6442af4d" origin="Generated by Node" reason="Artifact is not signed. Remove when https://github.com/nodejs/node/issues/53917 is resolved"/>
           </artifact>
        </component>
@@ -448,7 +404,7 @@ index b2da13c4478..74fc731c175 100644
        <component group="org.ow2" name="ow2" version="1.5">
           <artifact name="ow2-1.5.pom">
              <sha256 value="0f8a1b116e760b8fe6389c51b84e4b07a70fc11082d4f936e453b583dd50b43b" origin="Generated by Gradle" reason="Artifact is not signed"/>
-@@ -759,5 +771,20 @@
+@@ -761,5 +772,20 @@
              <sha256 value="4e54622f5dc0f8b6c51e28650268f001e3b55d076c8e3a9d9731c050820c0a3d" origin="Generated by Gradle" reason="Artifact is not signed"/>
           </artifact>
        </component>
@@ -502,7 +458,7 @@ index 9904e3f1337..d8b7f1a14b4 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/privacysandbox/ui/ui-client/build.gradle b/privacysandbox/ui/ui-client/build.gradle
-index ca03bb13633..8fa90fb3df1 100644
+index 393d678c72d..3c1d1dd40ae 100644
 --- a/privacysandbox/ui/ui-client/build.gradle
 +++ b/privacysandbox/ui/ui-client/build.gradle
 @@ -21,6 +21,8 @@

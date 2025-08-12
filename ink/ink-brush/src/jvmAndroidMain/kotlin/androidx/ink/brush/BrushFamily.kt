@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableIntObjectMap
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.util.Collections.unmodifiableList
@@ -52,8 +53,9 @@ private constructor(
     public val clientBrushFamilyId: String = BrushFamilyNative.getClientBrushFamilyId(nativePointer)
 
     /** The [InputModel] that will be used by a [Brush] in this [BrushFamily]. */
+    // Cached to avoid converting the C++ enum to a the corresponding singleton every time.
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public val inputModel: InputModel = SPRING_MODEL
+    public val inputModel: InputModel = BrushFamilyNative.getInputModel(nativePointer)
 
     /**
      * Creates a [BrushFamily] with the given [BrushCoat]s.
@@ -68,9 +70,13 @@ private constructor(
     public constructor(
         coats: List<BrushCoat>,
         clientBrushFamilyId: String = "",
-        @Suppress("UNUSED_PARAMETER") inputModel: InputModel = DEFAULT_INPUT_MODEL,
+        inputModel: InputModel = DEFAULT_INPUT_MODEL,
     ) : this(
-        BrushFamilyNative.create(coats.map { it.nativePointer }.toLongArray(), clientBrushFamilyId),
+        BrushFamilyNative.create(
+            coats.map { it.nativePointer }.toLongArray(),
+            clientBrushFamilyId,
+            inputModel.value,
+        ),
         coats,
     )
 
@@ -217,10 +223,13 @@ private constructor(
     /** Deletes native BrushFamily memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushFamilyNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushFamilyNative.free(nativePointer)
     }
 
     // Companion object gets initialized before anything else.
@@ -253,10 +262,17 @@ private constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
         @ExperimentalInkCustomBrushApi
         @JvmField
-        public val SPRING_MODEL: InputModel =
-            object : InputModel() {
-                override fun toString(): String = "SpringModel"
-            }
+        public val SPRING_MODEL: InputModel = InputModel.SPRING_MODEL
+
+        /**
+         * Input model that attempts to preserve input positions as closely as possible. This is an
+         * experimental configuration which may be adjusted or removed later.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @ExperimentalInkCustomBrushApi
+        @JvmField
+        public val EXPERIMENTAL_RAW_POSITION_MODEL: InputModel =
+            InputModel.EXPERIMENTAL_RAW_POSITION_MODEL
 
         /** The default [InputModel] that will be used by a [BrushFamily] when none is specified. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
@@ -273,11 +289,29 @@ private constructor(
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @ExperimentalInkCustomBrushApi
-    public abstract class InputModel internal constructor() {}
+    public class InputModel private constructor(internal val value: Int, private val name: String) {
+        init {
+            check(value !in VALUE_TO_INSTANCE) { "Duplicate InputModel value: $value" }
+            VALUE_TO_INSTANCE[value] = this
+        }
+
+        override public fun toString(): String = name
+
+        internal companion object {
+            private val VALUE_TO_INSTANCE = MutableIntObjectMap<InputModel>()
+
+            fun fromValue(value: Int): InputModel =
+                checkNotNull(VALUE_TO_INSTANCE[value]) { "Invalid InputModel value: $value" }
+
+            val SPRING_MODEL = InputModel(1, "SpringModel")
+            val EXPERIMENTAL_RAW_POSITION_MODEL = InputModel(2, "ExperimentalRawPositionModel")
+        }
+    }
 }
 
 /** Singleton wrapper around native JNI calls. */
 @UsedByNative
+@OptIn(ExperimentalInkCustomBrushApi::class)
 private object BrushFamilyNative {
     init {
         NativeLoader.load()
@@ -285,12 +319,21 @@ private object BrushFamilyNative {
 
     /** Create underlying native object and return reference for all subsequent native calls. */
     @UsedByNative
-    external fun create(coatNativePointers: LongArray, clientBrushFamilyId: String): Long
+    external fun create(
+        coatNativePointers: LongArray,
+        clientBrushFamilyId: String,
+        inputModel: Int,
+    ): Long
 
     /** Release the underlying memory allocated in [create]. */
     @UsedByNative external fun free(nativePointer: Long)
 
     @UsedByNative external fun getClientBrushFamilyId(nativePointer: Long): String
+
+    fun getInputModel(nativePointer: Long): BrushFamily.InputModel =
+        BrushFamily.InputModel.fromValue(getInputModelInt(nativePointer))
+
+    @UsedByNative private external fun getInputModelInt(nativePointer: Long): Int
 
     @UsedByNative external fun getBrushCoatCount(nativePointer: Long): Int
 

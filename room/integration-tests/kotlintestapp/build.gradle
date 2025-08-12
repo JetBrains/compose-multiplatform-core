@@ -48,6 +48,8 @@ android {
             dimension "processorConfiguration"
         }
     }
+    // b/435705964
+    packaging.jniLibs.useLegacyPackaging = true
     namespace = "androidx.room.integration.kotlintestapp"
 }
 

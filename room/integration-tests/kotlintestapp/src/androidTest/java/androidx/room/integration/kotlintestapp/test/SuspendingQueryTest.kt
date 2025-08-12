@@ -173,6 +173,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
                 db.booksDao().getBooksSuspend()
             }
         }
+        db.close()
     }
 
     @Test
@@ -197,6 +198,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
                 db.booksDao().getBooksSuspend()
             }
         }
+        db.close()
     }
 
     @Test
@@ -621,6 +623,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
         assertThat(executorService.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
 
         assertThat(localDatabase.booksDao().getPublishers()).isEmpty()
+
+        localDatabase.close()
     }
 
     @Test
@@ -824,6 +828,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
         assertThat(busyThreadsCount.get()).isEqualTo(0)
         wrappedExecutor.shutdown()
         assertThat(wrappedExecutor.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test
@@ -867,6 +873,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
         assertThat(executorService.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
 
         assertThat(booksDao.getPublishers()).isEmpty()
+
+        localDatabase.close()
     }
 
     @Test
@@ -895,6 +903,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
         executorService.shutdown()
         assertThat(executorService.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test
@@ -920,6 +930,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
                 assertThat(ex).hasMessageThat().contains("Error opening Database.")
             }
         }
+
+        localDatabase.close()
     }
 
     @Test
@@ -968,6 +980,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
                 assertThat(ex).hasMessageThat().contains("Error beginning transaction")
             }
         }
+
+        localDatabase.close()
     }
 
     @Test
@@ -1159,6 +1173,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
         executor.shutdown()
         assertThat(executor.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test
@@ -1191,6 +1207,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
         executor.shutdown()
         assertThat(executor.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test
@@ -1264,6 +1282,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
         executor.shutdown()
         assertThat(executor.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test
@@ -1311,6 +1331,8 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
         executor.shutdown()
         assertThat(executor.awaitTermination(1, TimeUnit.SECONDS)).isTrue()
+
+        localDatabase.close()
     }
 
     @Test

@@ -21,7 +21,6 @@ import android.animation.AnimatorInflater
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.res.Resources
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -52,7 +51,6 @@ import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import androidx.testutils.withUse
 import com.google.common.truth.Truth.assertThat
@@ -810,7 +808,6 @@ class FragmentNavigatorTest {
     @LargeTest
     @UiThreadTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryResumedWithAnimation() {
         val entry1 = createBackStackEntry()
 
@@ -846,7 +843,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryResumedWithAnimator() {
         val entry1 = createBackStackEntry()
 
@@ -983,7 +979,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryStatesWithAnimationAfterReconfiguration() {
         withUse(ActivityScenario.launch(NavigationActivity::class.java)) {
             val navController1 = withActivity { findNavController(R.id.nav_host) }
@@ -1111,7 +1106,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryStatesWithAnimatorAfterReconfiguration() {
         withUse(ActivityScenario.launch(NavigationActivity::class.java)) {
             val navController1 = withActivity { findNavController(R.id.nav_host) }
@@ -1342,7 +1336,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigateNavigateInterrupt() {
         val entry1 = createBackStackEntry()
         var entry2Started = false
@@ -1431,7 +1424,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigatePopInterrupt() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         var entry1Stopped = false
@@ -1526,7 +1518,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigatePopInterruptSameFrame() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         var entry1Stopped = false
@@ -1618,7 +1609,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testPopPopInterrupt() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         val entry2 = createBackStackEntry(SECOND_FRAGMENT, AnimatorFragment::class)
@@ -1763,7 +1753,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPress() {
         val entry1 = createBackStackEntry()
@@ -1851,7 +1840,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPress_multiEntries() {
         val entry1 = createBackStackEntry()
@@ -1981,7 +1969,6 @@ class FragmentNavigatorTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPressWithPostpone() {
         val entry1 = createBackStackEntry()

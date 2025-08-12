@@ -56,8 +56,7 @@ import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP, shadows = {
-        CameraManagerCompatTest.ShadowInteractionCameraManager.class})
+@Config(shadows = {CameraManagerCompatTest.ShadowInteractionCameraManager.class})
 public final class CameraManagerCompatTest {
 
     private static final String CAMERA_ID = "0";

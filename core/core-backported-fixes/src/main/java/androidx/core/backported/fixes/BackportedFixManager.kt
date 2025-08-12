@@ -31,7 +31,7 @@ package androidx.core.backported.fixes
  */
 public class BackportedFixManager(private val resolver: StatusResolver) {
 
-    /** Creates a BackportedFixManager object using the default lookup strategy. */
+    /** Creates a BackportedFixManager object using the default [StatusResolver]. */
     public constructor() :
         this(
             // TODO b/381267367 - Use Build.getBackportedFixStatus in when available.

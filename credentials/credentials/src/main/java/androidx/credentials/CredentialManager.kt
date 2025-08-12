@@ -21,7 +21,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
@@ -342,16 +341,19 @@ interface CredentialManager {
         }
 
     /**
-     * Signals a user's credential/credentials state to all credential providers.
+     * Signals a user's public key credential/credentials state to all credential providers.
      *
      * The execution does not invoke any UI but simply informs credential providers about the state
      * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
      * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
      *
+     * A successful response does not indicate that any provider honored the signal request; it
+     * however indicates that the request was well-formed, passes all necessary checks, and has been
+     * passed along to all enabled providers, if any.
+     *
      * @param request the request for signaling the credential state
      * @throws SignalCredentialStateException If the request parsing fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     suspend fun signalCredentialState(
         request: SignalCredentialStateRequest
     ): SignalCredentialStateResponse = suspendCancellableCoroutine { continuation ->
@@ -511,7 +513,7 @@ interface CredentialManager {
     )
 
     /**
-     * Signals a user's credential/credentials state to all credential providers.
+     * Signals a user's public key credential/credentials state to all credential providers.
      *
      * This API uses callbacks instead of Kotlin coroutines.
      *
@@ -519,17 +521,20 @@ interface CredentialManager {
      * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
      * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
      *
+     * A successful response does not indicate that any provider honored the signal request; it
+     * however indicates that the request was well-formed, passes all necessary checks, and has been
+     * passed along to all enabled providers, if any.
+     *
      * @param request the request for signaling the credential state
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    fun signalCredentialStateAsync(
+    open fun signalCredentialStateAsync(
         request: SignalCredentialStateRequest,
         executor: Executor,
         callback:
             CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
-    )
+    ) {}
 
     /**
      * Returns a pending intent that shows a screen that lets a user enable a Credential Manager

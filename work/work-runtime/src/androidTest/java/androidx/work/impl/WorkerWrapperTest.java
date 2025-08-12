@@ -1314,7 +1314,6 @@ public class WorkerWrapperTest extends DatabaseTest {
     @SuppressLint("NewApi")
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 21)
     public void testInterruptionsAfterCompletion() {
         // Suppressing this test prior to API 21, because creating a spy() ends up loading
         // android.net.Network class which does not exist before API 21.
@@ -1347,7 +1346,6 @@ public class WorkerWrapperTest extends DatabaseTest {
 
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 21)
     public void testInterruptionsBeforeCompletion() {
         // Suppressing this test prior to API 21, because creating a spy() ends up loading
         // android.net.Network class which does not exist before API 21.

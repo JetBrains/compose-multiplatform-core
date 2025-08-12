@@ -304,12 +304,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     check(width >= 0 && height >= 0) { "Canvas size must be larger than 0" }
 
                     // Resize the canvas to match the video aspect ratio - accounting for
-                    // the stereo
-                    // mode.
+                    // the stereo mode.
                     val dimensions = getCanvasAspectRatio(stereoMode, width, height)
-                    // Set the dimensions of the Quad canvas to the video dimensions and
-                    // attach the
-                    // a MovableComponent.
+                    // Set the dimensions of the Quad canvas to the video dimensions
                     if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
                         surfaceEntity?.canvasShape =
                             SurfaceEntity.CanvasShape.Quad(dimensions.width, dimensions.height)
@@ -320,10 +317,13 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     Log.i(TAG, "onPlaybackStateChanged: $playbackState")
-                    // Update videoPlaying based on ExoPlayer's isPlaying property.
-                    videoPlaying = exoPlayer?.isPlaying ?: false // Use safe call and elvis operator
                     if (playbackState == Player.STATE_ENDED) {
                         destroySurfaceEntity()
+                    } else {
+                        // Note that this doesn't exactly line up with the ExoPlayer isPlaying
+                        // property, because the UI (for this app) counts as "playing" even when
+                        // buffering or paused.
+                        videoPlaying = true
                     }
                 }
 

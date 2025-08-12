@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
+<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 22): `android.graphics.Bitmap#createBitmap`"
+        message="Call requires API level 28 (current min is 23): `android.graphics.Bitmap#createBitmap`"
         errorLine1="                                Bitmap.createBitmap("
         errorLine2="                                       ~~~~~~~~~~~~">
         <location
@@ -12,7 +12,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.Paint#getColorLong`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.Paint#getColorLong`"
         errorLine1="        val tmpLastColorLong = paint.colorLong"
         errorLine2="                                     ~~~~~~~~~">
         <location
@@ -21,7 +21,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 22): `android.graphics.Typeface#getWeight`"
+        message="Call requires API level 28 (current min is 23): `android.graphics.Typeface#getWeight`"
         errorLine1="        val tmpTypefaceWeight = paintTypeface?.weight ?: 0"
         errorLine2="                                               ~~~~~~">
         <location
@@ -30,7 +30,7 @@
 
     <issue
         id="NewApi"
-        message="Class requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter`"
+        message="Class requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter`"
         errorLine1="            if (tmpLastColorFilter is BlendModeColorFilter) {"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -39,7 +39,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter#getColor`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter#getColor`"
         errorLine1="                tmpLastColorFilter.color"
         errorLine2="                                   ~~~~~">
         <location
@@ -48,7 +48,7 @@
 
     <issue
         id="NewApi"
-        message="Class requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter`"
+        message="Class requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter`"
         errorLine1="            if (tmpLastColorFilter is BlendModeColorFilter) {"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -57,7 +57,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter#getMode`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter#getMode`"
         errorLine1="                colorFilterModeToInt(tmpLastColorFilter.mode)"
         errorLine2="                                                        ~~~~">
         <location
@@ -66,7 +66,7 @@
 
     <issue
         id="NewApi"
-        message="Class requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter`"
+        message="Class requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter`"
         errorLine1="            if (tmpLastColorFilter is BlendModeColorFilter) {"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -75,7 +75,7 @@
 
     <issue
         id="NewApi"
-        message="Implicit cast from `BlendModeColorFilter` to `ColorFilter` requires API level 29 (current min is 22)"
+        message="Implicit cast from `BlendModeColorFilter` to `ColorFilter` requires API level 29 (current min is 23)"
         errorLine1="                lastColorFilter = tmpLastColorFilter"
         errorLine2="                                  ~~~~~~~~~~~~~~~~~~">
         <location
@@ -84,7 +84,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter#getColor`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter#getColor`"
         errorLine1="                    tmpLastColorFilter.color,"
         errorLine2="                                       ~~~~~">
         <location
@@ -93,7 +93,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.BlendModeColorFilter#getMode`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.BlendModeColorFilter#getMode`"
         errorLine1="                    colorFilterModeToInt(tmpLastColorFilter.mode),"
         errorLine2="                                                            ~~~~">
         <location
@@ -102,7 +102,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.Paint#getBlendMode`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.Paint#getBlendMode`"
         errorLine1="        val paintBlendMode = paint.blendMode"
         errorLine2="                                   ~~~~~~~~~">
         <location
@@ -111,7 +111,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.Paint#getTextBounds`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.Paint#getTextBounds`"
         errorLine1="        ap.getTextBounds(text, 0, text.length, rec)"
         errorLine2="           ~~~~~~~~~~~~~">
         <location
@@ -120,7 +120,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 22): `android.graphics.Paint#getTextBounds`"
+        message="Call requires API level 29 (current min is 23): `android.graphics.Paint#getTextBounds`"
         errorLine1="        ap.getTextBounds(text, 0, text.length, rec)"
         errorLine2="           ~~~~~~~~~~~~~">
         <location
@@ -129,7 +129,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 24 (current min is 22): `java.lang.String#codePoints`"
+        message="Call requires API level 24 (current min is 23): `java.lang.String#codePoints`"
         errorLine1="    for (cPoint in codePoints()) {"
         errorLine2="                   ~~~~~~~~~~">
         <location
@@ -138,7 +138,7 @@
 
     <issue
         id="NewApi"
-        message="The type of the for loop iterated value is java.util.stream.IntStream, which requires API level 24, or core library desugaring (current min is 22)"
+        message="The type of the for loop iterated value is java.util.stream.IntStream, which requires API level 24, or core library desugaring (current min is 23)"
         errorLine1="    for (cPoint in codePoints()) {"
         errorLine2="                   ~~~~~~~~~~~~">
         <location
@@ -147,7 +147,7 @@
 
     <issue
         id="NewApi"
-        message="Enum for switch requires API level 29 (current min is 22): `android.graphics.BlendMode`"
+        message="Enum for switch requires API level 29 (current min is 23): `android.graphics.BlendMode`"
         errorLine1="    return when (mode) {"
         errorLine2="                 ~~~~">
         <location
@@ -156,7 +156,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#CLEAR`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#CLEAR`"
         errorLine1="        android.graphics.BlendMode.CLEAR -> PaintBundle.BLEND_MODE_CLEAR"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -165,7 +165,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SRC`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SRC`"
         errorLine1="        android.graphics.BlendMode.SRC -> PaintBundle.BLEND_MODE_SRC"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -174,7 +174,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DST`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DST`"
         errorLine1="        android.graphics.BlendMode.DST -> PaintBundle.BLEND_MODE_DST"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -183,7 +183,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SRC_OVER`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SRC_OVER`"
         errorLine1="        android.graphics.BlendMode.SRC_OVER -> PaintBundle.BLEND_MODE_SRC_OVER"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -192,7 +192,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DST_OVER`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DST_OVER`"
         errorLine1="        android.graphics.BlendMode.DST_OVER -> PaintBundle.BLEND_MODE_DST_OVER"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -201,7 +201,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SRC_IN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SRC_IN`"
         errorLine1="        android.graphics.BlendMode.SRC_IN -> PaintBundle.BLEND_MODE_SRC_IN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -210,7 +210,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DST_IN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DST_IN`"
         errorLine1="        android.graphics.BlendMode.DST_IN -> PaintBundle.BLEND_MODE_DST_IN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -219,7 +219,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SRC_OUT`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SRC_OUT`"
         errorLine1="        android.graphics.BlendMode.SRC_OUT -> PaintBundle.BLEND_MODE_SRC_OUT"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -228,7 +228,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DST_OUT`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DST_OUT`"
         errorLine1="        android.graphics.BlendMode.DST_OUT -> PaintBundle.BLEND_MODE_DST_OUT"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -237,7 +237,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SRC_ATOP`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SRC_ATOP`"
         errorLine1="        android.graphics.BlendMode.SRC_ATOP -> PaintBundle.BLEND_MODE_SRC_ATOP"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -246,7 +246,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DST_ATOP`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DST_ATOP`"
         errorLine1="        android.graphics.BlendMode.DST_ATOP -> PaintBundle.BLEND_MODE_DST_ATOP"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -255,7 +255,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#XOR`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#XOR`"
         errorLine1="        android.graphics.BlendMode.XOR -> PaintBundle.BLEND_MODE_XOR"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -264,7 +264,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#PLUS`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#PLUS`"
         errorLine1="        android.graphics.BlendMode.PLUS -> PaintBundle.BLEND_MODE_PLUS"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -273,7 +273,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#MODULATE`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#MODULATE`"
         errorLine1="        android.graphics.BlendMode.MODULATE -> PaintBundle.BLEND_MODE_MODULATE"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -282,7 +282,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SCREEN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SCREEN`"
         errorLine1="        android.graphics.BlendMode.SCREEN -> PaintBundle.BLEND_MODE_SCREEN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -291,7 +291,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#OVERLAY`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#OVERLAY`"
         errorLine1="        android.graphics.BlendMode.OVERLAY -> PaintBundle.BLEND_MODE_OVERLAY"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -300,7 +300,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DARKEN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DARKEN`"
         errorLine1="        android.graphics.BlendMode.DARKEN -> PaintBundle.BLEND_MODE_DARKEN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -309,7 +309,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#LIGHTEN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#LIGHTEN`"
         errorLine1="        android.graphics.BlendMode.LIGHTEN -> PaintBundle.BLEND_MODE_LIGHTEN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -318,7 +318,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#COLOR_DODGE`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#COLOR_DODGE`"
         errorLine1="        android.graphics.BlendMode.COLOR_DODGE -> PaintBundle.BLEND_MODE_COLOR_DODGE"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -327,7 +327,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#COLOR_BURN`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#COLOR_BURN`"
         errorLine1="        android.graphics.BlendMode.COLOR_BURN -> PaintBundle.BLEND_MODE_COLOR_BURN"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -336,7 +336,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#HARD_LIGHT`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#HARD_LIGHT`"
         errorLine1="        android.graphics.BlendMode.HARD_LIGHT -> PaintBundle.BLEND_MODE_HARD_LIGHT"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -345,7 +345,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SOFT_LIGHT`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SOFT_LIGHT`"
         errorLine1="        android.graphics.BlendMode.SOFT_LIGHT -> PaintBundle.BLEND_MODE_SOFT_LIGHT"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -354,7 +354,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#DIFFERENCE`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#DIFFERENCE`"
         errorLine1="        android.graphics.BlendMode.DIFFERENCE -> PaintBundle.BLEND_MODE_DIFFERENCE"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -363,7 +363,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#EXCLUSION`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#EXCLUSION`"
         errorLine1="        android.graphics.BlendMode.EXCLUSION -> PaintBundle.BLEND_MODE_EXCLUSION"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -372,7 +372,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#MULTIPLY`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#MULTIPLY`"
         errorLine1="        android.graphics.BlendMode.MULTIPLY -> PaintBundle.BLEND_MODE_MULTIPLY"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -381,7 +381,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#HUE`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#HUE`"
         errorLine1="        android.graphics.BlendMode.HUE -> PaintBundle.BLEND_MODE_HUE"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -390,7 +390,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#SATURATION`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#SATURATION`"
         errorLine1="        android.graphics.BlendMode.SATURATION -> PaintBundle.BLEND_MODE_SATURATION"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -399,7 +399,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#COLOR`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#COLOR`"
         errorLine1="        android.graphics.BlendMode.COLOR -> PaintBundle.BLEND_MODE_COLOR"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -408,7 +408,7 @@
 
     <issue
         id="NewApi"
-        message="Field requires API level 29 (current min is 22): `android.graphics.BlendMode#LUMINOSITY`"
+        message="Field requires API level 29 (current min is 23): `android.graphics.BlendMode#LUMINOSITY`"
         errorLine1="        android.graphics.BlendMode.LUMINOSITY -> PaintBundle.BLEND_MODE_LUMINOSITY"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

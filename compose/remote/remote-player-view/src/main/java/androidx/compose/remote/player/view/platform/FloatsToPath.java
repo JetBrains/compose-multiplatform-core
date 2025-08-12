@@ -17,6 +17,10 @@ package androidx.compose.remote.player.view.platform;
 
 import static androidx.compose.remote.core.operations.Utils.idFromNan;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.os.Build;
@@ -27,6 +31,7 @@ import androidx.compose.remote.core.operations.PathData;
  * Utility class to convert a float array representation of a path into an Android {@link Path}
  * object.
  */
+@RestrictTo(LIBRARY_GROUP)
 public class FloatsToPath {
     private FloatsToPath() {}
 

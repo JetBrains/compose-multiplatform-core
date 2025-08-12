@@ -22,8 +22,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
 
-import androidx.annotation.RequiresApi;
-
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -35,12 +33,7 @@ public class ImageViewCompat {
      * Return the tint applied to the image drawable, if specified.
      */
     public static @Nullable ColorStateList getImageTintList(@NonNull ImageView view) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getImageTintList(view);
-        }
-        return (view instanceof TintableImageSourceView)
-                ? ((TintableImageSourceView) view).getSupportImageTintList()
-                : null;
+        return Api21Impl.getImageTintList(view);
     }
 
     /**
@@ -48,22 +41,18 @@ public class ImageViewCompat {
      */
     public static void setImageTintList(@NonNull ImageView view,
             @Nullable ColorStateList tintList) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setImageTintList(view, tintList);
+        Api21Impl.setImageTintList(view, tintList);
 
-            if (Build.VERSION.SDK_INT == 21) {
-                // Work around a bug in L that did not update the state of the image source
-                // after applying the tint
-                Drawable imageViewDrawable = view.getDrawable();
-                if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
-                    if (imageViewDrawable.isStateful()) {
-                        imageViewDrawable.setState(view.getDrawableState());
-                    }
-                    view.setImageDrawable(imageViewDrawable);
+        if (Build.VERSION.SDK_INT == 21) {
+            // Work around a bug in L that did not update the state of the image source
+            // after applying the tint
+            Drawable imageViewDrawable = view.getDrawable();
+            if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
+                if (imageViewDrawable.isStateful()) {
+                    imageViewDrawable.setState(view.getDrawableState());
                 }
+                view.setImageDrawable(imageViewDrawable);
             }
-        } else if (view instanceof TintableImageSourceView) {
-            ((TintableImageSourceView) view).setSupportImageTintList(tintList);
         }
     }
 
@@ -71,12 +60,7 @@ public class ImageViewCompat {
      * Return the blending mode used to apply the tint to the image drawable, if specified.
      */
     public static PorterDuff.@Nullable Mode getImageTintMode(@NonNull ImageView view) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getImageTintMode(view);
-        }
-        return (view instanceof TintableImageSourceView)
-                ? ((TintableImageSourceView) view).getSupportImageTintMode()
-                : null;
+        return Api21Impl.getImageTintMode(view);
     }
 
     /**
@@ -85,29 +69,24 @@ public class ImageViewCompat {
      * to the image drawable. The default mode is {@link PorterDuff.Mode#SRC_IN}.
      */
     public static void setImageTintMode(@NonNull ImageView view, PorterDuff.@Nullable Mode mode) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setImageTintMode(view, mode);
+        Api21Impl.setImageTintMode(view, mode);
 
-            if (Build.VERSION.SDK_INT == 21) {
-                // Work around a bug in L that did not update the state of the image source
-                // after applying the tint
-                Drawable imageViewDrawable = view.getDrawable();
-                if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
-                    if (imageViewDrawable.isStateful()) {
-                        imageViewDrawable.setState(view.getDrawableState());
-                    }
-                    view.setImageDrawable(imageViewDrawable);
+        if (Build.VERSION.SDK_INT == 21) {
+            // Work around a bug in L that did not update the state of the image source
+            // after applying the tint
+            Drawable imageViewDrawable = view.getDrawable();
+            if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
+                if (imageViewDrawable.isStateful()) {
+                    imageViewDrawable.setState(view.getDrawableState());
                 }
+                view.setImageDrawable(imageViewDrawable);
             }
-        } else if (view instanceof TintableImageSourceView) {
-            ((TintableImageSourceView) view).setSupportImageTintMode(mode);
         }
     }
 
     private ImageViewCompat() {
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

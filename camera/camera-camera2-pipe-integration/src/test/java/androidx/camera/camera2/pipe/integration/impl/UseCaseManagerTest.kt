@@ -97,7 +97,6 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = 21)
 class UseCaseManagerTest {
     private val supportedSizes = arrayOf(Size(640, 480))
     private val streamConfigurationMap =
@@ -113,6 +112,7 @@ class UseCaseManagerTest {
     fun tearDown() = runBlocking {
         useCaseManagerList.forEach { it.close() }
         useCaseList.forEach { it.onUnbind() }
+        DisplayInfoManager.releaseInstance()
     }
 
     @Test
@@ -343,7 +343,7 @@ class UseCaseManagerTest {
     }
 
     @Test
-    fun onStateAttachedInvokedExactlyOnce_whenUseCaseAttachedAndMeteringRepeatingAdded() = runTest {
+    fun onSessionStartInvokedExactlyOnce_whenUseCaseAttachedAndMeteringRepeatingAdded() = runTest {
         // Arrange
         initializeUseCaseThreads(this)
         val useCaseManager = createUseCaseManager()
@@ -360,7 +360,7 @@ class UseCaseManagerTest {
     }
 
     @Test
-    fun onStateAttachedInvokedExactlyOnce_whenUseCaseAttachedAndMeteringRepeatingNotAdded() =
+    fun onSessionStopInvokedExactlyOnce_whenUseCaseAttachedAndMeteringRepeatingNotAdded() =
         runTest {
             // Arrange
             initializeUseCaseThreads(this)
@@ -730,7 +730,8 @@ class UseCaseManagerTest {
                 encoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build(),
                 context = ApplicationProvider.getApplicationContext(),
                 cameraProperties = cameraProperties,
-                displayInfoManager = DisplayInfoManager(ApplicationProvider.getApplicationContext()),
+                displayInfoManager =
+                    DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
             )
             .also { useCaseManagerList.add(it) }
     }

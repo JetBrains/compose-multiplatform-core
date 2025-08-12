@@ -42,6 +42,19 @@ internal fun rememberCalculatePose(
     }
 }
 
+/**
+ * Calculates the 3D pose of a composable within its parent layout.
+ *
+ * This function handles the conversion from Compose's 2D pixel-based coordinate system (Y-axis
+ * points down) to the Spatial Scene Graphs's meter-based coordinate system (Y-axis points up).
+ *
+ * @param contentOffset The top-left (x, y) position of the content in pixels.
+ * @param parentViewSize The width and height of the parent container in pixels.
+ * @param contentSize The width and height of the content itself in pixels.
+ * @param density The screen density, used for pixel-to-meter conversion.
+ * @param zDepth The optional depth of the content on the Z-axis.
+ * @return The calculated [Pose] for the 3D spatial scene graph.
+ */
 internal fun calculatePose(
     contentOffset: Offset,
     parentViewSize: IntSize,
@@ -49,28 +62,63 @@ internal fun calculatePose(
     density: Density,
     zDepth: Dp = 0.dp,
 ): Pose {
-    val meterPosition =
+    // Convert the 2D pixel offset to a 3D meter-based position, then add depth.
+    val positionInMeters =
         contentOffset.toMeterPosition(parentViewSize, contentSize, density) +
             MeterPosition(z = zDepth.toMeter())
-    return Pose(translation = meterPosition.toVector3())
+
+    return Pose(translation = positionInMeters.toVector3())
 }
 
 /**
- * Resolves the coordinate systems between 2D app pixel space and 3D meter space. In 2d space, views
- * and composables are anchored at the top left corner; however, in 3D space they are anchored at
- * the center. This fixes that by adjusting for the space size and the content's size so they are
- * anchored in the top left corner in 3D space.
+ * Converts a 2D pixel offset to a 3D meter-based position, correctly anchoring the content.
  *
- * This conversion requires that [density] be specified.
+ * It translates coordinates from a top-left anchor (used in 2D UI) to a center anchor (used in the
+ * 3D scene) and inverts the Y-axis.
  */
 private fun Offset.toMeterPosition(
     parentViewSize: IntSize,
     contentSize: IntSize,
     density: Density,
-) =
-    MeterPosition(
-        Meter.fromPixel(x.scale(contentSize.width, parentViewSize.width), density),
-        Meter.fromPixel(-y.scale(contentSize.height, parentViewSize.height), density),
-    )
+): MeterPosition {
+    // Find the center of the content in the parent's coordinate space (in pixels).
+    val centerXInPixels =
+        x.fromTopLeftToCenterAnchor(
+            contentDimension = contentSize.width,
+            parentDimension = parentViewSize.width,
+        )
+    val centerYInPixels =
+        y.fromTopLeftToCenterAnchor(
+            contentDimension = contentSize.height,
+            parentDimension = parentViewSize.height,
+        )
 
-private fun Float.scale(size: Int, space: Int) = this + (size - space) / 2.0f
+    // The Y-axis is negated to convert from Compose's 2D pixel-based coordinate system (Y-down)
+    // to the Spatial Scene Graphs's meter-based coordinate system (Y-up).
+    return MeterPosition(
+        x = Meter.fromPixel(centerXInPixels, density),
+        y = Meter.fromPixel(-centerYInPixels, density),
+    )
+}
+
+/**
+ * Translates a 2D coordinate from a top-left anchor system to a center-based anchor system.
+ *
+ * In Jetpack Compose, a composable's position (x, y) refers to its top-left corner. In the
+ * underlying Spatial Scene graph, an entity's position refers to its center. This function
+ * calculates the correct position for the entity's **center** so that its **top-left corner**
+ * aligns with the desired 2D coordinate.
+ *
+ * Let `coord` be the desired top-left coordinate of the content (this function's receiver). In the
+ * 3D system, the parent container is centered at origin `0`, so its edges are at
+ * `-parentDimension/2` and `+parentDimension/2`. The desired position of the content's center in
+ * the 2D system is `coord + contentDimension/2`. To convert this to the 3D system, we must shift it
+ * relative to the parent's center: `(coord + contentDimension/2) - (parentDimension/2)`. This
+ * simplifies to the formula used: `coord + (contentDimension - parentDimension) / 2`.
+ *
+ * @param contentDimension The size of the content (the child) along one axis.
+ * @param parentDimension The size of the available space (the parent) along the same axis.
+ * @return The adjusted coordinate for the content's center.
+ */
+private fun Float.fromTopLeftToCenterAnchor(contentDimension: Int, parentDimension: Int) =
+    this + (contentDimension - parentDimension) / 2.0f

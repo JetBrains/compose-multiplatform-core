@@ -30,11 +30,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
-import androidx.xr.compose.subspace.Volume
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
@@ -47,7 +45,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Tests for [Movable] modifier. */
+/** Tests for [SubspaceModifier.movable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class MovableModifierTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
@@ -458,39 +456,6 @@ class MovableModifierTest {
             }
         }
         assertMovableComponentDoesNotExist("row")
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun movable_volumeEntity_noComponentByDefault() {
-        composeTestRule.setContent {
-            TestSetup { Subspace { Volume(SubspaceModifier.testTag("volume")) {} } }
-        }
-        assertTrue(
-            composeTestRule
-                .onSubspaceNodeWithTag("volume")
-                .fetchSemanticsNode()
-                .components
-                .isNullOrEmpty()
-        )
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun movable_volumeEntity_noComponentWhenMovableIsEnabled() {
-        composeTestRule.setContent {
-            TestSetup { Subspace { Volume(SubspaceModifier.testTag("volume").movable()) {} } }
-        }
-        assertMovableComponentDoesNotExist("volume")
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun movable_volumeEntity_noComponentWhenMovableIsDisabled() {
-        composeTestRule.setContent {
-            TestSetup { Subspace { Volume(SubspaceModifier.testTag("volume").movable(false)) {} } }
-        }
-        assertMovableComponentDoesNotExist("volume")
     }
 
     private fun assertSingleMovableComponentExist(testTag: String = "panel") {

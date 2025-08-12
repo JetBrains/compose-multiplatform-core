@@ -48,6 +48,9 @@ public class ProcessGlobalConfigActivity extends AppCompatActivity {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.directory_base_path_activity_title),
                         new Intent(activityContext, DirectoryBasePathsActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.ui_thread_startup_mode_activity_title),
+                        new Intent(activityContext, UiThreadStartupModeActivity.class)),
         };
         listView.setItems(menuItems);
     }

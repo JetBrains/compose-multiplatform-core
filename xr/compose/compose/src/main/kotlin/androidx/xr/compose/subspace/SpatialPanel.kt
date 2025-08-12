@@ -30,40 +30,32 @@ import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastFold
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import androidx.core.graphics.drawable.toDrawable
 import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.disposableValueOf
-import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.layout.SubspaceLayout
+import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
+import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
+import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompositionLocalMap
@@ -71,13 +63,13 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEn
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
 import androidx.xr.compose.unit.Meter.Companion.millimeters
+import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.PanelEntity
-import kotlin.math.max
 
 private const val DEFAULT_SIZE_PX = 400
 
@@ -181,22 +173,7 @@ private fun <T : View> AndroidViewPanel(
             )
         }
 
-    val measurePolicy = SubspaceMeasurePolicy { _, constraints ->
-        view.measure(
-            MeasureSpec.makeMeasureSpec(
-                constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST,
-            ),
-            MeasureSpec.makeMeasureSpec(
-                constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
-                MeasureSpec.AT_MOST,
-            ),
-        )
-        val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
-        val height = view.measuredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
-        val depth = constraints.minDepth.coerceAtLeast(0)
-        layout(width, height, depth) {}
-    }
+    val measurePolicy = SpatialViewPanelMeasurePolicy(view)
 
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
@@ -237,61 +214,45 @@ public fun SpatialPanel(
                 pose = Pose.Identity,
             )
         }
-    var measuredSize by remember { mutableStateOf(IntSize(DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)) }
 
-    SubspaceLayout(modifier = modifier, coreEntity = corePanelEntity) { _, constraints ->
-        view.setContent {
-            val dialogManager = LocalDialogManager.current
-            val isDialogActive = dialogManager.isSpatialDialogActive.value
-            if (isDialogActive) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxSize().pointerInput(Unit) {
-                            detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
-                        }
-                ) {}
-            }
-            SideEffect {
-                view.foreground =
-                    if (isDialogActive) {
-                        DEFAULT_SCRIM_ALPHA.toDrawable()
-                    } else {
-                        Color.TRANSPARENT.toDrawable()
+    val measurePolicy = SpatialViewPanelMeasurePolicy(view)
+
+    val compositionLocalMap = currentComposer.currentCompositionLocalMap
+
+    // Set the content on the ComposeView.
+    view.setContent {
+        val dialogManager = LocalDialogManager.current
+        val isDialogActive = dialogManager.isSpatialDialogActive.value
+
+        CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity, content = content)
+
+        if (isDialogActive) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize().pointerInput(Unit) {
+                        detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
                     }
-            }
-
-            CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity) {
-                Layout(content = content) { measurables, _ ->
-                    val placeables =
-                        measurables.fastMap {
-                            it.measure(
-                                Constraints(
-                                    minWidth = constraints.minWidth,
-                                    maxWidth = constraints.maxWidth,
-                                    minHeight = constraints.minHeight,
-                                    maxHeight = constraints.maxHeight,
-                                )
-                            )
-                        }
-                    val size =
-                        placeables.fastFold(IntSize(0, 0)) { maxSize, placeable ->
-                            IntSize(
-                                max(maxSize.width, placeable.width),
-                                max(maxSize.height, placeable.height),
-                            )
-                        }
-                    measuredSize = size
-                    layout(size.width, size.height) { placeables.fastForEach { it.place(0, 0) } }
-                }
-            }
+            ) {}
         }
-
-        layout(
-            measuredSize.width.coerceIn(constraints.minWidth, constraints.maxWidth),
-            measuredSize.height.coerceIn(constraints.minHeight, constraints.maxHeight),
-            constraints.minDepth.coerceAtLeast(0),
-        ) {}
+        SideEffect {
+            view.foreground =
+                if (isDialogActive) {
+                    DEFAULT_SCRIM_ALPHA.toDrawable()
+                } else {
+                    Color.TRANSPARENT.toDrawable()
+                }
+        }
     }
+
+    ComposeNode<ComposeSubspaceNode, Applier<Any>>(
+        factory = ComposeSubspaceNode.Constructor,
+        update = {
+            set(compositionLocalMap, SetCompositionLocalMap)
+            set(measurePolicy, SetMeasurePolicy)
+            set(corePanelEntity, SetCoreEntity)
+            set(modifier, SetModifier)
+        },
+    )
 }
 
 /**
@@ -320,21 +281,9 @@ public fun SpatialMainPanel(
 ) {
     val mainPanel = LocalCoreMainPanelEntity.current ?: return
     val density = LocalDensity.current
+    val view = LocalView.current
+
     LaunchedEffect(shape, density) { mainPanel.setShape(shape, density) }
-
-    val view = LocalContext.current.getActivity().window?.decorView ?: LocalView.current
-
-    // When the mainPanel enters the compose hierarchy, we can't directly set the mainPanel.hidden
-    // to false here because the hidden state is a subcomponent of the size calculation, see
-    // [SubspaceLayoutNode.MeasureLayout.placeAt] and [CoreEntity.size].
-    // This means hidden will be set after layout completes, on the first frame when the mainPanel
-    // enters the Compose hierarchy.
-    DisposableEffect(mainPanel) {
-        // mainPanel will initially be enabled when an Activity is created, but must be re-enabled
-        // if removed and re-added to the Compose layout.
-        mainPanel.enabled = true
-        onDispose { mainPanel.enabled = false }
-    }
 
     SubspaceLayout(modifier = modifier, coreEntity = mainPanel) { _, constraints ->
         val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
@@ -433,5 +382,38 @@ public fun SpatialActivityPanel(
                 scrimPanelEntity.cornerRadius = activityPanelEntity.cornerRadius
             }
         }
+    }
+}
+
+private class SpatialViewPanelMeasurePolicy(private val view: View) : SubspaceMeasurePolicy {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SpatialViewPanelMeasurePolicy) return false
+        return view == other.view
+    }
+
+    override fun hashCode(): Int {
+        return view.hashCode()
+    }
+
+    override fun SubspaceMeasureScope.measure(
+        measurables: List<SubspaceMeasurable>,
+        constraints: VolumeConstraints,
+    ): SubspaceMeasureResult {
+        view.measure(
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST,
+            ),
+            MeasureSpec.makeMeasureSpec(
+                constraints.maxHeight.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
+                MeasureSpec.AT_MOST,
+            ),
+        )
+        // The measured size of the view is used to lay out the SubspaceNode.
+        val width = view.measuredWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
+        val height = view.measuredHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+        val depth = constraints.minDepth.coerceAtLeast(0)
+        return layout(width, height, depth) {}
     }
 }

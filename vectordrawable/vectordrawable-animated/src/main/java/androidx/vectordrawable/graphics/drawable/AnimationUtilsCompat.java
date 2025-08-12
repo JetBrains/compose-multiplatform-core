@@ -20,8 +20,6 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
-import android.content.res.XmlResourceParser;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Xml;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -39,9 +37,6 @@ import android.view.animation.OvershootInterpolator;
 import androidx.annotation.AnimRes;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.ObjectsCompat;
-import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
-import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
@@ -64,39 +59,10 @@ public class AnimationUtilsCompat {
     @SuppressWarnings("UnnecessaryInitCause") // requires API 24+
     public static @NonNull Interpolator loadInterpolator(@NonNull Context context, @AnimRes int id)
             throws NotFoundException {
-        // From API 21, we added path Interpolator .
-        if (Build.VERSION.SDK_INT >= 21) {
-            Interpolator interp = AnimationUtils.loadInterpolator(context, id);
-            ObjectsCompat.requireNonNull(interp, "Failed to parse interpolator, no start tag "
-                    + "found");
-            return interp;
-        }
-
-        XmlResourceParser parser = null;
-        try {
-            // Special treatment for the interpolator introduced at API 21.
-            if (id == AndroidResources.FAST_OUT_LINEAR_IN) {
-                return new FastOutLinearInInterpolator();
-            } else if (id == AndroidResources.FAST_OUT_SLOW_IN) {
-                return new FastOutSlowInInterpolator();
-            } else if (id == AndroidResources.LINEAR_OUT_SLOW_IN) {
-                return new LinearOutSlowInInterpolator();
-            }
-            parser = context.getResources().getAnimation(id);
-            return createInterpolatorFromXml(context, parser);
-        } catch (XmlPullParserException ex) {
-            NotFoundException rnf = new NotFoundException("Can't load animation resource ID #0x"
-                    + Integer.toHexString(id));
-            rnf.initCause(ex);
-            throw rnf;
-        } catch (IOException ex) {
-            NotFoundException rnf = new NotFoundException("Can't load animation resource ID #0x"
-                    + Integer.toHexString(id));
-            rnf.initCause(ex);
-            throw rnf;
-        } finally {
-            if (parser != null) parser.close();
-        }
+        Interpolator interp = AnimationUtils.loadInterpolator(context, id);
+        ObjectsCompat.requireNonNull(interp, "Failed to parse interpolator, no start tag "
+                + "found");
+        return interp;
 
     }
 

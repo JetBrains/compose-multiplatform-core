@@ -19,6 +19,7 @@ package androidx.xr.arcore.playservices
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Plane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Vector2
 import com.google.ar.core.Plane as ARCore1xPlane
 import com.google.ar.core.Plane.Type as ARCore1xPlaneType
@@ -61,7 +62,7 @@ class ArCorePlaneTest {
         whenever(mockPlane.extentX).thenReturn(1.0f)
         whenever(mockPlane.extentZ).thenReturn(2.0f)
 
-        assertThat(underTest.extents).isEqualTo(Vector2(1.0f, 2.0f))
+        assertThat(underTest.extents).isEqualTo(FloatSize2d(1.0f, 2.0f))
 
         verify(mockPlane).extentX
         verify(mockPlane).extentZ

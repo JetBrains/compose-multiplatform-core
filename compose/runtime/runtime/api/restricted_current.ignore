@@ -1,4 +1,8 @@
 // Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.runtime.Composer#scheduleFrameEndCallback(kotlin.jvm.functions.Function0<kotlin.Unit>):
+    Binary breaking change: Added method androidx.compose.runtime.Composer.scheduleFrameEndCallback(kotlin.jvm.functions.Function0<kotlin.Unit>)
+
+
 BecameUnchecked: androidx.compose.runtime.ComposablesKt#getCurrentCompositionContext(androidx.compose.runtime.Composer, int):
     Removed method androidx.compose.runtime.ComposablesKt.getCurrentCompositionContext(androidx.compose.runtime.Composer,int) from compatibility checked API surface
 BecameUnchecked: androidx.compose.runtime.ComposablesKt#getCurrentCompositionContext(androidx.compose.runtime.Composer, int) parameter #0:
@@ -35,6 +39,14 @@ RemovedFromBytecode: androidx.compose.runtime.collection.MutableVectorKt#mutable
     Binary breaking change: method androidx.compose.runtime.collection.MutableVectorKt.mutableVectorOf() has been removed from bytecode
 RemovedFromBytecode: androidx.compose.runtime.collection.MutableVectorKt#mutableVectorOf(T...):
     Binary breaking change: method androidx.compose.runtime.collection.MutableVectorKt.mutableVectorOf(T...) has been removed from bytecode
+
+
+RemovedFromKotlin: androidx.compose.runtime.ActualJvm_jvmKt#synchronized(Object, kotlin.jvm.functions.Function0<? extends R>):
+    Source breaking change: method androidx.compose.runtime.ActualJvm_jvmKt.synchronized(Object,kotlin.jvm.functions.Function0<? extends R>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.runtime.ComposerKt#traceEventStart(int, String):
+    Source breaking change: method androidx.compose.runtime.ComposerKt.traceEventStart(int,String) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.runtime.snapshots.StateRecord#create(int):
+    Source breaking change: method androidx.compose.runtime.snapshots.StateRecord.create(int) can no longer be resolved from Kotlin source
 
 
 RemovedMethod: androidx.compose.runtime.ComposablesKt#ComposeNode(kotlin.jvm.functions.Function0<? extends T>, kotlin.jvm.functions.Function1<? super androidx.compose.runtime.Updater<T>,kotlin.Unit>, androidx.compose.runtime.Composer, int):

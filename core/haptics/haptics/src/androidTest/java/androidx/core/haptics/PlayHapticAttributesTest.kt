@@ -73,10 +73,7 @@ class PlayHapticAttributesTest {
             )
     }
 
-    @SdkSuppress(
-        minSdkVersion = Build.VERSION_CODES.LOLLIPOP,
-        maxSdkVersion = Build.VERSION_CODES.P,
-    )
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.P)
     @Test
     fun play_api21To28_vibratesWithPatternAndAudioAttributes() {
         hapticManager.play(predefinedClick(), HapticAttributes(HapticAttributes.USAGE_TOUCH))

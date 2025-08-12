@@ -47,7 +47,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @LargeTest
-@SdkSuppress(minSdkVersion = 21) // Required for UiAutomation#executeShellCommand()
 @SuppressWarnings("deprecation") // TraceCompat is now deprecated
 public final class TraceCompatTest {
 

@@ -166,6 +166,8 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         }
 
         ValidateIntegrationPatches.createTask(project)
+
+        fetchDevelocityKeysIfNeeded()
     }
 
     private fun Project.configureTasksForKotlinWeb() {

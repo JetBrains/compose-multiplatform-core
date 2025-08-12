@@ -24,6 +24,7 @@ import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.impl.AbstractCameraPresenceSource
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -44,10 +45,15 @@ public class PipeCameraPresenceSource(
     context: Context,
 ) : AbstractCameraPresenceSource(initialCameraIds) {
 
+    private val isMonitoring = AtomicBoolean(false)
     private var flowCollectionJob: Job? = null
     private val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
     override fun startMonitoring() {
+        if (!isMonitoring.compareAndSet(false, true)) {
+            Log.i(TAG, "Monitoring is already active. Ignoring redundant start call.")
+            return
+        }
         Log.i(TAG, "Starting to collect camera ID flow.")
         flowCollectionJob?.cancel()
         flowCollectionJob =
@@ -68,17 +74,30 @@ public class PipeCameraPresenceSource(
                 }
                 .onEach { identifiers ->
                     Log.d(TAG, "Flow emitted new camera set: ${identifiers.joinToString()}")
-                    updateData(identifiers)
+                    if (isMonitoring.get()) {
+                        updateData(identifiers)
+                    } else {
+                        Log.d(TAG, "Ignoring camera update because monitoring is stopped.")
+                    }
                 }
                 .catch { e ->
                     Log.e(TAG, "Error in camera ID flow collection.", e)
-                    updateError(e)
+                    if (isMonitoring.get()) {
+                        updateError(e)
+                    } else {
+                        Log.d(TAG, "Ignoring error because monitoring is stopped.")
+                    }
                 }
                 .launchIn(coroutineScope)
     }
 
     public override fun stopMonitoring() {
         Log.i(TAG, "Stopping camera ID flow collection.")
+        // Make stop idempotent as well.
+        if (!isMonitoring.compareAndSet(true, false)) {
+            // Already stopped.
+            return
+        }
         flowCollectionJob?.cancel()
         flowCollectionJob = null
     }

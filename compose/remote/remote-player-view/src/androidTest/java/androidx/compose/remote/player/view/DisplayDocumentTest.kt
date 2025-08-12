@@ -21,7 +21,8 @@ import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.Theme
-import androidx.compose.remote.creation.RemoteComposeContext
+import androidx.compose.remote.creation.RemoteComposeContextAndroid
+import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayInputStream
 import org.junit.Assert.assertEquals
@@ -81,7 +82,7 @@ class DisplayDocumentTest {
         val darkImage = createImage(tw, th, true)
 
         val doc =
-            RemoteComposeContext(tw, th, "Demo") {
+            RemoteComposeContextAndroid(tw, th, "Demo", AndroidxPlatformServices()) {
                 setTheme(Theme.LIGHT)
                 drawBitmap(lightImage, "Light Mode")
                 setTheme(Theme.DARK)

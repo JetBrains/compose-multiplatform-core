@@ -57,8 +57,8 @@ internal constructor(
  *
  * @param T the type of the backStack key
  * @param onPop the callback to clean up the decorator state for a [NavEntry] when the entry is
- *   popped from the backstack and is leaving composition.The lambda provides the [NavEntry.key] of
- *   the popped entry as input.
+ *   popped from the backstack and is leaving composition.The lambda provides the
+ *   [NavEntry.contentKey] of the popped entry as input.
  * @param [decorator] the composable function to decorate a [NavEntry]. Note that this function only
  *   gets invoked for NavEntries that are actually getting rendered (i.e. by invoking the
  *   [NavEntry.content].)

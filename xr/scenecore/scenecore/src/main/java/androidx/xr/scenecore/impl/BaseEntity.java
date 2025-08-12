@@ -36,7 +36,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Implementation of a subset of core RealityCore Entity functionality. */
+/** Implementation of a subset of core SceneCore Entity functionality. */
 abstract class BaseEntity extends BaseActivityPose implements Entity {
     private final List<Entity> mChildren = new ArrayList<>();
     private final List<Component> mComponentList = new ArrayList<>();
@@ -200,7 +200,8 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
         return mParent.getActivitySpacePose()
                 .compose(
                         new Pose(
-                                mPose.getTranslation().times(mParent.getWorldSpaceScale()),
+                                mPose.getTranslation()
+                                        .scale(mParent.getWorldSpaceScale()),
                                 mPose.getRotation()));
     }
 
@@ -225,10 +226,10 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
                 mScale = scale;
                 break;
             case Space.ACTIVITY:
-                mScale = scale.div(mParent.getActivitySpaceScale());
+                mScale = scale.scale(mParent.getActivitySpaceScale().inverse());
                 break;
             case Space.REAL_WORLD:
-                mScale = scale.div(mParent.getWorldSpaceScale());
+                mScale = scale.scale(mParent.getWorldSpaceScale().inverse());
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
@@ -280,7 +281,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
         if (mParent == null) {
             throw new IllegalStateException("Cannot get scale in WorldSpace with a null parent");
         }
-        return mParent.getWorldSpaceScale().times(mScale);
+        return mParent.getWorldSpaceScale().scale(mScale);
     }
 
     @Override
@@ -288,7 +289,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
         if (mParent == null) {
             throw new IllegalStateException("Cannot get scale in ActivitySpace with a null parent");
         }
-        return mParent.getActivitySpaceScale().times(mScale);
+        return mParent.getActivitySpaceScale().scale(mScale);
     }
 
     @Override

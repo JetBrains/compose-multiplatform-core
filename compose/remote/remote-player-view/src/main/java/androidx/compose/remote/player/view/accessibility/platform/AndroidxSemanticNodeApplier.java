@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.accessibility.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.Rect;
 import android.view.View;
 
@@ -26,6 +30,7 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Accessibilit
 
 import java.util.List;
 
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidxSemanticNodeApplier
         extends BaseSemanticNodeApplier<AccessibilityNodeInfoCompat> {
     private final View mPlayer;

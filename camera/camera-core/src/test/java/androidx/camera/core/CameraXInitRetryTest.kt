@@ -77,7 +77,6 @@ import org.robolectric.versioning.AndroidVersions
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCoroutinesApi::class)
 class CameraXInitRetryTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -634,7 +633,7 @@ class CameraXInitRetryTest {
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, shadows = [TestShadowVDM::class])
-    fun testInitFailVirtualCameraValidation_NoAvailableDevices() = runTest {
+    fun testInitSucceedsOnVirtualDevice_NoAvailableDevices() = runTest {
         // Arrange. Set up a simulated environment that no accessible cameras.
         var callCount = 0
         val configBuilder: CameraXConfig.Builder =
@@ -663,13 +662,11 @@ class CameraXInitRetryTest {
 
         // Act.
         val cameraX = CameraX(context) { configBuilder.build() }
-        val throwableSubject =
-            assertThrows<InitializationException> { cameraX.initializeFuture.await() }
+        cameraX.initializeFuture.await()
 
         // Assert.
-        throwableSubject.hasCauseThat().isInstanceOf(CameraUnavailableException::class.java)
-        assertThat(cameraX.isInitialized).isFalse()
-        assertThat(callCount).isGreaterThan(0)
+        assertThat(cameraX.isInitialized).isTrue()
+        assertThat(callCount).isEqualTo(0)
         cameraX.shutdown().get()
     }
 

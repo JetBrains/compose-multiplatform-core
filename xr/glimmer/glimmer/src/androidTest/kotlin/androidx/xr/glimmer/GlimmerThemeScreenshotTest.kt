@@ -21,6 +21,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.ColorsSample
+import androidx.xr.glimmer.samples.DepthLevelsSample
 import androidx.xr.glimmer.samples.IconSizesSample
 import androidx.xr.glimmer.samples.ShapesSample
 import androidx.xr.glimmer.samples.TypographySample
@@ -53,6 +54,12 @@ class GlimmerThemeScreenshotTest() {
     fun shapes() {
         rule.setGlimmerThemeContent { ShapesSample() }
         rule.assertRootAgainstGolden("glimmerTheme_shapes", screenshotRule)
+    }
+
+    @Test
+    fun depthLevels() {
+        rule.setGlimmerThemeContent { DepthLevelsSample() }
+        rule.assertRootAgainstGolden("glimmerTheme_depthLevels", screenshotRule)
     }
 
     @Test

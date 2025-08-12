@@ -46,9 +46,14 @@ dependencies {
 
     implementation("androidx.core:core:1.13.0")
     implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.1")
+    implementation("androidx.ink:ink-authoring:${ink_version}")
     implementation("androidx.ink:ink-brush:${ink_version}")
+    implementation("androidx.ink:ink-nativeloader:${ink_version}")
     implementation("androidx.ink:ink-rendering:${ink_version}")
     implementation("androidx.ink:ink-strokes:${ink_version}")
+    implementation("androidx.input:input-motionprediction:1.0.0-beta05")
+    implementation("com.google.android.material:material:1.11.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.testRunner)
@@ -63,6 +68,7 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
 }
 
 androidx {

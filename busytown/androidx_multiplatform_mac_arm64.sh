@@ -8,4 +8,4 @@ export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
 
 sharedArgs="--no-configuration-cache -Pandroidx.lowMemory $*"
 
-impl/build.sh buildOnServer listTaskOutputs checkExternalLicenses "$sharedArgs"
+impl/build.sh buildOnServer createAllArchives listTaskOutputs checkExternalLicenses "$sharedArgs"

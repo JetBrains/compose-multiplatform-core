@@ -224,12 +224,13 @@ public final class SchemaToPlatformConverter {
                             .setShouldIndexNestedProperties(
                                     documentProperty.shouldIndexNestedProperties());
             if (!documentProperty.getIndexableNestedProperties().isEmpty()) {
-                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+                if (BuildCompat.T_EXTENSION_INT
+                        < AppSearchVersionUtil.TExtensionVersions.M2023_11) {
                     throw new UnsupportedOperationException(
                             "DocumentPropertyConfig.addIndexableNestedProperties is not supported "
                                     + "on this AppSearch implementation.");
                 }
-                ApiHelperForSdkExtensionVBase.addIndexableNestedProperties(platformBuilder,
+                ApiHelperForSdkExtensionM202311.addIndexableNestedProperties(platformBuilder,
                         documentProperty.getIndexableNestedProperties());
             }
             return platformBuilder.build();
@@ -240,12 +241,6 @@ public final class SchemaToPlatformConverter {
             }
             AppSearchSchema.EmbeddingPropertyConfig embeddingProperty =
                     (AppSearchSchema.EmbeddingPropertyConfig) jetpackProperty;
-            if (embeddingProperty.getQuantizationType()
-                    != AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE) {
-                // TODO(b/359959345): Remove this once embedding quantization is available.
-                throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_QUANTIZATION
-                        + " is not available on this AppSearch implementation.");
-            }
             return ApiHelperForB.createPlatformEmbeddingPropertyConfig(embeddingProperty);
         } else if (jetpackProperty instanceof AppSearchSchema.BlobHandlePropertyConfig) {
             // TODO(b/273591938): Remove this once blob APIs are available.
@@ -338,7 +333,6 @@ public final class SchemaToPlatformConverter {
             return jetpackBuilder.build();
         } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig) {
-            // TODO(b/359959345): Update quantization once it becomes available in platform.
             android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig embeddingProperty =
                     (android.app.appsearch.AppSearchSchema
                             .EmbeddingPropertyConfig) platformProperty;
@@ -400,15 +394,12 @@ public final class SchemaToPlatformConverter {
         }
     }
 
-
-    @SuppressLint("NewApi")
     @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
-            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
-    private static class ApiHelperForSdkExtensionVBase {
-        private ApiHelperForSdkExtensionVBase() {
+            version = AppSearchVersionUtil.TExtensionVersions.M2023_11)
+    private static class ApiHelperForSdkExtensionM202311 {
+        private ApiHelperForSdkExtensionM202311() {
             // This class is not instantiable.
         }
-
         @DoNotInline
         static void addIndexableNestedProperties(
                 android.app.appsearch.AppSearchSchema.DocumentPropertyConfig.Builder
@@ -416,7 +407,14 @@ public final class SchemaToPlatformConverter {
                 @NonNull Collection<String> indexableNestedProperties) {
             platformBuilder.addIndexableNestedProperties(indexableNestedProperties);
         }
+    }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
+        }
 
         @DoNotInline
         static List<String> getIndexableNestedProperties(
@@ -452,6 +450,7 @@ public final class SchemaToPlatformConverter {
 
         @DoNotInline
         @SuppressLint("WrongConstant")
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static android.app.appsearch.AppSearchSchema.PropertyConfig
                 createPlatformEmbeddingPropertyConfig(
                 AppSearchSchema.@NonNull EmbeddingPropertyConfig jetpackEmbeddingProperty) {
@@ -459,11 +458,13 @@ public final class SchemaToPlatformConverter {
                     jetpackEmbeddingProperty.getName())
                     .setCardinality(jetpackEmbeddingProperty.getCardinality())
                     .setIndexingType(jetpackEmbeddingProperty.getIndexingType())
+                    .setQuantizationType(jetpackEmbeddingProperty.getQuantizationType())
                     .build();
         }
 
         @DoNotInline
         @SuppressLint("WrongConstant")
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static AppSearchSchema.EmbeddingPropertyConfig createJetpackEmbeddingPropertyConfig(
                 android.app.appsearch.AppSearchSchema.@NonNull EmbeddingPropertyConfig
                         platformEmbeddingProperty) {
@@ -471,6 +472,7 @@ public final class SchemaToPlatformConverter {
                     platformEmbeddingProperty.getName())
                     .setCardinality(platformEmbeddingProperty.getCardinality())
                     .setIndexingType(platformEmbeddingProperty.getIndexingType())
+                    .setQuantizationType(platformEmbeddingProperty.getQuantizationType())
                     .build();
         }
     }

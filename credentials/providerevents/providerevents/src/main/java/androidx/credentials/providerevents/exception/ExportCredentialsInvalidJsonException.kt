@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The credential json cannot be read because it is written in invalid format */
-public class ExportCredentialsInvalidJsonException(errorMessage: CharSequence? = null) :
+public class ExportCredentialsInvalidJsonException(errorMessage: String? = null) :
     ExportCredentialsException(TYPE_EXPORT_CREDENTIALS_INVALID_JSON_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_EXPORT_CREDENTIALS_INVALID_JSON_EXCEPTION: String =

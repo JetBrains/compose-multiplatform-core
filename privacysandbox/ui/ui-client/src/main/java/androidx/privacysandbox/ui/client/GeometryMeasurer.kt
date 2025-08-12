@@ -154,6 +154,7 @@ internal class GeometryMeasurer(val clock: Clock = Clock { SystemClock.uptimeMil
                 } else {
                     view.getLocationOnScreen(windowLocation)
                     onScreenGeometry.offset(-windowLocation[0], -windowLocation[1])
+                    @Suppress("CheckResult") // b/435240390
                     onScreenGeometry.intersect(0, 0, view.width, view.height)
                 }
             } else {

@@ -90,6 +90,7 @@ class MultiTypedPagingSourceTest(
         assertThat(mainThreadQueries).isEmpty()
         coroutineScope.cancel()
         pagingSources.clear()
+        db.close()
     }
 
     @Ignore("Due to b/365183141")
@@ -522,6 +523,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // Check no mainThread queries happened.
         assertThat(mainThreadQueries).isEmpty()
         coroutineScope.cancel()
+        db.close()
     }
 
     @Test

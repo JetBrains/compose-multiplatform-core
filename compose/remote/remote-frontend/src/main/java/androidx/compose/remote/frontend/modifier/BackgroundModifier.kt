@@ -29,10 +29,7 @@ import androidx.compose.ui.graphics.toArgb
 data class BackgroundModifier(val brush: RemoteBrush) : RemoteModifier.Element {
     override fun toRemoteComposeElement(): RecordingModifier.Element {
         return if (brush is RemoteSolidColor) {
-            androidx.compose.remote.creation.modifiers.BackgroundModifier(
-                null,
-                brush.color.toArgb(),
-            )
+            androidx.compose.remote.creation.modifiers.SolidBackgroundModifier(brush.color.toArgb())
         } else {
             // TODO specify
             androidx.compose.remote.creation.modifiers.BackgroundModifier(

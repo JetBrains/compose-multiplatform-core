@@ -33,13 +33,11 @@ import androidx.enterprise.feedback.ReceivedKeyedAppState.ReceivedKeyedAppStateB
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests {@link ReceivedKeyedAppState}. */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = 21)
 public class ReceivedKeyedAppStateTest {
 
     private static final String KEY = "key";

@@ -39,7 +39,7 @@ sealed interface IndirectTouchEvent {
     val type: IndirectTouchEventType
 
     /** Main coordinate axis to use for movement. */
-    val primaryAxis: IndirectTouchEventPrimaryAxis
+    val primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis
 }
 
 // Work around for Kotlin cross module sealed interfaces.
@@ -75,20 +75,29 @@ value class IndirectTouchEventType private constructor(internal val value: Int) 
         }
 }
 
-/** Indicates the primary axis to use for movement of an [IndirectTouchEvent]. */
+/**
+ * The primary axis for motion from an [IndirectTouchEvent]. Input devices such as trackpads that do
+ * not map to the screen can define a primary axis for scrolling or movement. This facilitates the
+ * translation of a 2D input gesture into a 1D scroll on the screen. For example, an input device
+ * might be wide horizontally but narrow vertically. In such a case, it would designate X as its
+ * primary axis of motion. This means horizontal scrolling on the input device would cause the
+ * on-screen content to scroll along its main axis, as vertical (Y) axis scrolling would be
+ * impractical.
+ */
 @kotlin.jvm.JvmInline
 @ExperimentalIndirectTouchTypeApi
-value class IndirectTouchEventPrimaryAxis private constructor(internal val value: Int) {
+value class IndirectTouchEventPrimaryDirectionalMotionAxis
+private constructor(internal val value: Int) {
     @ExperimentalIndirectTouchTypeApi
     companion object {
 
-        /** No primary coordinate axis specified for movement. */
-        val Unspecified = IndirectTouchEventPrimaryAxis(0)
+        /** No coordinate axes specified for movement. */
+        val None = IndirectTouchEventPrimaryDirectionalMotionAxis(0)
 
         /** X coordinate axis specified as the primary movement axis. */
-        val X = IndirectTouchEventPrimaryAxis(1)
+        val X = IndirectTouchEventPrimaryDirectionalMotionAxis(1)
 
         /** Y coordinate axis specified as the primary movement axis. */
-        val Y = IndirectTouchEventPrimaryAxis(2)
+        val Y = IndirectTouchEventPrimaryDirectionalMotionAxis(2)
     }
 }

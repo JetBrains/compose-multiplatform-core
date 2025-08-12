@@ -20,7 +20,6 @@ import androidx.annotation.RestrictTo
 import androidx.work.Logger
 import androidx.work.impl.constraints.ConstraintListener
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
-import java.util.LinkedHashSet
 
 /**
  * A base for tracking constraints and notifying listeners of changes.

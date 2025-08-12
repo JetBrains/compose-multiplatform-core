@@ -37,8 +37,10 @@ import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.CameraUpdateException
 import androidx.camera.core.impl.Observable
 import androidx.camera.core.internal.StreamSpecsCalculator
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 
@@ -79,6 +81,7 @@ internal class CameraFactoryAdapter(
     }
     private var availableCameraIds: Set<String> = emptySet()
     private val lock = Any()
+    private val isShutdown = AtomicBoolean(false)
 
     init {
         val initialIds =
@@ -95,6 +98,10 @@ internal class CameraFactoryAdapter(
     }
 
     override fun onCameraIdsUpdated(cameraIds: List<String>) {
+        if (isShutdown.get()) {
+            return
+        }
+
         val optimizedIds =
             CameraSelectionOptimizer.getSelectedAvailableCameraIds(
                 appComponent,
@@ -112,6 +119,9 @@ internal class CameraFactoryAdapter(
             )
 
         synchronized(lock) {
+            if (isShutdown.get()) {
+                return
+            }
             if (availableCameraIds == filteredIds) {
                 return // No change
             }
@@ -125,6 +135,9 @@ internal class CameraFactoryAdapter(
      * Use cameraId from set of cameraIds provided by [getAvailableCameraIds] method.
      */
     override fun getCamera(cameraId: String): CameraInternal {
+        if (isShutdown.get()) {
+            throw CameraUpdateException("CameraFactory has been shut down.")
+        }
         val cameraInternal =
             appComponent
                 .cameraBuilder()
@@ -137,6 +150,9 @@ internal class CameraFactoryAdapter(
 
     override fun getAvailableCameraIds(): Set<String> =
         synchronized(lock) {
+            if (isShutdown.get()) {
+                return emptySet()
+            }
             // Return a copy
             LinkedHashSet(availableCameraIds)
         }
@@ -153,6 +169,9 @@ internal class CameraFactoryAdapter(
     }
 
     override fun shutdown() {
+        if (isShutdown.getAndSet(true)) {
+            return
+        }
         cameraCoordinator.shutdown()
         pipeCameraPresenceObservable.stopMonitoring()
         if (lazyCameraPipe.isInitialized()) {

@@ -103,7 +103,8 @@ private class ComposeLifecycleOwner : LifecycleOwner {
 
     private val lifecycleRegistry = LifecycleRegistry(provider = this)
 
-    override val lifecycle = lifecycleRegistry
+    override val lifecycle
+        get() = lifecycleRegistry
 
     // Tracks the last known state from the parent lifecycle.
     private var parentLifecycleState: State = State.INITIALIZED

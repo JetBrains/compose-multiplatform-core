@@ -28,9 +28,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.navigationevent.DirectNavigationEventInputHandler
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.NavigationEventInputHandler
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
@@ -61,8 +61,8 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
 
     // Input from for `ComponentDialog.onBackPressed()`, which can get called when API < 33 or
     // when `android:enableOnBackInvokedCallback` is `false`.
-    private val onBackPressedInputHandler: NavigationEventInputHandler by lazy {
-        NavigationEventInputHandler(navigationEventDispatcher)
+    private val onBackPressedInputHandler: DirectNavigationEventInputHandler by lazy {
+        DirectNavigationEventInputHandler(navigationEventDispatcher)
     }
 
     override fun onSaveInstanceState(): Bundle {
@@ -115,10 +115,15 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
     override val navigationEventDispatcher: NavigationEventDispatcher
         get() = onBackPressedDispatcher.eventDispatcher
 
-    @Suppress("OVERRIDE_DEPRECATION") // b/407493719
     @CallSuper
+    @Deprecated(
+        """This method has been deprecated in favor of using the
+      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.
+      The OnBackPressedDispatcher controls how back button events are dispatched
+      to one or more {@link OnBackPressedCallback} objects."""
+    )
     override fun onBackPressed() {
-        onBackPressedInputHandler.sendOnCompleted()
+        onBackPressedInputHandler.handleOnCompleted()
     }
 
     override fun setContentView(layoutResID: Int) {

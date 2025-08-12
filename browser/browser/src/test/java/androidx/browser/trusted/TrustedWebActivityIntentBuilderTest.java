@@ -36,6 +36,7 @@ import androidx.browser.trusted.TrustedWebActivityDisplayMode.ImmersiveMode;
 import androidx.browser.trusted.sharing.ShareData;
 import androidx.browser.trusted.sharing.ShareTarget;
 import androidx.browser.trusted.splashscreens.SplashScreenParamKey;
+import androidx.core.content.IntentCompat;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -86,6 +87,9 @@ public class TrustedWebActivityIntentBuilderTest {
 
         CustomTabsSession session = TestUtil.makeMockSession();
 
+        List<TrustedWebActivityDisplayMode> displayOverride =
+                Arrays.asList(new TrustedWebActivityDisplayMode.WindowControlsOverlay());
+
         ImmersiveMode displayMode = new ImmersiveMode(true,
                 LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES);
         Intent intent = new TrustedWebActivityIntentBuilder(url)
@@ -101,6 +105,7 @@ public class TrustedWebActivityIntentBuilderTest {
                         .setOriginalLaunchUrl(originalLaunchUrl)
                         .setFileHandlingData(fileHandlingData)
                         .setLaunchHandlerClientMode(launchHandlerClientMode)
+                        .setDisplayOverrideList(displayOverride)
                         .build(session)
                         .getIntent();
 
@@ -154,5 +159,14 @@ public class TrustedWebActivityIntentBuilderTest {
 
         assertEquals(launchHandlerClientMode, intent.getIntExtra(
                 TrustedWebActivityIntentBuilder.EXTRA_LAUNCH_HANDLER_CLIENT_MODE, 0));
+
+        List<Bundle> displayOverrideBundlesFromIntent = IntentCompat.getParcelableArrayListExtra(
+                intent,
+                TrustedWebActivityIntentBuilder.EXTRA_DISPLAY_OVERRIDE,
+                Bundle.class);
+        assertEquals(displayOverride.size(), displayOverrideBundlesFromIntent.size());
+        assertEquals(TrustedWebActivityDisplayMode.fromBundle(
+                        displayOverrideBundlesFromIntent.get(0)).getClass(),
+                TrustedWebActivityDisplayMode.WindowControlsOverlay.class);
     }
 }

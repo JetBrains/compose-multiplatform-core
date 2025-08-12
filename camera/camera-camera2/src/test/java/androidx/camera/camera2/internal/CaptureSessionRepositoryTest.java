@@ -25,7 +25,6 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Surface;
@@ -50,8 +49,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.camera2.internal.compat.params" })
+@Config(instrumentedPackages = { "androidx.camera.camera2.internal.compat.params" })
 public class CaptureSessionRepositoryTest {
     private static final int NUM_OUTPUTS = 3;
 

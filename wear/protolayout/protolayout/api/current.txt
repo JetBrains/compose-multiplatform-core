@@ -1026,10 +1026,12 @@ package androidx.wear.protolayout {
 
   public static final class ModifiersBuilders.Clickable.Builder {
     ctor public ModifiersBuilders.Clickable.Builder();
+    ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public ModifiersBuilders.Clickable.Builder(androidx.wear.protolayout.ProtoLayoutScope, String);
     method public androidx.wear.protolayout.ModifiersBuilders.Clickable build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setId(String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setMinimumClickableHeight(androidx.wear.protolayout.DimensionBuilders.DpProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setMinimumClickableWidth(androidx.wear.protolayout.DimensionBuilders.DpProp);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setOnClick(android.app.PendingIntent);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setOnClick(androidx.wear.protolayout.ActionBuilders.Action);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) public androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder setVisualFeedbackEnabled(boolean);
   }
@@ -1322,6 +1324,7 @@ package androidx.wear.protolayout {
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static final class ResourceBuilders.AndroidLottieResourceByResId {
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? getProgress();
+    method public java.util.List<androidx.wear.protolayout.ResourceBuilders.LottieProperty!> getProperties();
     method @RawRes public int getRawResourceId();
     method public androidx.wear.protolayout.TriggerBuilders.Trigger? getStartTrigger();
   }
@@ -1330,6 +1333,7 @@ package androidx.wear.protolayout {
     ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public ResourceBuilders.AndroidLottieResourceByResId.Builder(@RawRes int);
     method public androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId.Builder setProgress(androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId.Builder setProperties(androidx.wear.protolayout.ResourceBuilders.LottieProperty!...);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId.Builder setStartTrigger(androidx.wear.protolayout.TriggerBuilders.Trigger);
   }
 
@@ -1379,6 +1383,10 @@ package androidx.wear.protolayout {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ResourceBuilders.InlineImageResource.Builder setFormat(int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ResourceBuilders.InlineImageResource.Builder setHeightPx(@Dimension(unit=androidx.annotation.Dimension.PX) int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ResourceBuilders.InlineImageResource.Builder setWidthPx(@Dimension(unit=androidx.annotation.Dimension.PX) int);
+  }
+
+  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public abstract static class ResourceBuilders.LottieProperty {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ResourceBuilders.LottieProperty colorForSlot(String, androidx.wear.protolayout.ColorBuilders.ColorProp);
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class ResourceBuilders.Resources {
@@ -1577,6 +1585,9 @@ package androidx.wear.protolayout.modifiers {
     method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(optional androidx.wear.protolayout.ActionBuilders.Action action, optional String? id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) float minClickableWidth, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) float minClickableHeight);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier clickable(androidx.wear.protolayout.modifiers.LayoutModifier, optional androidx.wear.protolayout.ActionBuilders.Action action, optional String? id);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier clickable(androidx.wear.protolayout.modifiers.LayoutModifier, androidx.wear.protolayout.ModifiersBuilders.Clickable clickable);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableHeight);
     method public static androidx.wear.protolayout.ActionBuilders.LoadAction loadAction(optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.expression.DynamicDataMap? requestedStateMap);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static androidx.wear.protolayout.modifiers.LayoutModifier minimumTouchTargetSize(androidx.wear.protolayout.modifiers.LayoutModifier, @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minWidth, @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minHeight);
   }
@@ -1639,8 +1650,8 @@ package androidx.wear.protolayout.types {
     ctor public LayoutColor(@ColorInt int staticArgb, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? dynamicArgb);
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? getDynamicArgb();
     method public int getStaticArgb();
-    property @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? dynamicArgb;
-    property @ColorInt public int staticArgb;
+    property public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? dynamicArgb;
+    property public int staticArgb;
   }
 
   public final class LayoutColorUtil {

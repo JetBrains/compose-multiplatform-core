@@ -45,6 +45,7 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -338,7 +339,14 @@ class ListItemTest {
                 0,
             )
         down.source = SOURCE_TOUCH_NAVIGATION
-        rule.onNodeWithTag("listItem").performIndirectTouchEvent(IndirectTouchEvent(down))
+        rule
+            .onNodeWithTag("listItem")
+            .performIndirectTouchEvent(
+                IndirectTouchEvent(
+                    down,
+                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                )
+            )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
@@ -355,7 +363,14 @@ class ListItemTest {
                 0,
             )
         up.source = SOURCE_TOUCH_NAVIGATION
-        rule.onNodeWithTag("listItem").performIndirectTouchEvent(IndirectTouchEvent(up))
+        rule
+            .onNodeWithTag("listItem")
+            .performIndirectTouchEvent(
+                IndirectTouchEvent(
+                    up,
+                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                )
+            )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)

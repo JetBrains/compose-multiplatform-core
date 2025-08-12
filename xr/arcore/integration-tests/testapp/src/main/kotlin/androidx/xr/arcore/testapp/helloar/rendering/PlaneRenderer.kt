@@ -26,10 +26,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Plane
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
-import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
@@ -111,8 +111,8 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
                                 val panelExtentsInPixels = convertMetersToPixels(state.extents)
                                 entity.sizeInPixels =
                                     IntSize2d(
-                                        width = panelExtentsInPixels.x.toInt(),
-                                        height = panelExtentsInPixels.y.toInt(),
+                                        width = panelExtentsInPixels.width.toInt(),
+                                        height = panelExtentsInPixels.height.toInt(),
                                     )
                                 counter = 0
                             }
@@ -160,7 +160,7 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
             else -> Color.RED
         }
 
-    private fun convertMetersToPixels(input: Vector2): Vector2 = input * PX_PER_METER
+    private fun convertMetersToPixels(input: FloatSize2d): FloatSize2d = input * PX_PER_METER
 
     private fun removePlaneModel(planeModel: PlaneModel, planesToRender: MutableList<PlaneModel>) {
         planeModel.renderJob?.cancel()

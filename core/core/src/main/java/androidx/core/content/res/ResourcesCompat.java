@@ -132,11 +132,7 @@ public final class ResourcesCompat {
     @SuppressWarnings("deprecation")
     public static @Nullable Drawable getDrawable(@NonNull Resources res, @DrawableRes int id,
             @Nullable Theme theme) throws NotFoundException {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getDrawable(res, id, theme);
-        } else {
-            return res.getDrawable(id);
-        }
+        return res.getDrawable(id, theme);
     }
 
 
@@ -165,11 +161,7 @@ public final class ResourcesCompat {
     @SuppressWarnings("deprecation")
     public static @Nullable Drawable getDrawableForDensity(@NonNull Resources res,
             @DrawableRes int id, int density, @Nullable Theme theme) throws NotFoundException {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getDrawableForDensity(res, id, density, theme);
-        } else {
-            return res.getDrawableForDensity(id, density);
-        }
+        return res.getDrawableForDensity(id, density, theme);
     }
 
     /**
@@ -675,22 +667,6 @@ public final class ResourcesCompat {
 
         static int getColor(Resources resources, int id, Theme theme) {
             return resources.getColor(id, theme);
-        }
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static Drawable getDrawable(Resources resources, int id, Theme theme) {
-            return resources.getDrawable(id, theme);
-        }
-
-        static Drawable getDrawableForDensity(Resources resources, int id, int density,
-                Theme theme) {
-            return resources.getDrawableForDensity(id, density, theme);
         }
     }
 

@@ -27,6 +27,7 @@ import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ResizeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ResizeHiddenFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ScrollComposeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.ScrollFragment
+import androidx.privacysandbox.ui.macrobenchmark.testapp.target.UserInteractionComposeFragment
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.UserInteractionFragment
 
 /** Factory to create a specific fragment. */
@@ -52,6 +53,7 @@ object FragmentFactory {
                     FragmentOption.SCROLL -> ScrollComposeFragment()
                     FragmentOption.RESIZE -> ResizeComposeFragment()
                     FragmentOption.POOLING_CONTAINER -> LazyListFragment()
+                    FragmentOption.USER_INTERACTIONS -> UserInteractionComposeFragment()
                     else -> ResizeComposeFragment()
                 }
             else -> ResizeFragment()

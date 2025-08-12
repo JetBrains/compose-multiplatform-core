@@ -23,26 +23,19 @@ import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -52,7 +45,6 @@ import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.depthmaps.rendering.DepthMapRenderer
 import androidx.xr.arcore.testapp.depthmaps.rendering.DepthTextureHandler
-import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
@@ -187,94 +179,73 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
 
     @Composable
     fun DepthMapPanel(view: View) {
-        var title = intent.getStringExtra("TITLE")
-        if (title == null) title = "Depth Maps"
-        Scaffold(
-            modifier = Modifier.fillMaxSize().padding(0.dp),
-            topBar = {
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth().padding(0.dp).background(color = GoogleYellow),
-                    verticalAlignment = Alignment.CenterVertically,
+        Subspace {
+            SpatialPanel(modifier = SubspaceModifier.movable()) {
+                AndroidView(
+                    modifier = Modifier.width(1200.dp).height(1200.dp),
+                    factory = { _ -> surfaceView },
+                )
+                Orbiter(
+                    position = ContentEdge.Top,
+                    offset = 8.dp,
+                    shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
+                    offsetType = OrbiterOffsetType.InnerEdge,
                 ) {
-                    BackToMainActivityButton()
-                    Text(
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        text = title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                    )
-                }
-            },
-        ) { innerPadding ->
-            Subspace {
-                SpatialPanel(modifier = SubspaceModifier.movable()) {
-                    AndroidView(
-                        modifier = Modifier.width(1200.dp).height(1200.dp).padding(innerPadding),
-                        factory = { _ -> surfaceView },
-                    )
-                    Orbiter(
-                        position = ContentEdge.Top,
-                        offset = 8.dp,
-                        shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
-                        offsetType = OrbiterOffsetType.InnerEdge,
-                    ) {
-                        Row(modifier = Modifier.padding(innerPadding)) {
-                            val depthDescription: String =
-                                when (selectedDepthMode) {
-                                    DepthMode.RAW ->
-                                        when (selectedView) {
-                                            ViewSelection.LEFT -> "Left Smooth"
-                                            ViewSelection.RIGHT -> "Right Smooth"
-                                        }
+                    Row(modifier = Modifier) {
+                        BackToMainActivityButton()
+                        val depthDescription: String =
+                            when (selectedDepthMode) {
+                                DepthMode.RAW ->
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> "Left Smooth"
+                                        ViewSelection.RIGHT -> "Right Smooth"
+                                    }
 
-                                    DepthMode.SMOOTH ->
-                                        when (selectedView) {
-                                            ViewSelection.LEFT -> "Left Raw"
-                                            ViewSelection.RIGHT -> "Right Raw"
-                                        }
-                                }
-                            Text(
-                                modifier = Modifier.padding(8.dp),
-                                text = "Rendering $depthDescription Depth",
-                                color = Color.White,
-                                fontSize = 50.sp,
-                            )
-                            Button(
-                                modifier = Modifier.padding(8.dp),
-                                onClick = {
-                                    runBlocking {
-                                        configurationMutex.withLock {
-                                            when (selectedDepthMode) {
-                                                DepthMode.RAW -> {
-                                                    session.configure(smoothConfig)
-                                                    selectedDepthMode = DepthMode.SMOOTH
-                                                }
+                                DepthMode.SMOOTH ->
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> "Left Raw"
+                                        ViewSelection.RIGHT -> "Right Raw"
+                                    }
+                            }
+                        Text(
+                            modifier = Modifier.padding(8.dp),
+                            text = "Rendering $depthDescription Depth",
+                            color = Color.White,
+                            fontSize = 50.sp,
+                        )
+                        Button(
+                            modifier = Modifier.padding(8.dp),
+                            onClick = {
+                                runBlocking {
+                                    configurationMutex.withLock {
+                                        when (selectedDepthMode) {
+                                            DepthMode.RAW -> {
+                                                session.configure(smoothConfig)
+                                                selectedDepthMode = DepthMode.SMOOTH
+                                            }
 
-                                                DepthMode.SMOOTH -> {
-                                                    session.configure(rawConfig)
-                                                    selectedDepthMode = DepthMode.RAW
-                                                }
+                                            DepthMode.SMOOTH -> {
+                                                session.configure(rawConfig)
+                                                selectedDepthMode = DepthMode.RAW
                                             }
                                         }
                                     }
-                                },
-                            ) {
-                                Text("Toggle Depth Type")
-                            }
-                            Button(
-                                modifier = Modifier.padding(8.dp),
-                                onClick = {
-                                    selectedView =
-                                        when (selectedView) {
-                                            ViewSelection.LEFT -> ViewSelection.RIGHT
-                                            ViewSelection.RIGHT -> ViewSelection.LEFT
-                                        }
-                                },
-                            ) {
-                                Text("Toggle View")
-                            }
+                                }
+                            },
+                        ) {
+                            Text("Toggle Depth Type")
+                        }
+                        Button(
+                            modifier = Modifier.padding(8.dp),
+                            onClick = {
+                                selectedView =
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> ViewSelection.RIGHT
+                                        ViewSelection.RIGHT -> ViewSelection.LEFT
+                                    }
+                            },
+                        ) {
+                            Text("Toggle View")
                         }
                     }
                 }

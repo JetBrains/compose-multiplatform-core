@@ -110,7 +110,8 @@ class AppSearchMigrationHelper implements Closeable {
                             .addFilterSchemas(migrators.keySet())
                             .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
                             .build(),
-                    /*logger=*/ null);
+                    /*logger=*/ null,
+                    /*callStatsBuilder=*/null);
             while (!searchResultPage.getResults().isEmpty()) {
                 for (int i = 0; i < searchResultPage.getResults().size(); i++) {
                     GenericDocument document =
@@ -149,7 +150,8 @@ class AppSearchMigrationHelper implements Closeable {
                 codedOutputStream.flush();
                 mTotalNeedMigratedDocumentCount += searchResultPage.getResults().size();
                 searchResultPage = mAppSearchImpl.getNextPage(mPackageName,
-                        searchResultPage.getNextPageToken(), /*sStatsBuilder=*/ null);
+                        searchResultPage.getNextPageToken(), /*sStatsBuilder=*/ null,
+                        /*callStatsBuilder=*/null);
                 outputStream.flush();
             }
         }
@@ -199,7 +201,8 @@ class AppSearchMigrationHelper implements Closeable {
                             mDatabaseName,
                             document,
                             /*sendChangeNotifications=*/ false,
-                            /*logger=*/ null);
+                            /*logger=*/ null,
+                            /*callStatsBuilder=*/null);
                     savedDocsCount++;
                 } catch (Throwable t) {
                     responseBuilder.addMigrationFailure(
@@ -212,7 +215,8 @@ class AppSearchMigrationHelper implements Closeable {
                 }
             }
             mAppSearchImpl.persistToDisk(mPackageName, CALL_TYPE_SCHEMA_MIGRATION,
-                    PersistType.Code.FULL, mLogger);
+                    PersistType.Code.FULL, mLogger,
+                    /*callStatsBuilder=*/null);
             if (schemaMigrationStatsBuilder != null) {
                 schemaMigrationStatsBuilder.setTotalSuccessMigratedDocumentCount(savedDocsCount);
                 schemaMigrationStatsBuilder.setMigrationFailureCount(migrationFailureCount);

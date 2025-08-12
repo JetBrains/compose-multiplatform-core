@@ -22,5 +22,8 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.findViewTreeNavigationEventDispatcherOwner
 
 @Composable
-internal actual fun findViewTreeNavigationEventDispatcherOwner(): NavigationEventDispatcherOwner? =
-    LocalView.current.findViewTreeNavigationEventDispatcherOwner()
+internal actual fun findViewTreeNavigationEventDispatcherOwner(): NavigationEventDispatcherOwner? {
+    // On Android, the NavigationEventDispatcherOwner is expected to be
+    // discoverable up the view hierarchy.
+    return LocalView.current.findViewTreeNavigationEventDispatcherOwner()
+}

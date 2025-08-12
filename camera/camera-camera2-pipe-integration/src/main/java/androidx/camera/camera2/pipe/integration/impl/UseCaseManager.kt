@@ -240,9 +240,9 @@ constructor(
             val unattachedUseCases =
                 useCases.filter { useCase -> !attachedUseCases.contains(useCase) }
 
-            // Notify state attached to use cases
+            // Notify session start to use cases
             for (useCase in unattachedUseCases) {
-                useCase.onStateAttached()
+                useCase.onSessionStart()
             }
 
             if (attachedUseCases.addAll(useCases)) {
@@ -286,7 +286,7 @@ constructor(
             // Notify state detached to use cases
             for (useCase in useCases) {
                 if (attachedUseCases.contains(useCase)) {
-                    useCase.onStateDetached()
+                    useCase.onSessionStop()
                 }
             }
 

@@ -25,6 +25,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Plane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector2
@@ -149,7 +150,7 @@ class OpenXrPlaneTest {
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        assertThat(underTest.extents).isEqualTo(Vector2(1.0f, 2.0f))
+        assertThat(underTest.extents).isEqualTo(FloatSize2d(1.0f, 2.0f))
     }
 
     @Test

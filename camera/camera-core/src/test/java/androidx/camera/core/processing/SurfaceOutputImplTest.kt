@@ -18,7 +18,6 @@ package androidx.camera.core.processing
 
 import android.graphics.SurfaceTexture
 import android.opengl.Matrix
-import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
@@ -37,13 +36,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [SurfaceOutputImpl]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SurfaceOutputImplTest {
 
     companion object {

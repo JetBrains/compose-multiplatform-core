@@ -126,7 +126,6 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
 
     // SdkSuppress because dispatchProvideStructure is introduced in API 23.
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun testDispatchProvideStructure_createViewStructureForChildrenView() {
         TestActivity.onActivityCreated = { activity ->
             val container = FrameLayout(activity)

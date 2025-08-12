@@ -802,6 +802,13 @@ private fun Project.configureNode() {
     rootProject.extensions.findByType(YarnRootEnvSpec::class.java)?.let {
         it.version.set(getVersionByName("yarn"))
         it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+        if (!ProjectLayoutType.isPlayground(this)) {
+            it.downloadBaseUrl.set(
+                File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+                    .toURI()
+                    .toString()
+            )
+        }
     }
 
     if (!ProjectLayoutType.isPlayground(this)) {

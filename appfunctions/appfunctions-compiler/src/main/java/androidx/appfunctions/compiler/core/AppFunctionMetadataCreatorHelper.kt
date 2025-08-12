@@ -32,12 +32,20 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContex
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
 import androidx.appfunctions.compiler.core.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionUnitTypeMetadata
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -48,7 +56,9 @@ import com.google.devtools.ksp.symbol.KSValueParameter
  * A helper class that provides methods to construct
  * [androidx.appfunctions.compiler.core.metadata.AppFunctionMetadata] related class.
  */
-class AppFunctionMetadataCreatorHelper {
+class AppFunctionMetadataCreatorHelper(
+    private val sharedDataTypeDescriptionMap: Map<String, String> = mapOf()
+) {
 
     /**
      * Computes [AppFunctionAnnotationProperties] from [appFunctionAnnotation] and
@@ -143,6 +153,7 @@ class AppFunctionMetadataCreatorHelper {
                         // Parameter description will be provided through
                         // AppFunctionParameterMetadata.
                         description = "",
+                        parameter.annotations,
                     )
 
             add(
@@ -178,6 +189,7 @@ class AppFunctionMetadataCreatorHelper {
         sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
         seenDataTypeQualifiers: MutableSet<String>,
         allowSerializableInterfaceTypes: Boolean = false,
+        functionAnnotations: Sequence<KSAnnotation>,
     ): AppFunctionDataTypeMetadata {
         return returnType.toAppFunctionDataTypeMetadata(
             sharedDataTypeMap,
@@ -186,31 +198,50 @@ class AppFunctionMetadataCreatorHelper {
             allowSerializableInterfaceTypes,
             // Response description will be provided through AppFunctionResponseMetadata.
             description = "",
+            annotations = functionAnnotations,
         )
     }
 
+    /**
+     * Builds and returns [AppFunctionDataTypeMetadata] from the type reference.
+     *
+     * @param sharedDataTypeMap A mutable map used to share and reuse already processed data type
+     *   metadata, avoiding duplication.
+     * @param seenDataTypeQualifiers A mutable set used to track qualifiers of data types that have
+     *   already been seen, to prevent cycles or redundant processing.
+     * @param resolvedAnnotatedSerializableProxies Contains resolved proxies for annotated
+     *   serializable types used during metadata construction.
+     * @param allowSerializableInterfaceTypes Indicates whether interfaces marked with
+     *   `@Serializable` should be allowed.
+     * @param description A textual description to be associated with the resulting metadata.
+     * @param annotations Sequence of annotations applied at the usage site (e.g., function
+     *   parameter, return type, or property declaration) of this type reference.
+     */
     private fun KSTypeReference.toAppFunctionDataTypeMetadata(
         sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
         seenDataTypeQualifiers: MutableSet<String>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         allowSerializableInterfaceTypes: Boolean,
         description: String,
+        annotations: Sequence<KSAnnotation> = emptySequence(),
     ): AppFunctionDataTypeMetadata {
         val appFunctionTypeReference = AppFunctionTypeReference(this)
         return when (appFunctionTypeReference.typeCategory) {
             PRIMITIVE_SINGULAR ->
-                AppFunctionPrimitiveTypeMetadata(
-                    type = appFunctionTypeReference.toAppFunctionDataType(),
-                    isNullable = appFunctionTypeReference.isNullable,
-                    description = description,
+                createPrimitiveDataTypeMetadata(
+                    appFunctionTypeReference.toAppFunctionDataType(),
+                    appFunctionTypeReference.isNullable,
+                    description,
+                    annotations,
                 )
             PRIMITIVE_ARRAY ->
                 AppFunctionArrayTypeMetadata(
                     itemType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = appFunctionTypeReference.determineArrayItemType(),
+                        createPrimitiveDataTypeMetadata(
+                            appFunctionTypeReference.determineArrayItemType(),
                             isNullable = false,
                             description = "",
+                            annotations,
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
                     description = description,
@@ -218,12 +249,13 @@ class AppFunctionMetadataCreatorHelper {
             PRIMITIVE_LIST ->
                 AppFunctionArrayTypeMetadata(
                     itemType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = appFunctionTypeReference.determineArrayItemType(),
+                        createPrimitiveDataTypeMetadata(
+                            appFunctionTypeReference.determineArrayItemType(),
                             isNullable =
                                 AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
                                     .isNullable,
                             description = "",
+                            annotations,
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
                     description = description,
@@ -386,7 +418,16 @@ class AppFunctionMetadataCreatorHelper {
         }
         seenDataTypeQualifiers.add(serializableTypeQualifiedName)
 
-        val serializableDescription = appFunctionSerializableType.description
+        val serializableDescription =
+            when {
+                appFunctionSerializableType.description.isNotEmpty() ->
+                    appFunctionSerializableType.description
+                appFunctionSerializableType is AnnotatedParameterizedAppFunctionSerializable ->
+                    sharedDataTypeDescriptionMap[
+                        appFunctionSerializableType.unparameterizedJvmQualifiedName] ?: ""
+                else -> sharedDataTypeDescriptionMap[serializableTypeQualifiedName] ?: ""
+            }
+
         val superTypesWithSerializableAnnotation =
             appFunctionSerializableType.findSuperTypesWithSerializableAnnotation()
         val superTypesWithCapabilityAnnotation =
@@ -482,7 +523,7 @@ class AppFunctionMetadataCreatorHelper {
                 }
             }
 
-            // Finally add allOf the datatypes required to build this composed objects to the
+            // Finally add allOf of the datatypes required to build this composed objects to the
             // components map
             sharedDataTypeMap.put(
                 serializableTypeQualifiedName,
@@ -575,7 +616,11 @@ class AppFunctionMetadataCreatorHelper {
                             seenDataTypeQualifiers,
                             resolvedAnnotatedSerializableProxies,
                             allowSerializableInterfaceTypes,
-                            property.description,
+                            // Remove type parameter in case of generic type.
+                            sharedDataTypeDescriptionMap[
+                                "${serializableTypeQualifiedName.substringBefore("<")}#${property.name}"]
+                                ?: "",
+                            annotations = property.propertyAnnotations,
                         )
                     put(property.name, innerAppFunctionDataTypeMetadata)
                     if (property.isRequired) {
@@ -657,6 +702,55 @@ class AppFunctionMetadataCreatorHelper {
                     appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments
                 )
                 .validate(allowSerializableInterfaceTypes)
+        }
+    }
+
+    private fun createPrimitiveDataTypeMetadata(
+        primitiveType: Int,
+        isNullable: Boolean,
+        description: String,
+        annotations: Sequence<KSAnnotation>,
+    ): AppFunctionDataTypeMetadata {
+        return when (primitiveType) {
+            AppFunctionDataTypeMetadata.TYPE_UNIT ->
+                AppFunctionUnitTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_BYTES ->
+                AppFunctionBytesTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_INT ->
+                AppFunctionIntTypeMetadata.create(
+                    isNullable = isNullable,
+                    description = description,
+                    annotations,
+                )
+
+            AppFunctionDataTypeMetadata.TYPE_LONG ->
+                AppFunctionLongTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_FLOAT ->
+                AppFunctionFloatTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_DOUBLE ->
+                AppFunctionDoubleTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_BOOLEAN ->
+                AppFunctionBooleanTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_STRING ->
+                AppFunctionStringTypeMetadata.create(
+                    isNullable = isNullable,
+                    description = description,
+                    annotations,
+                )
+
+            AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
+                AppFunctionPendingIntentTypeMetadata(
+                    isNullable = isNullable,
+                    description = description,
+                )
+
+            else -> throw IllegalStateException("Unsupported primitive type: $primitiveType")
         }
     }
 

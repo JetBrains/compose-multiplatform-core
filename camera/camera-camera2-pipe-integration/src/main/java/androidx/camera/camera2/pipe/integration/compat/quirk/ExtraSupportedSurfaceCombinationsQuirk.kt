@@ -95,6 +95,14 @@ public class ExtraSupportedSurfaceCombinationsQuirk : Quirk {
                 "SM-S928", // Galaxy S24 Ultra
                 "SC-52E", // Galaxy S24 Ultra
                 "SCG26", // Galaxy S24 Ultra
+                "SM-S931", // Galaxy S25
+                "SM-S936", // Galaxy S25+
+                "SM-S937", // Galaxy S25 Edge
+                "SM-S938", // Galaxy S25 Ultra
+                "SCG31", // Galaxy S25
+                "SCG32", // Galaxy S25 Ultra
+                "SC-51F", // Galaxy S25
+                "SC-52F", // Galaxy S25 Ultra
             )
 
         public fun isEnabled(): Boolean {

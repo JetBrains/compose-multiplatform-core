@@ -23,7 +23,8 @@ import kotlin.contracts.contract
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @OptIn(ExperimentalContracts::class)
-public actual fun <R> synchronized(lock: Any, block: () -> R): R {
+@Suppress("BanInlineOptIn")
+public actual inline fun <R> synchronized(lock: Any, block: () -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     return kotlin.synchronized(lock) { block() }
 }

@@ -194,6 +194,33 @@ class TimePickerScreenshotTest {
             },
         )
 
+    @Test
+    fun timePicker12h_longAmPmText_usesFallback(@TestParameter screenSize: ScreenSize) =
+        rule.verifyTimePickerScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            screenSize = screenSize,
+            content = {
+                // This test verifies the dynamic fallback logic for locales with long AM/PM
+                // strings that would otherwise overflow the screen. Latvian (`lv-LV`) is used
+                // as the test case because its localized strings ("priekšpusdienā" /
+                // "pēcpusdienā") are very long. We expect the component to detect that these
+                // strings will not fit and display the standard "AM"/"PM" fallback text instead.
+                val latvianConfig =
+                    Configuration(LocalConfiguration.current).apply {
+                        setLocale(Locale.forLanguageTag("lv-LV"))
+                    }
+                CompositionLocalProvider(LocalConfiguration provides latvianConfig) {
+                    TimePicker(
+                        onTimePicked = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        timePickerType = TimePickerType.HoursMinutesAmPm12H,
+                        initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23),
+                    )
+                }
+            },
+        )
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun ComposeContentTestRule.verifyTimePickerScreenshot(
         testName: TestName,

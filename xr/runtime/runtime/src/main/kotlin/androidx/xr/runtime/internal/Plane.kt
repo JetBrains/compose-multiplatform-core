@@ -17,6 +17,7 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
@@ -33,7 +34,7 @@ public interface Plane : Trackable {
     public val centerPose: Pose
 
     /** The dimensions of the detected plane. */
-    public val extents: Vector2
+    public val extents: FloatSize2d
 
     /** If this plane has been subsumed, returns the plane this plane was merged into. */
     public val subsumedBy: Plane?

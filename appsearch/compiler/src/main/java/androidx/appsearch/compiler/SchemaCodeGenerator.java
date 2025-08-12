@@ -20,16 +20,18 @@ import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTIO
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_SCHEMA_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.PROPERTY_CONFIG_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentClassFactoryForClass;
-
-import static com.google.auto.common.MoreTypes.asTypeElement;
-
-import static javax.lang.model.type.TypeKind.DECLARED;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
+import static androidx.room.compiler.processing.compat.XConverters.toJavac;
+import static androidx.room.compiler.processing.compat.XConverters.toXProcessing;
 
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.DocumentPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.EmbeddingPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.LongPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
+import androidx.room.compiler.processing.XProcessingEnv;
+import androidx.room.compiler.processing.XType;
+import androidx.room.compiler.processing.XTypeElement;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -51,41 +53,38 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 /** Generates java code for an {@link androidx.appsearch.app.AppSearchSchema}. */
 class SchemaCodeGenerator {
     private final DocumentModel mModel;
     private final IntrospectionHelper mHelper;
-    private final LinkedHashSet<TypeElement> mDependencyDocumentClasses;
+    private final LinkedHashSet<XTypeElement> mDependencyDocumentClasses;
 
     public static void generate(
-            @NonNull ProcessingEnvironment env,
+            @NonNull XProcessingEnv env,
             @NonNull DocumentModel model,
             TypeSpec.@NonNull Builder classBuilder) throws ProcessingException {
         new SchemaCodeGenerator(model, env).generate(classBuilder);
     }
 
-    private SchemaCodeGenerator(@NonNull DocumentModel model, @NonNull ProcessingEnvironment env) {
+    private SchemaCodeGenerator(@NonNull DocumentModel model, @NonNull XProcessingEnv env) {
         mModel = model;
-        mHelper = new IntrospectionHelper(env);
+        mHelper = new IntrospectionHelper(toJavac(env));
         mDependencyDocumentClasses = computeDependencyClasses(model, env);
     }
 
-    private static @NonNull LinkedHashSet<TypeElement> computeDependencyClasses(
-            @NonNull DocumentModel model,
-            @NonNull ProcessingEnvironment env) {
-        LinkedHashSet<TypeElement> dependencies = new LinkedHashSet<>(model.getParentTypes());
+    private static @NonNull LinkedHashSet<XTypeElement> computeDependencyClasses(
+            @NonNull DocumentModel model, @NonNull XProcessingEnv env) {
+        LinkedHashSet<XTypeElement> dependencies = new LinkedHashSet<>(model.getParentTypes());
         for (AnnotatedGetterOrField getterOrField : model.getAnnotatedGettersAndFields()) {
             if (!(getterOrField.getAnnotation() instanceof DocumentPropertyAnnotation)) {
                 continue;
             }
 
             TypeMirror documentClass = getterOrField.getComponentType();
-            dependencies.add((TypeElement) env.getTypeUtils().asElement(documentClass));
+            dependencies.add(toXProcessing(documentClass, env).getTypeElement());
         }
         return dependencies;
     }
@@ -137,8 +136,10 @@ class SchemaCodeGenerator {
             methodBuilder.addStatement("return $T.emptyList()", ClassName.get(Collections.class));
         } else {
             methodBuilder.addStatement("$T classSet = new $T()", listOfClasses, arrayListOfClasses);
-            for (TypeElement dependencyType : mDependencyDocumentClasses) {
-                methodBuilder.addStatement("classSet.add($T.class)", ClassName.get(dependencyType));
+            for (XTypeElement dependencyType : mDependencyDocumentClasses) {
+                methodBuilder.addStatement(
+                        "classSet.add($T.class)",
+                        toJavaPoet(dependencyType.asClassName()));
             }
             methodBuilder.addStatement("return classSet").build();
         }
@@ -155,9 +156,9 @@ class SchemaCodeGenerator {
         CodeBlock.Builder codeBlock = CodeBlock.builder()
                 .add("new $T(SCHEMA_NAME)", APPSEARCH_SCHEMA_CLASS.nestedClass("Builder"))
                 .indent();
-        for (TypeElement parentType : mModel.getParentTypes()) {
+        for (XTypeElement parentType : mModel.getParentTypes()) {
             ClassName parentDocumentFactoryClass =
-                    getDocumentClassFactoryForClass(ClassName.get(parentType));
+                    getDocumentClassFactoryForClass(toJavaPoet(parentType.asClassName()));
             codeBlock.add("\n.addParentType($T.SCHEMA_NAME)", parentDocumentFactoryClass);
         }
 
@@ -264,26 +265,28 @@ class SchemaCodeGenerator {
 
         if (documentPropertyAnnotation.getShouldInheritIndexableNestedPropertiesFromSuperClass()) {
             // List of classes to expand into parent classes to search for the property annotation
-            Queue<TypeElement> classesToExpand = new ArrayDeque<>();
-            Set<TypeElement> visited = new HashSet<>();
+            Queue<XTypeElement> classesToExpand = new ArrayDeque<>();
+            Set<XTypeElement> visited = new HashSet<>();
             classesToExpand.add(mModel.getClassElement());
             while (!classesToExpand.isEmpty()) {
-                TypeElement currentClass = classesToExpand.poll();
+                XTypeElement currentClass = classesToExpand.poll();
                 if (visited.contains(currentClass)) {
                     continue;
                 }
                 visited.add(currentClass);
                 // Look for the document property annotation in the class's parent classes
-                List<TypeMirror> parentTypes = new ArrayList<>();
-                parentTypes.add(currentClass.getSuperclass());
-                parentTypes.addAll(currentClass.getInterfaces());
-                for (TypeMirror parent : parentTypes) {
-                    if (!parent.getKind().equals(DECLARED)) {
+                List<XType> parentTypes = new ArrayList<>();
+                if (currentClass.getSuperClass() != null) {
+                    parentTypes.add(currentClass.getSuperClass());
+                }
+                parentTypes.addAll(currentClass.getSuperInterfaces());
+                for (XType parent : parentTypes) {
+                    XTypeElement parentElement = parent.getTypeElement();
+                    if (parentElement == null) {
                         continue;
                     }
-                    TypeElement parentElement = asTypeElement(parent);
                     DocumentPropertyAnnotation annotation = mHelper.getDocumentPropertyAnnotation(
-                            parentElement, documentPropertyAnnotation.getName());
+                            toJavac(parentElement), documentPropertyAnnotation.getName());
                     if (annotation == null) {
                         // The property is not found in this level. Continue searching in one level
                         // above as the property could still be defined for this level by class

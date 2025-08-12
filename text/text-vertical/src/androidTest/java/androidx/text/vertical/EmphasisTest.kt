@@ -103,7 +103,11 @@ class EmphasisTest {
         val text =
             StyleTextBuilder()
                 .apply {
-                    withEmphasis(style = EmphasisStyle.TRIANGLE, filled = false, scale = 0.7f) {
+                    withEmphasis(
+                        style = EmphasisSpan.STYLE_TRIANGLE,
+                        filled = false,
+                        scale = 0.7f,
+                    ) {
                         text("あいうえお")
                     }
                 }
@@ -216,7 +220,11 @@ class EmphasisTest {
         val text =
             StyleTextBuilder()
                 .apply {
-                    withEmphasis(style = EmphasisStyle.TRIANGLE, filled = false, scale = 0.7f) {
+                    withEmphasis(
+                        style = EmphasisSpan.STYLE_TRIANGLE,
+                        filled = false,
+                        scale = 0.7f,
+                    ) {
                         text("12")
                     }
                 }

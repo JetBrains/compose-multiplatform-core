@@ -356,10 +356,13 @@ private constructor(
     /** Delete native BrushTip memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushTipNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushTipNative.free(nativePointer)
     }
 
     // Companion object gets initialized before anything else.

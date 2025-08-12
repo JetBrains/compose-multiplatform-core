@@ -33,7 +33,6 @@ import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
-import java.util.LinkedHashMap
 import java.util.UUID
 import org.junit.Before
 import org.junit.Test

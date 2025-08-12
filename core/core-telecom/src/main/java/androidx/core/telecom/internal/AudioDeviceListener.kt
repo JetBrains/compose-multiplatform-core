@@ -58,6 +58,7 @@ internal class AudioDeviceListener(
         if (addedDevices != null) {
             mPreCallEndpoints.endpointsAddedUpdate(
                 getEndpointsFromAudioDeviceInfo(mContext, mUuidSessionId, addedDevices.toList())
+                    .filterNotNull()
             )
         }
     }
@@ -66,6 +67,7 @@ internal class AudioDeviceListener(
         if (removedDevices != null) {
             mPreCallEndpoints.endpointsRemovedUpdate(
                 getEndpointsFromAudioDeviceInfo(mContext, mUuidSessionId, removedDevices.toList())
+                    .filterNotNull()
             )
         }
     }

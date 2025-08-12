@@ -24,6 +24,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
@@ -38,15 +39,19 @@ import androidx.compose.foundation.layout.Arrangement.Absolute.SpaceEvenly
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
@@ -792,6 +797,128 @@ fun DynamicallyEnableSharedElementsSample() {
                                     )
                                 )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Sampled
+@Composable
+fun SharedBoundsSample() {
+    var showText by remember { mutableStateOf(true) }
+    val rememberSharedKey = remember { Any() }
+    SharedTransitionLayout(Modifier.clickable { showText = !showText }) {
+        AnimatedContent(
+            targetState = showText,
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) { showText ->
+            if (showText) {
+                Text(
+                    text =
+                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent fringilla" +
+                            " mollis efficitur. Maecenas sit amet urna eu urna blandit suscipit efficitur" +
+                            " eget mauris. Nullam eget aliquet ligula. Nunc id euismod elit. Morbi aliquam" +
+                            " enim eros, eget consequat dolor consequat id. Quisque elementum faucibus" +
+                            " congue. Curabitur mollis aliquet turpis, ut pellentesque justo eleifend nec.\n",
+                    fontSize = 20.sp,
+                    modifier =
+                        Modifier.padding(20.dp)
+                            // Creates a shared bounds for the text so that we can animate from the
+                            // bounds of the text to the bounds of the image below.
+                            .sharedBounds(
+                                // Here we use an object created above as the key for the shared
+                                // bounds transition.
+                                sharedContentState =
+                                    rememberSharedContentState(key = rememberSharedKey),
+                                animatedVisibilityScope = this,
+                                // As the bounds transition from the text from/to the image, the
+                                // text
+                                // will be fading within in the bounds. This is also the default
+                                // behavior.
+                                enter = fadeIn(),
+                                exit = fadeOut(),
+                                // Since the text and the image have different aspect ratios, as
+                                // the bounds transition from one to the other, we need to define
+                                // how to fit the content in the changing bounds. Here we will
+                                // be using crop to fit the content.
+                                resizeMode = scaleToBounds(contentScale = ContentScale.Crop),
+                            ),
+                )
+            } else {
+                Image(
+                    painterResource(id = R.drawable.yt_profile),
+                    contentDescription = "cute cat",
+                    modifier =
+                        Modifier.wrapContentSize()
+                            // Creates a shared bounds for the image so that we can animate from the
+                            // bounds of the text to the bounds of this image, and vice versa.
+                            .sharedBounds(
+                                sharedContentState =
+                                    rememberSharedContentState(key = rememberSharedKey),
+                                animatedVisibilityScope = this,
+                                resizeMode = scaleToBounds(contentScale = ContentScale.Crop),
+                            )
+                            .requiredSize(200.dp)
+                            .clip(shape = RoundedCornerShape(10)),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Sampled
+@Composable
+fun ListToDetailSample() {
+    var itemSelected by remember { mutableStateOf<Int?>(null) }
+    SharedTransitionLayout(modifier = Modifier.clipToBounds().fillMaxSize()) {
+        val listState = rememberLazyListState()
+        AnimatedContent(itemSelected) { selected ->
+            when (selected) {
+                null -> { // No item selected, show list
+                    LazyColumn(state = listState) {
+                        items(50) { item ->
+                            Row(
+                                modifier = Modifier.clickable { itemSelected = item }.fillMaxWidth()
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.yt_profile),
+                                    modifier =
+                                        Modifier.size(100.dp)
+                                            .sharedElement(
+                                                rememberSharedContentState(key = "item-image$item"),
+                                                animatedVisibilityScope = this@AnimatedContent,
+                                            ),
+                                    contentScale = ContentScale.Crop,
+                                    contentDescription = null,
+                                )
+                                Spacer(Modifier.size(15.dp))
+                                Text(
+                                    "Item $item",
+                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                )
+                            }
+                        }
+                    }
+                }
+                else -> { // show detail for item selected
+                    Column(modifier = Modifier.fillMaxSize().clickable { itemSelected = null }) {
+                        Image(
+                            painter = painterResource(R.drawable.yt_profile),
+                            modifier =
+                                Modifier.sharedElement(
+                                        rememberSharedContentState(key = "item-image$selected"),
+                                        animatedVisibilityScope = this@AnimatedContent,
+                                    )
+                                    .fillMaxWidth(),
+                            contentScale = ContentScale.Crop,
+                            contentDescription = null,
+                        )
+                        Text("Item $itemSelected", fontSize = 23.sp)
                     }
                 }
             }

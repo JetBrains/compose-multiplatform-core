@@ -18,8 +18,6 @@ package androidx.core.util;
 
 import android.util.SizeF;
 
-import androidx.annotation.RequiresApi;
-
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -73,18 +71,15 @@ public final class SizeFCompat {
     }
 
     /** Converts this {@link SizeFCompat} into a {@link SizeF}. */
-    @RequiresApi(21)
     public @NonNull SizeF toSizeF() {
         return Api21Impl.toSizeF(this);
     }
 
     /** Converts this {@link SizeF} into a {@link SizeFCompat}. */
-    @RequiresApi(21)
     public static @NonNull SizeFCompat toSizeFCompat(@NonNull SizeF size) {
         return Api21Impl.toSizeFCompat(size);
     }
 
-    @RequiresApi(21)
     private static final class Api21Impl {
         static @NonNull SizeFCompat toSizeFCompat(@NonNull SizeF size) {
             Preconditions.checkNotNull(size);

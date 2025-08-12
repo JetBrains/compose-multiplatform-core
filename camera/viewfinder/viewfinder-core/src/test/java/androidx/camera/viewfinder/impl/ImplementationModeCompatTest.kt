@@ -33,7 +33,6 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument // Needed for Robolectric to correctly instrument classes in the same module
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ImplementationModeCompatTest {
     private lateinit var originalManufacturer: String
     private lateinit var originalDevice: String

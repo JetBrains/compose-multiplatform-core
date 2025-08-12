@@ -204,7 +204,11 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         }
 
         // No aspect ratio preferences initially
-        SpatialWindow.setPreferredAspectRatio(session!!, this, 0.0f)
+        SpatialWindow.setPreferredAspectRatio(
+            session!!,
+            this,
+            SpatialWindow.NO_PREFERRED_ASPECT_RATIO,
+        )
 
         // Make components visible per mode
         findViewById<RadioButton>(R.id.choice_any_aspect_ratio_in_hsm).isChecked = true
@@ -214,7 +218,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     when (checkedId) {
                         R.id.choice_portrait_in_hsm -> 0.7f
                         R.id.choice_landscape_in_hsm -> 1.4f
-                        else -> -12.345f // A negative ratio means "no preferences."
+                        else -> SpatialWindow.NO_PREFERRED_ASPECT_RATIO
                     }
                 // Note: If currently in FSM, the ratio will be applied
                 // when the mode switches back to HSM.

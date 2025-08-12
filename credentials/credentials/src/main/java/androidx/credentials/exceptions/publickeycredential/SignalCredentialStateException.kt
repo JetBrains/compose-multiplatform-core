@@ -24,23 +24,34 @@ import androidx.credentials.CredentialManager
  * [CredentialManager] for more details on how Exceptions work for Credential Manager flows.
  *
  * @see CredentialManager
+ * @see SignalCredentialUnknownException
+ * @see SignalCredentialSecurityException
+ * @see SignalCredentialStateProviderConfigurationException
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-open class SignalCredentialStateException
-internal constructor(val type: String, val errorMessage: String? = null) : Exception(errorMessage) {
+abstract class SignalCredentialStateException
+@JvmOverloads
+internal constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val type: String,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val errorMessage: CharSequence? = null,
+) : Exception(errorMessage?.toString()) {
     companion object {
-        const val ERROR_TYPE_UNKNOWN = "error_type_unknown"
-
-        @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun createFrom(type: String, msg: String?): SignalCredentialStateException {
-            return SignalCredentialStateException(type, msg)
+            return when (type) {
+                SignalCredentialSecurityException.TYPE_SIGNAL_CREDENTIAL_STATE_SECURITY_EXCEPTION ->
+                    SignalCredentialSecurityException(msg)
+                SignalCredentialUnknownException.TYPE_SIGNAL_CREDENTIAL_STATE_UNKNOWN_EXCEPTION ->
+                    SignalCredentialUnknownException(msg)
+                SignalCredentialStateProviderConfigurationException
+                    .TYPE_SIGNAL_CREDENTIAL_STATE_PROVIDER_CONFIGURATION_EXCEPTION ->
+                    SignalCredentialStateProviderConfigurationException(msg)
+                else -> SignalCredentialUnknownException(msg)
+            }
         }
 
-        @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun createFrom(msg: String?): SignalCredentialStateException {
-            return SignalCredentialStateException(ERROR_TYPE_UNKNOWN, msg)
+            return SignalCredentialUnknownException(msg)
         }
     }
 }

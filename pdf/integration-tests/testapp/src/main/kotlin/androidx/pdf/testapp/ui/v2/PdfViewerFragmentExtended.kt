@@ -17,7 +17,6 @@
 package androidx.pdf.testapp.ui.v2
 
 import android.app.AlertDialog
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -28,7 +27,7 @@ import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
 import androidx.pdf.content.ExternalLink
-import androidx.pdf.testapp.ConfigurationProvider
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.OpCancellationHandler
 import androidx.pdf.viewer.fragment.PdfViewerFragment
@@ -44,13 +43,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class PdfViewerFragmentExtended : PdfViewerFragment() {
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
-    private var configProvider: ConfigurationProvider? = null
     private var lastClickedLinkUri: String? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is ConfigurationProvider) configProvider = context
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -100,7 +93,7 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
     }
 
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
-        return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
+        return if (PdfFeatureFlags.isCustomLinkHandlingEnabled) {
             lastClickedLinkUri = externalLink.uri.toString()
             lastClickedLinkUri?.let { showCustomLinkHandlerDialog(it) }
             true

@@ -126,12 +126,12 @@ package androidx.constraintlayout.compose {
     method public void setWidth(androidx.constraintlayout.compose.Dimension);
     property public androidx.constraintlayout.compose.VerticalAnchorable absoluteLeft;
     property public androidx.constraintlayout.compose.VerticalAnchorable absoluteRight;
-    property @FloatRange(from=0.0, to=1.0) public float alpha;
+    property public float alpha;
     property public androidx.constraintlayout.compose.BaselineAnchorable baseline;
     property public androidx.constraintlayout.compose.HorizontalAnchorable bottom;
     property public androidx.constraintlayout.compose.VerticalAnchorable end;
     property public androidx.constraintlayout.compose.Dimension height;
-    property @FloatRange(from=0.0, to=1.0) public float horizontalBias;
+    property public float horizontalBias;
     property public float horizontalChainWeight;
     property public androidx.constraintlayout.compose.ConstrainedLayoutReference parent;
     property public float pivotX;
@@ -146,7 +146,7 @@ package androidx.constraintlayout.compose {
     property public androidx.compose.ui.unit.Dp translationX;
     property public androidx.compose.ui.unit.Dp translationY;
     property public androidx.compose.ui.unit.Dp translationZ;
-    property @FloatRange(from=0.0, to=1.0) public float verticalBias;
+    property public float verticalBias;
     property public float verticalChainWeight;
     property public androidx.constraintlayout.compose.Visibility visibility;
     property public androidx.constraintlayout.compose.Dimension width;
@@ -1173,7 +1173,7 @@ package androidx.constraintlayout.compose {
     method public void setMaxStaggerDelay(float);
     method public void setMotionArc(androidx.constraintlayout.compose.Arc);
     method public void setOnSwipe(androidx.constraintlayout.compose.OnSwipe?);
-    property @FloatRange(from=-1.0, to=1.0, fromInclusive=false, toInclusive=false) public float maxStaggerDelay;
+    property public float maxStaggerDelay;
     property public androidx.constraintlayout.compose.Arc motionArc;
     property public androidx.constraintlayout.compose.OnSwipe? onSwipe;
   }

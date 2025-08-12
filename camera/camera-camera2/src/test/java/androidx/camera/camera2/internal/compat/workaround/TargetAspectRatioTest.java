@@ -38,7 +38,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.ParameterizedRobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowCameraCharacteristics;
@@ -53,7 +52,6 @@ import java.util.List;
  */
 @RunWith(ParameterizedRobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class TargetAspectRatioTest {
     private static final String BACK_CAMERA_ID = "0";
     private static final Range<Integer> ALL_API_LEVELS = new Range<>(0, Integer.MAX_VALUE);

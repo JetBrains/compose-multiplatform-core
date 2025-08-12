@@ -25,7 +25,6 @@ import androidx.benchmark.traceprocessor.PerfettoTrace
 import androidx.benchmark.traceprocessor.record
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalPerfettoCaptureApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 23)
 class PerfettoTraceTest {
 
     @Test

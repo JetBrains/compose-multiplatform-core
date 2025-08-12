@@ -47,7 +47,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class EncoderProfilesProviderAdapterDeviceTest(private val quality: Int) {
 
     companion object {

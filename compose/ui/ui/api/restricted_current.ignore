@@ -1,4 +1,18 @@
 // Baseline format: 1.0
+ChangedType: androidx.compose.ui.semantics.SemanticsOwnerKt#getAllSemanticsNodes(androidx.compose.ui.semantics.SemanticsOwner, boolean):
+    Binary breaking change: Method androidx.compose.ui.semantics.SemanticsOwnerKt.getAllSemanticsNodes has changed return type from java.util.List<androidx.compose.ui.semantics.SemanticsNode> to java.util.List
+
+
+RemovedDeprecatedMethod: androidx.compose.ui.draw.ShadowKt#shadow(androidx.compose.ui.Modifier, float, androidx.compose.ui.graphics.Shape, boolean):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.draw.ShadowKt.shadow(androidx.compose.ui.Modifier,float,androidx.compose.ui.graphics.Shape,boolean)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.GraphicsLayerModifierKt#graphicsLayer(androidx.compose.ui.Modifier, float, float, float, float, float, float, float, float, float, float, long, androidx.compose.ui.graphics.Shape, boolean):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.GraphicsLayerModifierKt.graphicsLayer(androidx.compose.ui.Modifier,float,float,float,float,float,float,float,float,float,float,long,androidx.compose.ui.graphics.Shape,boolean)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.GraphicsLayerModifierKt#graphicsLayer(androidx.compose.ui.Modifier, float, float, float, float, float, float, float, float, float, float, long, androidx.compose.ui.graphics.Shape, boolean, androidx.compose.ui.graphics.RenderEffect):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.GraphicsLayerModifierKt.graphicsLayer(androidx.compose.ui.Modifier,float,float,float,float,float,float,float,float,float,float,long,androidx.compose.ui.graphics.Shape,boolean,androidx.compose.ui.graphics.RenderEffect)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.GraphicsLayerModifierKt#graphicsLayer(androidx.compose.ui.Modifier, float, float, float, float, float, float, float, float, float, float, long, androidx.compose.ui.graphics.Shape, boolean, androidx.compose.ui.graphics.RenderEffect, long, long):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.GraphicsLayerModifierKt.graphicsLayer(androidx.compose.ui.Modifier,float,float,float,float,float,float,float,float,float,float,long,androidx.compose.ui.graphics.Shape,boolean,androidx.compose.ui.graphics.RenderEffect,long,long)
+RemovedDeprecatedMethod: androidx.compose.ui.graphics.GraphicsLayerModifierKt#graphicsLayer(androidx.compose.ui.Modifier, float, float, float, float, float, float, float, float, float, float, long, androidx.compose.ui.graphics.Shape, boolean, androidx.compose.ui.graphics.RenderEffect, long, long, int):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.graphics.GraphicsLayerModifierKt.graphicsLayer(androidx.compose.ui.Modifier,float,float,float,float,float,float,float,float,float,float,long,androidx.compose.ui.graphics.Shape,boolean,androidx.compose.ui.graphics.RenderEffect,long,long,int)
 RemovedDeprecatedMethod: androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion#getDrag():
     Binary breaking change: Removed deprecated method androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.getDrag()
 RemovedDeprecatedMethod: androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion#getFling():
@@ -7,10 +21,20 @@ RemovedDeprecatedMethod: androidx.compose.ui.input.nestedscroll.NestedScrollSour
     Binary breaking change: Removed deprecated method androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.getRelocate()
 RemovedDeprecatedMethod: androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion#getWheel():
     Binary breaking change: Removed deprecated method androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.getWheel()
+RemovedDeprecatedMethod: androidx.compose.ui.input.pointer.PointerInputChange#copy(long, long, long, boolean, long, long, boolean, androidx.compose.ui.input.pointer.ConsumedData, int):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.input.pointer.PointerInputChange.copy(long,long,long,boolean,long,long,boolean,androidx.compose.ui.input.pointer.ConsumedData,int)
 RemovedDeprecatedMethod: androidx.compose.ui.semantics.SemanticsPropertiesKt#setImeAction(androidx.compose.ui.semantics.SemanticsPropertyReceiver, int):
     Binary breaking change: Removed deprecated method androidx.compose.ui.semantics.SemanticsPropertiesKt.setImeAction(androidx.compose.ui.semantics.SemanticsPropertyReceiver,int)
 
 
+RemovedFromKotlin: androidx.compose.ui.ComposedModifierKt#materialize(androidx.compose.runtime.Composer, androidx.compose.ui.Modifier):
+    Source breaking change: method androidx.compose.ui.ComposedModifierKt.materialize(androidx.compose.runtime.Composer,androidx.compose.ui.Modifier) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.focus.FocusRequester#requestFocus():
+    Source breaking change: method androidx.compose.ui.focus.FocusRequester.requestFocus() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus():
+    Source breaking change: method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.focus.FocusTargetModifierNodeKt#FocusTargetModifierNode():
+    Source breaking change: method androidx.compose.ui.focus.FocusTargetModifierNodeKt.FocusTargetModifierNode() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.graphics.GraphicsLayerScopeKt#getDefaultShadowColor():
     Source breaking change: method androidx.compose.ui.graphics.GraphicsLayerScopeKt.getDefaultShadowColor() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.graphics.vector.VectorKt#getDefaultFillType():
@@ -23,6 +47,20 @@ RemovedFromKotlin: androidx.compose.ui.graphics.vector.VectorKt#getDefaultTintBl
     Source breaking change: method androidx.compose.ui.graphics.vector.VectorKt.getDefaultTintBlendMode() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.graphics.vector.VectorKt#getDefaultTintColor():
     Source breaking change: method androidx.compose.ui.graphics.vector.VectorKt.getDefaultTintColor() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt#SuspendingPointerInputModifierNode(kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?>):
+    Source breaking change: method androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt.SuspendingPointerInputModifierNode(kotlin.jvm.functions.Function2) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt#pointerInput(androidx.compose.ui.Modifier, Object, Object, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?>):
+    Source breaking change: method androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt.pointerInput(androidx.compose.ui.Modifier,Object,Object,kotlin.jvm.functions.Function2) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt#pointerInput(androidx.compose.ui.Modifier, Object, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?>):
+    Source breaking change: method androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt.pointerInput(androidx.compose.ui.Modifier,Object,kotlin.jvm.functions.Function2) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt#pointerInput(androidx.compose.ui.Modifier, Object[], kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?>):
+    Source breaking change: method androidx.compose.ui.input.pointer.SuspendingPointerInputFilterKt.pointerInput(androidx.compose.ui.Modifier,Object[],kotlin.jvm.functions.Function2) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.layout.LayoutCoordinatesKt#boundsInWindow(androidx.compose.ui.layout.LayoutCoordinates):
+    Source breaking change: method androidx.compose.ui.layout.LayoutCoordinatesKt.boundsInWindow(androidx.compose.ui.layout.LayoutCoordinates) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.modifier.ModifierLocalModifierNodeKt#modifierLocalMapOf(androidx.compose.ui.modifier.ModifierLocal<?>...):
+    Source breaking change: method androidx.compose.ui.modifier.ModifierLocalModifierNodeKt.modifierLocalMapOf(androidx.compose.ui.modifier.ModifierLocal...) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.modifier.ModifierLocalModifierNodeKt#modifierLocalMapOf(kotlin.Pair<? extends androidx.compose.ui.modifier.ModifierLocal<?>,?>...):
+    Source breaking change: method androidx.compose.ui.modifier.ModifierLocalModifierNodeKt.modifierLocalMapOf(kotlin.Pair...) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.node.DpTouchBoundsExpansion#component1-D9Ej5fM():
     Source breaking change: method androidx.compose.ui.node.DpTouchBoundsExpansion.component1-D9Ej5fM() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.node.DpTouchBoundsExpansion#component2-D9Ej5fM():
@@ -33,6 +71,10 @@ RemovedFromKotlin: androidx.compose.ui.node.DpTouchBoundsExpansion#component4-D9
     Source breaking change: method androidx.compose.ui.node.DpTouchBoundsExpansion.component4-D9Ej5fM() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.node.DpTouchBoundsExpansion#copy-lDy3nrA(float, float, float, float, boolean):
     Source breaking change: method androidx.compose.ui.node.DpTouchBoundsExpansion.copy-lDy3nrA(float,float,float,float,boolean) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.platform.JvmActuals_jvmKt#synchronized(Object, kotlin.jvm.functions.Function0<? extends R>):
+    Source breaking change: method androidx.compose.ui.platform.JvmActuals_jvmKt.synchronized(Object,kotlin.jvm.functions.Function0<? extends R>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.semantics.SemanticsOwnerKt#getAllSemanticsNodes(androidx.compose.ui.semantics.SemanticsOwner, boolean):
+    Source breaking change: method androidx.compose.ui.semantics.SemanticsOwnerKt.getAllSemanticsNodes(androidx.compose.ui.semantics.SemanticsOwner,boolean) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.semantics.SemanticsPropertiesKt#getImeAction(androidx.compose.ui.semantics.SemanticsPropertyReceiver):
     Source breaking change: method androidx.compose.ui.semantics.SemanticsPropertiesKt.getImeAction(androidx.compose.ui.semantics.SemanticsPropertyReceiver) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.ui.semantics.SemanticsPropertiesKt#getLiveRegion(androidx.compose.ui.semantics.SemanticsPropertyReceiver):

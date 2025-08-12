@@ -31,7 +31,6 @@ import android.os.Build
  * [cts/backported_fixes/approved](https://cs.android.com/android/platform/superproject/+/android-latest-release:cts/backported_fixes/approved/).
  */
 public sealed class KnownIssues {
-    // TODO: b/381266031 - include samples for each
     public companion object {
 
         // sort the known issues by alias
@@ -66,7 +65,7 @@ public sealed class KnownIssues {
          *
          * @sample androidx.core.backported.fixes.samples.ki398591036
          *
-         * Full details are at https://issuetracker.google.com/issues/398591036
+         * Full details are at [issue #398591036](https://issuetracker.google.com/issues/398591036).
          */
         @JvmField
         public val KI_398591036: KnownIssue =

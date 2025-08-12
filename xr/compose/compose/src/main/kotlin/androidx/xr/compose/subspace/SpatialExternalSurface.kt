@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ExperimentalComposeApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
@@ -80,9 +81,7 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
     SpatialExternalSurfaceScope {
 
     private var executedInit = false
-    private var executedDestroy = false
     private var pendingOnCreate: ((Surface) -> Unit)? = null
-    private var pendingOnDestroy: ((Surface) -> Unit)? = null
 
     override fun onSurfaceCreated(onSurfaceCreated: (Surface) -> Unit) {
         pendingOnCreate = onSurfaceCreated
@@ -96,15 +95,7 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
     }
 
     override fun onSurfaceDestroyed(onSurfaceDestroyed: (Surface) -> Unit) {
-        pendingOnDestroy = onSurfaceDestroyed
-    }
-
-    internal fun executeOnDestroy() {
-        if (!executedDestroy) {
-            executedDestroy = true
-            pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
-            entity.dispose()
-        }
+        entity.setOnSurfaceDestroyed(onSurfaceDestroyed)
     }
 }
 
@@ -113,9 +104,7 @@ private class SpatialExternalSphereSurfaceScopeInstance(
 ) : SpatialExternalSurfaceScope {
 
     private var executedInit = false
-    private var executedDestroy = false
     private var pendingOnCreate: ((Surface) -> Unit)? = null
-    private var pendingOnDestroy: ((Surface) -> Unit)? = null
 
     override fun onSurfaceCreated(onSurfaceCreated: (Surface) -> Unit) {
         pendingOnCreate = onSurfaceCreated
@@ -129,15 +118,7 @@ private class SpatialExternalSphereSurfaceScopeInstance(
     }
 
     override fun onSurfaceDestroyed(onSurfaceDestroyed: (Surface) -> Unit) {
-        pendingOnDestroy = onSurfaceDestroyed
-    }
-
-    internal fun executeOnDestroy() {
-        if (!executedDestroy) {
-            executedDestroy = true
-            pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
-            entity.dispose()
-        }
+        entity.setOnSurfaceDestroyed(onSurfaceDestroyed)
     }
 }
 
@@ -152,6 +133,18 @@ public value class StereoMode private constructor(public val value: Int) {
         public val TopBottom: StereoMode = StereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM)
         /** The [left, right] halves of the surface will map to [left, right] eyes. */
         public val SideBySide: StereoMode = StereoMode(SurfaceEntity.StereoMode.SIDE_BY_SIDE)
+        /**
+         * For displaying mv-hevc video format, [base, secondary] view layers will map to
+         * [left, right] eyes.
+         */
+        public val MultiviewLeftPrimary: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY)
+        /**
+         * For displaying mv-hevc video format, [base, secondary] view layers will map to
+         * [right, left] eyes.
+         */
+        public val MultiviewRightPrimary: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY)
     }
 }
 
@@ -229,10 +222,7 @@ public fun SpatialExternalSurface(
     coreSurfaceEntity.stereoMode = stereoMode.value
     coreSurfaceEntity.setFeatheringEffect(featheringEffect)
 
-    DisposableEffect(instance) {
-        instance.executeOnCreate()
-        onDispose { instance.executeOnDestroy() }
-    }
+    LaunchedEffect(instance) { instance.executeOnCreate() }
 
     key(coreSurfaceEntity) {
         SubspaceLayout(
@@ -387,10 +377,7 @@ private fun SpatialExternalSurfaceSphere(
     coreSurfaceEntity.radius = meterRadius
     coreSurfaceEntity.setFeatheringEffect(featheringEffect)
 
-    DisposableEffect(instance) {
-        instance.executeOnCreate()
-        onDispose { instance.executeOnDestroy() }
-    }
+    LaunchedEffect(instance) { instance.executeOnCreate() }
 
     // Sets a black environment if a custom one isn't set. With a custom background at 0
     // passthrough set, the system will minimize the application if the user leaves the boundary for

@@ -36,7 +36,6 @@ import android.content.res.XmlResourceParser;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
@@ -46,7 +45,6 @@ import android.webkit.MimeTypeMap;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
 import androidx.core.content.res.ResourcesCompat;
@@ -536,8 +534,7 @@ public class FileProvider extends ContentProvider {
                     if (externalCacheDirs.length > 0) {
                         target = externalCacheDirs[0];
                     }
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                        && TAG_EXTERNAL_MEDIA.equals(tag)) {
+                } else if (TAG_EXTERNAL_MEDIA.equals(tag)) {
                     File[] externalMediaDirs = Api21Impl.getExternalMediaDirs(context);
                     if (externalMediaDirs.length > 0) {
                         target = externalMediaDirs[0];
@@ -977,7 +974,6 @@ public class FileProvider extends ContentProvider {
         }
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

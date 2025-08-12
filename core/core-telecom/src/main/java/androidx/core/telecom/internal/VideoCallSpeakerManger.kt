@@ -71,13 +71,28 @@ internal class VideoCallSpeakerManager(private val bluetoothDeviceChecker: Bluet
         }
 
         // Condition 4: No other non-watch Bluetooth device should be available.
-        if (bluetoothDeviceChecker.hasAvailableNonWatchDevice(availableEndpoints)) {
-            Log.i(TAG, "shouldSwitchToSpeaker: Skipping, a non-watch BT device is available.")
-            return false
+        // -- Perform a cheap check to see if any BT device exists. If not, we can switch.
+        if (!availableEndpoints.any { it.isBluetoothType() }) {
+            Log.i(
+                TAG,
+                "shouldSwitchToSpeaker: No BT devices found. Recommending switch to speaker.",
+            )
+            return true
         }
-
-        // All conditions met, recommend the switch.
-        Log.i(TAG, "shouldSwitchToSpeaker: Recommending switch to speaker for video call.")
-        return true
+        // -- Only if a BT device exists, perform the costly permission check.
+        val hasNonWatchDevice =
+            bluetoothDeviceChecker.hasAvailableNonWatchDevice(availableEndpoints)
+        // -- Log the result of the costly check and return the final decision.
+        if (hasNonWatchDevice) {
+            Log.i(TAG, "shouldSwitchToSpeaker: Skipping, a non-watch BT device" + " is available.")
+        } else {
+            // This case now specifically means "only a watch BT device is available"
+            Log.i(
+                TAG,
+                "shouldSwitchToSpeaker: Only watch BT device is available," +
+                    " recommending switch to SPEAKER.",
+            )
+        }
+        return !hasNonWatchDevice
     }
 }

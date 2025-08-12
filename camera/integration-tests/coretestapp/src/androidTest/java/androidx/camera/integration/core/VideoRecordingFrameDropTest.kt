@@ -49,7 +49,6 @@ import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -76,7 +75,6 @@ import org.junit.runners.Parameterized
 @FlakyTest
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 23) // Requires CaptureCallback.onCaptureBufferLost
 class VideoRecordingFrameDropTest(
     private val testName: String,
     private val cameraSelector: CameraSelector,

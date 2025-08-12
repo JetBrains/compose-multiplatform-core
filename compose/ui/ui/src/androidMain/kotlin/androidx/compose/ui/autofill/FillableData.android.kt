@@ -35,6 +35,7 @@ internal class AndroidFillableData(private val autofillValue: AutofillValue) : F
      * Returns the Boolean data if the backing [AutofillValue] contains a toggle value, otherwise
      * returns null.
      */
+    @Suppress("AutoBoxing")
     override fun getBool(): Boolean? {
         return if (autofillValue.isToggle) autofillValue.toggleValue else null
     }
@@ -43,17 +44,52 @@ internal class AndroidFillableData(private val autofillValue: AutofillValue) : F
      * Returns the Int data if the backing [AutofillValue] contains a list selection, otherwise
      * returns null.
      */
+    @Suppress("AutoBoxing")
     override fun getInt(): Int? {
         return if (autofillValue.isList) autofillValue.listValue else null
     }
 }
 
+/**
+ * Creates a [FillableData] instance from a [CharSequence].
+ *
+ * This function is used to wrap a text value for autofill purposes. On Android, it creates an
+ * [AutofillValue] that contains the provided text.
+ *
+ * @param charSequenceValue The text data to be used for autofill.
+ * @return A [FillableData] object containing the text data.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
-internal actual fun FillableData(charSequenceValue: CharSequence): FillableData {
+actual fun FillableData(charSequenceValue: CharSequence): FillableData {
     return AndroidFillableData(AutofillValue.forText(charSequenceValue))
 }
 
+/**
+ * Creates a [FillableData] instance from a [Boolean].
+ *
+ * This function is used to wrap a boolean value for autofill purposes, such as the state of a
+ * checkbox or a switch. On Android, it creates an [AutofillValue] that represents a toggle state.
+ *
+ * @param booleanValue The boolean data to be used for autofill.
+ * @return A [FillableData] object containing the boolean data.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
-internal actual fun FillableData(booleanValue: Boolean): FillableData {
+actual fun FillableData(booleanValue: Boolean): FillableData {
     return AndroidFillableData(AutofillValue.forToggle(booleanValue))
+}
+
+/**
+ * Creates a [FillableData] instance from an [Int].
+ *
+ * This function is used to wrap an integer value for autofill purposes, such as the selected index
+ * in a dropdown menu or spinner. On Android, it creates an [AutofillValue] that represents a list
+ * selection.
+ *
+ * @param intValue The integer data to be used for autofill, representing the index of the selected
+ *   item in a list.
+ * @return A [FillableData] object containing the integer data.
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+actual fun FillableData(intValue: Int): FillableData {
+    return AndroidFillableData(AutofillValue.forList(intValue))
 }

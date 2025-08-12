@@ -1048,13 +1048,13 @@ class IntersectionTest {
         val intersectingShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(14f, 3f, 14f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(14f, 3f, 14f, 5f)).toImmutable(),
                 )
                 .shape
         val nonIntersectingShape =
             Stroke(
                     TEST_BRUSH,
-                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).asImmutable(),
+                    buildStrokeInputBatchFromPoints(floatArrayOf(100f, 3f, 200f, 5f)).toImmutable(),
                 )
                 .shape
 
@@ -1101,7 +1101,7 @@ class IntersectionTest {
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
                 TEST_BRUSH,
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }

@@ -380,6 +380,7 @@ package androidx.compose.remote.core {
     method public byte[]? imageToByteArray(Object);
     method public boolean isAlpha8Image(Object);
     method public void log(androidx.compose.remote.core.Platform.LogCategory, String);
+    method public Object parsePath(String);
     method public float[]? pathToFloatArray(Object);
     field public static final androidx.compose.remote.core.Platform! None;
   }
@@ -802,13 +803,6 @@ package androidx.compose.remote.core {
     field public Object? fontBuilder;
     field public final byte[]! mFontData;
     field public final int mFontId;
-  }
-
-  public interface RemoteContextActions {
-    method public boolean performClick(androidx.compose.remote.core.CoreDocument, androidx.compose.remote.core.operations.layout.Component, String);
-    method public int scrollByOffset(androidx.compose.remote.core.operations.layout.Component, int);
-    method public boolean scrollDirection(androidx.compose.remote.core.operations.layout.Component, androidx.compose.remote.core.semantics.ScrollableComponent.ScrollDirection);
-    method public boolean showOnScreen(androidx.compose.remote.core.operations.layout.Component);
   }
 
   public interface SerializableToString {

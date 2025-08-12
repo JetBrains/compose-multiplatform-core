@@ -70,7 +70,6 @@ package androidx.ink.brush {
   }
 
   public final class InputToolType {
-    property public int value;
     field public static final androidx.ink.brush.InputToolType.Companion Companion;
     field public static final androidx.ink.brush.InputToolType MOUSE;
     field public static final androidx.ink.brush.InputToolType STYLUS;
@@ -86,6 +85,10 @@ package androidx.ink.brush {
   }
 
   public final class StockBrushes {
+    method public androidx.ink.brush.BrushFamily emojiHighlighterLatest(String clientTextureId);
+    method public androidx.ink.brush.BrushFamily emojiHighlighterLatest(String clientTextureId, optional boolean showMiniEmojiTrail);
+    method public androidx.ink.brush.BrushFamily emojiHighlighterV1(String clientTextureId);
+    method public androidx.ink.brush.BrushFamily emojiHighlighterV1(String clientTextureId, optional boolean showMiniEmojiTrail);
     method public static androidx.ink.brush.BrushFamily getDashedLineLatest();
     method public static androidx.ink.brush.BrushFamily getDashedLineV1();
     method public static androidx.ink.brush.BrushFamily getHighlighterLatest();

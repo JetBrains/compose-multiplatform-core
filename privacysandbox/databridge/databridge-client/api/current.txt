@@ -19,5 +19,32 @@ package androidx.privacysandbox.databridge.client {
     method public androidx.privacysandbox.databridge.client.DataBridgeClient getInstance(android.content.Context context);
   }
 
+  public abstract class DataSynchronizationManager {
+    method public abstract void addKeys(java.util.Map<androidx.privacysandbox.databridge.core.Key,? extends java.lang.Object?> keyValueMap);
+    method public abstract void addSyncCallback(java.util.concurrent.Executor executor, androidx.privacysandbox.databridge.client.SyncCallback syncCallback);
+    method public static final androidx.privacysandbox.databridge.client.DataSynchronizationManager getInstance(android.content.Context context);
+    method public abstract java.util.Set<androidx.privacysandbox.databridge.core.Key> getKeys();
+    method public abstract void removeSyncCallback(androidx.privacysandbox.databridge.client.SyncCallback syncCallback);
+    field public static final androidx.privacysandbox.databridge.client.DataSynchronizationManager.Companion Companion;
+  }
+
+  public static final class DataSynchronizationManager.Companion {
+    method public androidx.privacysandbox.databridge.client.DataSynchronizationManager getInstance(android.content.Context context);
+  }
+
+  public interface SyncCallback {
+    method public default void onSyncFailure(androidx.privacysandbox.databridge.core.Key key, Object? value, int errorCode, String errorMessage);
+    field public static final androidx.privacysandbox.databridge.client.SyncCallback.Companion Companion;
+    field public static final int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE = 1; // 0x1
+    field public static final int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES = 2; // 0x2
+  }
+
+  public static final class SyncCallback.Companion {
+    property public static int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE;
+    property public static int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES;
+    field public static final int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE = 1; // 0x1
+    field public static final int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES = 2; // 0x2
+  }
+
 }
 

@@ -22,7 +22,6 @@ import android.os.Parcel;
 import android.util.Log;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.RequiresFeature;
 import androidx.annotation.VisibleForTesting;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
@@ -32,7 +31,6 @@ import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.DocumentClassFactory;
 import androidx.appsearch.app.DocumentClassFactoryRegistry;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
-import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.PutDocumentsRequest;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -57,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 /**
@@ -68,9 +67,6 @@ import java.util.concurrent.Executor;
  * @see TakenAction
  */
 @ExperimentalAppSearchApi
-@RequiresFeature(
-        enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
-        name = Features.SEARCH_AND_CLICK_ACCUMULATOR)
 // TODO(b/395157195): Use FutureUtil once it is in the appsearch package
 public class ActionAccumulator {
     private static final String TAG = "AppSearchActionAccumul";
@@ -108,6 +104,9 @@ public class ActionAccumulator {
      *
      * <p>Initializing and using the ActionAccumulator requires that the provided {@link
      * AppSearchSession} has a database where {@link SearchAction} and {@link ClickAction} are set.
+     *
+     * @throws ExecutionException if either {@link SearchAction} or {@link ClickAction} are not set
+     * in the provided {@link AppSearchSession}.
      */
     @NonNull
     public static ListenableFuture<ActionAccumulator> createAsync(@NonNull Context context,
@@ -115,11 +114,6 @@ public class ActionAccumulator {
         Preconditions.checkNotNull(appSearchSession);
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(executor);
-        if (!appSearchSession.getFeatures()
-                .isFeatureSupported(Features.SEARCH_AND_CLICK_ACCUMULATOR)) {
-            throw new UnsupportedOperationException(
-                    "getActionAccumulator is not supported on this AppSearch implementation.");
-        }
         ActionAccumulator accumulator = new ActionAccumulator(appSearchSession, executor, context);
         return accumulator.initialize();
     }
@@ -156,7 +150,7 @@ public class ActionAccumulator {
             mCacheFile = getCacheFile();
 
             // Load any previously cached data from the file if needed
-            mPriorDiskCache = readActionsFromDisk();
+            mPriorDiskCache = readActionsFromDiskLocked();
 
             if (!mPriorDiskCache.isEmpty()) {
                 if (LogUtil.DEBUG) {
@@ -183,13 +177,22 @@ public class ActionAccumulator {
     }
 
     /**
-     * Reports a {@link SearchAction} and restarts the flush timer.
+     * Reports a {@link TakenAction} and restarts the flush timer.
      */
     @NonNull
-    public ListenableFuture<AppSearchBatchResult<String, Void>> reportSearchAsync(
-            @NonNull SearchAction searchAction) {
-        Preconditions.checkNotNull(searchAction);
+    public ListenableFuture<AppSearchBatchResult<String, Void>> reportActionAsync(
+            @NonNull TakenAction takenAction) {
+        Preconditions.checkNotNull(takenAction);
         ResolvableFuture<AppSearchBatchResult<String, Void>> future = ResolvableFuture.create();
+
+        boolean search = takenAction.getActionType() == ActionConstants.ACTION_TYPE_SEARCH;
+        boolean click = takenAction.getActionType() == ActionConstants.ACTION_TYPE_CLICK;
+
+        if (!search && !click) {
+            // TODO(b/395157195): Handle additional action types if necessary
+            return Futures.immediateFailedFuture(new IllegalArgumentException(
+                    "Reported actions must be ClickActions or SearchActions"));
+        }
 
         // We just received a search.
         // We need to iterate back through the cache and check if the last search has the same
@@ -209,25 +212,67 @@ public class ActionAccumulator {
                 }
             }, TIMEOUT_MILLIS);
 
-            // Possibly update prior actions
-            boolean sameQueryFound = updateFetchedResultCount(searchAction);
-            updateLastClickTimeOnResult(searchAction);
+            updateLastClickTimeOnResultLocked(takenAction);
+            if (search) {
+                SearchAction searchAction = (SearchAction) takenAction;
+                // Possibly update prior actions
+                boolean sameQueryFound = updateFetchedResultCountLocked(searchAction);
 
-            // Only add if the last search wasn't updated by updateFetchedResultCount
-            if (!sameQueryFound) {
-                mCache.add(searchAction);
+                // Only add if the last search wasn't updated by updateFetchedResultCount
+                if (!sameQueryFound) {
+                    mCache.add(takenAction);
+                }
+            } else if (click) {
+                mCache.add(takenAction);
             }
 
             // Run on separate thread
             mExecutor.execute(() -> {
                 try {
-                    writeActionsToDisk();
+                    List<TakenAction> localList = null;
+                    List<GenericDocument> localPriorCache = null;
 
-                    if (mCache.size() >= ACTION_CACHE_COUNT_LIMIT) {
-                        future.setFuture(saveDocumentsToAppSearchAsync());
-                    } else {
-                        future.set(new AppSearchBatchResult.Builder<String, Void>().build());
+                    // This will be executed in a new executor thread, so we have to acquire mLock
+                    // here and it won't conflict with the acquisition in reportActionAsync.
+                    // TODO(b/395157195): Combine logic with saveDocumentsToAppSearchAsync
+                    synchronized (mLock) {
+                        if (mCache.size() >= ACTION_CACHE_COUNT_LIMIT) {
+                            mTimer.cancel();
+                            // Delete what's on disk so it doesn't get saved to AppSearch again next
+                            // time we initialize
+                            boolean deleted = mCacheFile.delete();
+                            if (!deleted) {
+                                Log.e(TAG, "Failed to remove cache file for ActionAccumulator");
+                            }
+
+                            localList = mCache;
+                            localPriorCache = mPriorDiskCache;
+                            // Clear the cache afterwards
+                            mCache = new ArrayList<>();
+                            mPriorDiskCache = new ArrayList<>();
+                        } else {
+                            writeActionsToDiskLocked();
+                        }
                     }
+
+                    if ((localList == null || localList.isEmpty())
+                            && (localPriorCache == null || localPriorCache.isEmpty())) {
+                        future.set(new AppSearchBatchResult.Builder<String, Void>().build());
+                        return;
+                    }
+
+                    // Send them to appsearch
+                    PutDocumentsRequest.Builder putDocumentsRequestBuilder =
+                            new PutDocumentsRequest.Builder();
+                    if (localList != null) {
+                        putDocumentsRequestBuilder.addTakenActions(localList);
+                    }
+                    if (localPriorCache != null) {
+                        putDocumentsRequestBuilder.addTakenActionGenericDocuments(localPriorCache);
+                    }
+                    // Attempt to push everything in mCache and possible priorDiskCache to AppSearch
+                    future.setFuture(
+                            mAppSearchSession.putAsync(putDocumentsRequestBuilder.build()));
                 } catch (Throwable t) {
                     Log.e(TAG, t.getMessage());
                     future.setException(t);
@@ -243,11 +288,10 @@ public class ActionAccumulator {
      * the new search action's query. For example, if we have searches "app", "application", "app",
      * then receive a new search "app", we only want to replace the last one at index 2.
      *
-     * <p> The caller ({@link #reportSearchAsync}) should acquire mLock.
-     *
      * @return true if we updated a previous action with the same query, otherwise false.
      */
-    private boolean updateFetchedResultCount(@NonNull SearchAction searchAction) {
+    @GuardedBy("mLock")
+    private boolean updateFetchedResultCountLocked(@NonNull SearchAction searchAction) {
         Preconditions.checkNotNull(searchAction);
         for (int i = mCache.size() - 1; i >= 0; i--) {
             TakenAction action = mCache.get(i);
@@ -267,11 +311,10 @@ public class ActionAccumulator {
 
     /**
      * Update the time stay on result timestamp if the last reported action was a click.
-     *
-     * <p>The caller ({@link #reportSearchAsync}) should acquire mLock.
      */
-    private void updateLastClickTimeOnResult(@NonNull SearchAction searchAction) {
-        Preconditions.checkNotNull(searchAction);
+    @GuardedBy("mLock")
+    private void updateLastClickTimeOnResultLocked(@NonNull TakenAction takenAction) {
+        Preconditions.checkNotNull(takenAction);
         if (!mCache.isEmpty()) {
             TakenAction action = mCache.get(mCache.size() - 1);
             if (action.getActionType() == ActionConstants.ACTION_TYPE_CLICK) {
@@ -279,7 +322,7 @@ public class ActionAccumulator {
                 // because we have gone back to the app and have done another search
                 ClickAction clickCast = (ClickAction) action;
                 if (clickCast.getTimeStayOnResultMillis() == -1) {
-                    long timeStayOnResultMillis = searchAction.getActionTimestampMillis()
+                    long timeStayOnResultMillis = takenAction.getActionTimestampMillis()
                             - clickCast.getActionTimestampMillis();
                     mCache.set(mCache.size() - 1, new ClickAction.Builder(clickCast)
                             .setTimeStayOnResultMillis(timeStayOnResultMillis).build());
@@ -288,10 +331,10 @@ public class ActionAccumulator {
         }
     }
 
-    /**
-     * Saves actions to disk cache. The caller ({@link #reportSearchAsync}) should acquire mLock.
-     */
-    private void writeActionsToDisk() throws AppSearchException {
+    /** Saves actions to disk cache. */
+    @GuardedBy("mLock")
+    private void writeActionsToDiskLocked() throws AppSearchException {
+        // TODO(b/395157195): Add mHasFlushedToDisk to avoid saving the same documents repeatedly
         // Convert each SearchAction to a parcelable (GenericDocumentParcel)
         List<GenericDocumentParcel> parcelList = new ArrayList<>(mCache.size());
         for (TakenAction takenAction : mCache) {
@@ -370,12 +413,10 @@ public class ActionAccumulator {
         return new File(cacheDir, CACHE_FILE_NAME);
     }
 
-    /**
-     * Reads the cache written on disk and converts it to {@link GenericDocument}s. The caller
-     * ({@link #handlePriorCacheAsync}) should acquire mLock.
-     */
+    /** Reads the cache written on disk and converts it to {@link GenericDocument}s. */
+    @GuardedBy("mLock")
     @NonNull
-    private List<GenericDocument> readActionsFromDisk() {
+    private List<GenericDocument> readActionsFromDiskLocked() {
         if (!mCacheFile.exists()) {
             return Collections.emptyList();
         }

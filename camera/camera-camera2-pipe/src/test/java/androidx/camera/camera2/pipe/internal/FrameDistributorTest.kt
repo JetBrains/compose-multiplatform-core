@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraTimestamp
@@ -44,7 +43,6 @@ import org.robolectric.annotation.Config
 
 /** Tests for [FrameDistributor] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FrameDistributorTest {
 
     private val stream1Config =

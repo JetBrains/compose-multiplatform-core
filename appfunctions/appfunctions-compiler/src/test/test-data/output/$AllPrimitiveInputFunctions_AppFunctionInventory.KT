@@ -59,7 +59,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionIntTypeMetadata =
         AppFunctionIntTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val INTPARAM_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -314,7 +315,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionStringTypeMetadata =
         AppFunctionStringTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val STRINGPARAM_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -365,7 +367,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_INTPARAM_PRIMITIVE_DATA_TYPE: AppFunctionIntTypeMetadata =
         AppFunctionIntTypeMetadata(
             isNullable = true,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val INTPARAM_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -620,7 +623,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_STRINGPARAM_PRIMITIVE_DATA_TYPE: AppFunctionStringTypeMetadata =
         AppFunctionStringTypeMetadata(
             isNullable = true,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val STRINGPARAM_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -671,7 +675,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -961,7 +966,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -1019,7 +1025,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_INTARRAYPARAM_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -1309,7 +1316,8 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
         AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
             isNullable = false,
-            description = ""
+            description = "",
+            enumValues = null,
         )
 
     private val PARAMETER_METADATA_STRINGLISTPARAM_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =

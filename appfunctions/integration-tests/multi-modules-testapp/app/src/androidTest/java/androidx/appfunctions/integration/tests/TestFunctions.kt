@@ -21,9 +21,11 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.appfunctions.AppFunctionContext
+import androidx.appfunctions.AppFunctionIntValueConstraint
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.AppFunctionStringValueConstraint
 import androidx.appfunctions.AppFunctionUriGrant
 import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
@@ -33,7 +35,12 @@ interface AppFunctionOpenable {
     val intentToOpen: PendingIntent
 }
 
-@AppFunctionSerializable data class SetField<T>(val value: T)
+/** Example parameterized AppFunctionSerializable. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+data class SetField<T>(
+    /** Value property of SetField. */
+    val value: T
+)
 
 @AppFunctionSerializable
 data class CreateNoteParams(
@@ -58,12 +65,18 @@ data class UpdateNoteParams(
 
 @AppFunctionSerializable data class Attachment(val uri: String, val nested: Attachment? = null)
 
-@AppFunctionSerializable
+/** Represents a note in the notes app. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
 data class Note(
+    /** The note's title. */
     val title: String,
+    /** The note's content. */
     val content: List<String>,
+    /** The note's [Owner]. */
     val owner: Owner,
+    /** The note's attachments. */
     val attachments: List<Attachment>,
+    /** The note's last modified time. */
     val modifiedTime: LocalDateTime? = null,
 )
 
@@ -240,7 +253,14 @@ data class FilesData(
 
 @Suppress("UNUSED_PARAMETER")
 class TestFunctions {
-    @AppFunction
+    /**
+     * Returns the sum of the given two numbers.
+     *
+     * @param num1 The first number.
+     * @param num2 The second number.
+     * @return The sum of the two numbers.
+     */
+    @AppFunction(isDescribedByKdoc = true)
     fun add(appFunctionContext: AppFunctionContext, num1: Long, num2: Long) = num1 + num2
 
     @AppFunction
@@ -318,6 +338,15 @@ class TestFunctions {
         classWithOptionalValues: ClassWithOptionalValues,
     ): ClassWithOptionalValues {
         return classWithOptionalValues
+    }
+
+    @AppFunction
+    fun enumValueFunction(
+        appFunctionContext: AppFunctionContext,
+        @AppFunctionIntValueConstraint(enumValues = [0, 1]) intEnum: Int,
+        @AppFunctionStringValueConstraint(enumValues = ["A", "B"]) stringEnum: String,
+    ) {
+        throw UnsupportedOperationException("Not implemented")
     }
 
     @AppFunction

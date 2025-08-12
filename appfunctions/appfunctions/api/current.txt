@@ -107,6 +107,12 @@ package androidx.appfunctions {
     ctor public AppFunctionFunctionNotFoundException(optional String? errorMessage);
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public @interface AppFunctionIntValueConstraint {
+    ctor @KotlinOnly public AppFunctionIntValueConstraint(optional int[] enumValues);
+    method public abstract int[] enumValues();
+    property public abstract int[] enumValues;
+  }
+
   public final class AppFunctionInvalidArgumentException extends androidx.appfunctions.AppFunctionRequestException {
     ctor public AppFunctionInvalidArgumentException(optional String? errorMessage);
   }
@@ -176,6 +182,12 @@ package androidx.appfunctions {
     ctor @KotlinOnly public AppFunctionSerializable(optional boolean isDescribedByKdoc);
     method public abstract boolean isDescribedByKdoc() default false;
     property public abstract boolean isDescribedByKdoc;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public @interface AppFunctionStringValueConstraint {
+    ctor @KotlinOnly public AppFunctionStringValueConstraint(optional String[] enumValues);
+    method public abstract String[] enumValues();
+    property public abstract String[] enumValues;
   }
 
   public abstract class AppFunctionSystemException extends androidx.appfunctions.AppFunctionException {
@@ -312,6 +324,9 @@ package androidx.appfunctions.metadata {
   public final class AppFunctionIntTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
     ctor public AppFunctionIntTypeMetadata(boolean isNullable);
     ctor public AppFunctionIntTypeMetadata(boolean isNullable, optional String description);
+    ctor public AppFunctionIntTypeMetadata(boolean isNullable, optional String description, optional java.util.Set<java.lang.Integer>? enumValues);
+    method public java.util.Set<java.lang.Integer>? getEnumValues();
+    property public java.util.Set<java.lang.Integer>? enumValues;
   }
 
   public final class AppFunctionLongTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
@@ -416,6 +431,9 @@ package androidx.appfunctions.metadata {
   public final class AppFunctionStringTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
     ctor public AppFunctionStringTypeMetadata(boolean isNullable);
     ctor public AppFunctionStringTypeMetadata(boolean isNullable, optional String description);
+    ctor public AppFunctionStringTypeMetadata(boolean isNullable, optional String description, optional java.util.Set<java.lang.String>? enumValues);
+    method public java.util.Set<java.lang.String>? getEnumValues();
+    property public java.util.Set<java.lang.String>? enumValues;
   }
 
   public final class AppFunctionUnitTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {

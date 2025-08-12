@@ -17,6 +17,10 @@ package androidx.compose.remote.player.view.platform;
 
 import static androidx.compose.remote.core.RemoteClock.nanoTime;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -52,6 +56,7 @@ import java.util.Set;
  * <p>Its role is to paint a document as an AndroidView as well as handling user interactions
  * (touch/click).
  */
+@RestrictTo(LIBRARY_GROUP)
 public class RemoteComposeView extends FrameLayout implements View.OnAttachStateChangeListener {
 
     static final boolean USE_VIEW_AREA_CLICK = true; // Use views to represent click areas

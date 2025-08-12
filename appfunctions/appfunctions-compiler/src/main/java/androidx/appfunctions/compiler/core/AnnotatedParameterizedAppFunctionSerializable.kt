@@ -51,7 +51,7 @@ class AnnotatedParameterizedAppFunctionSerializable(
      * parameterized type information included as a suffix.
      */
     override val jvmQualifiedName: String by lazy {
-        val originalQualifiedName = super.jvmQualifiedName
+        val originalQualifiedName = unparameterizedJvmQualifiedName
         buildString {
             append(originalQualifiedName)
 
@@ -71,6 +71,12 @@ class AnnotatedParameterizedAppFunctionSerializable(
             }
         }
     }
+
+    /**
+     * The JVM qualified name of the parametrized class being annotated with
+     * AppFunctionSerializable, without the parameterized type information
+     */
+    val unparameterizedJvmQualifiedName: String by lazy { super.jvmQualifiedName }
 
     override val factoryVariableName: String by lazy {
         val variableName = jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() }
@@ -107,6 +113,7 @@ class AnnotatedParameterizedAppFunctionSerializable(
                     type = actualType,
                     description = propertyDeclaration.description,
                     isRequired = propertyDeclaration.isRequired,
+                    propertyAnnotations = propertyDeclaration.propertyAnnotations,
                 )
             } else {
                 propertyDeclaration

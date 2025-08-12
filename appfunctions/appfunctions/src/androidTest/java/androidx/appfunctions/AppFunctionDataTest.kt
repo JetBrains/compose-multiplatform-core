@@ -356,6 +356,84 @@ class AppFunctionDataTest {
     }
 
     @Test
+    fun testWrite_intEnumValue_conformanceFailsForInvalidValues() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "intEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionIntTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf(1, 2),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "intEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionIntTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf(1, 2),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        assertFailsWith<IllegalArgumentException> { afdBuilder.setInt("intEnum", 190) }
+        assertFailsWith<IllegalArgumentException> {
+            afdBuilder.setIntArray("intEnumArray", intArrayOf(1, 2, 190))
+        }
+    }
+
+    @Test
+    fun testReadWrite_intEnumValues_conformanceSuccess() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "intEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionIntTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf(1, 2),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "intEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionIntTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf(1, 2),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        afdBuilder.setInt("intEnum", 2)
+        afdBuilder.setIntArray("intEnumArray", intArrayOf(1, 2))
+        val afd = afdBuilder.build()
+
+        assertThat(afd.getInt("intEnum")).isEqualTo(2)
+        assertThat(afd.getIntArray("intEnumArray")?.asList()).containsExactly(1, 2)
+    }
+
+    @Test
     fun testWrite_asObject_notConformSpec() {
         val builder = AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
 

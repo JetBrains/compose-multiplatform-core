@@ -16,8 +16,13 @@
 
 package androidx.wear.protolayout.modifiers
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.graphics.Color
+import androidx.core.os.BundleCompat
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ActionBuilders.LaunchAction
 import androidx.wear.protolayout.ActionBuilders.LoadAction
 import androidx.wear.protolayout.ColorBuilders.LinearGradient
 import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeInSlideIn
@@ -27,6 +32,7 @@ import androidx.wear.protolayout.ModifiersBuilders.FadeOutTransition
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_BUTTON
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_NONE
 import androidx.wear.protolayout.ModifiersBuilders.SLIDE_DIRECTION_BOTTOM_TO_TOP
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
 import androidx.wear.protolayout.expression.dynamicDataMapOf
@@ -215,6 +221,45 @@ class ModifiersTest {
         val action = modifiers.clickable?.onClick as LoadAction
         assertThat(action.requestState?.keyToValueMapping)
             .containsExactlyEntriesIn(mapOf(statePair1.asPair(), statePair2.asPair()))
+    }
+
+    @Test
+    fun pendingIntent_clickable_toModifier() {
+        val scope = ProtoLayoutScope()
+        val id = "ID"
+        val minTouchWidth = 51f
+        val minTouchHeight = 52f
+        val pendingIntent =
+            PendingIntent.getActivity(
+                /* context = */ ApplicationProvider.getApplicationContext(),
+                /*requestCode = */ 0,
+                /* intent = */ Intent(),
+                /* flags = */ PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val modifiers =
+            LayoutModifier.clickable(scope.clickable(pendingIntent = pendingIntent, id = id))
+                .minimumTouchTargetSize(minTouchWidth, minTouchHeight)
+                .toProtoLayoutModifiers()
+        val collectedPendingIntents = scope.collectPendingIntents()
+
+        assertThat(modifiers.clickable?.id).isEqualTo(id)
+        assertThat(modifiers.clickable?.minimumClickableWidth?.value).isEqualTo(minTouchWidth)
+        assertThat(modifiers.clickable?.minimumClickableHeight?.value).isEqualTo(minTouchHeight)
+        // PendingIntentAction has package private access, so it is not accessible for the test here
+        assertThat(modifiers.clickable?.onClick).isNotNull()
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LoadAction::class.java)
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LaunchAction::class.java)
+
+        assertThat(collectedPendingIntents.containsKey(id)).isTrue()
+        assertThat(
+                BundleCompat.getParcelable<PendingIntent?>(
+                    collectedPendingIntents,
+                    id,
+                    PendingIntent::class.java,
+                )
+            )
+            .isEqualTo(pendingIntent)
     }
 
     @Test

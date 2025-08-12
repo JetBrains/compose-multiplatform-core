@@ -154,7 +154,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle grey skybox
         findViewById<Button>(R.id.environment_button2_1).setOnClickListener {
             setGeoAndSkybox(greySkybox, spatialEnvironmentPreference?.geometry)
-            addEvent(EventType.SKYBOX_CHANGED, "Skybox set to GREY")
+            addEvent(EventType.SKYBOX_CHANGED, "Skybox set to BAR")
         }
 
         // handle blue skybox
@@ -166,7 +166,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle unset skybox
         findViewById<Button>(R.id.environment_button2_3).setOnClickListener {
             setGeoAndSkybox(null, spatialEnvironmentPreference?.geometry)
-            addEvent(EventType.SKYBOX_CHANGED, "Skybox unset")
+            addEvent(EventType.SKYBOX_CHANGED, "Skybox unset (set to black)")
         }
     }
 
@@ -177,10 +177,10 @@ class EnvironmentActivity : AppCompatActivity() {
             addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to GROUND")
         }
 
-        // handle night geometry
+        // handle rock geometry
         findViewById<Button>(R.id.environment_button3_2).setOnClickListener {
             setGeoAndSkybox(spatialEnvironmentPreference?.skybox, rockGeometry)
-            addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to NIGHT")
+            addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to ROCKS")
         }
 
         // handle animated with mesh override geometry
@@ -198,7 +198,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle unset geometry
         findViewById<Button>(R.id.environment_button3_4).setOnClickListener {
             setGeoAndSkybox(spatialEnvironmentPreference?.skybox, null)
-            addEvent(EventType.GEOMETRY_CHANGED, "Geometry unset")
+            addEvent(EventType.GEOMETRY_CHANGED, "Geometry unset (no Geometry visible)")
         }
     }
 
@@ -215,7 +215,10 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle unset geometry and skybox
         findViewById<Button>(R.id.environment_button4_2).setOnClickListener {
             session!!.scene.spatialEnvironment.preferredSpatialEnvironment = null
-            addEvent(EventType.SKYBOX_AND_GEOMETRY_CHANGED, "Skybox and geometry unset")
+            addEvent(
+                EventType.SKYBOX_AND_GEOMETRY_CHANGED,
+                "Skybox and Geometry reverted to Home Environment",
+            )
         }
     }
 

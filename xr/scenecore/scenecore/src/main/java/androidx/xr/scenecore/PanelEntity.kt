@@ -36,7 +36,6 @@ import androidx.xr.runtime.math.Pose
  */
 // TODO(ricknels): move isMainPanelEntity check to JxrPlatformAdapter and provide better kdocs
 // for mainPanelEntity
-@Suppress("HiddenSuperclass") // BaseEntity is an internal class
 public open class PanelEntity
 internal constructor(
     private val lifecycleManager: LifecycleManager,

@@ -611,6 +611,8 @@ public class RxJava3Test extends TestDatabaseTest {
                 return mailList.equals(Lists.newArrayList(mail0, mail1));
             }
         });
+
+        db.close();
     }
 
     @Test

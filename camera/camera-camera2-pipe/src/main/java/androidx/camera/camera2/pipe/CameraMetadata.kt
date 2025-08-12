@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe
 
+import Camera2StreamConfigurationMap
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
@@ -205,6 +206,13 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                     }
                 } else {
                     null
+                }
+
+        public val CameraMetadata.streamConfigurationMap: CameraStreamConfigurationMap?
+            @JvmStatic
+            get() =
+                this[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
+                    Camera2StreamConfigurationMap(it)
                 }
 
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean

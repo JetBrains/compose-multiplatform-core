@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 
 import androidx.test.filters.SdkSuppress;
 
@@ -42,7 +41,6 @@ import org.robolectric.shadows.ShadowCameraCharacteristics;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class CameraCharacteristicsCompatTest {
     private CameraCharacteristics mCharacteristics;
     private static final int SENSOR_ORIENTATION_VAL = 270;

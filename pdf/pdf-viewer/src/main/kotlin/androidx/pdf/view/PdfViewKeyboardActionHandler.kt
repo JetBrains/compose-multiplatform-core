@@ -16,7 +16,12 @@
 
 package androidx.pdf.view
 
+import android.graphics.PointF
+import androidx.pdf.PdfPoint
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.ClipboardUtils
+import androidx.pdf.util.ZoomUtils
+import kotlin.math.roundToInt
 
 /**
  * Performs actions in response to keyboard shortcuts detected by [PdfViewExternalInputManager]
@@ -41,6 +46,41 @@ internal class PdfViewKeyboardActionHandler(pdfView: PdfView) :
         pdfView.clearSelection()
     }
 
+    fun scrollLeftOrScrollToPreviousPage(): Boolean {
+        val fitToWidthZoom =
+            ZoomUtils.calculateZoomToFit(
+                pdfView.viewportWidth.toFloat(),
+                pdfView.viewportHeight.toFloat(),
+                pdfView.contentWidth,
+                1f,
+            )
+        if (pdfView.zoom <= fitToWidthZoom) {
+            val previousPage = findPreviousPage() ?: return false
+            pdfView.scrollToPosition(PdfPoint(previousPage, PointF(0f, 0f)), ScrollAlignment.TOP)
+        } else {
+            scrollLeft()
+        }
+        return true
+    }
+
+    fun scrollRightOrScrollToNextPage() {
+        val fitToWidthZoom =
+            ZoomUtils.calculateZoomToFit(
+                pdfView.viewportWidth.toFloat(),
+                pdfView.viewportHeight.toFloat(),
+                pdfView.contentWidth,
+                1f,
+            )
+        if (pdfView.zoom <= fitToWidthZoom) {
+            pdfView.scrollToPosition(
+                PdfPoint(pdfView.firstVisiblePage + 1, PointF(0f, 0f)),
+                ScrollAlignment.TOP,
+            )
+        } else {
+            scrollRight()
+        }
+    }
+
     fun zoomIn() {
         zoomIn(pivotX, pivotY)
     }
@@ -51,6 +91,31 @@ internal class PdfViewKeyboardActionHandler(pdfView: PdfView) :
 
     fun zoomToDefault() {
         applyZoom(pdfView.getDefaultZoom(), pivotX, pivotY)
+    }
+
+    private fun findPreviousPage(): Int? {
+        val firstPageRect =
+            pdfView.pageMetadataLoader?.getPageLocation(
+                pdfView.firstVisiblePage,
+                pdfView.getVisibleAreaInContentCoords(),
+            ) ?: return null
+
+        val scrollYForPageTop = (firstPageRect.top * pdfView.zoom).roundToInt()
+
+        // If the current scrollY is greater than the ideal top position, it means the top of
+        // the page is partially scrolled off-screen.
+        val isScrolledPastTop = pdfView.scrollY > scrollYForPageTop
+
+        val previousPage =
+            if (isScrolledPastTop) {
+                // If scrolled past the top, the target is the top of the current page.
+                pdfView.firstVisiblePage
+            } else {
+                // Otherwise, the target is the previous page.
+                pdfView.firstVisiblePage - 1
+            }
+
+        return if (previousPage >= 0) previousPage else null
     }
 
     private companion object {

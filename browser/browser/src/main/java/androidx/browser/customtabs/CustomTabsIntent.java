@@ -2151,7 +2151,6 @@ public final class CustomTabsIntent {
         return Collections.unmodifiableList(actions);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static class Api21Impl {
         static void setLanguageTag(Intent intent, Locale locale) {
             intent.putExtra(EXTRA_TRANSLATE_LANGUAGE_TAG, locale.toLanguageTag());

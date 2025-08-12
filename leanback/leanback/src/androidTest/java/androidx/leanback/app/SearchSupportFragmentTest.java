@@ -18,7 +18,6 @@ package androidx.leanback.app;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 import android.view.KeyEvent;
@@ -40,7 +39,6 @@ import androidx.leanback.widget.ObjectAdapter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationTest;
 
@@ -130,7 +128,6 @@ public class SearchSupportFragmentTest extends SingleSupportFragmentTestBase {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP) // API 17 retains local Variable
     @Test
     public void viewLeakTest() throws Throwable {
         SingleSupportFragmentTestActivity activity = launchAndWaitActivity(F_LeakFragment.class,

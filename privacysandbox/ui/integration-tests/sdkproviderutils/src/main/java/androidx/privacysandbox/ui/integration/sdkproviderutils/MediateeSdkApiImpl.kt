@@ -47,7 +47,7 @@ class MediateeSdkApiImpl() {
                         withSlowDraw,
                         drawViewability,
                         sdkContext,
-                        automatedTestCallbackBundle,
+                        AutomatedTestCallback.fromBundle(automatedTestCallbackBundle),
                     )
                 AdFormat.NATIVE_AD -> loadNativeAdUtil(adType, sdkContext)
                 else -> Bundle()
@@ -58,7 +58,7 @@ class MediateeSdkApiImpl() {
             waitInsideOnDraw: Boolean,
             drawViewability: Boolean,
             sdkContext: Context,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallback: AutomatedTestCallback?,
         ): Bundle {
             val testAdapters = TestAdapters(sdkContext)
             val mediationDescription =
@@ -71,11 +71,11 @@ class MediateeSdkApiImpl() {
                     AdType.WEBVIEW_FROM_LOCAL_ASSETS ->
                         loadWebViewBannerAdFromLocalAssets(testAdapters)
                     AdType.NON_WEBVIEW_VIDEO -> loadVideoAd(testAdapters)
-                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallbackBundle)
+                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallback)
                     AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
                         loadScrollView(
                             testAdapters,
-                            automatedTestCallbackBundle, /* appCanScroll */
+                            automatedTestCallback, /* appCanScroll */
                             false,
                         )
                     else ->
@@ -83,7 +83,7 @@ class MediateeSdkApiImpl() {
                             testAdapters,
                             mediationDescription,
                             waitInsideOnDraw,
-                            automatedTestCallbackBundle,
+                            automatedTestCallback,
                         )
                 }
             ViewabilityHandler.addObserverFactoryToAdapter(adapter, drawViewability)
@@ -121,17 +121,17 @@ class MediateeSdkApiImpl() {
             testAdapters: TestAdapters,
             text: String,
             waitInsideOnDraw: Boolean,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallback: AutomatedTestCallback?,
         ): AbstractSandboxedUiAdapter {
-            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackBundle)
+            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallback)
         }
 
         private fun loadScrollView(
             testAdapters: TestAdapters,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallback: AutomatedTestCallback?,
             appCanScroll: Boolean = true,
         ): AbstractSandboxedUiAdapter {
-            return testAdapters.ScrollViewAd(automatedTestCallbackBundle, appCanScroll)
+            return testAdapters.ScrollViewAd(automatedTestCallback, appCanScroll)
         }
     }
 

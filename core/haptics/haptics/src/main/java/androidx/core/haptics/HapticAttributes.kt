@@ -55,7 +55,6 @@ constructor(
     )
 
     /** Creates a [HapticAttributes] mapping fields from given [AudioAttributes]. */
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     public constructor(
         attrs: AudioAttributes
     ) : this(HapticAttributesConverter.usageFromAudioAttributes(attrs), flags = 0)
@@ -80,7 +79,6 @@ constructor(
         )
 
         /** Creates a builder for [HapticAttributes] copying mapped fields from given attributes. */
-        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         public constructor(
             attrs: AudioAttributes
         ) : this(HapticAttributesConverter.usageFromAudioAttributes(attrs), flags = 0)
@@ -107,7 +105,7 @@ constructor(
 
     override fun toString(): String = "HapticAttributes(usage=$usage, flags=$flags)"
 
-    internal fun toAttributes(): AttributesWrapper? = HapticAttributesConverter.toAttributes(this)
+    internal fun toAttributes(): AttributesWrapper = HapticAttributesConverter.toAttributes(this)
 
     public companion object {
         // Values from VibrationAttributes.USAGE_* and VibrationAttributes.FLAG_*

@@ -220,6 +220,83 @@ class StrokeTest {
     }
 
     @Test
+    fun copy_withNeedsMoreAttributesBrushPaint_createsCopyWithSameInputsAndDifferentShape() {
+        val noWindingBrush = buildTestBrush()
+        val modifiedCoats = noWindingBrush.family.coats.toMutableList()
+        modifiedCoats[0] =
+            modifiedCoats[0].copy(
+                paint =
+                    BrushPaint(
+                        listOf(
+                            BrushPaint.TextureLayer(
+                                clientTextureId = "test-one",
+                                sizeX = 123.45F,
+                                sizeY = 678.90F,
+                                offsetX = 0.1F,
+                                offsetY = 0.2F,
+                                sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
+                                mapping = BrushPaint.TextureMapping.WINDING,
+                            )
+                        )
+                    )
+            )
+        val windingBrush =
+            buildTestBrush().copy(family = noWindingBrush.family.copy(coats = modifiedCoats))
+        val inputs = makeTestInputs()
+        val noWindingStroke =
+            InProgressStroke()
+                .apply {
+                    start(noWindingBrush)
+                    enqueueInputs(inputs, ImmutableStrokeInputBatch.EMPTY)
+                    finishInput()
+                    updateShape(0)
+                }
+                .toImmutableWithUnusedAttributesPruned()
+        val changedToWinding = noWindingStroke.copy(brush = windingBrush)
+        assertThat(noWindingStroke.shape.renderGroupFormat(0).attributeCount())
+            .isLessThan(changedToWinding.shape.renderGroupFormat(0).attributeCount())
+        assertThat(changedToWinding.shape).isNotSameInstanceAs(noWindingStroke.shape)
+    }
+
+    @Test
+    fun copy_withNeedsFewerAttributesBrushPaint_createsCopyWithSameInputsAndShape() {
+        val noWindingBrush = buildTestBrush()
+        val modifiedCoats = noWindingBrush.family.coats.toMutableList()
+        modifiedCoats[0] =
+            modifiedCoats[0].copy(
+                paint =
+                    BrushPaint(
+                        listOf(
+                            BrushPaint.TextureLayer(
+                                clientTextureId = "test-one",
+                                sizeX = 123.45F,
+                                sizeY = 678.90F,
+                                offsetX = 0.1F,
+                                offsetY = 0.2F,
+                                sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
+                                mapping = BrushPaint.TextureMapping.WINDING,
+                            )
+                        )
+                    )
+            )
+        val windingBrush =
+            buildTestBrush().copy(family = noWindingBrush.family.copy(coats = modifiedCoats))
+        val inputs = makeTestInputs()
+
+        val windingStroke =
+            InProgressStroke()
+                .apply {
+                    start(windingBrush)
+                    enqueueInputs(inputs, ImmutableStrokeInputBatch.EMPTY)
+                    finishInput()
+                    updateShape(0)
+                }
+                .toImmutableWithUnusedAttributesPruned()
+        val changedToNoWinding = windingStroke.copy(brush = noWindingBrush)
+        assertThat(changedToNoWinding.shape).isSameInstanceAs(windingStroke.shape)
+    }
+
+    @Test
     fun copy_withChangedBrushSize_createsCopyWithSameInputs() {
         val originalBrush = buildTestBrush()
         val sizeChangedBrush = originalBrush.copy(size = 99f)
@@ -251,6 +328,33 @@ class StrokeTest {
         // The new stroke has the original inputs and the changed brush.
         assertThat(actual.inputs).isSameInstanceAs(inputs)
         assertThat(actual.brush).isSameInstanceAs(epsilonChangedBrush)
+
+        // The new stroke has a different shape than the original stroke.
+        assertThat(actual.shape).isNotSameInstanceAs(originalStroke.shape)
+
+        // The new C++ Stroke is different from the original stroke.
+        assertThat(actual.nativePointer).isNotEqualTo(originalStroke.nativePointer)
+    }
+
+    @Test
+    fun copy_withChangedBrushInputModel_createsCopyWithSameInputs() {
+        val originalBrush = buildTestBrush()
+        assertThat(originalBrush.family.inputModel).isEqualTo(BrushFamily.SPRING_MODEL)
+        val inputModelChangedBrush =
+            originalBrush.copy(
+                family =
+                    originalBrush.family.copy(
+                        inputModel = BrushFamily.EXPERIMENTAL_RAW_POSITION_MODEL
+                    )
+            )
+        val inputs = makeTestInputs()
+        val originalStroke = Stroke(originalBrush, inputs)
+
+        val actual = originalStroke.copy(brush = inputModelChangedBrush)
+
+        // The new stroke has the original inputs and the changed brush.
+        assertThat(actual.inputs).isSameInstanceAs(inputs)
+        assertThat(actual.brush).isSameInstanceAs(inputModelChangedBrush)
 
         // The new stroke has a different shape than the original stroke.
         assertThat(actual.shape).isNotSameInstanceAs(originalStroke.shape)
@@ -299,7 +403,7 @@ class StrokeTest {
      * StrokeShape generated from the inputs and brush.
      */
     private fun buildTestStroke(): Stroke {
-        val batch = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable()
+        val batch = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable()
         return Stroke(buildTestBrush(), batch)
     }
 
@@ -318,5 +422,5 @@ class StrokeTest {
                     factor * 2f,
                 )
             )
-            .asImmutable()
+            .toImmutable()
 }

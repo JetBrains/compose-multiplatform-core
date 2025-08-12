@@ -15,6 +15,11 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.Rect;
 import android.util.Log;
 
@@ -40,6 +45,7 @@ import java.util.List;
  *
  * @param <N> The type of node this applier works with.
  */
+@RestrictTo(LIBRARY_GROUP)
 public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<N> {
     private static final String LOG_TAG = "RemoteCompose";
 

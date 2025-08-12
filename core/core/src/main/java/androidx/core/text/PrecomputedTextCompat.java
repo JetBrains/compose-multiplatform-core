@@ -283,14 +283,12 @@ public class PrecomputedTextCompat implements Spannable {
             if (mPaint.getTextSkewX() != other.getTextPaint().getTextSkewX()) {
                 return false;
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                if (mPaint.getLetterSpacing() != other.getTextPaint().getLetterSpacing()) {
-                    return false;
-                }
-                if (!TextUtils.equals(mPaint.getFontFeatureSettings(),
-                        other.getTextPaint().getFontFeatureSettings())) {
-                    return false;
-                }
+            if (mPaint.getLetterSpacing() != other.getTextPaint().getLetterSpacing()) {
+                return false;
+            }
+            if (!TextUtils.equals(mPaint.getFontFeatureSettings(),
+                    other.getTextPaint().getFontFeatureSettings())) {
+                return false;
             }
             if (mPaint.getFlags() != other.getTextPaint().getFlags()) {
                 return false;
@@ -342,15 +340,11 @@ public class PrecomputedTextCompat implements Spannable {
                         mPaint.getTextSkewX(), mPaint.getLetterSpacing(), mPaint.getFlags(),
                         mPaint.getTextLocales(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),
                         mTextDir, mBreakStrategy, mHyphenationFrequency);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else {
                 return ObjectsCompat.hash(mPaint.getTextSize(), mPaint.getTextScaleX(),
                         mPaint.getTextSkewX(), mPaint.getLetterSpacing(), mPaint.getFlags(),
                         mPaint.getTextLocale(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),
                         mTextDir, mBreakStrategy, mHyphenationFrequency);
-            } else {
-                return ObjectsCompat.hash(mPaint.getTextSize(), mPaint.getTextScaleX(),
-                        mPaint.getTextSkewX(), mPaint.getFlags(), mPaint.getTextLocale(),
-                        mPaint.getTypeface(), mTextDir, mBreakStrategy, mHyphenationFrequency);
             }
         }
 
@@ -360,10 +354,8 @@ public class PrecomputedTextCompat implements Spannable {
             sb.append("textSize=" + mPaint.getTextSize());
             sb.append(", textScaleX=" + mPaint.getTextScaleX());
             sb.append(", textSkewX=" + mPaint.getTextSkewX());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                sb.append(", letterSpacing=" + mPaint.getLetterSpacing());
-                sb.append(", elegantTextHeight=" + mPaint.isElegantTextHeight());
-            }
+            sb.append(", letterSpacing=" + mPaint.getLetterSpacing());
+            sb.append(", elegantTextHeight=" + mPaint.isElegantTextHeight());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 sb.append(", textLocale=" + mPaint.getTextLocales());
             } else {
@@ -451,12 +443,9 @@ public class PrecomputedTextCompat implements Spannable {
                         .setHyphenationFrequency(params.getHyphenationFrequency())
                         .setTextDirection(params.getTextDirection())
                         .build();
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else {
                 new StaticLayout(text, params.getTextPaint(), Integer.MAX_VALUE,
                         Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-            } else {
-                // There is no way of precomputing text layout on API 20 or before
-                // Do nothing
             }
 
             return new PrecomputedTextCompat(text, params, result);

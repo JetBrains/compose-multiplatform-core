@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 import android.os.Handler;
 
 import org.junit.Before;
@@ -43,7 +42,6 @@ import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class CameraCaptureSessionCompatTest {
 
     private CameraCaptureSession mCaptureSession;

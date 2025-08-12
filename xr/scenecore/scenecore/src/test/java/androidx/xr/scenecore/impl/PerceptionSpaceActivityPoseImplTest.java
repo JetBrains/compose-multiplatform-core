@@ -159,7 +159,8 @@ public final class PerceptionSpaceActivityPoseImplTest {
         Pose unscaledPose = activitySpaceMatrix.getInverse().getPose();
         Pose expectedPose =
                 new Pose(
-                        unscaledPose.getTranslation().times(new Vector3(0.5f, 0.5f, 0.5f)),
+                        unscaledPose.getTranslation()
+                                .scale(new Vector3(0.5f, 0.5f, 0.5f)),
                         unscaledPose.getRotation());
         assertPose(transformedPose, expectedPose);
     }

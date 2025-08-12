@@ -20,7 +20,6 @@ package androidx.xr.scenecore
 
 import android.util.Log
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.math.Pose
@@ -223,8 +222,6 @@ public interface Entity : ScenePose {
 }
 
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@Suppress("HiddenSuperClass")
 public abstract class BaseEntity<out RtEntityType : RtEntity>
 internal constructor(
     internal val rtEntity: RtEntityType,

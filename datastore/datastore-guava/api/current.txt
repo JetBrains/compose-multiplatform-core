@@ -6,6 +6,7 @@ package androidx.datastore.guava {
     method public static <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method public com.google.common.util.concurrent.ListenableFuture<T> getDataAsync();
     method public com.google.common.util.concurrent.ListenableFuture<T> updateDataAsync(kotlin.jvm.functions.Function1<? super T,? extends T> transform);
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.common.util.concurrent.ListenableFuture<T> updateDataFunctionAsync(java.util.function.Function<T,T> transform);
     field public static final androidx.datastore.guava.GuavaDataStore.Companion Companion;
   }
 

@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
@@ -32,6 +36,7 @@ import java.util.List;
  * provides methods to perform actions, retrieve state, and query the accessibility tree of the
  * remote Compose UI.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface RemoteComposeDocumentAccessibility {
     // Matches ExploreByTouchHelper.HOST_ID
     int RootId = View.NO_ID;

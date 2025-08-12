@@ -34,12 +34,6 @@ public class FeaturesImpl implements Features {
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public boolean isFeatureSupported(@NonNull String feature) {
         switch (feature) {
-            // Aliases for other features
-            case Features.SEARCH_AND_CLICK_ACCUMULATOR:
-                // Requires JoinSpec to create the Click schema. TakenAction API is optional as we
-                // can index search and click as regular documents if TakenActions aren't available.
-                return isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID);
-
             case Features.ADD_PERMISSIONS_AND_GET_VISIBILITY:
                 // fall through
             case Features.GLOBAL_SEARCH_SESSION_GET_SCHEMA:
@@ -85,6 +79,8 @@ public class FeaturesImpl implements Features {
             case Features.SCHEMA_SET_DESCRIPTION:
                 // fall through
             case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
+                // fall through
+            case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
                 // fall through

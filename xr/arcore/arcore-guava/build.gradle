@@ -34,8 +34,8 @@ dependencies {
     api(libs.kotlinStdlib)
     api(libs.guavaListenableFuture)
     api(project(":xr:runtime:runtime"))
-    api(project(":xr:runtime:runtime-guava"))
     api(project(":xr:arcore:arcore"))
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(project(":xr:runtime:runtime-testing"))

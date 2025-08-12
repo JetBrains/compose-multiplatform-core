@@ -18,14 +18,22 @@ package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.COMPONENT_METADATA_PROPERTY_NAME
@@ -228,7 +236,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     ) {
         val responseMetadataValueTypeName =
             when (val castDataType = appFunctionResponseMetadata.valueType) {
-                is AppFunctionPrimitiveTypeMetadata -> {
+                is AppFunctionIntTypeMetadata,
+                is AppFunctionLongTypeMetadata,
+                is AppFunctionStringTypeMetadata,
+                is AppFunctionBooleanTypeMetadata,
+                is AppFunctionBytesTypeMetadata,
+                is AppFunctionDoubleTypeMetadata,
+                is AppFunctionFloatTypeMetadata,
+                is AppFunctionUnitTypeMetadata,
+                is AppFunctionPendingIntentTypeMetadata -> {
                     val primitiveReturnTypeMetadataPropertyName = "PRIMITIVE_RESPONSE_VALUE_TYPE"
                     addPropertyForPrimitiveTypeMetadata(
                         primitiveReturnTypeMetadataPropertyName,
@@ -339,7 +355,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
             "${parameterMetadata.name.uppercase()}_PARAMETER_METADATA"
         val datatypeVariableName =
             when (val castDataType = parameterMetadata.dataType) {
-                is AppFunctionPrimitiveTypeMetadata -> {
+                is AppFunctionIntTypeMetadata,
+                is AppFunctionLongTypeMetadata,
+                is AppFunctionStringTypeMetadata,
+                is AppFunctionBooleanTypeMetadata,
+                is AppFunctionBytesTypeMetadata,
+                is AppFunctionDoubleTypeMetadata,
+                is AppFunctionFloatTypeMetadata,
+                is AppFunctionUnitTypeMetadata,
+                is AppFunctionPendingIntentTypeMetadata -> {
                     val primitiveTypeMetadataPropertyName =
                         getPrimitiveTypeMetadataPropertyNameForParameter(parameterMetadata)
                     addPropertyForPrimitiveTypeMetadata(
@@ -420,59 +444,123 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForPrimitiveTypeMetadata(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        primitiveTypeMetadata: AppFunctionPrimitiveTypeMetadata,
+        primitiveTypeMetadata: AppFunctionDataTypeMetadata,
     ) {
         functionMetadataObjectClassBuilder.addProperty(
-            PropertySpec.builder(propertyName, primitiveTypeMetadata.toMetadataClassName())
-                .addModifiers(KModifier.PRIVATE)
-                .initializer(
-                    buildCodeBlock {
-                        addStatement(
+            primitiveTypeMetadata.toPrimitiveMetadataPropertySpec(propertyName)
+        )
+    }
+
+    private fun AppFunctionDataTypeMetadata.toPrimitiveMetadataPropertySpec(
+        propertyName: String
+    ): PropertySpec {
+        return when (this) {
+            is AppFunctionIntTypeMetadata ->
+                PropertySpec.builder(
+                        propertyName,
+                        IntrospectionHelper.APP_FUNCTION_INT_TYPE_METADATA_CLASS,
+                    )
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(
+                        buildCodeBlock {
+                            addStatement(
+                                """
+                            %T(
+                                isNullable = %L,
+                                description = %S,
+                                enumValues = %L,
+                            )
                             """
+                                    .trimIndent(),
+                                IntrospectionHelper.APP_FUNCTION_INT_TYPE_METADATA_CLASS,
+                                isNullable,
+                                description,
+                                enumValues?.joinToString(prefix = "setOf(", postfix = ")"),
+                            )
+                        }
+                    )
+                    .build()
+
+            is AppFunctionStringTypeMetadata ->
+                PropertySpec.builder(
+                        propertyName,
+                        IntrospectionHelper.APP_FUNCTION_STRING_TYPE_METADATA_CLASS,
+                    )
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(
+                        buildCodeBlock {
+                            addStatement(
+                                """
+                            %T(
+                                isNullable = %L,
+                                description = %S,
+                                enumValues = %L,
+                            )
+                            """
+                                    .trimIndent(),
+                                IntrospectionHelper.APP_FUNCTION_STRING_TYPE_METADATA_CLASS,
+                                isNullable,
+                                description,
+                                enumValues?.joinToString(
+                                    prefix = "setOf(",
+                                    postfix = ")",
+                                    transform = { "\"$it\"" },
+                                ),
+                            )
+                        }
+                    )
+                    .build()
+
+            else ->
+                PropertySpec.builder(propertyName, toMetadataClassName())
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(
+                        buildCodeBlock {
+                            addStatement(
+                                """
                             %T(
                                 isNullable = %L,
                                 description = %S
                             )
                             """
-                                .trimIndent(),
-                            primitiveTypeMetadata.toMetadataClassName(),
-                            primitiveTypeMetadata.isNullable,
-                            primitiveTypeMetadata.description,
-                        )
-                    }
-                )
-                .build()
-        )
+                                    .trimIndent(),
+                                toMetadataClassName(),
+                                isNullable,
+                                description,
+                            )
+                        }
+                    )
+                    .build()
+        }
     }
 
     /**
-     * Maps [AppFunctionPrimitiveTypeMetadata] to the corresponding metadata class names defined in
-     * app functions metadata package.
+     * Maps [AppFunctionDataTypeMetadata] to the corresponding metadata class names defined in app
+     * functions metadata package.
      */
-    // TODO: b/421389790 - Remove AppFunctionPrimitiveTypeMetadata in compiler too.
-    private fun AppFunctionPrimitiveTypeMetadata.toMetadataClassName(): ClassName =
-        when (this.type) {
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT ->
+    private fun AppFunctionDataTypeMetadata.toMetadataClassName(): ClassName =
+        when (this) {
+            is AppFunctionIntTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_INT_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN ->
+            is AppFunctionBooleanTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_BOOLEAN_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES ->
+            is AppFunctionBytesTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_BYTES_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE ->
+            is AppFunctionDoubleTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_DOUBLE_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT ->
+            is AppFunctionFloatTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_FLOAT_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG ->
+            is AppFunctionLongTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_LONG_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING ->
+            is AppFunctionStringTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_STRING_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_UNIT ->
+            is AppFunctionUnitTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_UNIT_TYPE_METADATA_CLASS
-            AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT ->
+            is AppFunctionPendingIntentTypeMetadata ->
                 IntrospectionHelper.APP_FUNCTION_PENDING_INTENT_TYPE_METADATA_CLASS
             else ->
                 throw IllegalArgumentException(
-                    "Unsupported or non-primitive type in AppFunctionPrimitiveTypeMetadata: ${this.type}"
+                    "Unsupported or non-primitive type in AppFunctionDataTypeMetadata: ${this::class.simpleName}"
                 )
         }
 
@@ -483,7 +571,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     ) {
         val itemTypeVariableName =
             when (val castItemType = arrayTypeMetadata.itemType) {
-                is AppFunctionPrimitiveTypeMetadata -> {
+                is AppFunctionIntTypeMetadata,
+                is AppFunctionLongTypeMetadata,
+                is AppFunctionStringTypeMetadata,
+                is AppFunctionBooleanTypeMetadata,
+                is AppFunctionBytesTypeMetadata,
+                is AppFunctionDoubleTypeMetadata,
+                is AppFunctionFloatTypeMetadata,
+                is AppFunctionUnitTypeMetadata,
+                is AppFunctionPendingIntentTypeMetadata -> {
                     val primitiveItemTypeVariableName = propertyName + "_PRIMITIVE_ITEM_TYPE"
                     addPropertyForPrimitiveTypeMetadata(
                         primitiveItemTypeVariableName,
@@ -719,7 +815,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             val dataTypeVariableName =
                                 propertyName + "_${objectPropertyName.uppercase()}"
                             when (objectPropertyTypeMetadata) {
-                                is AppFunctionPrimitiveTypeMetadata ->
+                                is AppFunctionIntTypeMetadata,
+                                is AppFunctionLongTypeMetadata,
+                                is AppFunctionStringTypeMetadata,
+                                is AppFunctionBooleanTypeMetadata,
+                                is AppFunctionBytesTypeMetadata,
+                                is AppFunctionDoubleTypeMetadata,
+                                is AppFunctionFloatTypeMetadata,
+                                is AppFunctionUnitTypeMetadata,
+                                is AppFunctionPendingIntentTypeMetadata ->
                                     addPropertyForPrimitiveTypeMetadata(
                                         dataTypeVariableName,
                                         functionMetadataObjectClassBuilder,

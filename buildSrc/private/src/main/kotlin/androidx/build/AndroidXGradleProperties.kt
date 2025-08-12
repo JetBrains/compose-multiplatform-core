@@ -28,12 +28,6 @@ import org.gradle.api.provider.Provider
  */
 const val ADD_GROUP_CONSTRAINTS = "androidx.constraints"
 
-/**
- * Setting this property makes Test tasks succeed even if there are some failing tests. Useful when
- * running tests in CI where build passes test results as XML to test reporter.
- */
-const val TEST_FAILURES_DO_NOT_FAIL_TEST_TASK = "androidx.ignoreTestFailures"
-
 /** Setting this property to false makes test tasks not display detailed output to stdout. */
 const val DISPLAY_TEST_OUTPUT = "androidx.displayTestOutput"
 
@@ -132,7 +126,6 @@ val ALL_ANDROIDX_PROPERTIES =
         STUDIO_TYPE,
         SUMMARIZE_STANDARD_ERROR,
         USE_MAX_DEP_VERSIONS,
-        TEST_FAILURES_DO_NOT_FAIL_TEST_TASK,
         VALIDATE_NO_UNRECOGNIZED_MESSAGES,
         VERIFY_UP_TO_DATE,
         WRITE_VERSIONED_API_FILES,

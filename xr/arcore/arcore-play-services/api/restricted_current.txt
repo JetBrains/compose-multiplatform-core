@@ -60,11 +60,11 @@ package androidx.xr.arcore.playservices {
     method public void unpersistAnchor(java.util.UUID uuid);
     property public androidx.xr.runtime.internal.ArDevice arDevice;
     property public java.util.List<androidx.xr.runtime.internal.DepthMap> depthMaps;
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.arcore.playservices.ArCoreEarth earth;
+    property public androidx.xr.arcore.playservices.ArCoreEarth earth;
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;
     property public java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.runtime.internal.Face? userFace;
+    property public androidx.xr.runtime.internal.Face? userFace;
     property public java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 
@@ -72,14 +72,14 @@ package androidx.xr.arcore.playservices {
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Plane arCorePlane();
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector2 getExtents();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
     method public androidx.xr.runtime.internal.Plane.Label getLabel();
     method public androidx.xr.runtime.internal.Plane? getSubsumedBy();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     method public androidx.xr.runtime.internal.Plane.Type getType();
     method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public androidx.xr.runtime.math.Pose centerPose;
-    property public androidx.xr.runtime.math.Vector2 extents;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.runtime.internal.Plane.Label label;
     property public androidx.xr.runtime.internal.Plane? subsumedBy;
     property public androidx.xr.runtime.TrackingState trackingState;

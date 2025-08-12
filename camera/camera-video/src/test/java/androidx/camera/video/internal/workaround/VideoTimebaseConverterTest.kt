@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.workaround
 
-import android.os.Build
 import androidx.camera.core.impl.Timebase
 import androidx.camera.video.internal.compat.quirk.CameraUseInconsistentTimebaseQuirk
 import com.google.common.truth.Truth.assertThat
@@ -24,12 +23,10 @@ import java.util.concurrent.TimeUnit
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class VideoTimebaseConverterTest {
 
     private val systemTimeProvider =

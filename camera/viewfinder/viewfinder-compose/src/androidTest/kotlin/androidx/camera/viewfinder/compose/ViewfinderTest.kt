@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import kotlin.math.cos
@@ -145,7 +144,6 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
         assertThat(coordinateTransformer.transformMatrix.values).isEqualTo(expectedMatrix.values)
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Needed for Surface.lockHardwareCanvas()
     @Test
     fun canRetrieveSurface() = runBlocking {
         // Disable render animation so we aren't competing to lock the canvas

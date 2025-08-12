@@ -26,45 +26,7 @@ import androidx.xr.scenecore.PointSourceParams
  * PointSourceParams are used to configure a sound to be spatialized as a point in 3D space. This is
  * to override the default behavior where sound is played from the SpatialMainPanel.
  *
- * Example usage:
- * ```kotlin
- * @Composable
- * @SubspaceComposable
- * public fun SampleLayoutWithMedia(mediaUri: Uri) {
- *     val session = LocalSession.current
- *     val context = LocalContext.current
- *
- *     SpatialColumn {
- *         SpatialMainPanel()
- *
- *         // Audio would play from the SpatialMainPanel above unless we utilize
- *         // onPointSourceParamsAvailable with this Composable.
- *         val mediaPlayer = remember { MediaPlayer() }
- *         val paramsSet = remember { mutableStateOf(false) }
- *         SpatialPanel(
- *             SubspaceModifier.size(400.dp)
- *                 .onPointSourceParamsAvailable {
- *                     if (!paramsSet.value) {
- *                          paramsSet.value = true
- *                          mediaPlayer.setDataSource(context, mediaUri)
- *                          SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
- *                          mediaPlayer.prepare()
- *                          mediaPlayer.start()
- *                     }
- *                 }
- *                 .movable()
- *         ) {
- *             DisposableEffect(Unit) { onDispose { mediaPlayer.release() } }
- *
- *             // Use this for playing video, or omit it for audio only use cases.
- *             AndroidExternalSurface {
- *                 onSurface { surface, _, _ -> mediaPlayer.setSurface(surface) }
- *             }
- *         }
- *     }
- * }
- * ```
- *
+ * @sample androidx.xr.compose.samples.OnPointSourceParamsAvailableSample
  * @param onPointSourceParamsAvailable Will be called with a [PointSourceParams] once it is
  *   generated.
  */

@@ -31,11 +31,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
-import androidx.xr.compose.subspace.Volume
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
@@ -51,7 +49,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Tests for [Resizable] modifier. */
+/** Tests for [SubspaceModifier.resizable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class ResizableModifierTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
@@ -352,7 +350,7 @@ class ResizableModifierTest {
                                 onSizeReturnValue = !onSizeReturnValue
                             },
                         ) {
-                            Text(text = "Click to change resizabe and onSizeChange")
+                            Text(text = "Click to change resizable and onSizeChange")
                         }
                     }
                 }
@@ -393,7 +391,7 @@ class ResizableModifierTest {
                                 onSizeReturnValue = !onSizeReturnValue
                             },
                         ) {
-                            Text(text = "Click to change resizabe and onSizeChange")
+                            Text(text = "Click to change resizable and onSizeChange")
                         }
                     }
                 }
@@ -557,41 +555,6 @@ class ResizableModifierTest {
             }
         }
         assertResizableComponentDoesNotExist("row")
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun resizable_volumeEntity_noComponentByDefault() {
-        composeTestRule.setContent {
-            TestSetup { Subspace { Volume(SubspaceModifier.testTag("volume")) {} } }
-        }
-        assertTrue(
-            composeTestRule
-                .onSubspaceNodeWithTag("volume")
-                .fetchSemanticsNode()
-                .components
-                .isNullOrEmpty()
-        )
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun resizable_volumeEntity_noComponentWhenResizableIsEnabled() {
-        composeTestRule.setContent {
-            TestSetup { Subspace { Volume(SubspaceModifier.testTag("volume").resizable()) {} } }
-        }
-        assertResizableComponentDoesNotExist("volume")
-    }
-
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
-    @Test
-    fun resizable_volumeEntity_noComponentWhenResizableIsDisabled() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace { Volume(SubspaceModifier.testTag("volume").resizable(false)) {} }
-            }
-        }
-        assertResizableComponentDoesNotExist("volume")
     }
 
     private fun assertSingleResizableComponentExists(testTag: String = "panel") {

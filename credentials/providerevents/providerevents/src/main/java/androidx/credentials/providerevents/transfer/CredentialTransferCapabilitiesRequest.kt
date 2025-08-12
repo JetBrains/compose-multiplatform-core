@@ -16,5 +16,11 @@
 
 package androidx.credentials.providerevents.transfer
 
-/** A request for the state of the provider's credentials that can be exported */
-public class CredentialTransferCapabilitiesRequest()
+/**
+ * A request for the state of the provider's credentials that can be exported
+ *
+ * @property requestJson the request according to the
+ *     * [Fido Credential Exchange Protocol
+ *       format](https://fidoalliance.org/specs/cx/cxp-v1.0-wd-20240522.html)
+ */
+public class CredentialTransferCapabilitiesRequest(public val requestJson: String?)

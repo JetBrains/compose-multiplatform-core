@@ -31,6 +31,7 @@ import android.webkit.WebView;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.content.pm.PackageInfoCompat;
 import androidx.webkit.Navigation;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
@@ -566,6 +567,27 @@ public class WebViewFeatureInternal {
 
     /**
      * This feature covers
+     * {@link androidx.webkit.UserAgentMetadata.Builder#setFormFactors(List)}, and
+     * {@link androidx.webkit.UserAgentMetadata#getFormFactors()}.
+     */
+    public static final ApiFeature.NoFramework USER_AGENT_METADATA_FORM_FACTORS =
+            new ApiFeature.NoFramework(WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
+                    Features.USER_AGENT_METADATA) {
+                @Override
+                public boolean isSupportedByWebView() {
+                    if (!super.isSupportedByWebView()) {
+                        return false;
+                    }
+                    PackageInfo info = WebViewCompat.getCurrentLoadedWebViewPackage();
+                    if (info == null) return false;
+                    // Since version 124.0.6367.0 (crrev.com/c/5374782), Chromium WebView has
+                    // supported override form factor client hint.
+                    return PackageInfoCompat.getLongVersionCode(info) >= 6367_000_00L;
+                }
+            };
+
+    /**
+     * This feature covers
      * {@link Profile#getName()}.
      * {@link Profile#getWebStorage()}.
      * {@link Profile#getCookieManager()}.
@@ -793,6 +815,26 @@ public class WebViewFeatureInternal {
     public static final ApiFeature.NoFramework ORIGIN_MATCHED_HEADERS =
             new ApiFeature.NoFramework(WebViewFeature.ORIGIN_MATCHED_HEADERS,
                     Features.EXTRA_HEADER_FOR_ORIGINS);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)},
+     */
+    @WebViewCompat.ExperimentalAsyncStartUp
+    public static final StartupApiFeature.NoFramework STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
+            new StartupApiFeature.NoFramework(WebViewFeature.STARTUP_FEATURE_SET_PROFILES_TO_LOAD,
+                    StartupFeatures.STARTUP_FEATURE_SET_PROFILES_TO_LOAD);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
+     */
+    public static final StartupApiFeature.NoFramework
+            STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
+            new StartupApiFeature.NoFramework(
+                    WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
+                    StartupFeatures.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE);
 
     // --- Add new feature constants above this line ---
 

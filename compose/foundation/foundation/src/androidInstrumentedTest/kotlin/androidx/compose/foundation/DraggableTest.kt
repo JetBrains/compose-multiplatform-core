@@ -47,7 +47,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.InspectableValue
@@ -184,7 +184,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -192,7 +192,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -206,7 +206,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -214,7 +214,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
@@ -232,7 +232,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -240,7 +240,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -254,7 +254,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -262,7 +262,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
@@ -280,7 +280,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -288,7 +288,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -302,7 +302,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -310,7 +310,7 @@ class DraggableTest {
             .sendIndirectSwipeEvent(
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
@@ -839,7 +839,7 @@ class DraggableTest {
                     currentValue,
                     16L,
                     stepSize,
-                    IndirectTouchEventPrimaryAxis.X,
+                    IndirectTouchEventPrimaryDirectionalMotionAxis.X,
                 )
 
         val prevTotal =
@@ -970,7 +970,7 @@ class DraggableTest {
                     currentValue,
                     16L,
                     stepSize,
-                    IndirectTouchEventPrimaryAxis.X,
+                    IndirectTouchEventPrimaryDirectionalMotionAxis.X,
                 )
 
         rule.runOnIdle {

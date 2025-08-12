@@ -58,7 +58,7 @@ class StrokeInputBatchExtensionsTest {
                     orientationRadians = 0.9f,
                 )
             )
-            .asImmutable()
+            .toImmutable()
 
     private val compressedInvalidCodedStrokeInputBatchBytes =
         // Using hard-coded examples to avoid a proto dependency for these tests. This string is the

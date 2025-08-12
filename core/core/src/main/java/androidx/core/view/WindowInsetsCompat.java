@@ -87,7 +87,6 @@ public class WindowInsetsCompat {
 
     private final Impl mImpl;
 
-    @RequiresApi(20)
     private WindowInsetsCompat(@NonNull WindowInsets insets) {
         if (SDK_INT >= 34) {
             mImpl = new Impl34(this, insets);
@@ -99,12 +98,8 @@ public class WindowInsetsCompat {
             mImpl = new Impl29(this, insets);
         } else if (SDK_INT >= 28) {
             mImpl = new Impl28(this, insets);
-        } else if (SDK_INT >= 21) {
-            mImpl = new Impl21(this, insets);
-        } else if (SDK_INT >= 20) {
-            mImpl = new Impl20(this, insets);
         } else {
-            mImpl = new Impl(this);
+            mImpl = new Impl21(this, insets);
         }
     }
 
@@ -127,9 +122,9 @@ public class WindowInsetsCompat {
                 mImpl = new Impl29(this, (Impl29) srcImpl);
             } else if (SDK_INT >= 28 && srcImpl instanceof Impl28) {
                 mImpl = new Impl28(this, (Impl28) srcImpl);
-            } else if (SDK_INT >= 21 && srcImpl instanceof Impl21) {
+            } else if (srcImpl instanceof Impl21) {
                 mImpl = new Impl21(this, (Impl21) srcImpl);
-            } else if (SDK_INT >= 20 && srcImpl instanceof Impl20) {
+            } else if (srcImpl instanceof Impl20) {
                 mImpl = new Impl20(this, (Impl20) srcImpl);
             } else {
                 mImpl = new Impl(this);
@@ -153,7 +148,6 @@ public class WindowInsetsCompat {
      * @param insets source insets to wrap
      * @return the wrapped instance
      */
-    @RequiresApi(20)
     public static @NonNull WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets) {
         return toWindowInsetsCompat(insets, null);
     }
@@ -171,7 +165,6 @@ public class WindowInsetsCompat {
      *             view needs be attached to the window, otherwise it will be ignored.
      * @return the wrapped instance
      */
-    @RequiresApi(20)
     public static @NonNull WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets,
             @Nullable View view) {
         WindowInsetsCompat wic = new WindowInsetsCompat(Preconditions.checkNotNull(insets));
@@ -758,7 +751,6 @@ public class WindowInsetsCompat {
      *
      * @return the wrapped WindowInsets instance
      */
-    @RequiresApi(20)
     public @Nullable WindowInsets toWindowInsets() {
         return mImpl instanceof Impl20 ? ((Impl20) mImpl).mPlatformInsets : null;
     }
@@ -893,7 +885,6 @@ public class WindowInsetsCompat {
         }
     }
 
-    @RequiresApi(20)
     private static class Impl20 extends Impl {
 
         private static final int SYSTEM_BAR_VISIBILITY_MASK =
@@ -1220,7 +1211,6 @@ public class WindowInsetsCompat {
         }
     }
 
-    @RequiresApi(21)
     private static class Impl21 extends Impl20 {
         private Insets mStableInsets = null;
 
@@ -1484,10 +1474,8 @@ public class WindowInsetsCompat {
                 mImpl = new BuilderImpl30();
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29();
-            } else if (SDK_INT >= 20) {
-                mImpl = new BuilderImpl20();
             } else {
-                mImpl = new BuilderImpl();
+                mImpl = new BuilderImpl20();
             }
         }
 
@@ -1505,10 +1493,8 @@ public class WindowInsetsCompat {
                 mImpl = new BuilderImpl30(insets);
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29(insets);
-            } else if (SDK_INT >= 20) {
-                mImpl = new BuilderImpl20(insets);
             } else {
-                mImpl = new BuilderImpl(insets);
+                mImpl = new BuilderImpl20(insets);
             }
         }
 
@@ -1813,7 +1799,6 @@ public class WindowInsetsCompat {
         mImpl.setOverriddenInsets(insetsTypeMask);
     }
 
-    @RequiresApi(api = 20)
     private static class BuilderImpl20 extends BuilderImpl {
         private static Field sConsumedField;
         private static boolean sConsumedFieldFetched = false;
@@ -2374,7 +2359,6 @@ public class WindowInsetsCompat {
 
     @SuppressWarnings("JavaReflectionMemberAccess") // Reflection on private field
     @SuppressLint("SoonBlockedPrivateApi") // mAttachInfo is only accessed on SDK 21 and 22
-    @RequiresApi(21)
     static class Api21ReflectionHolder {
 
         private Api21ReflectionHolder() {

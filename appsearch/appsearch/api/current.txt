@@ -196,7 +196,7 @@ package androidx.appsearch.app {
   }
 
   public static final class AppSearchSchema.DocumentPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
-    method public java.util.List<java.lang.String!> getIndexableNestedProperties();
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES) public java.util.List<java.lang.String!> getIndexableNestedProperties();
     method public String getSchemaType();
     method public boolean shouldIndexNestedProperties();
   }
@@ -370,9 +370,9 @@ package androidx.appsearch.app {
     field public static final String SCHEMA_ADD_PARENT_TYPE = "SCHEMA_ADD_PARENT_TYPE";
     field public static final String SCHEMA_EMBEDDING_PROPERTY_CONFIG = "SCHEMA_EMBEDDING_PROPERTY_CONFIG";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_EMBEDDING_QUANTIZATION = "SCHEMA_EMBEDDING_QUANTIZATION";
+    field public static final String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_SCORABLE_PROPERTY_CONFIG = "SCHEMA_SCORABLE_PROPERTY_CONFIG";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_SET_DESCRIPTION = "SCHEMA_SET_DESCRIPTION";
-    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_AND_CLICK_ACCUMULATOR = "SEARCH_AND_CLICK_ACCUMULATOR";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
     field public static final String SEARCH_RESULT_MATCH_INFO_SUBMATCH = "SEARCH_RESULT_MATCH_INFO_SUBMATCH";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_RESULT_PARENT_TYPES = "SEARCH_RESULT_PARENT_TYPES";
@@ -1197,11 +1197,11 @@ package androidx.appsearch.observer {
 
 package androidx.appsearch.usagereporting {
 
-  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_AND_CLICK_ACCUMULATOR) @androidx.appsearch.app.ExperimentalAppSearchApi public class ActionAccumulator {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public class ActionAccumulator {
     method @VisibleForTesting public void cancelTimer();
     method public static com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.usagereporting.ActionAccumulator!> createAsync(android.content.Context, androidx.appsearch.app.AppSearchSession, java.util.concurrent.Executor);
     method @VisibleForTesting public java.io.File getCacheFile();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> reportSearchAsync(androidx.appsearch.usagereporting.SearchAction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> reportActionAsync(androidx.appsearch.usagereporting.TakenAction);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> saveDocumentsToAppSearchAsync() throws androidx.appsearch.exceptions.AppSearchException;
   }
 

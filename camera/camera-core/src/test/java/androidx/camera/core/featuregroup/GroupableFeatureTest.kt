@@ -31,7 +31,6 @@ import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +38,6 @@ import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalSessionConfig::class)
 @RunWith(JUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class GroupableFeatureTest {
     @Test
     fun objectHlg10_dynamicRangeIsHlg10Bit() {

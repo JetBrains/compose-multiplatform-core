@@ -18,17 +18,27 @@ package androidx.privacysandbox.sdkruntime.integration.testsdk
 
 import android.content.Context
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Process
 import android.util.Log
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.integration.callDoSomething
+import androidx.privacysandbox.sdkruntime.integration.testaidl.IClientImportanceListener
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.FileNotFoundException
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 class TestSdk(private val sdkContext: Context) : ISdkApi.Stub() {
+
+    private val appToSdkListenerMap =
+        mutableMapOf<IBinder, SdkSandboxClientImportanceListenerCompat>()
 
     override fun doSomething(param: String): String {
         Log.i(TAG, "TestSdk#doSomething($param)")
@@ -84,6 +94,62 @@ class TestSdk(private val sdkContext: Context) : ISdkApi.Stub() {
         return SdkSandboxControllerCompat.from(sdkContext)
             .getAppOwnedSdkSandboxInterfaces()
             .mapNotNull { callDoSomething(it.getInterface(), param) }
+    }
+
+    override fun triggerSandboxDeath() {
+        Process.killProcess(Process.myPid())
+    }
+
+    override fun getClientPackageName(): String {
+        return SdkSandboxControllerCompat.from(sdkContext).getClientPackageName()
+    }
+
+    override fun writeToFile(filename: String, data: String) {
+        sdkContext.openFileOutput(filename, Context.MODE_PRIVATE).use { outputStream ->
+            DataOutputStream(outputStream).use { dataStream -> dataStream.writeUTF(data) }
+        }
+    }
+
+    override fun readFromFile(filename: String): String? {
+        try {
+            return sdkContext.openFileInput(filename).use { inputStream ->
+                inputStream
+                DataInputStream(inputStream).use { dataStream -> dataStream.readUTF() }
+            }
+        } catch (_: FileNotFoundException) {
+            return null
+        }
+    }
+
+    override fun registerClientImportanceListener(listener: IClientImportanceListener) {
+        synchronized(appToSdkListenerMap) {
+            val binderToken = listener.asBinder()
+            // Replace to putIfAbsent after moving minSdk to 24+
+            if (!appToSdkListenerMap.containsKey(binderToken)) {
+                val wrapper = ClientListenerWrapper(listener)
+                appToSdkListenerMap.put(binderToken, wrapper)
+                SdkSandboxControllerCompat.from(sdkContext)
+                    .registerSdkSandboxClientImportanceListener(Runnable::run, wrapper)
+            }
+        }
+    }
+
+    override fun unregisterClientImportanceListener(listener: IClientImportanceListener) {
+        synchronized(appToSdkListenerMap) {
+            val binderToken = listener.asBinder()
+            val wrapper = appToSdkListenerMap.remove(binderToken)
+            if (wrapper != null) {
+                SdkSandboxControllerCompat.from(sdkContext)
+                    .unregisterSdkSandboxClientImportanceListener(wrapper)
+            }
+        }
+    }
+
+    private class ClientListenerWrapper(private val clientListener: IClientImportanceListener) :
+        SdkSandboxClientImportanceListenerCompat {
+        override fun onForegroundImportanceChanged(isForeground: Boolean) {
+            clientListener.onForegroundImportanceChanged(isForeground)
+        }
     }
 
     companion object {

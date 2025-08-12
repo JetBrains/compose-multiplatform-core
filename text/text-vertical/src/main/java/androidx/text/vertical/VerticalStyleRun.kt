@@ -49,51 +49,13 @@ public class FontShearSpan(public val fontShear: Float = DEFAULT_FONT_SHEAR) :
         /**
          * Default constant for fontShear.
          *
-         * This value represents a shear angle of approximately 9.53 degrees (atan(0.1678842)).
-         *
-         * Angles in the range of 8 to 12 degrees are widely considered to provide a visually
-         * balanced emphasis while maintaining readability, aligning with the general slope observed
-         * in many Roman italic and oblique typefaces.
-         *
-         * This specific value is adopted from the W3C Timed Text Markup Language 2 (TTML2)
-         * specification for the
-         * [tts:fontShear](https://www.w3.org/TR/2018/REC-ttml2-20181108/#style-attribute-fontShear)
-         * attribute which aims to standardize emphasis for such scripts.
+         * This value represents a shear angle of 15 degree (tan(15 deg)).
          */
-        public const val DEFAULT_FONT_SHEAR: Float = 0.1678842f
+        // This value is derived from Chrome's vertical writing implementation.
+        // https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/fonts/shaping/shape_result_bloberizer.cc;drc=c58cc9d7cce70b7f52b985e48aa126a4ba705cf6;l=676
+        public const val DEFAULT_FONT_SHEAR: Float = 0.2679492f
     }
 }
-
-/**
- * Defines the available styles for emphasis marks in vertical text.
- *
- * These styles are used to visually highlight characters. The `EmphasisSpan` class uses these
- * constants to determine the shape of the emphasis mark.
- */
-public object EmphasisStyle {
-    /** Emphasis mark is a small circle. The filled dot is U+2022, open dot is U+25E6. */
-    public const val DOT: Int = 0
-    /** Emphasis mark is a large circle. The filled dot is U+25CF, open dot is U+25CB. */
-    public const val CIRCLE: Int = 1
-    /** Emphasis mark is a double circle. The filled dot is U+25C9, open dot is U+25CE. */
-    public const val DOUBLE_CIRCLE: Int = 2
-    /** Emphasis mark is a triangle. The filled dot is U+25B2, open dot is U+25B3. */
-    public const val TRIANGLE: Int = 3
-    /** Emphasis mark is a sesame. The filled dot is U+FE45, open dot is U+FE46. */
-    public const val SESAME: Int = 4
-}
-
-@IntDef(
-    value =
-        [
-            EmphasisStyle.DOT,
-            EmphasisStyle.CIRCLE,
-            EmphasisStyle.DOUBLE_CIRCLE,
-            EmphasisStyle.TRIANGLE,
-            EmphasisStyle.SESAME,
-        ]
-)
-internal annotation class EmphasisStyleType
 
 /**
  * A span that applies emphasis marks to text in a vertical layout.
@@ -102,47 +64,57 @@ internal annotation class EmphasisStyleType
  * contexts. It allows for the application of various emphasis styles, such as dots, circles, or
  * triangles, above or next to characters in vertical text.
  *
- * The `EmphasisSpan` takes a style (defined in [EmphasisStyle]), a boolean indicating whether the
- * mark should be filled, and a scale factor for the size of the mark.
+ * The `EmphasisSpan` takes a style, a boolean indicating whether the mark should be filled, and a
+ * scale factor for the size of the mark.
  *
- * @see EmphasisStyle for available emphasis mark styles.
+ * @param style The style of the emphasis mark. This value determines the size of the emphasis mark
+ *   relative to the font size. A scale of 0.5f means the emphasis mark will be half the size of the
+ *   text.
+ * @param isFilled Whether the mark should be filled or outlined.
+ * @param scale The scale factor for the size of the mark. When `true`, the emphasis mark will be
+ *   drawn as a solid shape. When `false`, it will be drawn as an outline.
  */
-public class EmphasisSpan private constructor(public val letter: String, public val scale: Float) :
-    MetricAffectingSpan() {
+public class EmphasisSpan(
+    @EmphasisStyleType public val style: Int = DEFAULT_EMPHASIS_STYLE,
+    public val isFilled: Boolean = DEFAULT_EMPHASIS_FILL,
+    public val scale: Float = DEFAULT_SCALE,
+) : MetricAffectingSpan() {
 
-    /**
-     * @param style The style of the emphasis mark. This value determines the size of the emphasis
-     *   mark relative to the font size. A scale of 0.5f means the emphasis mark will be half the
-     *   size of the text.
-     * @param filled Whether the mark should be filled or outlined.
-     * @param scale The scale factor for the size of the mark. When `true`, the emphasis mark will
-     *   be drawn as a solid shape. When `false`, it will be drawn as an outline.
-     */
-    public constructor(
-        @EmphasisStyleType style: Int = DEFAULT_EMPHASIS_STYLE,
-        filled: Boolean = DEFAULT_EMPHASIS_FILL,
-        scale: Float = DEFAULT_SCALE,
-    ) : this(
-        (when (style) {
-            EmphasisStyle.DOT -> if (filled) "\u2022" else "\u25E6"
-            EmphasisStyle.CIRCLE -> if (filled) "\u25CF" else "\u25CB"
-            EmphasisStyle.DOUBLE_CIRCLE -> if (filled) "\u25C9" else "\u25CE"
-            EmphasisStyle.TRIANGLE -> if (filled) "\u25B2" else "\u25B3"
-            EmphasisStyle.SESAME -> if (filled) "\uFE45" else "\uFE46"
+    internal val letter =
+        when (style) {
+            STYLE_DOT -> if (isFilled) "\u2022" else "\u25E6"
+            STYLE_CIRCLE -> if (isFilled) "\u25CF" else "\u25CB"
+            STYLE_DOUBLE_CIRCLE -> if (isFilled) "\u25C9" else "\u25CE"
+            STYLE_TRIANGLE -> if (isFilled) "\u25B2" else "\u25B3"
+            STYLE_SESAME -> if (isFilled) "\uFE45" else "\uFE46"
             else -> throw RuntimeException("Unknown emphasis style: $style")
-        }),
-        scale,
-    )
+        }
 
     override fun updateMeasureState(p0: TextPaint) {}
 
     override fun updateDrawState(p0: TextPaint?) {}
 
     public companion object {
+        /** Emphasis mark is a small circle. The filled dot is U+2022, open dot is U+25E6. */
+        public const val STYLE_DOT: Int = 0
+        /** Emphasis mark is a large circle. The filled dot is U+25CF, open dot is U+25CB. */
+        public const val STYLE_CIRCLE: Int = 1
+        /** Emphasis mark is a double circle. The filled dot is U+25C9, open dot is U+25CE. */
+        public const val STYLE_DOUBLE_CIRCLE: Int = 2
+        /** Emphasis mark is a triangle. The filled dot is U+25B2, open dot is U+25B3. */
+        public const val STYLE_TRIANGLE: Int = 3
+        /** Emphasis mark is a sesame. The filled dot is U+FE45, open dot is U+FE46. */
+        public const val STYLE_SESAME: Int = 4
+
+        @IntDef(
+            value = [STYLE_DOT, STYLE_CIRCLE, STYLE_DOUBLE_CIRCLE, STYLE_TRIANGLE, STYLE_SESAME]
+        )
+        internal annotation class EmphasisStyleType
+
         /** The default scale factor for emphasis marks. */
         public const val DEFAULT_SCALE: Float = 0.5f
         /** The default style used for emphasis marks, typically a dot. */
-        public const val DEFAULT_EMPHASIS_STYLE: Int = EmphasisStyle.DOT
+        public const val DEFAULT_EMPHASIS_STYLE: Int = STYLE_DOT
         /** The default value for whether the emphasis mark should be filled. */
         public const val DEFAULT_EMPHASIS_FILL: Boolean = true
     }

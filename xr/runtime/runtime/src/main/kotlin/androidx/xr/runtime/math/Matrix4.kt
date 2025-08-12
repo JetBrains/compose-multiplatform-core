@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package androidx.xr.runtime.math
 
-import kotlin.math.sign
 import kotlin.math.sqrt
 
 /**
@@ -151,6 +150,42 @@ public class Matrix4(dataToCopy: FloatArray) {
             sign * sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]),
             sign * sqrt(data[4] * data[4] + data[5] * data[5] + data[6] * data[6]),
             sign * sqrt(data[8] * data[8] + data[9] * data[9] + data[10] * data[10]),
+        )
+    }
+
+    /**
+     * Returns a normalized transformation matrix.
+     *
+     * This method removes the scaling factors from this matrix, as determined by [scale], while
+     * preserving its core rotational and translational components. The resulting matrix is
+     * therefore ideal for accurate normal vector transformations and pure orientation extraction.
+     */
+    public fun unscaled(): Matrix4 {
+        // Matrix4.scale returns either a positive or negative scale based on the
+        // determinant of the rotation matrix.
+        val positiveScale = Vector3.abs(scale())
+        val scaleX = positiveScale.x
+        val scaleY = positiveScale.y
+        val scaleZ = positiveScale.z
+        return Matrix4(
+            floatArrayOf(
+                data[0] / scaleX,
+                data[1] / scaleX,
+                data[2] / scaleX,
+                data[3],
+                data[4] / scaleY,
+                data[5] / scaleY,
+                data[6] / scaleY,
+                data[7],
+                data[8] / scaleZ,
+                data[9] / scaleZ,
+                data[10] / scaleZ,
+                data[11],
+                data[12],
+                data[13],
+                data[14],
+                data[15],
+            )
         )
     }
 

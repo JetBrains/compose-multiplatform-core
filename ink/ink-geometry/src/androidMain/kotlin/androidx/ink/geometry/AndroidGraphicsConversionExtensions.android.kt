@@ -22,6 +22,7 @@ import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
+import androidx.annotation.CheckResult
 import androidx.annotation.IntRange
 import androidx.ink.geometry.internal.threadLocal
 
@@ -262,4 +263,17 @@ public fun PartitionedMesh.populateOutlines(
         out.close()
     }
     return out
+}
+
+/**
+ * Fill the given [RectF] with the bounds of this [BoxAccumulator], returning whether or not the
+ * object was actually overwritten.
+ */
+@CheckResult
+public fun BoxAccumulator.getBounds(outRect: RectF): Boolean {
+    box?.let {
+        outRect.set(it.xMin, it.yMin, it.xMax, it.yMax)
+        return true
+    }
+    return false
 }

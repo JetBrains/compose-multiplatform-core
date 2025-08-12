@@ -51,6 +51,7 @@ import java.util.Date
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -66,6 +67,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class MultimapQueryTest {
+    private lateinit var mDb: TestDatabase
     private lateinit var mMusicDao: MusicDao
     private val mRhcpSong1: Song =
         Song(1, "Dani California", "Red Hot Chili Peppers", "Stadium Arcadium", 442, 2006)
@@ -136,9 +138,13 @@ class MultimapQueryTest {
     @Before
     fun createDb() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        val db: TestDatabase =
-            Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
-        mMusicDao = db.musicDao()
+        mDb = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
+        mMusicDao = mDb.musicDao()
+    }
+
+    @After
+    fun closeDb() {
+        mDb.close()
     }
 
     /** Tests a simple JOIN query between two tables. */

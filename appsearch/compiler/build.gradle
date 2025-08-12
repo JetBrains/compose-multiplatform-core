@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.javapoet)
     implementation(libs.kotlinStdlib)
+    implementation(libs.kspApi)
     implementation("androidx.room:room-compiler-processing:2.7.2")
     implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.21")
 

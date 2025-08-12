@@ -137,10 +137,10 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
         // Head eye radio button setup
         findViewById<RadioButton>(R.id.head_radio_button).also {
-            it.isChecked = true
             it.setOnCheckedChangeListener { buttonView, isChecked ->
                 if (isChecked) setProjectionSource(buttonView.text.toString())
             }
+            it.isChecked = true
         }
 
         // Left eye radio button setup

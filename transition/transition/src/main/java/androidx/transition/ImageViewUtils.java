@@ -55,35 +55,11 @@ class ImageViewUtils {
                 drawable.setBounds(0, 0, vwidth, vheight);
                 view.invalidate();
             }
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            hiddenAnimateTransform(view, matrix);
         } else {
-            Drawable drawable = view.getDrawable();
-            if (drawable != null) {
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(),
-                        drawable.getIntrinsicHeight());
-                Matrix drawMatrix = null;
-                fetchDrawMatrixField();
-                if (sDrawMatrixField != null) {
-                    try {
-                        drawMatrix = (Matrix) sDrawMatrixField.get(view);
-                        if (drawMatrix == null) {
-                            drawMatrix = new Matrix();
-                            sDrawMatrixField.set(view, drawMatrix);
-                        }
-                    } catch (IllegalAccessException ignore) {
-                        // Do nothing
-                    }
-                }
-                if (drawMatrix != null) {
-                    drawMatrix.set(matrix);
-                }
-                view.invalidate();
-            }
+            hiddenAnimateTransform(view, matrix);
         }
     }
 
-    @RequiresApi(21)
     @SuppressLint("NewApi") // Lint doesn't know about the hidden method.
     private static void hiddenAnimateTransform(@NonNull ImageView view, @Nullable Matrix matrix) {
         if (sTryHiddenAnimateTransform) {

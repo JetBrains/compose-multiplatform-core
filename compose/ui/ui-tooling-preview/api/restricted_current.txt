@@ -116,10 +116,10 @@ package androidx.compose.ui.tooling.preview {
     method public abstract int uiMode() default 0;
     method public abstract int wallpaper() default androidx.compose.ui.tooling.preview.Wallpapers.NONE;
     method public abstract int widthDp() default -1;
-    property @IntRange(from=1L) public abstract int apiLevel;
+    property public abstract int apiLevel;
     property public abstract long backgroundColor;
     property public abstract String device;
-    property @FloatRange(from=0.01) public abstract float fontScale;
+    property public abstract float fontScale;
     property public abstract String group;
     property public abstract int heightDp;
     property public abstract String locale;

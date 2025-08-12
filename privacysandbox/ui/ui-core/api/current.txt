@@ -87,7 +87,7 @@ package androidx.privacysandbox.ui.core {
     ctor public SessionData();
     method public android.window.InputTransferToken? getInputTransferToken();
     method public android.os.IBinder? getWindowInputToken();
-    property @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public android.window.InputTransferToken? inputTransferToken;
+    property public android.window.InputTransferToken? inputTransferToken;
     property public android.os.IBinder? windowInputToken;
     field public static final androidx.privacysandbox.ui.core.SessionData.Companion Companion;
   }

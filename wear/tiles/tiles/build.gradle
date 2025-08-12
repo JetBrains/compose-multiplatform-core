@@ -49,6 +49,7 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.androidx.core)
 }
 
 android {

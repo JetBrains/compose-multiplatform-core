@@ -130,6 +130,8 @@ public class ProvidedTypeConverterTest {
         assertThat(db2.getDao().get(2)).isEqualTo(entity2);
         assertThat(db1.getDao().getRawUsername(1)).isEqualTo("foo1-bar1");
         assertThat(db2.getDao().getRawUsername(2)).isEqualTo("bar2-foo2");
+        db1.close();
+        db2.close();
     }
 
     @Database(entities = {Pet.class, Toy.class, User.class, Robot.class, Hivemind.class},

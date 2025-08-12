@@ -489,11 +489,7 @@ public class ContextCompat {
      */
     @SuppressWarnings("deprecation")
     public static @Nullable Drawable getDrawable(@NonNull Context context, @DrawableRes int id) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getDrawable(context, id);
-        } else {
-            return context.getResources().getDrawable(id);
-        }
+        return context.getDrawable(id);
     }
 
     /**
@@ -574,12 +570,7 @@ public class ContextCompat {
      * @see Context#getFilesDir()
      */
     public static @Nullable File getNoBackupFilesDir(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getNoBackupFilesDir(context);
-        } else {
-            ApplicationInfo appInfo = context.getApplicationInfo();
-            return createFilesDir(new File(appInfo.dataDir, "no_backup"));
-        }
+        return context.getNoBackupFilesDir();
     }
 
     /**
@@ -598,12 +589,7 @@ public class ContextCompat {
      * @return The path of the directory holding application code cache files.
      */
     public static @NonNull File getCodeCacheDir(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getCodeCacheDir(context);
-        } else {
-            ApplicationInfo appInfo = context.getApplicationInfo();
-            return createFilesDir(new File(appInfo.dataDir, "code_cache"));
-        }
+        return context.getCodeCacheDir();
     }
 
     private static File createFilesDir(File file) {
@@ -989,18 +975,16 @@ public class ContextCompat {
                 SERVICES.put(SubscriptionManager.class, TELEPHONY_SUBSCRIPTION_SERVICE);
                 SERVICES.put(UsageStatsManager.class, USAGE_STATS_SERVICE);
             }
-            if (Build.VERSION.SDK_INT >= 21) {
-                SERVICES.put(AppWidgetManager.class, APPWIDGET_SERVICE);
-                SERVICES.put(BatteryManager.class, BATTERY_SERVICE);
-                SERVICES.put(CameraManager.class, CAMERA_SERVICE);
-                SERVICES.put(JobScheduler.class, JOB_SCHEDULER_SERVICE);
-                SERVICES.put(LauncherApps.class, LAUNCHER_APPS_SERVICE);
-                SERVICES.put(MediaProjectionManager.class, MEDIA_PROJECTION_SERVICE);
-                SERVICES.put(MediaSessionManager.class, MEDIA_SESSION_SERVICE);
-                SERVICES.put(RestrictionsManager.class, RESTRICTIONS_SERVICE);
-                SERVICES.put(TelecomManager.class, TELECOM_SERVICE);
-                SERVICES.put(TvInputManager.class, TV_INPUT_SERVICE);
-            }
+            SERVICES.put(AppWidgetManager.class, APPWIDGET_SERVICE);
+            SERVICES.put(BatteryManager.class, BATTERY_SERVICE);
+            SERVICES.put(CameraManager.class, CAMERA_SERVICE);
+            SERVICES.put(JobScheduler.class, JOB_SCHEDULER_SERVICE);
+            SERVICES.put(LauncherApps.class, LAUNCHER_APPS_SERVICE);
+            SERVICES.put(MediaProjectionManager.class, MEDIA_PROJECTION_SERVICE);
+            SERVICES.put(MediaSessionManager.class, MEDIA_SESSION_SERVICE);
+            SERVICES.put(RestrictionsManager.class, RESTRICTIONS_SERVICE);
+            SERVICES.put(TelecomManager.class, TELECOM_SERVICE);
+            SERVICES.put(TvInputManager.class, TV_INPUT_SERVICE);
 
             SERVICES.put(AppOpsManager.class, APP_OPS_SERVICE);
             SERVICES.put(CaptioningManager.class, CAPTIONING_SERVICE);
@@ -1042,25 +1026,6 @@ public class ContextCompat {
             SERVICES.put(WifiP2pManager.class, WIFI_P2P_SERVICE);
             SERVICES.put(WifiManager.class, WIFI_SERVICE);
             SERVICES.put(WindowManager.class, WINDOW_SERVICE);
-        }
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static Drawable getDrawable(Context obj, int id) {
-            return obj.getDrawable(id);
-        }
-
-        static File getNoBackupFilesDir(Context obj) {
-            return obj.getNoBackupFilesDir();
-        }
-
-        static File getCodeCacheDir(Context obj) {
-            return obj.getCodeCacheDir();
         }
     }
 

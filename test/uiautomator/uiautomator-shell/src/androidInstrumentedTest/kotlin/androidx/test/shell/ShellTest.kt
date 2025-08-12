@@ -18,13 +18,11 @@ package androidx.test.shell
 
 import android.annotation.SuppressLint
 import androidx.kruth.assertThat
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.shell.internal.instrumentationPackageMediaDir
 import java.io.File
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = 23)
 @SmallTest
 class ShellTest {
 

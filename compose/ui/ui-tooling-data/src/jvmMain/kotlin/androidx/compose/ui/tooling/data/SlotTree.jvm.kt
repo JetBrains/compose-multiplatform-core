@@ -548,7 +548,7 @@ private fun extractFromIndyLambdaFields(
     val sortedFields =
         fields.sortedBy { it.name.substringAfter("f$").toIntOrNull() ?: Int.MAX_VALUE }
 
-    val hasParameterNames = metadata.any { it.name != null }
+    val hasParameterNames = metadata.isEmpty() || metadata.any { it.name != null }
     val realFields =
         if (hasParameterNames) {
             // Lambda fields might contain additional synthetic parameters.
@@ -585,8 +585,16 @@ private fun extractFromLegacyFields(
     val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
     val changed = blockClass.accessibleField(changedFieldName)?.get(block) as? Int ?: 0
 
+    val hasParameterNames = metadata.isEmpty() || metadata.any { it.name != null }
+    val sorted =
+        if (hasParameterNames) {
+            metadata.sortedBy { it.name }
+        } else {
+            metadata
+        }
+
     return fields.mapIndexedNotNull { index, _ ->
-        val paramMeta = metadata.getOrNull(index) ?: ParameterSourceInformation(index)
+        val paramMeta = sorted.getOrNull(index) ?: ParameterSourceInformation(index)
         val sortedIndex = paramMeta.sortedIndex
         if (sortedIndex >= fields.size) return@mapIndexedNotNull null
 

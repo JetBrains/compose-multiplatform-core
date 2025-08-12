@@ -28,7 +28,6 @@ import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.
 import static com.google.common.truth.Truth.assertThat;
 
 import android.graphics.Rect;
-import android.os.Build;
 import android.util.Range;
 import android.util.Size;
 
@@ -39,7 +38,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -50,7 +48,6 @@ import java.util.Set;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class FakeCameraInfoTest {
 
     private static final int SENSOR_ROTATION_DEGREES = 90;

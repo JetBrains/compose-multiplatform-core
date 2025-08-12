@@ -16,8 +16,6 @@
 
 package androidx.appfunctions.compiler.core
 
-import androidx.annotation.VisibleForTesting
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import kotlin.collections.joinToString
 
 private const val PARAM_TAG_REGEX_PATTERN = """^@param\s+(\w+)\s*(.*)"""
@@ -33,17 +31,9 @@ private val KOTLIN_SUPPORTED_TAGS = Regex(KOTLIN_SUPPORTED_TAGS_PATTERN)
 /**
  * Returns a mapping of parameter name to parameter description, where the parameter's description
  * is extracted from `@param` declarations in the KDoc.
+ *
+ * The input docString is expected to be stripped from any "/**", "*/" or "*".
  */
-fun KSFunctionDeclaration.getParamDescriptionsFromKDoc(): Map<String, String> {
-    return if (docString != null) {
-        getParamDescriptionsFromKDoc(checkNotNull(docString))
-    } else {
-        mapOf()
-    }
-}
-
-/** The input docString is expected to be stripped from any "/**", "*/" or "*". */
-@VisibleForTesting
 internal fun getParamDescriptionsFromKDoc(docString: String): Map<String, String> {
     val descriptionMap = mutableMapOf<String, String>()
 
@@ -92,17 +82,9 @@ internal fun getParamDescriptionsFromKDoc(docString: String): Map<String, String
 /**
  * Returns the function's response description, extracted from the `@return` tag of the function's
  * KDoc.
+ *
+ * The input docString is expected to be stripped from any "/**", "*/" or "*".
  */
-fun KSFunctionDeclaration.getResponseDescriptionFromKDoc(): String {
-    return if (docString != null) {
-        getResponseDescriptionFromKDoc(checkNotNull(docString))
-    } else {
-        ""
-    }
-}
-
-/** The input docString is expected to be stripped from any "/**", "*/" or "*". */
-@VisibleForTesting
 internal fun getResponseDescriptionFromKDoc(docString: String): String {
     val responseDescriptionBuilder = StringBuilder()
 
@@ -127,24 +109,12 @@ internal fun getResponseDescriptionFromKDoc(docString: String): String {
 }
 
 /**
- * Returns the function's docstring with all of the kotlin supported tags stripped out. Any content
- * preceding block tags is considered part of the previous tag's content and is stripped in case of
- * kotlin supported tags.
- */
-fun KSFunctionDeclaration.sanitizeKDoc(): String {
-    return if (docString != null) {
-        sanitizeKDoc(checkNotNull(docString))
-    } else {
-        ""
-    }
-}
-
-/**
+ * Returns the function's docstring with all of the kotlin supported tags stripped out.
+ *
  * The input docString is expected to be stripped from any "/**", "*/" or "*". Any content preceding
  * block tags is considered part of the previous tag's content and is stripped in case of kotlin
  * supported tags.
  */
-@VisibleForTesting
 internal fun sanitizeKDoc(docString: String): String {
     val resultLines = mutableListOf<String>()
     var skippingTagDescription = false

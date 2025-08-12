@@ -2055,7 +2055,7 @@ package androidx.appcompat.widget {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class TintTypedArray {
     method public boolean getBoolean(int, boolean);
-    method @RequiresApi(21) public int getChangingConfigurations();
+    method public int getChangingConfigurations();
     method public int getColor(int, int);
     method public android.content.res.ColorStateList! getColorStateList(int);
     method public float getDimension(int, float);

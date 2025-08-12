@@ -61,7 +61,7 @@ package androidx.core.uwb {
     property public java.util.List<androidx.core.uwb.UwbDevice> peerDevices;
     property public int sessionId;
     property public byte[]? sessionKeyInfo;
-    property @IntRange(from=androidx.core.uwb.RangingParameters.RANGING_SLOT_DURATION_1_MILLIS, to=androidx.core.uwb.RangingParameters.RANGING_SLOT_DURATION_2_MILLIS) public long slotDurationMillis;
+    property public long slotDurationMillis;
     property public int subSessionId;
     property public byte[]? subSessionKeyInfo;
     property public int updateRateType;

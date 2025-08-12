@@ -67,7 +67,6 @@ private const val CAPTURE_TIMEOUT = 10_000.toLong() //  10 seconds
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ExtraSupportedSurfaceCombinationsContainerDeviceTest(val cameraId: String) {
 
     @get:Rule

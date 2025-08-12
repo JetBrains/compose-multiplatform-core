@@ -308,14 +308,14 @@ private class MovableElement(
 
 @Suppress("PrimitiveInCollection")
 internal class MovableNode(
-    public var enabled: Boolean,
-    public var stickyPose: Boolean,
-    public var scaleWithDistance: Boolean,
-    public var onMoveStart: ((SpatialMoveStartEvent) -> Unit)?,
-    public var onMoveEnd: ((SpatialMoveEndEvent) -> Unit)?,
-    public var onMove: ((SpatialMoveEvent) -> Boolean)?,
-    public var anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
-    public var anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
+    var enabled: Boolean,
+    var stickyPose: Boolean,
+    var scaleWithDistance: Boolean,
+    var onMoveStart: ((SpatialMoveStartEvent) -> Unit)?,
+    var onMoveEnd: ((SpatialMoveEndEvent) -> Unit)?,
+    var onMove: ((SpatialMoveEvent) -> Boolean)?,
+    var anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
+    var anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
 ) :
     SubspaceModifier.Node(),
     CompositionLocalConsumerSubspaceModifierNode,
@@ -546,7 +546,7 @@ internal class MovableNode(
         requestRelayout()
     }
 
-    public companion object {
+    companion object {
         private val MainExecutor: Executor = Dispatchers.Main.asExecutor()
     }
 }

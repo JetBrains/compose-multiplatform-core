@@ -18,7 +18,6 @@ package androidx.camera.camera2.internal
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
@@ -47,14 +46,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class HighSpeedResolverTest {
 
     private companion object {

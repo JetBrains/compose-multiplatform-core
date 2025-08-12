@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The credential json cannot be returned due to unknown error */
-public class ImportCredentialsUnknownErrorException(errorMessage: CharSequence? = null) :
+public class ImportCredentialsUnknownErrorException(errorMessage: String? = null) :
     ImportCredentialsException(TYPE_IMPORT_CREDENTIALS_UNKNOWN_ERROR_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_IMPORT_CREDENTIALS_UNKNOWN_ERROR_EXCEPTION: String =

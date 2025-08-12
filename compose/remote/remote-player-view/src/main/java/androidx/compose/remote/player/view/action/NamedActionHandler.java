@@ -29,5 +29,5 @@ public interface NamedActionHandler {
      * @param value
      * @param stateUpdater
      */
-    void execute(@NonNull String name, @Nullable Object value, StateUpdater stateUpdater);
+    void execute(@NonNull String name, @Nullable Object value, @NonNull StateUpdater stateUpdater);
 }

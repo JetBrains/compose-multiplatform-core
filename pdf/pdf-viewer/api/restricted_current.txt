@@ -1,6 +1,9 @@
 // Signature format: 4.0
 package androidx.pdf {
 
+  @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPdfApi {
+  }
+
   public interface PdfDocument extends java.io.Closeable {
     method public androidx.pdf.PdfDocument.BitmapSource getPageBitmapSource(int pageNumber);
     method public suspend Object? getPageContent(int pageNumber, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument.PdfPageContent?>);
@@ -173,6 +176,28 @@ package androidx.pdf.content {
 
 }
 
+package androidx.pdf.selection {
+
+  public interface Selection {
+    method public java.util.List<androidx.pdf.PdfRect> getBounds();
+    property public abstract java.util.List<androidx.pdf.PdfRect> bounds;
+  }
+
+}
+
+package androidx.pdf.selection.model {
+
+  public final class TextSelection implements androidx.pdf.selection.Selection {
+    ctor public TextSelection(CharSequence text, java.util.List<androidx.pdf.PdfRect> bounds);
+    method public java.util.List<androidx.pdf.PdfRect> getBounds();
+    method public CharSequence getText();
+    method public String textAsString();
+    property public java.util.List<androidx.pdf.PdfRect> bounds;
+    property public CharSequence text;
+  }
+
+}
+
 package androidx.pdf.view {
 
   public final class Highlight {
@@ -180,7 +205,7 @@ package androidx.pdf.view {
     method public androidx.pdf.PdfRect getArea();
     method public int getColor();
     property public androidx.pdf.PdfRect area;
-    property @ColorInt public int color;
+    property public int color;
   }
 
   public class PdfView extends android.view.View {
@@ -191,7 +216,7 @@ package androidx.pdf.view {
     method public final void addOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void addOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
     method public final void clearSelection();
-    method public final androidx.pdf.view.Selection? getCurrentSelection();
+    method public final androidx.pdf.selection.Selection? getCurrentSelection();
     method public final android.graphics.drawable.Drawable getFastScrollPageIndicatorBackgroundDrawable();
     method public final int getFastScrollPageIndicatorMarginEnd();
     method public final android.graphics.drawable.Drawable getFastScrollVerticalThumbDrawable();
@@ -221,7 +246,7 @@ package androidx.pdf.view {
     method public final void setZoom(float);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(android.graphics.PointF viewPoint);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(float x, float y);
-    property public final androidx.pdf.view.Selection? currentSelection;
+    property public final androidx.pdf.selection.Selection? currentSelection;
     property public final android.graphics.drawable.Drawable fastScrollPageIndicatorBackgroundDrawable;
     property public final int fastScrollPageIndicatorMarginEnd;
     property public final android.graphics.drawable.Drawable fastScrollVerticalThumbDrawable;
@@ -254,25 +279,11 @@ package androidx.pdf.view {
   }
 
   public static interface PdfView.OnSelectionChangedListener {
-    method public void onSelectionChanged(androidx.pdf.view.Selection? newSelection);
+    method public void onSelectionChanged(androidx.pdf.selection.Selection? newSelection);
   }
 
   public static interface PdfView.OnViewportChangedListener {
     method public void onViewportChanged(int firstVisiblePage, int visiblePagesCount, android.util.SparseArray<android.graphics.RectF> pageLocations, float zoomLevel);
-  }
-
-  public interface Selection {
-    method public java.util.List<androidx.pdf.PdfRect> getBounds();
-    property public abstract java.util.List<androidx.pdf.PdfRect> bounds;
-  }
-
-  public final class TextSelection implements androidx.pdf.view.Selection {
-    ctor public TextSelection(CharSequence text, java.util.List<androidx.pdf.PdfRect> bounds);
-    method public java.util.List<androidx.pdf.PdfRect> getBounds();
-    method public CharSequence getText();
-    method public String textAsString();
-    property public java.util.List<androidx.pdf.PdfRect> bounds;
-    property public CharSequence text;
   }
 
 }

@@ -13,6 +13,7 @@ pluginManagement {
             }
         }
     }
+    includeBuild("androidx-settings-plugins")
 }
 
 buildscript {
@@ -25,10 +26,11 @@ buildscript {
 
     dependencies {
         // upgrade protobuf to be compatible with AGP
-        classpath("com.google.protobuf:protobuf-java:3.22.3")
+        classpath("com.google.protobuf:protobuf-java:3.25.5")
         classpath("com.gradle:develocity-gradle-plugin:4.1")
         classpath("com.gradle:common-custom-user-data-gradle-plugin:2.3")
         classpath("androidx.build.gradle.gcpbuildcache:gcpbuildcache:1.0.0")
+        classpath("com.google.cloud:google-cloud-secretmanager:2.67.0")
         def agpOverride = System.getenv("GRADLE_PLUGIN_VERSION")
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
@@ -38,6 +40,10 @@ buildscript {
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
     }
+}
+
+plugins {
+    id("AndroidXHostTestFailureHandlerPlugin")
 }
 
 enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
@@ -473,6 +479,8 @@ includeProject(":camera:camera-video", [BuildType.CAMERA])
 includeProject(":camera:camera-video:camera-video-samples", "camera/camera-video/samples", [BuildType.CAMERA])
 includeProject(":camera:camera-view", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-benchmark", [BuildType.CAMERA])
+includeProject(":camera:integration-tests:camera-macrobenchmark", [BuildType.CAMERA])
+includeProject(":camera:integration-tests:camera-macrobenchmark-target", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-testapp-avsync", "camera/integration-tests/avsynctestapp", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-testapp-camera2-pipe", "camera/integration-tests/camerapipetestapp", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-testapp-core", "camera/integration-tests/coretestapp", [BuildType.CAMERA])
@@ -587,9 +595,11 @@ includeProject(":compose:material3:material3:material3-samples", "compose/materi
 includeProject(":compose:mpp:demo", [BuildType.COMPOSE])
 includeProject(":compose:mpp:demo-uikit", [BuildType.COMPOSE])
 includeProject(":compose:remote:remote-core", [BuildType.MAIN])
+includeProject(":compose:remote:remote-creation-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-view", [BuildType.MAIN])
 includeProject(":compose:remote:remote-frontend", [BuildType.MAIN])
+includeProject(":compose:remote:test-utils", [BuildType.MAIN])
 includeProject(":compose:runtime:runtime", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation:runtime-annotation-samples", "compose/runtime/runtime-annotation/samples", [BuildType.COMPOSE])
@@ -844,7 +854,6 @@ includeProject(":lifecycle:integration-tests:lifecycle-testapp-kotlin", "lifecyc
 includeProject(":lifecycle:lifecycle-common", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":lifecycle:lifecycle-common-java8", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":lifecycle:lifecycle-compiler", [BuildType.MAIN, BuildType.FLAN])
-includeProject(":lifecycle:lifecycle-extensions", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":lifecycle:lifecycle-livedata", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":lifecycle:lifecycle-livedata-core", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":lifecycle:lifecycle-livedata-core-ktx", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
@@ -1228,6 +1237,7 @@ includeProject(":xr:arcore:integration-tests:projected-testapp", [BuildType.XR])
 includeProject(":xr:arcore:arcore-projected", [BuildType.XR])
 includeProject(":xr:assets", [BuildType.XR])
 includeProject(":xr:compose:compose", [BuildType.XR])
+includeProject(":xr:compose:compose:compose-samples", "xr/compose/compose/samples", [BuildType.XR])
 includeProject(":xr:compose:compose-testing", [BuildType.XR])
 includeProject(":xr:compose:integration-tests:common", [BuildType.XR])
 includeProject(":xr:compose:integration-tests:layout:activitypanelapp", [BuildType.XR])
@@ -1261,7 +1271,6 @@ includeProject(":xr:glimmer:glimmer:glimmer-samples", "xr/glimmer/glimmer/sample
 includeProject(":xr:glimmer:integration-tests:demos", [BuildType.COMPOSE])
 includeProject(":xr:projected:projected", [BuildType.XR])
 includeProject(":xr:runtime:runtime", [BuildType.XR])
-includeProject(":xr:runtime:runtime-guava", [BuildType.XR])
 includeProject(":xr:runtime:runtime-manifest", [BuildType.XR])
 includeProject(":xr:runtime:runtime-openxr", [BuildType.XR])
 includeProject(":xr:runtime:runtime-rxjava3", [BuildType.XR])

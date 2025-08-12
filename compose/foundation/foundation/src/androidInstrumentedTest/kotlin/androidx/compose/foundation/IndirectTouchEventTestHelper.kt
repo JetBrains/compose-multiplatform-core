@@ -21,7 +21,7 @@ import android.view.MotionEvent
 import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.performIndirectTouchEvent
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
@@ -33,7 +33,8 @@ internal fun SemanticsNodeInteraction.sendIndirectSwipeEvent(
     to: Offset = Offset(TouchPadEnd, 0f),
     stepCount: Int = 10,
     delayTimeMills: Long = 16L,
-    primaryAxis: IndirectTouchEventPrimaryAxis = IndirectTouchEventPrimaryAxis.X,
+    primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis =
+        IndirectTouchEventPrimaryDirectionalMotionAxis.X,
 ) {
     require(stepCount > 0) { "Step count should be at least 1" }
     val stepSize = (to - from) / stepCount.toFloat()
@@ -41,7 +42,7 @@ internal fun SemanticsNodeInteraction.sendIndirectSwipeEvent(
     var currentTime = SystemClock.uptimeMillis()
     var currentValue = from
 
-    sendIndirectTouchPressEvent(currentTime, currentValue, primaryAxis)
+    sendIndirectTouchPressEvent(currentTime, currentValue, primaryDirectionalMotionAxis)
     currentTime += delayTimeMills
     currentValue += stepSize
 
@@ -52,10 +53,10 @@ internal fun SemanticsNodeInteraction.sendIndirectSwipeEvent(
             currentValue,
             delayTimeMills,
             stepSize,
-            primaryAxis,
+            primaryDirectionalMotionAxis,
         )
 
-    sendIndirectTouchReleaseEvent(newCurrentTime, newCurrentValue, primaryAxis)
+    sendIndirectTouchReleaseEvent(newCurrentTime, newCurrentValue, primaryDirectionalMotionAxis)
 }
 
 @ExperimentalIndirectTouchTypeApi
@@ -65,7 +66,7 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchMoveEvents(
     currentValue: Offset,
     delayTimeMills: Long,
     stepSize: Offset,
-    primaryAxis: IndirectTouchEventPrimaryAxis,
+    primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis,
 ): Pair<Long, Offset> {
     var currentTime1 = currentTime
     var currentValue1 = currentValue
@@ -84,7 +85,7 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchMoveEvents(
             currentTime1 += delayTimeMills
             currentValue1 += stepSize
         }
-        performIndirectTouchEvent(IndirectTouchEvent(move, primaryAxis))
+        performIndirectTouchEvent(IndirectTouchEvent(move, primaryDirectionalMotionAxis))
     }
     return Pair(currentTime1, currentValue1)
 }
@@ -93,7 +94,8 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchMoveEvents(
 internal fun SemanticsNodeInteraction.sendIndirectTouchReleaseEvent(
     currentTime: Long = SystemClock.uptimeMillis(),
     currentValue: Offset = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f),
-    primaryAxis: IndirectTouchEventPrimaryAxis = IndirectTouchEventPrimaryAxis.X,
+    primaryAxis: IndirectTouchEventPrimaryDirectionalMotionAxis =
+        IndirectTouchEventPrimaryDirectionalMotionAxis.X,
 ) {
     val up =
         MotionEvent.obtain(
@@ -112,7 +114,8 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchReleaseEvent(
 internal fun SemanticsNodeInteraction.sendIndirectTouchPressEvent(
     currentTime: Long = SystemClock.uptimeMillis(),
     currentValue: Offset = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f),
-    primaryAxis: IndirectTouchEventPrimaryAxis = IndirectTouchEventPrimaryAxis.X,
+    primaryDirectionalMotionAxis: IndirectTouchEventPrimaryDirectionalMotionAxis =
+        IndirectTouchEventPrimaryDirectionalMotionAxis.X,
 ) {
     val down =
         MotionEvent.obtain(
@@ -124,7 +127,7 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchPressEvent(
             0,
         )
     down.source = SOURCE_TOUCH_NAVIGATION
-    performIndirectTouchEvent(IndirectTouchEvent(down, primaryAxis))
+    performIndirectTouchEvent(IndirectTouchEvent(down, primaryDirectionalMotionAxis))
 }
 
 /** Swiping away from the start of the touchpad. */
@@ -156,7 +159,7 @@ internal fun SemanticsNodeInteraction.sendIndirectTouchCancelEvent(sendMoveEvent
             currentValue,
             16L,
             stepSize,
-            IndirectTouchEventPrimaryAxis.X,
+            IndirectTouchEventPrimaryDirectionalMotionAxis.X,
         )
     }
 
@@ -177,7 +180,7 @@ internal fun SemanticsNodeInteraction.sendIndirectPressReleaseEvent() {
             currentValue,
             16L,
             Offset.Zero,
-            IndirectTouchEventPrimaryAxis.X,
+            IndirectTouchEventPrimaryDirectionalMotionAxis.X,
         )
     sendIndirectTouchReleaseEvent(newCurrentTime, newCurrentValue)
 }

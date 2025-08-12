@@ -29,7 +29,6 @@ import android.media.CamcorderProfile.QUALITY_480P
 import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.internal.compat.CameraManagerCompat
 import androidx.camera.core.impl.EncoderProfilesProvider
@@ -51,7 +50,6 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
@@ -64,7 +62,6 @@ private const val CAMERA_ID_EXTERNAL_1 = "101"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class EncoderProfilesProviderFallbackTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()

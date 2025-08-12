@@ -21,4 +21,16 @@
     <item
         android:id="@+id/itemAppSdksCuj"
         android:title="@string/app_sdks_cuj" />
+    <item
+        android:id="@+id/itemSandboxDeathCuj"
+        android:title="@string/sandbox_death_cuj" />
+    <item
+        android:id="@+id/itemClientPackageCuj"
+        android:title="@string/get_client_package_cuj" />
+    <item
+        android:id="@+id/itemSdkContextCuj"
+        android:title="@string/sdk_context_cuj" />
+    <item
+        android:id="@+id/itemClientImportanceListenerCuj"
+        android:title="@string/client_importance_listener_cuj" />
 </menu>

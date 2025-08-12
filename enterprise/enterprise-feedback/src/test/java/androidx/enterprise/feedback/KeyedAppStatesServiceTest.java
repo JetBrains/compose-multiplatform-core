@@ -64,7 +64,7 @@ import java.util.Collections;
 @SuppressWarnings("UnstableApiUsage") // PausedExecutorService and ShadowPausedAsyncTask are @Beta
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = 21, instrumentedPackages = { "androidx.enterprise.feedback" })
+@Config(instrumentedPackages = { "androidx.enterprise.feedback" })
 public class KeyedAppStatesServiceTest {
 
     private static class TestKeyedAppStatesService extends KeyedAppStatesService {

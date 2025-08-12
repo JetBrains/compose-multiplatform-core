@@ -67,7 +67,6 @@ android {
         }
     }
     namespace = "com.example.androidx.webkit"
-    compileSdk = 35
 }
 
 androidx {

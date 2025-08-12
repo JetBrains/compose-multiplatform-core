@@ -42,7 +42,11 @@ public class Queue<T>(capacity: Int = QUEUE_CAPACITY) {
         synchronized(queue) { queue.addLast(value) }
     }
 
-    public fun removeFirstOrNull(): T? {
-        return synchronized(queue) { queue.removeFirstOrNull() }
+    public fun firstOrNull(): T? {
+        return synchronized(queue) { queue.firstOrNull() }
+    }
+
+    public fun removeFirst() {
+        return synchronized(queue) { queue.removeFirst() }
     }
 }

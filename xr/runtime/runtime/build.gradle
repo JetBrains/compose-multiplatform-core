@@ -39,7 +39,7 @@ dependencies {
 
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
-    implementation("com.google.ar:impress:0.0.4")
+    implementation("com.google.ar:impress:0.0.5")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)

@@ -42,7 +42,11 @@ import org.junit.runners.Parameterized
 /** User interaction Macrobenchmark tests. */
 @LargeTest
 @RunWith(Parameterized::class)
-class UserInteractionBenchmark(private val ciTestConfigType: String, private val zOrder: String) {
+class UserInteractionBenchmark(
+    private val ciTestConfigType: String,
+    private val uiFramework: String,
+    private val zOrder: String,
+) {
     @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
     private lateinit var viewConfiguration: ViewConfiguration
@@ -108,7 +112,7 @@ class UserInteractionBenchmark(private val ciTestConfigType: String, private val
             setupBlock = { pressHome() },
             measureBlock = {
                 startActivityAndWait(
-                    intent = getIntentForUserInteractionsFragmentWithZOrder(zOrder)
+                    intent = getIntentForUserInteractionsFragment(uiFramework, zOrder)
                 )
                 val remoteLayout =
                     device.wait(
@@ -122,7 +126,7 @@ class UserInteractionBenchmark(private val ciTestConfigType: String, private val
         )
     }
 
-    private fun getIntentForUserInteractionsFragmentWithZOrder(zOrder: String): Intent {
+    private fun getIntentForUserInteractionsFragment(uiFramework: String, zOrder: String): Intent {
         val intent =
             InstrumentationRegistry.getInstrumentation()
                 .context
@@ -133,6 +137,7 @@ class UserInteractionBenchmark(private val ciTestConfigType: String, private val
             FragmentOptions.KEY_FRAGMENT,
             FragmentOptions.FRAGMENT_USER_INTERACTIONS,
         )
+        configBundle.putString(FragmentOptions.KEY_UI_FRAMEWORK, uiFramework)
         configBundle.putString(FragmentOptions.KEY_Z_ORDER, zOrder)
         intent.putExtras(configBundle)
         return intent
@@ -147,7 +152,7 @@ class UserInteractionBenchmark(private val ciTestConfigType: String, private val
         const val SDK_SANDBOX_SUFFIX = "_sdk_sandbox"
 
         /** Parameterized test config type and z-order. */
-        @Parameterized.Parameters(name = "{0}, z-order={1}")
+        @Parameterized.Parameters(name = "{0}, uiFramework={1}, z-order={2}")
         @JvmStatic
         fun params(): List<Array<String>> {
             val configTypes =
@@ -155,11 +160,15 @@ class UserInteractionBenchmark(private val ciTestConfigType: String, private val
                     InstrumentationRegistry.getArguments()
                         .getString("androidx.testConfigType", "LOCAL_RUN")
                 )
+            val uiFrameworks =
+                listOf(FragmentOptions.UI_FRAMEWORK_COMPOSE, FragmentOptions.UI_FRAMEWORK_VIEW)
             val zOrders = listOf(FragmentOptions.Z_ORDER_ABOVE, FragmentOptions.Z_ORDER_BELOW)
             val params = mutableListOf<Array<String>>()
             for (configType in configTypes) {
-                for (zOrderValue in zOrders) {
-                    params.add(arrayOf(configType, zOrderValue))
+                for (uiFrameworkValue in uiFrameworks) {
+                    for (zOrderValue in zOrders) {
+                        params.add(arrayOf(configType, uiFrameworkValue, zOrderValue))
+                    }
                 }
             }
             return params

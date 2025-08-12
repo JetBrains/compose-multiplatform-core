@@ -19,9 +19,11 @@ package androidx.xr.projected.permissions
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.ResultReceiver
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
@@ -72,6 +74,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
      */
     private var rationaleRequest by mutableStateOf<PermissionRequest?>(null)
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (intent.getBooleanExtra(GoToHostProjectedActivity.EXTRA_SHOULD_FINISH, false)) {
@@ -81,6 +84,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
         initialize(savedInstanceState)
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun initialize(savedInstanceState: Bundle?) {
         rationaleRequest = null
 
@@ -154,6 +158,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
         isInitialized = true
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -175,6 +180,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
     }
 
     @VisibleForTesting
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(GoToHostProjectedActivity.EXTRA_SHOULD_FINISH, false)) {
@@ -203,6 +209,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun handleNextRequest() {
         if (nextRequestIndex >= requests.size) {
             sendResultsAndFinish()
@@ -233,6 +240,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
         resultSent = true
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun onContinue() {
         val request = requests[nextRequestIndex]
         // Hide the rationale UI before showing the system permission dialog.
@@ -248,6 +256,7 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
      * This prevents a confusing user experience where the user is immediately prompted for a
      * permission after hitting cancel in the rationale UI.
      */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun onCancel() {
         // Hide the rationale UI.
         rationaleRequest = null

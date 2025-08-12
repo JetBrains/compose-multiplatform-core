@@ -15,10 +15,15 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.text.StaticLayout;
 
 import androidx.compose.remote.core.Platform;
 
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidComputedTextLayout implements Platform.ComputedTextLayout {
     StaticLayout mStaticLayout;
     float mWidth;

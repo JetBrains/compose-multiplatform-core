@@ -25,7 +25,6 @@ import androidx.camera.testing.impl.ExifUtil
 import androidx.camera.testing.impl.TestImageUtil
 import androidx.camera.testing.impl.fakes.FakeImageInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import org.junit.Test
@@ -33,7 +32,6 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class Image2BitmapTest {
     private val operation = Image2Bitmap()
 

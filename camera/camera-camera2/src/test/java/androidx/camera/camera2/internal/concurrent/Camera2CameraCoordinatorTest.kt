@@ -57,10 +57,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.camera2.internal"],
-)
+@Config(instrumentedPackages = ["androidx.camera.camera2.internal"])
 class Camera2CameraCoordinatorTest {
     private val originalFingerprint = Build.FINGERPRINT
 

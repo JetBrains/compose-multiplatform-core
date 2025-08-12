@@ -56,6 +56,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import io.reactivex.Flowable;
 
 import org.hamcrest.MatcherAssert;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -79,7 +80,7 @@ import java.util.concurrent.TimeoutException;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MultimapQueryTest {
-    // TODO: (b/191265082) Handle duplicate column names in JOINs
+    private MusicTestDatabase mDb;
     private MusicDao mMusicDao;
 
     private final Song mRhcpSong1 = new Song(
@@ -214,9 +215,14 @@ public class MultimapQueryTest {
     @Before
     public void createDb() {
         Context context = ApplicationProvider.getApplicationContext();
-        MusicTestDatabase db = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
+        mDb = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
                 .build();
-        mMusicDao = db.getDao();
+        mMusicDao = mDb.getDao();
+    }
+
+    @After
+    public void closeDb() {
+        mDb.close();
     }
 
     /**

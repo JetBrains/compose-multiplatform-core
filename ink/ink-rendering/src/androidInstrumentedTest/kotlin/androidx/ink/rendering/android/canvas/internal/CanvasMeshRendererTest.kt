@@ -66,7 +66,7 @@ class CanvasMeshRendererTest {
             inputs =
                 MutableStrokeInputBatch()
                     .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
-                    .asImmutable(),
+                    .toImmutable(),
         )
 
     private val clock = FakeClock()
@@ -123,7 +123,7 @@ class CanvasMeshRendererTest {
                 inputs =
                     MutableStrokeInputBatch()
                         .add(InputToolType.UNKNOWN, x = 99F, y = 99F, elapsedTimeMillis = 100)
-                        .asImmutable(),
+                        .toImmutable(),
             )
 
         assertThat(stroke.shape.getRenderGroupCount()).isEqualTo(1)
@@ -477,7 +477,7 @@ class CanvasMeshRendererTest {
                 inputs =
                     MutableStrokeInputBatch()
                         .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
-                        .asImmutable(),
+                        .toImmutable(),
             )
 
         val renderNode = RenderNode("test")
@@ -528,7 +528,7 @@ class CanvasMeshRendererTest {
                 inputs =
                     MutableStrokeInputBatch()
                         .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
-                        .asImmutable(),
+                        .toImmutable(),
             )
 
         val renderNode = RenderNode("test")

@@ -31,6 +31,8 @@ import androidx.room.integration.multiplatformtestapp.test.BaseMigrationTest.Mig
 import androidx.room.migration.Migration
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -233,6 +235,40 @@ abstract class BaseMigrationTest {
             }
             .hasMessageThat()
             .contains("Creation of tables should never occur while validating migrations.")
+    }
+
+    // Validates that the type of connection created by the given driver are used in migrations.
+    @Test
+    fun customConnectionsOnMigrate() = runTest {
+        val migrationTestHelper = getTestHelper()
+        val connection = migrationTestHelper.createDatabase(1)
+        connection.close()
+
+        class MyConnection(private val delegate: SQLiteConnection) : SQLiteConnection by delegate
+
+        val bundledDriver = BundledSQLiteDriver()
+        val dbVersion2 =
+            getDatabaseBuilder()
+                .addMigrations(
+                    object : Migration(1, 2) {
+                        override fun migrate(connection: SQLiteConnection) {
+                            assertThat(connection).isInstanceOf<MyConnection>()
+                            connection.execSQL(
+                                "ALTER TABLE MigrationEntity ADD COLUMN addedInV2 TEXT"
+                            )
+                        }
+                    }
+                )
+                .setDriver(
+                    object : SQLiteDriver by bundledDriver {
+                        override fun open(fileName: String): SQLiteConnection {
+                            return MyConnection(bundledDriver.open(fileName))
+                        }
+                    }
+                )
+                .build()
+        dbVersion2.dao().getSingleItem(1)
+        dbVersion2.close()
     }
 
     @Entity data class MigrationEntity(@PrimaryKey val pk: Long, val addedInV2: String?)

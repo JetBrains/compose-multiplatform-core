@@ -29,73 +29,6 @@ import org.junit.runners.JUnit4
 class BrushBehaviorTest {
 
     @Test
-    fun sourceConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.Source>(
-                BrushBehavior.Source.NORMALIZED_PRESSURE,
-                BrushBehavior.Source.TILT_IN_RADIANS,
-                BrushBehavior.Source.TILT_X_IN_RADIANS,
-                BrushBehavior.Source.TILT_Y_IN_RADIANS,
-                BrushBehavior.Source.ORIENTATION_IN_RADIANS,
-                BrushBehavior.Source.ORIENTATION_ABOUT_ZERO_IN_RADIANS,
-                BrushBehavior.Source.SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND,
-                BrushBehavior.Source.VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND,
-                BrushBehavior.Source.VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND,
-                BrushBehavior.Source.DIRECTION_IN_RADIANS,
-                BrushBehavior.Source.DIRECTION_ABOUT_ZERO_IN_RADIANS,
-                BrushBehavior.Source.NORMALIZED_DIRECTION_X,
-                BrushBehavior.Source.NORMALIZED_DIRECTION_Y,
-                BrushBehavior.Source.DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Source.TIME_OF_INPUT_IN_SECONDS,
-                BrushBehavior.Source.TIME_OF_INPUT_IN_MILLIS,
-                BrushBehavior.Source.PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Source.PREDICTED_TIME_ELAPSED_IN_SECONDS,
-                BrushBehavior.Source.PREDICTED_TIME_ELAPSED_IN_MILLIS,
-                BrushBehavior.Source.DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Source.TIME_SINCE_INPUT_IN_SECONDS,
-                BrushBehavior.Source.TIME_SINCE_INPUT_IN_MILLIS,
-                BrushBehavior.Source.ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED,
-                BrushBehavior.Source.ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED,
-                BrushBehavior.Source.ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED,
-                BrushBehavior.Source
-                    .ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED,
-                BrushBehavior.Source
-                    .ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED,
-                BrushBehavior.Source.INPUT_SPEED_IN_CENTIMETERS_PER_SECOND,
-                BrushBehavior.Source.INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND,
-                BrushBehavior.Source.INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND,
-                BrushBehavior.Source.INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS,
-                BrushBehavior.Source.PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS,
-                BrushBehavior.Source.INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED,
-                BrushBehavior.Source.INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED,
-                BrushBehavior.Source.INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED,
-                BrushBehavior.Source.INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED,
-                BrushBehavior.Source.INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED,
-                BrushBehavior.Source.DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun sourceHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.Source.NORMALIZED_PRESSURE.hashCode())
-            .isEqualTo(BrushBehavior.Source.NORMALIZED_PRESSURE.hashCode())
-
-        assertThat(BrushBehavior.Source.TILT_IN_RADIANS.hashCode())
-            .isNotEqualTo(BrushBehavior.Source.NORMALIZED_PRESSURE.hashCode())
-    }
-
-    @Test
-    fun sourceEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.Source.NORMALIZED_PRESSURE)
-            .isEqualTo(BrushBehavior.Source.NORMALIZED_PRESSURE)
-
-        assertThat(BrushBehavior.Source.TILT_IN_RADIANS)
-            .isNotEqualTo(BrushBehavior.Source.NORMALIZED_PRESSURE)
-        assertThat(BrushBehavior.Source.TILT_IN_RADIANS).isNotEqualTo(null)
-    }
-
-    @Test
     fun sourceToString_returnsCorrectString() {
         assertThat(BrushBehavior.Source.NORMALIZED_PRESSURE.toString())
             .isEqualTo("BrushBehavior.Source.NORMALIZED_PRESSURE")
@@ -230,49 +163,6 @@ class BrushBehaviorTest {
     }
 
     @Test
-    fun targetConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.Target>(
-                BrushBehavior.Target.WIDTH_MULTIPLIER,
-                BrushBehavior.Target.HEIGHT_MULTIPLIER,
-                BrushBehavior.Target.SIZE_MULTIPLIER,
-                BrushBehavior.Target.SLANT_OFFSET_IN_RADIANS,
-                BrushBehavior.Target.PINCH_OFFSET,
-                BrushBehavior.Target.ROTATION_OFFSET_IN_RADIANS,
-                BrushBehavior.Target.CORNER_ROUNDING_OFFSET,
-                BrushBehavior.Target.POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Target.POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Target.POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Target.POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.Target.TEXTURE_ANIMATION_PROGRESS_OFFSET,
-                BrushBehavior.Target.HUE_OFFSET_IN_RADIANS,
-                BrushBehavior.Target.SATURATION_MULTIPLIER,
-                BrushBehavior.Target.LUMINOSITY,
-                BrushBehavior.Target.OPACITY_MULTIPLIER,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun targetHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER.hashCode())
-            .isEqualTo(BrushBehavior.Target.WIDTH_MULTIPLIER.hashCode())
-
-        assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER.hashCode())
-            .isNotEqualTo(BrushBehavior.Target.HEIGHT_MULTIPLIER.hashCode())
-    }
-
-    @Test
-    fun targetEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER)
-            .isEqualTo(BrushBehavior.Target.WIDTH_MULTIPLIER)
-
-        assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER)
-            .isNotEqualTo(BrushBehavior.Target.HEIGHT_MULTIPLIER)
-        assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER).isNotEqualTo(null)
-    }
-
-    @Test
     fun targetToString_returnsCorrectString() {
         assertThat(BrushBehavior.Target.WIDTH_MULTIPLIER.toString())
             .isEqualTo("BrushBehavior.Target.WIDTH_MULTIPLIER")
@@ -313,69 +203,6 @@ class BrushBehaviorTest {
     }
 
     @Test
-    fun polarTargetConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.PolarTarget>(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun polarTargetHashCode_withIdenticalValues_match() {
-        assertThat(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-                    .hashCode()
-            )
-            .isEqualTo(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-                    .hashCode()
-            )
-
-        assertThat(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-                    .hashCode()
-            )
-            .isEqualTo(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-                    .hashCode()
-            )
-    }
-
-    @Test
-    fun polarTargetEquals_checksEqualityOfValues() {
-        assertThat(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-            )
-            .isEqualTo(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-            )
-
-        assertThat(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-            )
-            .isNotEqualTo(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-            )
-        assertThat(
-                BrushBehavior.PolarTarget
-                    .POSITION_OFFSET_ABSOLUTE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE
-            )
-            .isNotEqualTo(null)
-    }
-
-    @Test
     fun polarTargetToString_returnsCorrectString() {
         assertThat(
                 BrushBehavior.PolarTarget
@@ -396,34 +223,6 @@ class BrushBehaviorTest {
     }
 
     @Test
-    fun outOfRangeConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.OutOfRange>(
-                BrushBehavior.OutOfRange.CLAMP,
-                BrushBehavior.OutOfRange.REPEAT,
-                BrushBehavior.OutOfRange.MIRROR,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun outOfRangeHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.OutOfRange.CLAMP.hashCode())
-            .isEqualTo(BrushBehavior.OutOfRange.CLAMP.hashCode())
-
-        assertThat(BrushBehavior.OutOfRange.CLAMP.hashCode())
-            .isNotEqualTo(BrushBehavior.OutOfRange.REPEAT.hashCode())
-    }
-
-    @Test
-    fun outOfRangeEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.OutOfRange.CLAMP).isEqualTo(BrushBehavior.OutOfRange.CLAMP)
-
-        assertThat(BrushBehavior.OutOfRange.CLAMP).isNotEqualTo(BrushBehavior.OutOfRange.REPEAT)
-        assertThat(BrushBehavior.OutOfRange.CLAMP).isNotEqualTo(null)
-    }
-
-    @Test
     fun outOfRangeToString_returnsCorrectString() {
         assertThat(BrushBehavior.OutOfRange.CLAMP.toString())
             .isEqualTo("BrushBehavior.OutOfRange.CLAMP")
@@ -431,37 +230,6 @@ class BrushBehaviorTest {
             .isEqualTo("BrushBehavior.OutOfRange.REPEAT")
         assertThat(BrushBehavior.OutOfRange.MIRROR.toString())
             .isEqualTo("BrushBehavior.OutOfRange.MIRROR")
-    }
-
-    @Test
-    fun optionalInputPropertyConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.OptionalInputProperty>(
-                BrushBehavior.OptionalInputProperty.PRESSURE,
-                BrushBehavior.OptionalInputProperty.TILT,
-                BrushBehavior.OptionalInputProperty.ORIENTATION,
-                BrushBehavior.OptionalInputProperty.TILT_X_AND_Y,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun optionalInputPropertyHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.OptionalInputProperty.PRESSURE.hashCode())
-            .isEqualTo(BrushBehavior.OptionalInputProperty.PRESSURE.hashCode())
-
-        assertThat(BrushBehavior.OptionalInputProperty.PRESSURE.hashCode())
-            .isNotEqualTo(BrushBehavior.OptionalInputProperty.TILT.hashCode())
-    }
-
-    @Test
-    fun optionalInputPropertyEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.OptionalInputProperty.PRESSURE)
-            .isEqualTo(BrushBehavior.OptionalInputProperty.PRESSURE)
-
-        assertThat(BrushBehavior.OptionalInputProperty.PRESSURE)
-            .isNotEqualTo(BrushBehavior.OptionalInputProperty.TILT)
-        assertThat(BrushBehavior.OptionalInputProperty.PRESSURE).isNotEqualTo(null)
     }
 
     @Test
@@ -477,69 +245,10 @@ class BrushBehaviorTest {
     }
 
     @Test
-    fun binaryOpConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.BinaryOp>(
-                BrushBehavior.BinaryOp.PRODUCT,
-                BrushBehavior.BinaryOp.SUM,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun binaryOpHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.BinaryOp.PRODUCT.hashCode())
-            .isEqualTo(BrushBehavior.BinaryOp.PRODUCT.hashCode())
-
-        assertThat(BrushBehavior.BinaryOp.PRODUCT.hashCode())
-            .isNotEqualTo(BrushBehavior.BinaryOp.SUM.hashCode())
-    }
-
-    @Test
-    fun binaryOpEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.BinaryOp.PRODUCT).isEqualTo(BrushBehavior.BinaryOp.PRODUCT)
-
-        assertThat(BrushBehavior.BinaryOp.PRODUCT).isNotEqualTo(BrushBehavior.BinaryOp.SUM)
-        assertThat(BrushBehavior.BinaryOp.PRODUCT).isNotEqualTo(null)
-    }
-
-    @Test
     fun binaryOpToString_returnsCorrectString() {
         assertThat(BrushBehavior.BinaryOp.PRODUCT.toString())
             .isEqualTo("BrushBehavior.BinaryOp.PRODUCT")
         assertThat(BrushBehavior.BinaryOp.SUM.toString()).isEqualTo("BrushBehavior.BinaryOp.SUM")
-    }
-
-    @Test
-    fun dampingSourceConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.DampingSource>(
-                BrushBehavior.DampingSource.DISTANCE_IN_CENTIMETERS,
-                BrushBehavior.DampingSource.DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE,
-                BrushBehavior.DampingSource.TIME_IN_SECONDS,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun dampingSourceHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS.hashCode())
-            .isEqualTo(BrushBehavior.DampingSource.TIME_IN_SECONDS.hashCode())
-
-        assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS.hashCode())
-            .isNotEqualTo(
-                BrushBehavior.DampingSource.DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE.hashCode()
-            )
-    }
-
-    @Test
-    fun dampingSourceEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS)
-            .isEqualTo(BrushBehavior.DampingSource.TIME_IN_SECONDS)
-
-        assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS)
-            .isNotEqualTo(BrushBehavior.DampingSource.DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE)
-        assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS).isNotEqualTo(null)
     }
 
     @Test
@@ -550,34 +259,6 @@ class BrushBehaviorTest {
             .isEqualTo("BrushBehavior.DampingSource.DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE")
         assertThat(BrushBehavior.DampingSource.TIME_IN_SECONDS.toString())
             .isEqualTo("BrushBehavior.DampingSource.TIME_IN_SECONDS")
-    }
-
-    @Test
-    fun interpolationConstants_areDistinct() {
-        val list =
-            listOf<BrushBehavior.Interpolation>(
-                BrushBehavior.Interpolation.LERP,
-                BrushBehavior.Interpolation.INVERSE_LERP,
-            )
-        assertThat(list.toSet()).hasSize(list.size)
-    }
-
-    @Test
-    fun interpolationHashCode_withIdenticalValues_match() {
-        assertThat(BrushBehavior.Interpolation.LERP.hashCode())
-            .isEqualTo(BrushBehavior.Interpolation.LERP.hashCode())
-
-        assertThat(BrushBehavior.Interpolation.LERP.hashCode())
-            .isNotEqualTo(BrushBehavior.Interpolation.INVERSE_LERP.hashCode())
-    }
-
-    @Test
-    fun interpolationEquals_checksEqualityOfValues() {
-        assertThat(BrushBehavior.Interpolation.LERP).isEqualTo(BrushBehavior.Interpolation.LERP)
-
-        assertThat(BrushBehavior.Interpolation.LERP)
-            .isNotEqualTo(BrushBehavior.Interpolation.INVERSE_LERP)
-        assertThat(BrushBehavior.Interpolation.LERP).isNotEqualTo(null)
     }
 
     @Test

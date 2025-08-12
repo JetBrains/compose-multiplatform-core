@@ -9,3 +9,13 @@ RemovedFromBytecode: androidx.activity.ActivityViewModelLazyKt#viewModels(androi
 
 RemovedFromJava: androidx.activity.ActivityViewModelLazyKt#viewModels(androidx.activity.ComponentActivity, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.ViewModelProvider.Factory>):
     Source breaking change: method androidx.activity.ActivityViewModelLazyKt.viewModels(androidx.activity.ComponentActivity,kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>,kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>) can no longer be resolved from Java source
+RemovedFromJava: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType):
+    Source breaking change: method androidx.activity.result.PickVisualMediaRequestKt.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType) can no longer be resolved from Java source
+RemovedFromJava: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType, int):
+    Source breaking change: method androidx.activity.result.PickVisualMediaRequestKt.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType,int) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType):
+    Source breaking change: method androidx.activity.result.PickVisualMediaRequestKt.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType, int):
+    Source breaking change: method androidx.activity.result.PickVisualMediaRequestKt.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType,int) can no longer be resolved from Kotlin source

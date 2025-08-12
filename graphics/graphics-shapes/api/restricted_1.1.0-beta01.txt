@@ -6,8 +6,8 @@ package androidx.graphics.shapes {
     ctor public CornerRounding(optional @FloatRange(from=0.0) float radius, optional @FloatRange(from=0.0, to=1.0) float smoothing);
     method public float getRadius();
     method public float getSmoothing();
-    property @FloatRange(from=0.0) public float radius;
-    property @FloatRange(from=0.0, to=1.0) public float smoothing;
+    property public float radius;
+    property public float smoothing;
     field public static final androidx.graphics.shapes.CornerRounding.Companion Companion;
     field public static final androidx.graphics.shapes.CornerRounding Unrounded;
   }

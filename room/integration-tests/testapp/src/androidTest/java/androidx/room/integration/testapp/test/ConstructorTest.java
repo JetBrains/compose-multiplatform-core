@@ -34,6 +34,7 @@ import androidx.test.filters.SmallTest;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -229,6 +230,11 @@ public class ConstructorTest {
         mDb = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), MyDb.class)
                 .build();
         mDao = mDb.dao();
+    }
+
+    @After
+    public void teardown() {
+        mDb.close();
     }
 
     @Test

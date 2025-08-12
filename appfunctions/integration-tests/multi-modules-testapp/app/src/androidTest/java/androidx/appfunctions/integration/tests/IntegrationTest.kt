@@ -32,10 +32,13 @@ import androidx.appfunctions.integration.tests.TestUtil.assertWriteInaccessible
 import androidx.appfunctions.integration.tests.TestUtil.doBlocking
 import androidx.appfunctions.integration.tests.TestUtil.retryAssert
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -112,7 +115,166 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(16)
+        assertThat(appFunctions).hasSize(19)
+    }
+
+    @Test
+    fun searchAllAppFunctions_returnEnumValues_withDynamicIndexer() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val enumFunctionMetadata =
+            appFunctionManager
+                .observeAppFunctions(searchFunctionSpec)
+                .first()
+                .flatMap { it.appFunctions }
+                .single {
+                    it.id ==
+                        "androidx.appfunctions.integration.tests.TestFunctions#enumValueFunction"
+                }
+
+        val intEnumParamMetadata =
+            assertIs<AppFunctionIntTypeMetadata>(
+                enumFunctionMetadata.parameters.associateBy { it.name }["intEnum"]?.dataType
+            )
+        assertThat(intEnumParamMetadata.enumValues).containsExactly(0, 1)
+        val stringEnumParamMetadata =
+            assertIs<AppFunctionStringTypeMetadata>(
+                enumFunctionMetadata.parameters.associateBy { it.name }["stringEnum"]?.dataType
+            )
+        assertThat(stringEnumParamMetadata.enumValues).containsExactly("A", "B")
+    }
+
+    @Test
+    fun searchAllAppFunctions_returnEnumValuesFromLibraryModule_withDynamicIndexer() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val enumFunctionMetadata =
+            appFunctionManager
+                .observeAppFunctions(searchFunctionSpec)
+                .first()
+                .flatMap { it.appFunctions }
+                .single {
+                    it.id ==
+                        "androidx.appfunctions.integration.testapp.library.TestFunctions2#enumValueFunction"
+                }
+
+        val intEnumParamMetadata =
+            assertIs<AppFunctionIntTypeMetadata>(
+                enumFunctionMetadata.parameters.associateBy { it.name }["intEnum"]?.dataType
+            )
+        assertThat(intEnumParamMetadata.enumValues).containsExactly(0, 1)
+        val stringEnumParamMetadata =
+            assertIs<AppFunctionStringTypeMetadata>(
+                enumFunctionMetadata.parameters.associateBy { it.name }["stringEnum"]?.dataType
+            )
+        assertThat(stringEnumParamMetadata.enumValues).containsExactly("A", "B")
+        val intEnumReturnMetadata =
+            assertIs<AppFunctionIntTypeMetadata>(enumFunctionMetadata.response.valueType)
+        assertThat(intEnumReturnMetadata.enumValues).containsExactly(10, 20)
+    }
+
+    @Test
+    fun searchAllAppFunctions_populatesFunctionDescriptions_withDynamicIndexer() = doBlocking {
+        val expectedAppFunctionDescriptions =
+            mapOf(
+                "androidx.appfunctions.integration.tests.TestFunctions#add" to
+                    "Returns the sum of the given two numbers.",
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat" to
+                    "Concatenates the two given strings.",
+            )
+        val expectedParamDescriptions =
+            mapOf(
+                "androidx.appfunctions.integration.tests.TestFunctions#add" to
+                    listOf("The first number.", "The second number."),
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat" to
+                    listOf("The first string.", "The second string."),
+            )
+        val expectedResponseDescriptions =
+            mapOf(
+                "androidx.appfunctions.integration.tests.TestFunctions#add" to
+                    "The sum of the two numbers.",
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat" to
+                    "The result of concatenating the two strings.",
+            )
+        assumeTrue(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val appFunctions: List<AppFunctionMetadata> =
+            appFunctionManager
+                .observeAppFunctions(searchFunctionSpec)
+                .first()
+                .flatMap { it.appFunctions }
+                .filter { it -> it.id in expectedAppFunctionDescriptions.keys }
+
+        assertThat(expectedAppFunctionDescriptions.keys)
+            .containsExactlyElementsIn(appFunctions.map { it -> it.id })
+
+        for (appFunction in appFunctions) {
+            assertThat(expectedAppFunctionDescriptions[appFunction.id])
+                .isEqualTo(appFunction.description)
+            assertThat(expectedParamDescriptions[appFunction.id])
+                .containsExactlyElementsIn(appFunction.parameters.map { it.description })
+            assertThat(expectedResponseDescriptions[appFunction.id])
+                .isEqualTo(appFunction.response.description)
+        }
+    }
+
+    @Test
+    fun searchAllAppFunctions_populatesSerializableDescriptions_withDynamicIndexer() = doBlocking {
+        val expectedSerializableDescriptions =
+            mapOf(
+                "androidx.appfunctions.integration.tests.Note" to
+                    "Represents a note in the notes app.",
+                "androidx.appfunctions.integration.tests.SetField<kotlin.String>" to
+                    "Example parameterized AppFunctionSerializable.",
+                "androidx.appfunctions.integration.testapp.library.ExampleSerializable" to
+                    "AppFunctionSerializable in non-root library.",
+                "androidx.appfunctions.integration.testapp.library.GenericSerializable<kotlin.Int>" to
+                    "Example parameterized AppFunctionSerializable in another package.",
+            )
+        val expectedPropertyDescriptions =
+            mapOf(
+                "androidx.appfunctions.integration.tests.Note" to
+                    mapOf(
+                        "title" to "The note's title.",
+                        "content" to "The note's content.",
+                        "owner" to "The note's [Owner].",
+                        "attachments" to "The note's attachments.",
+                        "modifiedTime" to "The note's last modified time.",
+                    ),
+                "androidx.appfunctions.integration.tests.SetField<kotlin.String>" to
+                    mapOf("value" to "Value property of SetField."),
+                "androidx.appfunctions.integration.testapp.library.ExampleSerializable" to
+                    mapOf("intProperty" to "Int property of ExampleSerializable."),
+                "androidx.appfunctions.integration.testapp.library.GenericSerializable<kotlin.Int>" to
+                    mapOf("value" to "Value property of GenericSerializable."),
+            )
+        assumeTrue(isDynamicIndexerAvailable(context))
+        val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
+
+        val dataTypeMetadata: Map<String, AppFunctionDataTypeMetadata> =
+            appFunctionManager
+                .observeAppFunctions(searchFunctionSpec)
+                .first()
+                .flatMap { it -> it.appFunctions }
+                .map { it.components.dataTypes }
+                .fold(emptyMap()) { acc, map -> acc + map }
+        val filteredMetadata =
+            dataTypeMetadata.filter { it -> it.key in expectedSerializableDescriptions.keys }
+        assertThat(expectedSerializableDescriptions.keys)
+            .containsExactlyElementsIn(filteredMetadata.keys)
+
+        for ((id, dataType) in filteredMetadata) {
+            assertThat(expectedSerializableDescriptions[id]).isEqualTo(dataType.description)
+            assertThat(expectedPropertyDescriptions[id])
+                .containsExactlyEntriesIn(
+                    (dataType as AppFunctionObjectTypeMetadata).properties.entries.associate { it ->
+                        it.key to it.value.description
+                    }
+                )
+        }
     }
 
     @Test

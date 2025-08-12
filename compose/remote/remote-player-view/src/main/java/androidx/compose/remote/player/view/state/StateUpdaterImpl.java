@@ -15,6 +15,10 @@
  */
 package androidx.compose.remote.player.view.state;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
+
 import android.graphics.Bitmap;
 
 import androidx.compose.remote.core.RemoteContext;
@@ -22,6 +26,7 @@ import androidx.compose.remote.core.RemoteContext;
 import org.jspecify.annotations.NonNull;
 
 /** Default implementation of {@link StateUpdater}. */
+@RestrictTo(LIBRARY_GROUP)
 public class StateUpdaterImpl implements StateUpdater {
 
     private final RemoteContext mRemoteContext;

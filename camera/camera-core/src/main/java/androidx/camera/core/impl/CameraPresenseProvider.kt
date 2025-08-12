@@ -20,7 +20,6 @@ import androidx.annotation.GuardedBy
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraPresenceListener
 import androidx.camera.core.CameraState
-import androidx.camera.core.InitializationException
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.annotation.ExecutedBy
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -80,7 +79,10 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
         this.cameraRepository = cameraRepository
         this.sourcePresenceObservable = cameraFactory.cameraPresenceSource
 
-        sourcePresenceObservable?.addObserver(backgroundExecutor, sourceObserver)
+        sourcePresenceObservable?.addObserver(
+            CameraXExecutors.newSequentialExecutor(backgroundExecutor),
+            sourceObserver,
+        )
     }
 
     /** Shuts down the provider and cleans up all resources. */
@@ -110,7 +112,7 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
             val rawIdStrings = rawCameraIdentifiers?.map { it.internalId } ?: emptyList()
             try {
                 factory.onCameraIdsUpdated(rawIdStrings)
-            } catch (e: InitializationException) {
+            } catch (e: Exception) {
                 Logger.e(TAG, "CameraFactory failed to update. Triggering refresh.", e)
                 sourcePresenceObservable?.fetchData()
                 return
@@ -300,9 +302,9 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
         val repo = cameraRepository
         if (repo != null) {
             val cameraInfosToRemoveObserver =
-                repo.cameras.map { cameraInternal -> cameraInternal.cameraInfoInternal }
+                repo.cameras.mapNotNull { cameraInternal -> cameraInternal?.cameraInfoInternal }
             Logger.d(TAG, "Clearing all ${observersToClear.size} state observers.")
-            observersToClear.map { (cameraId, observer) ->
+            observersToClear.forEach { (cameraId, observer) ->
                 CameraXExecutors.mainThreadExecutor().execute {
                     try {
                         cameraInfosToRemoveObserver
@@ -310,7 +312,7 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
                             ?.cameraState
                             ?.removeObserver(observer)
                     } catch (_: IllegalArgumentException) {
-                        // Safe to ignore, camera might have been removed from the repo already.
+                        // Safe to ignore, the camera might have already been removed.
                     }
                 }
             }

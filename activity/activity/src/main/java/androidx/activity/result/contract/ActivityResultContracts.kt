@@ -516,7 +516,6 @@ class ActivityResultContracts private constructor() {
      * @see DocumentsContract.buildDocumentUriUsingTree
      * @see DocumentsContract.buildChildDocumentsUriUsingTree
      */
-    @RequiresApi(21)
     open class OpenDocumentTree : ActivityResultContract<Uri?, Uri?>() {
         @CallSuper
         override fun createIntent(context: Context, input: Uri?): Intent {

@@ -19,7 +19,6 @@ package androidx.camera.core
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
-import android.os.Build
 import android.os.Looper
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -43,12 +42,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ImageCaptureExtTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val fakeOutputFileOptions =

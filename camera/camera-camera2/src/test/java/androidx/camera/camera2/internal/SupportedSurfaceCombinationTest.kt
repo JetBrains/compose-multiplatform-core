@@ -212,7 +212,6 @@ private val NO_STREAM_USE_CASE: StreamUseCase? = null
 /** Robolectric test for [SupportedSurfaceCombination] class */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SupportedSurfaceCombinationTest {
     private val mockCamcorderProfileHelper = Mockito.mock(CamcorderProfileHelper::class.java)
     private val mockEmptyCamcorderProfileHelper = Mockito.mock(CamcorderProfileHelper::class.java)
@@ -3410,7 +3409,6 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
-    @Config(minSdk = 23)
     fun correctMaximumSize_withHighResolutionOutputSizes() {
         setupCameraAndInitCameraX(supportedHighResolutionSizes = HIGH_RESOLUTION_SUPPORTED_SIZES)
         val supportedSurfaceCombination =
@@ -3490,7 +3488,7 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
-    @Config(minSdk = 21, maxSdk = 26)
+    @Config(maxSdk = 26)
     fun canCorrectResolution_forSamsungJ710mnDevice() {
         val j710mnBrandName = "SAMSUNG"
         val j710mnModelName = "SM-J710MN"
@@ -3769,7 +3767,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
-    @Config(minSdk = 21, maxSdk = 32)
+    @Config(maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOs() {
         populateStreamUseCaseTypesForUseCases(
@@ -3780,7 +3778,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
-    @Config(minSdk = 21, maxSdk = 32)
+    @Config(maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOsWithOverrideStreamUseCase() {
         populateStreamUseCaseTypesForUseCases(
@@ -4017,21 +4015,6 @@ class SupportedSurfaceCombinationTest {
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             compareExpectedFps = Range.create(240, 240), // Find the closest max supported fps.
         )
-    }
-
-    @Config(minSdk = 21, maxSdk = 22)
-    @Test
-    fun getSuggestedStreamSpec_highSpeed_unsupportedSdkVersion_throwException() {
-        val useCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                sessionType = SESSION_TYPE_HIGH_SPEED,
-                targetFrameRate = Range.create(240, 240),
-            )
-        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
-        assertThrows(IllegalArgumentException::class.java) {
-            getSuggestedSpecsAndVerifyForHighSpeed(useCaseExpectedResultMap)
-        }
     }
 
     @Config(minSdk = Build.VERSION_CODES.M)

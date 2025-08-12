@@ -106,6 +106,7 @@ class ListenableFuturePagingSourceTest {
         // Check no mainThread queries happened.
         assertThat(mainThreadQueries).isEmpty()
         coroutineScope.cancel()
+        db.close()
     }
 
     @Test

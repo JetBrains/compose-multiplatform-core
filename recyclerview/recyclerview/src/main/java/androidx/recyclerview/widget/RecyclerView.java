@@ -261,7 +261,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
      * On L+, with RenderThread, the UI thread has idle time after it has passed a frame off to
      * RenderThread but before the next frame begins. We schedule prefetch work in this window.
      */
-    static final boolean ALLOW_THREAD_GAP_WORK = Build.VERSION.SDK_INT >= 21;
+    static final boolean ALLOW_THREAD_GAP_WORK = true;
 
     /**
      * When flinging the stretch towards scrolling content, it should destretch quicker than the
@@ -848,14 +848,12 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         createLayoutManager(context, layoutManagerName, attrs, defStyleAttr, 0);
 
         boolean nestedScrollingEnabled = true;
-        if (Build.VERSION.SDK_INT >= 21) {
-            a = context.obtainStyledAttributes(attrs, NESTED_SCROLLING_ATTRS,
-                    defStyleAttr, 0);
-            ViewCompat.saveAttributeDataForStyleable(this,
-                    context, NESTED_SCROLLING_ATTRS, attrs, a, defStyleAttr, 0);
-            nestedScrollingEnabled = a.getBoolean(0, true);
-            a.recycle();
-        }
+        a = context.obtainStyledAttributes(attrs, NESTED_SCROLLING_ATTRS,
+                defStyleAttr, 0);
+        ViewCompat.saveAttributeDataForStyleable(this,
+                context, NESTED_SCROLLING_ATTRS, attrs, a, defStyleAttr, 0);
+        nestedScrollingEnabled = a.getBoolean(0, true);
+        a.recycle();
         // Re-set whether nested scrolling is enabled so that it is set on all API levels
         setNestedScrollingEnabled(nestedScrollingEnabled);
         PoolingContainer.setPoolingContainer(this, true);

@@ -65,13 +65,27 @@ object IntrospectionHelper {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionComponentRegistry")
         const val PROPERTY_COMPONENT_CATEGORY = "componentCategory"
         const val PROPERTY_COMPONENT_NAMES = "componentNames"
+        const val PROPERTY_COMPONENT_DOCSTRINGS = "componentDocStrings"
 
         object Category {
             const val INVENTORY = "INVENTORY"
             const val INVOKER = "INVOKER"
             const val FUNCTION = "FUNCTION"
             const val SCHEMA_DEFINITION = "SCHEMA_DEFINITION"
+            const val SERIALIZABLE = "SERIALIZABLE"
         }
+    }
+
+    object AppFunctionIntValueConstraintAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionIntValueConstraint")
+
+        const val PROPERTY_ENUM_VALUES = "enumValues"
+    }
+
+    object AppFunctionStringValueConstraintAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionStringValueConstraint")
+
+        const val PROPERTY_ENUM_VALUES = "enumValues"
     }
 
     // Classes

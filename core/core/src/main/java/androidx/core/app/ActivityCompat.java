@@ -298,11 +298,7 @@ public class ActivityCompat extends ContextCompat {
      * special exit transition.</p>
      */
     public static void finishAfterTransition(@NonNull Activity activity) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.finishAfterTransition(activity);
-        } else {
-            activity.finish();
-        }
+        activity.finishAfterTransition();
     }
 
     /**
@@ -379,12 +375,10 @@ public class ActivityCompat extends ContextCompat {
      */
     public static void setEnterSharedElementCallback(@NonNull Activity activity,
             @Nullable SharedElementCallback callback) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            android.app.SharedElementCallback frameworkCallback = callback != null
-                    ? new SharedElementCallback21Impl(callback)
-                    : null;
-            Api21Impl.setEnterSharedElementCallback(activity, frameworkCallback);
-        }
+        android.app.SharedElementCallback frameworkCallback = callback != null
+                ? new SharedElementCallback21Impl(callback)
+                : null;
+        Api21Impl.setEnterSharedElementCallback(activity, frameworkCallback);
     }
 
     /**
@@ -399,24 +393,18 @@ public class ActivityCompat extends ContextCompat {
      */
     public static void setExitSharedElementCallback(@NonNull Activity activity,
             @Nullable SharedElementCallback callback) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            android.app.SharedElementCallback frameworkCallback = callback != null
-                    ? new SharedElementCallback21Impl(callback)
-                    : null;
-            Api21Impl.setExitSharedElementCallback(activity, frameworkCallback);
-        }
+        android.app.SharedElementCallback frameworkCallback = callback != null
+                ? new SharedElementCallback21Impl(callback)
+                : null;
+        Api21Impl.setExitSharedElementCallback(activity, frameworkCallback);
     }
 
     public static void postponeEnterTransition(@NonNull Activity activity) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.postponeEnterTransition(activity);
-        }
+        activity.postponeEnterTransition();
     }
 
     public static void startPostponedEnterTransition(@NonNull Activity activity) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.startPostponedEnterTransition(activity);
-        }
+        activity.startPostponedEnterTransition();
     }
 
     /**
@@ -704,7 +692,6 @@ public class ActivityCompat extends ContextCompat {
         }
     }
 
-    @RequiresApi(21)
     static class SharedElementCallback21Impl extends android.app.SharedElementCallback {
         private final SharedElementCallback mCallback;
 
@@ -826,14 +813,9 @@ public class ActivityCompat extends ContextCompat {
         }
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.
-        }
-
-        static void finishAfterTransition(Activity activity) {
-            activity.finishAfterTransition();
         }
 
         static void setEnterSharedElementCallback(Activity activity,
@@ -846,13 +828,6 @@ public class ActivityCompat extends ContextCompat {
             activity.setExitSharedElementCallback(callback);
         }
 
-        static void postponeEnterTransition(Activity activity) {
-            activity.postponeEnterTransition();
-        }
-
-        static void startPostponedEnterTransition(Activity activity) {
-            activity.startPostponedEnterTransition();
-        }
     }
 
     @RequiresApi(22)

@@ -1,6 +1,14 @@
 // Baseline format: 1.0
+ChangedType: androidx.compose.ui.test.ActionsKt#performSemanticsAction(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.AccessibilityAction<T>>, kotlin.jvm.functions.Function1<? super T,kotlin.Unit>):
+    Binary breaking change: Method androidx.compose.ui.test.ActionsKt.performSemanticsAction has changed return type from void to androidx.compose.ui.test.SemanticsNodeInteraction
+ChangedType: androidx.compose.ui.test.ActionsKt#performSemanticsAction(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.AccessibilityAction<kotlin.jvm.functions.Function0<java.lang.Boolean>>>):
+    Binary breaking change: Method androidx.compose.ui.test.ActionsKt.performSemanticsAction has changed return type from void to androidx.compose.ui.test.SemanticsNodeInteraction
+
+
 RemovedDeprecatedMethod: androidx.compose.ui.test.GestureScope#getVisibleSize():
     Binary breaking change: Removed deprecated method androidx.compose.ui.test.GestureScope.getVisibleSize()
+RemovedDeprecatedMethod: androidx.compose.ui.test.TextActionsKt#performTextInputSelection(androidx.compose.ui.test.SemanticsNodeInteraction, long):
+    Binary breaking change: Removed deprecated method androidx.compose.ui.test.TextActionsKt.performTextInputSelection(androidx.compose.ui.test.SemanticsNodeInteraction,long)
 
 
 RemovedFromKotlin: androidx.compose.ui.test.GestureScopeKt#getBottomCenter(androidx.compose.ui.test.GestureScope):

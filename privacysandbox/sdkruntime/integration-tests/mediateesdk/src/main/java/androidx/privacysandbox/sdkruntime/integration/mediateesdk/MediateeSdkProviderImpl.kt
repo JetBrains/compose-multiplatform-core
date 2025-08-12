@@ -25,6 +25,6 @@ class MediateeSdkProviderImpl() : SandboxedSdkProviderCompat() {
         if (params.getBoolean("needFail", false)) {
             throw RuntimeException("Expected to fail")
         }
-        return SandboxedSdkCompat(MediateeSdk())
+        return SandboxedSdkCompat(MediateeSdk(context!!))
     }
 }

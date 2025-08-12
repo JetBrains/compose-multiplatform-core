@@ -37,6 +37,10 @@ public interface TrustedWebActivityDisplayMode {
                 return new BrowserMode();
             case MinimalUiMode.ID:
                 return new MinimalUiMode();
+            case TabbedMode.ID:
+                return new TabbedMode();
+            case WindowControlsOverlay.ID:
+                return new WindowControlsOverlay();
             case DefaultMode.ID: // fallthrough
             default:
                 return new DefaultMode();
@@ -154,6 +158,49 @@ public interface TrustedWebActivityDisplayMode {
     class MinimalUiMode implements TrustedWebActivityDisplayMode {
 
         private static final int ID = 3;
+
+        @Override
+        public @NonNull Bundle toBundle() {
+            Bundle bundle = new Bundle();
+            bundle.putInt(KEY_ID, ID);
+            return bundle;
+        }
+    }
+
+    /**
+     * Tabbed mode: Experimental display mode where the application can contain multiple web
+     * pages inside a single window, commonly used to create a tab bar UI.
+     *
+     * {@see https://github.com/WICG/manifest-incubations/blob/gh-pages/tabbed-mode-explainer.md}
+     * {@see https://wicg.github.io/manifest-incubations/#tab_strip-member}
+     */
+    final class TabbedMode implements TrustedWebActivityDisplayMode {
+
+        private static final int ID = 4;
+
+        @Override
+        public @NonNull Bundle toBundle() {
+            Bundle bundle = new Bundle();
+            bundle.putInt(KEY_ID, ID);
+            return bundle;
+        }
+    }
+
+    /**
+     * Window controls overlay mode: Experimental display mode where the entire window surface
+     * is be available for the app's web content. System controls (maximize, minimize, close, etc)
+     * will be displayed as overlays on top of the web contents.
+     *
+     * This is not the same as immersive mode because the web activity can be in a free-floating
+     * window with window controls overlay enabled. In immersive mode, the web activity will
+     * occupy the entire screen.
+     *
+     * {@see https://github.com/WICG/window-controls-overlay/blob/main/explainer.md}
+     * {@see https://wicg.github.io/window-controls-overlay/}
+     */
+    final class WindowControlsOverlay implements TrustedWebActivityDisplayMode {
+
+        private static final int ID = 5;
 
         @Override
         public @NonNull Bundle toBundle() {

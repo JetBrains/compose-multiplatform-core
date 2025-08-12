@@ -908,7 +908,7 @@ package androidx.xr.runtime.internal {
     property public float distance;
     property public androidx.xr.runtime.math.Vector3? hitPosition;
     property public androidx.xr.runtime.math.Vector3? surfaceNormal;
-    property @androidx.xr.runtime.internal.HitTestResult.HitTestSurfaceTypeValue public int surfaceType;
+    property public int surfaceType;
   }
 
   public static final class HitTestResult.HitTestSurfaceType {
@@ -1120,9 +1120,9 @@ package androidx.xr.runtime.internal {
     method public int getBlendMode();
     method public int getDoubleSidedMode();
     method public int getLightingModel();
-    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.BlendMode public int blendMode;
-    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.DoubleSidedMode public int doubleSidedMode;
-    property @androidx.xr.runtime.internal.KhronosPbrMaterialSpec.LightingModel public int lightingModel;
+    property public int blendMode;
+    property public int doubleSidedMode;
+    property public int lightingModel;
     field public static final androidx.xr.runtime.internal.KhronosPbrMaterialSpec.Companion Companion;
     field public static final int DOUBLE_SIDED = 1; // 0x1
     field public static final int LIT = 0; // 0x0
@@ -1334,13 +1334,13 @@ package androidx.xr.runtime.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Plane extends androidx.xr.runtime.internal.Trackable {
     method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.Vector2 getExtents();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
     method public androidx.xr.runtime.internal.Plane.Label getLabel();
     method public androidx.xr.runtime.internal.Plane? getSubsumedBy();
     method public androidx.xr.runtime.internal.Plane.Type getType();
     method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public abstract androidx.xr.runtime.math.Pose centerPose;
-    property public abstract androidx.xr.runtime.math.Vector2 extents;
+    property public abstract androidx.xr.runtime.math.FloatSize2d extents;
     property public abstract androidx.xr.runtime.internal.Plane.Label label;
     property public abstract androidx.xr.runtime.internal.Plane? subsumedBy;
     property public abstract androidx.xr.runtime.internal.Plane.Type type;
@@ -1421,7 +1421,51 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingRuntime {
+    method public androidx.xr.runtime.internal.TextureResource? borrowReflectionTexture();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource>? createKhronosPbrMaterial(androidx.xr.runtime.internal.KhronosPbrMaterialSpec spec);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
+    method public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material);
+    method public void destroyTexture(androidx.xr.runtime.internal.TextureResource texture);
+    method public void destroyWaterMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void dispose();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.TextureResource> loadTexture(String assetName, androidx.xr.runtime.internal.TextureSampler sampler);
+    method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaCutoff);
+    method public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource alphaMap);
+    method public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaStepMultiplier);
+    method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource ambientOcclusion);
+    method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setBaseColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector4 factors);
+    method public void setBaseColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource baseColor);
+    method public void setBaseColorUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setClearcoatFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float intensity, float roughness, float normal);
+    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoatNormal);
+    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoatRoughness);
+    method public void setClearcoatTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource clearcoat);
+    method public void setEmissiveFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
+    method public void setEmissiveTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource emissive);
+    method public void setEmissiveUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setIndexOfRefractionOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float indexOfRefraction);
+    method public void setMetallicFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource metallicRoughness);
+    method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setNormalBoundaryOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalBoundary);
+    method public void setNormalFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setNormalMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource normalMap);
+    method public void setNormalSpeedOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalSpeed);
+    method public void setNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource normal);
+    method public void setNormalTilingOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalTiling);
+    method public void setNormalUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
+    method public void setNormalZOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, float normalZ);
+    method public void setReflectionMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource reflectionMap);
+    method public void setRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setSheenColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
+    method public void setSheenColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource sheenColor);
+    method public void setSheenRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource sheenRoughness);
+    method public void setTransmissionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float factor);
+    method public void setTransmissionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource transmission);
+    method public void setTransmissionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
     method public void startRenderer();
     method public void stopRenderer();
   }
@@ -1495,7 +1539,12 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntime {
+    method public androidx.xr.runtime.internal.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.runtime.internal.Entity parent);
     method public void dispose();
+    method public androidx.xr.runtime.internal.ActivitySpace getActivitySpace();
+    method public androidx.xr.runtime.internal.SpatialCapabilities getSpatialCapabilities();
+    property public abstract androidx.xr.runtime.internal.ActivitySpace activitySpace;
+    property public abstract androidx.xr.runtime.internal.SpatialCapabilities spatialCapabilities;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntimeFactory extends androidx.xr.runtime.internal.Service {
@@ -1510,7 +1559,7 @@ package androidx.xr.runtime.internal {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SoundFieldAttributes {
     ctor public SoundFieldAttributes(@androidx.xr.runtime.internal.SpatializerConstants.AmbisonicsOrder int ambisonicsOrder);
     method public int getAmbisonicsOrder();
-    property @androidx.xr.runtime.internal.SpatializerConstants.AmbisonicsOrder public int ambisonicsOrder;
+    property public int ambisonicsOrder;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SoundPoolExtensionsWrapper {
@@ -1902,14 +1951,14 @@ package androidx.xr.runtime.internal {
     method public int getWrapModeR();
     method public int getWrapModeS();
     method public int getWrapModeT();
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int anisotropyLog2;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int compareFunc;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int compareMode;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int magFilter;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int minFilter;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int wrapModeR;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int wrapModeS;
-    property @androidx.xr.runtime.internal.TextureSampler.WrapMode public int wrapModeT;
+    property public int anisotropyLog2;
+    property public int compareFunc;
+    property public int compareMode;
+    property public int magFilter;
+    property public int minFilter;
+    property public int wrapModeR;
+    property public int wrapModeS;
+    property public int wrapModeT;
     field public static final int A = 6; // 0x6
     field public static final int CLAMP_TO_EDGE = 0; // 0x0
     field public static final int COMPARE_TO_TEXTURE = 1; // 0x1
@@ -2196,6 +2245,7 @@ package androidx.xr.runtime.math {
     method public androidx.xr.runtime.math.Matrix4 getTranspose();
     method public boolean isTrs();
     method public operator androidx.xr.runtime.math.Matrix4 times(androidx.xr.runtime.math.Matrix4 other);
+    method public androidx.xr.runtime.math.Matrix4 unscaled();
     property public float[] data;
     property public androidx.xr.runtime.math.Matrix4 inverse;
     property public boolean isTrs;
@@ -2353,17 +2403,17 @@ package androidx.xr.runtime.math {
     method public inline androidx.xr.runtime.math.Vector2 copy(optional float x, optional float y);
     method public inline infix float cross(androidx.xr.runtime.math.Vector2 other);
     method public static float distance(androidx.xr.runtime.math.Vector2 vector1, androidx.xr.runtime.math.Vector2 vector2);
-    method public inline operator androidx.xr.runtime.math.Vector2 div(androidx.xr.runtime.math.Vector2 other);
     method public inline operator androidx.xr.runtime.math.Vector2 div(float c);
     method public inline infix float dot(androidx.xr.runtime.math.Vector2 other);
     method public inline float getLength();
     method public inline float getLengthSquared();
     method public float getX();
     method public float getY();
+    method public androidx.xr.runtime.math.Vector2 inverse();
     method public static androidx.xr.runtime.math.Vector2 lerp(androidx.xr.runtime.math.Vector2 start, androidx.xr.runtime.math.Vector2 end, float ratio);
     method public inline operator androidx.xr.runtime.math.Vector2 minus(androidx.xr.runtime.math.Vector2 other);
     method public operator androidx.xr.runtime.math.Vector2 plus(androidx.xr.runtime.math.Vector2 other);
-    method public inline operator androidx.xr.runtime.math.Vector2 times(androidx.xr.runtime.math.Vector2 other);
+    method public inline androidx.xr.runtime.math.Vector2 scale(androidx.xr.runtime.math.Vector2 other);
     method public inline operator androidx.xr.runtime.math.Vector2 times(float c);
     method public androidx.xr.runtime.math.Vector2 toNormalized();
     method public inline operator androidx.xr.runtime.math.Vector2 unaryMinus();
@@ -2408,7 +2458,6 @@ package androidx.xr.runtime.math {
     method public androidx.xr.runtime.math.Vector3 copy(optional float x, optional float y, optional float z);
     method public infix androidx.xr.runtime.math.Vector3 cross(androidx.xr.runtime.math.Vector3 other);
     method public static float distance(androidx.xr.runtime.math.Vector3 vector1, androidx.xr.runtime.math.Vector3 vector2);
-    method public operator androidx.xr.runtime.math.Vector3 div(androidx.xr.runtime.math.Vector3 other);
     method public operator androidx.xr.runtime.math.Vector3 div(float c);
     method public infix float dot(androidx.xr.runtime.math.Vector3 other);
     method public static androidx.xr.runtime.math.Vector3 fromValue(float value);
@@ -2417,13 +2466,14 @@ package androidx.xr.runtime.math {
     method public float getX();
     method public float getY();
     method public float getZ();
+    method public androidx.xr.runtime.math.Vector3 inverse();
     method public static androidx.xr.runtime.math.Vector3 lerp(androidx.xr.runtime.math.Vector3 start, androidx.xr.runtime.math.Vector3 end, float ratio);
     method public static androidx.xr.runtime.math.Vector3 max(androidx.xr.runtime.math.Vector3 a, androidx.xr.runtime.math.Vector3 b);
     method public static androidx.xr.runtime.math.Vector3 min(androidx.xr.runtime.math.Vector3 a, androidx.xr.runtime.math.Vector3 b);
     method public operator androidx.xr.runtime.math.Vector3 minus(androidx.xr.runtime.math.Vector3 other);
     method public operator androidx.xr.runtime.math.Vector3 plus(androidx.xr.runtime.math.Vector3 other);
     method public static androidx.xr.runtime.math.Vector3 projectOnPlane(androidx.xr.runtime.math.Vector3 vector, androidx.xr.runtime.math.Vector3 planeNormal);
-    method public operator androidx.xr.runtime.math.Vector3 times(androidx.xr.runtime.math.Vector3 other);
+    method public androidx.xr.runtime.math.Vector3 scale(androidx.xr.runtime.math.Vector3 other);
     method public operator androidx.xr.runtime.math.Vector3 times(float c);
     method public androidx.xr.runtime.math.Vector3 toNormalized();
     method public operator androidx.xr.runtime.math.Vector3 unaryMinus();
@@ -2478,7 +2528,6 @@ package androidx.xr.runtime.math {
     method public androidx.xr.runtime.math.Vector4 copy(optional float x, optional float y, optional float z);
     method public androidx.xr.runtime.math.Vector4 copy(optional float x, optional float y, optional float z, optional float w);
     method public static float distance(androidx.xr.runtime.math.Vector4 vector1, androidx.xr.runtime.math.Vector4 vector2);
-    method public operator androidx.xr.runtime.math.Vector4 div(androidx.xr.runtime.math.Vector4 other);
     method public operator androidx.xr.runtime.math.Vector4 div(float c);
     method public infix float dot(androidx.xr.runtime.math.Vector4 other);
     method public static androidx.xr.runtime.math.Vector4 fromValue(float value);
@@ -2488,12 +2537,13 @@ package androidx.xr.runtime.math {
     method public float getX();
     method public float getY();
     method public float getZ();
+    method public androidx.xr.runtime.math.Vector4 inverse();
     method public static androidx.xr.runtime.math.Vector4 lerp(androidx.xr.runtime.math.Vector4 start, androidx.xr.runtime.math.Vector4 end, float ratio);
     method public static androidx.xr.runtime.math.Vector4 max(androidx.xr.runtime.math.Vector4 a, androidx.xr.runtime.math.Vector4 b);
     method public static androidx.xr.runtime.math.Vector4 min(androidx.xr.runtime.math.Vector4 a, androidx.xr.runtime.math.Vector4 b);
     method public operator androidx.xr.runtime.math.Vector4 minus(androidx.xr.runtime.math.Vector4 other);
     method public operator androidx.xr.runtime.math.Vector4 plus(androidx.xr.runtime.math.Vector4 other);
-    method public operator androidx.xr.runtime.math.Vector4 times(androidx.xr.runtime.math.Vector4 other);
+    method public androidx.xr.runtime.math.Vector4 scale(androidx.xr.runtime.math.Vector4 other);
     method public operator androidx.xr.runtime.math.Vector4 times(float c);
     method public androidx.xr.runtime.math.Vector4 toNormalized();
     method public operator androidx.xr.runtime.math.Vector4 unaryMinus();

@@ -20,6 +20,8 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import androidx.lifecycle.LiveData
+import androidx.work.WorkManager.Companion.getInstance
+import androidx.work.WorkManager.Companion.initialize
 import androidx.work.impl.WorkManagerImpl
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.UUID

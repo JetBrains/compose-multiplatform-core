@@ -433,7 +433,7 @@ public class By {
          *
          * @see ByWindowSelector#type(int) ByWindowSelector.type(int)
          */
-        public static @NonNull ByWindowSelector type(int type) {
+        public static @NonNull ByWindowSelector type(@ByWindowSelector.WindowType int type) {
             return new ByWindowSelector().type(type);
         }
 
@@ -485,6 +485,8 @@ public class By {
         /**
          * Constructs a new {@link ByWindowSelector} and sets the window id criteria.
          *
+         * <p>The window id can be obtained from {@link UiWindow#getId()}.
+         *
          * @see ByWindowSelector#id(int) ByWindowSelector.id(int)
          */
         public static @NonNull ByWindowSelector id(int id) {
@@ -494,27 +496,33 @@ public class By {
         /**
          * Constructs a new {@link ByWindowSelector} and sets the layer (Z-order) criteria.
          *
+         * <p>The layer ID can be obtained from {@link UiWindow#getLayer()}.
+         *
          * @see ByWindowSelector#layer(int) ByWindowSelector.layer(int)
          */
-        public static @NonNull ByWindowSelector layer(int layer) {
+        public static @NonNull ByWindowSelector layer(@IntRange(from = 0) int layer) {
             return new ByWindowSelector().layer(layer);
         }
 
         /**
          * Constructs a new {@link ByWindowSelector} and sets the layer (Z-order) criteria.
          *
+         * <p>The referenced layer ID can be obtained from {@link UiWindow#getLayer()}.
+         *
          * @see ByWindowSelector#layerAbove(int) ByWindowSelector.layerAbove(int)
          */
-        public static @NonNull ByWindowSelector layerAbove(int referenceLayer) {
+        public static @NonNull ByWindowSelector layerAbove(@IntRange(from = 0) int referenceLayer) {
             return new ByWindowSelector().layerAbove(referenceLayer);
         }
 
         /**
          * Constructs a new {@link ByWindowSelector} and sets the layer (Z-order) criteria.
          *
+         * <p>The referenced layer ID can be obtained from {@link UiWindow#getLayer()}.
+         *
          * @see ByWindowSelector#layerBelow(int) ByWindowSelector.layerBelow(int)
          */
-        public static @NonNull ByWindowSelector layerBelow(int referenceLayer) {
+        public static @NonNull ByWindowSelector layerBelow(@IntRange(from = 1) int referenceLayer) {
             return new ByWindowSelector().layerBelow(referenceLayer);
         }
 

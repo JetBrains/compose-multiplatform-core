@@ -31,17 +31,41 @@ AddedMethod: androidx.collection.IntIntPair#unbox-impl():
 
 RemovedFromBytecode: androidx.collection.FloatFloatPair#FloatFloatPair(float, float):
     Binary breaking change: constructor androidx.collection.FloatFloatPair(float,float) has been removed from bytecode
+RemovedFromBytecode: androidx.collection.FloatFloatPair#component1():
+    Binary breaking change: method androidx.collection.FloatFloatPair.component1() has been removed from bytecode
+RemovedFromBytecode: androidx.collection.FloatFloatPair#component2():
+    Binary breaking change: method androidx.collection.FloatFloatPair.component2() has been removed from bytecode
 RemovedFromBytecode: androidx.collection.IntIntPair#IntIntPair(int, int):
     Binary breaking change: constructor androidx.collection.IntIntPair(int,int) has been removed from bytecode
+RemovedFromBytecode: androidx.collection.IntIntPair#component1():
+    Binary breaking change: method androidx.collection.IntIntPair.component1() has been removed from bytecode
+RemovedFromBytecode: androidx.collection.IntIntPair#component2():
+    Binary breaking change: method androidx.collection.IntIntPair.component2() has been removed from bytecode
 
 
 RemovedFromJava: androidx.collection.ArraySet#size():
     Source breaking change: method androidx.collection.ArraySet.size() can no longer be resolved from Java source
 RemovedFromJava: androidx.collection.FloatFloatPair#FloatFloatPair(float, float):
     Source breaking change: constructor androidx.collection.FloatFloatPair(float,float) can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.FloatFloatPair#component1():
+    Source breaking change: method androidx.collection.FloatFloatPair.component1() can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.FloatFloatPair#component2():
+    Source breaking change: method androidx.collection.FloatFloatPair.component2() can no longer be resolved from Java source
 RemovedFromJava: androidx.collection.IntIntPair#IntIntPair(int, int):
     Source breaking change: constructor androidx.collection.IntIntPair(int,int) can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.IntIntPair#component1():
+    Source breaking change: method androidx.collection.IntIntPair.component1() can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.IntIntPair#component2():
+    Source breaking change: method androidx.collection.IntIntPair.component2() can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.LongSparseArrayKt#remove(androidx.collection.LongSparseArray<T>, long, T):
+    Source breaking change: method androidx.collection.LongSparseArrayKt.remove(androidx.collection.LongSparseArray,long,Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.collection.SparseArrayKt#remove(androidx.collection.SparseArrayCompat<T>, int, T):
+    Source breaking change: method androidx.collection.SparseArrayKt.remove(androidx.collection.SparseArrayCompat,int,Object) can no longer be resolved from Java source
 
 
 RemovedFromKotlin: androidx.collection.ArraySet#size():
     Source breaking change: method androidx.collection.ArraySet.size() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.collection.LongSparseArrayKt#remove(androidx.collection.LongSparseArray<T>, long, T):
+    Source breaking change: method androidx.collection.LongSparseArrayKt.remove(androidx.collection.LongSparseArray,long,Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.collection.SparseArrayKt#remove(androidx.collection.SparseArrayCompat<T>, int, T):
+    Source breaking change: method androidx.collection.SparseArrayKt.remove(androidx.collection.SparseArrayCompat,int,Object) can no longer be resolved from Kotlin source

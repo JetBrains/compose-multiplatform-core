@@ -50,7 +50,6 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowWindow;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class PreviewViewTest {
     private final Context mAppContext = ApplicationProvider.getApplicationContext();
     private PreviewView mPreviewView;
@@ -219,7 +218,7 @@ public class PreviewViewTest {
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP, instrumentedPackages = {"androidx.camera.view"})
+    @Config(instrumentedPackages = {"androidx.camera.view"})
     public void registerAndUnregisterDisplayListener_notInEditMode() {
         // 1. Create a spy of the view to track method calls
         PreviewView previewViewSpy = Mockito.spy(mPreviewView);
@@ -242,7 +241,7 @@ public class PreviewViewTest {
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP, instrumentedPackages = {"androidx.camera.view"})
+    @Config(instrumentedPackages = {"androidx.camera.view"})
     public void doesNotRegisterAndUnregisterDisplayListener_inEditMode() {
         // 1. Create a spy of the view to track method calls
         PreviewView previewViewSpy = Mockito.spy(mPreviewView);

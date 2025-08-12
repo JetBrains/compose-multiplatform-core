@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore.playservices
 
+import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
@@ -97,7 +98,8 @@ internal class CameraStateExtender : StateExtender {
                 camera.displayOrientedPose.toRuntimePose(),
                 Matrix4(projectionMatrixData),
                 Matrix4(viewMatrixData),
-                perceptionManager._latestFrame.hardwareBuffer,
+                if (Build.VERSION.SDK_INT >= 27) perceptionManager._latestFrame.hardwareBuffer
+                else null,
                 getTransformCoordinates2DFunction(),
             )
         } else {

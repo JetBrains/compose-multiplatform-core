@@ -32,8 +32,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -51,8 +51,12 @@ import androidx.navigation3.ui.NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECON
 import androidx.navigation3.ui.NavDisplay.POP_TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.PREDICTIVE_POP_TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.TRANSITION_SPEC
+import androidx.navigationevent.NavigationEvent.Companion.EDGE_NONE
+import androidx.navigationevent.NavigationEvent.SwipeEdge
+import androidx.navigationevent.NavigationEventState.InProgress
 import androidx.navigationevent.compose.NavigationEventHandler
 import kotlin.reflect.KClass
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
@@ -80,11 +84,12 @@ public object NavDisplay {
      * the provided [ContentTransform].
      */
     public fun predictivePopTransitionSpec(
-        predictivePopTransitionSpec: AnimatedContentTransitionScope<*>.() -> ContentTransform?
+        predictivePopTransitionSpec:
+            AnimatedContentTransitionScope<*>.(@SwipeEdge Int) -> ContentTransform?
     ): Map<String, Any> = mapOf(PREDICTIVE_POP_TRANSITION_SPEC to predictivePopTransitionSpec)
 
     public val defaultPredictivePopTransitionSpec:
-        AnimatedContentTransitionScope<*>.() -> ContentTransform =
+        AnimatedContentTransitionScope<*>.(@SwipeEdge Int) -> ContentTransform =
         {
             ContentTransform(
                 fadeIn(
@@ -163,7 +168,8 @@ public fun <T : Any> NavDisplay(
             fadeOut(animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND)),
         )
     },
-    predictivePopTransitionSpec: AnimatedContentTransitionScope<*>.() -> ContentTransform =
+    predictivePopTransitionSpec:
+        AnimatedContentTransitionScope<*>.(@SwipeEdge Int) -> ContentTransform =
         NavDisplay.defaultPredictivePopTransitionSpec,
     entryProvider: (key: T) -> NavEntry<T>,
 ) {
@@ -193,23 +199,36 @@ public fun <T : Any> NavDisplay(
             }
         } while (overlaidEntries != null)
         val overlayScenes = allScenes.dropLast(1)
-        val scene = allScenes.last()
+        val scene =
+            remember(backStack.map { it }, entryDecorators.map { it }, sceneStrategy, onBack) {
+                allScenes.last()
+            }
 
         // Predictive Back Handling
-        var progress by remember { mutableFloatStateOf(0f) }
-        var inPredictiveBack by remember { mutableStateOf(false) }
-
-        NavigationEventHandler({ scene.previousEntries.isNotEmpty() }) { navEvent ->
-            progress = 0f
-            try {
-                navEvent.collect { value ->
-                    inPredictiveBack = true
-                    progress = value.progress
+        val gestureState by
+            checkNotNull(LocalNavigationEventDispatcherOwner.current) {
+                    "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
                 }
-                inPredictiveBack = false
+                .navigationEventDispatcher
+                .state
+                .collectAsState()
+
+        val progress = gestureState.progress
+        val inPredictiveBack = gestureState is InProgress
+        val swipeEdge =
+            when (val currentGestureState = gestureState) {
+                is InProgress -> currentGestureState.latestEvent.swipeEdge
+                else -> EDGE_NONE
+            }
+
+        NavigationEventHandler(enabled = scene.previousEntries.isNotEmpty()) { progress ->
+            progress.collect()
+
+            // If `enabled` becomes stale (e.g., it was set to false but a gesture was
+            // dispatched in the same frame), this ensures that the calculated index is valid
+            // before calling onBack, avoiding IndexOutOfBoundsException in edge cases.
+            if (entries.size > scene.previousEntries.size) {
                 onBack(entries.size - scene.previousEntries.size)
-            } finally {
-                inPredictiveBack = false
             }
         }
 
@@ -340,8 +359,8 @@ public fun <T : Any> NavDisplay(
         val contentTransform: AnimatedContentTransitionScope<*>.() -> ContentTransform = {
             when {
                 inPredictiveBack -> {
-                    transitionEntry.contentTransform(PREDICTIVE_POP_TRANSITION_SPEC)?.invoke(this)
-                        ?: predictivePopTransitionSpec(this)
+                    transitionEntry.predictivePopSpec()?.invoke(this, swipeEdge)
+                        ?: predictivePopTransitionSpec(swipeEdge)
                 }
                 isPop -> {
                     transitionEntry.contentTransform(POP_TRANSITION_SPEC)?.invoke(this)
@@ -404,6 +423,7 @@ public fun <T : Any> NavDisplay(
         // Show all OverlayScene instances above the AnimatedContent
         overlayScenes.fastForEachReversed { overlayScene ->
             // TODO Calculate what entries should be displayed from sceneToRenderableEntryMap
+            @Suppress("ListIterator")
             val allEntries = overlayScene.entries.map { it.contentKey }.toSet()
             CompositionLocalProvider(LocalEntriesToRenderInCurrentScene provides allEntries) {
                 overlayScene.content.invoke()
@@ -430,4 +450,11 @@ private fun <T : Any> NavEntry<T>.contentTransform(
     key: String
 ): (AnimatedContentTransitionScope<*>.() -> ContentTransform)? {
     return metadata[key] as? AnimatedContentTransitionScope<*>.() -> ContentTransform
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun <T : Any> NavEntry<T>.predictivePopSpec():
+    (AnimatedContentTransitionScope<*>.(@SwipeEdge Int) -> ContentTransform)? {
+    return metadata[PREDICTIVE_POP_TRANSITION_SPEC]
+        as? AnimatedContentTransitionScope<*>.(@SwipeEdge Int) -> ContentTransform
 }

@@ -582,10 +582,10 @@ interface DraggableAnchors<T> {
      */
     fun closestAnchor(position: Float, searchUpwards: Boolean): T?
 
-    /** The smallest anchor position, or [Float.NEGATIVE_INFINITY] if the anchors are empty. */
+    /** The smallest anchor position, or [Float.NaN] if the anchors are empty. */
     fun minPosition(): Float
 
-    /** The biggest anchor position, or [Float.POSITIVE_INFINITY] if the anchors are empty. */
+    /** The biggest anchor position, or [Float.NaN] if the anchors are empty. */
     fun maxPosition(): Float
 
     /** Get the anchor key at the specified index, or null if the index is out of bounds. */
@@ -1596,7 +1596,8 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
-        return keys.getOrNull(minAnchorIndex)
+        if (minAnchorIndex == -1) return null
+        return keys[minAnchorIndex]
     }
 
     override fun closestAnchor(position: Float, searchUpwards: Boolean): T? {
@@ -1610,12 +1611,13 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
-        return keys.getOrNull(minAnchorIndex)
+        if (minAnchorIndex == -1) return null
+        return keys[minAnchorIndex]
     }
 
-    override fun minPosition() = anchors.minOrNull() ?: Float.NaN
+    override fun minPosition() = anchors.minOrNaN()
 
-    override fun maxPosition() = anchors.maxOrNull() ?: Float.NaN
+    override fun maxPosition() = anchors.maxOrNaN()
 
     override val size = anchors.size
 
@@ -1651,6 +1653,30 @@ private class DefaultDraggableAnchors<T>(
             }
         }
         append("})")
+    }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.minOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = minOf(min, e)
+        }
+        return min
+    }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.maxOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = maxOf(min, e)
+        }
+        return min
     }
 }
 

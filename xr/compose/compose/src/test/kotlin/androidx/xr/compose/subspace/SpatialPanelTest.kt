@@ -46,6 +46,7 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
@@ -221,31 +222,142 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun mainPanel_disposes_mainPanelGetsDisabled() {
-        val showMainPanel = mutableStateOf(true)
+    fun mainPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "mainPanel"
 
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    if (showMainPanel.value) {
-                        SpatialMainPanel(
-                            SubspaceModifier.testTag("mainPanel").width(100.dp).height(100.dp)
+                    if (showPanel.value) {
+                        SpatialMainPanel(SubspaceModifier.testTag(panelTag).size(100.dp))
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelEntityAfterShowing =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode().semanticsEntity
+                as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShowing).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun spatialPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "spatialPanel"
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    if (showPanel.value) {
+                        SpatialPanel(SubspaceModifier.testTag(panelTag).size(100.dp)) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun spatialAndroidViewPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "androidViewPanel"
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    if (showPanel.value) {
+                        SpatialAndroidViewPanel(
+                            factory = { context -> TextView(context).apply { text = "test" } },
+                            modifier = SubspaceModifier.testTag(panelTag).size(100.dp),
                         )
                     }
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
-        val mainPanelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
-        val mainPanelSceneCoreEntity = mainPanelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(mainPanelSceneCoreEntity).isEnabled()).isTrue()
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
 
-        showMainPanel.value = false
-        composeTestRule.waitForIdle()
+        showPanel.value = false
 
-        val mainPanelSceneCoreEntityAfter = mainPanelNode.semanticsEntity as? PanelEntity
-        assertThat(checkNotNull(mainPanelSceneCoreEntityAfter).isEnabled()).isFalse()
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun activityPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "activityPanel"
+
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    if (showPanel.value) {
+                        SpatialActivityPanel(
+                            intent =
+                                Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                            modifier = SubspaceModifier.testTag(panelTag).size(100.dp),
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
     }
 
     @Test
@@ -294,7 +406,10 @@ class SpatialPanelTest {
                 }
             }
         }
-        assertThat(getPanelEntity("panel")?.cornerRadius?.meters?.toDp()).isEqualTo(32.dp)
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius?.meters?.toDp()).isEqualTo(32.dp)
     }
 
     @Test
@@ -310,7 +425,10 @@ class SpatialPanelTest {
                 }
             }
         }
-        assertThat(getPanelEntity("mainPanel")?.cornerRadius?.meters?.toDp()).isEqualTo(16.dp)
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius?.meters?.toDp()).isEqualTo(16.dp)
     }
 
     @Test
@@ -326,7 +444,9 @@ class SpatialPanelTest {
             }
         }
 
-        assertThat(getPanelEntity("panel")?.cornerRadius?.meters?.toDp()).isEqualTo(100.dp)
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius?.meters?.toDp()).isEqualTo(100.dp)
     }
 
     @Test
@@ -430,11 +550,6 @@ class SpatialPanelTest {
         // Activity Panel
         // Main PanelEntity
         assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
-    }
-
-    private fun getPanelEntity(tag: String): PanelEntity? {
-        return composeTestRule.onSubspaceNodeWithTag(tag).fetchSemanticsNode().semanticsEntity
-            as PanelEntity
     }
 
     private class SpatialPanelActivity : ComponentActivity() {}

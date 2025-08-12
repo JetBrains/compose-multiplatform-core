@@ -139,7 +139,6 @@ private const val FILE_SIZE_LIMIT_BUFFER = 50 * 1024 // 50k threshold buffer
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class RecorderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
 
     @get:Rule
@@ -401,7 +400,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 25)
+    @SdkSuppress(maxSdkVersion = 25)
     @SuppressLint("NewApi") // Intentionally testing behavior of calling from invalid API level
     fun prepareRecordingWithFileDescriptor_throwsExceptionBeforeApi26() {
         // Arrange.
@@ -1115,7 +1114,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1144,7 +1142,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenSupportedInExtensions() {
         assumeFalse(
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))

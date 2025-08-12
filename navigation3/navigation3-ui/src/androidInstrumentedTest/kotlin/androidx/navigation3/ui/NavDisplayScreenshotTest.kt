@@ -22,6 +22,7 @@ import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -123,6 +124,142 @@ class NavDisplayScreenshotTest {
             .onNodeWithTag(navHostTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavDisplayPredictiveBackAnimations")
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testNavDisplayPredictiveBackAnimationsRightSwipeEdge() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                transitionSpec = {
+                    slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
+                },
+                predictivePopTransitionSpec = { swipeEdge ->
+                    if (swipeEdge == BackEvent.EDGE_LEFT) {
+                        EnterTransition.None togetherWith slideOutHorizontally { it / 2 }
+                    } else {
+                        EnterTransition.None togetherWith slideOutHorizontally { -it / 2 }
+                    }
+                },
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first) { Text(first) }
+                    second ->
+                        NavEntry(second) {
+                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
+                                Text(second, Modifier.size(50.dp))
+                            }
+                        }
+
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle { backStack.add(second) }
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_RIGHT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_RIGHT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_RIGHT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "testNavDisplayPredictiveBackAnimationsRightSwipeEdge",
+            )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testNavDisplayPredictiveBackAnimationsLeftSwipeEdge() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                transitionSpec = {
+                    slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
+                },
+                predictivePopTransitionSpec = { swipeEdge ->
+                    if (swipeEdge == BackEvent.EDGE_LEFT) {
+                        EnterTransition.None togetherWith slideOutHorizontally { it / 2 }
+                    } else {
+                        EnterTransition.None togetherWith slideOutHorizontally { -it / 2 }
+                    }
+                },
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first) { Text(first) }
+                    second ->
+                        NavEntry(second) {
+                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
+                                Text(second, Modifier.size(50.dp))
+                            }
+                        }
+
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle { backStack.add(second) }
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "testNavDisplayPredictiveBackAnimationsLeftSwipeEdge",
+            )
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

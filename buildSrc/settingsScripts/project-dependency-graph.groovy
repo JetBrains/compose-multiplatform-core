@@ -341,6 +341,11 @@ class ProjectDependencyGraph {
                 )
             }
         }
+        Matcher matcherRepositories = repositories.matcher(line)
+        if (matcherRepositories) {
+            throw new Exception("$buildFile.absolutePath file should not set up repositories. " +
+                    "This list is controlled at a global build level.")
+        }
     }
 
     private static Pattern projectReferencePattern = Pattern.compile(
@@ -360,6 +365,7 @@ class ProjectDependencyGraph {
     private static Pattern compileSdk = Pattern.compile("compileSdk(\\D*)([0-9]+)\$")
     private static Pattern minSdk = Pattern.compile("minSdk(\\D*)([0-9]+)\$")
     private static Pattern namespace = Pattern.compile("namespace (.*)(['\"])([^'^\"]*)['\"]\$")
+    private static Pattern repositories = Pattern.compile("repositories \\{")
     private static List<String> buildFileNames = ["build.gradle", "build.gradle.kts"]
 }
 

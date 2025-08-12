@@ -34,4 +34,9 @@ public object PdfFeatureFlags {
 
     // Toggles availability of smart action contextual menu components for text selection.
     public var isSmartActionMenuComponentEnabled: Boolean = false
+
+    public var isCustomLinkHandlingEnabled: Boolean = false
+
+    // Toggles multi touch scroll functionality for the PDF viewer.
+    public var isMultiTouchScrollEnabled: Boolean = false
 }

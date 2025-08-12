@@ -16,8 +16,6 @@
 
 package androidx.core.app;
 
-import static android.app.AlarmManager.RTC_WAKEUP;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
@@ -63,12 +61,8 @@ public final class AlarmManagerCompat {
     @SuppressLint("MissingPermission")
     public static void setAlarmClock(@NonNull AlarmManager alarmManager, long triggerTime,
             @NonNull PendingIntent showIntent, @NonNull PendingIntent operation) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setAlarmClock(alarmManager,
-                    Api21Impl.createAlarmClockInfo(triggerTime, showIntent), operation);
-        } else {
-            AlarmManagerCompat.setExact(alarmManager, RTC_WAKEUP, triggerTime, operation);
-        }
+        Api21Impl.setAlarmClock(alarmManager,
+                Api21Impl.createAlarmClockInfo(triggerTime, showIntent), operation);
     }
 
     /**
@@ -265,7 +259,6 @@ public final class AlarmManagerCompat {
     private AlarmManagerCompat() {
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

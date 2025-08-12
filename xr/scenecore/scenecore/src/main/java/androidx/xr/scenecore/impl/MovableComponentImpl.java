@@ -436,7 +436,8 @@ class MovableComponentImpl implements MovableComponent {
             // TODO: b/367754233 - Revisit if this needs to use ActivitySpaceScale or
             // WorldSpaceScale.
             mEntity.setScale(
-                    mEntity.getWorldSpaceScale().div(mActivitySpaceImpl.getWorldSpaceScale()),
+                    mEntity.getWorldSpaceScale()
+                            .scale(mActivitySpaceImpl.getWorldSpaceScale().inverse()),
                     Space.PARENT);
             mEntity.setParent(mActivitySpaceImpl);
             checkAndDisposeAnchorEntity();

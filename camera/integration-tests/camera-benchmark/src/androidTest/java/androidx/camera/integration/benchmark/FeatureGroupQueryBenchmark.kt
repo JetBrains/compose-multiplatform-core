@@ -85,11 +85,6 @@ class FeatureGroupQueryBenchmark(
         }
     }
 
-    // TODO: b/429377883 - Track query API first calls or any initialization latency by adding a
-    //   macro-benchmark test. The micro-benchmark tests are designed for measuring CPU work that
-    //   assesses best-case performance and ignores initialization and non-cached scenarios by
-    //   utilizing a warm-up phase before measuring performance.
-
     @Test
     fun queryFeatureGroup() {
         cameraProvider =

@@ -75,7 +75,7 @@ message TrackEvent {
     int64 counter_value = 30;
     double double_counter_value = 44;
   }
-  repeated fixed64 flow_ids = 47;
+  repeated fixed64 flow_ids = 47 [packed = false];
 
   // ---------------------------------------------------------------------------
   // TrackEvent arguments:

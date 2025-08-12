@@ -46,7 +46,7 @@ private constructor(
 ) {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @Suppress("HiddenTypeParameter")
+    @Suppress("HiddenTypeParameter") // Internal API.
     public val internalColor: ComposeColor =
         // Caching this because the native call is slow. Still doing the round-trip on construction
         // to
@@ -393,10 +393,13 @@ private constructor(
     /** Delete native Brush memory. */
     // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
-        if (nativePointer != 0L) {
-            BrushNative.free(nativePointer)
-        }
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
+        BrushNative.free(nativePointer)
     }
 
     public companion object {

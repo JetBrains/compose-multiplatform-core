@@ -18,7 +18,6 @@ package androidx.camera.camera2.internal.compat
 
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.internal.compat.workaround.OutputSizesCorrector
 import androidx.camera.core.impl.ImageFormatConstants
@@ -28,14 +27,12 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 /** Unit tests for [StreamConfigurationMapCompat]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StreamConfigurationMapCompatTest {
 
     companion object {
@@ -92,7 +89,6 @@ class StreamConfigurationMapCompatTest {
     }
 
     @Test
-    @Config(minSdk = 23)
     fun getHighResolutionOutputSizesTwice_whenReturnedArrayIsNull() {
         assumeTrue(
             streamConfigurationMapCompat.getHighResolutionOutputSizes(ImageFormat.JPEG) == null

@@ -25,3 +25,7 @@ internal actual fun FillableData(charSequenceValue: CharSequence): FillableData 
 internal actual fun FillableData(booleanValue: Boolean): FillableData {
     implementedInJetBrainsFork()
 }
+
+internal actual fun FillableData(intValue: Int): FillableData {
+    implementedInJetBrainsFork()
+}

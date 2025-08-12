@@ -70,7 +70,6 @@ import org.junit.runner.RunWith
 /** Instrumented tests for [ProcessingNode]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class ProcessingNodeDeviceTest {
 
     // The color before and after the encoding/decoding process on API 23 or below devices might

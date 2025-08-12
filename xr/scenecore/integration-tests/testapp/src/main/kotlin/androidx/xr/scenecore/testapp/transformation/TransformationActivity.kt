@@ -35,6 +35,7 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.math.Vector3.Companion.distance
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
@@ -207,9 +208,8 @@ class TransformationActivity : AppCompatActivity() {
                 "getPose is not allowed with Space.PARENT on this Entity: ${e.message}"
             }
         view.setLine("localPose", localPose)
-
+        view.setLine("activitySpacePose", trackedEntity.getPose(Space.ACTIVITY).toFormattedString())
         view.setLine("worldSpacePose", trackedEntity.getPose(Space.REAL_WORLD).toFormattedString())
-        view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
 
         val localScale =
             try {
@@ -218,6 +218,8 @@ class TransformationActivity : AppCompatActivity() {
                 "getScale is not allowed with Space.PARENT on this Entity ${e.message}"
             }
         view.setLine("local scale", localScale.toString())
+        view.setLine("activitySpaceScale", trackedEntity.getScale(Space.ACTIVITY).toString())
+        view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
 
         val activitySpacePose =
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.activitySpace)
@@ -227,17 +229,44 @@ class TransformationActivity : AppCompatActivity() {
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.mainPanelEntity)
         view.setLine("MainPanelSpacePose", mainPanelSpacePose.toFormattedString())
 
+        val trackedEntityWorldPos = trackedEntity.getPose(Space.REAL_WORLD).translation
         if (anchor != null && anchorState == AnchorEntity.State.ANCHORED) {
             val anchorSpacePose = trackedEntity.transformPoseTo(Pose.Identity, anchor!!)
             view.setLine("AnchorSpacePose", anchorSpacePose.toFormattedString())
-            view.setLine("Distance to Anchor", length(anchorSpacePose.translation).toString())
+            val anchorWorldPos = anchor!!.getPose(Space.REAL_WORLD).translation
+            view.setLine(
+                "Distance to Anchor (dest units)",
+                length(anchorSpacePose.translation).toString(),
+            )
+            view.setLine(
+                "Distance to Anchor (meters)",
+                distance(trackedEntityWorldPos, anchorWorldPos).toString(),
+            )
         } else {
             view.setLine("AnchorSpacePose", "N/A (Anchor not ready)")
-            view.setLine("Distance to Anchor", "N/A")
+            view.setLine("Distance to Anchor (dest units)", "N/A")
+            view.setLine("Distance to Anchor (meters)", "N/A")
         }
+        val activitySpacePos = session!!.scene.activitySpace.getPose(Space.REAL_WORLD).translation
+        view.setLine(
+            "Distance to ActivitySpace (dest units)",
+            length(activitySpacePose.translation).toString(),
+        )
+        view.setLine(
+            "Distance to ActivitySpace (meters)",
+            distance(trackedEntityWorldPos, activitySpacePos).toString(),
+        )
 
-        view.setLine("Distance to ActivitySpace", length(activitySpacePose.translation).toString())
-        view.setLine("Distance to Main Panel", length(mainPanelSpacePose.translation).toString())
+        val mainPanelWorldPos =
+            session!!.scene.mainPanelEntity.getPose(Space.REAL_WORLD).translation
+        view.setLine(
+            "Distance to Main Panel (dest units)",
+            length(mainPanelSpacePose.translation).toString(),
+        )
+        view.setLine(
+            "Distance to Main Panel (meters)",
+            distance(trackedEntityWorldPos, mainPanelWorldPos).toString(),
+        )
         when (trackedEntity) {
             is PanelEntity -> {
                 view.setLine("Panel size", trackedEntity.size.toString())

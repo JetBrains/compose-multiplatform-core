@@ -17,6 +17,7 @@
 package androidx.credentials.providerevents.transfer
 
 import android.os.Bundle
+import androidx.annotation.RestrictTo
 
 /**
  * A success response from requesting import.
@@ -34,6 +35,8 @@ public class ImportCredentialsResponse(public val responseJson: String) {
          * [File Provider](https://developer.android.com/reference/androidx/core/content/FileProvider)
          * can be used to share the credentials to another app.
          */
-        @JvmStatic public fun toBundle(response: ImportCredentialsResponse): Bundle = Bundle()
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun toBundle(response: ImportCredentialsResponse): Bundle = Bundle()
     }
 }

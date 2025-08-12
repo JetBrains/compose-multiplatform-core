@@ -61,6 +61,10 @@ RemovedFromJava: androidx.navigation.NavGraph#findNode():
     Source breaking change: method androidx.navigation.NavGraph.findNode() can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavGraph#setStartDestination():
     Source breaking change: method androidx.navigation.NavGraph.setStartDestination() can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraph#setStartDestination(T):
+    Source breaking change: method androidx.navigation.NavGraph.setStartDestination(T) can no longer be resolved from Java source
+RemovedFromJava: androidx.navigation.NavGraph#setStartDestination(kotlin.reflect.KClass<T>):
+    Source breaking change: method androidx.navigation.NavGraph.setStartDestination(kotlin.reflect.KClass<T>) can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, Object, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):
     Source breaking change: method androidx.navigation.NavGraphBuilderKt.navigation(androidx.navigation.NavGraphBuilder,Object,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavGraphBuilder,kotlin.Unit>) can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavGraphBuilderKt#navigation(androidx.navigation.NavGraphBuilder, kotlin.reflect.KClass<?>, java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>, kotlin.jvm.functions.Function1<? super androidx.navigation.NavGraphBuilder,kotlin.Unit>):

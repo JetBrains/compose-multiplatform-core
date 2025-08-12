@@ -288,6 +288,97 @@ class ScrollableTest {
     }
 
     @Test
+    fun scrollable_horizontalScroll_2d_mouseWheel() {
+        var total = 0f
+        val controller =
+            ScrollableState(
+                consumeScrollDelta = {
+                    total += it
+                    it
+                }
+            )
+        setScrollableContent {
+            Modifier.scrollable(state = controller, orientation = Orientation.Horizontal)
+        }
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-100f, 0f)) // only moved horizontally
+        }
+
+        var lastTotal =
+            rule.runOnIdle {
+                assertThat(total).isGreaterThan(0)
+                total
+            }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(0f, -100f)) // only moved vertically
+        }
+
+        rule.runOnIdle { assertThat(total).isEqualTo(lastTotal) }
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(100f, 0f)) // only moved horizontally
+        }
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+    }
+
+    @Test
+    fun scrollableHorizontal_diagonalScroll_2d_mouseWheel() {
+        var total = 0f
+        val controller =
+            ScrollableState(
+                consumeScrollDelta = {
+                    total += it
+                    it
+                }
+            )
+        setScrollableContent {
+            Modifier.scrollable(state = controller, orientation = Orientation.Horizontal)
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(100f, 50f)) // moved more horizontally at 1 quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isLessThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(100f, -50f)) // moved more horizontally at 4 quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isLessThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-100f, 50f)) // moved more horizontally at 2 quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-100f, -50f)) // moved more horizontally at 3 quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-50f, -100f)) // // moved more vertically
+        }
+
+        rule.runOnIdle { assertThat(total).isEqualTo(0f) }
+    }
+
+    @Test
     fun scrollable_horizontalScroll_mouseWheel_badMotionEvent() {
         var total = 0f
         val controller =
@@ -571,6 +662,99 @@ class ScrollableTest {
     }
 
     @Test
+    fun scrollable_verticalScroll_2d_mouseWheel() {
+        var total = 0f
+        val controller =
+            ScrollableState(
+                consumeScrollDelta = {
+                    total += it
+                    it
+                }
+            )
+        setScrollableContent {
+            Modifier.scrollable(state = controller, orientation = Orientation.Vertical)
+        }
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput { this.scroll(Offset(0f, -100f)) }
+
+        val lastTotal =
+            rule.runOnIdle {
+                assertThat(total).isGreaterThan(0)
+                total
+            }
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput { this.scroll(Offset(-100f, 0f)) }
+
+        rule.runOnIdle { assertThat(total).isEqualTo(lastTotal) }
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput { this.scroll(Offset(0f, 100f)) }
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+    }
+
+    @Test
+    fun scrollableVertical_diagonalScroll_2d_mouseWheel() {
+        var total = 0f
+        val controller =
+            ScrollableState(
+                consumeScrollDelta = {
+                    total += it
+                    it
+                }
+            )
+        setScrollableContent {
+            Modifier.scrollable(state = controller, orientation = Orientation.Vertical)
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(50f, 100f)) // moved more vertically, 1st quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isLessThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-50f, 100f)) // moved more vertically, 2nd quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isLessThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-50f, -100f)) // moved more vertically, 3rd quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(50f, -100f)) // moved more vertically, 4th quadrant
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(100f, 100f)) // at exact 45 angle
+        }
+
+        rule.runOnIdle {
+            assertThat(total).isLessThan(0)
+            total = 0f
+        }
+
+        rule.onNodeWithTag(scrollableBoxTag).performMouseInput {
+            this.scroll(Offset(-100f, -50f)) // // moved more horizontally
+        }
+
+        rule.runOnIdle { assertThat(total).isEqualTo(0) }
+    }
+
+    @Test
     fun scrollable_verticalScroll_mouseWheel_badMotionEvent() {
         var total = 0f
         val controller =
@@ -588,6 +772,93 @@ class ScrollableTest {
         }
 
         assertThat(total).isEqualTo(0)
+    }
+
+    @Test
+    fun scrollable_nestedDiagonalScroll_mouseWheel_triggersOnAngle() {
+        var totalVerticalScroll = 0f
+        var totalHorizontalScroll = 0f
+        val outerController =
+            ScrollableState(
+                consumeScrollDelta = {
+                    totalVerticalScroll += it
+                    it
+                }
+            )
+
+        val innerController =
+            ScrollableState(
+                consumeScrollDelta = {
+                    totalHorizontalScroll += it
+                    it
+                }
+            )
+        rule.setContentAndGetScope {
+            Box {
+                Box(
+                    modifier =
+                        Modifier.testTag("outerScrollableBoxTag")
+                            .size(100.dp)
+                            .scrollable(outerController, Orientation.Vertical)
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.testTag("innerScrollableBoxTag")
+                                .size(100.dp)
+                                .scrollable(innerController, Orientation.Horizontal)
+                    )
+                }
+            }
+        }
+
+        // mostly horizontal event triggered horizontal scrollable
+        rule.onRoot().performMouseInput { this.scroll(Offset(-100f, -50f)) }
+
+        rule.runOnIdle {
+            assertThat(totalHorizontalScroll).isGreaterThan(0)
+            assertThat(totalVerticalScroll).isZero()
+        }
+
+        totalHorizontalScroll = 0f
+        totalVerticalScroll = 0f
+
+        // mostly vertical event triggered vertical scrollable
+        rule.onRoot().performMouseInput { this.scroll(Offset(-10f, -50f)) }
+
+        rule.runOnIdle {
+            assertThat(totalVerticalScroll).isGreaterThan(0)
+            assertThat(totalHorizontalScroll).isZero()
+        }
+
+        totalHorizontalScroll = 0f
+        totalVerticalScroll = 0f
+
+        // started vertical and changed to horizontal triggers only vertical
+        // We use the initial event to determine user intention due to mouse wheel events batching.
+        rule.onRoot().performMouseInput {
+            this.scroll(Offset(-10f, -50f))
+            this.scroll(Offset(-50f, -10f))
+        }
+
+        rule.runOnIdle {
+            assertThat(totalVerticalScroll).isGreaterThan(0)
+            assertThat(totalHorizontalScroll).isZero()
+        }
+
+        totalHorizontalScroll = 0f
+        totalVerticalScroll = 0f
+
+        // started vertical, waited, changed to horizontal means we have a new scrolling direction.
+        rule.onRoot().performMouseInput { this.scroll(Offset(-10f, -50f)) }
+
+        rule.waitForIdle()
+
+        rule.onRoot().performMouseInput { this.scroll(Offset(-50f, -10f)) }
+
+        rule.runOnIdle {
+            assertThat(totalVerticalScroll).isGreaterThan(0)
+            assertThat(totalHorizontalScroll).isGreaterThan(0)
+        }
     }
 
     /*

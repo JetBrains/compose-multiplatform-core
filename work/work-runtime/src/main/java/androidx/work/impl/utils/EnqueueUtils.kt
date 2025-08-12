@@ -21,12 +21,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.work.Configuration
 import androidx.work.Data
 import androidx.work.impl.Scheduler
-import androidx.work.impl.Schedulers
 import androidx.work.impl.WorkContinuationImpl
 import androidx.work.impl.WorkDatabase
 import androidx.work.impl.WorkManagerImpl
-import androidx.work.impl.WorkManagerImpl.MAX_PRE_JOB_SCHEDULER_API_LEVEL
-import androidx.work.impl.WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL
 import androidx.work.impl.model.WorkSpec
 import androidx.work.impl.workers.ARGUMENT_CLASS_NAME
 import androidx.work.impl.workers.ConstraintTrackingWorker
@@ -122,21 +119,8 @@ internal fun wrapWorkSpecIfNeeded(schedulers: List<Scheduler>, workSpec: WorkSpe
     val delegated = tryDelegateRemoteListenableWorker(workSpec)
     // Use a ConstraintTrackingWorker when necessary.
     return when {
-        Build.VERSION.SDK_INT in MIN_JOB_SCHEDULER_API_LEVEL..25 ->
-            tryDelegateConstrainedWorkSpec(delegated)
-        Build.VERSION.SDK_INT <= MAX_PRE_JOB_SCHEDULER_API_LEVEL &&
-            usesScheduler(schedulers, Schedulers.GCM_SCHEDULER) ->
-            tryDelegateConstrainedWorkSpec(delegated)
+        Build.VERSION.SDK_INT <= 25 -> tryDelegateConstrainedWorkSpec(delegated)
         else -> delegated
-    }
-}
-
-private fun usesScheduler(schedulers: List<Scheduler>, className: String): Boolean {
-    return try {
-        val klass = Class.forName(className)
-        return schedulers.any { scheduler -> klass.isAssignableFrom(scheduler.javaClass) }
-    } catch (ignore: ClassNotFoundException) {
-        false
     }
 }
 

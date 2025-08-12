@@ -34,9 +34,6 @@ androidx {
 android {
     namespace = "androidx.compose.remote.frontend"
     compileSdk = 35
-    defaultConfig {
-       minSdk = 22
-    }
 }
 
 dependencies {
@@ -58,6 +55,14 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":compose:remote:test-utils"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:ui:ui-test-manifest"))
 }

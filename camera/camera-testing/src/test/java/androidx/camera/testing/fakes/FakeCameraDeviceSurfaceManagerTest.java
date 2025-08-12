@@ -27,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-import android.os.Build;
 import android.util.Range;
 import android.util.Size;
 
@@ -47,7 +46,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.Collections;
@@ -60,7 +58,6 @@ import java.util.Map;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class FakeCameraDeviceSurfaceManagerTest {
 
     private static final int FAKE_WIDTH0 = 400;

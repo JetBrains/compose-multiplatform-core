@@ -36,7 +36,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-/** Implementation of a RealityCore Entity that logs its function calls. */
+/** Implementation of a SceneCore Entity that logs its function calls. */
 class LoggingEntityImpl extends BaseEntity implements LoggingEntity {
 
     private static final String TAG = "SceneCore";

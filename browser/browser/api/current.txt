@@ -611,7 +611,18 @@ package androidx.browser.trusted {
     method public android.os.Bundle toBundle();
   }
 
+  public static final class TrustedWebActivityDisplayMode.TabbedMode implements androidx.browser.trusted.TrustedWebActivityDisplayMode {
+    ctor public TrustedWebActivityDisplayMode.TabbedMode();
+    method public android.os.Bundle toBundle();
+  }
+
+  public static final class TrustedWebActivityDisplayMode.WindowControlsOverlay implements androidx.browser.trusted.TrustedWebActivityDisplayMode {
+    ctor public TrustedWebActivityDisplayMode.WindowControlsOverlay();
+    method public android.os.Bundle toBundle();
+  }
+
   public final class TrustedWebActivityIntent {
+    method public java.util.List<androidx.browser.trusted.TrustedWebActivityDisplayMode!> getDisplayOverrideList();
     method public androidx.browser.trusted.FileHandlingData? getFileHandlingData();
     method public android.content.Intent getIntent();
     method public int getLaunchHandlerClientMode();
@@ -630,6 +641,7 @@ package androidx.browser.trusted {
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setColorSchemeParams(int, androidx.browser.customtabs.CustomTabColorSchemeParams);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(androidx.browser.customtabs.CustomTabColorSchemeParams);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setDisplayMode(androidx.browser.trusted.TrustedWebActivityDisplayMode);
+    method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setDisplayOverrideList(java.util.List<androidx.browser.trusted.TrustedWebActivityDisplayMode!>?);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setFileHandlingData(androidx.browser.trusted.FileHandlingData);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setLaunchHandlerClientMode(int);
     method @Deprecated public androidx.browser.trusted.TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int);
@@ -641,6 +653,7 @@ package androidx.browser.trusted {
     method @Deprecated public androidx.browser.trusted.TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int);
     field public static final String EXTRA_ADDITIONAL_TRUSTED_ORIGINS = "android.support.customtabs.extra.ADDITIONAL_TRUSTED_ORIGINS";
     field public static final String EXTRA_DISPLAY_MODE = "androidx.browser.trusted.extra.DISPLAY_MODE";
+    field public static final String EXTRA_DISPLAY_OVERRIDE = "androidx.browser.trusted.extra.DISPLAY_OVERRIDE";
     field public static final String EXTRA_FILE_HANDLING_DATA = "androidx.browser.trusted.extra.FILE_HANDLING_DATA";
     field public static final String EXTRA_LAUNCH_HANDLER_CLIENT_MODE = "androidx.browser.trusted.extra.LAUNCH_HANDLER_CLIENT_MODE";
     field public static final String EXTRA_ORIGINAL_LAUNCH_URL = "androidx.browser.trusted.extra.ORIGINAL_LAUNCH_URL";

@@ -320,7 +320,11 @@ public final class UiWindow implements Searchable {
         return windowBounds;
     }
 
-    /** Returns the name of the package that this window belongs to. */
+    /**
+     * Returns the name of the package that this window belongs to.
+     *
+     * @return The name of the package, or {@code null} if the root object is not available.
+     */
     public @Nullable String getPackageName() {
         UiObject2 root = getRootObject();
         if (root == null) {

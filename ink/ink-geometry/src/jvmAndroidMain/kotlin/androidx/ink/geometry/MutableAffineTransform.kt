@@ -126,8 +126,12 @@ public constructor(
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun asImmutable(): ImmutableAffineTransform =
-        ImmutableAffineTransform(m00, m10, m20, m01, m11, m21)
+    override fun toImmutable(): ImmutableAffineTransform =
+        if (this == AffineTransform.IDENTITY) {
+            AffineTransform.IDENTITY
+        } else {
+            ImmutableAffineTransform(m00, m10, m20, m01, m11, m21)
+        }
 
     /**
      * Fills this [MutableAffineTransform] with the same values contained in [input].
@@ -136,7 +140,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFrom(input: AffineTransform): MutableAffineTransform {
         m00 = input.m00
         m10 = input.m10
@@ -155,7 +158,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromIdentity(): MutableAffineTransform {
         m00 = 1f
         m10 = 0f
@@ -174,7 +176,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromTranslate(offset: Vec): MutableAffineTransform {
         m00 = 1f
         m10 = 0f
@@ -193,7 +194,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromScale(scaleFactor: Float): MutableAffineTransform {
         m00 = scaleFactor
         m10 = 0f
@@ -213,7 +213,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromScale(xScaleFactor: Float, yScaleFactor: Float): MutableAffineTransform {
         m00 = xScaleFactor
         m10 = 0f
@@ -232,7 +231,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromScaleX(scaleFactor: Float): MutableAffineTransform {
         m00 = scaleFactor
         m10 = 0f
@@ -251,7 +249,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromScaleY(scaleFactor: Float): MutableAffineTransform {
         m00 = 1f
         m10 = 0f
@@ -270,7 +267,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromShearX(shearFactor: Float): MutableAffineTransform {
         m00 = 1f
         m10 = shearFactor
@@ -289,7 +285,6 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFromShearY(shearFactor: Float): MutableAffineTransform {
         m00 = 1f
         m10 = 0f
@@ -308,8 +303,7 @@ public constructor(
      *
      * @return `this`
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    public fun populateFromRotate(
+    public fun populateFromRotation(
         @AngleRadiansFloat angleOfRotation: Float
     ): MutableAffineTransform {
         val sin = sin(angleOfRotation)

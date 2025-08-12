@@ -42,9 +42,10 @@ class BrushPaintTest {
                             offsetY = 0.2f,
                             rotation = Angle.QUARTER_TURN_RADIANS,
                             opacity = 0.3f,
-                            animationFrames = 1,
-                            animationRows = 1,
-                            animationColumns = 1,
+                            animationFrames = 2,
+                            animationRows = 3,
+                            animationColumns = 4,
+                            animationDurationMillis = 5000,
                             BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                             BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
                             BrushPaint.TextureMapping.TILING,
@@ -59,9 +60,10 @@ class BrushPaintTest {
                             offsetY = 0.9f,
                             rotation = Angle.HALF_TURN_RADIANS,
                             opacity = 0.7f,
-                            animationFrames = 1,
-                            animationRows = 1,
-                            animationColumns = 1,
+                            animationFrames = 2,
+                            animationRows = 3,
+                            animationColumns = 4,
+                            animationDurationMillis = 5000,
                             BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                             BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                             BrushPaint.TextureMapping.TILING,
@@ -238,6 +240,14 @@ class BrushPaintTest {
         assertFailsWith<IllegalArgumentException> {
             BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationFrames = 0)
         }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
+                animationFrames = (1 shl 24) + 1,
+            )
+        }
     }
 
     @Test
@@ -250,6 +260,14 @@ class BrushPaintTest {
             BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationRows = 0)
         }
         assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
+                animationRows = (1 shl 12) + 1,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
             BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationColumns = -1)
         }
         assertFailsWith<IllegalArgumentException> {
@@ -260,9 +278,38 @@ class BrushPaintTest {
                 TEST_TEXTURE_ID,
                 sizeX = 1f,
                 sizeY = 1f,
+                animationColumns = (1 shl 12) + 1,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
                 animationFrames = 7,
                 animationRows = 2,
                 animationColumns = 3,
+            )
+        }
+    }
+
+    @Test
+    @Suppress("Range") // Testing error cases.
+    fun textureLayerConstructor_withInvalidAnimationDuration_throwsIllegalArgumentException() {
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
+                animationDurationMillis = -1L,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
+                animationDurationMillis = 0L,
             )
         }
     }
@@ -286,6 +333,7 @@ class BrushPaintTest {
                 animationFrames = 2,
                 animationRows = 3,
                 animationColumns = 4,
+                animationDurationMillis = 5000,
                 BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                 BrushPaint.TextureOrigin.LAST_STROKE_INPUT,
                 BrushPaint.TextureMapping.WINDING,
@@ -308,6 +356,7 @@ class BrushPaintTest {
                     animationFrames = 2,
                     animationRows = 3,
                     animationColumns = 4,
+                    animationDurationMillis = 5000,
                     BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                     BrushPaint.TextureOrigin.LAST_STROKE_INPUT,
                     BrushPaint.TextureMapping.WINDING,
@@ -330,6 +379,7 @@ class BrushPaintTest {
         assertThat(layer).isNotEqualTo(layer.copy(animationFrames = 5))
         assertThat(layer).isNotEqualTo(layer.copy(animationRows = 6))
         assertThat(layer).isNotEqualTo(layer.copy(animationColumns = 7))
+        assertThat(layer).isNotEqualTo(layer.copy(animationDurationMillis = 8000))
         assertThat(layer)
             .isNotEqualTo(layer.copy(sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES))
         assertThat(layer)
@@ -363,6 +413,7 @@ class BrushPaintTest {
                 animationFrames = 2,
                 animationRows = 3,
                 animationColumns = 4,
+                animationDurationMillis = 5000,
                 BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                 BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                 BrushPaint.TextureMapping.WINDING,
@@ -389,6 +440,7 @@ class BrushPaintTest {
                     animationFrames = 2,
                     animationRows = 3,
                     animationColumns = 4,
+                    animationDurationMillis = 5000,
                     BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                     BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                     BrushPaint.TextureMapping.WINDING,
@@ -409,6 +461,9 @@ class BrushPaintTest {
         assertThat(string).contains("rotation")
         assertThat(string).contains("opacity")
         assertThat(string).contains("animationFrames")
+        assertThat(string).contains("animationRows")
+        assertThat(string).contains("animationColumns")
+        assertThat(string).contains("animationDurationMillis")
         assertThat(string).contains("sizeUnit")
         assertThat(string).contains("origin")
         assertThat(string).contains("mapping")
@@ -420,30 +475,6 @@ class BrushPaintTest {
     // endregion
 
     // region SizeUnit class tests
-    @Test
-    fun sizeUnitConstants_areDistinct() {
-        val set =
-            setOf(
-                BrushPaint.TextureSizeUnit.BRUSH_SIZE,
-                BrushPaint.TextureSizeUnit.STROKE_SIZE,
-                BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
-            )
-        assertThat(set).hasSize(3)
-    }
-
-    @Test
-    fun sizeUnitHashCode_withIdenticalValues_match() {
-        assertThat(BrushPaint.TextureSizeUnit.STROKE_COORDINATES.hashCode())
-            .isEqualTo(BrushPaint.TextureSizeUnit.STROKE_COORDINATES.hashCode())
-    }
-
-    @Test
-    fun sizeUnitEquals_checksEqualityOfValues() {
-        assertThat(BrushPaint.TextureSizeUnit.STROKE_COORDINATES)
-            .isEqualTo(BrushPaint.TextureSizeUnit.STROKE_COORDINATES)
-        assertThat(BrushPaint.TextureSizeUnit.STROKE_COORDINATES)
-            .isNotEqualTo(BrushPaint.TextureSizeUnit.BRUSH_SIZE)
-    }
 
     @Test
     fun sizeUnitToString_returnsCorrectString() {
@@ -459,7 +490,7 @@ class BrushPaintTest {
 
     // region Origin class tests
     @Test
-    fun originConstants_areDistint() {
+    fun originConstants_areDistinct() {
         val set =
             setOf(
                 BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
@@ -497,24 +528,6 @@ class BrushPaintTest {
 
     // region Mapping class tests
     @Test
-    fun mappingConstants_areDistinct() {
-        val set = setOf(BrushPaint.TextureMapping.TILING, BrushPaint.TextureMapping.WINDING)
-        assertThat(set).hasSize(2)
-    }
-
-    @Test
-    fun mappingHashCode_withIdenticalValues_match() {
-        assertThat(BrushPaint.TextureMapping.TILING.hashCode())
-            .isEqualTo(BrushPaint.TextureMapping.TILING.hashCode())
-    }
-
-    @Test
-    fun mappingEquals_checksEqualityOfValues() {
-        assertThat(BrushPaint.TextureMapping.TILING).isEqualTo(BrushPaint.TextureMapping.TILING)
-        assertThat(BrushPaint.TextureMapping.TILING).isNotEqualTo(BrushPaint.TextureMapping.WINDING)
-    }
-
-    @Test
     fun mappingToString_returnsCorrectString() {
         assertThat(BrushPaint.TextureMapping.TILING.toString())
             .isEqualTo("BrushPaint.TextureMapping.TILING")
@@ -526,71 +539,18 @@ class BrushPaintTest {
 
     // region Wrap class tests
     @Test
-    fun wrapConstants_areDistinct() {
-        val set =
-            setOf(
-                BrushPaint.TextureWrap.REPEAT,
-                BrushPaint.TextureWrap.MIRROR,
-                BrushPaint.TextureWrap.CLAMP,
-            )
-        assertThat(set).hasSize(3)
-    }
-
-    @Test
-    fun wrapHashCode_withIdenticalValues_match() {
-        assertThat(BrushPaint.TextureWrap.MIRROR.hashCode())
-            .isEqualTo(BrushPaint.TextureWrap.MIRROR.hashCode())
-        assertThat(BrushPaint.TextureWrap.CLAMP.hashCode())
-            .isEqualTo(BrushPaint.TextureWrap.CLAMP.hashCode())
-        assertThat(BrushPaint.TextureWrap.MIRROR.hashCode())
-            .isNotEqualTo(BrushPaint.TextureWrap.CLAMP.hashCode())
-    }
-
-    @Test
-    fun wrapEquals_checksEqualityOfValues() {
-        assertThat(BrushPaint.TextureWrap.CLAMP).isEqualTo(BrushPaint.TextureWrap.CLAMP)
-        assertThat(BrushPaint.TextureWrap.CLAMP).isNotEqualTo(BrushPaint.TextureWrap.REPEAT)
-    }
-
-    @Test
     fun wrapToString_returnsCorrectString() {
-        assertThat(BrushPaint.TextureWrap.REPEAT.toString())
-            .isEqualTo("BrushPaint.TextureWrap.REPEAT")
         assertThat(BrushPaint.TextureWrap.MIRROR.toString())
             .isEqualTo("BrushPaint.TextureWrap.MIRROR")
         assertThat(BrushPaint.TextureWrap.CLAMP.toString())
             .isEqualTo("BrushPaint.TextureWrap.CLAMP")
+        assertThat(BrushPaint.TextureWrap.REPEAT.toString())
+            .isEqualTo("BrushPaint.TextureWrap.REPEAT")
     }
 
     // endregion
 
     // region BlendMode class tests
-    @Test
-    fun textureBlendModeConstants_areDistinct() {
-        val set =
-            setOf(
-                BrushPaint.BlendMode.MODULATE,
-                BrushPaint.BlendMode.DST_IN,
-                BrushPaint.BlendMode.DST_OUT,
-                BrushPaint.BlendMode.SRC_ATOP,
-                BrushPaint.BlendMode.SRC_IN,
-                BrushPaint.BlendMode.SRC_OVER,
-            )
-        assertThat(set).hasSize(6)
-    }
-
-    @Test
-    fun textureBlendModeHashCode_withIdenticalValues_match() {
-        assertThat(BrushPaint.BlendMode.MODULATE.hashCode())
-            .isEqualTo(BrushPaint.BlendMode.MODULATE.hashCode())
-    }
-
-    @Test
-    fun textureBlendModeEquals_checksEqualityOfValues() {
-        assertThat(BrushPaint.BlendMode.MODULATE).isEqualTo(BrushPaint.BlendMode.MODULATE)
-        assertThat(BrushPaint.BlendMode.MODULATE).isNotEqualTo(BrushPaint.BlendMode.SRC_OVER)
-    }
-
     @Test
     fun textureBlendModeToString_returnsCorrectString() {
         assertThat(BrushPaint.BlendMode.MODULATE.toString()).contains("MODULATE")
@@ -624,6 +584,7 @@ class BrushPaintTest {
             animationFrames = 2,
             animationRows = 3,
             animationColumns = 4,
+            animationDurationMillis = 5000,
             BrushPaint.TextureSizeUnit.BRUSH_SIZE,
             BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
             BrushPaint.TextureMapping.WINDING,

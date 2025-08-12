@@ -54,7 +54,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
  */
 @Suppress("DEPRECATION")
 public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
-    private val displayInfoManager by lazy { DisplayInfoManager(context) }
+    private val displayInfoManager by lazy { DisplayInfoManager.getInstance(context) }
 
     init {
         if (context === context.applicationContext) {

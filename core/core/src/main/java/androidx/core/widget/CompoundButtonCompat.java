@@ -57,11 +57,7 @@ public final class CompoundButtonCompat {
      */
     public static void setButtonTintList(@NonNull CompoundButton button,
             @Nullable ColorStateList tint) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setButtonTintList(button, tint);
-        } else if (button instanceof TintableCompoundButton) {
-            ((TintableCompoundButton) button).setSupportButtonTintList(tint);
-        }
+        Api21Impl.setButtonTintList(button, tint);
     }
 
     /**
@@ -70,13 +66,7 @@ public final class CompoundButtonCompat {
      * @see #setButtonTintList(CompoundButton, ColorStateList)
      */
     public static @Nullable ColorStateList getButtonTintList(@NonNull CompoundButton button) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getButtonTintList(button);
-        }
-        if (button instanceof TintableCompoundButton) {
-            return ((TintableCompoundButton) button).getSupportButtonTintList();
-        }
-        return null;
+        return Api21Impl.getButtonTintList(button);
     }
 
     /**
@@ -93,11 +83,7 @@ public final class CompoundButtonCompat {
      */
     public static void setButtonTintMode(@NonNull CompoundButton button,
             PorterDuff.@Nullable Mode tintMode) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setButtonTintMode(button, tintMode);
-        } else if (button instanceof TintableCompoundButton) {
-            ((TintableCompoundButton) button).setSupportButtonTintMode(tintMode);
-        }
+        Api21Impl.setButtonTintMode(button, tintMode);
     }
 
     /**
@@ -106,13 +92,7 @@ public final class CompoundButtonCompat {
      * @see #setButtonTintMode(CompoundButton, PorterDuff.Mode)
      */
     public static PorterDuff.@Nullable Mode getButtonTintMode(@NonNull CompoundButton button) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getButtonTintMode(button);
-        }
-        if (button instanceof TintableCompoundButton) {
-            return ((TintableCompoundButton) button).getSupportButtonTintMode();
-        }
-        return null;
+        return Api21Impl.getButtonTintMode(button);
     }
 
     /**
@@ -146,7 +126,6 @@ public final class CompoundButtonCompat {
         return null;
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

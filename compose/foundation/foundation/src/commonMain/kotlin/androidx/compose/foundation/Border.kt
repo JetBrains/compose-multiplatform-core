@@ -63,7 +63,7 @@ import kotlin.math.min
 /**
  * Modify element to add border with appearance specified with a [border] and a [shape] and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSample()
+ * @sample androidx.compose.foundation.samples.BorderSample
  * @param border [BorderStroke] class that specifies border appearance, such as size and color
  * @param shape shape of the border
  */
@@ -75,7 +75,7 @@ fun Modifier.border(border: BorderStroke, shape: Shape = RectangleShape) =
  * Modify element to add border with appearance specified with a [width], a [color] and a [shape]
  * and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSampleWithDataClass()
+ * @sample androidx.compose.foundation.samples.BorderSampleWithDataClass
  * @param width width of the border. Use [Dp.Hairline] for a hairline border.
  * @param color color to paint the border with
  * @param shape shape of the border
@@ -88,8 +88,8 @@ fun Modifier.border(width: Dp, color: Color, shape: Shape = RectangleShape) =
  * Modify element to add border with appearance specified with a [width], a [brush] and a [shape]
  * and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSampleWithBrush()
- * @sample androidx.compose.foundation.samples.BorderSampleWithDynamicData()
+ * @sample androidx.compose.foundation.samples.BorderSampleWithBrush
+ * @sample androidx.compose.foundation.samples.BorderSampleWithDynamicData
  * @param width width of the border. Use [Dp.Hairline] for a hairline border.
  * @param brush brush to paint the border with
  * @param shape shape of the border

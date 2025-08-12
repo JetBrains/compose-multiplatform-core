@@ -23,10 +23,38 @@ import androidx.xr.runtime.internal.SoundFieldAttributes
 import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper
 import androidx.xr.runtime.internal.SpatializerConstants
 
-// TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [SoundPoolExtensionsWrapper] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
+
+    private var playAsPointSourceResult: Int = 0
+
+    /**
+     * For test purposes only. Sets the value that will be returned by the [play] method for point
+     * source audio.
+     *
+     * This allows tests to simulate both successful and failed attempts to play a sound.
+     *
+     * @param result The stream ID to return from the `play` call. A non-zero value simulates a
+     *   successful playback, while `0` simulates a failure (e.g., because no more streams are
+     *   available).
+     */
+    public fun setPlayAsPointSourceResult(result: Int) {
+        playAsPointSourceResult = result
+    }
+
+    /**
+     * Plays a sound as a point source.
+     *
+     * @param soundPool The SoundPool to use.
+     * @param soundId The ID of the sound to play.
+     * @param params The PointSourceParams to use.
+     * @param volume The volume of the sound.
+     * @param priority The priority of the sound.
+     * @param loop Whether to loop the sound.
+     * @param rate The playback rate of the sound.
+     * @return Non-zero streamID if successful, zero if failed.
+     */
     override fun play(
         soundPool: SoundPool,
         soundId: Int,
@@ -35,8 +63,38 @@ public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
         priority: Int,
         loop: Int,
         rate: Float,
-    ): Int = 0
+    ): Int {
+        return playAsPointSourceResult
+    }
 
+    private var playAsSoundFieldResult: Int = 0
+
+    /**
+     * For test purposes only. Sets the value that will be returned by the [play] method for sound
+     * field audio.
+     *
+     * This allows tests to simulate both successful and failed attempts to play a sound.
+     *
+     * @param result The stream ID to return from the `play` call. A non-zero value simulates a
+     *   successful playback, while `0` simulates a failure (e.g., because no more streams are
+     *   available).
+     */
+    public fun setPlayAsSoundFieldResult(result: Int) {
+        playAsSoundFieldResult = result
+    }
+
+    /**
+     * Plays a sound as a sound field.
+     *
+     * @param soundPool The SoundPool to use.
+     * @param soundId The ID of the sound to play.
+     * @param attributes The SoundFieldAttributes to use.
+     * @param volume The volume of the sound.
+     * @param priority The priority of the sound.
+     * @param loop Whether to loop the sound.
+     * @param rate The playback rate of the sound.
+     * @return Non-zero streamID if successful, zero if failed.
+     */
     override fun play(
         soundPool: SoundPool,
         soundId: Int,
@@ -45,9 +103,27 @@ public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
         priority: Int,
         loop: Int,
         rate: Float,
-    ): Int = 0
+    ): Int {
+        return playAsSoundFieldResult
+    }
 
+    /**
+     * For test purposes only.
+     *
+     * Sets the result of a call to [SoundPoolExtensionsWrapper.getSpatialSourceType] like the
+     * setSourceType does in scenecore unit tests.
+     */
+    @SpatializerConstants.SourceType public var sourceType: Int = 0
+
+    /**
+     * Returns the spatial source type of the sound.
+     *
+     * @param soundPool The SoundPool to use.
+     * @param streamId The stream ID of the sound.
+     * @return The spatial source type of the sound.
+     */
     @SpatializerConstants.SourceType
-    override fun getSpatialSourceType(soundPool: SoundPool, streamId: Int): Int =
-        SpatializerConstants.SourceType.SOURCE_TYPE_BYPASS
+    override fun getSpatialSourceType(soundPool: SoundPool, streamId: Int): Int {
+        return sourceType
+    }
 }

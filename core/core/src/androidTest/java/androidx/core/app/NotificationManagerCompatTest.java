@@ -529,7 +529,6 @@ public class NotificationManagerCompatTest {
         assertEquals(IMPORTANCE_DEFAULT, result.getImportance());
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     public void testCreateNotificationChannelCompatWithParams() {
         String channelId = genUniqueId(TYPE_CHANNEL);
@@ -1210,17 +1209,6 @@ public class NotificationManagerCompatTest {
     }
 
     @Test
-    @SdkSuppress(maxSdkVersion = 22)
-    public void testGetCurrentInterruptionFilterLegacy() {
-        NotificationManager fakeManager = mPlatformNotificationManager;
-        NotificationManagerCompat notificationManager = new NotificationManagerCompat(fakeManager,
-                mContext);
-        assertEquals(NotificationManagerCompat.INTERRUPTION_FILTER_UNKNOWN,
-                notificationManager.getCurrentInterruptionFilter());
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void testGetCurrentInterruptionFilter() {
         NotificationManagerCompat notificationManager = new NotificationManagerCompat(
                 mPlatformNotificationManager,

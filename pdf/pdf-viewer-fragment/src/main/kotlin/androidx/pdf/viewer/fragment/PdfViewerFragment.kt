@@ -44,21 +44,24 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.os.OperationCanceledException
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withStarted
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.PdfDocument
 import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.featureflag.PdfFeatureFlags.isExternalHardwareInteractionEnabled
+import androidx.pdf.selection.Selection
 import androidx.pdf.util.AnnotationUtils
 import androidx.pdf.util.Uris
 import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.Selection
 import androidx.pdf.view.ToolBoxView
 import androidx.pdf.view.search.PdfSearchView
 import androidx.pdf.viewer.PdfPasswordDialog
@@ -76,6 +79,7 @@ import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor.MotionE
 import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor.ToolboxGestureDelegate
 import androidx.pdf.viewer.fragment.util.getCenter
 import androidx.pdf.viewer.fragment.view.PdfViewManager
+import androidx.window.layout.WindowMetricsCalculator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -218,6 +222,16 @@ public open class PdfViewerFragment constructor() : Fragment() {
     public open fun onLoadDocumentSuccess() {}
 
     /**
+     * Called when the document has been parsed and processed.
+     *
+     * <p>Note that this callback is dispatched only when the fragment is fully created and not yet
+     * destroyed, i.e., after [onCreate] has fully run and before [onDestroy] runs, and only on the
+     * main thread.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    protected open fun onLoadDocumentSuccess(document: PdfDocument) {}
+
+    /**
      * Invoked when a problem arises during the loading process of the PDF document. This callback
      * provides details about the encountered error, allowing for appropriate error handling and
      * user notification.
@@ -232,6 +246,22 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     /** Invoked when the password dialog is requested (i.e., becomes visible). */
     @VisibleForTesting internal open fun onPasswordRequestedState() {}
+
+    /**
+     * Invoked when underlying [PdfView] implementation has been created. This allows subclasses to
+     * configure [PdfView] and set listeners for appropriate callbacks.
+     *
+     * <p>[PdfView.pdfDocument] is internally managed by fragment and setting any arbitrary
+     * [androidx.pdf.PdfDocument] is not supported. </p>
+     *
+     * <p> The [PdfView] is owned and managed by [PdfViewerFragment]. Clients should not directly
+     * modify the view in response to user interactions, as this may interfere with the fragment’s
+     * internal behavior and event handling. </p>
+     *
+     * @param pdfView: The [PdfView] instance created by
+     *   [androidx.pdf.viewer.fragment.PdfViewerFragment].
+     */
+    @ExperimentalPdfApi public open fun onPdfViewCreated(pdfView: PdfView) {}
 
     private val documentViewModel: PdfDocumentViewModel by viewModels {
         PdfDocumentViewModel.Factory
@@ -347,6 +377,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
         return inflater.inflate(R.layout.pdf_viewer_fragment, container, false)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         with(view) {
@@ -357,6 +388,23 @@ public open class PdfViewerFragment constructor() : Fragment() {
             _toolboxView = findViewById(R.id.toolBoxView)
             _pdfView = pdfContainer.pdfView
         }
+
+        val windowMetrics =
+            WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(requireActivity())
+
+        val windowWidthPx = windowMetrics.bounds.width()
+        val density = resources.displayMetrics.density
+        val windowWidthDp = windowWidthPx / density
+
+        val dimenResId =
+            if (windowWidthDp >= 840) {
+                androidx.pdf.R.dimen.pdf_horizontal_padding_w840dp
+            } else {
+                androidx.pdf.R.dimen.pdf_horizontal_padding
+            }
+        val paddingPx = resources.getDimensionPixelSize(dimenResId)
+        _pdfContainer.updatePadding(left = paddingPx, right = paddingPx)
+
         val gestureDetector =
             GestureDetector(
                 activity,
@@ -408,6 +456,9 @@ public open class PdfViewerFragment constructor() : Fragment() {
         if (stylingOptions != null) {
             applyPdfViewStyledAttributes(stylingOptions.containerStyleResId)
         }
+        // Call onPdfViewCreated last to allow host apps to override any internal PdfView listeners
+        // set by fragment.
+        onPdfViewCreated(pdfView)
     }
 
     private fun applyPdfViewStyledAttributes(resId: Int) {
@@ -545,8 +596,6 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     private fun setupSearchViewListeners(searchView: PdfSearchView) {
         with(searchView) {
-            onSearchClosed = { isTextSearchActive = false }
-
             searchQueryBox.addTextChangedListener(searchQueryTextWatcher)
 
             searchQueryBox.setOnEditorActionListener { _, actionId, _ ->
@@ -698,6 +747,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     private fun handleDocumentLoaded(uiState: DocumentLoaded) {
         dismissPasswordDialog()
+        onLoadDocumentSuccess(uiState.pdfDocument)
         onLoadDocumentSuccess()
         _pdfView.pdfDocument = uiState.pdfDocument
         _toolboxView.setPdfDocument(uiState.pdfDocument)

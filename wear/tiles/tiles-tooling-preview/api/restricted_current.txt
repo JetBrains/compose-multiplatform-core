@@ -9,7 +9,7 @@ package androidx.wear.tiles.tooling.preview {
     method public abstract String locale() default "";
     method public abstract String name() default "";
     property public abstract String device;
-    property @FloatRange(from=0.01) public abstract float fontScale;
+    property public abstract float fontScale;
     property public abstract String group;
     property public abstract String locale;
     property public abstract String name;

@@ -197,15 +197,15 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         }
     }
 
-    void notifyStateAttached() {
+    void notifySessionStart() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateAttached();
+            useCase.onSessionStart();
         }
     }
 
-    void notifyStateDetached() {
+    void notifySessionStop() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateDetached();
+            useCase.onSessionStop();
         }
     }
 

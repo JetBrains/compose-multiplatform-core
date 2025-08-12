@@ -26,6 +26,7 @@ import android.view.MotionEvent.PointerProperties
 import androidx.ink.authoring.testing.InputStreamBuilder
 import androidx.ink.authoring.testing.MultiTouchInputBuilder
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.AffineTransform
@@ -39,6 +40,7 @@ import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
@@ -46,6 +48,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based test of [InProgressStrokesView]. */
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
@@ -929,6 +933,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     fun setRendererFactory_usesCustomRenderer() {
         /** Draws in-progress strokes as ovals, and finished strokes as rectangles. */
         class CustomRenderer : CanvasStrokeRenderer {
+            @ExperimentalInkCustomBrushApi
             override fun draw(
                 canvas: Canvas,
                 stroke: Stroke,
@@ -936,6 +941,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 textureAnimationProgress: Float,
             ) = draw(canvas, stroke, strokeToScreenTransform.toMatrix(), textureAnimationProgress)
 
+            @ExperimentalInkCustomBrushApi
             override fun draw(
                 canvas: Canvas,
                 stroke: Stroke,
@@ -946,6 +952,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 canvas.drawRect(androidRect, Paint().apply { color = stroke.brush.colorIntArgb })
             }
 
+            @ExperimentalInkCustomBrushApi
             override fun draw(
                 canvas: Canvas,
                 inProgressStroke: InProgressStroke,
@@ -959,6 +966,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     textureAnimationProgress,
                 )
 
+            @ExperimentalInkCustomBrushApi
             override fun draw(
                 canvas: Canvas,
                 inProgressStroke: InProgressStroke,

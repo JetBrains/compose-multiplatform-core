@@ -28,10 +28,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Tests for PerfettoCapture */
-@SdkSuppress(minSdkVersion = 23)
 @RunWith(AndroidJUnit4::class)
 class PerfettoCaptureTest {
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = MIN_BUNDLED_SDK_VERSION - 1)
+    @SdkSuppress(maxSdkVersion = MIN_BUNDLED_SDK_VERSION - 1)
     @SmallTest
     @Test
     fun bundledNotSupported() {

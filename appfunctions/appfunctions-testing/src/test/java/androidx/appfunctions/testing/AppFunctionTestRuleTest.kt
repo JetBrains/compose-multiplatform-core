@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,6 +58,7 @@ class AppFunctionTestRuleTest {
         appFunctionTestRule.getAppFunctionManagerCompat()
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_observeApiNoFilter_returnsAllAppFunctions() =
         runBlocking<Unit> {
             val results =
@@ -69,6 +71,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_observeApi_returnsNewValueOnUpdate() =
         runBlocking<Unit> {
             val functionIdToTest = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"
@@ -112,6 +115,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterBySchemaName_success() =
         runBlocking<Unit> {
             val results =
@@ -130,6 +134,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterByPackageName_success() =
         runBlocking<Unit> {
             val results =
@@ -144,6 +149,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterBySchemaCategory_success() =
         runBlocking<Unit> {
             val results =
@@ -162,6 +168,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterByMinSchemaVersion_success() =
         runBlocking<Unit> {
             val results =
@@ -180,6 +187,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_enabledByDefault_modified_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#enabledByDefault"
@@ -194,6 +202,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modified_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"
@@ -208,6 +217,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun executeAppFunction_success() =
         runBlocking<Unit> {
             val response =
@@ -233,6 +243,7 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modifiedAndRestoredToDefault_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"

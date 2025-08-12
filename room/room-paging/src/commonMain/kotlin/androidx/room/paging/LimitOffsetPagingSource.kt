@@ -31,6 +31,7 @@ import androidx.room.paging.util.queryDatabase
 import androidx.room.paging.util.queryItemCount
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -72,10 +73,18 @@ internal class CommonLimitOffsetImpl<Value : Any>(
 
     internal val itemCount = AtomicInt(INITIAL_ITEM_COUNT)
 
+    private val flow = db.invalidationTracker.createFlow(*tables, emitInitialState = false)
+
     private val invalidationFlowStarted = AtomicBoolean(false)
+
+    private val refreshComplete = AtomicBoolean(false)
+
     private var invalidationFlowJob: Job? = null
 
     init {
+        // register db listeners right away
+        db.getCoroutineScope().launch { flow.collect() }
+
         pagingSource.registerInvalidatedCallback { invalidationFlowJob?.cancel() }
     }
 
@@ -87,16 +96,17 @@ internal class CommonLimitOffsetImpl<Value : Any>(
                         if (pagingSource.invalid) {
                             throw CancellationException("PagingSource is invalid")
                         }
-                        pagingSource.invalidate()
+                        if (refreshComplete.get()) {
+                            pagingSource.invalidate()
+                        }
                     }
                 }
         }
-
         val tempCount = itemCount.get()
         // if itemCount is < 0, then it is initial load
         return try {
             if (tempCount == INITIAL_ITEM_COUNT) {
-                initialLoad(params)
+                initialLoad(params).also { refreshComplete.compareAndSet(false, true) }
             } else {
                 nonInitialLoad(params, tempCount)
             }

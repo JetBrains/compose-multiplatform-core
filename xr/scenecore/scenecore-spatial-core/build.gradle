@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.mockitoCore)
+    testImplementation(libs.testExtJunit)
     testImplementation("org.robolectric:robolectric")
+    testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation(project(":xr:scenecore:scenecore-testing"))
 
     // For com.android.xr.extensions.
@@ -62,7 +64,7 @@ android {
 
 androidx {
     name = "XR SceneCore Spatial Core"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
     inceptionYear = "2025"
     description = "SceneCore's core implementation for devices with full spatial capabilities, enabling a comprehensive experience."
 

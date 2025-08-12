@@ -17,7 +17,6 @@
 package androidx.viewpager2.widget
 
 import android.graphics.Path
-import android.os.Build
 import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
@@ -356,7 +355,7 @@ class FakeDragTest(private val config: TestConfig) : BaseTest() {
     }
 
     private fun getNextPageAction(): Int {
-        val useEnhancedA11y = Build.VERSION.SDK_INT >= 21 && ViewPager2.sFeatureEnhancedA11yEnabled
+        val useEnhancedA11y = ViewPager2.sFeatureEnhancedA11yEnabled
         val isHorizontal = test.viewPager.isHorizontal
 
         return if (useEnhancedA11y && isHorizontal && test.viewPager.isRtl) {

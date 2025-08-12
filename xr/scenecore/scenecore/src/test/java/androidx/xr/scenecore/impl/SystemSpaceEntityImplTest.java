@@ -351,10 +351,10 @@ public abstract class SystemSpaceEntityImplTest {
         systemSpaceEntity.setOpenXrReferenceSpacePose(matrix);
         assertVector3(
                 systemSpaceEntity.getActivitySpaceScale(),
-                scale.div(getActivitySpaceEntity().getWorldSpaceScale()));
+                scale.scale(getActivitySpaceEntity().getWorldSpaceScale().inverse()));
         assertVector3(systemSpaceEntity.getWorldSpaceScale(), scale);
         assertVector3(
                 systemSpaceEntity.getScale(Space.ACTIVITY),
-                scale.div(getActivitySpaceEntity().getWorldSpaceScale()));
+                scale.scale(getActivitySpaceEntity().getWorldSpaceScale().inverse()));
     }
 }

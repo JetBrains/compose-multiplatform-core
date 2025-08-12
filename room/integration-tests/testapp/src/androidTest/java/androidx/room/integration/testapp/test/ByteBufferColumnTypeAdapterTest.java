@@ -43,8 +43,6 @@ import java.nio.ByteBuffer;
 @RunWith(AndroidJUnit4.class)
 public class ByteBufferColumnTypeAdapterTest {
 
-    private ByteBufferColumnTypeAdapterDatabase mDb;
-
     @Entity(tableName = "byteBufferFoo")
     public static class ByteBufferFoo {
         @PrimaryKey
@@ -84,12 +82,13 @@ public class ByteBufferColumnTypeAdapterTest {
     @Test
     public void testByteBufferFooDao() {
         Context context = ApplicationProvider.getApplicationContext();
-        mDb = Room.inMemoryDatabaseBuilder(
-                context,
-                ByteBufferColumnTypeAdapterDatabase.class)
+        ByteBufferColumnTypeAdapterDatabase db = Room.inMemoryDatabaseBuilder(
+                        context,
+                        ByteBufferColumnTypeAdapterDatabase.class)
                 .build();
 
-        mDb.byteBufferFooDao().insert(new ByteBufferFoo("Key1", null));
-        assertThat(mDb.byteBufferFooDao().getItem("Key1").buffer).isEqualTo(null);
+        db.byteBufferFooDao().insert(new ByteBufferFoo("Key1", null));
+        assertThat(db.byteBufferFooDao().getItem("Key1").buffer).isEqualTo(null);
+        db.close();
     }
 }

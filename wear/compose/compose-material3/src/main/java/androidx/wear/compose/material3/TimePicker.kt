@@ -64,9 +64,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -171,16 +173,6 @@ public fun TimePicker(
         } else {
             null
         }
-    val (amString, pmString) =
-        if (timePickerType == TimePickerType.HoursMinutesAmPm12H) {
-            remember(locale) {
-                DateTimeFormatter.ofPattern("a", locale).let { formatter ->
-                    LocalTime.of(0, 0).format(formatter) to LocalTime.of(12, 0).format(formatter)
-                }
-            }
-        } else {
-            "" to ""
-        }
     val periodState =
         if (timePickerType == TimePickerType.HoursMinutesAmPm12H) {
             rememberPickerState(
@@ -229,9 +221,9 @@ public fun TimePicker(
         if (selectedElement == FocusableElement.None) {
             periodString
         } else if (periodState?.selectedOptionIndex == 0) {
-            amString
+            localeConfig.localizedAmText
         } else {
-            pmString
+            localeConfig.localizedPmText
         }
     }
 
@@ -267,7 +259,7 @@ public fun TimePicker(
             Spacer(Modifier.height(topPadding))
 
             FontScaleIndependent {
-                val styles = getTimePickerStyles(timePickerType, amString, pmString)
+                val layoutConfig = rememberPickerLayoutConfig(timePickerType, localeConfig)
                 val heading =
                     when (selectedElement) {
                         FocusableElement.Hour -> hourString
@@ -291,11 +283,11 @@ public fun TimePicker(
                             .align(Alignment.CenterHorizontally)
                             .semantics(mergeDescendants = true) { heading() },
                     color = colors.pickerLabelColor,
-                    style = styles.labelTextStyle,
+                    style = layoutConfig.labelTextStyle,
                     maxLines = maxTextLines,
                     textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(styles.sectionVerticalPadding))
+                Spacer(Modifier.height(layoutConfig.sectionVerticalPadding))
                 TimePickerContent(
                     localeConfig = localeConfig,
                     selectedElement = selectedElement,
@@ -309,9 +301,9 @@ public fun TimePicker(
                     secondsContentDescription = secondsContentDescription,
                     periodContentDescription = periodContentDescription,
                     colors = colors,
-                    styles = styles,
+                    layoutConfig = layoutConfig,
                 )
-                Spacer(Modifier.height(styles.sectionVerticalPadding))
+                Spacer(Modifier.height(layoutConfig.sectionVerticalPadding))
             }
             EdgeButton(
                 onClick = {
@@ -528,7 +520,6 @@ public class TimePickerColors(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun ColumnScope.TimePickerContent(
-    localeConfig: PickerLocaleConfig,
     selectedElement: FocusableElement,
     onPickerSelected: (FocusableElement) -> Unit,
     hourState: PickerState,
@@ -540,7 +531,8 @@ private fun ColumnScope.TimePickerContent(
     secondsContentDescription: () -> String,
     periodContentDescription: () -> String,
     colors: TimePickerColors,
-    styles: TimePickerStyles,
+    localeConfig: PickerLocaleConfig,
+    layoutConfig: PickerLayoutConfig,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().weight(1f),
@@ -572,21 +564,19 @@ private fun ColumnScope.TimePickerContent(
                                         selected = selectedElement == FocusableElement.Period,
                                         onSelected = { onPickerSelected(FocusableElement.Period) },
                                         contentDescription = periodContentDescription,
-                                        amString = localeConfig.amString,
-                                        pmString = localeConfig.pmString,
-                                        styles = styles,
+                                        layoutConfig = layoutConfig,
                                         colors = colors,
                                     )
                                 }
                             }
                             is TimePatternPart.SeparatorPart -> {
                                 Separator(
-                                    textStyle = styles.optionTextStyle,
+                                    textStyle = layoutConfig.optionTextStyle,
                                     color = colors.separatorColor,
-                                    separatorPadding = styles.separatorPadding,
+                                    separatorPadding = layoutConfig.separatorPadding,
                                     text = part.separatorText,
-                                    optionHeight = styles.optionHeight,
-                                    optionBaseline = styles.optionBaseline,
+                                    optionHeight = layoutConfig.optionHeight,
+                                    optionBaseline = layoutConfig.optionBaseline,
                                 )
                             }
                         }
@@ -622,7 +612,7 @@ private fun ColumnScope.TimePickerContent(
                                                             hoursContentDescription,
                                                         hourValueOffset =
                                                             localeConfig.hourValueOffset,
-                                                        styles = styles,
+                                                        layoutConfig = layoutConfig,
                                                         colors = colors,
                                                         locale = localeConfig.locale,
                                                     )
@@ -639,7 +629,7 @@ private fun ColumnScope.TimePickerContent(
                                                         },
                                                         contentDescription =
                                                             minutesContentDescription,
-                                                        styles = styles,
+                                                        layoutConfig = layoutConfig,
                                                         colors = colors,
                                                         locale = localeConfig.locale,
                                                     )
@@ -657,7 +647,7 @@ private fun ColumnScope.TimePickerContent(
                                                             },
                                                             contentDescription =
                                                                 secondsContentDescription,
-                                                            styles = styles,
+                                                            layoutConfig = layoutConfig,
                                                             colors = colors,
                                                             locale = localeConfig.locale,
                                                         )
@@ -668,12 +658,12 @@ private fun ColumnScope.TimePickerContent(
                                         }
                                         is TimePatternPart.SeparatorPart -> {
                                             Separator(
-                                                textStyle = styles.optionTextStyle,
+                                                textStyle = layoutConfig.optionTextStyle,
                                                 color = colors.separatorColor,
-                                                separatorPadding = styles.separatorPadding,
+                                                separatorPadding = layoutConfig.separatorPadding,
                                                 text = part.separatorText,
-                                                optionHeight = styles.optionHeight,
-                                                optionBaseline = styles.optionBaseline,
+                                                optionHeight = layoutConfig.optionHeight,
+                                                optionBaseline = layoutConfig.optionBaseline,
                                             )
                                         }
                                     }
@@ -694,26 +684,26 @@ private fun PickerGroupScope.HourPicker(
     onSelected: () -> Unit,
     contentDescription: () -> String,
     hourValueOffset: Int,
-    styles: TimePickerStyles,
+    layoutConfig: PickerLayoutConfig,
     colors: TimePickerColors,
     locale: Locale,
 ) {
     PickerGroupItem(
         pickerState = hourState,
-        modifier = Modifier.width(styles.twoDigitsOptionWidth).fillMaxHeight(),
+        modifier = Modifier.width(layoutConfig.twoDigitsOptionWidth).fillMaxHeight(),
         selected = selected,
         onSelected = onSelected,
         contentDescription = contentDescription,
         option =
             pickerTextOption(
-                textStyle = styles.optionTextStyle,
+                textStyle = layoutConfig.optionTextStyle,
                 selectedContentColor = colors.selectedPickerContentColor,
                 unselectedContentColor = colors.unselectedPickerContentColor,
                 indexToText = { "%02d".format(locale, it + hourValueOffset) },
-                optionHeight = styles.optionHeight,
-                optionBaseline = styles.optionBaseline,
+                optionHeight = layoutConfig.optionHeight,
+                optionBaseline = layoutConfig.optionBaseline,
             ),
-        verticalSpacing = styles.optionSpacing,
+        verticalSpacing = layoutConfig.optionSpacing,
     )
 }
 
@@ -723,26 +713,26 @@ private fun PickerGroupScope.MinutePicker(
     selected: Boolean,
     onSelected: () -> Unit,
     contentDescription: () -> String,
-    styles: TimePickerStyles,
+    layoutConfig: PickerLayoutConfig,
     colors: TimePickerColors,
     locale: Locale,
 ) {
     PickerGroupItem(
         pickerState = minuteState,
-        modifier = Modifier.width(styles.twoDigitsOptionWidth).fillMaxHeight(),
+        modifier = Modifier.width(layoutConfig.twoDigitsOptionWidth).fillMaxHeight(),
         selected = selected,
         onSelected = onSelected,
         contentDescription = contentDescription,
         option =
             pickerTextOption(
-                textStyle = styles.optionTextStyle,
+                textStyle = layoutConfig.optionTextStyle,
                 indexToText = { "%02d".format(locale, it) },
                 selectedContentColor = colors.selectedPickerContentColor,
                 unselectedContentColor = colors.unselectedPickerContentColor,
-                optionHeight = styles.optionHeight,
-                optionBaseline = styles.optionBaseline,
+                optionHeight = layoutConfig.optionHeight,
+                optionBaseline = layoutConfig.optionBaseline,
             ),
-        verticalSpacing = styles.optionSpacing,
+        verticalSpacing = layoutConfig.optionSpacing,
     )
 }
 
@@ -752,26 +742,26 @@ private fun PickerGroupScope.SecondPicker(
     selected: Boolean,
     onSelected: () -> Unit,
     contentDescription: () -> String,
-    styles: TimePickerStyles,
+    layoutConfig: PickerLayoutConfig,
     colors: TimePickerColors,
     locale: Locale,
 ) {
     PickerGroupItem(
         pickerState = secondState,
-        modifier = Modifier.width(styles.twoDigitsOptionWidth).fillMaxHeight(),
+        modifier = Modifier.width(layoutConfig.twoDigitsOptionWidth).fillMaxHeight(),
         selected = selected,
         onSelected = onSelected,
         contentDescription = contentDescription,
         option =
             pickerTextOption(
-                textStyle = styles.optionTextStyle,
+                textStyle = layoutConfig.optionTextStyle,
                 indexToText = { "%02d".format(locale, it) },
                 selectedContentColor = colors.selectedPickerContentColor,
                 unselectedContentColor = colors.unselectedPickerContentColor,
-                optionHeight = styles.optionHeight,
-                optionBaseline = styles.optionBaseline,
+                optionHeight = layoutConfig.optionHeight,
+                optionBaseline = layoutConfig.optionBaseline,
             ),
-        verticalSpacing = styles.optionSpacing,
+        verticalSpacing = layoutConfig.optionSpacing,
     )
 }
 
@@ -781,36 +771,40 @@ private fun PickerGroupScope.PeriodPicker(
     selected: Boolean,
     onSelected: () -> Unit,
     contentDescription: () -> String,
-    amString: String,
-    pmString: String,
-    styles: TimePickerStyles,
+    layoutConfig: PickerLayoutConfig,
     colors: TimePickerColors,
 ) {
     PickerGroupItem(
         pickerState = periodState,
-        modifier = Modifier.width(styles.periodOptionWidth).fillMaxHeight(),
+        modifier = Modifier.width(layoutConfig.periodOptionWidth).fillMaxHeight(),
         selected = selected,
         onSelected = onSelected,
         contentDescription = contentDescription,
         option =
             pickerTextOption(
-                textStyle = styles.optionTextStyle,
-                indexToText = { if (it == 0) amString else pmString },
+                textStyle = layoutConfig.optionTextStyle,
+                indexToText = {
+                    if (it == 0) layoutConfig.displayAmText else layoutConfig.displayPmText
+                },
                 selectedContentColor = colors.selectedPickerContentColor,
                 unselectedContentColor = colors.unselectedPickerContentColor,
-                optionHeight = styles.optionHeight,
-                optionBaseline = styles.optionBaseline,
+                optionHeight = layoutConfig.optionHeight,
+                optionBaseline = layoutConfig.optionBaseline,
             ),
-        verticalSpacing = styles.optionSpacing,
+        verticalSpacing = layoutConfig.optionSpacing,
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun getTimePickerStyles(
+private fun rememberPickerLayoutConfig(
     timePickerType: TimePickerType,
-    amString: String,
-    pmString: String,
-): TimePickerStyles {
+    localeConfig: PickerLocaleConfig,
+): PickerLayoutConfig {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
     val isLargeScreen = isLargeScreen()
     val labelTextStyle =
         if (isLargeScreen) {
@@ -829,136 +823,178 @@ private fun getTimePickerStyles(
             .value
             .copy(textAlign = TextAlign.Center, fontFeatureSettings = "tnum")
 
-    val (minimumOptionHeight, maximumOptionHeight) =
-        if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
-            46.dp to 58.dp
-        } else {
-            36.dp to 48.dp
-        }
+    // This remember block caches the entire layout configuration. It is keyed on the
+    // fundamental "sources of truth" that can affect the layout's appearance or metrics.
+    //
+    // - `timePickerType`: Controls which pickers are shown and influences text styles.
+    // - `localeConfig`: Encapsulates all locale-specific formatting and text.
+    // - `screenWidth`: Determines `isLargeScreen` and is used for fallback logic.
+    // - `density.density`: Ensures recalculation on rare screen density changes.
+    // - `LocalTypography.current`: Ensures the layout adapts if the app's theme provides
+    //   a different typography, as this affects all text measurements.
+    //
+    // We DO NOT need to key on `density.fontScale` because the `FontScaleIndependent`
+    // wrapper ensures it is always 1.0f in this scope.
+    return remember(
+        timePickerType,
+        localeConfig,
+        screenWidth,
+        density.density,
+        LocalTypography.current,
+    ) {
+        val (minimumOptionHeight, maximumOptionHeight) =
+            if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
+                46.dp to 58.dp
+            } else {
+                36.dp to 48.dp
+            }
 
-    val optionSpacing = if (isLargeScreen) 6.dp else 4.dp
-    val separatorPadding =
-        when {
-            timePickerType == TimePickerType.HoursMinutes24H && isLargeScreen -> 12.dp
-            timePickerType == TimePickerType.HoursMinutes24H && !isLargeScreen -> 8.dp
-            timePickerType == TimePickerType.HoursMinutesAmPm12H && isLargeScreen -> 0.dp
-            isLargeScreen -> 6.dp
-            else -> 2.dp
-        }
+        val optionSpacing = if (isLargeScreen) 6.dp else 4.dp
+        val separatorPadding =
+            when {
+                timePickerType == TimePickerType.HoursMinutes24H && isLargeScreen -> 12.dp
+                timePickerType == TimePickerType.HoursMinutes24H && !isLargeScreen -> 8.dp
+                timePickerType == TimePickerType.HoursMinutesAmPm12H && isLargeScreen -> 0.dp
+                isLargeScreen -> 6.dp
+                else -> 2.dp
+            }
 
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val primaryLocale = LocalConfiguration.current.locales[0]
-
-    val localizedDigits =
-        remember(primaryLocale) {
-            buildString { (0..9).forEach { append("%d".format(primaryLocale, it)) } }
-        }
-
-    val measuredMetrics =
-        remember(
-            density.density,
-            LocalConfiguration.current.screenWidthDp,
-            optionTextStyle,
-            localizedDigits,
-            amString,
-            pmString,
-        ) {
-            val widthMeasureResult =
-                measurer.measure(
-                    "$localizedDigits\n$amString\n$pmString",
-                    style = optionTextStyle,
-                    density = density,
-                )
-
-            val singleLineHeightMeasureResult =
-                measurer.measure(
-                    "$localizedDigits$amString$pmString",
-                    style = optionTextStyle,
-                    density = density,
-                )
-
-            TimePickerMeasuredMetrics(
-                twoDigitsWidthPx =
-                    (0 until localizedDigits.length).maxOf {
-                        widthMeasureResult.getBoundingBox(it).width
-                    } * 2,
-                periodTextWidthPx =
-                    (1..2).maxOf {
-                        widthMeasureResult.getLineRight(it) - widthMeasureResult.getLineLeft(it)
-                    },
-                optionHeightPx =
-                    singleLineHeightMeasureResult.getLineBottom(0) -
-                        singleLineHeightMeasureResult.getLineTop(0),
-                optionBaselinePx = singleLineHeightMeasureResult.getLineBaseline(0),
+        val measuredMetrics =
+            measurePickerMetrics(
+                measurer = measurer,
+                optionTextStyle = optionTextStyle,
+                localeConfig = localeConfig,
+                density = density,
             )
-        }
-    val twoDigitsOptionWidth =
-        with(LocalDensity.current) {
-            measuredMetrics.twoDigitsWidthPx.toDp() +
-                1.dp // Add 1dp buffer to compensate for potential conversion loss
-        }
-    val periodOptionWidth =
-        with(LocalDensity.current) {
-            measuredMetrics.periodTextWidthPx.toDp() + 1.dp // Add 1dp buffer
-        }
-    val measuredOptionHeight = with(LocalDensity.current) { measuredMetrics.optionHeightPx.toDp() }
+        val twoDigitsOptionWidth =
+            with(density) {
+                measuredMetrics.twoDigitsWidthPx.toDp() +
+                    1.dp // Add 1dp buffer to compensate for potential conversion loss
+            }
+        val measuredPeriodOptionWidth =
+            with(density) {
+                measuredMetrics.periodTextWidthPx.toDp() + 1.dp // Add 1dp buffer
+            }
+        val fallbackPeriodOptionWidth =
+            with(density) {
+                measuredMetrics.fallbackPeriodWidthPx.toDp() + 1.dp // Add 1dp buffer
+            }
+        val measuredOptionHeight = with(density) { measuredMetrics.optionHeightPx.toDp() }
+        val optionHeight = measuredOptionHeight.coerceIn(minimumOptionHeight, maximumOptionHeight)
+        val optionBaseline =
+            calculateBaseline(
+                measuredOptionBaselinePx = measuredMetrics.optionBaselinePx,
+                measuredOptionHeight = measuredOptionHeight,
+                maximumOptionHeight = maximumOptionHeight,
+                minimumOptionHeight = minimumOptionHeight,
+                density,
+            )
 
-    // This logic calculates the baseline for the picker text to ensure it is vertically
-    // centered within the component's height constraints.
-    val optionBaseline =
-        // This branch handles the edge case where the measured text is TALLER than the
-        // maximum allowed component height.
-        if (measuredOptionHeight > maximumOptionHeight) {
-            (measuredMetrics.optionBaselinePx +
-                    with(LocalDensity.current) {
-                        // Since measuredOptionHeight > maximumOptionHeight, this subtraction
-                        // results in a NEGATIVE value.
-                        // This negative offset is used to shift the oversized text UPWARDS,
-                        // ensuring it's optically centered within the clipped area, rather
-                        // than just having its bottom clipped off.
-                        min(0.dp, (maximumOptionHeight - measuredOptionHeight) / 2).toPx()
-                    })
-                .toInt()
-        } else {
-            // This is the standard case. It centers the text within the minimum component height.
-            (measuredMetrics.optionBaselinePx +
-                    with(LocalDensity.current) {
-                        // This calculates the extra vertical padding required to center the text.
-                        // It correctly handles two sub-cases:
-                        // 1. If text is smaller than the minimum height, this yields a POSITIVE
-                        //    padding to center the text within the larger minimum touch target.
-                        // 2. If text is larger than the minimum height, the subtraction is
-                        // negative, and max(0.dp, ...) correctly clamps the padding to zero.
-                        max(0.dp, (minimumOptionHeight - measuredOptionHeight) / 2).toPx()
-                    })
-                .toInt()
-        }
+        val separatorTotalWidth = SeparatorWidth + (separatorPadding * 2)
+        val useFallbackPeriodText =
+            measuredPeriodOptionWidth >
+                screenWidth - separatorTotalWidth * 2 - twoDigitsOptionWidth * 2
+        val periodOptionWidth =
+            if (useFallbackPeriodText) fallbackPeriodOptionWidth else measuredPeriodOptionWidth
+        val displayAmText =
+            if (useFallbackPeriodText) FallbackAmText else localeConfig.localizedAmText
+        val displayPmText =
+            if (useFallbackPeriodText) FallbackPmText else localeConfig.localizedPmText
 
-    return TimePickerStyles(
-        labelTextStyle = labelTextStyle,
-        optionTextStyle = optionTextStyle,
-        twoDigitsOptionWidth = max(twoDigitsOptionWidth, minimumInteractiveComponentSize),
-        periodOptionWidth = max(periodOptionWidth, minimumInteractiveComponentSize),
-        optionHeight = min(max(measuredOptionHeight, minimumOptionHeight), maximumOptionHeight),
-        optionBaseline = optionBaseline,
-        optionSpacing = optionSpacing,
-        separatorPadding = separatorPadding,
-        sectionVerticalPadding = if (isLargeScreen) 6.dp else 4.dp,
+        PickerLayoutConfig(
+            labelTextStyle = labelTextStyle,
+            optionTextStyle = optionTextStyle,
+            twoDigitsOptionWidth = max(twoDigitsOptionWidth, minimumInteractiveComponentSize),
+            periodOptionWidth = max(periodOptionWidth, minimumInteractiveComponentSize),
+            optionHeight = optionHeight,
+            optionBaseline = optionBaseline,
+            optionSpacing = optionSpacing,
+            separatorPadding = separatorPadding,
+            sectionVerticalPadding = if (isLargeScreen) 6.dp else 4.dp,
+            displayAmText = displayAmText,
+            displayPmText = displayPmText,
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun measurePickerMetrics(
+    measurer: TextMeasurer,
+    optionTextStyle: TextStyle,
+    density: Density,
+    localeConfig: PickerLocaleConfig,
+): PickerMeasuredMetrics {
+    val widthMeasureResult =
+        measurer.measure(
+            "${localeConfig.localizedDigits}\n${localeConfig.localizedAmText}\n${localeConfig.localizedPmText}\n$FallbackAmText\n$FallbackPmText",
+            style = optionTextStyle,
+            density = density,
+        )
+
+    val singleLineHeightMeasureResult =
+        measurer.measure(
+            "${localeConfig.localizedDigits}${localeConfig.localizedAmText}${localeConfig.localizedPmText}$FallbackAmText$FallbackPmText",
+            style = optionTextStyle,
+            density = density,
+        )
+
+    return PickerMeasuredMetrics(
+        twoDigitsWidthPx =
+            (0 until localeConfig.localizedDigits.length).maxOf {
+                widthMeasureResult.getBoundingBox(it).width
+            } * 2,
+        periodTextWidthPx =
+            (1..2).maxOf {
+                widthMeasureResult.getLineRight(it) - widthMeasureResult.getLineLeft(it)
+            },
+        fallbackPeriodWidthPx =
+            (3..4).maxOf {
+                widthMeasureResult.getLineRight(it) - widthMeasureResult.getLineLeft(it)
+            },
+        optionHeightPx =
+            singleLineHeightMeasureResult.getLineBottom(0) -
+                singleLineHeightMeasureResult.getLineTop(0),
+        optionBaselinePx = singleLineHeightMeasureResult.getLineBaseline(0),
     )
 }
 
-private class TimePickerStyles(
-    val labelTextStyle: TextStyle,
-    val optionTextStyle: TextStyle,
-    val twoDigitsOptionWidth: Dp,
-    val periodOptionWidth: Dp,
-    val optionHeight: Dp,
-    val optionBaseline: Int,
-    val optionSpacing: Dp,
-    val separatorPadding: Dp,
-    val sectionVerticalPadding: Dp,
-)
+// This logic calculates the baseline for the picker text to ensure it is vertically
+// centered within the component's height constraints.
+private fun calculateBaseline(
+    measuredOptionBaselinePx: Float,
+    measuredOptionHeight: Dp,
+    maximumOptionHeight: Dp,
+    minimumOptionHeight: Dp,
+    density: Density,
+): Int {
+    // This branch handles the edge case where the measured text is TALLER than the
+    // maximum allowed component height.
+    return if (measuredOptionHeight > maximumOptionHeight) {
+        (measuredOptionBaselinePx +
+                with(density) {
+                    // Since measuredOptionHeight > maximumOptionHeight, this subtraction
+                    // results in a NEGATIVE value.
+                    // This negative offset is used to shift the oversized text UPWARDS,
+                    // ensuring it's optically centered within the clipped area, rather
+                    // than just having its bottom clipped off.
+                    min(0.dp, (maximumOptionHeight - measuredOptionHeight) / 2).toPx()
+                })
+            .toInt()
+    } else {
+        // This is the standard case. It centers the text within the minimum component height.
+        (measuredOptionBaselinePx +
+                with(density) {
+                    // This calculates the extra vertical padding required to center the text.
+                    // It correctly handles two sub-cases:
+                    // 1. If text is smaller than the minimum height, this yields a POSITIVE
+                    //    padding to center the text within the larger minimum touch target.
+                    // 2. If text is larger than the minimum height, the subtraction is
+                    // negative, and max(0.dp, ...) correctly clamps the padding to zero.
+                    max(0.dp, (minimumOptionHeight - measuredOptionHeight) / 2).toPx()
+                })
+            .toInt()
+    }
+}
 
 @Composable
 private fun Separator(
@@ -981,7 +1017,7 @@ private fun Separator(
             modifier =
                 modifier
                     .wrapContentHeight()
-                    .width(12.dp)
+                    .width(SeparatorWidth)
                     .align(Alignment.Center)
                     .clearAndSetSemantics {}
                     .layout { measurable, constraints ->
@@ -1010,14 +1046,6 @@ private fun createDescription(
     } else {
         context.resources.getQuantityString(plurals.value, selectedValue, selectedValue)
     }
-
-/** A private data class to hold the measured raw pixel metrics for picker options. */
-private data class TimePickerMeasuredMetrics(
-    val twoDigitsWidthPx: Float,
-    val periodTextWidthPx: Float,
-    val optionHeightPx: Float,
-    val optionBaselinePx: Float,
-)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Immutable
@@ -1050,21 +1078,45 @@ private class PickerLocaleConfig(val locale: Locale, val timePickerType: TimePic
     // (e.g., k for 1-24, h for 1-12). This offset accounts for that difference.
     val hourValueOffset: Int = if (pattern.contains('H') || pattern.contains('K')) 0 else 1
 
-    // CHANGED: Declare amString and pmString as explicit internal properties.
-    val amString: String
-    val pmString: String
+    val localizedDigits = buildString { (0..9).forEach { append("%d".format(locale, it)) } }
+
+    val localizedAmText: String
+    val localizedPmText: String
 
     init {
         if (is12hour) {
             val formatter = DateTimeFormatter.ofPattern("a", locale)
-            amString = formatter.format(LocalTime.of(0, 0))
-            pmString = formatter.format(LocalTime.of(12, 0))
+            localizedAmText = formatter.format(LocalTime.of(0, 0))
+            localizedPmText = formatter.format(LocalTime.of(12, 0))
         } else {
-            amString = ""
-            pmString = ""
+            localizedAmText = ""
+            localizedPmText = ""
         }
     }
 }
+
+private class PickerLayoutConfig(
+    val labelTextStyle: TextStyle,
+    val optionTextStyle: TextStyle,
+    val twoDigitsOptionWidth: Dp,
+    val periodOptionWidth: Dp,
+    val optionHeight: Dp,
+    val optionBaseline: Int,
+    val optionSpacing: Dp,
+    val separatorPadding: Dp,
+    val sectionVerticalPadding: Dp,
+    val displayAmText: String,
+    val displayPmText: String,
+)
+
+/** A private data class to hold the measured raw pixel metrics for picker options. */
+private data class PickerMeasuredMetrics(
+    val twoDigitsWidthPx: Float,
+    val periodTextWidthPx: Float,
+    val fallbackPeriodWidthPx: Float,
+    val optionHeightPx: Float,
+    val optionBaselinePx: Float,
+)
 
 internal enum class FocusableElement {
     Hour,
@@ -1189,3 +1241,7 @@ internal fun parsePattern(pattern: String): List<TimePatternPart> {
     }
     return parts
 }
+
+private const val FallbackAmText = "AM"
+private const val FallbackPmText = "PM"
+private val SeparatorWidth = 12.dp

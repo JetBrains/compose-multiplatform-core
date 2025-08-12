@@ -24,6 +24,7 @@ import androidx.pdf.service.PdfDocumentServiceImpl
 import androidx.pdf.service.connect.PdfSandboxHandleImpl
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.service.connect.PdfServiceConnectionImpl
+import androidx.pdf.utils.openFileDescriptor
 import java.io.IOException
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
@@ -70,7 +71,7 @@ public class SandboxedPdfLoader(
         val connection = connect(uri)
 
         return withContext(resolveCoroutineContext(coroutineContext)) {
-            val pfd = openFileDescriptor(uri)
+            val pfd = openFileDescriptor(context, uri, "r")
             openDocumentInternal(uri, pfd, password, connection)
         }
     }
@@ -139,11 +140,6 @@ public class SandboxedPdfLoader(
             PdfLoadingStatus.LOADING_ERROR -> throw RuntimeException("Loading failed")
             else -> throw IllegalStateException("Unknown loading status: $status")
         }
-    }
-
-    private fun openFileDescriptor(uri: Uri): ParcelFileDescriptor {
-        return context.contentResolver.openFileDescriptor(uri, "r")
-            ?: throw IOException("Failed to open PDF file")
     }
 
     public companion object {

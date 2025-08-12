@@ -78,8 +78,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastAny
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import kotlin.math.atan2
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -277,7 +279,6 @@ internal class ScrollableNode(
     ),
     KeyInputModifierNode,
     SemanticsModifierNode,
-    CompositionLocalConsumerModifierNode,
     OnScrollChangedDispatcher {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -686,6 +687,25 @@ internal class ScrollingLogic(
 
     fun Offset.toFloat(): Float = if (orientation == Horizontal) this.x else this.y
 
+    /**
+     * Converts this offset to a single axis delta based on the derived angle from the x and y
+     * deltas.
+     *
+     * @return Returns a single axis delta based on the angle. If the angle is mostly horizontal,
+     *   and we are in a horizontal scrollable, this will return the x component. If the angle is
+     *   mostly vertical, and we are in a vertical scrollable, this will return the y component.
+     *   Otherwise, this will return 0. Mostly horizontal means angles smaller than
+     *   [VerticalAxisThresholdAngle].
+     */
+    fun Offset.toSingleAxisDeltaFromAngle(): Float {
+        val angle = atan2(this.y.absoluteValue, this.x.absoluteValue)
+        return if (angle >= VerticalAxisThresholdAngle) {
+            if (orientation == Vertical) this.y else 0f
+        } else {
+            if (orientation == Horizontal) this.x else 0f
+        }
+    }
+
     fun Float.toVelocity(): Velocity =
         when {
             this == 0f -> Velocity.Zero
@@ -1084,3 +1104,5 @@ internal class FlingCancellationException :
 internal interface OnScrollChangedDispatcher {
     fun dispatchScrollDeltaInfo(delta: Offset)
 }
+
+private const val VerticalAxisThresholdAngle = PI / 4

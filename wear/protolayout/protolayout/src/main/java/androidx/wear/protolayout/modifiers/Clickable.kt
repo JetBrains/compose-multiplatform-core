@@ -17,12 +17,14 @@
 package androidx.wear.protolayout.modifiers
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
 import androidx.wear.protolayout.ActionBuilders.Action
 import androidx.wear.protolayout.ActionBuilders.LoadAction
 import androidx.wear.protolayout.ActionBuilders.actionFromProto
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.StateBuilders.State
 import androidx.wear.protolayout.expression.DynamicDataMap
 import androidx.wear.protolayout.expression.RequiresSchemaVersion
@@ -71,6 +73,43 @@ fun clickable(
         .setOnClick(action)
         .apply {
             id?.let { setId(it) }
+            if (!minClickableWidth.isNaN()) setMinimumClickableWidth(minClickableWidth.dp)
+            if (!minClickableHeight.isNaN()) setMinimumClickableHeight(minClickableHeight.dp)
+        }
+        .build()
+
+/**
+ * Creates a [Clickable] that allows the modified element to have a [PendingIntent] associated with
+ * it, which will be sent when the element is tapped.
+ *
+ * This clickable requires to be created in a [ProtoLayoutScope] receiver scope which handles
+ * internal details of ProtoLayout layout and tiles. In Tiles cases, this scope object can be
+ * obtained via `androidx.wear.tiles.RequestBuilders#TileRequest.getScope`.
+ *
+ * @param pendingIntent is sent when the element is tapped.
+ * @param id is the associated identifier for this clickable. This will be used to the identify the
+ *   pendingIntent to send in the renderer. Within the same tile, this id must be unique among all
+ *   pendingIntent clickables.
+ * @param minClickableWidth of the clickable area. The default value is 48dp, following the Material
+ *   design accessibility guideline. Note that this value does not affect the layout, so the minimum
+ *   clickable width is not guaranteed unless there is enough space around the element within its
+ *   parent bounds.
+ * @param minClickableHeight of the clickable area. The default value is 48dp, following the
+ *   Material design accessibility guideline. Note that this value does not affect the layout, so
+ *   the minimum clickable height is not guaranteed unless there is enough space around the element
+ *   within its parent bounds.
+ */
+@RequiresSchemaVersion(major = 1, minor = 600)
+@JvmOverloads
+fun ProtoLayoutScope.clickable(
+    pendingIntent: PendingIntent,
+    id: String,
+    @Dimension(DP) minClickableWidth: Float = Float.NaN,
+    @Dimension(DP) minClickableHeight: Float = Float.NaN,
+): Clickable =
+    Clickable.Builder(this, id)
+        .setOnClick(pendingIntent)
+        .apply {
             if (!minClickableWidth.isNaN()) setMinimumClickableWidth(minClickableWidth.dp)
             if (!minClickableHeight.isNaN()) setMinimumClickableHeight(minClickableHeight.dp)
         }

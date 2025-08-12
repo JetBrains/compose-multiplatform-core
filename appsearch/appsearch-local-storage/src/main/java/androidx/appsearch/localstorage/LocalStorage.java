@@ -406,6 +406,7 @@ public class LocalStorage {
                 icingDir,
                 config,
                 initStatsBuilder,
+                /*callStatsBuilder=*/null,
                 /*visibilityChecker=*/ null,
                 revocableFileDescriptorStore,
                 /*icingSearchEngine=*/ null,

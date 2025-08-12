@@ -248,15 +248,17 @@ public class StreamSharing extends UseCase {
     }
 
     @Override
-    public void onStateAttached() {
-        super.onStateAttached();
-        mVirtualCameraAdapter.notifyStateAttached();
+    @MainThread
+    public void onSessionStart() {
+        super.onSessionStart();
+        mVirtualCameraAdapter.notifySessionStart();
     }
 
     @Override
-    public void onStateDetached() {
-        super.onStateDetached();
-        mVirtualCameraAdapter.notifyStateDetached();
+    @MainThread
+    public void onSessionStop() {
+        super.onSessionStop();
+        mVirtualCameraAdapter.notifySessionStop();
     }
 
     @Override

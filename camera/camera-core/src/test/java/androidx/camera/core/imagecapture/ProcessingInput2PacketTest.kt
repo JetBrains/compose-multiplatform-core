@@ -19,7 +19,6 @@ package androidx.camera.core.imagecapture
 import android.graphics.ImageFormat
 import android.graphics.ImageFormat.YUV_420_888
 import android.graphics.Rect
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.imagecapture.Utils.CAMERA_CAPTURE_RESULT
 import androidx.camera.core.imagecapture.Utils.CROP_RECT
@@ -52,7 +51,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [ProcessingInput2Packet] */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ProcessingInput2PacketTest {
 
     private val operation = ProcessingInput2Packet()

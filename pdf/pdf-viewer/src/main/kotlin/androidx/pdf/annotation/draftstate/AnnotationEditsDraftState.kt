@@ -20,7 +20,7 @@ import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.SavedEdit
+import androidx.pdf.annotation.models.PdfAnnotationData
 
 /**
  * Abstract class representing the draft state of annotation edits. This class manages the
@@ -43,9 +43,10 @@ public abstract class AnnotationEditsDraftState(public open val pfd: ParcelFileD
      * Retrieves all annotation edits for a specific page.
      *
      * @param pageNum The page number (0-indexed) for which to retrieve edits.
-     * @return A list of [SavedEdit] objects representing the id and the persisted annotation.
+     * @return A list of [PdfAnnotationData] objects representing the id and the persisted
+     *   annotation.
      */
-    public abstract fun getEdits(pageNum: Int): List<SavedEdit>
+    public abstract fun getEdits(pageNum: Int): List<PdfAnnotationData>
 
     /**
      * Adds a new annotation edit to the draft state.
@@ -71,4 +72,11 @@ public abstract class AnnotationEditsDraftState(public open val pfd: ParcelFileD
      * @return The updated [PdfAnnotation].
      */
     public abstract fun updateEdit(editId: EditId, annotation: PdfAnnotation): PdfAnnotation
+
+    /**
+     * Converts this mutable draft state into an immutable representation.
+     *
+     * @return An [ImmutableAnnotationEditsDraftState] representing the current state of edits.
+     */
+    public abstract fun toImmutableDraftState(): ImmutableAnnotationEditsDraftState
 }

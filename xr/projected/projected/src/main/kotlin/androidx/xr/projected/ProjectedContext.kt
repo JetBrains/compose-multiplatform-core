@@ -20,7 +20,9 @@ import android.app.ActivityOptions
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 
 /**
@@ -53,6 +55,7 @@ public object ProjectedContext {
      * the projected device was not found.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun createProjectedDeviceContext(context: Context): Context {
         val deviceId =
             getProjectedDeviceId(context)
@@ -68,6 +71,7 @@ public object ProjectedContext {
      * from the host (e.g. phone), it needs to use the host device context.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun createHostDeviceContext(context: Context): Context =
         context.createDeviceContext(Context.DEVICE_ID_DEFAULT)
 
@@ -78,6 +82,7 @@ public object ProjectedContext {
      * @throws IllegalArgumentException If another context is used (e.g. the host context).
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun getProjectedDeviceName(context: Context): String? =
         // TODO: b/424812882 - Turn this into a lint check with an annotation.
         if (isProjectedDeviceContext(context)) {
@@ -90,6 +95,7 @@ public object ProjectedContext {
 
     /** Returns whether the provided context is the Projected device context. */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun isProjectedDeviceContext(context: Context): Boolean =
         getVirtualDevice(context)?.name?.startsWith(PROJECTED_DEVICE_NAME) == true
 
@@ -111,6 +117,7 @@ public object ProjectedContext {
      * @param context The Projected device context.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public fun createProjectedActivityOptions(context: Context): ActivityOptions {
         // TODO: b/424812882 - Turn this into a lint check with an annotation.
         if (!isProjectedDeviceContext(context)) {
@@ -131,6 +138,7 @@ public object ProjectedContext {
         return ActivityOptions.makeBasic().setLaunchDisplayId(displayIds.first())
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getProjectedDeviceId(context: Context) =
         context
             .getSystemService(VirtualDeviceManager::class.java)
@@ -139,11 +147,13 @@ public object ProjectedContext {
             .find { it.name?.startsWith(PROJECTED_DEVICE_NAME) ?: false }
             ?.deviceId
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getVirtualDevice(context: Context) =
         context.getSystemService(VirtualDeviceManager::class.java).virtualDevices.find {
             it.deviceId == context.deviceId
         }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun getProjectedDisplayIds(context: Context) =
         getVirtualDevice(context)?.displayIds ?: IntArray(size = 0)
 }

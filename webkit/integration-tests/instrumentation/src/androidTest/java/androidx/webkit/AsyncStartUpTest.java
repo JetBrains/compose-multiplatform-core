@@ -23,6 +23,7 @@ import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.webkit.internal.StartupFeatures;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 import androidx.webkit.test.common.WebViewOnUiThread;
 import androidx.webkit.test.common.WebkitUtils;
@@ -303,6 +304,8 @@ public class AsyncStartUpTest {
     @Ignore("b/376656739")
     public void testAsyncStartUp_withCreatingCustomProfile_createsRequestedProfiles() {
         Assume.assumeFalse(webViewCurrentlyLoaded());
+        WebkitUtils.checkStartupFeature(ApplicationProvider.getApplicationContext(),
+                StartupFeatures.STARTUP_FEATURE_SET_PROFILES_TO_LOAD);
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
                 Executors.newSingleThreadExecutor())
                 .setShouldRunUiThreadStartUpTasks(true).setProfilesToLoadDuringStartup(

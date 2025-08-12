@@ -82,7 +82,7 @@ class ActivityResultFragmentVersionDetector : Detector(), UastScanner, GradleSca
         }
     }
 
-    @Suppress("OVERRIDE_DEPRECATION") // b/407493719
+    @Deprecated("This is deprecated in the GradleScanner class.")
     override fun checkDslPropertyAssignment(
         context: GradleContext,
         property: String,

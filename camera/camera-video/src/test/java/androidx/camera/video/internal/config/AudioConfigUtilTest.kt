@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.config
 
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import androidx.camera.video.AudioSpec.CHANNEL_COUNT_MONO
@@ -26,12 +25,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class AudioConfigUtilTest {
 
     @Test

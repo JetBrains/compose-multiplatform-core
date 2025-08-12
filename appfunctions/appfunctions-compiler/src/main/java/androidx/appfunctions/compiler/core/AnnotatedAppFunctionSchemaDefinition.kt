@@ -93,6 +93,7 @@ class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClass
                 sharedDataTypeMap = sharedDataTypeMap,
                 seenDataTypeQualifiers = seenDataTypeQualifiers,
                 allowSerializableInterfaceTypes = true,
+                functionAnnotations = schemaFunctionDeclaration.annotations,
             )
 
         return CompileTimeAppFunctionMetadata(

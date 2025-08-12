@@ -29,7 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(JUnit4::class)
 @SmallTest
 class AudioToHapticAttributesTest {
@@ -255,10 +254,7 @@ class HapticAttributesTest {
         assertThat(HapticAttributes(HapticAttributes.USAGE_TOUCH).toAttributes()).isNull()
     }
 
-    @SdkSuppress(
-        minSdkVersion = Build.VERSION_CODES.LOLLIPOP,
-        maxSdkVersion = Build.VERSION_CODES.S,
-    )
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.S)
     @Test
     fun toAttributes_api21To32_returnsAudioAttributes() {
         hapticUsageList.forEach { hapticUsage ->

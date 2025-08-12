@@ -24,6 +24,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Plane as RuntimePlane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector2
@@ -222,14 +223,14 @@ class PlaneTest {
     @Test
     fun update_extentsMatchesRuntime() = runBlocking {
         val runtimePlane = FakeRuntimePlane()
-        val extents = Vector2(1.0f, 2.0f)
+        val extents = FloatSize2d(1.0f, 2.0f)
         runtimePlane.extents = extents
         xrResourcesManager.syncTrackables(listOf(runtimePlane))
         val underTest = xrResourcesManager.trackablesMap[runtimePlane] as Plane
         underTest.update()
         check(underTest.state.value.extents == extents)
 
-        val newExtents = Vector2(3.0f, 4.0f)
+        val newExtents = FloatSize2d(3.0f, 4.0f)
         runtimePlane.extents = newExtents
         underTest.update()
 

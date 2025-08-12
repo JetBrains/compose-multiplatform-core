@@ -11,7 +11,7 @@ package androidx.core.backported.fixes {
   public final class KnownIssue {
     method public long getId();
     method public String getUrl();
-    property @IntRange(from=1024L) public long id;
+    property public long id;
     property public String url;
   }
 

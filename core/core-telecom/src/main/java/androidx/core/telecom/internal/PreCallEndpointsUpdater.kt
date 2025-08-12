@@ -69,7 +69,7 @@ internal class PreCallEndpointsUpdater(
     /** Sorts the current list of endpoints and sends the result to the client. */
     private fun updateClient() {
         // The sorted() extension creates a new sorted list before sending.
-        val sortedList = currentDevices.sorted()
+        val sortedList = currentDevices.filterNotNull().sorted()
         sendChannel.trySend(sortedList)
     }
 }

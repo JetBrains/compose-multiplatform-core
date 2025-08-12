@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,19 +21,18 @@ package androidx.navigationevent
  *
  * This class maintains its own [isEnabled] state and will only receive callbacks when enabled.
  *
- * @param isEnabled The enabled state for this callback.
- * @param isPassThrough Whether this callback should consume the events from
- *   [NavigationEventDispatcher] or allow it to continue.
+ * @param isEnabled The initial enabled state for this callback.
  * @see NavigationEventDispatcher
  */
-public abstract class NavigationEventCallback(
-    isEnabled: Boolean,
-    /**
-     * Whether this callback should consume the events from [NavigationEventDispatcher] or allow it
-     * to continue.
-     */
-    public val isPassThrough: Boolean = false,
-) {
+public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled: Boolean) {
+
+    /** The most recent navigation info provided via [setInfo]. */
+    internal var currentInfo: T? = null
+        private set
+
+    /** Caches the navigation info from before the most recent call to [setInfo]. */
+    internal var previousInfo: T? = null
+        private set
 
     /**
      * Controls whether this callback is active and should be considered for event dispatching.
@@ -68,8 +67,32 @@ public abstract class NavigationEventCallback(
 
     internal var dispatcher: NavigationEventDispatcher? = null
 
+    /**
+     * Removes this callback from the [NavigationEventDispatcher] it is registered with. If the
+     * callback is not registered, this call does nothing.
+     */
     public fun remove() {
         dispatcher?.removeCallback(this)
+    }
+
+    /**
+     * Updates the current and previous navigation information for this callback.
+     *
+     * This method updates the callback's local info and then notifies the central
+     * `NavigationEventProcessor`. The processor is responsible for deciding whether to update the
+     * global navigation state, ensuring that only the highest-priority callback can influence the
+     * state.
+     *
+     * @param currentInfo The new navigation information to be set as the current state.
+     * @param previousInfo The navigation information to be set as the previous state.
+     */
+    public fun setInfo(currentInfo: T, previousInfo: T?) {
+        this.currentInfo = currentInfo
+        this.previousInfo = previousInfo
+
+        // Simply notify the processor that info has changed.
+        // The processor now owns all the logic for updating the shared state.
+        dispatcher?.sharedProcessor?.updateEnabledCallbackState(callback = this)
     }
 
     /** Callback for handling [NavigationEventDispatcher.dispatchOnStarted]. */

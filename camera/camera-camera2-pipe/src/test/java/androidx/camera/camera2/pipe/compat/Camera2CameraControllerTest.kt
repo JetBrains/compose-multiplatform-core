@@ -59,7 +59,6 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Camera2CameraControllerTest {
     private val cameraId = CameraId.fromCamera2Id("0")
     private val testScope = TestScope()

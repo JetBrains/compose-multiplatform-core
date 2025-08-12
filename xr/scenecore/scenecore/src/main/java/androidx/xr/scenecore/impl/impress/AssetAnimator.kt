@@ -16,14 +16,17 @@
 
 package androidx.xr.scenecore.impl.impress
 
-import androidx.annotation.RestrictTo
-
-/** Interface defining the callbacks that get triggered when an asset is animated. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface AssetAnimator {
+/**
+ * Interface defining the callbacks that are triggered from the Native side when an asset is
+ * animated.
+ */
+internal interface AssetAnimator {
     /** Called when the asset is done animating. */
     public fun onComplete()
 
     /** Called when the asset fails to be animated. */
     public fun onFailure(message: String)
+
+    /** Called when the animation is cancelled, such as during shutdown. */
+    public fun onCancelled(message: String)
 }

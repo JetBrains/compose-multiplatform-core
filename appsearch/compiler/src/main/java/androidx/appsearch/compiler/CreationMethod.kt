@@ -77,6 +77,7 @@ data class CreationMethod(
          * @throws ProcessingException If the method is not invocable or the association for a param
          *   could not be deduced.
          */
+        @JvmStatic
         @Throws(ProcessingException::class)
         fun inferParamAssociationsAndCreate(
             method: ExecutableElement,

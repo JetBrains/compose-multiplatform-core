@@ -31,7 +31,7 @@ public class OnBackInvokedInputHandler(
 ) : NavigationEventInputHandler(dispatcher) {
     private val onBackInvokedCallback: OnBackInvokedCallback =
         if (Build.VERSION.SDK_INT == 33) {
-            OnBackInvokedCallback { sendOnCompleted() }
+            OnBackInvokedCallback { dispatchOnCompleted() }
         } else { // Build.VERSION.SDK_INT >= 34
             createOnBackAnimationCallback()
         }
@@ -39,7 +39,7 @@ public class OnBackInvokedInputHandler(
     private var backInvokedCallbackRegistered = false
 
     init {
-        dispatcher.addOnHasEnabledCallbacksChangedCallback { hasEnabledCallbacks ->
+        addOnHasEnabledCallbacksChangedCallback { hasEnabledCallbacks ->
             updateBackInvokedCallbackState(hasEnabledCallbacks)
         }
         updateBackInvokedCallbackState(dispatcher.hasEnabledCallbacks())
@@ -62,19 +62,19 @@ public class OnBackInvokedInputHandler(
     private fun createOnBackAnimationCallback(): OnBackInvokedCallback {
         return object : OnBackAnimationCallback {
             override fun onBackStarted(backEvent: BackEvent) {
-                sendOnStarted(NavigationEvent(backEvent))
+                dispatchOnStarted(NavigationEvent(backEvent))
             }
 
             override fun onBackProgressed(backEvent: BackEvent) {
-                sendOnProgressed(NavigationEvent(backEvent))
+                dispatchOnProgressed(NavigationEvent(backEvent))
             }
 
             override fun onBackInvoked() {
-                sendOnCompleted()
+                dispatchOnCompleted()
             }
 
             override fun onBackCancelled() {
-                sendOnCancelled()
+                dispatchOnCancelled()
             }
         }
     }

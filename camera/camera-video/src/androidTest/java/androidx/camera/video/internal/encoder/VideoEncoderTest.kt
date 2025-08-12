@@ -52,7 +52,6 @@ import androidx.concurrent.futures.ResolvableFuture
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
@@ -87,7 +86,6 @@ private const val I_FRAME_INTERVAL = 1
 @LargeTest
 @RunWith(Parameterized::class)
 @Suppress("DEPRECATION")
-@SdkSuppress(minSdkVersion = 21)
 class VideoEncoderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
 
     @get:Rule
