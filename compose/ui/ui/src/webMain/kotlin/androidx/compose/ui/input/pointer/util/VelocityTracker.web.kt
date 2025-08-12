@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-#import <UIKit/UIKit.h>
+package androidx.compose.ui.input.pointer.util
 
-@interface CMPScrollView : UIScrollView
+internal actual const val HistorySize: Int = 20
 
-- (BOOL)accessibilityScrollUpPageSupported;
-- (BOOL)accessibilityScrollDownPageSupported;
-- (BOOL)accessibilityScrollLeftPageSupported;
-- (BOOL)accessibilityScrollRightPageSupported;
-
-- (BOOL)drawsFocusRingWhenChildrenFocused;
-
-@end
+/**
+ * Some platforms (e.g. iOS) filter certain gestures during velocity calculation.
+ */
+internal actual fun VelocityTracker1D.shouldUseDataPoints(
+    points: FloatArray,
+    times: FloatArray,
+    count: Int,
+    afterPointerStop: Boolean
+): Boolean = true
