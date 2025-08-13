@@ -19,7 +19,9 @@ package androidx.compose.ui.input.pointer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastMap
 
 /**
  * Compose or user code can't work well if we miss some events.
@@ -211,7 +213,7 @@ internal class SyntheticEventSender(
 
     private fun PointerInputEvent.isSamePosition(previousEvent: PointerInputEvent?): Boolean {
         val previousIdToPosition = previousEvent?.pointers?.associate { it.id to it.position }
-        return pointers.all {
+        return pointers.fastAll {
             val previousPosition = previousIdToPosition?.get(it.id)
             previousPosition == null || it.position == previousPosition
         }
@@ -224,7 +226,7 @@ internal class SyntheticEventSender(
         copyPointer: (PointerInputEventData) -> PointerInputEventData,
     ) = PointerInputEvent(
         eventType = type,
-        pointers = pointers.map(copyPointer),
+        pointers = pointers.fastMap(copyPointer),
         uptime = uptime,
         nativeEvent = null,
         buttons = buttons,

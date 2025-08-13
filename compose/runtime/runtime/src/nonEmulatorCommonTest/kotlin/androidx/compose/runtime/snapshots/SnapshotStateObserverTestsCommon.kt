@@ -347,9 +347,7 @@ class SnapshotStateObserverTestsCommon {
         runSimpleTest { stateObserver, state ->
             stateObserver.observeReads(ValueWrapper("scope1"), { changes1++ }) {
                 stateObserver.observeReads(ValueWrapper("scope2"), { changes2++ }) {
-                    Snapshot.withoutReadObservation {
-                        state.value
-                    }
+                    Snapshot.withoutReadObservation { state.value }
                 }
             }
         }

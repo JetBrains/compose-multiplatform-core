@@ -221,7 +221,7 @@ class DefaultTextContextMenuDropdownProviderTest {
                                 minHeight = smallerSizeDp,
                                 maxWidth = largerSizeDp,
                                 maxHeight = largerSizeDp,
-                            )
+                            ),
                 ) {
                     it()
                 }
@@ -235,7 +235,7 @@ class DefaultTextContextMenuDropdownProviderTest {
                         }
                         .testTag(innerContentTestTag)
                 )
-            }
+            },
         ) {
             assertThat(actualConstraints).isEqualTo(expectedConstraints)
             rule.onNodeWithTag(innerContentTestTag).assertIsDisplayed()
@@ -368,7 +368,7 @@ class DefaultTextContextMenuDropdownProviderTest {
             val dataProvider =
                 testDataProvider(
                     positioner = { offset },
-                    data = { numbersToData(*itemNumbers.toIntArray()) }
+                    data = { numbersToData(*itemNumbers.toIntArray()) },
                 )
             val contextMenuCoroutine = showTextContextMenu(dataProvider)
             assertContextMenuExistsWithNumbers(1)
@@ -425,7 +425,7 @@ class DefaultTextContextMenuDropdownProviderTest {
         coroutineScope: CoroutineScope,
     ) : CoroutineScope by coroutineScope {
         fun showTextContextMenu(
-            dataProvider: TextContextMenuDataProvider = testDataProvider(),
+            dataProvider: TextContextMenuDataProvider = testDataProvider()
         ): Job =
             launch(start = CoroutineStart.UNDISPATCHED) {
                     provider.showTextContextMenu(dataProvider)

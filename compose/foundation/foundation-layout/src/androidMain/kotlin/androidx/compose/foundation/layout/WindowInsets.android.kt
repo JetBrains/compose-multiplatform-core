@@ -128,7 +128,7 @@ var AbstractComposeView.consumeWindowInsets: Boolean
  */
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Please use AbstractComposeView.consumeWindowInsets"
+    message = "Please use AbstractComposeView.consumeWindowInsets",
 )
 @OptIn(ExperimentalLayoutApi::class)
 var ComposeView.consumeWindowInsets: Boolean
@@ -354,7 +354,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         systemInsets(
             insets,
             WindowInsetsCompat.Type.mandatorySystemGestures(),
-            "mandatorySystemGestures"
+            "mandatorySystemGestures",
         )
     val navigationBars =
         systemInsets(insets, WindowInsetsCompat.Type.navigationBars(), "navigationBars")
@@ -375,31 +375,31 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         valueInsetsIgnoringVisibility(
             insets,
             WindowInsetsCompat.Type.captionBar(),
-            "captionBarIgnoringVisibility"
+            "captionBarIgnoringVisibility",
         )
     val navigationBarsIgnoringVisibility =
         valueInsetsIgnoringVisibility(
             insets,
             WindowInsetsCompat.Type.navigationBars(),
-            "navigationBarsIgnoringVisibility"
+            "navigationBarsIgnoringVisibility",
         )
     val statusBarsIgnoringVisibility =
         valueInsetsIgnoringVisibility(
             insets,
             WindowInsetsCompat.Type.statusBars(),
-            "statusBarsIgnoringVisibility"
+            "statusBarsIgnoringVisibility",
         )
     val systemBarsIgnoringVisibility =
         valueInsetsIgnoringVisibility(
             insets,
             WindowInsetsCompat.Type.systemBars(),
-            "systemBarsIgnoringVisibility"
+            "systemBarsIgnoringVisibility",
         )
     val tappableElementIgnoringVisibility =
         valueInsetsIgnoringVisibility(
             insets,
             WindowInsetsCompat.Type.tappableElement(),
-            "tappableElementIgnoringVisibility"
+            "tappableElementIgnoringVisibility",
         )
     val imeAnimationTarget =
         valueInsetsIgnoringVisibility(insets, WindowInsetsCompat.Type.ime(), "imeAnimationTarget")
@@ -581,7 +581,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         private fun valueInsetsIgnoringVisibility(
             windowInsets: WindowInsetsCompat?,
             type: Int,
-            name: String
+            name: String,
         ): ValueInsets {
             val initial = windowInsets?.getInsetsIgnoringVisibility(type) ?: AndroidXInsets.NONE
             return ValueInsets(initial, name)
@@ -589,9 +589,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
     }
 }
 
-private class InsetsListener(
-    val composeInsets: WindowInsetsHolder,
-) :
+private class InsetsListener(val composeInsets: WindowInsetsHolder) :
     WindowInsetsAnimationCompat.Callback(
         if (composeInsets.consumes) DISPATCH_MODE_STOP else DISPATCH_MODE_CONTINUE_ON_SUBTREE
     ),
@@ -622,7 +620,7 @@ private class InsetsListener(
 
     override fun onStart(
         animation: WindowInsetsAnimationCompat,
-        bounds: WindowInsetsAnimationCompat.BoundsCompat
+        bounds: WindowInsetsAnimationCompat.BoundsCompat,
     ): WindowInsetsAnimationCompat.BoundsCompat {
         prepared = false
         return super.onStart(animation, bounds)
@@ -630,7 +628,7 @@ private class InsetsListener(
 
     override fun onProgress(
         insets: WindowInsetsCompat,
-        runningAnimations: MutableList<WindowInsetsAnimationCompat>
+        runningAnimations: MutableList<WindowInsetsAnimationCompat>,
     ): WindowInsetsCompat {
         composeInsets.update(insets)
         return if (composeInsets.consumes) WindowInsetsCompat.CONSUMED else insets

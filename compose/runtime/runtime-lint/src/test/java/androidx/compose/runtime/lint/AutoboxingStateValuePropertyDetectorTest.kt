@@ -21,6 +21,8 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.useFirUast
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -35,6 +37,7 @@ class AutoboxingStateValuePropertyDetectorTest : LintDetectorTest() {
 
     @Test
     fun testReadAutoboxingPropertyAsVariableAssignment() {
+        assumeFalse("Test fails under K2: b/353980920", useFirUast())
         lint()
             .files(
                 kotlin(
@@ -51,7 +54,7 @@ class AutoboxingStateValuePropertyDetectorTest : LintDetectorTest() {
                     )
                     .indented(),
                 AutoboxingStateValuePropertyStub,
-                MinimalSnapshotStateStub
+                MinimalSnapshotStateStub,
             )
             .run()
             .expect(
@@ -90,7 +93,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
                     )
                     .indented(),
                 AutoboxingStateValuePropertyStub,
-                MinimalSnapshotStateStub
+                MinimalSnapshotStateStub,
             )
             .run()
             .expect(
@@ -148,7 +151,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
             MR5uTSoTSBLSULiyT7BP/gtiWKGalMAt3MYdgukGNIEM9NCsYm2avYt1bISw
             ASZwD/eRJepmA5EKchVsVfAA2wTxsII8dqgqwCPsNhAL8DjAXoDElU3+AfvU
             hgfXAwAA
-            """
+            """,
             )
 
         private val MinimalSnapshotStateStub: TestFile =
@@ -303,7 +306,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
             T3EzGlLab8ajYUecyYjA6uVXryup5U0kTpWKSSRjpV2ajxwml9G3XNDXsUrI
             ggf7O7JRnvgS1sgfU0WBNH4bdh1TdUzXMYNZCjFXR4BiG0xjHgttuBqLGksa
             yxorOoP5T7cJbagBAgAA
-            """
+            """,
             )
     }
 }

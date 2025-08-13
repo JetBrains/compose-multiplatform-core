@@ -126,10 +126,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class ScrollTest(private val config: Config) {
 
-    data class Config(
-        val orientation: Orientation,
-        val layoutDirection: LayoutDirection,
-    )
+    data class Config(val orientation: Orientation, val layoutDirection: LayoutDirection)
 
     companion object {
         @JvmStatic
@@ -159,7 +156,7 @@ class ScrollTest(private val config: Config) {
             Color(red = 0, green = 0xFF, blue = 0, alpha = 0xFF),
             Color(red = 0, green = 0xFF, blue = 0xA5, alpha = 0xFF),
             Color(red = 0, green = 0, blue = 0xFF, alpha = 0xFF),
-            Color(red = 0xA5, green = 0, blue = 0xFF, alpha = 0xFF)
+            Color(red = 0xA5, green = 0, blue = 0xFF, alpha = 0xFF),
         )
 
     @get:Rule
@@ -288,7 +285,7 @@ class ScrollTest(private val config: Config) {
             isVertical = config.orientation == Vertical,
             isRtl = config.layoutDirection == Rtl,
             firstSwipe = { configAwareSwipe(forward = true) },
-            secondSwipe = { configAwareSwipe(forward = false) }
+            secondSwipe = { configAwareSwipe(forward = false) },
         )
     }
 
@@ -308,7 +305,7 @@ class ScrollTest(private val config: Config) {
 
         createScrollableContent(
             isVertical = config.orientation == Vertical,
-            scrollState = scrollState
+            scrollState = scrollState,
         )
 
         rule.waitForIdle()
@@ -687,7 +684,7 @@ class ScrollTest(private val config: Config) {
                     "interactionSource",
                     "bringIntoViewSpec",
                     "useLocalOverscrollFactory",
-                    "overscrollEffect"
+                    "overscrollEffect",
                 )
 
             assertThat(scroll.nameFallback).isEqualTo("scroll")
@@ -725,7 +722,7 @@ class ScrollTest(private val config: Config) {
                     "interactionSource",
                     "bringIntoViewSpec",
                     "useLocalOverscrollFactory",
-                    "overscrollEffect"
+                    "overscrollEffect",
                 )
 
             assertThat(scroll.nameFallback).isEqualTo("scroll")
@@ -779,7 +776,7 @@ class ScrollTest(private val config: Config) {
                 shapeColor = Color.Red,
                 backgroundColor = Color.Gray,
                 horizontalPadding = horizontalPadding,
-                verticalPadding = verticalPadding
+                verticalPadding = verticalPadding,
             )
     }
 
@@ -825,7 +822,7 @@ class ScrollTest(private val config: Config) {
                                         measurables: List<IntrinsicMeasurable>,
                                         width: Int,
                                     ) = 40.dp.roundToPx()
-                                }
+                                },
                             )
                         }
                     }
@@ -833,19 +830,19 @@ class ScrollTest(private val config: Config) {
                     val measurable = measurables.first()
                     assertEquals(
                         10.dp.roundToPx(),
-                        measurable.minIntrinsicWidth(Constraints.Infinity)
+                        measurable.minIntrinsicWidth(Constraints.Infinity),
                     )
                     assertEquals(
                         20.dp.roundToPx(),
-                        measurable.minIntrinsicHeight(Constraints.Infinity)
+                        measurable.minIntrinsicHeight(Constraints.Infinity),
                     )
                     assertEquals(
                         30.dp.roundToPx(),
-                        measurable.maxIntrinsicWidth(Constraints.Infinity)
+                        measurable.maxIntrinsicWidth(Constraints.Infinity),
                     )
                     assertEquals(
                         40.dp.roundToPx(),
-                        measurable.maxIntrinsicHeight(Constraints.Infinity)
+                        measurable.maxIntrinsicHeight(Constraints.Infinity),
                     )
                     layout(0, 0) {}
                 }
@@ -897,7 +894,7 @@ class ScrollTest(private val config: Config) {
             object : LayoutModifier {
                 override fun MeasureScope.measure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     val p = measurable.measure(constraints)
                     return layout(p.width, p.height) { p.place(0, 0) }
@@ -905,7 +902,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.minIntrinsicWidth(
                     measurable: IntrinsicMeasurable,
-                    height: Int
+                    height: Int,
                 ): Int {
                     sizeParam = height
                     return measurable.minIntrinsicWidth(height)
@@ -913,7 +910,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurable: IntrinsicMeasurable,
-                    width: Int
+                    width: Int,
                 ): Int {
                     sizeParam = width
                     return measurable.minIntrinsicHeight(width)
@@ -938,7 +935,7 @@ class ScrollTest(private val config: Config) {
             object : LayoutModifier {
                 override fun MeasureScope.measure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     val p = measurable.measure(constraints)
                     return layout(p.width, p.height) { p.place(0, 0) }
@@ -946,7 +943,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.minIntrinsicWidth(
                     measurable: IntrinsicMeasurable,
-                    height: Int
+                    height: Int,
                 ): Int {
                     sizeParam = height
                     return measurable.minIntrinsicWidth(height)
@@ -954,7 +951,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurable: IntrinsicMeasurable,
-                    width: Int
+                    width: Int,
                 ): Int {
                     sizeParam = width
                     return measurable.minIntrinsicHeight(width)
@@ -979,7 +976,7 @@ class ScrollTest(private val config: Config) {
             object : LayoutModifier {
                 override fun MeasureScope.measure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     val p = measurable.measure(constraints)
                     return layout(p.width, p.height) { p.place(0, 0) }
@@ -987,7 +984,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                     measurable: IntrinsicMeasurable,
-                    height: Int
+                    height: Int,
                 ): Int {
                     sizeParam = height
                     return measurable.minIntrinsicWidth(height)
@@ -995,7 +992,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                     measurable: IntrinsicMeasurable,
-                    width: Int
+                    width: Int,
                 ): Int {
                     sizeParam = width
                     return measurable.minIntrinsicHeight(width)
@@ -1020,7 +1017,7 @@ class ScrollTest(private val config: Config) {
             object : LayoutModifier {
                 override fun MeasureScope.measure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     val p = measurable.measure(constraints)
                     return layout(p.width, p.height) { p.place(0, 0) }
@@ -1028,7 +1025,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                     measurable: IntrinsicMeasurable,
-                    height: Int
+                    height: Int,
                 ): Int {
                     sizeParam = height
                     return measurable.minIntrinsicWidth(height)
@@ -1036,7 +1033,7 @@ class ScrollTest(private val config: Config) {
 
                 override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                     measurable: IntrinsicMeasurable,
-                    width: Int
+                    width: Int,
                 ): Int {
                     sizeParam = width
                     return measurable.minIntrinsicHeight(width)
@@ -1174,12 +1171,12 @@ class ScrollTest(private val config: Config) {
                 if (config.orientation == Horizontal) {
                     Row(
                         Modifier.horizontalScroll(scrollState).then(wrapperModifiers),
-                        content = { content() }
+                        content = { content() },
                     )
                 } else {
                     Column(
                         Modifier.verticalScroll(scrollState).then(wrapperModifiers),
-                        content = { content() }
+                        content = { content() },
                     )
                 }
             }
@@ -1210,7 +1207,7 @@ class ScrollTest(private val config: Config) {
                                 Modifier.testTag(scrollerTag)
                                     .verticalScroll(
                                         state = scrollState,
-                                        overscrollEffect = overscroll
+                                        overscrollEffect = overscroll,
                                     )
                             ) {
                                 Box(Modifier.height(contentSize).fillMaxWidth())
@@ -1224,7 +1221,7 @@ class ScrollTest(private val config: Config) {
                                     Modifier.testTag(scrollerTag)
                                         .horizontalScroll(
                                             state = scrollState,
-                                            overscrollEffect = overscroll
+                                            overscrollEffect = overscroll,
                                         )
                                 ) {
                                     Box(Modifier.width(contentSize).fillMaxHeight())
@@ -1309,7 +1306,7 @@ class ScrollTest(private val config: Config) {
         isReversed: Boolean = false,
         mainAxisSize: Int = defaultMainAxisSize,
         crossAxisSize: Int = defaultCrossAxisSize,
-        cellSize: Int = defaultCellSize
+        cellSize: Int = defaultCellSize,
     ) {
         when (config.orientation) {
             Vertical ->
@@ -1318,7 +1315,7 @@ class ScrollTest(private val config: Config) {
                     isReversed = isReversed,
                     width = crossAxisSize,
                     height = mainAxisSize,
-                    rowHeight = cellSize
+                    rowHeight = cellSize,
                 )
             Horizontal ->
                 composeHorizontalScroller(
@@ -1326,7 +1323,7 @@ class ScrollTest(private val config: Config) {
                     isReversed = isReversed,
                     width = mainAxisSize,
                     height = crossAxisSize,
-                    isRtl = config.layoutDirection == Rtl
+                    isRtl = config.layoutDirection == Rtl,
                 )
         }
     }
@@ -1336,7 +1333,7 @@ class ScrollTest(private val config: Config) {
         isReversed: Boolean = false,
         width: Int = defaultCrossAxisSize,
         height: Int = defaultMainAxisSize,
-        rowHeight: Int = defaultCellSize
+        rowHeight: Int = defaultCellSize,
     ) {
         val resolvedState = scrollState ?: ScrollState(initial = 0)
         // We assume that the height of the device is more than 45 px
@@ -1364,7 +1361,7 @@ class ScrollTest(private val config: Config) {
         isReversed: Boolean = false,
         width: Int = defaultMainAxisSize,
         height: Int = defaultCrossAxisSize,
-        isRtl: Boolean = false
+        isRtl: Boolean = false,
     ) {
         val resolvedState = scrollState ?: ScrollState(initial = 0)
         // We assume that the height of the device is more than 45 px
@@ -1398,7 +1395,7 @@ class ScrollTest(private val config: Config) {
         offset: Int = 0,
         mainAxis: Int = 40,
         crossAxis: Int = 45,
-        cellSize: Int = 5
+        cellSize: Int = 5,
     ) {
         when (config.orientation) {
             Vertical ->
@@ -1406,14 +1403,14 @@ class ScrollTest(private val config: Config) {
                     offset = offset,
                     width = crossAxis,
                     height = mainAxis,
-                    rowHeight = cellSize
+                    rowHeight = cellSize,
                 )
             Horizontal ->
                 validateHorizontalScroller(
                     offset = offset,
                     width = mainAxis,
                     height = crossAxis,
-                    checkInRtl = config.layoutDirection == Rtl
+                    checkInRtl = config.layoutDirection == Rtl,
                 )
         }
     }
@@ -1423,7 +1420,7 @@ class ScrollTest(private val config: Config) {
         offset: Int = 0,
         width: Int = 45,
         height: Int = 40,
-        rowHeight: Int = 5
+        rowHeight: Int = 5,
     ) {
         rule.onNodeWithTag(scrollerTag).captureToImage().assertPixels(
             expectedSize = IntSize(width, height)
@@ -1438,7 +1435,7 @@ class ScrollTest(private val config: Config) {
         offset: Int = 0,
         width: Int = 40,
         height: Int = 45,
-        checkInRtl: Boolean = false
+        checkInRtl: Boolean = false,
     ) {
         val scrollerWidth = colors.size * defaultCellSize
         val absoluteOffset = if (checkInRtl) scrollerWidth - width - offset else offset
@@ -1458,7 +1455,7 @@ class ScrollTest(private val config: Config) {
         isReversed: Boolean = false,
         scrollState: ScrollState? = null,
         isRtl: Boolean = config.layoutDirection == Rtl,
-        touchInputEnabled: Boolean = true
+        touchInputEnabled: Boolean = true,
     ) {
         val resolvedState = scrollState ?: ScrollState(initial = 0)
         rule.setContent {
@@ -1472,7 +1469,7 @@ class ScrollTest(private val config: Config) {
                                 .verticalScroll(
                                     resolvedState,
                                     enabled = touchInputEnabled,
-                                    reverseScrolling = isReversed
+                                    reverseScrolling = isReversed,
                                 )
                         ) {
                             content()
@@ -1485,7 +1482,7 @@ class ScrollTest(private val config: Config) {
                                     .horizontalScroll(
                                         resolvedState,
                                         enabled = touchInputEnabled,
-                                        reverseScrolling = isReversed
+                                        reverseScrolling = isReversed,
                                     )
                             ) {
                                 content()
@@ -1524,7 +1521,7 @@ class ScrollTest(private val config: Config) {
         isVertical: Boolean = config.orientation == Vertical,
         firstSwipe: TouchInjectionScope.() -> Unit,
         secondSwipe: TouchInjectionScope.() -> Unit,
-        isRtl: Boolean = config.layoutDirection == Rtl
+        isRtl: Boolean = config.layoutDirection == Rtl,
     ) {
         rule.mainClock.autoAdvance = false
         val scrollState = ScrollState(initial = 0)
@@ -1556,7 +1553,7 @@ class ScrollTest(private val config: Config) {
         drawRect(
             Color.Red,
             Offset(-inflate, -inflate),
-            Size(size.width + inflate * 2, size.height + inflate * 2)
+            Size(size.width + inflate * 2, size.height + inflate * 2),
         )
     }
 
@@ -1589,7 +1586,7 @@ class ScrollTest(private val config: Config) {
         override fun applyToScroll(
             delta: Offset,
             source: NestedScrollSource,
-            performScroll: (Offset) -> Offset
+            performScroll: (Offset) -> Offset,
         ): Offset {
             applyToScrollCalledCount++
             val consumed = performScroll(delta)
@@ -1599,7 +1596,7 @@ class ScrollTest(private val config: Config) {
 
         override suspend fun applyToFling(
             velocity: Velocity,
-            performFling: suspend (Velocity) -> Velocity
+            performFling: suspend (Velocity) -> Velocity,
         ) {
             applyToFlingCalledCount++
             val consumed = performFling(velocity)

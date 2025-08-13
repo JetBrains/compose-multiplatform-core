@@ -46,12 +46,12 @@ fun RulerProducerUsage(content: @Composable BoxScope.() -> Unit) {
                 rulers = {
                     val height = coordinates.size.height
                     SafeBottomRuler provides (height - safeInsets.getBottom(this)).toFloat()
-                }
+                },
             ) {
                 placeable.place(0, 0)
             }
         },
-        content = content
+        content = content,
     )
 }
 
@@ -84,7 +84,7 @@ fun RulerConsumerUsage(content: @Composable BoxScope.() -> Unit) {
                 }
             }
         },
-        content = content
+        content = content,
     )
 }
 

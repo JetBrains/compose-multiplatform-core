@@ -1,7 +1,0 @@
-// Baseline format: 1.0
-BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#getShowLayoutBounds():
-    Removed method androidx.compose.ui.platform.AbstractComposeView.getShowLayoutBounds() from compatibility checked API surface
-BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#setShowLayoutBounds(boolean):
-    Removed method androidx.compose.ui.platform.AbstractComposeView.setShowLayoutBounds(boolean) from compatibility checked API surface
-BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#setShowLayoutBounds(boolean) parameter #0:
-    Removed parameter arg1 in androidx.compose.ui.platform.AbstractComposeView.setShowLayoutBounds(boolean arg1) from compatibility checked API surface

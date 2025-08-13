@@ -53,11 +53,12 @@ internal abstract class ComposeStackTraceBuilder {
         }
     }
 
+    @OptIn(ComposeToolingApi::class)
     private fun extractTraceFrame(
         groupSourceInformation: GroupSourceInformation,
-        targetChild: Any?
+        targetChild: Any?,
     ): ComposeStackTraceFrame? {
-        val parsed = groupSourceInformation.sourceInformation?.let { parseSourceInfo(it) }
+        val parsed = groupSourceInformation.sourceInformation?.let { parseSourceInformation(it) }
         if (parsed != null) {
             if (targetChild == null) {
                 // no child specified
@@ -133,7 +134,7 @@ internal abstract class ComposeStackTraceBuilder {
 
     private fun findInGroupSourceInformation(
         sourceInformation: GroupSourceInformation,
-        target: Any // (Anchor | Int)
+        target: Any, // (Anchor | Int)
     ): Boolean {
         val children = sourceInformation.groups
         if (children == null) {
@@ -186,82 +187,10 @@ internal abstract class ComposeStackTraceBuilder {
     abstract fun groupKeyOf(anchor: Anchor): Int
 }
 
-private val EmptyIntArray = IntArray(0)
-
-private fun parseSourceInfo(data: String): ParsedSourceInformation? {
-    if (data.isEmpty()) {
-        return null
-    }
-
-    var i = 0
-    var functionName: String? = null
-    var isCall = false
-    if (data[i] == 'C') { // call
-        i++
-        isCall = true
-        if (data[i] == 'C') { // inline call
-            i++
-        }
-        // parse function name
-        if (data[i] == '(') {
-            var end = ++i
-            while (data[end] != ')') end++
-            functionName = data.substring(i, end)
-            i = ++end
-        } else {
-            functionName = "<lambda>"
-        }
-        // skip over parameter info
-        if (data[i] == 'P') {
-            var end = ++i
-            while (data[end] != ')') end++
-            i = ++end
-        }
-    }
-
-    // parse offset section ([*]<line-number>@<offset>L<length>[,])
-    var callInfoEnd = i
-    while (callInfoEnd < data.length && data[callInfoEnd] != ':') callInfoEnd++
-    val lineInfo =
-        if (i < callInfoEnd) {
-            data
-                .substring(i, callInfoEnd)
-                .split(',')
-                // points to end of previous line, so adding 1
-                .map { it.substringBefore('@').substringAfter('*').toInt() + 1 }
-                .toIntArray()
-        } else {
-            EmptyIntArray
-        }
-
-    // parse file name and package hash
-    var fileName: String? = null
-    i = callInfoEnd
-    if (i < data.length) {
-        var end = ++i
-        while (data[end] != '#') end++
-        fileName = data.substring(i, end)
-        i = end
-    }
-    var packageHash: String? = null
-    if (i < data.length) {
-        packageHash = data.substring(++i)
-    }
-
-    return ParsedSourceInformation(
-        isCall = isCall,
-        functionName = functionName,
-        lineNumbers = lineInfo,
-        fileName = fileName,
-        packageHash = packageHash,
-        dataString = data
-    )
-}
-
 internal fun SlotWriter.buildTrace(
     child: Any? = null,
     group: Int = currentGroup,
-    parent: Int? = null
+    parent: Int? = null,
 ): List<ComposeStackTraceFrame> {
     val writer = this
     if (!writer.closed && writer.size != 0) {
@@ -305,7 +234,7 @@ internal fun SlotReader.buildTrace(): List<ComposeStackTraceFrame> {
 
 internal fun SlotReader.traceForGroup(
     group: Int,
-    child: Any? /* Anchor | Int | null */
+    child: Any?, /* Anchor | Int | null */
 ): List<ComposeStackTraceFrame> {
     val reader = this
     val traceBuilder = ReaderTraceBuilder(reader)

@@ -92,7 +92,7 @@ private fun BenchmarkScreen(initialEntries: List<Entry> = List(100) { Entry("Ite
     Box {
         LazyColumn(
             state = state,
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "IamLazy" }
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "IamLazy" },
         ) {
             items(data) { ListRow(it) }
         }

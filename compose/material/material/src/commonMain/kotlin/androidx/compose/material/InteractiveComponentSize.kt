@@ -80,7 +80,7 @@ internal class MinimumInteractiveModifierNode :
     @OptIn(ExperimentalMaterialApi::class)
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val enforcement = isAttached && currentValueOf(LocalMinimumInteractiveComponentEnforcement)
         val size = minimumInteractiveComponentSize
@@ -134,7 +134,7 @@ val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Bool
 @Deprecated(
     message = "Use LocalMinimumInteractiveComponentEnforcement instead.",
     replaceWith = ReplaceWith("LocalMinimumInteractiveComponentEnforcement"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 val LocalMinimumTouchTargetEnforcement: ProvidableCompositionLocal<Boolean> =
     LocalMinimumInteractiveComponentEnforcement
@@ -142,7 +142,7 @@ val LocalMinimumTouchTargetEnforcement: ProvidableCompositionLocal<Boolean> =
 private class MinimumInteractiveComponentSizeModifier(val size: DpSize) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
 
         val placeable = measurable.measure(constraints)

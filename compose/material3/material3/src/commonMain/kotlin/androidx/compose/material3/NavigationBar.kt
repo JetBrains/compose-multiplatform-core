@@ -116,7 +116,7 @@ fun NavigationBar(
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
     tonalElevation: Dp = NavigationBarDefaults.Elevation,
     windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     with(LocalNavigationBarOverride.current) {
         NavigationBarOverrideScope(
@@ -144,7 +144,7 @@ object DefaultNavigationBarOverride : NavigationBarOverride {
             color = containerColor,
             contentColor = contentColor,
             tonalElevation = tonalElevation,
-            modifier = modifier
+            modifier = modifier,
         ) {
             Row(
                 modifier =
@@ -154,7 +154,7 @@ object DefaultNavigationBarOverride : NavigationBarOverride {
                         .selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(NavigationBarItemHorizontalPadding),
                 verticalAlignment = Alignment.CenterVertically,
-                content = content
+                content = content,
             )
         }
     }
@@ -204,7 +204,7 @@ fun RowScope.NavigationBarItem(
     label: @Composable (() -> Unit)? = null,
     alwaysShowLabel: Boolean = true,
     colors: NavigationBarItemColors = NavigationBarItemDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -215,7 +215,7 @@ fun RowScope.NavigationBarItem(
             val iconColor by
                 animateColorAsState(
                     targetValue = colors.iconColor(selected = selected, enabled = enabled),
-                    animationSpec = colorAnimationSpec
+                    animationSpec = colorAnimationSpec,
                 )
             // If there's a label, don't have a11y services repeat the icon description.
             val clearSemantics = label != null && (alwaysShowLabel || selected)
@@ -231,12 +231,12 @@ fun RowScope.NavigationBarItem(
                 val textColor by
                     animateColorAsState(
                         targetValue = colors.textColor(selected = selected, enabled = enabled),
-                        animationSpec = colorAnimationSpec
+                        animationSpec = colorAnimationSpec,
                     )
                 ProvideContentColorTextStyle(
                     contentColor = textColor,
                     textStyle = style,
-                    content = label
+                    content = label,
                 )
             }
         }
@@ -263,13 +263,13 @@ fun RowScope.NavigationBarItem(
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             )
         val sizeAnimationProgress: State<Float> =
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
+                animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
             )
         // The entire item is selectable, but only the indicator pill shows the ripple. To achieve
         // this, we re-map the coordinates of the item's InteractionSource into the coordinates of
@@ -314,7 +314,7 @@ fun RowScope.NavigationBarItem(
             label = styledLabel,
             alwaysShowLabel = alwaysShowLabel,
             alphaAnimationProgress = { alphaAnimationProgress.value },
-            sizeAnimationProgress = { sizeAnimationProgress.value }
+            sizeAnimationProgress = { sizeAnimationProgress.value },
         )
     }
 }
@@ -402,7 +402,7 @@ object NavigationBarItemDefaults {
 
     @Deprecated(
         "Use overload with disabledIconColor and disabledTextColor",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     @Composable
     fun colors(
@@ -571,7 +571,7 @@ private fun NavigationBarItemLayout(
                     label()
                 }
             }
-        }
+        },
     ) { measurables, constraints ->
         @Suppress("NAME_SHADOWING")
         // Ensure that the progress is >= 0. It may be negative on bouncy springs, for example.
@@ -609,7 +609,7 @@ private fun NavigationBarItemLayout(
                 indicatorPlaceable,
                 constraints,
                 alwaysShowLabel,
-                animationProgress
+                animationProgress,
             )
         }
     }
@@ -620,7 +620,7 @@ private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable?,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val width =
         if (constraints.maxWidth == Constraints.Infinity) {

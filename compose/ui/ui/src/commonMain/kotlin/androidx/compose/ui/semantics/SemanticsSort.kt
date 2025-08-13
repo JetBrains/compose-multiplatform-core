@@ -36,7 +36,7 @@ import kotlin.math.min
 internal fun SemanticsNode.subtreeSortedByGeometryGrouping(
     isVisible: (SemanticsNode) -> Boolean,
     isFocusableContainer: (SemanticsNode) -> Boolean,
-    listToSort: List<SemanticsNode>
+    listToSort: List<SemanticsNode>,
 ): List<SemanticsNode> {
     // This should be mapping of [containerID: listOfSortedChildren], only populated if there
     // are container nodes in this level. If there are container nodes, `containerMapToChildren`
@@ -49,7 +49,7 @@ internal fun SemanticsNode.subtreeSortedByGeometryGrouping(
             geometryList,
             isVisible,
             isFocusableContainer,
-            containerMapToChildren
+            containerMapToChildren,
         )
     }
 
@@ -60,7 +60,7 @@ private fun SemanticsNode.geometryDepthFirstSearch(
     geometryList: ArrayList<SemanticsNode>,
     isVisible: (SemanticsNode) -> Boolean,
     isFocusableContainer: (SemanticsNode) -> Boolean,
-    containerMapToChildren: MutableIntObjectMap<List<SemanticsNode>>
+    containerMapToChildren: MutableIntObjectMap<List<SemanticsNode>>,
 ) {
     // We only want to add children that are either traversalGroups or are
     // screen reader focusable. The child must also be in the current pruned semantics tree.
@@ -80,7 +80,7 @@ private fun SemanticsNode.geometryDepthFirstSearch(
                 geometryList,
                 isVisible,
                 isFocusableContainer,
-                containerMapToChildren
+                containerMapToChildren,
             )
         }
     }
@@ -100,7 +100,7 @@ private fun SemanticsNode.geometryDepthFirstSearch(
 internal fun SemanticsNode.sortByGeometryGroupings(
     parentListToSort: List<SemanticsNode>,
     isFocusableContainer: (SemanticsNode) -> Boolean = { false },
-    containerChildrenMapping: IntObjectMap<List<SemanticsNode>> = intObjectMapOf()
+    containerChildrenMapping: IntObjectMap<List<SemanticsNode>> = intObjectMapOf(),
 ): List<SemanticsNode> {
     val layoutIsRtl = layoutInfo.layoutDirection == LayoutDirection.Rtl
 
@@ -162,7 +162,7 @@ internal fun SemanticsNode.sortByGeometryGroupings(
 // check to see if this entry overlaps with any groupings in rowGroupings
 private fun placedEntryRowOverlaps(
     rowGroupings: ArrayList<Pair<Rect, MutableList<SemanticsNode>>>,
-    node: SemanticsNode
+    node: SemanticsNode,
 ): Boolean {
     // Conversion to long is needed in order to utilize `until`, which has no float ver
     val entryTopCoord = node.boundsInWindow.top
@@ -252,7 +252,7 @@ private object RtlBoundsComparator : Comparator<SemanticsNode> {
 private object TopBottomBoundsComparator : Comparator<Pair<Rect, MutableList<SemanticsNode>>> {
     override fun compare(
         a: Pair<Rect, MutableList<SemanticsNode>>,
-        b: Pair<Rect, MutableList<SemanticsNode>>
+        b: Pair<Rect, MutableList<SemanticsNode>>,
     ): Int {
         val r = a.first.top.compareTo(b.first.top)
         if (r != 0) return r

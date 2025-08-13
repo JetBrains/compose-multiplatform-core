@@ -23,7 +23,6 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -64,7 +63,7 @@ internal suspend fun PointerInputScope.detectDragGesturesAfterLongPressWithObser
         onDragEnd = { observer.onStop() },
         onDrag = { _, offset -> observer.onDrag(offset) },
         onDragStart = { observer.onStart(it) },
-        onDragCancel = { observer.onCancel() }
+        onDragCancel = { observer.onCancel() },
     )
 
 /**
@@ -77,13 +76,6 @@ internal suspend fun PointerInputScope.detectDownAndDragGesturesWithObserver(
     coroutineScope {
         launch(start = CoroutineStart.UNDISPATCHED) { detectPreDragGesturesWithObserver(observer) }
         launch(start = CoroutineStart.UNDISPATCHED) { detectDragGesturesWithObserver(observer) }
-            .invokeOnCompletion {
-                // Otherwise observer won't be notified if
-                // composable was disposed before the drag cancellation
-                if (it is CancellationException){
-                    observer.onCancel()
-                }
-            }
     }
 }
 
@@ -108,6 +100,6 @@ private suspend fun PointerInputScope.detectDragGesturesWithObserver(observer: T
         onDragEnd = { observer.onStop() },
         onDrag = { _, offset -> observer.onDrag(offset) },
         onDragStart = { observer.onStart(it) },
-        onDragCancel = { observer.onCancel() }
+        onDragCancel = { observer.onCancel() },
     )
 }

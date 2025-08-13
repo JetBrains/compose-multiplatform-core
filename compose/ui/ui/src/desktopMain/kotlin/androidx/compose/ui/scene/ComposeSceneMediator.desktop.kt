@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.ComposeFeatureFlags
@@ -31,6 +30,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.internal
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.pointer.AwtCursor
@@ -90,7 +90,6 @@ import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -149,7 +148,8 @@ internal class ComposeSceneMediator(
      * @see ComposeFeatureFlags.useInteropBlending
      */
     private val useInteropBlending: Boolean
-        get() = ComposeFeatureFlags.useInteropBlending && skiaLayerComponent.interopBlendingSupported
+        get() = ComposeFeatureFlags.useInteropBlending.value &&
+            skiaLayerComponent.interopBlendingSupported
 
     /**
      * Adding any components below [contentComponent] makes our bridge non-transparent on macOS.
@@ -491,10 +491,6 @@ internal class ComposeSceneMediator(
 
         unsubscribe(contentComponent)
 
-        interopContainer.root.removeContainerListener(interopContainerListener)
-        // Since rendering will not happen after, we need to execute all scheduled updates
-        interopContainer.dispose()
-
         container.remove(contentComponent)
         container.remove(invisibleComponent)
         container.transferHandler = null
@@ -502,6 +498,11 @@ internal class ComposeSceneMediator(
 
         scene.close()
         skiaLayerComponent.dispose()
+
+        interopContainer.root.removeContainerListener(interopContainerListener)
+        // Since rendering will not happen after, we need to execute all scheduled updates
+        interopContainer.dispose()
+
         _onComponentAttached = null
     }
 
@@ -569,6 +570,10 @@ internal class ComposeSceneMediator(
             width = size.width.coerceAtLeast(0f).roundToInt(),
             height = size.height.coerceAtLeast(0f).roundToInt()
         )
+    }
+
+    fun onWindowPositionChanged() = catchExceptions {
+        scene.invalidatePositionOnScreen()
     }
 
     fun onChangeDensity(density: Density = container.density) = catchExceptions {
@@ -708,12 +713,7 @@ internal class ComposeSceneMediator(
         override val textInputService = this@ComposeSceneMediator.textInputService
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-            suspendCancellableCoroutine<Nothing> { continuation ->
-                textInputService2.startInput(request)
-                continuation.invokeOnCancellation {
-                    textInputService2.stopInput()
-                }
-            }
+            textInputService2.startInputMethod(request)
         }
 
         override fun setPointerIcon(pointerIcon: PointerIcon) {
@@ -750,6 +750,7 @@ internal class ComposeSceneMediator(
         override fun enableInput(inputMethodRequests: InputMethodRequests) {
             currentInputMethodRequests = inputMethodRequests
             contentComponent.enableInputMethods(true)
+            contentComponent.inputContext.endComposition()
             // Without resetting the focus, Swing won't update the status (doesn't show/hide popup)
             // enableInputMethods is design to used per-Swing component level at init stage,
             // not dynamically
@@ -763,6 +764,10 @@ internal class ComposeSceneMediator(
             // enableInputMethods is design to used per-Swing component level at init stage,
             // not dynamically
             resetFocus()
+        }
+
+        override fun endComposition() {
+            contentComponent.inputContext.endComposition()
         }
     }
 

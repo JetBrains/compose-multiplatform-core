@@ -95,6 +95,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -146,8 +147,8 @@ class AppBarTest {
                     colors =
                         TopAppBarDefaults.topAppBarColors(
                             titleContentColor = Color.Red,
-                            subtitleContentColor = Color.Green
-                        )
+                            subtitleContentColor = Color.Green,
+                        ),
                 )
             }
         }
@@ -162,7 +163,7 @@ class AppBarTest {
                 TopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -175,7 +176,7 @@ class AppBarTest {
             Box(Modifier.testTag(TopAppBarTestTag)) {
                 TopAppBar(
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -191,7 +192,7 @@ class AppBarTest {
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     subtitle = { Text("Subtitle", Modifier.testTag(SubtitleTestTag)) },
                     titleHorizontalAlignment = Alignment.CenterHorizontally,
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -213,7 +214,7 @@ class AppBarTest {
                         // Apply the test tag just to the action at the end. We will test its
                         // position at the assertSmallDefaultPositioning.
                         FakeIcon(Modifier.testTag(ActionsTestTag))
-                    }
+                    },
                 )
             }
         }
@@ -248,7 +249,7 @@ class AppBarTest {
                     Text("Subtitle")
                     textStyle = LocalTextStyle.current
                     expectedTextStyle = TypographyKeyTokens.LabelMedium.value // TODO tokens
-                }
+                },
             )
         }
         assertThat(textStyle).isNotNull()
@@ -289,7 +290,7 @@ class AppBarTest {
                     actionsColor = LocalContentColor.current
                     expectedActionsColor =
                         TopAppBarDefaults.topAppBarColors().actionIconContentColor
-                }
+                },
             )
         }
         assertThat(navigationIconColor).isNotNull()
@@ -322,7 +323,7 @@ class AppBarTest {
                             .containerColor(colorTransitionFraction = 1f)
                 },
                 modifier = Modifier.testTag(TopAppBarTestTag),
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         }
 
@@ -348,7 +349,7 @@ class AppBarTest {
             TopAppBar(
                 title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                 modifier = Modifier.testTag(TopAppBarTestTag),
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         }
 
@@ -377,7 +378,7 @@ class AppBarTest {
                 title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                 modifier = Modifier.testTag(TopAppBarTestTag),
                 expandedHeight = expandedHeightDp,
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         }
 
@@ -397,7 +398,7 @@ class AppBarTest {
                 subtitle = { Text("Subtitle", Modifier.testTag(SubtitleTestTag)) },
                 modifier = Modifier.testTag(TopAppBarTestTag),
                 expandedHeight = expandedHeightDp,
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         }
 
@@ -475,7 +476,7 @@ class AppBarTest {
                 CenterAlignedTopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -491,7 +492,7 @@ class AppBarTest {
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
-                    windowInsets = WindowInsets(padding, padding, padding, padding)
+                    windowInsets = WindowInsets(padding, padding, padding, padding),
                 )
             }
         }
@@ -514,7 +515,7 @@ class AppBarTest {
             Box(Modifier.testTag(TopAppBarTestTag)) {
                 CenterAlignedTopAppBar(
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -531,10 +532,10 @@ class AppBarTest {
                             text = "This is a very very very very long title",
                             modifier = Modifier.testTag(TitleTestTag),
                             overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
+                            maxLines = 1,
                         )
                     },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -556,9 +557,9 @@ class AppBarTest {
                             text = "This is a very very very very long title",
                             modifier = Modifier.testTag(TitleTestTag),
                             overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
+                            maxLines = 1,
                         )
-                    }
+                    },
                 )
             }
         }
@@ -598,7 +599,7 @@ class AppBarTest {
                     Text("Subtitle")
                     textStyle = LocalTextStyle.current
                     expectedTextStyle = TypographyKeyTokens.LabelMedium.value // TODO tokens
-                }
+                },
             )
         }
         assertThat(textStyle).isNotNull()
@@ -617,7 +618,7 @@ class AppBarTest {
                         appBarSize = IntSize(placeable.width, placeable.height)
                         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                     },
-                title = { Text("Title") }
+                title = { Text("Title") },
             )
         }
 
@@ -658,7 +659,7 @@ class AppBarTest {
                     actionsColor = LocalContentColor.current
                     expectedActionsColor =
                         TopAppBarDefaults.topAppBarColors().actionIconContentColor
-                }
+                },
             )
         }
         assertThat(navigationIconColor).isNotNull()
@@ -692,7 +693,7 @@ class AppBarTest {
                         TopAppBarDefaults.topAppBarColors()
                             .containerColor(colorTransitionFraction = 1f)
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         }
 
@@ -722,7 +723,7 @@ class AppBarTest {
                 MediumTopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -731,7 +732,7 @@ class AppBarTest {
         assertMediumOrLargeDefaultPositioning(
             appBarCollapsedHeight = AppBarSmallTokens.ContainerHeight,
             appBarExpandedHeight = AppBarMediumTokens.ContainerHeight,
-            bottomTextPadding = 24.dp
+            bottomTextPadding = 24.dp,
         )
     }
 
@@ -746,7 +747,7 @@ class AppBarTest {
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
-                    expandedHeight = expandedHeightDp
+                    expandedHeight = expandedHeightDp,
                 )
             }
         }
@@ -755,7 +756,7 @@ class AppBarTest {
         assertMediumOrLargeDefaultPositioning(
             appBarCollapsedHeight = collapsedHeightDp,
             appBarExpandedHeight = expandedHeightDp,
-            bottomTextPadding = 24.dp
+            bottomTextPadding = 24.dp,
         )
     }
 
@@ -775,7 +776,7 @@ class AppBarTest {
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
                     expandedHeight = expandedHeightDp,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         }
@@ -807,7 +808,7 @@ class AppBarTest {
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
                     expandedHeight = expandedHeightDp,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         }
@@ -838,7 +839,7 @@ class AppBarTest {
                         title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                         actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                         scrollBehavior = scrollBehavior,
-                        windowInsets = windowInsets
+                        windowInsets = windowInsets,
                     )
                 }
             }
@@ -846,7 +847,7 @@ class AppBarTest {
             AppBarMediumTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             windowInsets,
-            content
+            content,
         )
     }
 
@@ -873,7 +874,7 @@ class AppBarTest {
             appBarMaxHeight = expandedHeightDp,
             appBarMinHeight = collapsedHeightDp,
             windowInsets,
-            content
+            content,
         )
     }
 
@@ -885,7 +886,7 @@ class AppBarTest {
                 MediumTopAppBar(
                     modifier = Modifier.testTag(TopAppBarTestTag),
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
 
@@ -894,7 +895,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Unspecified,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -908,7 +909,7 @@ class AppBarTest {
                     title = {
                         Text(text = "Title", Modifier.testTag(TitleTestTag), color = Color.Green)
                     },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         assertMediumOrLargeScrolledColors(
@@ -916,7 +917,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Green,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -934,10 +935,10 @@ class AppBarTest {
                         Text(
                             text = "Subtitle",
                             Modifier.testTag(SubtitleTestTag),
-                            color = Color.Green
+                            color = Color.Green,
                         )
                     },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         assertMediumOrLargeScrolledColors(
@@ -945,7 +946,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Green,
             subtitleContentColor = Color.Green,
-            content = content
+            content = content,
         )
     }
 
@@ -960,7 +961,7 @@ class AppBarTest {
                         Text(text = "Title", Modifier.testTag(TitleTestTag), color = Color.Green)
                     },
                     subtitle = null,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         assertMediumOrLargeScrolledColors(
@@ -968,7 +969,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Green,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -982,7 +983,7 @@ class AppBarTest {
                     Color.Red,
                     Color.Yellow,
                     Color.Cyan,
-                    Color.Magenta
+                    Color.Magenta,
                 )
             assert(colors.containerColor == Color.Blue)
             assert(colors.scrolledContainerColor == Color.Green)
@@ -1001,7 +1002,7 @@ class AppBarTest {
                 MediumTopAppBar(
                     modifier = Modifier.testTag(TopAppBarTestTag),
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
 
@@ -1009,7 +1010,7 @@ class AppBarTest {
             AppBarMediumTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             content,
-            withSubtitle = false
+            withSubtitle = false,
         )
     }
 
@@ -1022,7 +1023,7 @@ class AppBarTest {
                     modifier = Modifier.testTag(TopAppBarTestTag),
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     subtitle = { Text("Subtitle", Modifier.testTag(SubtitleTestTag)) },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
 
@@ -1030,7 +1031,7 @@ class AppBarTest {
             AppBarMediumTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             content,
-            withSubtitle = true
+            withSubtitle = true,
         )
     }
 
@@ -1042,14 +1043,14 @@ class AppBarTest {
                 LargeTopAppBar(
                     modifier = Modifier.testTag(TopAppBarTestTag),
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         assertMediumOrLargeScrolledSemantics(
             AppBarLargeTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             content,
-            withSubtitle = false
+            withSubtitle = false,
         )
     }
 
@@ -1062,14 +1063,14 @@ class AppBarTest {
                     modifier = Modifier.testTag(TopAppBarTestTag),
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     subtitle = { Text("Subtitle", Modifier.testTag(SubtitleTestTag)) },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         assertMediumOrLargeScrolledSemantics(
             AppBarLargeTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             content,
-            withSubtitle = true
+            withSubtitle = true,
         )
     }
 
@@ -1088,7 +1089,7 @@ class AppBarTest {
                 LargeTopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
-                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) }
+                    actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                 )
             }
         }
@@ -1097,7 +1098,7 @@ class AppBarTest {
         assertMediumOrLargeDefaultPositioning(
             appBarCollapsedHeight = AppBarSmallTokens.ContainerHeight,
             appBarExpandedHeight = AppBarLargeTokens.ContainerHeight,
-            bottomTextPadding = 28.dp
+            bottomTextPadding = 28.dp,
         )
     }
 
@@ -1112,7 +1113,7 @@ class AppBarTest {
                     title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
-                    expandedHeight = expandedHeightDp
+                    expandedHeight = expandedHeightDp,
                 )
             }
         }
@@ -1121,7 +1122,7 @@ class AppBarTest {
         assertMediumOrLargeDefaultPositioning(
             appBarCollapsedHeight = collapsedHeightDp,
             appBarExpandedHeight = expandedHeightDp,
-            bottomTextPadding = 28.dp
+            bottomTextPadding = 28.dp,
         )
     }
 
@@ -1141,7 +1142,7 @@ class AppBarTest {
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
                     expandedHeight = expandedHeightDp,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         }
@@ -1173,7 +1174,7 @@ class AppBarTest {
                     actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                     collapsedHeight = collapsedHeightDp,
                     expandedHeight = expandedHeightDp,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             }
         }
@@ -1204,7 +1205,7 @@ class AppBarTest {
                         title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                         actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                         scrollBehavior = scrollBehavior,
-                        windowInsets = windowInsets
+                        windowInsets = windowInsets,
                     )
                 }
             }
@@ -1212,7 +1213,7 @@ class AppBarTest {
             AppBarLargeTokens.ContainerHeight,
             AppBarSmallTokens.ContainerHeight,
             windowInsets,
-            content
+            content,
         )
     }
 
@@ -1231,7 +1232,7 @@ class AppBarTest {
                         collapsedHeight = collapsedHeightDp,
                         expandedHeight = expandedHeightDp,
                         windowInsets = windowInsets,
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 }
             }
@@ -1239,7 +1240,7 @@ class AppBarTest {
             appBarMaxHeight = expandedHeightDp,
             appBarMinHeight = collapsedHeightDp,
             windowInsets,
-            content
+            content,
         )
     }
 
@@ -1259,7 +1260,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Unspecified,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -1281,7 +1282,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Red,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -1299,7 +1300,7 @@ class AppBarTest {
                         Text(
                             text = "Subtitle",
                             Modifier.testTag(SubtitleTestTag),
-                            color = Color.Red
+                            color = Color.Red,
                         )
                     },
                     scrollBehavior = scrollBehavior,
@@ -1310,7 +1311,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Red,
             subtitleContentColor = Color.Red,
-            content = content
+            content = content,
         )
     }
 
@@ -1332,7 +1333,7 @@ class AppBarTest {
             appBarMinHeight = AppBarSmallTokens.ContainerHeight,
             titleContentColor = Color.Red,
             subtitleContentColor = Color.Unspecified,
-            content = content
+            content = content,
         )
     }
 
@@ -1390,7 +1391,7 @@ class AppBarTest {
             TopAppBar(
                 title = { Text("Title") },
                 modifier = Modifier.testTag(TopAppBarTestTag),
-                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
             )
         }
 
@@ -1416,7 +1417,7 @@ class AppBarTest {
             MediumTopAppBar(
                 modifier = Modifier.testTag(TopAppBarTestTag),
                 title = { Text("Title") },
-                scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+                scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
             )
         }
 
@@ -1443,7 +1444,7 @@ class AppBarTest {
             LargeTopAppBar(
                 modifier = Modifier.testTag(TopAppBarTestTag),
                 title = { Text("Title") },
-                scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+                scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
             )
         }
 
@@ -1486,7 +1487,7 @@ class AppBarTest {
                 modifier = Modifier.testTag(TopAppBarTestTag),
                 title = { Text("Title") },
                 scrollBehavior =
-                    TopAppBarDefaults.exitUntilCollapsedScrollBehavior(snapAnimationSpec = null)
+                    TopAppBarDefaults.exitUntilCollapsedScrollBehavior(snapAnimationSpec = null),
             )
         }
 
@@ -1494,7 +1495,7 @@ class AppBarTest {
         val boundsBefore = rule.onNodeWithTag(TopAppBarTestTag).getBoundsInRoot()
         AppBarLargeTokens.ContainerHeight.assertIsEqualTo(
             expected = boundsBefore.height,
-            subject = "container height"
+            subject = "container height",
         )
         // Slightly drag up the app bar.
         rule.onNodeWithTag(TopAppBarTestTag).performTouchInput {
@@ -1561,7 +1562,7 @@ class AppBarTest {
             swipeDown(
                 startY = height - 1000f,
                 endY = height - (1000f - appBarHeightPx / 1.5f),
-                durationMillis = 1000L
+                durationMillis = 1000L,
             )
         }
         rule.waitForIdle()
@@ -1590,7 +1591,7 @@ class AppBarTest {
                     TopAppBar(
                         title = { Text("Title") },
                         modifier = Modifier.testTag(TopAppBarTestTag),
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 },
             ) { paddingValues ->
@@ -1635,7 +1636,7 @@ class AppBarTest {
             rule.onNodeWithText("Item $newTopVisibleItemIndex").getBoundsInRoot().top
         topVisibleItemTopWhileCollapsing.assertIsEqualTo(
             expected = bottomAppBarWhileCollapsing,
-            subject = "Top item comparison to bottom app bar"
+            subject = "Top item comparison to bottom app bar",
         )
     }
 
@@ -1677,14 +1678,14 @@ class AppBarTest {
                     TopAppBar(
                         title = { Text("Title") },
                         expandedHeight = expandedHeightDp,
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 }
                 Row(modifier = Modifier.height(IntrinsicSize.Max).testTag(RowTestTag + 1)) {
                     TopAppBar(
                         title = { Text("Title") },
                         expandedHeight = expandedHeightDp,
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 }
             }
@@ -1717,7 +1718,7 @@ class AppBarTest {
                         title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                         actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
                         expandedHeight = expandedHeightDp,
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 }
                 Row(modifier = Modifier.width(IntrinsicSize.Max).testTag(RowTestTag + 1)) {
@@ -1727,7 +1728,7 @@ class AppBarTest {
                         title = { Text("Title") },
                         actions = { FakeIcon(Modifier) },
                         expandedHeight = expandedHeightDp,
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     )
                 }
             }
@@ -1748,7 +1749,7 @@ class AppBarTest {
             .assertIsEqualTo(
                 expected = intrinsicWidth,
                 subject = "intrinsic width",
-                tolerance = 1.dp
+                tolerance = 1.dp,
             )
         rule
             .onNodeWithTag(RowTestTag + 1)
@@ -1757,7 +1758,7 @@ class AppBarTest {
             .assertIsEqualTo(
                 expected = intrinsicWidth,
                 subject = "intrinsic width",
-                tolerance = 1.dp
+                tolerance = 1.dp,
             )
     }
 
@@ -1785,7 +1786,7 @@ class AppBarTest {
 
         assertMediumOrLargeDefaultPositioning(
             appBarCollapsedHeight = collapsedHeightDp,
-            appBarExpandedHeight = expandedHeightDp
+            appBarExpandedHeight = expandedHeightDp,
         )
     }
 
@@ -1818,11 +1819,12 @@ class AppBarTest {
             appBarMaxHeight = expandedHeightDp,
             appBarMinHeight = collapsedHeightDp,
             windowInsets,
-            content
+            content,
         )
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithFAB_heightIsFromSpec() {
         rule
             .setMaterialContentForSizeAssertions {
@@ -1832,11 +1834,11 @@ class AppBarTest {
                         FloatingActionButton(
                             onClick = { /* do something */ },
                             containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                         ) {
                             Icon(Icons.Filled.Add, "Localized description")
                         }
-                    }
+                    },
                 )
             }
             .assertHeightIsEqualTo(BottomAppBarTokens.ContainerHeight)
@@ -1844,12 +1846,13 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithCustomArrangement_heightIsFromSpec() {
         rule
             .setMaterialContentForSizeAssertions {
                 FlexibleBottomAppBar(
                     horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(BottomAppBarDefaults.FlexibleBottomAppBarHeight)
@@ -1857,6 +1860,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithCustomHeight() {
         val height = 128.dp
         rule
@@ -1864,7 +1868,7 @@ class AppBarTest {
                 FlexibleBottomAppBar(
                     horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
                     expandedHeight = height,
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(height)
@@ -1882,11 +1886,11 @@ class AppBarTest {
                         FloatingActionButton(
                             onClick = { /* do something */ },
                             containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                         ) {
                             Icon(Icons.Filled.Add, "Localized description")
                         }
-                    }
+                    },
                 )
             }
             .assertHeightIsEqualTo(BottomAppBarTokens.ContainerHeight + 20.dp)
@@ -1907,13 +1911,14 @@ class AppBarTest {
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }
-                }
+                },
             )
         }
         rule.onNodeWithTag("FAB").assertIsDisplayed()
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBar_widthExpandsToScreen() {
         rule
             .setMaterialContentForSizeAssertions { BottomAppBar {} }
@@ -1922,6 +1927,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_default_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             BottomAppBar(Modifier.testTag("bar")) { FakeIcon(Modifier.testTag("icon")) }
@@ -1943,12 +1949,13 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_default_positioning_respectsContentPadding() {
         val topPadding = 5.dp
         rule.setMaterialContent(lightColorScheme()) {
             BottomAppBar(
                 Modifier.testTag("bar"),
-                contentPadding = PaddingValues(top = topPadding, start = 3.dp)
+                contentPadding = PaddingValues(top = topPadding, start = 3.dp),
             ) {
                 FakeIcon(Modifier.testTag("icon"))
             }
@@ -1978,11 +1985,11 @@ class AppBarTest {
                         onClick = { /* do something */ },
                         modifier = Modifier.testTag("FAB"),
                         containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }
-                }
+                },
             )
         }
 
@@ -1999,6 +2006,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_exitAlways_scaffoldWithFAB_default_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
@@ -2007,7 +2015,7 @@ class AppBarTest {
                 bottomBar = {
                     BottomAppBar(
                         modifier = Modifier.testTag(BottomAppBarTestTag),
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     ) {}
                 },
                 floatingActionButton = {
@@ -2016,7 +2024,7 @@ class AppBarTest {
                         onClick = { /* do something */ },
                     ) {}
                 },
-                floatingActionButtonPosition = FabPosition.EndOverlay
+                floatingActionButtonPosition = FabPosition.EndOverlay,
             ) {}
         }
 
@@ -2031,6 +2039,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBar_exitAlways_scaffoldWithFAB_scrolled_positioning() {
         lateinit var scrollBehavior: BottomAppBarScrollBehavior
         val scrollHeightOffsetDp = 20.dp
@@ -2044,7 +2053,7 @@ class AppBarTest {
                 bottomBar = {
                     BottomAppBar(
                         modifier = Modifier.testTag(BottomAppBarTestTag),
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     ) {}
                 },
                 floatingActionButton = {
@@ -2053,7 +2062,7 @@ class AppBarTest {
                         onClick = { /* do something */ },
                     ) {}
                 },
-                floatingActionButtonPosition = FabPosition.EndOverlay
+                floatingActionButtonPosition = FabPosition.EndOverlay,
             ) {}
         }
 
@@ -2105,9 +2114,9 @@ class AppBarTest {
                 bottomBar = {
                     BottomAppBar(
                         modifier = Modifier.testTag(BottomAppBarTestTag),
-                        scrollBehavior = scrollBehavior
+                        scrollBehavior = scrollBehavior,
                     ) {}
-                }
+                },
             ) { contentPadding ->
                 Box(modifier = Modifier.padding(contentPadding))
             }
@@ -2125,20 +2134,20 @@ class AppBarTest {
                 TopAppBar(
                     title = { Text(text = "Title") },
                     modifier = Modifier.testTag(TopAppBarTestTag),
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
-            }
+            },
         ) { contentPadding ->
             LazyRow(Modifier.fillMaxSize().testTag(LazyListTag), state) {
                 items(2) { page ->
                     LazyColumn(
                         modifier = Modifier.fillParentMaxSize(),
-                        contentPadding = contentPadding
+                        contentPadding = contentPadding,
                     ) {
                         items(50) {
                             Text(
                                 modifier = Modifier.fillParentMaxWidth(),
-                                text = "Item #$page x $it"
+                                text = "Item #$page x $it",
                             )
                         }
                     }
@@ -2154,20 +2163,20 @@ class AppBarTest {
             bottomBar = {
                 BottomAppBar(
                     modifier = Modifier.testTag(BottomAppBarTestTag),
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 ) {}
-            }
+            },
         ) { contentPadding ->
             LazyRow(Modifier.fillMaxSize().testTag(LazyListTag), state) {
                 items(2) { page ->
                     LazyColumn(
                         modifier = Modifier.fillParentMaxSize(),
-                        contentPadding = contentPadding
+                        contentPadding = contentPadding,
                     ) {
                         items(50) {
                             Text(
                                 modifier = Modifier.fillParentMaxWidth(),
-                                text = "Item #$page x $it"
+                                text = "Item #$page x $it",
                             )
                         }
                     }
@@ -2271,7 +2280,7 @@ class AppBarTest {
     private fun assertMediumOrLargeDefaultPositioning(
         appBarCollapsedHeight: Dp,
         appBarExpandedHeight: Dp,
-        bottomTextPadding: Dp = Dp.Unspecified
+        bottomTextPadding: Dp = Dp.Unspecified,
     ) {
         val appBarBounds = rule.onNodeWithTag(TopAppBarTestTag).getUnclippedBoundsInRoot()
         appBarBounds.height.assertIsEqualTo(appBarExpandedHeight, "top app bar height")
@@ -2326,7 +2335,7 @@ class AppBarTest {
                 bottomTitleBounds.top + bottomTitleNode.getLastBaselinePosition()
             (bottomAppBarBottomEdgeY - bottomTextBaselineY).assertIsEqualTo(
                 bottomTextPadding,
-                "text baseline distance from the bottom"
+                "text baseline distance from the bottom",
             )
         }
     }
@@ -2347,7 +2356,7 @@ class AppBarTest {
         appBarMaxHeight: Dp,
         appBarMinHeight: Dp,
         windowInsets: WindowInsets,
-        content: @Composable (TopAppBarScrollBehavior?) -> Unit
+        content: @Composable (TopAppBarScrollBehavior?) -> Unit,
     ) {
         val (topInset, bottomInset) =
             with(rule.density) {
@@ -2412,7 +2421,7 @@ class AppBarTest {
         appBarMinHeight: Dp,
         titleContentColor: Color,
         subtitleContentColor: Color,
-        content: @Composable (TopAppBarScrollBehavior?) -> Unit
+        content: @Composable (TopAppBarScrollBehavior?) -> Unit,
     ) {
         // Note: This value is specifically picked to avoid precision issues when asserting the
         // color values further down this test.
@@ -2509,7 +2518,7 @@ class AppBarTest {
         appBarMaxHeight: Dp,
         appBarMinHeight: Dp,
         content: @Composable (TopAppBarScrollBehavior?) -> Unit,
-        withSubtitle: Boolean
+        withSubtitle: Boolean,
     ) {
         val fullyCollapsedOffsetDp = appBarMaxHeight - appBarMinHeight
         val oneThirdCollapsedOffsetDp = fullyCollapsedOffsetDp / 3
@@ -2587,7 +2596,7 @@ class AppBarTest {
         @Composable { modifier: Modifier ->
             IconButton(
                 onClick = { /* doSomething() */ },
-                modifier = modifier.semantics(mergeDescendants = true) {}
+                modifier = modifier.semantics(mergeDescendants = true) {},
             ) {
                 Icon(ColorPainter(Color.Red), null)
             }

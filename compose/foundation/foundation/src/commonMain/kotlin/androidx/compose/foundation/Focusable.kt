@@ -146,7 +146,7 @@ private class FocusableElement(private val interactionSource: MutableInteraction
 internal class FocusableNode(
     private var interactionSource: MutableInteractionSource?,
     focusability: Focusability = Focusability.Always,
-    private val onFocusChange: ((Boolean) -> Unit)? = null
+    private val onFocusChange: ((Boolean) -> Unit)? = null,
 ) :
     DelegatingNode(),
     SemanticsModifierNode,
@@ -169,7 +169,7 @@ internal class FocusableNode(
         delegate(
             FocusTargetModifierNode(
                 focusability = focusability,
-                onFocusChange = ::onFocusStateChange
+                onFocusChange = ::onFocusStateChange,
             )
         )
 

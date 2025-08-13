@@ -58,7 +58,7 @@ class TestMonotonicFrameClock(
     private val coroutineScope: CoroutineScope,
     @get:Suppress("MethodNameUnits") // Nanos for high-precision animation clocks
     val frameDelayNanos: Long = DefaultFrameDelay,
-    private val onPerformTraversals: (Long) -> Unit = {}
+    private val onPerformTraversals: (Long) -> Unit = {},
 ) : MonotonicFrameClock {
     private val delayController =
         requireNotNull(coroutineScope.coroutineContext[TestCoroutineScheduler]) {

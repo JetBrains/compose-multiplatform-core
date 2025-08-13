@@ -77,7 +77,7 @@ fun NestedSharedBoundsSample() {
         AnimatedVisibility(
             visible = expanded,
             enter = EnterTransition.None,
-            exit = ExitTransition.None
+            exit = ExitTransition.None,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Surface(
@@ -85,7 +85,7 @@ fun NestedSharedBoundsSample() {
                         .padding(20.dp)
                         .sharedBounds(
                             rememberSharedContentState(key = "container"),
-                            this@AnimatedVisibility
+                            this@AnimatedVisibility,
                         )
                         .requiredHeightIn(max = 60.dp),
                     shape = RoundedCornerShape(50),
@@ -107,8 +107,8 @@ fun NestedSharedBoundsSample() {
                                     top = 10.dp,
                                     bottom = 10.dp,
                                     start = 10.dp,
-                                    end = 20.dp
-                                )
+                                    end = 20.dp,
+                                ),
                         )
                         Icon(
                             Icons.Outlined.Favorite,
@@ -118,8 +118,8 @@ fun NestedSharedBoundsSample() {
                                     top = 10.dp,
                                     bottom = 10.dp,
                                     start = 10.dp,
-                                    end = 20.dp
-                                )
+                                    end = 20.dp,
+                                ),
                         )
                         Icon(
                             Icons.Outlined.Create,
@@ -128,19 +128,19 @@ fun NestedSharedBoundsSample() {
                             modifier =
                                 Modifier.sharedBounds(
                                         rememberSharedContentState(key = "icon_background"),
-                                        this@AnimatedVisibility
+                                        this@AnimatedVisibility,
                                     )
                                     .background(selectionColor, RoundedCornerShape(50))
                                     .padding(
                                         top = 10.dp,
                                         bottom = 10.dp,
                                         start = 20.dp,
-                                        end = 20.dp
+                                        end = 20.dp,
                                     )
                                     .sharedElement(
                                         rememberSharedContentState(key = "icon"),
-                                        this@AnimatedVisibility
-                                    )
+                                        this@AnimatedVisibility,
+                                    ),
                         )
                     }
                 }
@@ -149,7 +149,7 @@ fun NestedSharedBoundsSample() {
         AnimatedVisibility(
             visible = !expanded,
             enter = EnterTransition.None,
-            exit = ExitTransition.None
+            exit = ExitTransition.None,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Surface(
@@ -165,10 +165,10 @@ fun NestedSharedBoundsSample() {
                             this@AnimatedVisibility,
                             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
                             enter = EnterTransition.None,
-                            exit = ExitTransition.None
+                            exit = ExitTransition.None,
                         ),
                     shape = RoundedCornerShape(30.dp),
-                    color = selectionColor
+                    color = selectionColor,
                 ) {
                     Icon(
                         Icons.Outlined.Create,
@@ -179,8 +179,8 @@ fun NestedSharedBoundsSample() {
                                 .size(40.dp)
                                 .sharedElement(
                                     rememberSharedContentState(key = "icon"),
-                                    this@AnimatedVisibility
-                                )
+                                    this@AnimatedVisibility,
+                                ),
                     )
                 }
             }
@@ -200,7 +200,7 @@ fun SharedElementWithMovableContentSample() {
                 painterResource(id = R.drawable.yt_profile),
                 contentDescription = "cute cat",
                 contentScale = ContentScale.FillHeight,
-                modifier = Modifier.clip(shape = RoundedCornerShape(cornerRadius.value))
+                modifier = Modifier.clip(shape = RoundedCornerShape(cornerRadius.value)),
             )
         }
     }
@@ -239,7 +239,7 @@ fun SharedElementWithMovableContentSample() {
                 .aspectRatio(1f)
                 .sharedElementWithCallerManagedVisibility(
                     rememberSharedContentState(key = "YT"),
-                    !showThumbnail
+                    !showThumbnail,
                 )
         ) {
             if (!showThumbnail) {
@@ -260,7 +260,7 @@ fun SharedElementWithFABInOverlaySample() {
             painterResource(id = R.drawable.yt_profile),
             contentDescription = "cute cat",
             contentScale = ContentScale.FillHeight,
-            modifier = modifier.clip(shape = RoundedCornerShape(10))
+            modifier = modifier.clip(shape = RoundedCornerShape(10)),
         )
     }
 
@@ -325,7 +325,7 @@ fun SharedElementWithFABInOverlaySample() {
                             // FAB is rendered on top of the shared elements.
                             zIndexInOverlay = 1f
                         ),
-                onClick = {}
+                onClick = {},
             ) {
                 Icon(Icons.Default.Favorite, contentDescription = "favorite")
             }
@@ -348,7 +348,7 @@ fun SharedElementInAnimatedContentSample() {
             painterResource(id = R.drawable.yt_profile),
             contentDescription = "cute cat",
             contentScale = ContentScale.FillHeight,
-            modifier = modifier.clip(shape = RoundedCornerShape(10))
+            modifier = modifier.clip(shape = RoundedCornerShape(10)),
         )
     }
 
@@ -398,8 +398,8 @@ fun SharedElementInAnimatedContentSample() {
                             .wrapContentWidth(Alignment.CenterHorizontally)
                             .sharedBounds(
                                 rememberSharedContentState(key = "text"),
-                                this@AnimatedContent
-                            )
+                                this@AnimatedContent,
+                            ),
                 )
             } else {
                 Column {
@@ -434,8 +434,8 @@ fun SharedElementInAnimatedContentSample() {
                                         // Here we use a string-based key, in contrast to the key
                                         // above.
                                         rememberSharedContentState(key = "text"),
-                                        this@AnimatedContent
-                                    )
+                                        this@AnimatedContent,
+                                    ),
                         )
                     }
                     Box(

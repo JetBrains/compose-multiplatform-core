@@ -41,7 +41,7 @@ public final class androidx/compose/material/navigation/BottomSheetNavigatorShee
 public final class androidx/compose/material/navigation/ComposableSingletons$BottomSheetNavigatorKt {
 	public static final field INSTANCE Landroidx/compose/material/navigation/ComposableSingletons$BottomSheetNavigatorKt;
 	public fun <init> ()V
-	public final fun getLambda-1$material_navigation ()Lkotlin/jvm/functions/Function4;
+	public final fun getLambda$-1104060618$material_navigation ()Lkotlin/jvm/functions/Function4;
 }
 
 public final class androidx/compose/material/navigation/NavGraphBuilderKt {

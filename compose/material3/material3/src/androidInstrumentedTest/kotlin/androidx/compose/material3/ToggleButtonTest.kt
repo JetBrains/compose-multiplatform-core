@@ -77,7 +77,7 @@ class ToggleButtonTest {
                 ToggleButton(
                     checked = checked,
                     modifier = Modifier.testTag(ToggleButtonTag),
-                    onCheckedChange = { checked = it }
+                    onCheckedChange = { checked = it },
                 ) {
                     Text("test")
                 }
@@ -102,7 +102,7 @@ class ToggleButtonTest {
                     checked = checked,
                     modifier = Modifier.testTag(ToggleButtonTag),
                     onCheckedChange = { checked = it },
-                    enabled = false
+                    enabled = false,
                 ) {
                     Text("test")
                 }
@@ -127,11 +127,11 @@ class ToggleButtonTest {
                     checked = checked,
                     modifier = Modifier.testTag(ToggleButtonTag),
                     onCheckedChange = { checked = it },
-                    enabled = false
+                    enabled = false,
                 ) {
                     Text(
                         text = "test",
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -152,7 +152,7 @@ class ToggleButtonTest {
                     checked = false,
                     modifier = Modifier.testTag(ToggleButtonTag),
                     onCheckedChange = {},
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(
                         modifier =
@@ -163,7 +163,7 @@ class ToggleButtonTest {
                     Spacer(modifier = Modifier.width(ToggleButtonDefaults.IconSpacing))
                     Text(
                         text = "test",
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -204,7 +204,7 @@ class ToggleButtonTest {
                                 alpha = FilledButtonTokens.DisabledLabelTextOpacity
                             ),
                         checkedContainerColor = FilledButtonTokens.SelectedContainerColor.value,
-                        checkedContentColor = FilledButtonTokens.SelectedPressedLabelTextColor.value
+                        checkedContentColor = FilledButtonTokens.SelectedPressedLabelTextColor.value,
                     )
                 )
         }
@@ -237,7 +237,7 @@ class ToggleButtonTest {
                             ),
                         checkedContainerColor = ElevatedButtonTokens.SelectedContainerColor.value,
                         checkedContentColor =
-                            ElevatedButtonTokens.SelectedPressedLabelTextColor.value
+                            ElevatedButtonTokens.SelectedPressedLabelTextColor.value,
                     )
                 )
         }
@@ -269,7 +269,7 @@ class ToggleButtonTest {
                                 alpha = TonalButtonTokens.DisabledLabelTextOpacity
                             ),
                         checkedContainerColor = TonalButtonTokens.SelectedContainerColor.value,
-                        checkedContentColor = TonalButtonTokens.SelectedLabelTextColor.value
+                        checkedContentColor = TonalButtonTokens.SelectedLabelTextColor.value,
                     )
                 )
         }
@@ -301,7 +301,7 @@ class ToggleButtonTest {
                                 alpha = OutlinedButtonTokens.DisabledLabelTextOpacity
                             ),
                         checkedContainerColor = OutlinedButtonTokens.SelectedContainerColor.value,
-                        checkedContentColor = OutlinedButtonTokens.SelectedLabelTextColor.value
+                        checkedContentColor = OutlinedButtonTokens.SelectedLabelTextColor.value,
                     )
                 )
         }
@@ -343,7 +343,7 @@ class ToggleButtonTest {
                     onCheckedChange = {},
                     modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
                     shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
@@ -351,12 +351,12 @@ class ToggleButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -381,7 +381,7 @@ class ToggleButtonTest {
                     onCheckedChange = {},
                     modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
                     shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
@@ -389,13 +389,13 @@ class ToggleButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         style = ButtonDefaults.textStyleFor(size),
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -420,7 +420,7 @@ class ToggleButtonTest {
                     onCheckedChange = {},
                     modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
                     shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
@@ -428,13 +428,13 @@ class ToggleButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         style = ButtonDefaults.textStyleFor(size),
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -459,7 +459,7 @@ class ToggleButtonTest {
                     onCheckedChange = {},
                     modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
                     shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
@@ -467,13 +467,13 @@ class ToggleButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         style = ButtonDefaults.textStyleFor(size),
-                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }

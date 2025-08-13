@@ -64,13 +64,13 @@ import androidx.compose.ui.semantics.selected
 @Deprecated(
     message =
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun Modifier.selectable(
     selected: Boolean,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -99,7 +99,7 @@ fun Modifier.selectable(
             indication = localIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -142,7 +142,7 @@ fun Modifier.selectable(
     enabled: Boolean = true,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ): Modifier {
     @OptIn(ExperimentalFoundationApi::class)
     return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
@@ -154,7 +154,7 @@ fun Modifier.selectable(
                 useLocalIndication = true,
                 enabled = enabled,
                 role = role,
-                onClick = onClick
+                onClick = onClick,
             )
         )
     } else
@@ -186,7 +186,7 @@ fun Modifier.selectable(
                 indication = localIndication,
                 enabled = enabled,
                 role = role,
-                onClick = onClick
+                onClick = onClick,
             )
         }
 }
@@ -233,11 +233,11 @@ fun Modifier.selectable(
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         SelectableElement(
             selected = selected,
@@ -246,7 +246,7 @@ fun Modifier.selectable(
             useLocalIndication = false,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -257,7 +257,7 @@ private class SelectableElement(
     private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
-    private val onClick: () -> Unit
+    private val onClick: () -> Unit,
 ) : ModifierNodeElement<SelectableNode>() {
     override fun create() =
         SelectableNode(
@@ -267,7 +267,7 @@ private class SelectableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
 
     override fun update(node: SelectableNode) {
@@ -278,7 +278,7 @@ private class SelectableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -329,7 +329,7 @@ private class SelectableNode(
     useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) :
     ClickableNode(
         interactionSource = interactionSource,
@@ -338,7 +338,7 @@ private class SelectableNode(
         enabled = enabled,
         onClickLabel = null,
         role = role,
-        onClick = onClick
+        onClick = onClick,
     ) {
     fun update(
         selected: Boolean,
@@ -347,7 +347,7 @@ private class SelectableNode(
         useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         if (this.selected != selected) {
             this.selected = selected
@@ -360,7 +360,7 @@ private class SelectableNode(
             enabled = enabled,
             onClickLabel = null,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 

@@ -15,7 +15,6 @@
  */
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +42,7 @@ import org.junit.runners.Parameterized
 
 @MediumTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ColorSchemeScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @get:Rule(order = 0) val rule = createComposeRule()
@@ -59,12 +58,12 @@ class ColorSchemeScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 ColorItem(name = "Surface Container High", color = colorScheme.surfaceContainerHigh)
                 ColorItem(
                     name = "Surface Container Highest",
-                    color = colorScheme.surfaceContainerHighest
+                    color = colorScheme.surfaceContainerHighest,
                 )
                 ColorItem(name = "Surface Container Low", color = colorScheme.surfaceContainerLow)
                 ColorItem(
                     name = "Surface Container Lowest",
-                    color = colorScheme.surfaceContainerLowest
+                    color = colorScheme.surfaceContainerLowest,
                 )
                 ColorItem(name = "Surface Dim", color = colorScheme.surfaceDim)
                 ColorItem(name = "Surface Bright", color = colorScheme.surfaceBright)
@@ -168,21 +167,21 @@ class ColorSchemeScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 ColorItem(name = "On Primary Fixed", color = colorScheme.onPrimaryFixed)
                 ColorItem(
                     name = "On Primary Fixed Variant",
-                    color = colorScheme.onPrimaryFixedVariant
+                    color = colorScheme.onPrimaryFixedVariant,
                 )
                 ColorItem(name = "Secondary Fixed", color = colorScheme.secondaryFixed)
                 ColorItem(name = "Secondary Fixed Dim", color = colorScheme.secondaryFixedDim)
                 ColorItem(name = "On Secondary Fixed", color = colorScheme.onSecondaryFixed)
                 ColorItem(
                     name = "On Secondary Fixed Variant",
-                    color = colorScheme.onSecondaryFixedVariant
+                    color = colorScheme.onSecondaryFixedVariant,
                 )
                 ColorItem(name = "Tertiary Fixed", color = colorScheme.tertiaryFixed)
                 ColorItem(name = "Tertiary Fixed Dim", color = colorScheme.tertiaryFixedDim)
                 ColorItem(name = "On Tertiary Fixed", color = colorScheme.onTertiaryFixed)
                 ColorItem(
                     name = "On Tertiary Fixed Variant",
-                    color = colorScheme.onTertiaryFixedVariant
+                    color = colorScheme.onTertiaryFixedVariant,
                 )
             }
         }

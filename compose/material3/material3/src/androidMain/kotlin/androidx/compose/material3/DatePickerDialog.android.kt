@@ -60,7 +60,7 @@ import androidx.compose.ui.window.DialogProperties
  * @param properties typically platform specific properties to further configure the dialog
  * @param content the content of the dialog (i.e. a [DatePicker], for example)
  */
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun DatePickerDialog(
     onDismissRequest: () -> Unit,
@@ -71,12 +71,12 @@ actual fun DatePickerDialog(
     tonalElevation: Dp,
     colors: DatePickerColors,
     properties: DialogProperties,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier.wrapContentHeight(),
-        properties = properties
+        properties = properties,
     ) {
         Surface(
             modifier =
@@ -97,14 +97,14 @@ actual fun DatePickerDialog(
                 Box(modifier = Modifier.align(Alignment.End).padding(DialogButtonsPadding)) {
                     ProvideContentColorTextStyle(
                         contentColor = DialogTokens.ActionLabelTextColor.value,
-                        textStyle = DialogTokens.ActionLabelTextFont.value
+                        textStyle = DialogTokens.ActionLabelTextFont.value,
                     ) {
                         AlertDialogFlowRow(
                             mainAxisSpacing = DialogButtonsMainAxisSpacing,
-                            crossAxisSpacing = DialogButtonsCrossAxisSpacing
+                            crossAxisSpacing = DialogButtonsCrossAxisSpacing,
                         ) {
-                            dismissButton?.invoke()
                             confirmButton()
+                            dismissButton?.invoke()
                         }
                     }
                 }

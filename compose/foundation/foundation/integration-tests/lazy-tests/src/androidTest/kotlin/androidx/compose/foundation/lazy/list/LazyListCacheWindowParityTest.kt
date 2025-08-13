@@ -230,7 +230,7 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
             firstItem = initialIndex,
             itemOffset = 5,
             contentPadding = PaddingValues(mainAxis = halfItemSize),
-            cacheWindow = parityWindow
+            cacheWindow = parityWindow,
         )
         parityWindow.ahead = itemsSizePx
 
@@ -263,12 +263,9 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
             state =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = 1,
-                    initialFirstVisibleItemScrollOffset = itemsSizePx / 2
+                    initialFirstVisibleItemScrollOffset = itemsSizePx / 2,
                 )
-            LazyColumnOrRow(
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 stickyHeader {
                     Spacer(
                         Modifier.mainAxisSize(itemsSizeDp)
@@ -311,10 +308,7 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
                     if (emit) {
                         subcompose(Unit) {
                                 state = rememberLazyListState()
-                                LazyColumnOrRow(
-                                    Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                                    state,
-                                ) {
+                                LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                                     items(1000) {
                                         Spacer(
                                             Modifier.mainAxisSize(itemsSizeDp)
@@ -349,10 +343,7 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
         val composedItems = mutableListOf<Int>()
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumnOrRow(
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 items(1000) {
                     composedItems.add(it)
                     Spacer(Modifier.mainAxisSize(itemsSizeDp).then(fillParentMaxCrossAxis()))
@@ -433,7 +424,7 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    cacheWindow = cacheWindow
+                    cacheWindow = cacheWindow,
                 )
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f),

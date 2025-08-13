@@ -249,7 +249,16 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
             approachSet.isEmpty() &&
             lookaheadAndAncestorPlaceSet.isEmpty()
 
-    val affectsLookaheadMeasure: Boolean = !lookaheadAndAncestorMeasureSet.isEmpty()
+    val affectsLookaheadMeasure: Boolean
+        get() =
+            // If lookahead measurement has been requested, approach set will add
+            // corresponding nodes as well. Therefore if approachSet is empty, no
+            // lookahead measurement has been requested.
+            approachSet.isNotEmpty() &&
+                // If approachSet is not empty, it may be an approach animation,
+                // check lookaheadAndAncestorMeasureSet to determine if any lookahead
+                // invalidation is needed.
+                lookaheadAndAncestorMeasureSet.isNotEmpty()
 
     fun isNotEmpty(): Boolean = !isEmpty()
 }

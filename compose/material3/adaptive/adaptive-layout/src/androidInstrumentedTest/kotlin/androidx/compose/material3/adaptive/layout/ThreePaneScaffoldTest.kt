@@ -56,7 +56,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Hidden,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
 
@@ -71,7 +71,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Hidden,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
 
@@ -86,7 +86,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
 
@@ -101,7 +101,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
 
@@ -117,7 +117,7 @@ class ThreePaneScaffoldTest {
                 ThreePaneScaffoldValue(
                     PaneAdaptedValue.Expanded,
                     PaneAdaptedValue.Hidden,
-                    PaneAdaptedValue.Hidden
+                    PaneAdaptedValue.Hidden,
                 )
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
@@ -130,7 +130,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
 
         rule.waitForIdle()
@@ -147,7 +147,7 @@ class ThreePaneScaffoldTest {
                 ThreePaneScaffoldValue(
                     PaneAdaptedValue.Expanded,
                     PaneAdaptedValue.Hidden,
-                    PaneAdaptedValue.Expanded
+                    PaneAdaptedValue.Expanded,
                 )
             )
         rule.setContent { SampleThreePaneScaffold(scaffoldValue = testScaffoldValue) }
@@ -160,7 +160,7 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
 
         rule.waitForIdle()
@@ -306,7 +306,7 @@ class ThreePaneScaffoldTest {
                     anchors =
                         listOf(
                             PaneExpansionAnchor.Proportion(0f),
-                            PaneExpansionAnchor.Offset.fromStart(MockPaneExpansionMiddleAnchor)
+                            PaneExpansionAnchor.Offset.fromStart(MockPaneExpansionMiddleAnchor),
                         )
                 )
             mockDraggingPx = with(LocalDensity.current) { 200.dp.toPx() }
@@ -372,7 +372,7 @@ class ThreePaneScaffoldTest {
             scope.launch {
                 mockPaneExpansionState.animateTo(
                     PaneExpansionAnchor.Offset.fromStart(MockPaneExpansionMiddleAnchor),
-                    200F
+                    200F,
                 )
             }
         }
@@ -410,13 +410,13 @@ class ThreePaneScaffoldTest {
             ThreePaneScaffoldValue(
                 primary = PaneAdaptedValue.Expanded,
                 secondary = PaneAdaptedValue.Expanded,
-                tertiary = PaneAdaptedValue.Hidden
+                tertiary = PaneAdaptedValue.Hidden,
             )
         val scaffoldValueSecondaryHidden =
             ThreePaneScaffoldValue(
                 primary = PaneAdaptedValue.Expanded,
                 secondary = PaneAdaptedValue.Hidden,
-                tertiary = PaneAdaptedValue.Hidden
+                tertiary = PaneAdaptedValue.Hidden,
             )
 
         var increment = 0
@@ -432,7 +432,7 @@ class ThreePaneScaffoldTest {
                 secondaryContent = {
                     numberOnSecondaryPane = remember { increment++ }
                     restorableNumberOnSecondaryPane = rememberSaveable { increment++ }
-                }
+                },
             )
         }
 
@@ -480,7 +480,7 @@ private fun SampleThreePaneScaffold(scaffoldValue: ThreePaneScaffoldValue) {
     SampleThreePaneScaffold(
         MockScaffoldDirective,
         scaffoldValue,
-        ListDetailPaneScaffoldDefaults.PaneOrder
+        ListDetailPaneScaffoldDefaults.PaneOrder,
     )
 }
 
@@ -495,7 +495,7 @@ internal fun SampleThreePaneScaffold(
     paneExpansionState: PaneExpansionState = PaneExpansionState(),
     primaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {},
     secondaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {},
-    tertiaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {}
+    tertiaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {},
 ) {
     ThreePaneScaffold(
         modifier = Modifier.fillMaxSize().testTag(ThreePaneScaffoldTestTag),
@@ -508,7 +508,7 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "SecondaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
                 ) {
                     secondaryContent()
                 }
@@ -518,12 +518,12 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "TertiaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
                 ) {
                     tertiaryContent()
                 }
             }
-        }
+        },
     ) {
         AnimatedPane(modifier = Modifier.testTag(tag = "PrimaryPane")) {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {
@@ -549,7 +549,7 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "SecondaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
                 ) {}
             }
         },
@@ -557,10 +557,10 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "TertiaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
                 ) {}
             }
-        }
+        },
     ) {
         AnimatedPane(modifier = Modifier.testTag(tag = "PrimaryPane")) {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {}

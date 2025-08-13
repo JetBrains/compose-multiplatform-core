@@ -43,6 +43,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreNativeTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecomposerTests {
@@ -64,24 +66,24 @@ class RecomposerTests {
             Snapshot.withMutableSnapshot { state = 1 }
             assertNotNull(
                 withTimeoutOrNull(3_000) { recomposer.awaitIdle() },
-                "timed out waiting for recomposer idle for recomposition"
+                "timed out waiting for recomposer idle for recomposition",
             )
             assertEquals(1, lastRecomposedState, "recomposition")
             recomposer.close()
             assertNotNull(
                 withTimeoutOrNull(3_000) { recomposer.join() },
-                "timed out waiting for recomposer.join"
+                "timed out waiting for recomposer.join",
             )
             assertNotNull(
                 withTimeoutOrNull(3_000) { runner.join() },
-                "timed out waiting for recomposer runner job"
+                "timed out waiting for recomposer runner job",
             )
             Snapshot.withMutableSnapshot { state = 2 }
             assertNotNull(
                 withTimeoutOrNull(3_000) {
                     recomposer.currentState.first { it <= Recomposer.State.PendingWork }
                 },
-                "timed out waiting for recomposer to not have active pending work"
+                "timed out waiting for recomposer to not have active pending work",
             )
             assertEquals(1, lastRecomposedState, "expected no recomposition by closed recomposer")
         }
@@ -103,12 +105,12 @@ class RecomposerTests {
             completer.complete()
             assertNotNull(
                 withTimeoutOrNull(5_000) { recomposer.join() },
-                "Expected recomposer join"
+                "Expected recomposer join",
             )
             assertEquals(
                 Recomposer.State.ShutDown,
                 recomposer.currentState.first(),
-                "recomposer state"
+                "recomposer state",
             )
             assertNotNull(withTimeoutOrNull(5_000) { runner.join() }, "Expected runner join")
         }
@@ -117,12 +119,7 @@ class RecomposerTests {
     @Test
     fun testRecomposition() = compositionTest {
         val counter = Counter()
-        val triggers =
-            mapOf(
-                99 to Trigger(),
-                100 to Trigger(),
-                102 to Trigger(),
-            )
+        val triggers = mapOf(99 to Trigger(), 100 to Trigger(), 102 to Trigger())
         compose { RecomposeTestComponentsA(counter, triggers) }
 
         assertEquals(1, counter["A"])
@@ -273,7 +270,7 @@ class RecomposerTests {
         assertEquals(
             "testParent",
             child.recomposeCoroutineContext[CoroutineName]?.name,
-            "child did not inherit parent recomposeCoroutineContext"
+            "child did not inherit parent recomposeCoroutineContext",
         )
     }
 
@@ -335,7 +332,7 @@ class RecomposerTests {
 
                 assertNotNull(
                     withTimeoutOrNull(3_000) { recomposer.awaitIdle() },
-                    "timed out waiting for recomposer idle for recomposition"
+                    "timed out waiting for recomposer idle for recomposition",
                 )
 
                 dispatcher.scheduler.runCurrent()
@@ -348,20 +345,23 @@ class RecomposerTests {
 
                 assertNotNull(
                     withTimeoutOrNull(3_000) { recomposer.awaitIdle() },
-                    "timed out waiting for recomposer idle for recomposition"
+                    "timed out waiting for recomposer idle for recomposition",
                 )
 
                 assertNotNull(
                     withTimeoutOrNull(3_000) { runner.join() },
-                    "timed out waiting for recomposer runner job"
+                    "timed out waiting for recomposer runner job",
                 )
             }
         }
     }
 
-    @Ignore // TODO: Fails on JS https://youtrack.jetbrains.com/issue/CMP-7455
+    // TODO: b/409727145
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-7455
     @Test
-    @IgnoreJsTarget // b/409727145
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
     fun stateChangesDuringApplyChangesAreNotifiedBeforeFrameFinished() = compositionTest {
         val count = mutableStateOf(0)
         val countFromEffect = mutableStateOf(0)
@@ -474,7 +474,7 @@ class RecomposerTests {
                 assertEquals(state, lastStateSeen, "assume composition would have happened")
                 assertTrue(
                     lastNanosSeen > nanosAfterInitialComposition,
-                    "assumed launched effect and first frame would have run by now"
+                    "assumed launched effect and first frame would have run by now",
                 )
 
                 // Pause the frame clock
@@ -498,7 +498,7 @@ class RecomposerTests {
                 dispatcher.scheduler.advanceTimeBy(1_000)
                 assertTrue(
                     lastNanosSeen > nanosAfterPause,
-                    "Expected call to withFrameNanos after resume didn't occur"
+                    "Expected call to withFrameNanos after resume didn't occur",
                 )
                 val nanosAfterResume = lastNanosSeen
 
@@ -508,7 +508,7 @@ class RecomposerTests {
                 assertEquals(state, lastStateSeen, "expected composition didn't occur")
                 assertTrue(
                     lastNanosSeen > nanosAfterResume,
-                    "Expected withFrameNanos in recompose after resume didn't occur"
+                    "Expected withFrameNanos in recompose after resume didn't occur",
                 )
 
                 // Cleanup after the test
@@ -517,12 +517,12 @@ class RecomposerTests {
 
                 assertNotNull(
                     withTimeoutOrNull(3_000) { recomposer.awaitIdle() },
-                    "timed out waiting for recomposer idle for recomposition"
+                    "timed out waiting for recomposer idle for recomposition",
                 )
 
                 assertNotNull(
                     withTimeoutOrNull(3_000) { runner.join() },
-                    "timed out waiting for recomposer runner job"
+                    "timed out waiting for recomposer runner job",
                 )
             }
         }

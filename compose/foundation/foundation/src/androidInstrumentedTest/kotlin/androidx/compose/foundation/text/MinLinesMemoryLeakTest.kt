@@ -46,13 +46,13 @@ class MinLinesMemoryLeakTest(private val numLines: Int) {
                 AndroidReferenceMatchers.instanceFieldLeak(
                     className = "com.android.internal.jank.FrameTracker",
                     fieldName = "mConfig",
-                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283"
+                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283",
                 ),
                 AndroidReferenceMatchers.instanceFieldLeak(
                     className = "com.android.internal.jank.FrameTracker",
                     fieldName = "mListener",
-                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283"
-                )
+                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283",
+                ),
             )
 
         @JvmStatic

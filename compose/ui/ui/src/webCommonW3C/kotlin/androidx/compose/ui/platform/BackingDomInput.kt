@@ -22,19 +22,20 @@ import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.HTMLElement
 
 internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
 
-    fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
+    fun sendKeyboardEvent(keyboardEvent: KeyEvent)
 }
 
-private fun setBackingInputBox(left: Float, top: Float, width: Float, height: Float) { js("""
-    document.documentElement.style.setProperty("--compose-internal-web-backing-input-left", left);
-    document.documentElement.style.setProperty("--compose-internal-web-backing-input-top", top);
-    document.documentElement.style.setProperty("--compose-internal-web-backing-input-width", width);
-    document.documentElement.style.setProperty("--compose-internal-web-backing-input-height", height)
+private fun setBackingInputBox(container: HTMLElement, left: Float, top: Float, width: Float, height: Float) { js("""
+    container.style.setProperty("--compose-internal-web-backing-input-left", left);
+    container.style.setProperty("--compose-internal-web-backing-input-top", top);
+    container.style.setProperty("--compose-internal-web-backing-input-width", width);
+    container.style.setProperty("--compose-internal-web-backing-input-height", height)
 """) }
 
 /**
@@ -43,6 +44,7 @@ private fun setBackingInputBox(left: Float, top: Float, width: Float, height: Fl
  * the virtual keyboard.
  */
 internal class BackingDomInput(
+    val inputContainer: HTMLElement,
     imeOptions: ImeOptions,
     composeCommunicator : ComposeCommandCommunicator,
 ) {
@@ -51,16 +53,11 @@ internal class BackingDomInput(
         composeCommunicator
     )
 
-    private companion object {
-        init {
-            setBackingInputBox(0f, 0f, 0f, 0f)
-        }
-    }
-
-    private val backingElement = inputStrategy.htmlInput
+    internal val backingElement = inputStrategy.htmlInput
 
     fun register() {
-        document.body?.appendChild(backingElement)
+        setBackingInputBox(container = inputContainer, 0f, 0f, 0f, 0f)
+        inputContainer.appendChild(backingElement)
     }
 
     fun focus() {
@@ -80,7 +77,12 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputBox(left: Float, top: Float, width: Float, height: Float) {
-        setBackingInputBox(left, top, width, height)
+        // we coerce the width to at least 1px, to mitigate the typing lags in mobile Safari:
+        // https://youtrack.jetbrains.com/issue/CMP-8373/Web-Mobile.-TextField.-Typing-input-delay
+        // Apparently when the width is 0px and the selection index is large enough (big text length),
+        // the lags become more noticeable.
+        // I assume it has something to do with text layout. Read more in the comments of the linked issue.
+        setBackingInputBox(container = inputContainer, left, top, width.coerceAtLeast(1f), height)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {

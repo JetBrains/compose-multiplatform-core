@@ -33,9 +33,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformInsetsConfig
+import androidx.compose.ui.platform.exclude
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
@@ -80,30 +81,6 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     actual constructor(
         dismissOnBackPress: Boolean,
         dismissOnClickOutside: Boolean,
-        usePlatformDefaultWidth: Boolean,
-    ) : this(
-        dismissOnBackPress = dismissOnBackPress,
-        dismissOnClickOutside = dismissOnClickOutside,
-        usePlatformDefaultWidth = usePlatformDefaultWidth,
-        usePlatformInsets = true,
-        useSoftwareKeyboardInset = true,
-        scrimColor = DefaultScrimColor,
-    )
-
-    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    constructor(
-        dismissOnBackPress: Boolean,
-        dismissOnClickOutside: Boolean,
-
-        /*
-         * Temporary hack to skip unsupported arguments from Android source set.
-         * Should be removed after upstreaming changes from JetBrains' fork.
-         *
-         * After skip this unsupported argument, you must name all subsequent arguments.
-         */
-        @Suppress("FORBIDDEN_VARARG_PARAMETER_TYPE")
-        vararg unsupported: Nothing,
-
         usePlatformDefaultWidth: Boolean,
     ) : this(
         dismissOnBackPress = dismissOnBackPress,
@@ -208,9 +185,10 @@ private fun DialogLayout(
             containerSize = containerSize,
             platformInsets = platformInsets
         )
-        PlatformInsetsConfig.excludeInsets(
+
+        LocalPlatformWindowInsets.current.exclude(
             safeInsets = properties.usePlatformInsets,
-            ime = properties.useSoftwareKeyboardInset,
+            ime = properties.useSoftwareKeyboardInset
         ) {
             Layout(
                 content = currentContent,
@@ -224,15 +202,17 @@ private fun DialogLayout(
 private val DialogProperties.platformInsets: PlatformInsets
     @Composable get() {
         val safeInsets = if (usePlatformInsets) {
-            PlatformInsetsConfig.safeInsets
+            LocalPlatformWindowInsets.current.systemBars
         } else {
             PlatformInsets.Zero
         }
+
         val ime = if (useSoftwareKeyboardInset) {
-            PlatformInsetsConfig.ime
+            LocalPlatformWindowInsets.current.ime
         } else {
             PlatformInsets.Zero
         }
+
         return safeInsets.union(ime)
     }
 

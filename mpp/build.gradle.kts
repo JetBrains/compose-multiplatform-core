@@ -20,9 +20,6 @@ open class ComposePublishingTask : AbstractComposePublishingTask() {
     }
 }
 
-// TODO: Align with other modules
-val viewModelPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE
-
 val libraryToComponents = mapOf(
     "COMPOSE" to listOf(
         // TODO https://youtrack.jetbrains.com/issue/CMP-1604/Publish-public-collection-annotation-libraries-with-a-separate-version
@@ -36,14 +33,9 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:foundation:foundation"),
         ComposeComponent(":compose:foundation:foundation-layout"),
         ComposeComponent(":compose:material:material"),
-        ComposeComponent(":compose:material3:material3"),
         //ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
-        ComposeComponent(":compose:material3:material3-window-size-class"),
-        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
-        // TODO: It's published for all platforms by Google, so we don't need to re-publish it
-        ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),
         ComposeComponent(":compose:ui:ui-geometry"),
@@ -77,8 +69,10 @@ val libraryToComponents = mapOf(
     "COMPOSE_MATERIAL_NAVIGATION" to listOf(
         ComposeComponent(":compose:material:material-navigation"),
     ),
-    "COMPOSE_MATERIAL3_COMMON" to listOf(
-        ComposeComponent(":compose:material3:material3-common"),
+    "COMPOSE_MATERIAL3" to listOf(
+        ComposeComponent(":compose:material3:material3"),
+        ComposeComponent(":compose:material3:material3-window-size-class"),
+        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
     ),
     "COMPOSE_MATERIAL3_ADAPTIVE" to listOf(
         ComposeComponent(":compose:material3:adaptive:adaptive"),
@@ -104,26 +98,23 @@ val libraryToComponents = mapOf(
         ),
         ComposeComponent(
             path = ":lifecycle:lifecycle-viewmodel",
-            supportedPlatforms = viewModelPlatforms
+            supportedPlatforms = ComposePlatforms.ALL_AOSP
         ),
-        ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", viewModelPlatforms),
+        ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
         ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":lifecycle:lifecycle-viewmodel-compose"),
     ),
     "NAVIGATION" to listOf(
         ComposeComponent(":navigation:navigation-compose"),
-        ComposeComponent(":navigation:navigation-common", viewModelPlatforms),
-        ComposeComponent(":navigation:navigation-runtime", viewModelPlatforms),
-    ),
-    "PERFORMANCE" to listOf(
-        ComposeComponent(":performance:performance-annotation", viewModelPlatforms),
+        ComposeComponent(":navigation:navigation-common", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
+        ComposeComponent(":navigation:navigation-runtime", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
     ),
     "SAVEDSTATE" to listOf(
         ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
         ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
     ),
     "WINDOW" to listOf(
-        ComposeComponent(":window:window-core", viewModelPlatforms),
+        ComposeComponent(":window:window-core", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
     ),
 )
 
@@ -313,8 +304,10 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
         .filterComposePlatforms(klibPlatforms)
 }
 
-fun allTasksWith(name: String) =
-    rootProject.subprojects.flatMap { it.tasks.filter { it.name == name } }
+fun allTasksWith(name: String): List<Task> =
+    rootProject.subprojects.mapNotNull { project ->
+        project.tasks.findByName(name)
+    }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle
 // or just ./gradlew printAllArtifactRedirectionVersions

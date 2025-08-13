@@ -79,12 +79,7 @@ private class OnVisibilityChangedElement(
     val callback: (Boolean) -> Unit,
 ) : ModifierNodeElement<OnVisibilityChangedNode>() {
     override fun create() =
-        OnVisibilityChangedNode(
-            minDurationMs,
-            minFractionVisible,
-            viewportBounds,
-            callback,
-        )
+        OnVisibilityChangedNode(minDurationMs, minFractionVisible, viewportBounds, callback)
 
     override fun update(node: OnVisibilityChangedNode) {
         node.minDurationMs = minDurationMs
@@ -157,7 +152,7 @@ internal class OnVisibilityChangedNode(
     fun checkVisibility(
         minFractionVisible: Float,
         bounds: RelativeLayoutBounds,
-        viewport: RelativeLayoutBounds?
+        viewport: RelativeLayoutBounds?,
     ) {
         lastBounds = bounds
         if (viewport == null && viewportBounds != null) {

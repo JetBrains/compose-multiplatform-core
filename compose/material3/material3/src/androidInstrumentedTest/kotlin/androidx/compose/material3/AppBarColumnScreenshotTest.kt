@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -44,7 +43,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class AppBarColumnScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -94,7 +93,7 @@ class AppBarColumnScreenshotTest {
             listOf(
                 AppBarItem(label = "Favorite", icon = Icons.Filled.Favorite, onClick = {}),
                 AppBarItem(label = "Add", icon = Icons.Filled.Add, onClick = {}),
-                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {})
+                AppBarItem(label = "Edit", icon = Icons.Filled.Edit, onClick = {}),
             )
 
         AppBarColumn(
@@ -108,14 +107,14 @@ class AppBarColumnScreenshotTest {
                         } else {
                             menuState.show()
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Menu,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
-            }
+            },
         ) {
             repeat(itemCount) { index ->
                 val item = appBarItems[index % 3]
@@ -125,7 +124,7 @@ class AppBarColumnScreenshotTest {
                         Icon(imageVector = item.icon, contentDescription = "Localized description")
                     },
                     enabled = true,
-                    label = item.label
+                    label = item.label,
                 )
             }
         }

@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 internal class TextFieldSelectionGesturesLtrTest :
     TextField1SelectionGesturesTest(
         initialText = "line1\nline2 text1 text2\nline3",
-        layoutDirection = LayoutDirection.Ltr
+        layoutDirection = LayoutDirection.Ltr,
     ) {
     override val word = "hello"
 

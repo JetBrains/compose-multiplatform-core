@@ -46,6 +46,6 @@ val AllDemosCategory =
             PagingFoundationDemos,
             TextDemos,
             AccessibilityDemos,
-            PerformanceDemos
-        )
+            PerformanceDemos,
+        ),
     )

@@ -22,12 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
-import androidx.compose.ui.assertThat
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
@@ -603,14 +601,6 @@ class OwnerLayerTest {
             graphicsLayer = graphicsContext!!.createGraphicsLayer(),
             context = graphicsContext,
             layerManager = object : OwnedLayerManager {
-                override fun createLayer(
-                    drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-                    invalidateParentLayer: () -> Unit,
-                    explicitLayer: GraphicsLayer?
-                ): OwnedLayer = throw NotImplementedError()
-                override fun recycle(layer: OwnedLayer) = false
-                override fun notifyLayerIsDirty(layer: OwnedLayer, isDirty: Boolean) = Unit
-
                 override fun invalidate() {
                     invalidateBlock()
                 }

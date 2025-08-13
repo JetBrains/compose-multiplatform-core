@@ -182,7 +182,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberedObject.all { it.isLive }
@@ -272,7 +272,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberObservers.all { it.isLive }
@@ -325,7 +325,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -381,7 +381,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -1837,7 +1837,7 @@ private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
 private fun Text(text: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Text" } },
-        update = { set(text) { attributes["text"] = it } }
+        update = { set(text) { attributes["text"] = it } },
     )
 }
 
@@ -1859,7 +1859,7 @@ private fun MockViewValidator.Marker() {
 private fun Marker(value: Int) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Marker" } },
-        update = { set(value) { attributes["value"] = it } }
+        update = { set(value) { attributes["value"] = it } },
     )
 }
 

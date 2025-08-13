@@ -29,7 +29,7 @@ class AnimationCoreIssueRegistry : IssueRegistry() {
         get() =
             listOf(
                 TransitionDetector.UnusedTransitionTargetStateParameter,
-                ArcAnimationSpecTypeDetector.ArcAnimationSpecTypeIssue
+                ArcAnimationSpecTypeDetector.ArcAnimationSpecTypeIssue,
             )
 
     // Now handled by RememberInComposition
@@ -39,6 +39,6 @@ class AnimationCoreIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.animation.core",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

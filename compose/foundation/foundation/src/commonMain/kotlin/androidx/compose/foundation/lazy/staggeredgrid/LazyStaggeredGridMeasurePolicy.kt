@@ -46,7 +46,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
     crossAxisSpacing: Dp,
     coroutineScope: CoroutineScope,
     slots: LazyGridStaggeredGridSlotsProvider,
-    graphicsContext: GraphicsContext
+    graphicsContext: GraphicsContext,
 ): LazyLayoutMeasurePolicy =
     remember(
         state,
@@ -57,7 +57,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
         mainAxisSpacing,
         crossAxisSpacing,
         slots,
-        graphicsContext
+        graphicsContext,
     ) {
         LazyLayoutMeasurePolicy { constraints ->
             state.measurementScopeInvalidator.attachToScope()
@@ -100,7 +100,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
             val pinnedItems =
                 itemProvider.calculateLazyLayoutPinnedIndices(
                     state.pinnedItems,
-                    state.beyondBoundsInfo
+                    state.beyondBoundsInfo,
                 )
 
             // todo: wrap with snapshot when b/341782245 is resolved
@@ -113,7 +113,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
                     constraints =
                         constraints.copy(
                             minWidth = constraints.constrainWidth(horizontalPadding),
-                            minHeight = constraints.constrainHeight(verticalPadding)
+                            minHeight = constraints.constrainHeight(verticalPadding),
                         ),
                     mainAxisSpacing = mainAxisSpacing.roundToPx(),
                     contentOffset = contentOffset,
@@ -126,7 +126,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
                     isInLookaheadScope = isInLookaheadScope,
                     isLookingAhead = isLookingAhead,
                     approachLayoutInfo = state.approachLayoutInfo,
-                    graphicsContext = graphicsContext
+                    graphicsContext = graphicsContext,
                 )
             state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
             measureResult
@@ -135,7 +135,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
 
 private fun PaddingValues.startPadding(
     orientation: Orientation,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
 ): Dp =
     when (orientation) {
         Orientation.Vertical -> calculateStartPadding(layoutDirection)
@@ -145,7 +145,7 @@ private fun PaddingValues.startPadding(
 private fun PaddingValues.beforePadding(
     orientation: Orientation,
     reverseLayout: Boolean,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
 ): Dp =
     when (orientation) {
         Orientation.Vertical ->
@@ -161,7 +161,7 @@ private fun PaddingValues.beforePadding(
 private fun PaddingValues.afterPadding(
     orientation: Orientation,
     reverseLayout: Boolean,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
 ): Dp =
     when (orientation) {
         Orientation.Vertical ->

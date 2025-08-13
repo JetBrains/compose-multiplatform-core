@@ -90,12 +90,12 @@ class AppBarRowTest {
                 overflowIndicator = {
                     IconButton(
                         onClick = { menuState = true },
-                        modifier = Modifier.testTag("overflowButton")
+                        modifier = Modifier.testTag("overflowButton"),
                     ) {
                         // Icon(null, null) // Replace with your overflow icon
                     }
                 },
-                modifier = Modifier.testTag("appBarRow")
+                modifier = Modifier.testTag("appBarRow"),
             ) {
                 // Add many items to force overflow
                 repeat(10) {
@@ -117,12 +117,12 @@ class AppBarRowTest {
                 overflowIndicator = {
                     IconButton(
                         onClick = { it.show() },
-                        modifier = Modifier.testTag("overflowButton")
+                        modifier = Modifier.testTag("overflowButton"),
                     ) {
                         // Icon(null, null) // Replace with your overflow icon
                     }
                 },
-                modifier = Modifier.testTag("appBarRow")
+                modifier = Modifier.testTag("appBarRow"),
             ) {
                 // Add many items to force overflow
                 repeat(10) { clickableItem(onClick = {}, icon = {}, label = "Item $it") }
@@ -142,7 +142,7 @@ class AppBarRowTest {
                 clickableItem(
                     onClick = { clicked = true },
                     icon = { Text("Clickable") },
-                    label = "Clickable Item"
+                    label = "Clickable Item",
                 )
             }
         }
@@ -160,7 +160,7 @@ class AppBarRowTest {
                     checked = checkedState,
                     onCheckedChange = { checkedState = it },
                     icon = { Text("Toggleable") },
-                    label = "Toggleable Item"
+                    label = "Toggleable Item",
                 )
             }
         }
@@ -183,17 +183,17 @@ class AppBarRowTest {
                     overflowIndicator = {
                         IconButton(
                             onClick = { it.show() },
-                            modifier = Modifier.testTag("overflowButton")
+                            modifier = Modifier.testTag("overflowButton"),
                         ) {
                             Text("O")
                         }
-                    }
+                    },
                 ) {
                     repeat(5) {
                         clickableItem(
                             onClick = {},
                             icon = { Text(text = "Item $it", softWrap = false, maxLines = 1) },
-                            label = "Item $it"
+                            label = "Item $it",
                         )
                     }
                 }

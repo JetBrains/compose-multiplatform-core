@@ -125,13 +125,13 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
                             ColorIndicationNodeFactory(Color.Blue)
                         } else {
                             ColorIndicationNodeFactory(Color.Red)
-                        }
+                        },
                     )
                 },
                 *modifier("draggable") {
                     Modifier.draggable(
                         draggableState,
-                        if (it) Orientation.Vertical else Orientation.Horizontal
+                        if (it) Orientation.Vertical else Orientation.Horizontal,
                     )
                 },
                 *modifier("draggable2D") { Modifier.draggable2D(draggable2DState) },
@@ -139,7 +139,7 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
                 *modifier("scrollable") {
                     Modifier.scrollable(
                         scrollableState,
-                        if (it) Orientation.Vertical else Orientation.Horizontal
+                        if (it) Orientation.Vertical else Orientation.Horizontal,
                     )
                 },
                 *modifier("scrollable2D") {
@@ -154,15 +154,15 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
                     Modifier.border(
                         if (it) 4.dp else 2.dp,
                         if (it) Color.Black else Color.Blue,
-                        CircleShape
+                        CircleShape,
                     )
                 },
                 *modifier("graphicsLayer") {
                     Modifier.graphicsLayer(
                         translationX = if (it) 1f else 2f,
-                        shape = if (it) RectangleShape else CircleShape
+                        shape = if (it) RectangleShape else CircleShape,
                     )
-                }
+                },
             )
 
         private val focusRequester = FocusRequester()
@@ -200,7 +200,7 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
             object : DraggableState {
                 override suspend fun drag(
                     dragPriority: MutatePriority,
-                    block: suspend DragScope.() -> Unit
+                    block: suspend DragScope.() -> Unit,
                 ) {}
 
                 override fun dispatchRawDelta(delta: Float) {}
@@ -209,7 +209,7 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
             object : Draggable2DState {
                 override suspend fun drag(
                     dragPriority: MutatePriority,
-                    block: suspend Drag2DScope.() -> Unit
+                    block: suspend Drag2DScope.() -> Unit,
                 ) {}
 
                 override fun dispatchRawDelta(delta: Offset) {}
@@ -220,13 +220,13 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
         fun modifier(
             name: String,
             allCounts: Boolean = false,
-            modifierFn: (Boolean) -> Modifier
+            modifierFn: (Boolean) -> Modifier,
         ): Array<Array<Any>> {
             return if (allCounts) {
                 arrayOf(
                     arrayOf(name, 1, modifierFn),
                     arrayOf(name, 10, modifierFn),
-                    arrayOf(name, 100, modifierFn)
+                    arrayOf(name, 100, modifierFn),
                 )
             } else {
                 arrayOf(arrayOf(name, 10, modifierFn))

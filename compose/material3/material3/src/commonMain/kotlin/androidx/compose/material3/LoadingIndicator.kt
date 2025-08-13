@@ -97,7 +97,7 @@ fun LoadingIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = LoadingIndicatorDefaults.indicatorColor,
-    polygons: List<RoundedPolygon> = LoadingIndicatorDefaults.DeterminateIndicatorPolygons
+    polygons: List<RoundedPolygon> = LoadingIndicatorDefaults.DeterminateIndicatorPolygons,
 ) =
     LoadingIndicatorImpl(
         progress = progress,
@@ -180,7 +180,7 @@ fun ContainedLoadingIndicator(
     containerColor: Color = LoadingIndicatorDefaults.containedContainerColor,
     indicatorColor: Color = LoadingIndicatorDefaults.containedIndicatorColor,
     containerShape: Shape = LoadingIndicatorDefaults.containerShape,
-    polygons: List<RoundedPolygon> = LoadingIndicatorDefaults.DeterminateIndicatorPolygons
+    polygons: List<RoundedPolygon> = LoadingIndicatorDefaults.DeterminateIndicatorPolygons,
 ) =
     LoadingIndicatorImpl(
         progress = progress,
@@ -254,7 +254,7 @@ private fun LoadingIndicatorImpl(
     containerColor: Color,
     indicatorColor: Color,
     containerShape: Shape,
-    indicatorPolygons: List<RoundedPolygon>
+    indicatorPolygons: List<RoundedPolygon>,
 ) {
     require(indicatorPolygons.size > 1) {
         "indicatorPolygons should have, at least, two RoundedPolygons"
@@ -283,17 +283,17 @@ private fun LoadingIndicatorImpl(
                     progressBarRangeInfo =
                         ProgressBarRangeInfo(
                             coercedProgress().takeUnless { it.isNaN() } ?: 0f,
-                            0f..1f
+                            0f..1f,
                         )
                 }
                 .size(
                     width = LoadingIndicatorDefaults.ContainerWidth,
-                    height = LoadingIndicatorDefaults.ContainerHeight
+                    height = LoadingIndicatorDefaults.ContainerHeight,
                 )
                 .fillMaxSize()
                 .clip(containerShape)
                 .background(containerColor),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         // Using a Spacer to render the indicator's shapes. Maintains a square aspect ratio (1:1)
         // to prevent shape distortion during rendering.
@@ -328,14 +328,14 @@ private fun LoadingIndicatorImpl(
                                                 // Use the adjusted progress.
                                                 progress = adjustedProgressValue,
                                                 path = path,
-                                                startAngle = 0
+                                                startAngle = 0,
                                             ),
                                         size = size,
                                         scaleFactor = morphScaleFactor,
-                                        scaleMatrix = scaleMatrix
+                                        scaleMatrix = scaleMatrix,
                                     ),
                                 color = indicatorColor,
-                                style = Fill
+                                style = Fill,
                             )
                         }
                     }
@@ -361,7 +361,7 @@ private fun LoadingIndicatorImpl(
     containerColor: Color,
     indicatorColor: Color,
     containerShape: Shape,
-    indicatorPolygons: List<RoundedPolygon>
+    indicatorPolygons: List<RoundedPolygon>,
 ) {
     require(indicatorPolygons.size > 1) {
         "indicatorPolygons should have, at least, two RoundedPolygons"
@@ -398,7 +398,7 @@ private fun LoadingIndicatorImpl(
                         val animationResult =
                             morphProgress.animateTo(
                                 targetValue = 1f,
-                                animationSpec = morphAnimationSpec
+                                animationSpec = morphAnimationSpec,
                             )
                         if (animationResult.endReason == AnimationEndReason.Finished) {
                             currentMorphIndex = (currentMorphIndex + 1) % morphSequence.size
@@ -420,8 +420,8 @@ private fun LoadingIndicatorImpl(
                     animationSpec =
                         infiniteRepeatable(
                             tween(GlobalRotationDurationMillis, easing = LinearEasing),
-                            repeatMode = RepeatMode.Restart
-                        )
+                            repeatMode = RepeatMode.Restart,
+                        ),
                 )
             }
         }
@@ -449,12 +449,12 @@ private fun LoadingIndicatorImpl(
                 .progressSemantics()
                 .size(
                     width = LoadingIndicatorDefaults.ContainerWidth,
-                    height = LoadingIndicatorDefaults.ContainerHeight
+                    height = LoadingIndicatorDefaults.ContainerHeight,
                 )
                 .fillMaxSize()
                 .clip(containerShape)
                 .background(containerColor),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Spacer(
             modifier =
@@ -472,14 +472,14 @@ private fun LoadingIndicatorImpl(
                                             // to simulate some bounciness instead.
                                             progress = progress,
                                             path = path,
-                                            startAngle = 0
+                                            startAngle = 0,
                                         ),
                                     size = size,
                                     scaleFactor = shapesScaleFactor,
-                                    scaleMatrix = scaleMatrix
+                                    scaleMatrix = scaleMatrix,
                                 ),
                             color = indicatorColor,
-                            style = Fill
+                            style = Fill,
                         )
                     }
                 }
@@ -537,7 +537,7 @@ object LoadingIndicatorDefaults {
             MaterialShapes.Pill,
             MaterialShapes.Sunny,
             MaterialShapes.Cookie4Sided,
-            MaterialShapes.Oval
+            MaterialShapes.Oval,
         )
 
     /**
@@ -553,7 +553,7 @@ object LoadingIndicatorDefaults {
             // Rotating the circle gets us a smoother morphing to the soft-burst shapes, which is
             // also being rotated at the same angle.
             MaterialShapes.Circle.transformed(Matrix().apply { rotateZ(360f / 20) }),
-            MaterialShapes.SoftBurst
+            MaterialShapes.SoftBurst,
         )
 
     /**

@@ -90,7 +90,7 @@ fun Scaffold(
     containerColor: Color = MaterialTheme.colorScheme.background,
     contentColor: Color = contentColorFor(containerColor),
     contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     val safeInsets = remember(contentWindowInsets) { MutableWindowInsets(contentWindowInsets) }
     Surface(
@@ -100,7 +100,7 @@ fun Scaffold(
                 safeInsets.insets = contentWindowInsets.exclude(consumedWindowInsets)
             },
         color = containerColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         ScaffoldLayout(
             fabPosition = floatingActionButtonPosition,
@@ -109,7 +109,7 @@ fun Scaffold(
             content = content,
             snackbar = snackbarHost,
             contentWindowInsets = safeInsets,
-            fab = floatingActionButton
+            fab = floatingActionButton,
         )
     }
 }
@@ -134,7 +134,7 @@ private fun ScaffoldLayout(
     snackbar: @Composable () -> Unit,
     fab: @Composable () -> Unit,
     contentWindowInsets: WindowInsets,
-    bottomBar: @Composable () -> Unit
+    bottomBar: @Composable () -> Unit,
 ) {
     // Create the backing value for the content padding
     // These values will be updated during measurement, but before subcomposing the body content
@@ -267,7 +267,7 @@ private fun ScaffoldLayout(
                         bottomBarPlaceable.height.toDp()
                     },
                 start = insets.calculateStartPadding(layoutDirection),
-                end = insets.calculateEndPadding(layoutDirection)
+                end = insets.calculateEndPadding(layoutDirection),
             )
 
         val bodyContentPlaceable =
@@ -359,5 +359,5 @@ private enum class ScaffoldLayoutContent {
     MainContent,
     Snackbar,
     Fab,
-    BottomBar
+    BottomBar,
 }

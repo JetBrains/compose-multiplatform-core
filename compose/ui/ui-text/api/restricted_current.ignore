@@ -1,21 +1,213 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.ui.text.TextRange#getCollapsed():
-    Removed method androidx.compose.ui.text.TextRange.getCollapsed()
-RemovedMethod: androidx.compose.ui.text.TextRange#getEnd():
-    Removed method androidx.compose.ui.text.TextRange.getEnd()
-RemovedMethod: androidx.compose.ui.text.TextRange#getLength():
-    Removed method androidx.compose.ui.text.TextRange.getLength()
-RemovedMethod: androidx.compose.ui.text.TextRange#getMax():
-    Removed method androidx.compose.ui.text.TextRange.getMax()
-RemovedMethod: androidx.compose.ui.text.TextRange#getMin():
-    Removed method androidx.compose.ui.text.TextRange.getMin()
-RemovedMethod: androidx.compose.ui.text.TextRange#getReversed():
-    Removed method androidx.compose.ui.text.TextRange.getReversed()
-RemovedMethod: androidx.compose.ui.text.TextRange#getStart():
-    Removed method androidx.compose.ui.text.TextRange.getStart()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrategy():
-    Removed method androidx.compose.ui.text.style.LineBreak.getStrategy()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrictness():
-    Removed method androidx.compose.ui.text.style.LineBreak.getStrictness()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getWordBreak():
-    Removed method androidx.compose.ui.text.style.LineBreak.getWordBreak()
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#fillBoundingBoxes-8ffj60Q(long, float[], int):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.fillBoundingBoxes-8ffj60Q(long,float[],int)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#getOffsetForPosition-k-4lQ0M(long):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.getOffsetForPosition-k-4lQ0M(long)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#getRangeForRect-8-6BmAI(androidx.compose.ui.geometry.Rect, int, androidx.compose.ui.text.TextInclusionStrategy):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.getRangeForRect-8-6BmAI(androidx.compose.ui.geometry.Rect,int,androidx.compose.ui.text.TextInclusionStrategy)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#getWordBoundary--jx7JFs(int):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.getWordBoundary--jx7JFs(int)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#paint-LG529CI(androidx.compose.ui.graphics.Canvas, long, androidx.compose.ui.graphics.Shadow, androidx.compose.ui.text.style.TextDecoration, androidx.compose.ui.graphics.drawscope.DrawStyle, int):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.paint-LG529CI(androidx.compose.ui.graphics.Canvas,long,androidx.compose.ui.graphics.Shadow,androidx.compose.ui.text.style.TextDecoration,androidx.compose.ui.graphics.drawscope.DrawStyle,int)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#paint-RPmYEkk(androidx.compose.ui.graphics.Canvas, long, androidx.compose.ui.graphics.Shadow, androidx.compose.ui.text.style.TextDecoration):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.paint-RPmYEkk(androidx.compose.ui.graphics.Canvas,long,androidx.compose.ui.graphics.Shadow,androidx.compose.ui.text.style.TextDecoration)
+AddedAbstractMethod: androidx.compose.ui.text.Paragraph#paint-hn5TExg(androidx.compose.ui.graphics.Canvas, androidx.compose.ui.graphics.Brush, float, androidx.compose.ui.graphics.Shadow, androidx.compose.ui.text.style.TextDecoration, androidx.compose.ui.graphics.drawscope.DrawStyle, int):
+    Binary breaking change: Added method androidx.compose.ui.text.Paragraph.paint-hn5TExg(androidx.compose.ui.graphics.Canvas,androidx.compose.ui.graphics.Brush,float,androidx.compose.ui.graphics.Shadow,androidx.compose.ui.text.style.TextDecoration,androidx.compose.ui.graphics.drawscope.DrawStyle,int)
+AddedAbstractMethod: androidx.compose.ui.text.font.Font#getStyle-_-LCdwA():
+    Binary breaking change: Added method androidx.compose.ui.text.font.Font.getStyle-_-LCdwA()
+AddedAbstractMethod: androidx.compose.ui.text.font.FontFamily.Resolver#resolve-DPcqOEQ(androidx.compose.ui.text.font.FontFamily, androidx.compose.ui.text.font.FontWeight, int, int):
+    Binary breaking change: Added method androidx.compose.ui.text.font.FontFamily.Resolver.resolve-DPcqOEQ(androidx.compose.ui.text.font.FontFamily,androidx.compose.ui.text.font.FontWeight,int,int)
+AddedAbstractMethod: androidx.compose.ui.text.input.InputEventCallback#onImeAction-KlQnJC8(int):
+    Binary breaking change: Added method androidx.compose.ui.text.input.InputEventCallback.onImeAction-KlQnJC8(int)
+
+
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#get(int):
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.get has changed return type from E (extends java.lang.Object) to androidx.compose.ui.text.font.Font
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#iterator():
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.iterator has changed return type from java.util.Iterator<E> to java.util.Iterator<androidx.compose.ui.text.font.Font>
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#listIterator():
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.listIterator has changed return type from java.util.ListIterator<E> to java.util.ListIterator<androidx.compose.ui.text.font.Font>
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#listIterator(int):
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.listIterator has changed return type from java.util.ListIterator<E> to java.util.ListIterator<androidx.compose.ui.text.font.Font>
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#remove(int):
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.remove has changed return type from E (extends java.lang.Object) to androidx.compose.ui.text.font.Font
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#removeFirst():
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.removeFirst has changed return type from E (extends java.lang.Object) to androidx.compose.ui.text.font.Font
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#removeLast():
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.removeLast has changed return type from E (extends java.lang.Object) to androidx.compose.ui.text.font.Font
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#set(int, androidx.compose.ui.text.font.Font):
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.set has changed return type from E (extends java.lang.Object) to androidx.compose.ui.text.font.Font
+ChangedType: androidx.compose.ui.text.font.FontListFontFamily#subList(int, int):
+    Binary breaking change: Method androidx.compose.ui.text.font.FontListFontFamily.subList has changed return type from java.util.List<E> to java.util.List<androidx.compose.ui.text.font.Font>
+
+
+RemovedFromJava: androidx.compose.ui.text.AnnotatedString#charAt(int):
+    Source breaking change: method androidx.compose.ui.text.AnnotatedString.charAt(int) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.AnnotatedString#length():
+    Source breaking change: method androidx.compose.ui.text.AnnotatedString.length() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#add(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.add(androidx.compose.ui.text.font.Font) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#add(int, E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.add(int,androidx.compose.ui.text.font.Font) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#addAll(int, java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addAll(int,java.util.Collection<? extends androidx.compose.ui.text.font.Font>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#addAll(java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addAll(java.util.Collection<? extends androidx.compose.ui.text.font.Font>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#addFirst(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addFirst(androidx.compose.ui.text.font.Font) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#addLast(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addLast(androidx.compose.ui.text.font.Font) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#clear():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.clear() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#contains(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.contains(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#containsAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.containsAll(java.util.Collection<?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#get(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.get(int) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#indexOf(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.indexOf(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#isEmpty():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.isEmpty() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#iterator():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.iterator() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#lastIndexOf(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.lastIndexOf(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#listIterator():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.listIterator() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#listIterator(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.listIterator(int) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#remove(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.remove(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#remove(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.remove(int) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#removeAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeAll(java.util.Collection<?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#removeFirst():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeFirst() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#removeLast():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeLast() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#replaceAll(java.util.function.UnaryOperator<E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.replaceAll(java.util.function.UnaryOperator<androidx.compose.ui.text.font.Font>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#retainAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.retainAll(java.util.Collection<?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#set(int, E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.set(int,androidx.compose.ui.text.font.Font) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#size():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.size() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#sort(java.util.Comparator<? super E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.sort(java.util.Comparator<? super androidx.compose.ui.text.font.Font>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#subList(int, int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.subList(int,int) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#toArray():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.toArray() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.font.FontListFontFamily#toArray(T[]):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.toArray(T[]) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#add(E):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.add(androidx.compose.ui.text.intl.Locale) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#addAll(java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.addAll(java.util.Collection<? extends androidx.compose.ui.text.intl.Locale>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#clear():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.clear() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#contains(Object):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.contains(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#remove(Object):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.remove(Object) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#removeAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.removeAll(java.util.Collection<?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#removeIf(java.util.function.Predicate<? super E>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.removeIf(java.util.function.Predicate<? super androidx.compose.ui.text.intl.Locale>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#retainAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.retainAll(java.util.Collection<?>) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#size():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.size() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#toArray():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.toArray() can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.ui.text.intl.LocaleList#toArray(T[]):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.toArray(T[]) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.compose.ui.text.AnnotatedString#charAt(int):
+    Source breaking change: method androidx.compose.ui.text.AnnotatedString.charAt(int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.AnnotatedString#length():
+    Source breaking change: method androidx.compose.ui.text.AnnotatedString.length() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#add(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.add(androidx.compose.ui.text.font.Font) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#add(int, E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.add(int,androidx.compose.ui.text.font.Font) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#addAll(int, java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addAll(int,java.util.Collection<? extends androidx.compose.ui.text.font.Font>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#addAll(java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addAll(java.util.Collection<? extends androidx.compose.ui.text.font.Font>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#addFirst(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addFirst(androidx.compose.ui.text.font.Font) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#addLast(E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.addLast(androidx.compose.ui.text.font.Font) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#clear():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.clear() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#contains(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.contains(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#containsAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.containsAll(java.util.Collection<?>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#get(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.get(int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#indexOf(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.indexOf(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#isEmpty():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.isEmpty() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#iterator():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.iterator() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#lastIndexOf(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.lastIndexOf(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#listIterator():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.listIterator() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#listIterator(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.listIterator(int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#remove(Object):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.remove(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#remove(int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.remove(int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#removeAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeAll(java.util.Collection<?>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#removeFirst():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeFirst() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#removeLast():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.removeLast() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#replaceAll(java.util.function.UnaryOperator<E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.replaceAll(java.util.function.UnaryOperator<androidx.compose.ui.text.font.Font>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#retainAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.retainAll(java.util.Collection<?>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#set(int, E):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.set(int,androidx.compose.ui.text.font.Font) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#size():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.size() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#sort(java.util.Comparator<? super E>):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.sort(java.util.Comparator<? super androidx.compose.ui.text.font.Font>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#subList(int, int):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.subList(int,int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#toArray():
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.toArray() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.font.FontListFontFamily#toArray(T[]):
+    Source breaking change: method androidx.compose.ui.text.font.FontListFontFamily.toArray(T[]) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#add(E):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.add(androidx.compose.ui.text.intl.Locale) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#addAll(java.util.Collection<? extends E>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.addAll(java.util.Collection<? extends androidx.compose.ui.text.intl.Locale>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#clear():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.clear() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#contains(Object):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.contains(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#remove(Object):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.remove(Object) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#removeAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.removeAll(java.util.Collection<?>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#removeIf(java.util.function.Predicate<? super E>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.removeIf(java.util.function.Predicate<? super androidx.compose.ui.text.intl.Locale>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#retainAll(java.util.Collection<?>):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.retainAll(java.util.Collection<?>) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#size():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.size() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#toArray():
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.toArray() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.ui.text.intl.LocaleList#toArray(T[]):
+    Source breaking change: method androidx.compose.ui.text.intl.LocaleList.toArray(T[]) can no longer be resolved from Kotlin source

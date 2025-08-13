@@ -49,13 +49,13 @@ fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     currentDestination: ThreePaneScaffoldDestinationItem<*>?,
-    maxVerticalPartitions: Int = 1
+    maxVerticalPartitions: Int = 1,
 ): ThreePaneScaffoldValue =
     calculateThreePaneScaffoldValue(
         maxHorizontalPartitions,
         adaptStrategies,
         listOfNotNull(currentDestination),
-        maxVerticalPartitions
+        maxVerticalPartitions,
     )
 
 /**
@@ -87,7 +87,7 @@ fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
-    maxVerticalPartitions: Int = 1
+    maxVerticalPartitions: Int = 1,
 ): ThreePaneScaffoldValue {
     var expandedCount = 0
     var primaryPaneAdaptedValue: PaneAdaptedValue? = null
@@ -142,7 +142,7 @@ fun calculateThreePaneScaffoldValue(
             var anchorPaneValue: PaneAdaptedValue? = null
             if (checkReflowedPane) {
                 (adaptStrategies[pane] as? AdaptStrategy.Reflow)?.apply {
-                    (this.targetPane as? ThreePaneScaffoldRole)?.apply {
+                    (this.reflowUnder as? ThreePaneScaffoldRole)?.apply {
                         reflowedPane = pane
                         anchorPane = this
                         anchorPaneValue = getAdaptedValue(anchorPane)
@@ -186,7 +186,7 @@ fun calculateThreePaneScaffoldValue(
 @ExperimentalMaterial3AdaptiveApi
 private inline fun forEachPaneByPriority(
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
-    action: (ThreePaneScaffoldRole) -> Unit
+    action: (ThreePaneScaffoldRole) -> Unit,
 ) {
     destinationHistory.fastForEachReversed { action(it.pane) }
     action(ThreePaneScaffoldRole.Primary)
@@ -214,7 +214,7 @@ private inline fun forEachPaneByPriority(
 class ThreePaneScaffoldValue(
     val primary: PaneAdaptedValue,
     val secondary: PaneAdaptedValue,
-    val tertiary: PaneAdaptedValue
+    val tertiary: PaneAdaptedValue,
 ) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
     internal val expandedCount by lazy {
         var count = 0
@@ -280,7 +280,7 @@ class ThreePaneScaffoldValue(
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal class TwoPaneExpansionStateKeyImpl(
     val firstExpandedPane: ThreePaneScaffoldRole,
-    val secondExpandedPane: ThreePaneScaffoldRole
+    val secondExpandedPane: ThreePaneScaffoldRole,
 ) : PaneExpansionStateKey {
     override fun hashCode(): Int {
         return firstExpandedPane.hashCode() * 31 + secondExpandedPane.hashCode()
@@ -300,9 +300,9 @@ internal class TwoPaneExpansionStateKeyImpl(
                 restore = {
                     TwoPaneExpansionStateKeyImpl(
                         firstExpandedPane = it[0],
-                        secondExpandedPane = it[1]
+                        secondExpandedPane = it[1],
                     )
-                }
+                },
             )
     }
 }

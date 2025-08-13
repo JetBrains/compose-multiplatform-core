@@ -101,12 +101,12 @@ class IconButtonTest {
                         Modifier.minimumInteractiveComponentSize()
                             .size(IconButtonDefaults.extraSmallContainerSize())
                             .testTag(IconButtonTestTag),
-                    shape = IconButtonDefaults.smallRoundShape
+                    shape = IconButtonDefaults.smallRoundShape,
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
             },
-            expectedSize
+            expectedSize,
         )
     }
 
@@ -118,7 +118,7 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.extraSmallContainerSize())
+                            .size(IconButtonDefaults.extraSmallContainerSize()),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -145,12 +145,12 @@ class IconButtonTest {
                         Modifier.minimumInteractiveComponentSize()
                             .size(size)
                             .testTag(IconButtonTestTag),
-                    shape = IconButtonDefaults.smallRoundShape
+                    shape = IconButtonDefaults.smallRoundShape,
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
             },
-            expectedSize
+            expectedSize,
         )
     }
 
@@ -162,7 +162,7 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.smallContainerSize())
+                            .size(IconButtonDefaults.smallContainerSize()),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -244,7 +244,7 @@ class IconButtonTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -318,7 +318,7 @@ class IconButtonTest {
                             contentColor = LocalContentColor.current,
                             disabledContainerColor = Color.Transparent,
                             disabledContentColor =
-                                Color.Blue.copy(alpha = StandardIconButtonTokens.DisabledOpacity)
+                                Color.Blue.copy(alpha = StandardIconButtonTokens.DisabledOpacity),
                         )
                     )
             }
@@ -337,7 +337,7 @@ class IconButtonTest {
                         disabledContentColor =
                             StandardIconButtonTokens.DisabledColor.value.copy(
                                 alpha = StandardIconButtonTokens.DisabledOpacity
-                            )
+                            ),
                     )
                 )
         }
@@ -371,7 +371,7 @@ class IconButtonTest {
                 val colors =
                     IconButtonDefaults.iconButtonVibrantColors(
                         containerColor = Color.Blue,
-                        contentColor = Color.Green
+                        contentColor = Color.Green,
                     )
                 assert(colors.containerColor == Color.Blue)
                 assert(colors.contentColor == Color.Green)
@@ -390,7 +390,7 @@ class IconButtonTest {
                 val colors =
                     IconButtonDefaults.iconButtonVibrantColors(
                         containerColor = Color.Blue,
-                        contentColor = Color.Green
+                        contentColor = Color.Green,
                     )
                 assert(colors.containerColor == Color.Blue)
                 assert(colors.contentColor == Color.Green)
@@ -518,7 +518,7 @@ class IconButtonTest {
                         modifier =
                             Modifier.align(Alignment.Center)
                                 .requiredSize(2.dp)
-                                .testTag(IconButtonTestTag)
+                                .testTag(IconButtonTestTag),
                     ) {
                         Box(Modifier.size(2.dp))
                     }
@@ -550,7 +550,7 @@ class IconButtonTest {
                                 alpha = StandardIconButtonTokens.DisabledOpacity
                             ),
                         checkedContainerColor = Color.Transparent,
-                        checkedContentColor = StandardIconButtonTokens.SelectedColor.value
+                        checkedContentColor = StandardIconButtonTokens.SelectedColor.value,
                     )
                 )
         }
@@ -570,7 +570,7 @@ class IconButtonTest {
                                 alpha = StandardIconButtonTokens.DisabledOpacity
                             ),
                         checkedContainerColor = Color.Transparent,
-                        checkedContentColor = StandardIconButtonTokens.SelectedColor.value
+                        checkedContentColor = StandardIconButtonTokens.SelectedColor.value,
                     )
                 )
         }
@@ -595,12 +595,12 @@ class IconButtonTest {
                         Modifier.minimumInteractiveComponentSize()
                             .size(size)
                             .testTag(IconButtonTestTag),
-                    shape = IconButtonDefaults.extraSmallRoundShape
+                    shape = IconButtonDefaults.extraSmallRoundShape,
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
             },
-            expectedSize
+            expectedSize,
         )
     }
 
@@ -613,7 +613,7 @@ class IconButtonTest {
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
                             .size(IconButtonDefaults.extraSmallContainerSize()),
-                    shape = IconButtonDefaults.extraSmallRoundShape
+                    shape = IconButtonDefaults.extraSmallRoundShape,
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -641,12 +641,12 @@ class IconButtonTest {
                         Modifier.minimumInteractiveComponentSize()
                             .size(size)
                             .testTag(IconButtonTestTag),
-                    shape = IconButtonDefaults.smallRoundShape
+                    shape = IconButtonDefaults.smallRoundShape,
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
             },
-            expectedSize
+            expectedSize,
         )
     }
 
@@ -658,7 +658,7 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.smallContainerSize())
+                            .size(IconButtonDefaults.smallContainerSize()),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -689,7 +689,7 @@ class IconButtonTest {
                 size = IconButtonDefaults.largeContainerSize()
                 FilledIconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.size(size)
+                    modifier = Modifier.size(size),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -708,7 +708,7 @@ class IconButtonTest {
                 size = IconButtonDefaults.extraLargeContainerSize()
                 FilledIconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.size(size)
+                    modifier = Modifier.size(size),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -739,7 +739,7 @@ class IconButtonTest {
                         colors =
                             IconButtonDefaults.iconButtonVibrantColors(
                                 containerColor = iconButtonColor
-                            )
+                            ),
                     ) {}
                 }
             }
@@ -753,7 +753,7 @@ class IconButtonTest {
                 shape = shape,
                 shapeColor = iconButtonColor,
                 backgroundColor = background,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -771,7 +771,7 @@ class IconButtonTest {
                     shapes =
                         IconButtonShapes(
                             shape = IconButtonDefaults.mediumRoundShape,
-                            pressedShape = IconButtonDefaults.mediumPressedShape
+                            pressedShape = IconButtonDefaults.mediumPressedShape,
                         ),
                     modifier =
                         Modifier.testTag(IconTestTag)
@@ -779,7 +779,7 @@ class IconButtonTest {
                     colors =
                         IconButtonDefaults.iconButtonVibrantColors(
                             containerColor = shapeColor,
-                            contentColor = shapeColor
+                            contentColor = shapeColor,
                         ),
                 ) {}
             }
@@ -794,7 +794,7 @@ class IconButtonTest {
                 shape = shape,
                 shapeColor = shapeColor,
                 backgroundColor = backgroundColor,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -887,7 +887,7 @@ class IconButtonTest {
                         disabledContentColor =
                             FilledIconButtonTokens.DisabledColor.value.copy(
                                 alpha = FilledIconButtonTokens.DisabledOpacity
-                            )
+                            ),
                     )
                 )
         }
@@ -935,7 +935,7 @@ class IconButtonTest {
                         disabledContentColor =
                             FilledTonalIconButtonTokens.DisabledColor.value.copy(
                                 alpha = FilledTonalIconButtonTokens.DisabledOpacity
-                            )
+                            ),
                     )
                 )
         }
@@ -962,7 +962,7 @@ class IconButtonTest {
                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                     FilledIconToggleButton(
                         checked = true,
-                        onCheckedChange = { /* doSomething() */ }
+                        onCheckedChange = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -1060,7 +1060,7 @@ class IconButtonTest {
                             ),
                         checkedContainerColor = FilledIconButtonTokens.SelectedContainerColor.value,
                         checkedContentColor =
-                            contentColorFor(FilledIconButtonTokens.SelectedContainerColor.value)
+                            contentColorFor(FilledIconButtonTokens.SelectedContainerColor.value),
                     )
                 )
         }
@@ -1083,7 +1083,7 @@ class IconButtonTest {
                             IconToggleButtonShapes(
                                 shape = IconButtonDefaults.mediumSquareShape,
                                 pressedShape = IconButtonDefaults.mediumPressedShape,
-                                checkedShape = IconButtonDefaults.mediumSquareShape
+                                checkedShape = IconButtonDefaults.mediumSquareShape,
                             ),
                         modifier =
                             Modifier.semantics(mergeDescendants = true) {}
@@ -1092,7 +1092,7 @@ class IconButtonTest {
                         colors =
                             IconButtonDefaults.iconToggleButtonVibrantColors(
                                 checkedContainerColor = iconButtonColor
-                            )
+                            ),
                     ) {}
                 }
             }
@@ -1106,7 +1106,7 @@ class IconButtonTest {
                 shape = shape,
                 shapeColor = iconButtonColor,
                 backgroundColor = background,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -1131,7 +1131,7 @@ class IconButtonTest {
                             ),
                         checkedContainerColor =
                             FilledTonalIconButtonTokens.SelectedContainerColor.value,
-                        checkedContentColor = FilledTonalIconButtonTokens.SelectedColor.value
+                        checkedContentColor = FilledTonalIconButtonTokens.SelectedColor.value,
                     )
                 )
         }
@@ -1144,7 +1144,7 @@ class IconButtonTest {
                 OutlinedIconButton(onClick = { /* doSomething() */ }) {
                     Icon(
                         Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
             }
@@ -1162,7 +1162,7 @@ class IconButtonTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -1239,11 +1239,11 @@ class IconButtonTest {
             .setMaterialContentForSizeAssertions {
                 OutlinedIconToggleButton(
                     checked = true,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(
                         Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
             }
@@ -1260,11 +1260,11 @@ class IconButtonTest {
                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                     OutlinedIconToggleButton(
                         checked = true,
-                        onCheckedChange = { /* doSomething() */ }
+                        onCheckedChange = { /* doSomething() */ },
                     ) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -1351,7 +1351,7 @@ class IconButtonTest {
                         contentColor = localContentColor,
                         disabledContainerColor = Color.Transparent,
                         disabledContentColor =
-                            localContentColor.copy(alpha = OutlinedIconButtonTokens.DisabledOpacity)
+                            localContentColor.copy(alpha = OutlinedIconButtonTokens.DisabledOpacity),
                     )
                 )
         }
@@ -1369,7 +1369,7 @@ class IconButtonTest {
                         disabledContentColor =
                             OutlinedIconButtonTokens.DisabledColor.value.copy(
                                 alpha = OutlinedIconButtonTokens.DisabledOpacity
-                            )
+                            ),
                     )
                 )
         }
@@ -1411,7 +1411,7 @@ class IconButtonTest {
                             ),
                         checkedContainerColor =
                             OutlinedIconButtonTokens.SelectedContainerColor.value,
-                        checkedContentColor = OutlinedIconButtonTokens.SelectedColor.value
+                        checkedContentColor = OutlinedIconButtonTokens.SelectedColor.value,
                     )
                 )
         }
@@ -1434,13 +1434,13 @@ class IconButtonTest {
             Truth.assertThat(
                     IconButtonDefaults.outlinedIconToggleButtonVibrantBorder(
                         enabled = false,
-                        checked = false
+                        checked = false,
                     )
                 )
                 .isEqualTo(
                     BorderStroke(
                         SmallIconButtonTokens.OutlinedOutlineWidth,
-                        outlineColor.copy(alpha = OutlinedIconButtonTokens.DisabledOpacity)
+                        outlineColor.copy(alpha = OutlinedIconButtonTokens.DisabledOpacity),
                     )
                 )
         }

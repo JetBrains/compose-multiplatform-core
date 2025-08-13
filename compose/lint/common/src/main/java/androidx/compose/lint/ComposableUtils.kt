@@ -19,6 +19,7 @@ package androidx.compose.lint
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiType
 import com.intellij.psi.impl.compiled.ClsParameterImpl
 import com.intellij.psi.impl.light.LightParameter
 import kotlin.metadata.jvm.annotations
@@ -148,8 +149,13 @@ private val PsiParameter.isComposable: Boolean
                     it.className == Names.Runtime.Composable.kmClassName
                 } != null
             }
-            // The parameter is in a source declaration
-            else -> (toUElement() as? UParameter)?.typeReference?.isComposable == true
+            else -> {
+                // In case of reified inline function from binary, UAST creates a fake PSI
+                // where the associated [PsiType] has annotations if any.
+                type.hasComposableAnnotation ||
+                    // The parameter might be in a source declaration
+                    (toUElement() as? UParameter)?.typeReference?.isComposable == true
+            }
         }
 
 /** Returns whether this lambda expression is @Composable or not */
@@ -241,10 +247,13 @@ private class ComposableBodyVisitor(private val expression: UExpression) {
     }
 }
 
+val PsiType.hasComposableAnnotation: Boolean
+    get() = hasAnnotation(Names.Runtime.Composable.javaFqn)
+
 /** Returns whether this type reference is @Composable or not */
 val UTypeReferenceExpression.isComposable: Boolean
     get() {
-        if (type.hasAnnotation(Names.Runtime.Composable.javaFqn)) return true
+        if (type.hasComposableAnnotation) return true
 
         // Annotations on the types of local properties (val foo: @Composable () -> Unit = {})
         // are currently not present on the PsiType, we so need to manually check the underlying

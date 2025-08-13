@@ -20,13 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
@@ -35,11 +32,12 @@ import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.platform.IOSLifecycleOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
+import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.LocalInterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck
 import androidx.compose.ui.uikit.density
@@ -56,7 +54,8 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ApplicationActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
+import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -104,6 +103,8 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+    // Used for testing
+    val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layers: UIKitComposeSceneLayersHolder? = null
@@ -135,7 +136,7 @@ internal class ComposeHostingViewController(
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
 
-    var focusStack: FocusStack? = FocusStack()
+    var focusedViewsList: FocusedViewsList? = FocusedViewsList()
 
     /*
      * On iOS >= 13.0 interfaceOrientation will be deduced from [UIWindowScene] of [UIWindow]
@@ -215,9 +216,14 @@ internal class ComposeHostingViewController(
 
     private fun updateInterfaceOrientationState() {
         currentInterfaceOrientation?.let {
-            interfaceOrientationState.value = it
+            updateInterfaceOrientation(it)
         }
     }
+
+    fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
+        interfaceOrientationState.value = orientation
+    }
+
 
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
@@ -303,14 +309,15 @@ internal class ComposeHostingViewController(
 
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
-            focusStack = focusStack,
+            focusedViewsList = focusedViewsList,
             windowContext = windowContext,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->
                 createComposeScene(invalidate, context, layers.metalView)
             },
-            backGestureDispatcher = backGestureDispatcher
+            backGestureDispatcher = backGestureDispatcher,
+            interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
             rootView.embedSubview(mediator.inputView)
             rootView.updateMetalView(metalView, ::onDidMoveToWindow)
@@ -463,11 +470,12 @@ internal class ComposeHostingViewController(
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
-                    focusStack = if (focusable) focusStack else null,
+                    focusedViewsList = if (focusable) focusedViewsList else null,
                     windowContext = windowContext,
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
                     enableBackGesture = configuration.enableBackGesture,
+                    interfaceOrientationState = interfaceOrientationState
                 )
 
                 attachLayer(layer)
@@ -524,7 +532,6 @@ internal class ComposeHostingViewController(
         CompositionLocalProvider(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
-            LocalInterfaceOrientation provides interfaceOrientationState.value,
             LocalSystemTheme provides systemThemeState.value,
             LocalLifecycleOwner provides lifecycleOwner,
             LocalInternalViewModelStoreOwner provides lifecycleOwner,
@@ -563,7 +570,3 @@ private fun getLayoutDirection() =
         UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
-
-private class MotionDurationScaleImpl: MotionDurationScale {
-    override var scaleFactor by mutableStateOf(1f)
-}

@@ -51,7 +51,7 @@ class Scrim(val color: Color = Color.Unspecified, val onClick: (() -> Unit)? = n
                                 interactionSource = null,
                                 indication = null,
                                 enabled = enabled,
-                                onClick = onClick
+                                onClick = onClick,
                             )
                         } else {
                             Modifier

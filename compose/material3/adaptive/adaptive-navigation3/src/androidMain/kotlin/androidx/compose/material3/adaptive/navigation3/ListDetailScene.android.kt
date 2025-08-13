@@ -62,7 +62,7 @@ internal class ListDetailScene<T : Any>(
     override val previousEntries: List<NavEntry<T>>
         get() = onBackResult.previousEntries
 
-    private val entriesAsNavItems: List<ThreePaneScaffoldDestinationItem<T>> =
+    private val entriesAsNavItems: List<ThreePaneScaffoldDestinationItem<Any>> =
         entries.map { it.toNavItem()!! }
 
     val currentScaffoldValue: ThreePaneScaffoldValue
@@ -104,7 +104,7 @@ internal class ListDetailScene<T : Any>(
                 // Back event leaves the scaffold
                 return OnBackResult(
                     previousScaffoldValue = null,
-                    previousEntries = allEntries.subList(0, index + 1).toList()
+                    previousEntries = allEntries.subList(0, index + 1).toList(),
                 )
             }
             if (index == prevDestAbsoluteIndex) {
@@ -115,16 +115,13 @@ internal class ListDetailScene<T : Any>(
                     )
                 return OnBackResult(
                     previousScaffoldValue = previousScaffoldValue,
-                    previousEntries = allEntries.subList(0, index + 1).toList()
+                    previousEntries = allEntries.subList(0, index + 1).toList(),
                 )
             }
         }
 
         // No previous entry in backstack
-        return OnBackResult(
-            previousScaffoldValue = null,
-            previousEntries = emptyList(),
-        )
+        return OnBackResult(previousScaffoldValue = null, previousEntries = emptyList())
     }
 
     private fun getPreviousDestinationIndex(): Int {
@@ -142,7 +139,7 @@ internal class ListDetailScene<T : Any>(
                     val previousValue =
                         calculateScaffoldValue(
                             destinationHistory =
-                                entriesAsNavItems.subList(0, previousDestinationIndex + 1),
+                                entriesAsNavItems.subList(0, previousDestinationIndex + 1)
                         )
                     if (previousValue != currentScaffoldValue) {
                         return previousDestinationIndex
@@ -165,7 +162,7 @@ internal class ListDetailScene<T : Any>(
                     val previousValue =
                         calculateScaffoldValue(
                             destinationHistory =
-                                entriesAsNavItems.subList(0, previousDestinationIndex + 1),
+                                entriesAsNavItems.subList(0, previousDestinationIndex + 1)
                         )
                     if (previousValue != currentScaffoldValue) {
                         return previousDestinationIndex
@@ -217,12 +214,9 @@ internal class ListDetailScene<T : Any>(
         ListDetailPaneScaffold(
             directive = directive,
             scaffoldState = scaffoldState,
-            listPane =
-                lastList?.content?.let { { AnimatedPane { it.invoke(lastList.key) } } } ?: {},
-            detailPane =
-                lastDetail?.content?.let { { AnimatedPane { it.invoke(lastDetail.key) } } }
-                    ?: detailPlaceholder,
-            extraPane = lastExtra?.content?.let { { AnimatedPane { it.invoke(lastExtra.key) } } },
+            listPane = lastList?.let { { AnimatedPane { it.Content() } } } ?: {},
+            detailPane = lastDetail?.let { { AnimatedPane { it.Content() } } } ?: detailPlaceholder,
+            extraPane = lastExtra?.let { { AnimatedPane { it.Content() } } },
         )
     }
 }
@@ -241,12 +235,9 @@ private val <T : Any> NavEntry<T>.paneRole: ThreePaneScaffoldRole?
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private fun <T : Any> NavEntry<T>.toNavItem(): ThreePaneScaffoldDestinationItem<T>? {
+private fun <T : Any> NavEntry<T>.toNavItem(): ThreePaneScaffoldDestinationItem<Any>? {
     val role = this.paneRole ?: return null
-    return ThreePaneScaffoldDestinationItem(
-        pane = role,
-        contentKey = this.key,
-    )
+    return ThreePaneScaffoldDestinationItem(pane = role, contentKey = this.contentKey)
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

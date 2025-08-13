@@ -57,7 +57,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class DateInputTest {
 
     @get:Rule val rule = createComposeRule()
@@ -74,7 +73,7 @@ class DateInputTest {
             state =
                 rememberDatePickerState(
                     initialDisplayedMonthMillis = monthInUtcMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -101,7 +100,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -119,7 +118,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
             // Update the delayCompleted till after the focus is acquired. Note that we request the
@@ -143,10 +142,10 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = initialDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     ),
                 // Prevent the focus from being requested.
-                focusRequester = null
+                focusRequester = null,
             )
             // Although a focus request is not made, apply a delay to ensure that the test checks
             // for focus after that delay.
@@ -169,7 +168,7 @@ class DateInputTest {
                 DatePickerState(
                     locale = Locale.forLanguageTag("he"),
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -195,7 +194,7 @@ class DateInputTest {
                     // Arabic locale with Arabic-Indic digits and symbols
                     locale = Locale.forLanguageTag("ar-u-nu-arab"),
                     initialSelectedDateMillis = initialDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -251,7 +250,7 @@ class DateInputTest {
                         object : SelectableDates {
                             // All dates are invalid for the sake of this test.
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = state)
         }
@@ -277,7 +276,7 @@ class DateInputTest {
                 rememberDatePickerState(
                     // Limit the years selection to 2018-2023
                     yearRange = IntRange(2018, 2023),
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DatePicker(state = state)
         }
@@ -291,7 +290,7 @@ class DateInputTest {
             .assert(
                 expectValue(
                     SemanticsProperties.Error,
-                    errorMessage.format(state.yearRange.first, state.yearRange.last)
+                    errorMessage.format(state.yearRange.first, state.yearRange.last),
                 )
             )
     }
@@ -312,7 +311,7 @@ class DateInputTest {
                     selectableDates =
                         object : SelectableDates {
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DatePicker(state = state)
         }
@@ -379,7 +378,7 @@ class DateInputTest {
             dateInputLabel = getString(string = Strings.DateInputLabel)
             DatePicker(
                 state = rememberDatePickerState(initialDisplayMode = DisplayMode.Input),
-                modifier = Modifier.testTag(DateInputTestTag)
+                modifier = Modifier.testTag(DateInputTestTag),
             )
         }
         val withoutErrorBounds = rule.onNodeWithTag(DateInputTestTag).getBoundsInRoot()
@@ -391,7 +390,7 @@ class DateInputTest {
         // Check that the height of the component did not change after having the error text visible
         withoutErrorBounds.height.assertIsEqualTo(
             withErrorBounds.height,
-            subject = "Date input height"
+            subject = "Date input height",
         )
     }
 
@@ -406,7 +405,7 @@ class DateInputTest {
                 state =
                     rememberDatePickerState(
                         initialSelectedDateMillis = selectedDateInUtcMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -416,7 +415,7 @@ class DateInputTest {
                 selectedDateInUtcMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
 
         rule

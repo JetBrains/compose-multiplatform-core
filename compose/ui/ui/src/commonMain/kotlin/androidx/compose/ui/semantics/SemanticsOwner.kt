@@ -34,7 +34,7 @@ class SemanticsOwner
 internal constructor(
     private val rootNode: LayoutNode,
     private val outerSemanticsNode: EmptySemanticsModifier,
-    private val nodes: IntObjectMap<LayoutNode>
+    private val nodes: IntObjectMap<LayoutNode>,
 ) {
     /**
      * The root node of the semantics tree. Does not contain any unmerged data. May contain merged
@@ -55,7 +55,7 @@ internal constructor(
                 // have an empty config, but if we don't pass this in explicitly here it will try
                 // to call `rootNode.collapsedSemantics` which will fail because the LayoutNode
                 // is not yet attached when this getter is first called.
-                unmergedConfig = SemanticsConfiguration()
+                unmergedConfig = SemanticsConfiguration(),
             )
         }
 
@@ -70,7 +70,7 @@ internal constructor(
 
     internal fun notifySemanticsChange(
         semanticsInfo: SemanticsInfo,
-        previousSemanticsConfiguration: SemanticsConfiguration?
+        previousSemanticsConfiguration: SemanticsConfiguration?,
     ) {
         listeners.forEach { it.onSemanticsChanged(semanticsInfo, previousSemanticsConfiguration) }
     }
@@ -87,11 +87,11 @@ internal constructor(
  */
 fun SemanticsOwner.getAllSemanticsNodes(
     mergingEnabled: Boolean,
-    skipDeactivatedNodes: Boolean = true
+    skipDeactivatedNodes: Boolean = true,
 ): List<SemanticsNode> {
     return getAllSemanticsNodesToMap(
             useUnmergedTree = !mergingEnabled,
-            skipDeactivatedNodes = skipDeactivatedNodes
+            skipDeactivatedNodes = skipDeactivatedNodes,
         )
         .values
         .toList()
@@ -108,7 +108,7 @@ fun SemanticsOwner.getAllSemanticsNodes(mergingEnabled: Boolean) =
  */
 internal fun SemanticsOwner.getAllSemanticsNodesToMap(
     useUnmergedTree: Boolean = false,
-    skipDeactivatedNodes: Boolean = true
+    skipDeactivatedNodes: Boolean = true,
 ): Map<Int, SemanticsNode> {
     val nodes = mutableMapOf<Int, SemanticsNode>()
 
@@ -147,7 +147,7 @@ private val DefaultFakeNodeBounds = Rect(0f, 0f, 10f, 10f)
 /** Semantics node with adjusted bounds for the uncovered(by siblings) part. */
 internal class SemanticsNodeWithAdjustedBounds(
     val semanticsNode: SemanticsNode,
-    val adjustedBounds: IntRect
+    val adjustedBounds: IntRect,
 )
 
 /**
@@ -222,7 +222,7 @@ internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
                     nodes[virtualViewId] =
                         SemanticsNodeWithAdjustedBounds(
                             currentNode,
-                            boundsForFakeNode.roundToIntRect()
+                            boundsForFakeNode.roundToIntRect(),
                         )
                 } else if (virtualViewId == customRootNodeId) {
                     // Root view might have WRAP_CONTENT layout params in which case it will have

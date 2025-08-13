@@ -24,11 +24,13 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
 import androidx.compose.material3.adaptive.layout.DefaultAnimatedPaneOverride.AnimatedPane
+import androidx.compose.material3.adaptive.layout.internal.getValue
+import androidx.compose.material3.adaptive.layout.internal.rememberRef
+import androidx.compose.material3.adaptive.layout.internal.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
@@ -73,7 +75,7 @@ fun <S, T : PaneScaffoldValue<S>> ExtendedPaneScaffoldPaneScope<S, T>.AnimatedPa
                 enterTransition = enterTransition,
                 exitTransition = exitTransition,
                 boundsAnimationSpec = boundsAnimationSpec,
-                content = content
+                content = content,
             )
             .AnimatedPane()
     }
@@ -108,7 +110,7 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                             animationSpec = boundsAnimationSpec,
                             scaleConversion = scaleConversion,
                             lookaheadScope = this,
-                            enabled = animatingBounds
+                            enabled = animatingBounds,
                         )
                         .semantics { isTraversalGroup = true }
                         .then(
@@ -120,26 +122,25 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                         )
                         .then(if (animatingBounds) Modifier else Modifier.clipToBounds()),
                 enter = enterTransition,
-                exit = exitTransition
+                exit = exitTransition,
             ) {
                 scope.saveableStateHolder.SaveableStateProvider(paneRole.toString()) {
                     AnimatedPaneScope.create(this).content()
                 }
             }
 
-            class ScrimHolder(var scrim: Scrim? = null)
-            val scrimHolder = remember { ScrimHolder() }
-            (paneValue as? PaneAdaptedValue.Levitated)?.apply { scrimHolder.scrim = scrim }
-            scrimHolder.scrim?.apply {
+            var scrim by rememberRef<Scrim?>(null)
+            (paneValue as? PaneAdaptedValue.Levitated)?.apply { scrim = this.scrim }
+            scrim?.apply {
                 // Display a scrim when the pane gets levitated
                 scaffoldStateTransition.AnimatedVisibility(
                     visible = { value: T -> value[paneRole] != PaneAdaptedValue.Hidden },
                     enter = enterTransition,
-                    exit = exitTransition
+                    exit = exitTransition,
                 ) {
                     Content(
                         defaultColor = ThreePaneScaffoldDefaults.ScrimColor,
-                        enabled = paneValue is PaneAdaptedValue.Levitated
+                        enabled = paneValue is PaneAdaptedValue.Levitated,
                     )
                 }
             }

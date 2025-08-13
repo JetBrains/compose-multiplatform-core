@@ -82,11 +82,7 @@ internal class SingleTextSelectionGesturesBidiTest : TextSelectionGesturesBidiTe
     override fun TextContent() {
         BasicText(
             text = textContent.value,
-            style =
-                TextStyle(
-                    fontFamily = fontFamily,
-                    fontSize = fontSize,
-                ),
+            style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
             modifier = Modifier.fillMaxWidth().testTag(testTag),
         )
     }

@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.Canvas
@@ -29,6 +30,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
@@ -41,7 +43,7 @@ import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toRect
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
@@ -58,14 +60,15 @@ internal class UIKitComposeSceneLayer(
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
-    focusStack: FocusStack?,
+    focusedViewsList: FocusedViewsList?,
     windowContext: PlatformWindowContext,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
+    private val interfaceOrientationState: State<InterfaceOrientation>
 ) : ComposeSceneLayer {
 
-    override var focusable: Boolean = focusStack != null
+    override var focusable: Boolean = focusedViewsList != null
         set(value) {
             if (field != value) {
                 field = value
@@ -89,12 +92,13 @@ internal class UIKitComposeSceneLayer(
 
     private val mediator = ComposeSceneMediator(
         onFocusBehavior = onFocusBehavior,
-        focusStack = focusStack,
+        focusedViewsList = focusedViewsList,
         windowContext = windowContext,
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
-        backGestureDispatcher = backGestureDispatcher
+        backGestureDispatcher = backGestureDispatcher,
+        interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
     }

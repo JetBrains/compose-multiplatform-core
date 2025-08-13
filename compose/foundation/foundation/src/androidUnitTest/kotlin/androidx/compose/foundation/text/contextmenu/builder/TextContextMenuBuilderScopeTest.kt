@@ -72,11 +72,7 @@ class TextContextMenuBuilderScopeTest {
             intItem(1)
         }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Separator,
-            Component.Item(1),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Separator, Component.Item(1))
     }
 
     @Test
@@ -86,9 +82,7 @@ class TextContextMenuBuilderScopeTest {
             intItem(0)
         }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-        )
+        actualData.assertHasComponents(Component.Item(0))
     }
 
     @Test
@@ -98,19 +92,13 @@ class TextContextMenuBuilderScopeTest {
             separator()
         }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-        )
+        actualData.assertHasComponents(Component.Item(0))
     }
 
     @Test
     fun whenOnlyItems_itemsReturned() {
         val actualData = createAndRunScope { repeat(3) { intItem(it) } }
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Item(1),
-            Component.Item(2),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Item(1), Component.Item(2))
     }
 
     @Test
@@ -174,10 +162,7 @@ class TextContextMenuBuilderScopeTest {
         val actualData =
             createAndRunScope(filter = { (it.key as Int) % 2 == 0 }) { repeat(4) { intItem(it) } }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Item(2),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Item(2))
     }
 
     @Test
@@ -191,11 +176,7 @@ class TextContextMenuBuilderScopeTest {
                 }
             }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Separator,
-            Component.Item(2),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Separator, Component.Item(2))
     }
 
     @Test
@@ -207,11 +188,7 @@ class TextContextMenuBuilderScopeTest {
                 intItem(1)
             }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Separator,
-            Component.Item(1),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Separator, Component.Item(1))
     }
 
     @Test
@@ -230,11 +207,7 @@ class TextContextMenuBuilderScopeTest {
                 }
             }
 
-        actualData.assertHasComponents(
-            Component.Item(0),
-            Component.Separator,
-            Component.Item(1),
-        )
+        actualData.assertHasComponents(Component.Item(0), Component.Separator, Component.Item(1))
     }
 
     @Test
@@ -264,7 +237,7 @@ private fun TextContextMenuData.assertHasComponents(vararg components: Component
 
 private fun createAndRunScope(
     filter: ((TextContextMenuComponent) -> Boolean)? = null,
-    scope: TextContextMenuBuilderScope.() -> Unit
+    scope: TextContextMenuBuilderScope.() -> Unit,
 ): TextContextMenuData =
     TextContextMenuBuilderScope()
         .apply {
@@ -307,5 +280,5 @@ private val ComponentCorrespondence =
                 is Component.Item -> actual?.key as? Int == expected.intValue
             }
         },
-        /* description = */ "equals"
+        /* description = */ "equals",
     )

@@ -159,7 +159,7 @@ fun PrimaryTabRow(
         )
     },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRowImpl(modifier, containerColor, contentColor, indicator, divider, tabs)
 }
@@ -210,7 +210,7 @@ fun SecondaryTabRow(
             )
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRowImpl(modifier, containerColor, contentColor, indicator, divider, tabs)
 }
@@ -266,7 +266,7 @@ fun PrimaryScrollableTabRow(
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
     minTabWidth: Dp = TabRowDefaults.ScrollableTabRowMinTabWidth,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRowImpl(
         selectedTabIndex = selectedTabIndex,
@@ -336,7 +336,7 @@ fun SecondaryScrollableTabRow(
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
     minTabWidth: Dp = TabRowDefaults.ScrollableTabRowMinTabWidth,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRowImpl(
         selectedTabIndex = selectedTabIndex,
@@ -348,7 +348,7 @@ fun SecondaryScrollableTabRow(
         minTabWidth = minTabWidth,
         divider = divider,
         tabs = tabs,
-        scrollState = scrollState
+        scrollState = scrollState,
     )
 }
 
@@ -366,12 +366,7 @@ interface TabIndicatorScope {
      * @sample androidx.compose.material3.samples.FancyAnimatedIndicatorWithModifier
      */
     fun Modifier.tabIndicatorLayout(
-        measure:
-            MeasureScope.(
-                Measurable,
-                Constraints,
-                List<TabPosition>,
-            ) -> MeasureResult
+        measure: MeasureScope.(Measurable, Constraints, List<TabPosition>) -> MeasureResult
     ): Modifier
 
     /**
@@ -383,7 +378,7 @@ interface TabIndicatorScope {
      */
     fun Modifier.tabIndicatorOffset(
         selectedTabIndex: Int,
-        matchContentSize: Boolean = false
+        matchContentSize: Boolean = false,
     ): Modifier
 }
 
@@ -400,12 +395,12 @@ private fun TabRowImpl(
     contentColor: Color,
     indicator: @Composable TabIndicatorScope.() -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier.selectableGroup(),
         color = containerColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         // TODO Load the motionScheme tokens from the component tokens file
         val tabIndicatorAnimationSpec = MotionSchemeKeyTokens.DefaultSpatial.value<Dp>()
@@ -416,30 +411,22 @@ private fun TabRowImpl(
 
                 override fun Modifier.tabIndicatorLayout(
                     measure:
-                        MeasureScope.(
-                            Measurable,
-                            Constraints,
-                            List<TabPosition>,
-                        ) -> MeasureResult
+                        MeasureScope.(Measurable, Constraints, List<TabPosition>) -> MeasureResult
                 ): Modifier =
                     this.layout { measurable: Measurable, constraints: Constraints ->
-                        measure(
-                            measurable,
-                            constraints,
-                            tabPositions.value,
-                        )
+                        measure(measurable, constraints, tabPositions.value)
                     }
 
                 override fun Modifier.tabIndicatorOffset(
                     selectedTabIndex: Int,
-                    matchContentSize: Boolean
+                    matchContentSize: Boolean,
                 ): Modifier =
                     this.then(
                         TabIndicatorModifier(
                             tabPositions,
                             selectedTabIndex,
                             matchContentSize,
-                            tabIndicatorAnimationSpec
+                            tabIndicatorAnimationSpec,
                         )
                     )
 
@@ -451,12 +438,7 @@ private fun TabRowImpl(
 
         Layout(
             modifier = Modifier.fillMaxWidth(),
-            contents =
-                listOf(
-                    tabs,
-                    divider,
-                    { scope.indicator() },
-                )
+            contents = listOf(tabs, divider, { scope.indicator() }),
         ) { (tabMeasurables, dividerMeasurables, indicatorMeasurables), constraints ->
             val tabRowWidth = constraints.maxWidth
             val tabCount = tabMeasurables.size
@@ -504,7 +486,7 @@ private fun TabRowImpl(
                             minWidth = tabWidth,
                             maxWidth = tabWidth,
                             minHeight = 0,
-                            maxHeight = tabRowHeight
+                            maxHeight = tabRowHeight,
                         )
                     )
                 }
@@ -536,7 +518,7 @@ private fun ScrollableTabRowImpl(
     scrollState: ScrollState,
     indicator: @Composable TabIndicatorScope.() -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
         val coroutineScope = rememberCoroutineScope()
@@ -549,7 +531,7 @@ private fun ScrollableTabRowImpl(
                 ScrollableTabData(
                     scrollState = scrollState,
                     coroutineScope = coroutineScope,
-                    animationSpec = scrollAnimationSpec
+                    animationSpec = scrollAnimationSpec,
                 )
             }
 
@@ -560,30 +542,22 @@ private fun ScrollableTabRowImpl(
 
                 override fun Modifier.tabIndicatorLayout(
                     measure:
-                        MeasureScope.(
-                            Measurable,
-                            Constraints,
-                            List<TabPosition>,
-                        ) -> MeasureResult
+                        MeasureScope.(Measurable, Constraints, List<TabPosition>) -> MeasureResult
                 ): Modifier =
                     this.layout { measurable: Measurable, constraints: Constraints ->
-                        measure(
-                            measurable,
-                            constraints,
-                            tabPositions.value,
-                        )
+                        measure(measurable, constraints, tabPositions.value)
                     }
 
                 override fun Modifier.tabIndicatorOffset(
                     selectedTabIndex: Int,
-                    matchContentSize: Boolean
+                    matchContentSize: Boolean,
                 ): Modifier =
                     this.then(
                         TabIndicatorModifier(
                             tabPositions,
                             selectedTabIndex,
                             matchContentSize,
-                            tabIndicatorAnimationSpec
+                            tabIndicatorAnimationSpec,
                         )
                     )
 
@@ -592,104 +566,86 @@ private fun ScrollableTabRowImpl(
                 }
             }
         }
+        Box(contentAlignment = Alignment.BottomStart) {
+            divider()
+            Layout(
+                contents = listOf(tabs, { scope.indicator() }),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .wrapContentSize(align = Alignment.CenterStart)
+                        .horizontalScroll(scrollState)
+                        .selectableGroup()
+                        .clipToBounds(),
+            ) { (tabMeasurables, indicatorMeasurables), constraints ->
+                val padding = edgePadding.roundToPx()
+                val tabCount = tabMeasurables.size
+                val layoutHeight =
+                    tabMeasurables.fastFold(initial = 0) { curr, measurable ->
+                        maxOf(curr, measurable.maxIntrinsicHeight(Constraints.Infinity))
+                    }
+                var layoutWidth = padding * 2
+                val tabConstraints =
+                    constraints.copy(
+                        minWidth = minTabWidth.roundToPx(),
+                        minHeight = layoutHeight,
+                        maxHeight = layoutHeight,
+                    )
 
-        Layout(
-            contents =
-                listOf(
-                    tabs,
-                    divider,
-                    { scope.indicator() },
-                ),
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentSize(align = Alignment.CenterStart)
-                    .horizontalScroll(scrollState)
-                    .selectableGroup()
-                    .clipToBounds(),
-        ) { (tabMeasurables, dividerMeasurables, indicatorMeasurables), constraints ->
-            val padding = edgePadding.roundToPx()
-            val tabCount = tabMeasurables.size
-            val layoutHeight =
-                tabMeasurables.fastFold(initial = 0) { curr, measurable ->
-                    maxOf(curr, measurable.maxIntrinsicHeight(Constraints.Infinity))
+                var left = edgePadding
+                val tabPlaceables = tabMeasurables.fastMap { it.measure(tabConstraints) }
+                // Get indicator widths based on incoming content size, not based on forced minimum
+                // width applied below.
+                val indicatorWidth = mutableIntListOf()
+                tabMeasurables.fastForEach {
+                    indicatorWidth.add(it.maxIntrinsicWidth(Constraints.Infinity))
                 }
-            var layoutWidth = padding * 2
-            val tabConstraints =
-                constraints.copy(
-                    minWidth = minTabWidth.roundToPx(),
-                    minHeight = layoutHeight,
-                    maxHeight = layoutHeight,
-                )
 
-            var left = edgePadding
-            val tabPlaceables = tabMeasurables.fastMap { it.measure(tabConstraints) }
-            // Get indicator widths based on incoming content size, not based on forced minimum
-            // width applied below.
-            val indicatorWidth = mutableIntListOf()
-            tabMeasurables.fastForEach {
-                indicatorWidth.add(it.maxIntrinsicWidth(Constraints.Infinity))
-            }
+                val positions =
+                    List(tabCount) { index ->
+                        val tabWidth = maxOf(minTabWidth, tabPlaceables[index].width.toDp())
+                        layoutWidth += tabWidth.roundToPx()
+                        // Enforce minimum touch target of 24.dp
+                        val contentWidth =
+                            maxOf(indicatorWidth[index].toDp() - (HorizontalTextPadding * 2), 24.dp)
+                        val tabPosition =
+                            TabPosition(left = left, width = tabWidth, contentWidth = contentWidth)
+                        left += tabWidth
+                        tabPosition
+                    }
+                scope.setTabPositions(positions)
 
-            val positions =
-                List(tabCount) { index ->
-                    val tabWidth = maxOf(minTabWidth, tabPlaceables[index].width.toDp())
-                    layoutWidth += tabWidth.roundToPx()
-                    // Enforce minimum touch target of 24.dp
-                    val contentWidth =
-                        maxOf(indicatorWidth[index].toDp() - (HorizontalTextPadding * 2), 24.dp)
-                    val tabPosition =
-                        TabPosition(left = left, width = tabWidth, contentWidth = contentWidth)
-                    left += tabWidth
-                    tabPosition
-                }
-            scope.setTabPositions(positions)
-
-            val dividerPlaceables =
-                dividerMeasurables.fastMap {
-                    it.measure(
-                        constraints.copy(
-                            minHeight = 0,
-                            minWidth = layoutWidth,
-                            maxWidth = layoutWidth
+                val indicatorPlaceables =
+                    indicatorMeasurables.fastMap {
+                        it.measure(
+                            constraints.copy(
+                                minWidth = 0,
+                                maxWidth = positions[selectedTabIndex].contentWidth.roundToPx(),
+                                minHeight = 0,
+                                maxHeight = layoutHeight,
+                            )
                         )
+                    }
+
+                layout(layoutWidth, layoutHeight) {
+                    left = edgePadding
+                    tabPlaceables.fastForEachIndexed { index, placeable ->
+                        placeable.placeRelative(left.roundToPx(), 0)
+                        left += positions[index].width
+                    }
+
+                    indicatorPlaceables.fastForEach {
+                        val relativeOffset =
+                            max(0, (positions[selectedTabIndex].width.roundToPx() - it.width) / 2)
+                        it.placeRelative(relativeOffset, layoutHeight - it.height)
+                    }
+
+                    scrollableTabData.onLaidOut(
+                        density = this@Layout,
+                        edgeOffset = padding,
+                        tabPositions = positions,
+                        selectedTab = selectedTabIndex,
                     )
                 }
-
-            val indicatorPlaceables =
-                indicatorMeasurables.fastMap {
-                    it.measure(
-                        constraints.copy(
-                            minWidth = 0,
-                            maxWidth = positions[selectedTabIndex].contentWidth.roundToPx(),
-                            minHeight = 0,
-                            maxHeight = layoutHeight
-                        )
-                    )
-                }
-
-            layout(layoutWidth, layoutHeight) {
-                left = edgePadding
-                tabPlaceables.fastForEachIndexed { index, placeable ->
-                    placeable.placeRelative(left.roundToPx(), 0)
-                    left += positions[index].width
-                }
-
-                dividerPlaceables.fastForEach { placeable ->
-                    placeable.placeRelative(0, layoutHeight - placeable.height)
-                }
-
-                indicatorPlaceables.fastForEach {
-                    val relativeOffset =
-                        max(0, (positions[selectedTabIndex].width.roundToPx() - it.width) / 2)
-                    it.placeRelative(relativeOffset, layoutHeight - it.height)
-                }
-
-                scrollableTabData.onLaidOut(
-                    density = this@Layout,
-                    edgeOffset = padding,
-                    tabPositions = positions,
-                    selectedTab = selectedTabIndex
-                )
             }
         }
     }
@@ -699,7 +655,7 @@ internal data class TabIndicatorModifier(
     val tabPositionsState: State<List<TabPosition>>,
     val selectedTabIndex: Int,
     val followContentSize: Boolean,
-    val animationSpec: FiniteAnimationSpec<Dp>
+    val animationSpec: FiniteAnimationSpec<Dp>,
 ) : ModifierNodeElement<TabIndicatorOffsetNode>() {
 
     override fun create(): TabIndicatorOffsetNode {
@@ -707,7 +663,7 @@ internal data class TabIndicatorModifier(
             tabPositionsState = tabPositionsState,
             selectedTabIndex = selectedTabIndex,
             followContentSize = followContentSize,
-            animationSpec = animationSpec
+            animationSpec = animationSpec,
         )
     }
 
@@ -737,7 +693,7 @@ internal class TabIndicatorOffsetNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         if (tabPositionsState.value.isEmpty()) {
             return layout(0, 0) {}
@@ -796,6 +752,7 @@ internal class TabIndicatorOffsetNode(
     }
 }
 
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 private fun TabRowWithSubcomposeImpl(
     modifier: Modifier,
@@ -803,12 +760,12 @@ private fun TabRowWithSubcomposeImpl(
     contentColor: Color,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier.selectableGroup(),
         color = containerColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
             val tabRowWidth = constraints.maxWidth
@@ -865,6 +822,7 @@ private fun TabRowWithSubcomposeImpl(
     }
 }
 
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 private fun ScrollableTabRowWithSubcomposeImpl(
     selectedTabIndex: Int,
@@ -886,7 +844,7 @@ private fun ScrollableTabRowWithSubcomposeImpl(
                 ScrollableTabData(
                     scrollState = scrollState,
                     coroutineScope = coroutineScope,
-                    animationSpec = scrollAnimationSpec
+                    animationSpec = scrollAnimationSpec,
                 )
             }
         SubcomposeLayout(
@@ -940,7 +898,7 @@ private fun ScrollableTabRowWithSubcomposeImpl(
                         TabPosition(
                             left = left.toDp(),
                             width = placeable.width.toDp(),
-                            contentWidth = tabContentWidths[index]
+                            contentWidth = tabContentWidths[index],
                         )
                     )
                     left += placeable.width
@@ -954,7 +912,7 @@ private fun ScrollableTabRowWithSubcomposeImpl(
                             constraints.copy(
                                 minHeight = 0,
                                 minWidth = layoutWidth,
-                                maxWidth = layoutWidth
+                                maxWidth = layoutWidth,
                             )
                         )
                     placeable.placeRelative(0, layoutHeight - placeable.height)
@@ -971,7 +929,7 @@ private fun ScrollableTabRowWithSubcomposeImpl(
                     density = this@SubcomposeLayout,
                     edgeOffset = padding,
                     tabPositions = tabPositions,
-                    selectedTab = selectedTabIndex
+                    selectedTab = selectedTabIndex,
                 )
             }
         }
@@ -1033,7 +991,7 @@ object TabRowDefaults {
     /** Default container color of a tab row. */
     @Deprecated(
         message = "Use TabRowDefaults.primaryContainerColor instead",
-        replaceWith = ReplaceWith("primaryContainerColor")
+        replaceWith = ReplaceWith("primaryContainerColor"),
     )
     val containerColor: Color
         @Composable get() = PrimaryNavigationTabTokens.ContainerColor.value
@@ -1049,7 +1007,7 @@ object TabRowDefaults {
     /** Default content color of a tab row. */
     @Deprecated(
         message = "Use TabRowDefaults.primaryContentColor instead",
-        replaceWith = ReplaceWith("primaryContentColor")
+        replaceWith = ReplaceWith("primaryContentColor"),
     )
     val contentColor: Color
         @Composable get() = PrimaryNavigationTabTokens.ActiveLabelTextColor.value
@@ -1073,13 +1031,13 @@ object TabRowDefaults {
     @Composable
     @Deprecated(
         message = "Use SecondaryIndicator instead.",
-        replaceWith = ReplaceWith("SecondaryIndicator(modifier, height, color)")
+        replaceWith = ReplaceWith("SecondaryIndicator(modifier, height, color)"),
     )
     fun Indicator(
         modifier: Modifier = Modifier,
         height: Dp = PrimaryNavigationTabTokens.ActiveIndicatorHeight,
         color: Color =
-            MaterialTheme.colorScheme.fromToken(PrimaryNavigationTabTokens.ActiveIndicatorColor)
+            MaterialTheme.colorScheme.fromToken(PrimaryNavigationTabTokens.ActiveIndicatorColor),
     ) {
         Box(modifier.fillMaxWidth().height(height).background(color = color))
     }
@@ -1100,7 +1058,7 @@ object TabRowDefaults {
         width: Dp = 24.dp,
         height: Dp = PrimaryNavigationTabTokens.ActiveIndicatorHeight,
         color: Color = PrimaryNavigationTabTokens.ActiveIndicatorColor.value,
-        shape: Shape = PrimaryNavigationTabTokens.ActiveIndicatorShape
+        shape: Shape = PrimaryNavigationTabTokens.ActiveIndicatorShape,
     ) {
         Spacer(
             modifier
@@ -1122,7 +1080,7 @@ object TabRowDefaults {
     fun SecondaryIndicator(
         modifier: Modifier = Modifier,
         height: Dp = PrimaryNavigationTabTokens.ActiveIndicatorHeight,
-        color: Color = PrimaryNavigationTabTokens.ActiveIndicatorColor.value
+        color: Color = PrimaryNavigationTabTokens.ActiveIndicatorColor.value,
     ) {
         Box(modifier.fillMaxWidth().height(height).background(color = color))
     }
@@ -1139,7 +1097,7 @@ object TabRowDefaults {
         message =
             "Solely for use alongside deprecated TabRowDefaults.Indicator method. For " +
                 "recommended PrimaryIndicator and SecondaryIndicator methods, please use " +
-                "TabIndicatorScope.tabIndicatorOffset method."
+                "TabIndicatorScope.tabIndicatorOffset method.",
     )
     fun Modifier.tabIndicatorOffset(currentTabPosition: TabPosition): Modifier =
         composed(
@@ -1153,12 +1111,12 @@ object TabRowDefaults {
             val currentTabWidth by
                 animateDpAsState(
                     targetValue = currentTabPosition.width,
-                    animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+                    animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
                 )
             val indicatorOffset by
                 animateDpAsState(
                     targetValue = currentTabPosition.left,
-                    animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+                    animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
                 )
             fillMaxWidth()
                 .wrapContentSize(Alignment.BottomStart)
@@ -1170,14 +1128,14 @@ object TabRowDefaults {
 private enum class TabSlots {
     Tabs,
     Divider,
-    Indicator
+    Indicator,
 }
 
 /** Class holding onto state needed for [ScrollableTabRow] */
 private class ScrollableTabData(
     private val scrollState: ScrollState,
     private val coroutineScope: CoroutineScope,
-    private val animationSpec: FiniteAnimationSpec<Float>
+    private val animationSpec: FiniteAnimationSpec<Float>,
 ) {
     private var selectedTab: Int? = null
 
@@ -1185,7 +1143,7 @@ private class ScrollableTabData(
         density: Density,
         edgeOffset: Int,
         tabPositions: List<TabPosition>,
-        selectedTab: Int
+        selectedTab: Int,
     ) {
         // Animate if the new tab is different from the old tab, or this is called for the first
         // time (i.e selectedTab is `null`).
@@ -1212,7 +1170,7 @@ private class ScrollableTabData(
     private fun TabPosition.calculateTabOffset(
         density: Density,
         edgeOffset: Int,
-        tabPositions: List<TabPosition>
+        tabPositions: List<TabPosition>,
     ): Int =
         with(density) {
             val totalTabRowWidth = tabPositions.last().right.roundToPx() + edgeOffset
@@ -1245,7 +1203,7 @@ fun PrimaryScrollableTabRow(
             )
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) =
     PrimaryScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -1276,7 +1234,7 @@ fun SecondaryScrollableTabRow(
             )
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) =
     SecondaryScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -1288,7 +1246,7 @@ fun SecondaryScrollableTabRow(
         indicator = indicator,
         divider = divider,
         minTabWidth = TabRowDefaults.ScrollableTabRowMinTabWidth,
-        tabs = tabs
+        tabs = tabs,
     )
 
 /**
@@ -1372,7 +1330,7 @@ fun SecondaryScrollableTabRow(
     replaceWith =
         ReplaceWith(
             "SecondaryTabRow(selectedTabIndex, modifier, containerColor, contentColor, indicator, divider, tabs)"
-        )
+        ),
 )
 @Suppress("DEPRECATION")
 fun TabRow(
@@ -1389,7 +1347,7 @@ fun TabRow(
             }
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRowWithSubcomposeImpl(modifier, containerColor, contentColor, indicator, divider, tabs)
 }
@@ -1438,7 +1396,7 @@ fun TabRow(
     replaceWith =
         ReplaceWith(
             "SecondaryScrollableTabRow(selectedTabIndex, modifier, containerColor, contentColor, edgePadding, indicator, divider, tabs)"
-        )
+        ),
 )
 @Suppress("DEPRECATION")
 fun ScrollableTabRow(
@@ -1454,7 +1412,7 @@ fun ScrollableTabRow(
             )
         },
     divider: @Composable () -> Unit = @Composable { HorizontalDivider() },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRowWithSubcomposeImpl(
         selectedTabIndex = selectedTabIndex,
@@ -1465,6 +1423,6 @@ fun ScrollableTabRow(
         edgePadding = edgePadding,
         divider = divider,
         tabs = tabs,
-        scrollState = rememberScrollState()
+        scrollState = rememberScrollState(),
     )
 }

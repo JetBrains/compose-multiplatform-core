@@ -76,7 +76,7 @@ fun ButtonGroupSample() {
             ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "Localized description"
+                    contentDescription = "Localized description",
                 )
             }
         }
@@ -113,11 +113,11 @@ fun SingleSelectConnectedButtonGroupSample() {
                         0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                         options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                         else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    }
+                    },
             ) {
                 Icon(
                     if (selectedIndex == index) checkedIcons[index] else unCheckedIcons[index],
-                    contentDescription = "Localized description"
+                    contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
                 Text(label)
@@ -137,7 +137,7 @@ fun SingleSelectConnectedButtonGroupWithFlowLayoutSample() {
             Icons.Outlined.Restaurant,
             Icons.Outlined.Coffee,
             Icons.Outlined.Search,
-            Icons.Outlined.Home
+            Icons.Outlined.Home,
         )
     val checkedIcons =
         listOf(
@@ -145,14 +145,14 @@ fun SingleSelectConnectedButtonGroupWithFlowLayoutSample() {
             Icons.Filled.Restaurant,
             Icons.Filled.Coffee,
             Icons.Filled.Search,
-            Icons.Filled.Home
+            Icons.Filled.Home,
         )
     var selectedIndex by remember { mutableIntStateOf(0) }
 
     FlowRow(
         Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         options.forEachIndexed { index, label ->
             ToggleButton(
@@ -164,11 +164,11 @@ fun SingleSelectConnectedButtonGroupWithFlowLayoutSample() {
                         options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                         else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                     },
-                modifier = Modifier.semantics { role = Role.RadioButton }
+                modifier = Modifier.semantics { role = Role.RadioButton },
             ) {
                 Icon(
                     if (selectedIndex == index) checkedIcons[index] else unCheckedIcons[index],
-                    contentDescription = "Localized description"
+                    contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
                 Text(label)
@@ -189,7 +189,7 @@ fun MultiSelectConnectedButtonGroupSample() {
 
     Row(
         Modifier.padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
     ) {
         val modifiers = listOf(Modifier.weight(1f), Modifier.weight(1.5f), Modifier.weight(1f))
         options.forEachIndexed { index, label ->
@@ -202,11 +202,61 @@ fun MultiSelectConnectedButtonGroupSample() {
                         0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                         options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                         else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    }
+                    },
             ) {
                 Icon(
                     if (checked[index]) checkedIcons[index] else unCheckedIcons[index],
-                    contentDescription = "Localized description"
+                    contentDescription = "Localized description",
+                )
+                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                Text(label)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Sampled
+@Composable
+fun MultiSelectConnectedButtonGroupWithFlowLayoutSample() {
+    val options = listOf("Work", "Restaurant", "Coffee", "Search", "Home")
+    val unCheckedIcons =
+        listOf(
+            Icons.Outlined.Work,
+            Icons.Outlined.Restaurant,
+            Icons.Outlined.Coffee,
+            Icons.Outlined.Search,
+            Icons.Outlined.Home,
+        )
+    val checkedIcons =
+        listOf(
+            Icons.Filled.Work,
+            Icons.Filled.Restaurant,
+            Icons.Filled.Coffee,
+            Icons.Filled.Search,
+            Icons.Filled.Home,
+        )
+    val checked = remember { mutableStateListOf(false, false, false, false, false) }
+
+    FlowRow(
+        Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        options.forEachIndexed { index, label ->
+            ToggleButton(
+                checked = checked[index],
+                onCheckedChange = { checked[index] = it },
+                shapes =
+                    when (index) {
+                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    },
+            ) {
+                Icon(
+                    if (checked[index]) checkedIcons[index] else unCheckedIcons[index],
+                    contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
                 Text(label)

@@ -207,7 +207,7 @@ class OnGlobalLayoutListenerTest {
             rule.setContent {
                 Column(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    verticalArrangement = Arrangement.SpaceBetween
+                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Box(
                         Modifier.graphicsLayer {
@@ -247,7 +247,7 @@ class OnGlobalLayoutListenerTest {
                     topBar = {
                         Row(
                             modifier = Modifier.height(topBarHeightPx.toDp()).testTag(occlusionTag),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Box(
                                 Modifier.fillMaxHeight()
@@ -268,7 +268,7 @@ class OnGlobalLayoutListenerTest {
                                 // Will only fit one box, so that it can scroll up
                                 .size(columnBoxSizePx.toDp())
                                 .verticalScroll(scrollState),
-                        verticalArrangement = Arrangement.spacedBy(2f.toDp())
+                        verticalArrangement = Arrangement.spacedBy(2f.toDp()),
                     ) {
                         Box(Modifier.size(columnBoxSizePx.toDp()).testTag(targetTag))
                         Box(Modifier.size(columnBoxSizePx.toDp()))
@@ -437,9 +437,7 @@ class OnGlobalLayoutListenerTest {
             var countDown = CountDownLatch(1)
 
             rule.setContent {
-                Column(
-                    modifier = Modifier.size((rootSizePx).toDp()),
-                ) {
+                Column(modifier = Modifier.size((rootSizePx).toDp())) {
                     Box(Modifier.size((itemSizePx * sizeMultiplier).toDp()))
                     Box(
                         Modifier.size((itemSizePx * sizeMultiplier2).toDp())
@@ -457,7 +455,7 @@ class OnGlobalLayoutListenerTest {
             assertEquals(IntOffset(0, (itemSizePx * sizeMultiplier).fastRoundToInt()), posInRoot)
             assertEquals(
                 Size(itemSizePx * sizeMultiplier2, itemSizePx * sizeMultiplier2).roundToIntSize(),
-                size
+                size,
             )
 
             countDown = CountDownLatch(1)
@@ -472,10 +470,10 @@ class OnGlobalLayoutListenerTest {
                         itemSizePx * sizeMultiplier2,
                         (itemSizePx * sizeMultiplier2).coerceAtMost(
                             rootSizePx - (itemSizePx * sizeMultiplier)
-                        )
+                        ),
                     )
                     .roundToIntSize(),
-                size
+                size,
             )
         }
 
@@ -494,7 +492,7 @@ class OnGlobalLayoutListenerTest {
      */
     private fun SemanticsNodeInteraction.assertOcclusions(
         occludingTag: String,
-        expectedCount: Int
+        expectedCount: Int,
     ) {
         val occlusionSet = mutableIntSetOf()
         var callbackCount = 0
@@ -540,7 +538,7 @@ class OnGlobalLayoutListenerTest {
             OnGlobaLayoutListenerElement(
                 throttleMillis = 0,
                 debounceMillis = 0,
-                callback = callback
+                callback = callback,
             )
 }
 
@@ -577,7 +575,7 @@ private fun PlaceTwoLayoutsApartVert(
             }
         },
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -590,7 +588,7 @@ private data class OnGlobaLayoutListenerElement(
         OnGlobalLayoutListenerNode(
             throttleMillis = throttleMillis,
             debounceMillis = debounceMillis,
-            callback = callback
+            callback = callback,
         )
 
     override fun update(node: OnGlobalLayoutListenerNode) {

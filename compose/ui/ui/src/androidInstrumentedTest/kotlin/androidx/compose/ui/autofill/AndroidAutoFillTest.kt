@@ -85,7 +85,7 @@ class AndroidAutoFillTest {
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 
@@ -128,7 +128,7 @@ class AndroidAutoFillTest {
             AutofillNode(
                 onFill = { autoFilledValue = it },
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         val autofillValues =
             SparseArray<AutofillValue>().apply {

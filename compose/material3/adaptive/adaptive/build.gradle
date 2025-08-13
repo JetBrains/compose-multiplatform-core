@@ -116,17 +116,17 @@ kotlin {
             }
         }
 
-        skikoMain.dependsOn(commonMain)
-        desktopMain.dependsOn(skikoMain)
-        nonJvmMain.dependsOn(skikoMain)
+        nonAndroidMain.dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nonJvmMain.dependsOn(nonAndroidMain)
         webMain.dependsOn(nonJvmMain)
         jsMain.dependsOn(webMain)
         wasmJsMain.dependsOn(webMain)
         nativeMain.dependsOn(nonJvmMain)
 
-        skikoTest.dependsOn(commonTest)
-        desktopTest.dependsOn(skikoTest)
-        nonJvmTest.dependsOn(skikoTest)
+        nonAndroidTest.dependsOn(commonTest)
+        desktopTest.dependsOn(nonAndroidTest)
+        nonJvmTest.dependsOn(nonAndroidTest)
         webTest.dependsOn(nonJvmTest)
         jsTest.dependsOn(webTest)
         wasmJsTest.dependsOn(webTest)

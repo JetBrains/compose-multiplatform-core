@@ -98,7 +98,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             val positionChange = change.positionChange()
             dragOrder = count++
@@ -124,7 +124,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             dragOrder = count++
             if (change.positionChange().y > 0f || !consumePositiveOnly) {
@@ -148,7 +148,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             dragOrder = count++
             if (change.positionChange().x > 0f || !consumePositiveOnly) {
@@ -310,12 +310,12 @@ class DragGestureDetectorTest(dragType: GestureType) {
     }
 
     private fun layoutWithGestureDetector(
-        gestureDetector: suspend PointerInputScope.() -> Unit,
+        gestureDetector: suspend PointerInputScope.() -> Unit
     ): @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
             LocalViewConfiguration provides
-                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
+                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero),
         ) {
             with(LocalDensity.current) {
                 Box(
@@ -352,7 +352,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
     private fun performTouch(
         initialPass: PointerInputChange.() -> Unit = nothingHandler,
         finalPass: PointerInputChange.() -> Unit = nothingHandler,
-        block: TouchInjectionScope.() -> Unit
+        block: TouchInjectionScope.() -> Unit,
     ) {
         this.initialPass = initialPass
         this.finalPass = finalPass

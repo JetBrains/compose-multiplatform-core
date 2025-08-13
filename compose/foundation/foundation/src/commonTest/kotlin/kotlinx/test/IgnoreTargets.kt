@@ -23,3 +23,6 @@ expect annotation class IgnoreWasmTarget()
 
 @OptionalExpectation
 expect annotation class IgnoreJsTarget()
+
+@OptionalExpectation
+expect annotation class IgnoreIosTarget()

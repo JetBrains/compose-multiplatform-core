@@ -106,7 +106,7 @@ class RulerTest {
                             rulers = {
                                 verticalRuler.provides(35f)
                                 horizontalRuler.provides(53f)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -150,7 +150,7 @@ class RulerTest {
                             rulers = {
                                 verticalRuler.provides(35f)
                                 horizontalRuler.provides(53f)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -168,7 +168,7 @@ class RulerTest {
                                     verticalKeylineValues += verticalRuler.current(Float.NaN)
                                     p.place(0, 0)
                                 }
-                            }
+                            },
                     )
                     Text("World")
                 }
@@ -198,7 +198,7 @@ class RulerTest {
                             rulers = {
                                 verticalRuler.provides(5f)
                                 horizontalRuler.provides(7f)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -239,7 +239,7 @@ class RulerTest {
                             layout(
                                 p.width,
                                 p.height,
-                                rulers = { verticalRuler.providesRelative(0f) }
+                                rulers = { verticalRuler.providesRelative(0f) },
                             ) {
                                 p.place(0, 0)
                             }
@@ -285,7 +285,7 @@ class RulerTest {
                             layout(
                                 p.width,
                                 p.height,
-                                rulers = { verticalRuler.providesRelative(0f) }
+                                rulers = { verticalRuler.providesRelative(0f) },
                             ) {
                                 p.place(0, 0)
                             }
@@ -332,7 +332,7 @@ class RulerTest {
                             layout(
                                 p.width,
                                 p.height,
-                                rulers = { verticalRuler.providesRelative(0f) }
+                                rulers = { verticalRuler.providesRelative(0f) },
                             ) {
                                 p.place(0, 0)
                             }
@@ -387,7 +387,7 @@ class RulerTest {
                             rulers = {
                                 verticalRuler.provides(vertValue)
                                 horizontalRuler.provides(horzValue)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -442,7 +442,7 @@ class RulerTest {
                                     verticalRuler.provides(35f)
                                     horizontalRuler.provides(53f)
                                 }
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -496,7 +496,7 @@ class RulerTest {
                                     verticalRuler.provides(35f)
                                     horizontalRuler.provides(53f)
                                 }
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -548,7 +548,7 @@ class RulerTest {
                             rulers = {
                                 verticalRuler.provides(35f)
                                 horizontalRuler.provides(53f)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }
@@ -600,7 +600,7 @@ class RulerTest {
                             rulers = {
                                 val position = coordinates.positionInRoot().x
                                 verticalRuler.provides(-position)
-                            }
+                            },
                         ) {
                             p.place(0, 0)
                         }

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.adaptive.layout
 
-import android.os.Build
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.VerticalDragHandle
@@ -26,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.captureToImage
@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class ThreePaneScaffoldScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -144,7 +144,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_scaffoldStateTransitionFraction_0percent"
+                "threePaneScaffold_scaffoldStateTransitionFraction_0percent",
             )
     }
 
@@ -175,7 +175,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_scaffoldStateTransitionFraction_10percent"
+                "threePaneScaffold_scaffoldStateTransitionFraction_10percent",
             )
     }
 
@@ -197,7 +197,99 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_listDetailPaneOrder_withReflowedPane"
+                "threePaneScaffold_listDetailPaneOrder_withReflowedPane",
+            )
+    }
+
+    @Test
+    fun threePaneScaffold_singlePaneLayout_withLevitatedPane() {
+        rule.setContent {
+            SampleThreePaneScaffoldStandardMode(
+                overrideScaffoldValue =
+                    ThreePaneScaffoldValue(
+                        primary = PaneAdaptedValue.Expanded,
+                        secondary = PaneAdaptedValue.Levitated(alignment = Alignment.Center),
+                        tertiary = PaneAdaptedValue.Hidden,
+                    )
+            )
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_singlePaneLayout_withLevitatedPane",
+            )
+    }
+
+    @Test
+    fun threePaneScaffold_dualPaneLayout_withLevitatedPaneWithScrim() {
+        rule.setContentWithSimulatedSize(simulatedWidth = 1024.dp, simulatedHeight = 800.dp) {
+            SampleThreePaneScaffoldStandardMode(
+                overrideScaffoldValue =
+                    ThreePaneScaffoldValue(
+                        primary = PaneAdaptedValue.Expanded,
+                        secondary =
+                            PaneAdaptedValue.Levitated(
+                                alignment = Alignment.Center,
+                                scrim = Scrim(),
+                            ),
+                        tertiary = PaneAdaptedValue.Hidden,
+                    )
+            )
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_dualPaneLayout_withLevitatedPaneWithScrim",
+            )
+    }
+
+    @Test
+    fun threePaneScaffold_singlePaneLayout_withLevitatedBottomAligned() {
+        rule.setContent {
+            SampleThreePaneScaffoldStandardMode(
+                overrideScaffoldValue =
+                    ThreePaneScaffoldValue(
+                        primary = PaneAdaptedValue.Expanded,
+                        secondary = PaneAdaptedValue.Levitated(alignment = Alignment.BottomCenter),
+                        tertiary = PaneAdaptedValue.Hidden,
+                    )
+            )
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_singlePaneLayout_withLevitatedBottomAligned",
+            )
+    }
+
+    @Test
+    fun threePaneScaffold_dualPaneLayout_withLevitatedPaneStartAligned() {
+        rule.setContentWithSimulatedSize(simulatedWidth = 1024.dp, simulatedHeight = 800.dp) {
+            SampleThreePaneScaffoldStandardMode(
+                overrideScaffoldValue =
+                    ThreePaneScaffoldValue(
+                        primary = PaneAdaptedValue.Expanded,
+                        secondary = PaneAdaptedValue.Levitated(alignment = Alignment.CenterStart),
+                        tertiary = PaneAdaptedValue.Expanded,
+                    )
+            )
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_dualPaneLayout_withLevitatedPaneStartAligned",
             )
     }
 
@@ -216,7 +308,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_fixedFirstPaneWidth"
+                "threePaneScaffold_paneExpansion_fixedFirstPaneWidth",
             )
     }
 
@@ -233,7 +325,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_zeroFirstPaneWidth"
+                "threePaneScaffold_paneExpansion_zeroFirstPaneWidth",
             )
     }
 
@@ -252,7 +344,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_overflowFirstPaneWidth"
+                "threePaneScaffold_paneExpansion_overflowFirstPaneWidth",
             )
     }
 
@@ -269,7 +361,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_fixedFirstPanePercentage"
+                "threePaneScaffold_paneExpansion_fixedFirstPanePercentage",
             )
     }
 
@@ -286,7 +378,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_zeroFirstPanePercentage"
+                "threePaneScaffold_paneExpansion_zeroFirstPanePercentage",
             )
     }
 
@@ -303,7 +395,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_smallFirstPanePercentage"
+                "threePaneScaffold_paneExpansion_smallFirstPanePercentage",
             )
     }
 
@@ -320,7 +412,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_largeFirstPanePercentage"
+                "threePaneScaffold_paneExpansion_largeFirstPanePercentage",
             )
     }
 
@@ -337,7 +429,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansion_fullFirstPanePercentage"
+                "threePaneScaffold_paneExpansion_fullFirstPanePercentage",
             )
     }
 
@@ -356,7 +448,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_disabledOnSinglePane"
+                "threePaneScaffold_paneExpansionWithDragHandle_disabledOnSinglePane",
             )
     }
 
@@ -375,7 +467,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_fixedFirstPaneWidth"
+                "threePaneScaffold_paneExpansionWithDragHandle_fixedFirstPaneWidth",
             )
     }
 
@@ -392,7 +484,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_zeroFirstPaneWidth"
+                "threePaneScaffold_paneExpansionWithDragHandle_zeroFirstPaneWidth",
             )
     }
 
@@ -411,7 +503,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_overflowFirstPaneWidth"
+                "threePaneScaffold_paneExpansionWithDragHandle_overflowFirstPaneWidth",
             )
     }
 
@@ -426,7 +518,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionDragHandle_unspecifiedExpansionState"
+                "threePaneScaffold_paneExpansionDragHandle_unspecifiedExpansionState",
             )
     }
 
@@ -447,7 +539,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_dragging"
+                "threePaneScaffold_paneExpansionWithDragHandle_dragging",
             )
     }
 
@@ -468,7 +560,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_draggingCloseToLeftEdge"
+                "threePaneScaffold_paneExpansionWithDragHandle_draggingCloseToLeftEdge",
             )
     }
 
@@ -489,7 +581,7 @@ class ThreePaneScaffoldScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "threePaneScaffold_paneExpansionWithDragHandle_draggingCloseToRightEdge"
+                "threePaneScaffold_paneExpansionWithDragHandle_draggingCloseToRightEdge",
             )
     }
 }
@@ -505,12 +597,12 @@ private fun SampleThreePaneScaffoldStandardMode(
             ?: calculateThreePaneScaffoldValue(
                 scaffoldDirective.maxHorizontalPartitions,
                 ThreePaneScaffoldDefaults.adaptStrategies(),
-                null
+                null,
             )
     SampleThreePaneScaffold(
         scaffoldDirective,
         scaffoldValue,
-        ListDetailPaneScaffoldDefaults.PaneOrder
+        ListDetailPaneScaffoldDefaults.PaneOrder,
     )
 }
 
@@ -523,12 +615,12 @@ private fun SampleThreePaneScaffoldDenseMode() {
         calculateThreePaneScaffoldValue(
             scaffoldDirective.maxHorizontalPartitions,
             ThreePaneScaffoldDefaults.adaptStrategies(),
-            null
+            null,
         )
     SampleThreePaneScaffold(
         scaffoldDirective,
         scaffoldValue,
-        ListDetailPaneScaffoldDefaults.PaneOrder
+        ListDetailPaneScaffoldDefaults.PaneOrder,
     )
 }
 
@@ -540,7 +632,7 @@ private fun SampleThreePaneScaffoldWithScaffoldState(scaffoldState: ThreePaneSca
     SampleThreePaneScaffold(
         scaffoldDirective,
         scaffoldState,
-        ListDetailPaneScaffoldDefaults.PaneOrder
+        ListDetailPaneScaffoldDefaults.PaneOrder,
     )
 }
 
@@ -556,14 +648,14 @@ internal fun SampleThreePaneScaffoldWithPaneExpansion(
         calculateThreePaneScaffoldValue(
             scaffoldDirective.maxHorizontalPartitions,
             ThreePaneScaffoldDefaults.adaptStrategies(),
-            null
+            null,
         )
     SampleThreePaneScaffold(
         scaffoldDirective = scaffoldDirective,
         scaffoldValue = scaffoldValue,
         paneOrder = ListDetailPaneScaffoldDefaults.PaneOrder,
         paneExpansionState = paneExpansionState,
-        paneExpansionDragHandle = paneExpansionDragHandle
+        paneExpansionDragHandle = paneExpansionDragHandle,
     )
 }
 
@@ -578,6 +670,6 @@ internal fun ThreePaneScaffoldScope.MockDragHandle(state: PaneExpansionState) {
                 LocalMinimumInteractiveComponentSize.current,
                 interactionSource,
             ),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }

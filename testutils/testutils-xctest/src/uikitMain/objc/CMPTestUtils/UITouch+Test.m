@@ -72,7 +72,7 @@ typedef struct {
 - (id)initAtPoint:(CGPoint)point inWindow:(UIWindow *)window tapCount:(NSInteger)tapCount fromEdge:(BOOL)fromEdge {
 	self = [super init];
     if (self) {
-        UIView *hitTestView = [window hitTest:point withEvent:nil];
+        UIView *hitTestView = [window hitTest:point withEvent:[[UIApplication sharedApplication] _touchesEvent]];
 
         [self setWindow:window];
         [self setView:hitTestView];

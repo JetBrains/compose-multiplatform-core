@@ -49,6 +49,7 @@ internal actual fun ActualImageBitmap(
     hasAlpha: Boolean,
     colorSpace: ColorSpace
 ): ImageBitmap {
+    require(width > 0 && height > 0) { "width and height must be > 0" }
     val colorType = config.toSkiaColorType()
     val alphaType = if (hasAlpha) ColorAlphaType.PREMUL else ColorAlphaType.OPAQUE
     val skiaColorSpace = colorSpace.toSkiaColorSpace()

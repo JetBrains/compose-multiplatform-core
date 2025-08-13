@@ -68,14 +68,14 @@ internal fun rememberPagerMeasurePolicy(
         snapPosition,
         pageCount,
         beyondViewportPageCount,
-        coroutineScope
+        coroutineScope,
     ) {
         LazyLayoutMeasurePolicy { containerConstraints ->
             state.measurementScopeInvalidator.attachToScope()
             val isVertical = orientation == Orientation.Vertical
             checkScrollableContainerConstraints(
                 containerConstraints,
-                if (isVertical) Orientation.Vertical else Orientation.Horizontal
+                if (isVertical) Orientation.Vertical else Orientation.Horizontal,
             )
 
             // resolve content paddings
@@ -133,7 +133,7 @@ internal fun rememberPagerMeasurePolicy(
                     // we offset start padding by negative space between paddings.
                     IntOffset(
                         if (isVertical) startPadding else startPadding + mainAxisAvailableSize,
-                        if (isVertical) topPadding + mainAxisAvailableSize else topPadding
+                        if (isVertical) topPadding + mainAxisAvailableSize else topPadding,
                     )
                 }
 
@@ -156,7 +156,7 @@ internal fun rememberPagerMeasurePolicy(
                             contentConstraints.maxHeight
                         } else {
                             pageAvailableSize
-                        }
+                        },
                 )
             val itemProvider = itemProviderLambda()
 
@@ -175,14 +175,14 @@ internal fun rememberPagerMeasurePolicy(
                         afterContentPadding,
                         state.currentPage,
                         state.currentPageOffsetFraction,
-                        state.pageCount
+                        state.pageCount,
                     )
             }
 
             val pinnedPages =
                 itemProvider.calculateLazyLayoutPinnedIndices(
                     pinnedItemList = state.pinnedPages,
-                    beyondBoundsInfo = state.beyondBoundsInfo
+                    beyondBoundsInfo = state.beyondBoundsInfo,
                 )
 
             val placeablesCache = mutableIntObjectMapOf<List<Placeable>>()
@@ -216,9 +216,9 @@ internal fun rememberPagerMeasurePolicy(
                             containerConstraints.constrainWidth(width + totalHorizontalPadding),
                             containerConstraints.constrainHeight(height + totalVerticalPadding),
                             emptyMap(),
-                            placement
+                            placement,
                         )
-                    }
+                    },
                 )
             state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
             measureResult

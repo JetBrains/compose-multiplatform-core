@@ -39,12 +39,10 @@ private fun OnVisibilityChangedAutoplaySample() {
             items(feedData) { video ->
                 VideoRow(
                     video,
-                    Modifier.onVisibilityChanged(
-                        minDurationMs = 500,
-                        minFractionVisible = 1f,
-                    ) { visible ->
+                    Modifier.onVisibilityChanged(minDurationMs = 500, minFractionVisible = 1f) {
+                        visible ->
                         if (visible) video.play() else video.pause()
-                    }
+                    },
                 )
             }
         }
@@ -67,7 +65,7 @@ private fun OnVisibilityChangedAutoplayWithViewportSample() {
                         viewportBounds = viewport,
                     ) { visible ->
                         if (visible) video.play() else video.pause()
-                    }
+                    },
                 )
             }
         }
@@ -84,10 +82,8 @@ private fun OnVisibilityChangedDurationLoggingSample() {
                 var startTime by remember { mutableLongStateOf(-1) }
                 VideoRow(
                     video,
-                    Modifier.onVisibilityChanged(
-                        minDurationMs = 500,
-                        minFractionVisible = 1f,
-                    ) { visible ->
+                    Modifier.onVisibilityChanged(minDurationMs = 500, minFractionVisible = 1f) {
+                        visible ->
                         if (visible) {
                             startTime = System.currentTimeMillis()
                         } else if (startTime >= 0) {
@@ -95,7 +91,7 @@ private fun OnVisibilityChangedDurationLoggingSample() {
                             logger.logImpression(video.id, durationMs)
                             startTime = -1
                         }
-                    }
+                    },
                 )
             }
         }
@@ -111,12 +107,9 @@ private fun OnFirstVisibleImpressionLoggingSample() {
             items(feedData) { video ->
                 VideoRow(
                     video,
-                    Modifier.onFirstVisible(
-                        minDurationMs = 500,
-                        minFractionVisible = 1f,
-                    ) {
+                    Modifier.onFirstVisible(minDurationMs = 500, minFractionVisible = 1f) {
                         logger.logImpression(video.id)
-                    }
+                    },
                 )
             }
         }
@@ -136,21 +129,17 @@ private fun OnFirstVisibleImpressionLoggingWithViewportSample() {
                     Modifier.onFirstVisible(
                         minDurationMs = 500,
                         minFractionVisible = 1f,
-                        viewportBounds = viewport
+                        viewportBounds = viewport,
                     ) {
                         logger.logImpression(video.id)
-                    }
+                    },
                 )
             }
         }
     }
 }
 
-@Composable
-fun VideoRow(
-    video: Video,
-    modifier: Modifier = Modifier,
-) {}
+@Composable fun VideoRow(video: Video, modifier: Modifier = Modifier) {}
 
 class Logger {
     fun logImpression(id: Int) {}

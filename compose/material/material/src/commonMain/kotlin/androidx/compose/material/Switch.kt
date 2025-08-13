@@ -96,7 +96,7 @@ fun Switch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    colors: SwitchColors = SwitchDefaults.colors()
+    colors: SwitchColors = SwitchDefaults.colors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -119,7 +119,7 @@ fun Switch(
                         true at maxBound
                     },
                 positionalThreshold = { distance -> distance * SwitchPositionalThreshold },
-                velocityThreshold = { switchVelocityThresholdPx }
+                velocityThreshold = { switchVelocityThresholdPx },
             )
         }
     val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
@@ -147,7 +147,7 @@ fun Switch(
                 enabled = enabled,
                 role = Role.Switch,
                 interactionSource = interactionSource,
-                indication = null
+                indication = null,
             )
         } else {
             Modifier
@@ -169,7 +169,7 @@ fun Switch(
                 enabled = enabled && onCheckedChange != null,
                 reverseDirection = isRtl,
                 interactionSource = interactionSource,
-                startDragImmediately = false
+                startDragImmediately = false,
             )
             .wrapContentSize(Alignment.Center)
             .padding(DefaultSwitchPadding)
@@ -180,7 +180,7 @@ fun Switch(
             enabled = enabled,
             colors = colors,
             thumbValue = { anchoredDraggableState.requireOffset() },
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
     }
 }
@@ -216,7 +216,7 @@ private fun BoxScope.SwitchImpl(
     enabled: Boolean,
     colors: SwitchColors,
     thumbValue: () -> Float,
-    interactionSource: InteractionSource
+    interactionSource: InteractionSource,
 ) {
     val interactions = remember { mutableStateListOf<Interaction>() }
 
@@ -260,7 +260,7 @@ private fun BoxScope.SwitchImpl(
             .offset { IntOffset(thumbValue().roundToInt(), 0) }
             .indication(
                 interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = ThumbRippleRadius)
+                indication = ripple(bounded = false, radius = ThumbRippleRadius),
             )
             .requiredSize(ThumbDiameter)
             .shadow(elevation, CircleShape, clip = false)
@@ -275,7 +275,7 @@ private fun DrawScope.drawTrack(trackColor: Color, trackWidth: Float, strokeWidt
         Offset(strokeRadius, center.y),
         Offset(trackWidth - strokeRadius, center.y),
         strokeWidth,
-        StrokeCap.Round
+        StrokeCap.Round,
     )
 }
 
@@ -337,7 +337,7 @@ object SwitchDefaults {
         disabledUncheckedTrackColor: Color =
             uncheckedTrackColor
                 .copy(alpha = ContentAlpha.disabled)
-                .compositeOver(MaterialTheme.colors.surface)
+                .compositeOver(MaterialTheme.colors.surface),
     ): SwitchColors =
         DefaultSwitchColors(
             checkedThumbColor = checkedThumbColor,
@@ -348,7 +348,7 @@ object SwitchDefaults {
             disabledCheckedTrackColor = disabledCheckedTrackColor.copy(alpha = checkedTrackAlpha),
             disabledUncheckedThumbColor = disabledUncheckedThumbColor,
             disabledUncheckedTrackColor =
-                disabledUncheckedTrackColor.copy(alpha = uncheckedTrackAlpha)
+                disabledUncheckedTrackColor.copy(alpha = uncheckedTrackAlpha),
         )
 }
 
@@ -362,7 +362,7 @@ private class DefaultSwitchColors(
     private val disabledCheckedThumbColor: Color,
     private val disabledCheckedTrackColor: Color,
     private val disabledUncheckedThumbColor: Color,
-    private val disabledUncheckedTrackColor: Color
+    private val disabledUncheckedTrackColor: Color,
 ) : SwitchColors {
     @Composable
     override fun thumbColor(enabled: Boolean, checked: Boolean): State<Color> {

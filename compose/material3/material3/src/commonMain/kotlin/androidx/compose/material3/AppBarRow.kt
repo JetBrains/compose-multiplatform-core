@@ -75,17 +75,17 @@ fun AppBarRow(
                         overflowIndicator(menuState)
                         DropdownMenu(
                             expanded = menuState.isExpanded,
-                            onDismissRequest = { menuState.dismiss() }
+                            onDismissRequest = { menuState.dismiss() },
                         ) {
                             scope.items
                                 .subList(
                                     overflowState.visibleItemCount,
-                                    overflowState.totalItemCount
+                                    overflowState.totalItemCount,
                                 )
                                 .fastForEach { item -> item.MenuContent(menuState) }
                         }
                     }
-                }
+                },
             ),
         modifier = modifier,
         measurePolicy = measurePolicy,

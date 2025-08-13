@@ -77,8 +77,15 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    // TODO(grantapher-cm-api-publicize) Make field public
-    @Suppress("MutableBareField") @JvmField internal var isNewContextMenuEnabled = false
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-7757/Adopt-new-context-menu-API
+    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
+
+    /**
+     * Whether to use the new smart selection feature in
+     * [androidx.compose.foundation.text.selection.SelectionContainer] and all
+     * [androidx.compose.foundation.text.BasicTextField]s.
+     */
+    @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
 
     /**
      * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
@@ -131,4 +138,27 @@ object ComposeFoundationFlags {
     @Suppress("MutableBareField")
     @JvmField
     var isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled: Boolean = true
+
+    /**
+     * With this flag on a new fling cancellation behavior will be implemented. Previously, when the
+     * list hit the bounds we would cancel the fling since the list couldn't consume anything
+     * anymore. Now we only cancel the fling if the scrollable node is detatched.
+     */
+    @Suppress("MutableBareField") @JvmField var isFlingContinuationAtBoundsEnabled = true
+
+    /**
+     * With this flag on we don't use suspend pointer input as part of Modifier.clickable
+     * implementation as an optimization.
+     */
+    @Suppress("MutableBareField") @JvmField var isNonSuspendingPointerInputInClickableEnabled = true
+
+    /**
+     * With this flag on, the new BasicTextField and the other new TextFields that accept
+     * [androidx.compose.foundation.text.input.TextFieldState] changes their behavior of how they
+     * process arrow/Dpad keys received from input devices such as hardware keyboards, gamepads, or
+     * TV remotes. The new behavior is to always move the cursor first until it reaches the start or
+     * the end of the text. Then the TextField allows to move the focus to the next focusable
+     * element on the screen.
+     */
+    @Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
 }

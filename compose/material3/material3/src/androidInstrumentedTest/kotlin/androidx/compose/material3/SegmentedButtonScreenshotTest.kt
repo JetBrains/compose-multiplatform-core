@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Favorite
@@ -38,7 +37,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class SegmentedButtonScreenshotTest {
 
@@ -51,11 +50,7 @@ class SegmentedButtonScreenshotTest {
         rule.setMaterialContent(lightColorScheme()) {
             MultiChoiceSegmentedButtonRow(modifier = Modifier.testTag(testTag)) {
                 values.forEach {
-                    SegmentedButton(
-                        checked = false,
-                        onCheckedChange = {},
-                        shape = RectangleShape,
-                    ) {
+                    SegmentedButton(checked = false, onCheckedChange = {}, shape = RectangleShape) {
                         Text(it)
                     }
                 }
@@ -115,7 +110,7 @@ class SegmentedButtonScreenshotTest {
                                     Icon(
                                         imageVector = Icons.Outlined.Favorite,
                                         contentDescription = null,
-                                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize),
                                     )
                                 }
                             },
@@ -136,7 +131,7 @@ class SegmentedButtonScreenshotTest {
             val colors =
                 SegmentedButtonDefaults.colors(
                     activeBorderColor = Color.Blue,
-                    inactiveBorderColor = Color.Yellow
+                    inactiveBorderColor = Color.Yellow,
                 )
             MultiChoiceSegmentedButtonRow(modifier = Modifier.testTag(testTag)) {
                 values.forEachIndexed { index, item ->
@@ -161,7 +156,7 @@ class SegmentedButtonScreenshotTest {
             val colors =
                 SegmentedButtonDefaults.colors(
                     activeBorderColor = Color.Blue,
-                    inactiveBorderColor = Color.Yellow
+                    inactiveBorderColor = Color.Yellow,
                 )
             MultiChoiceSegmentedButtonRow(modifier = Modifier.testTag(testTag)) {
                 values.forEachIndexed { index, item ->
@@ -187,11 +182,7 @@ class SegmentedButtonScreenshotTest {
         rule.setMaterialContent(darkColorScheme()) {
             MultiChoiceSegmentedButtonRow(modifier = Modifier.testTag(testTag)) {
                 values.forEach {
-                    SegmentedButton(
-                        checked = false,
-                        onCheckedChange = {},
-                        shape = RectangleShape,
-                    ) {
+                    SegmentedButton(checked = false, onCheckedChange = {}, shape = RectangleShape) {
                         Text(it)
                     }
                 }

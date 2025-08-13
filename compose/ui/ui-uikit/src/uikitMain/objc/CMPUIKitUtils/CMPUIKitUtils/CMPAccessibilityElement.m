@@ -81,14 +81,6 @@ NS_ASSUME_NONNULL_BEGIN
     return [super accessibilityPerformEscape];
 }
 
-- (BOOL)accessibilityScrollToVisible {
-    return NO;
-}
-
-- (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
-    return NO;
-}
-
 - (void)accessibilityElementDidBecomeFocused {
     [super accessibilityElementDidBecomeFocused];
 }
@@ -97,16 +89,20 @@ NS_ASSUME_NONNULL_BEGIN
     [super accessibilityElementDidLoseFocus];
 }
 
-- (NSInteger)accessibilityElementCount {
-    return [super accessibilityElementCount];
+- (NSArray *)accessibilityElements {
+    return [super accessibilityElements];
 }
 
-- (NSInteger)indexOfAccessibilityElement:(nonnull id)element {
-    return [super indexOfAccessibilityElement:element];
+- (void)setAccessibilityElements:(nullable NSArray *)accessibilityElements {
+    [super setAccessibilityElements:accessibilityElements];
 }
 
-- (id _Nullable)accessibilityElementAtIndex:(NSInteger)index {
-    return [super accessibilityElementAtIndex:index];
+- (BOOL)_drawsFocusRingWhenChildrenFocused {
+    return [self drawsFocusRingWhenChildrenFocused];
+}
+
+- (BOOL)drawsFocusRingWhenChildrenFocused {
+    return NO;
 }
 
 @end

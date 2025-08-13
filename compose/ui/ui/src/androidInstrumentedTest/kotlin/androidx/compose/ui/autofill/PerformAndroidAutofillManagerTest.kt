@@ -126,7 +126,7 @@ class PerformAndroidAutofillManagerTest {
             .assert(
                 SemanticsMatcher.expectValue(
                     SemanticsProperties.ContentType,
-                    ContentType.NewUsername
+                    ContentType.NewUsername,
                 )
             )
     }
@@ -385,7 +385,7 @@ class PerformAndroidAutofillManagerTest {
                         enabled = true,
                         role = Role.Tab,
                         interactionSource = null,
-                        indication = null
+                        indication = null,
                     )
                     .testTag(contentTag)
             )
@@ -433,7 +433,7 @@ class PerformAndroidAutofillManagerTest {
                         enabled = true,
                         role = Role.RadioButton,
                         interactionSource = null,
-                        indication = null
+                        indication = null,
                     )
                     .testTag(contentTag)
             )
@@ -484,7 +484,7 @@ class PerformAndroidAutofillManagerTest {
                         enabled = true,
                         role = Role.DropdownList,
                         interactionSource = null,
-                        indication = null
+                        indication = null,
                     )
                     .testTag(contentTag)
             )
@@ -535,7 +535,7 @@ class PerformAndroidAutofillManagerTest {
                         enabled = true,
                         role = Role.ValuePicker,
                         interactionSource = null,
-                        indication = null
+                        indication = null,
                     )
                     .testTag(contentTag)
             )
@@ -1159,7 +1159,7 @@ class PerformAndroidAutofillManagerTest {
                     modifier =
                         Modifier.semantics { contentType = ContentType.Username }
                             .size(height, width)
-                            .testTag(contentTag)
+                            .testTag(contentTag),
                 )
             }
         }
@@ -1208,7 +1208,7 @@ class PerformAndroidAutofillManagerTest {
                     modifier =
                         Modifier.semantics { contentType = ContentType.Username }
                             .size(height, width)
-                            .testTag(contentTag)
+                            .testTag(contentTag),
                 )
             }
         }
@@ -1259,7 +1259,7 @@ class PerformAndroidAutofillManagerTest {
                     modifier =
                         Modifier.semantics { contentType = ContentType.Password }
                             .size(height, width)
-                            .testTag(contentTag)
+                            .testTag(contentTag),
                 )
             }
         }
@@ -1311,7 +1311,7 @@ class PerformAndroidAutofillManagerTest {
                     modifier =
                         Modifier.semantics { contentType = ContentType.Password }
                             .size(height, width)
-                            .testTag(contentTag)
+                            .testTag(contentTag),
                 )
             }
         }
@@ -1410,13 +1410,13 @@ class PerformAndroidAutofillManagerTest {
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.semantics { contentType = ContentType.Username }
-                            .testTag(usernameTag)
+                            .testTag(usernameTag),
                 )
                 BasicTextField(
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.semantics { contentType = ContentType.Password }
-                            .testTag(passwordTag)
+                            .testTag(passwordTag),
                 )
             }
         }
@@ -1454,13 +1454,13 @@ class PerformAndroidAutofillManagerTest {
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.semantics { contentType = ContentType.CreditCardNumber }
-                            .testTag(creditCardTag)
+                            .testTag(creditCardTag),
                 )
                 BasicTextField(
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.semantics { contentType = ContentType.CreditCardSecurityCode }
-                            .testTag(securityCodeTag)
+                            .testTag(securityCodeTag),
                 )
             }
         }
@@ -1489,7 +1489,7 @@ class PerformAndroidAutofillManagerTest {
 
     private inline fun ViewStructure(
         view: View,
-        block: FakeViewStructure.() -> Unit
+        block: FakeViewStructure.() -> Unit,
     ): FakeViewStructure {
         return FakeViewStructure().apply {
             autofillId = view.autofillId

@@ -18,6 +18,9 @@ package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.internal.getValue
+import androidx.compose.material3.adaptive.layout.internal.rememberRef
+import androidx.compose.material3.adaptive.layout.internal.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -41,7 +44,7 @@ internal fun Modifier.predictiveBackScale(state: PredictiveBackScaleState): Modi
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal class PredictiveBackScaleState(
     private val scaffoldSize: () -> IntSize,
-    private val isPredictiveBackInProgress: () -> Boolean
+    private val isPredictiveBackInProgress: () -> Boolean,
 ) {
     val scaleAnimatable = Animatable(initialValue = 1f)
     val scale: Float
@@ -60,7 +63,7 @@ internal class PredictiveBackScaleState(
                         pivotX = scaffoldSize.width.toFloat() * transformOrigin.pivotFractionX,
                         pivotY = scaffoldSize.height.toFloat() * transformOrigin.pivotFractionY,
                         scaleX = scaleAnimatable.value,
-                        scaleY = scaleAnimatable.value
+                        scaleY = scaleAnimatable.value,
                     )
                 }
                 .map(offset.toOffset())
@@ -78,10 +81,13 @@ internal class PredictiveBackScaleState(
 @Composable
 internal fun ThreePaneScaffoldState.CollectPredictiveBackScale(
     predictiveBackScaleState: PredictiveBackScaleState
-) =
+) {
+    var previousValue by rememberRef(0f)
     LaunchedEffect(this) {
         snapshotFlow { progressFraction }
             .collect { value ->
+                if (value == previousValue) return@collect
+                previousValue = value
                 if (isPredictiveBackInProgress) {
                     val scale = convertStateProgressToPredictiveBackScale(value)
                     predictiveBackScaleState.scaleAnimatable.snapTo(scale)
@@ -90,6 +96,7 @@ internal fun ThreePaneScaffoldState.CollectPredictiveBackScale(
                 }
             }
     }
+}
 
 private fun convertStateProgressToPredictiveBackScale(fraction: Float): Float {
     // A decay curve such that: When fraction = 0, function returns 1.

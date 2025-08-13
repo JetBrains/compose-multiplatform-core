@@ -26,10 +26,10 @@ internal expect fun createApplier(container: LayoutNode): AbstractApplier<Layout
 /*@MainThread*/
 internal fun createSubcomposition(
     container: LayoutNode,
-    parent: CompositionContext
+    parent: CompositionContext,
 ): ReusableComposition = ReusableComposition(createApplier(container), parent)
 
 internal fun createPausableSubcomposition(
     container: LayoutNode,
-    parent: CompositionContext
+    parent: CompositionContext,
 ): PausableComposition = PausableComposition(createApplier(container), parent)

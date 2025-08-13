@@ -30,7 +30,7 @@ class RoundRectTest {
                 topLeft = CornerRadius(0.5f),
                 topRight = CornerRadius(0.25f),
                 bottomRight = CornerRadius(0.25f, 0.75f),
-                bottomLeft = CornerRadius.Zero
+                bottomLeft = CornerRadius.Zero,
             )
 
         assertFalse(Offset(1.0f, 1.0f) in roundRect)
@@ -51,7 +51,7 @@ class RoundRectTest {
                 topLeft = CornerRadius(5000.0f),
                 topRight = CornerRadius(2500.0f),
                 bottomRight = CornerRadius(2500.0f, 7500.0f),
-                bottomLeft = CornerRadius.Zero
+                bottomLeft = CornerRadius.Zero,
             )
 
         assertFalse(Offset(1.0f, 1.0f) in roundRect)
@@ -77,7 +77,7 @@ class RoundRectTest {
                 CornerRadius(5f, 10f),
                 CornerRadius(15f, 20f),
                 CornerRadius(25f, 30f),
-                CornerRadius(35f, 40f)
+                CornerRadius(35f, 40f),
             )
         assertEquals(right - left, roundRect.width)
     }
@@ -95,7 +95,7 @@ class RoundRectTest {
                 CornerRadius(5f, 10f),
                 CornerRadius(15f, 20f),
                 CornerRadius(25f, 30f),
-                CornerRadius(35f, 40f)
+                CornerRadius(35f, 40f),
             )
         assertEquals(bottom - top, roundRect.height)
     }
@@ -112,7 +112,7 @@ class RoundRectTest {
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
-                CornerRadius(30f, 30f)
+                CornerRadius(30f, 30f),
             )
         assertEquals(roundRect1, roundRect2)
     }
@@ -129,7 +129,7 @@ class RoundRectTest {
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
-                CornerRadius(30f, 30f)
+                CornerRadius(30f, 30f),
             )
         assertEquals(roundRect1, roundRect2)
     }
@@ -146,7 +146,7 @@ class RoundRectTest {
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
                 CornerRadius(30f, 30f),
-                CornerRadius(30f, 30f)
+                CornerRadius(30f, 30f),
             )
         assertEquals(roundRect1, roundRect2)
     }
@@ -159,7 +159,7 @@ class RoundRectTest {
                 CornerRadius(1f, 2f),
                 CornerRadius(3f, 4f),
                 CornerRadius(5f, 6f),
-                CornerRadius(7f, 8f)
+                CornerRadius(7f, 8f),
             )
         val roundRect2 =
             RoundRect(
@@ -170,7 +170,7 @@ class RoundRectTest {
                 CornerRadius(1f, 2f),
                 CornerRadius(3f, 4f),
                 CornerRadius(5f, 6f),
-                CornerRadius(7f, 8f)
+                CornerRadius(7f, 8f),
             )
         assertEquals(roundRect1, roundRect2)
     }
@@ -186,7 +186,7 @@ class RoundRectTest {
                 CornerRadius(10f, 15f),
                 CornerRadius(17f, 20f),
                 CornerRadius(25f, 30f),
-                CornerRadius(35f, 40f)
+                CornerRadius(35f, 40f),
             )
         assertEquals(CornerRadius(10f, 15f), rr.topLeftCornerRadius)
         assertEquals(CornerRadius(17f, 20f), rr.topRightCornerRadius)
@@ -224,16 +224,16 @@ class RoundRectTest {
                 topLeftCornerRadius = CornerRadius(0f, 5f),
                 topRightCornerRadius = CornerRadius(5f, 10f),
                 bottomRightCornerRadius = CornerRadius(10f, 15f),
-                bottomLeftCornerRadius = CornerRadius(15f, 20f)
+                bottomLeftCornerRadius = CornerRadius(15f, 20f),
             )
         assertEquals(
             Rect(
                 15f * insetFactor,
                 10f * insetFactor,
                 100f - 10f * insetFactor,
-                100f - 20f * insetFactor
+                100f - 20f * insetFactor,
             ),
-            rr.safeInnerRect
+            rr.safeInnerRect,
         )
     }
 
@@ -257,7 +257,7 @@ class RoundRectTest {
                     CornerRadius(16f, 16f),
                     CornerRadius(16f, 17f),
                     CornerRadius(16f, 16f),
-                    CornerRadius(16f, 16f)
+                    CornerRadius(16f, 16f),
                 )
                 .isEllipse
         )
@@ -270,7 +270,7 @@ class RoundRectTest {
                     CornerRadius(17f, 16f),
                     CornerRadius(16f, 16f),
                     CornerRadius(16f, 16f),
-                    CornerRadius(16f, 16f)
+                    CornerRadius(16f, 16f),
                 )
                 .isEllipse
         )
@@ -283,7 +283,7 @@ class RoundRectTest {
                     CornerRadius(16f, 16f),
                     CornerRadius(16f, 16f),
                     CornerRadius(17f, 16f),
-                    CornerRadius(16f, 16f)
+                    CornerRadius(16f, 16f),
                 )
                 .isEllipse
         )
@@ -296,7 +296,7 @@ class RoundRectTest {
                     CornerRadius(16f, 16f),
                     CornerRadius(16f, 16f),
                     CornerRadius(16f, 16f),
-                    CornerRadius(16f, 17f)
+                    CornerRadius(16f, 17f),
                 )
                 .isEllipse
         )

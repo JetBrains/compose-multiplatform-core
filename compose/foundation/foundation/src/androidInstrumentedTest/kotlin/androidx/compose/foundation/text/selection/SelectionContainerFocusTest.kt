@@ -137,7 +137,7 @@ class SelectionContainerFocusTest {
         val fakeTextToolbar =
             FakeTextToolbar(
                 onShowMenu = { _, _, _, _, _, _ -> lastShowCalled = true },
-                onHideMenu = { lastShowCalled = false }
+                onHideMenu = { lastShowCalled = false },
             )
 
         val tag = "SelectionContainer"
@@ -156,7 +156,7 @@ class SelectionContainerFocusTest {
                             overflow = TextOverflow.Clip,
                             maxLines = Int.MAX_VALUE,
                             inlineContent = mapOf(),
-                            onTextLayout = {}
+                            onTextLayout = {},
                         )
                     }
                 }
@@ -193,7 +193,7 @@ class SelectionContainerFocusTest {
                             overflow = TextOverflow.Clip,
                             maxLines = Int.MAX_VALUE,
                             inlineContent = mapOf(),
-                            onTextLayout = {}
+                            onTextLayout = {},
                         )
                     }
                 }
@@ -216,13 +216,13 @@ class SelectionContainerFocusTest {
             CompositionLocalProvider(
                 LocalHapticFeedback provides hapticFeedback,
                 LocalLayoutDirection provides layoutDirection,
-                LocalTextToolbar provides mock()
+                LocalTextToolbar provides mock(),
             ) {
                 Column {
                     SelectionContainer(
                         modifier = Modifier.testTag("selectionContainer1"),
                         selection = selection1.value,
-                        onSelectionChange = { selection1.value = it }
+                        onSelectionChange = { selection1.value = it },
                     ) {
                         Column {
                             BasicText(
@@ -237,7 +237,7 @@ class SelectionContainerFocusTest {
                     SelectionContainer(
                         modifier = Modifier.testTag("selectionContainer2"),
                         selection = selection2.value,
-                        onSelectionChange = { selection2.value = it }
+                        onSelectionChange = { selection2.value = it },
                     ) {
                         BasicText(
                             text = AnnotatedString(textContent),
@@ -259,9 +259,9 @@ internal fun FakeTextToolbar(
             onPasteRequested: (() -> Unit)?,
             onCutRequested: (() -> Unit)?,
             onSelectAllRequested: (() -> Unit)?,
-            onAutofillRequested: (() -> Unit)?
+            onAutofillRequested: (() -> Unit)?,
         ) -> Unit,
-    onHideMenu: () -> Unit
+    onHideMenu: () -> Unit,
 ): TextToolbar {
     return object : TextToolbar {
         private var _status: TextToolbarStatus = TextToolbarStatus.Hidden
@@ -272,7 +272,7 @@ internal fun FakeTextToolbar(
             onPasteRequested: (() -> Unit)?,
             onCutRequested: (() -> Unit)?,
             onSelectAllRequested: (() -> Unit)?,
-            onAutofillRequested: (() -> Unit)?
+            onAutofillRequested: (() -> Unit)?,
         ) {
             onShowMenu(
                 rect,
@@ -280,7 +280,7 @@ internal fun FakeTextToolbar(
                 onPasteRequested,
                 onCutRequested,
                 onSelectAllRequested,
-                onAutofillRequested
+                onAutofillRequested,
             )
             _status = TextToolbarStatus.Shown
         }
@@ -290,7 +290,7 @@ internal fun FakeTextToolbar(
             onCopyRequested: (() -> Unit)?,
             onPasteRequested: (() -> Unit)?,
             onCutRequested: (() -> Unit)?,
-            onSelectAllRequested: (() -> Unit)?
+            onSelectAllRequested: (() -> Unit)?,
         ) {
             _status = TextToolbarStatus.Shown
         }

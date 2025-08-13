@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.contextmenu.ProcessTextItemOverrideRule
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
@@ -63,6 +64,8 @@ class SelectionContainerContextMenuBuilderTest {
     private val textTag = "text"
     private val defaultText = "Text Text Text"
     private val initialClipboardText = "initialClipboardText"
+
+    @get:Rule val processTextRule = ProcessTextItemOverrideRule()
 
     @Test
     fun whenTouch_onClick_copy() = runTest {
@@ -123,23 +126,16 @@ class SelectionContainerContextMenuBuilderTest {
                 }
             }
 
-        val fakeClipboard =
-            FakeClipboard(
-                initialText = initialClipboardText,
-                supportsClipEntry = true,
-            )
+        val fakeClipboard = FakeClipboard(initialClipboardText)
 
         val reader = TestTextContextMenuDataInvoker()
         var selection by mutableStateOf<Selection?>(null)
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides fakeClipboard) {
-                SelectionContainer(
-                    selection = selection,
-                    onSelectionChange = { selection = it },
-                ) {
+                SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
                     BasicText(
                         defaultText,
-                        modifier = Modifier.testTag(textTag).testTextContextMenuDataReader(reader)
+                        modifier = Modifier.testTag(textTag).testTextContextMenuDataReader(reader),
                     )
                 }
             }
@@ -189,7 +185,7 @@ class SelectionContainerContextMenuBuilderTest {
     fun whenPartialSelection_itemsMatch() =
         runItemMatchTest(
             actions = { rule.onNodeWithTag(textTag).performTouchInput { longClick(center) } },
-            expectedItems = listOf(CopyKey, SelectAllKey)
+            expectedItems = listOf(CopyKey, SelectAllKey),
         )
 
     @Test
@@ -203,13 +199,10 @@ class SelectionContainerContextMenuBuilderTest {
                     up()
                 }
             },
-            expectedItems = listOf(CopyKey)
+            expectedItems = listOf(CopyKey),
         )
 
-    private fun runItemMatchTest(
-        actions: (() -> Unit)? = null,
-        expectedItems: List<Any>,
-    ) {
+    private fun runItemMatchTest(actions: (() -> Unit)? = null, expectedItems: List<Any>) {
         val reader = TestTextContextMenuDataInvoker()
         rule.setContent {
             SelectionContainer {

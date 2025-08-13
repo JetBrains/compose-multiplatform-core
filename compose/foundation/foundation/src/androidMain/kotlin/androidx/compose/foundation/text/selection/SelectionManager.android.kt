@@ -27,7 +27,7 @@ import androidx.compose.foundation.text.TextContextMenuItems.Copy
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.platformDefaultKeyMapping
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
@@ -66,15 +66,15 @@ internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modi
                             }
                     },
                     useTextDefault = true,
-                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
-            }
+            },
         )
     }
 }
 
 internal fun SelectionManager.contextMenuBuilder(
-    state: ContextMenuState,
+    state: ContextMenuState
 ): ContextMenuScope.() -> Unit = {
     fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
         TextItem(state, label, enabled, operation)
@@ -87,30 +87,39 @@ internal fun SelectionManager.contextMenuBuilder(
 }
 
 internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
-    selectionManager: SelectionManager,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+    selectionManager: SelectionManager
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.selectionContainerItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
         }
     }
 
-    with(selectionManager) {
-        separator()
-        selectionContainerItem(Copy, enabled = isNonEmptySelection()) { copy() }
-        selectionContainerItem(
-            item = SelectAll,
-            enabled = !isEntireContainerSelected(),
-            closePredicate = { !showToolbar || !isInTouchMode },
-        ) {
-            selectAll()
+    val textAndSelection = selectionManager.getContextTextAndSelection()
+    addPlatformTextContextMenuItems(
+        context = context,
+        editable = false,
+        text = textAndSelection?.first,
+        selection = textAndSelection?.second,
+        platformSelectionBehaviors = selectionManager.platformSelectionBehaviors,
+    ) {
+        with(selectionManager) {
+            separator()
+            selectionContainerItem(Copy, enabled = isNonEmptySelection()) { copy() }
+            selectionContainerItem(
+                item = SelectAll,
+                enabled = !isEntireContainerSelected(),
+                closePredicate = { !showToolbar || !isInTouchMode },
+            ) {
+                selectAll()
+            }
+            separator()
         }
-        separator()
     }
 }

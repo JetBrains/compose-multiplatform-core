@@ -84,14 +84,14 @@ class TextFieldStateSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
                 BasicTextField(
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.testTag(passwordTag).semantics {
                             contentType = ContentType.Password
-                        }
+                        },
                 )
             }
         }
@@ -127,7 +127,7 @@ class TextFieldStateSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }

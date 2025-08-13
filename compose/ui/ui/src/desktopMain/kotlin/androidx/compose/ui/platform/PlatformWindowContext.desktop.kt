@@ -28,6 +28,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.density
 import java.awt.Component
 import java.awt.Container
+import java.awt.Frame
 import java.awt.Point
 import javax.swing.SwingUtilities
 import kotlin.math.roundToInt
@@ -72,11 +73,33 @@ internal class PlatformWindowContext {
     fun convertWindowToLocalPosition(container: Component, positionInWindow: Offset) =
         positionInWindow - offsetInWindow(container).toOffset(container.density)
 
-    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset =
-        localPosition + container.locationOnScreen.toOffset(container.density)
+    /**
+     * If the [component]'s location on screen is undefined, returns [Offset.Unspecified]; otherwise
+     * passes its location on screen to [block] and returns its return value.
+     */
+    private inline fun withLocationOnScreenOrUnspecified(
+        component: Component,
+        block: (locationOnScreen: Offset) -> Offset
+    ): Offset {
+        if (!component.isShowing) return Offset.Unspecified
 
-    fun convertScreenToLocalPosition(container: Component, positionOnScreen: Offset): Offset =
-        positionOnScreen - container.locationOnScreen.toOffset(container.density)
+        val frame = SwingUtilities.getWindowAncestor(component) as? Frame
+        if ((frame != null) && (frame.state == Frame.ICONIFIED)) return Offset.Unspecified
+
+        return block(component.locationOnScreen.toOffset(component.density))
+    }
+
+    fun convertLocalToScreenPosition(container: Component, localPosition: Offset): Offset {
+        return withLocationOnScreenOrUnspecified(container) {
+            localPosition + it
+        }
+    }
+
+    fun convertScreenToLocalPosition(container: Component, locationOnScreen: Offset): Offset {
+        return withLocationOnScreenOrUnspecified(container) {
+            locationOnScreen - it
+        }
+    }
 
     /**
      * Calculates the offset of the given [container] within the window.
@@ -94,7 +117,7 @@ internal class PlatformWindowContext {
     }
 }
 
-private fun Point.toOffset(density: Density): Offset {
+internal fun Point.toOffset(density: Density): Offset {
     val scale = density.density
     return Offset(
         x = x * scale,

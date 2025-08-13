@@ -27,14 +27,21 @@ internal expect class PlatformDateFormat(locale: CalendarLocale) {
     fun formatWithPattern(
         utcTimeMillis: Long,
         pattern: String,
+        cache: MutableMap<String, Any>
     ): String
 
     fun formatWithSkeleton(
         utcTimeMillis: Long,
         skeleton: String,
+        cache: MutableMap<String, Any>
     ): String
 
-    fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate?
+    fun parse(
+        date: String,
+        pattern: String,
+        locale: CalendarLocale,
+        cache: MutableMap<String, Any>
+    ): CalendarDate?
 
     fun getDateInputFormat(): DateInputFormat
 

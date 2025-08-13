@@ -117,7 +117,7 @@ internal fun LazyGridLayoutInfo.visibleLinesAverageMainAxisSize(): Int {
                         visibleItems[lineEndIndex].size.height
                     } else {
                         visibleItems[lineEndIndex].size.width
-                    }
+                    },
                 )
             ++lineEndIndex
         }

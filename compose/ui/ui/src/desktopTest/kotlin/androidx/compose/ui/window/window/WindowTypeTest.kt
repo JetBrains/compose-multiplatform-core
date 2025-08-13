@@ -685,6 +685,92 @@ class WindowTypeTest : BaseWindowTextFieldTest() {
         assertStateEquals("", selection = TextRange(0), composition = null)
     }
 
+    // Verifies the fix to https://youtrack.jetbrains.com/issue/CMP-8184
+    @Theory
+    internal fun `q, w, space, backspace 2x, q, w, space (Chinese, macOS)`(
+        textFieldKind: TextFieldKind<*>
+    ) = runTextFieldTest(textFieldKind, "Chinese, macOS") {
+        if (!isMacOs) return@runTextFieldTest  // Assume.assumeTrue doesn't work with @Theory
+
+        // q
+        window.sendInputMethodEvent("q", 0)
+        window.sendKeyEvent(81, 'q', KEY_RELEASED)
+        assertStateEquals("q", selection = TextRange(1), composition = TextRange(0, 1))
+
+        // w
+        window.sendInputMethodEvent("q'w", 0)
+        window.sendKeyEvent(87, 'w', KEY_RELEASED)
+        assertStateEquals("q'w", selection = TextRange(3), composition = TextRange(0, 3))
+
+        // space
+        window.sendInputMethodEvent("請問", 2)
+        window.sendInputMethodEvent(null, 0)
+        window.sendKeyEvent(32, ' ', KEY_RELEASED)
+        assertStateEquals("請問", selection = TextRange(2), composition = null)
+
+        // backspace
+        window.sendKeyEvent(8, Char(8), KEY_PRESSED)
+        window.sendKeyTypedEvent(Char(8))
+        triggerNeedsToDeletePreviousChar()
+        window.sendKeyEvent(8, Char(8), KEY_RELEASED)
+        assertStateEquals("請", selection = TextRange(1), composition = null)
+
+        // backspace
+        window.sendKeyEvent(8, Char(8), KEY_PRESSED)
+        window.sendKeyTypedEvent(Char(8))
+        triggerNeedsToDeletePreviousChar()
+        window.sendKeyEvent(8, Char(8), KEY_RELEASED)
+        assertStateEquals("", selection = TextRange(0), composition = null)
+
+        // q
+        window.sendInputMethodEvent("q", 0)
+        window.sendKeyEvent(81, 'q', KEY_RELEASED)
+        assertStateEquals("q", selection = TextRange(1), composition = TextRange(0, 1))
+
+        // w
+        window.sendInputMethodEvent("q'w", 0)
+        window.sendKeyEvent(87, 'w', KEY_RELEASED)
+        assertStateEquals("q'w", selection = TextRange(3), composition = TextRange(0, 3))
+
+        // space
+        window.sendInputMethodEvent("請問", 2)
+        window.sendInputMethodEvent(null, 0)
+        window.sendKeyEvent(32, ' ', KEY_RELEASED)
+        assertStateEquals("請問", selection = TextRange(2), composition = null)
+    }
+
+    // Verifies the fix to https://youtrack.jetbrains.com/issue/CMP-8200
+    @Theory
+    internal fun `v, x, click before v, x, click at end(Korean, macOS)`(
+        textFieldKind: TextFieldKind<*>
+    ) = runTextFieldTest(textFieldKind, "Chinese, macOS") {
+        // Press 'v' key
+        window.sendKeyTypedEvent('v')
+        assertStateEquals("v", selection = TextRange(1), composition = null)
+
+        // Press 'x' key (produces 'ㅌ')
+        window.sendInputMethodEvent("ㅌ", 0)
+        window.sendKeyEvent(88, 'ㅌ', KEY_RELEASED)
+        assertStateEquals("vㅌ", selection = TextRange(2), composition = TextRange(1, 2))
+
+        clickBeforeIndex(0)
+        awaitIdle()
+        // Here PlatformComponent.endComposition() should be called, and in response the
+        // system should send a composition-ending event
+        window.sendInputMethodEvent("ㅌ", 1)
+        assertStateEquals("vㅌ", selection = TextRange(0), composition = null)
+
+        // Press 'x' key (produces 'ㅌ')
+        window.sendInputMethodEvent("ㅌ", 0)
+        window.sendKeyEvent(88, 'ㅌ', KEY_RELEASED)
+        assertStateEquals("ㅌvㅌ", selection = TextRange(1), composition = TextRange(0, 1))
+
+        clickBeforeIndex(3)
+        awaitIdle()
+        window.sendInputMethodEvent("ㅌ", 1)
+        assertStateEquals("ㅌvㅌ", selection = TextRange(3), composition = null)
+    }
+
     // Verifies that each typed character and character replaced by the input service is reported
     // (to `inputTransformation`) as a change in the last character only.
     // The behavior of `SecureTextField` with `TextObfuscationMode.RevealLastTyped` depends on this,
@@ -749,23 +835,38 @@ class WindowTypeTest : BaseWindowTextFieldTest() {
     }
 
     @Theory
-    internal fun macOsAccentedCharacterByLongPressInput(textFieldKind: TextFieldKind<*>) = runTextFieldTest(
-        name = "ç, macOS",
-        textFieldKind = textFieldKind,
-    ) {
-        if (!isMacOs) return@runTextFieldTest  // Assume.assumeTrue doesn't work with @Theory
+    internal fun macOsAccentedCharacterByLongPressInput(textFieldKind: TextFieldKind<*>) =
+        runTextFieldTest(
+            name = "ç, macOS",
+            textFieldKind = textFieldKind,
+        ) {
+            if (!isMacOs) return@runTextFieldTest  // Assume.assumeTrue doesn't work with @Theory
 
-        window.sendKeyEvent('c'.code, 'c', KEY_PRESSED)
-        window.sendKeyTypedEvent('c')
+            window.sendKeyEvent('c'.code, 'c', KEY_PRESSED)
+            window.sendKeyTypedEvent('c')
+            triggerNeedsToDeletePreviousChar()
+            window.sendKeyEvent('c'.code, 'c', KEY_RELEASED)
+            assertStateEquals("c", selection = TextRange(1), composition = null)
+
+            window.sendInputMethodEvent("ç", 1)
+            assertStateEquals("ç", selection = TextRange(1), composition = null)
+        }
+
+    @Theory
+    internal fun committedTextEventSentImmediatelyCommitsText(textFieldKind: TextFieldKind<*>) =
+        runTextFieldTest(
+            name = "first InputMethodEvent commits text",
+            textFieldKind = textFieldKind,
+        ) {
+            window.sendInputMethodEvent("·", committedCharacterCount = 1)
+            assertStateEquals("·", selection = TextRange(1), composition = null)
+        }
+
+    private fun TextFieldTestScope.triggerNeedsToDeletePreviousChar() {
         // This triggers the "needToDeletePreviousChar" hack in DesktopTextInputService(2).
         // If the implementation of this ever changes, this test will need to change as well.
         // Note that using java.awt.Robot to test this doesn't appear to work, as the accented
         // characters toolbar isn't displayed.
         window.focusOwner.inputMethodRequests.getSelectedText(null)
-        window.sendKeyEvent('c'.code, 'c', KEY_RELEASED)
-        assertStateEquals("c", selection = TextRange(1), composition = null)
-
-        window.sendInputMethodEvent("ç", 1)
-        assertStateEquals("ç", selection = TextRange(1), composition = null)
     }
 }

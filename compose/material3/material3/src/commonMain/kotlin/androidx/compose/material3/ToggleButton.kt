@@ -121,7 +121,7 @@ fun ToggleButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -143,18 +143,18 @@ fun ToggleButton(
         contentColor = contentColor,
         shadowElevation = shadowElevation,
         border = border,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         ProvideContentColorTextStyle(
             contentColor = contentColor,
-            textStyle = MaterialTheme.typography.labelLarge
+            textStyle = MaterialTheme.typography.labelLarge,
         ) {
             Row(
                 Modifier.defaultMinSize(minHeight = ToggleButtonDefaults.MinHeight)
                     .padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
-                content = content
+                content = content,
             )
         }
     }
@@ -214,7 +214,7 @@ fun ElevatedToggleButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) =
     ToggleButton(
         checked = checked,
@@ -227,7 +227,7 @@ fun ElevatedToggleButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 
 /**
@@ -287,7 +287,7 @@ fun TonalToggleButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) =
     ToggleButton(
         checked = checked,
@@ -300,7 +300,7 @@ fun TonalToggleButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 
 /**
@@ -358,7 +358,7 @@ fun OutlinedToggleButton(
     border: BorderStroke? = if (!checked) ButtonDefaults.outlinedButtonBorder(enabled) else null,
     contentPadding: PaddingValues = ButtonDefaults.contentPaddingFor(ButtonDefaults.MinHeight),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) =
     ToggleButton(
         checked = checked,
@@ -371,7 +371,7 @@ fun OutlinedToggleButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 
 /** Contains the default values for all five toggle button types. */
@@ -405,7 +405,7 @@ object ToggleButtonDefaults {
             start = ToggleButtonStartPadding,
             top = ButtonVerticalPadding,
             end = ToggleButtonEndPadding,
-            bottom = ButtonVerticalPadding
+            bottom = ButtonVerticalPadding,
         )
 
     /**
@@ -426,12 +426,12 @@ object ToggleButtonDefaults {
     fun shapes(
         shape: Shape? = null,
         pressedShape: Shape? = null,
-        checkedShape: Shape? = null
+        checkedShape: Shape? = null,
     ): ToggleButtonShapes =
         MaterialTheme.shapes.defaultToggleButtonShapes.copy(
             shape = shape,
             pressedShape = pressedShape,
-            checkedShape = checkedShape
+            checkedShape = checkedShape,
         )
 
     internal val Shapes.defaultToggleButtonShapes: ToggleButtonShapes
@@ -440,7 +440,7 @@ object ToggleButtonDefaults {
                 ?: ToggleButtonShapes(
                         shape = fromToken(ButtonSmallTokens.ContainerShapeRound),
                         pressedShape = RoundedCornerShape(6.dp),
-                        checkedShape = fromToken(ButtonSmallTokens.SelectedContainerShapeSquare)
+                        checkedShape = fromToken(ButtonSmallTokens.SelectedContainerShapeSquare),
                     )
                     .also { defaultToggleButtonShapesCached = it }
         }
@@ -537,7 +537,7 @@ object ToggleButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         checkedContainerColor: Color = Color.Unspecified,
-        checkedContentColor: Color = Color.Unspecified
+        checkedContentColor: Color = Color.Unspecified,
     ): ToggleButtonColors =
         MaterialTheme.colorScheme.defaultToggleButtonColors.copy(
             containerColor = containerColor,
@@ -545,7 +545,7 @@ object ToggleButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             checkedContainerColor = checkedContainerColor,
-            checkedContentColor = checkedContentColor
+            checkedContentColor = checkedContentColor,
         )
 
     internal val ColorScheme.defaultToggleButtonColors: ToggleButtonColors
@@ -564,7 +564,7 @@ object ToggleButtonDefaults {
                         checkedContainerColor =
                             fromToken(FilledButtonTokens.SelectedContainerColor),
                         checkedContentColor =
-                            fromToken(FilledButtonTokens.SelectedPressedLabelTextColor)
+                            fromToken(FilledButtonTokens.SelectedPressedLabelTextColor),
                     )
                     .also { defaultToggleButtonColorsCached = it }
         }
@@ -596,7 +596,7 @@ object ToggleButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         checkedContainerColor: Color = Color.Unspecified,
-        checkedContentColor: Color = Color.Unspecified
+        checkedContentColor: Color = Color.Unspecified,
     ): ToggleButtonColors =
         MaterialTheme.colorScheme.defaultElevatedToggleButtonColors.copy(
             containerColor = containerColor,
@@ -604,7 +604,7 @@ object ToggleButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             checkedContainerColor = checkedContainerColor,
-            checkedContentColor = checkedContentColor
+            checkedContentColor = checkedContentColor,
         )
 
     internal val ColorScheme.defaultElevatedToggleButtonColors: ToggleButtonColors
@@ -623,7 +623,7 @@ object ToggleButtonDefaults {
                         checkedContainerColor =
                             fromToken(ElevatedButtonTokens.SelectedContainerColor),
                         checkedContentColor =
-                            fromToken(ElevatedButtonTokens.SelectedPressedLabelTextColor)
+                            fromToken(ElevatedButtonTokens.SelectedPressedLabelTextColor),
                     )
                     .also { defaultElevatedToggleButtonColorsCached = it }
         }
@@ -654,7 +654,7 @@ object ToggleButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         checkedContainerColor: Color = Color.Unspecified,
-        checkedContentColor: Color = Color.Unspecified
+        checkedContentColor: Color = Color.Unspecified,
     ): ToggleButtonColors =
         MaterialTheme.colorScheme.defaultTonalToggleButtonColors.copy(
             containerColor = containerColor,
@@ -662,7 +662,7 @@ object ToggleButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             checkedContainerColor = checkedContainerColor,
-            checkedContentColor = checkedContentColor
+            checkedContentColor = checkedContentColor,
         )
 
     internal val ColorScheme.defaultTonalToggleButtonColors: ToggleButtonColors
@@ -678,7 +678,7 @@ object ToggleButtonDefaults {
                             fromToken(TonalButtonTokens.DisabledLabelTextColor)
                                 .copy(alpha = TonalButtonTokens.DisabledLabelTextOpacity),
                         checkedContainerColor = fromToken(TonalButtonTokens.SelectedContainerColor),
-                        checkedContentColor = fromToken(TonalButtonTokens.SelectedLabelTextColor)
+                        checkedContentColor = fromToken(TonalButtonTokens.SelectedLabelTextColor),
                     )
                     .also { defaultTonalToggleButtonColorsCached = it }
         }
@@ -710,7 +710,7 @@ object ToggleButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         checkedContainerColor: Color = Color.Unspecified,
-        checkedContentColor: Color = Color.Unspecified
+        checkedContentColor: Color = Color.Unspecified,
     ): ToggleButtonColors =
         MaterialTheme.colorScheme.defaultOutlinedToggleButtonColors.copy(
             containerColor = containerColor,
@@ -718,7 +718,7 @@ object ToggleButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             checkedContainerColor = checkedContainerColor,
-            checkedContentColor = checkedContentColor
+            checkedContentColor = checkedContentColor,
         )
 
     internal val ColorScheme.defaultOutlinedToggleButtonColors: ToggleButtonColors
@@ -735,7 +735,7 @@ object ToggleButtonDefaults {
                                 .copy(alpha = OutlinedButtonTokens.DisabledLabelTextOpacity),
                         checkedContainerColor =
                             fromToken(OutlinedButtonTokens.SelectedContainerColor),
-                        checkedContentColor = fromToken(OutlinedButtonTokens.SelectedLabelTextColor)
+                        checkedContentColor = fromToken(OutlinedButtonTokens.SelectedLabelTextColor),
                     )
                     .also { defaultOutlinedToggleButtonColorsCached = it }
         }
@@ -757,26 +757,26 @@ object ToggleButtonDefaults {
                 shapes(
                     shape = shape,
                     pressedShape = extraSmallPressedShape,
-                    checkedShape = extraSmallCheckedSquareShape
+                    checkedShape = extraSmallCheckedSquareShape,
                 )
             buttonHeight <= (smallHeight + mediumHeight) / 2 -> shapes()
             buttonHeight <= (mediumHeight + largeHeight) / 2 ->
                 shapes(
                     shape = shape,
                     pressedShape = mediumPressedShape,
-                    checkedShape = mediumCheckedSquareShape
+                    checkedShape = mediumCheckedSquareShape,
                 )
             buttonHeight <= (largeHeight + xLargeHeight) / 2 ->
                 shapes(
                     shape = shape,
                     pressedShape = largePressedShape,
-                    checkedShape = largeCheckedSquareShape
+                    checkedShape = largeCheckedSquareShape,
                 )
             else ->
                 shapes(
                     shape = shape,
                     pressedShape = extraLargePressedShape,
-                    checkedShape = extraLargeCheckedSquareShape
+                    checkedShape = extraLargeCheckedSquareShape,
                 )
         }
     }
@@ -807,7 +807,7 @@ class ToggleButtonColors(
     val disabledContainerColor: Color,
     val disabledContentColor: Color,
     val checkedContainerColor: Color,
-    val checkedContentColor: Color
+    val checkedContentColor: Color,
 ) {
     /**
      * Returns a copy of this ToggleButtonColors, optionally overriding some of the values. This
@@ -819,7 +819,7 @@ class ToggleButtonColors(
         disabledContainerColor: Color = this.disabledContainerColor,
         disabledContentColor: Color = this.disabledContentColor,
         checkedContainerColor: Color = this.checkedContainerColor,
-        checkedContentColor: Color = this.checkedContentColor
+        checkedContentColor: Color = this.checkedContentColor,
     ) =
         ToggleButtonColors(
             containerColor.takeOrElse { this.containerColor },
@@ -827,7 +827,7 @@ class ToggleButtonColors(
             disabledContainerColor.takeOrElse { this.disabledContainerColor },
             disabledContentColor.takeOrElse { this.disabledContentColor },
             checkedContainerColor.takeOrElse { this.checkedContainerColor },
-            checkedContentColor.takeOrElse { this.checkedContentColor }
+            checkedContentColor.takeOrElse { this.checkedContentColor },
         )
 
     /**
@@ -902,12 +902,12 @@ class ToggleButtonShapes(val shape: Shape, val pressedShape: Shape, val checkedS
     fun copy(
         shape: Shape? = this.shape,
         pressedShape: Shape? = this.pressedShape,
-        checkedShape: Shape? = this.checkedShape
+        checkedShape: Shape? = this.checkedShape,
     ) =
         ToggleButtonShapes(
             shape = shape.takeOrElse { this.shape },
             pressedShape = pressedShape.takeOrElse { this.pressedShape },
-            checkedShape = checkedShape.takeOrElse { this.checkedShape }
+            checkedShape = checkedShape.takeOrElse { this.checkedShape },
         )
 
     internal fun Shape?.takeOrElse(block: () -> Shape): Shape = this ?: block()
@@ -945,7 +945,7 @@ private fun shapeByInteraction(
     shapes: ToggleButtonShapes,
     pressed: Boolean,
     checked: Boolean,
-    animationSpec: FiniteAnimationSpec<Float>
+    animationSpec: FiniteAnimationSpec<Float>,
 ): Shape {
     val shape =
         if (pressed) {
@@ -957,12 +957,7 @@ private fun shapeByInteraction(
         }
 
     if (shapes.hasRoundedCornerShapes)
-        return key(shapes) {
-            rememberAnimatedShape(
-                shape as RoundedCornerShape,
-                animationSpec,
-            )
-        }
+        return key(shapes) { rememberAnimatedShape(shape as RoundedCornerShape, animationSpec) }
 
     return shape
 }

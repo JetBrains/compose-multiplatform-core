@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package androidx.compose.material3.internal
 
 import androidx.compose.material3.CalendarLocale
-import androidx.compose.material3.internal.PlatformDateFormat
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.Month
@@ -28,6 +30,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.atTime
 import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -40,8 +43,8 @@ internal class KotlinxDatetimeCalendarModel(locale: CalendarLocale) : CalendarMo
             val localDate = Clock.System.now().toLocalDateTime(systemTZ)
             return CalendarDate(
                 year = localDate.year,
-                month = localDate.monthNumber,
-                dayOfMonth = localDate.dayOfMonth,
+                month = localDate.month.number,
+                dayOfMonth = localDate.day,
                 utcTimeMillis = localDate.date
                     .atTime(Midnight)
                     .toInstant(TimeZone.UTC)
@@ -85,8 +88,8 @@ internal class KotlinxDatetimeCalendarModel(locale: CalendarLocale) : CalendarMo
     override fun getMonth(year: Int, month: Int): CalendarMonth {
         val instant = LocalDate(
             year = year,
-            monthNumber = month,
-            dayOfMonth = 1,
+            month = month,
+            day = 1
         ).atTime(Midnight)
             .toInstant(TimeZone.UTC)
 
@@ -96,8 +99,8 @@ internal class KotlinxDatetimeCalendarModel(locale: CalendarLocale) : CalendarMo
     override fun getDayOfWeek(date: CalendarDate): Int {
         return LocalDate(
             year = date.year,
-            monthNumber = date.month,
-            dayOfMonth = date.dayOfMonth
+            month = date.month,
+            day = date.dayOfMonth
         ).dayOfWeek.isoDayNumber
     }
 
@@ -121,11 +124,11 @@ internal class KotlinxDatetimeCalendarModel(locale: CalendarLocale) : CalendarMo
         pattern: String,
         locale: CalendarLocale
     ): String {
-        return platformDateFormat.formatWithPattern(utcTimeMillis, pattern)
+        return platformDateFormat.formatWithPattern(utcTimeMillis, pattern, formatterCache)
     }
 
     override fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate? {
-        return platformDateFormat.parse(date, pattern, locale)
+        return platformDateFormat.parse(date, pattern, locale, formatterCache)
     }
 
     private fun Instant.toCalendarMonth(
@@ -137,12 +140,12 @@ internal class KotlinxDatetimeCalendarModel(locale: CalendarLocale) : CalendarMo
         val monthStart = LocalDate(
             year = dateTime.year,
             month = dateTime.month,
-            dayOfMonth = 1,
+            day = 1
         )
 
         return CalendarMonth(
             year = dateTime.year,
-            month = dateTime.monthNumber,
+            month = dateTime.month.number,
             numberOfDays = dateTime.month
                 .numberOfDays(dateTime.year.isLeapYear()),
             daysFromStartOfWeekToFirstOfMonth = monthStart
@@ -166,8 +169,8 @@ internal fun Instant.toCalendarDate(
 
     return CalendarDate(
         year = dateTime.year,
-        month = dateTime.monthNumber,
-        dayOfMonth = dateTime.dayOfMonth,
+        month = dateTime.month.number,
+        dayOfMonth = dateTime.day,
         utcTimeMillis = toEpochMilliseconds()
     )
 }

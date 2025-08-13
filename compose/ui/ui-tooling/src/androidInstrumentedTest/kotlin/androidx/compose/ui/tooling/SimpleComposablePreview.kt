@@ -123,13 +123,7 @@ private fun ActivityResultRegistryPreview() {
 @Composable
 fun ViewModelPreview(model: TestViewModel = viewModel()) {
     val count by model.counterLiveData.observeAsState(0)
-    Column {
-        Button(
-            onClick = { model.increaseCounter() },
-        ) {
-            Text("Clicks: $count")
-        }
-    }
+    Column { Button(onClick = { model.increaseCounter() }) { Text("Clicks: $count") } }
 }
 
 class TestGroup {

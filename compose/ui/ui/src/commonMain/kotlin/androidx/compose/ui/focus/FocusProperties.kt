@@ -223,7 +223,7 @@ sealed interface FocusEnterExitScope {
 }
 
 internal class CancelIndicatingFocusBoundaryScope(
-    override val requestedFocusDirection: FocusDirection,
+    override val requestedFocusDirection: FocusDirection
 ) : FocusEnterExitScope {
     var isCanceled = false
         private set
@@ -270,9 +270,8 @@ private data class FocusPropertiesElement(val scope: FocusPropertiesScope) :
     }
 }
 
-private class FocusPropertiesNode(
-    var focusPropertiesScope: FocusPropertiesScope,
-) : FocusPropertiesModifierNode, Modifier.Node() {
+private class FocusPropertiesNode(var focusPropertiesScope: FocusPropertiesScope) :
+    FocusPropertiesModifierNode, Modifier.Node() {
 
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusPropertiesScope.apply(focusProperties)

@@ -59,7 +59,7 @@ internal abstract class TextField1SelectionGesturesTest(
                 textToolbar = textToolbar,
                 spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
-                getActual = { textFieldValue }
+                getActual = { textFieldValue },
             )
     }
 

@@ -83,8 +83,9 @@ class TextContextMenuGesturesModifierTest {
     @Test
     fun whenRightClick_dataProviderTriggers() =
         runTest(
-            preGestureModifier = Modifier.addTextContextMenuComponents { testItem(TestItem.One) },
-            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp)
+            preGestureModifier =
+                Modifier.appendTextContextMenuComponents { testItem(TestItem.One) },
+            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp),
         ) {
             val clickOffset = IntOffset(10, 10)
             rightClick(clickOffset.toOffset())
@@ -101,7 +102,7 @@ class TextContextMenuGesturesModifierTest {
         runTest(
             preGestureModifier = Modifier.size(baseLengthDp * 2),
             postGestureModifier =
-                Modifier.offset { offset }.background(Color.LightGray).size(baseLengthDp)
+                Modifier.offset { offset }.background(Color.LightGray).size(baseLengthDp),
         ) {
             val clickOffset = IntOffset(10, 10)
 
@@ -126,7 +127,7 @@ class TextContextMenuGesturesModifierTest {
         var offset by mutableStateOf(initialOffset)
         runTest(
             preGestureModifier = Modifier.size(baseLengthDp * 2).offset { offset },
-            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp)
+            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp),
         ) {
             val clickOffset = IntOffset(10, 10)
 
@@ -146,8 +147,8 @@ class TextContextMenuGesturesModifierTest {
     fun whenDataProviderDataUpdates_dataResultUpdates() {
         var item by mutableStateOf(TestItem.One)
         runTest(
-            preGestureModifier = Modifier.addTextContextMenuComponents { testItem(item) },
-            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp)
+            preGestureModifier = Modifier.appendTextContextMenuComponents { testItem(item) },
+            postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp),
         ) {
             rightClick()
             assertDataContains(TestItem.One)
@@ -163,15 +164,12 @@ class TextContextMenuGesturesModifierTest {
     private fun runTest(
         preGestureModifier: Modifier = Modifier,
         postGestureModifier: Modifier = Modifier,
-        block: TestScope.() -> Unit
+        block: TestScope.() -> Unit,
     ) {
         TestScope(preGestureModifier, postGestureModifier).block()
     }
 
-    private inner class TestScope(
-        preGestureModifier: Modifier,
-        postGestureModifier: Modifier,
-    ) {
+    private inner class TestScope(preGestureModifier: Modifier, postGestureModifier: Modifier) {
         private val tag = "testTag"
 
         private var dataProvider by
@@ -241,7 +239,7 @@ private enum class TestItem(val label: String) {
 
 private fun TextContextMenuBuilderScope.testItem(
     item: TestItem,
-    onClick: TextContextMenuSession.() -> Unit = {}
+    onClick: TextContextMenuSession.() -> Unit = {},
 ) {
     item(key = item, label = item.label, onClick = onClick)
 }

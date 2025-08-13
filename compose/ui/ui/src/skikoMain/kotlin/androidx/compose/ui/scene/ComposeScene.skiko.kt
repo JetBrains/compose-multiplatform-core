@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +25,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.draganddrop.DragAndDropNode
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.pointerInteropFilter
-import org.jetbrains.skiko.currentNanoTime
 
 /**
  * Represents a static [CompositionLocal] key for a [ComposeScene] in Jetpack Compose.
@@ -69,9 +68,12 @@ internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null 
  * (such as application, runComposeUiTest, ComposeWindow). While it can be used by
  * third-party users for integrating Compose into other platforms, it does not come
  * with any guarantee of stability.
+ *
+ * @see PlatformLayersComposeScene
+ * @see CanvasLayersComposeScene
  */
 @InternalComposeUiApi
-interface ComposeScene {
+sealed interface ComposeScene : AutoCloseable {
 
     /**
      * Density of the content which will be used to convert [Dp] units.
@@ -123,12 +125,12 @@ interface ComposeScene {
      * Close all resources and subscriptions. Not calling this method when [ComposeScene] is no
      * longer needed will cause a memory leak.
      *
-     * All effects launched via [LaunchedEffect] or [rememberCoroutineScope] will be cancelled
+     * All effects launched via [LaunchedEffect] or [rememberCoroutineScope] will be canceled
      * (but not immediately).
      *
      * After calling this method, you cannot call any other method of this [ComposeScene].
      */
-    fun close()
+    override fun close()
 
     /**
      * Returns the current content size (in pixels) in infinity constraints.
@@ -146,6 +148,15 @@ interface ComposeScene {
      * @see PlatformContext.convertWindowToLocalPosition
      */
     fun invalidatePositionInWindow()
+
+    /**
+     * Invalidates position of the [ComposeScene]'s window. It will trigger callbacks like
+     * [Modifier.onGloballyPositioned] so they can recalculate actual position on screen.
+     *
+     * @see PlatformContext.convertLocalToScreenPosition
+     * @see PlatformContext.convertScreenToLocalPosition
+     */
+    fun invalidatePositionOnScreen()
 
     /**
      * Returns true if there are pending recompositions, renders or dispatched tasks.
@@ -192,7 +203,7 @@ interface ComposeScene {
         eventType: PointerEventType,
         position: Offset,
         scrollDelta: Offset = Offset.Zero,
-        timeMillis: Long = currentTimeForEvent(),
+        timeMillis: Long = currentTimeMillis(),
         type: PointerType = PointerType.Mouse,
         buttons: PointerButtons? = null,
         keyboardModifiers: PointerKeyboardModifiers? = null,
@@ -227,7 +238,7 @@ interface ComposeScene {
         buttons: PointerButtons = PointerButtons(),
         keyboardModifiers: PointerKeyboardModifiers = PointerKeyboardModifiers(),
         scrollDelta: Offset = Offset.Zero,
-        timeMillis: Long = currentTimeForEvent(),
+        timeMillis: Long = currentTimeMillis(),
         nativeEvent: Any? = null,
         button: PointerButton? = null,
     ): PointerEventResult
@@ -257,7 +268,7 @@ interface ComposeScene {
     fun sendRotaryScrollEvent(
         verticalScrollPixels: Float,
         horizontalScrollPixels: Float,
-        timeMillis: Long = currentTimeForEvent(),
+        timeMillis: Long = currentTimeMillis(),
     ): Boolean
 
     /**
@@ -274,6 +285,3 @@ interface ComposeScene {
      */
     suspend fun withMonotonicFrameClock(block: suspend () -> Unit)
 }
-
-private fun currentTimeForEvent(): Long =
-    (currentNanoTime() / 1E6).toLong()

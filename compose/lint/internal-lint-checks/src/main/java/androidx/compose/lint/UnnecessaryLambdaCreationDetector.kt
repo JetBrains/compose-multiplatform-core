@@ -181,7 +181,7 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
                 ISSUE,
                 node,
                 context.getNameLocation(expression as UElement),
-                "Creating an unnecessary lambda to emit a captured lambda"
+                "Creating an unnecessary lambda to emit a captured lambda",
             )
         }
     }
@@ -201,7 +201,7 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
                 Category.PERFORMANCE,
                 5,
                 Severity.ERROR,
-                Implementation(UnnecessaryLambdaCreationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                Implementation(UnnecessaryLambdaCreationDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
     }
 }

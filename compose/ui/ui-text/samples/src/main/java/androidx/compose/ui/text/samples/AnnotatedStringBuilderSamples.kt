@@ -50,8 +50,8 @@ fun AnnotatedStringConstructorSample() {
         paragraphStyles =
             listOf(
                 AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 6),
-                AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11)
-            )
+                AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11),
+            ),
     )
 }
 
@@ -65,11 +65,11 @@ fun AnnotatedStringMainConstructorSample() {
                 AnnotatedString.Range(
                     LinkAnnotation.Url("https://developer.android.com/jetpack/compose"),
                     0,
-                    15
+                    15,
                 ),
                 AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 8),
-                AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 8, 15)
-            )
+                AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 8, 15),
+            ),
     )
 }
 
@@ -183,7 +183,7 @@ fun AnnotatedStringAddStringAnnotationSample() {
             tag = "URL",
             annotation = "https://developer.android.com/jetpack/compose",
             start = 6,
-            end = 21
+            end = 21,
         )
     }
 }
@@ -198,7 +198,7 @@ fun AnnotatedStringWithLinkSample() {
             withLink(
                 LinkAnnotation.Url(
                     "https://developer.android.com/jetpack/compose",
-                    TextLinkStyles(style = SpanStyle(color = Color.Blue))
+                    TextLinkStyles(style = SpanStyle(color = Color.Blue)),
                 )
             ) {
                 append("Jetpack Compose")
@@ -219,8 +219,8 @@ fun AnnotatedStringWithHoveredLinkStylingSample() {
                     "https://developer.android.com/jetpack/compose",
                     TextLinkStyles(
                         style = SpanStyle(color = Color.Blue),
-                        hoveredStyle = SpanStyle(textDecoration = TextDecoration.Underline)
-                    )
+                        hoveredStyle = SpanStyle(textDecoration = TextDecoration.Underline),
+                    ),
                 )
             withLink(link) { append("Jetpack Compose") }
         }
@@ -239,7 +239,7 @@ fun AnnotatedStringWithListenerSample() {
             val link =
                 LinkAnnotation.Url(
                     "https://developer.android.com/jetpack/compose",
-                    TextLinkStyles(SpanStyle(color = Color.Blue))
+                    TextLinkStyles(SpanStyle(color = Color.Blue)),
                 ) {
                     val url = (it as LinkAnnotation.Url).url
                     // log some metrics

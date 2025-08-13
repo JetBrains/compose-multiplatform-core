@@ -63,9 +63,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class DateRangePickerTest {
 
     @get:Rule val rule = createComposeRule()
@@ -76,7 +76,7 @@ class DateRangePickerTest {
             DateRangePickerState(
                 locale = Locale.getDefault(),
                 initialSelectedStartDateMillis = 1649721600000L, // 04/12/2022
-                initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours // 04/13/2022
+                initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours, // 04/13/2022
             )
         with(dateRangePickerState) {
             assertThat(selectedStartDateMillis).isEqualTo(1649721600000L)
@@ -108,7 +108,7 @@ class DateRangePickerTest {
                     // 04/12/2022
                     initialSelectedStartDateMillis = 1649721600000L,
                     // 04/13/2022
-                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours
+                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours,
                 )
         }
         with(dateRangePickerState) {
@@ -138,7 +138,7 @@ class DateRangePickerTest {
                     // 04/12/2022
                     initialSelectedStartDateMillis = 1649721600000L + 10000L,
                     // 04/13/2022
-                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours + 10000L
+                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours + 10000L,
                 )
         }
         with(dateRangePickerState) {
@@ -191,7 +191,7 @@ class DateRangePickerTest {
                     // 04/12/2022
                     initialSelectedStartDateMillis = 1649721600000L,
                     // 04/11/2022
-                    initialSelectedEndDateMillis = 1649721600000L - MillisecondsIn24Hours
+                    initialSelectedEndDateMillis = 1649721600000L - MillisecondsIn24Hours,
                 )
         }
 
@@ -215,7 +215,7 @@ class DateRangePickerTest {
                     initialSelectedStartDateMillis = 1649721600000L,
                     // 04/12/2022 + a few added milliseconds to ensure that the state is initialized
                     // with a canonical date.
-                    initialSelectedEndDateMillis = 1649721600000L + 1000
+                    initialSelectedEndDateMillis = 1649721600000L + 1000,
                 )
         }
         with(dateRangePickerState) {
@@ -241,7 +241,7 @@ class DateRangePickerTest {
                 rememberDateRangePickerState(
                     initialSelectedStartDateMillis = initialStartDateMillis,
                     initialSelectedEndDateMillis = initialEndDateMillis,
-                    yearRange = IntRange(2000, 2050)
+                    yearRange = IntRange(2000, 2050),
                 )
         }
 
@@ -265,7 +265,7 @@ class DateRangePickerTest {
                 rememberDateRangePickerState(
                     initialSelectedStartDateMillis = initialStartDateMillis,
                     initialSelectedEndDateMillis = initialEndDateMillis,
-                    yearRange = IntRange(2000, 2050)
+                    yearRange = IntRange(2000, 2050),
                 )
         }
 
@@ -431,7 +431,7 @@ class DateRangePickerTest {
         // Select dates through an API call
         dateRangePickerState.setSelection(
             startDate = LocalDate.of(2019, 1, 10),
-            endDate = LocalDate.of(2019, 1, 14)
+            endDate = LocalDate.of(2019, 1, 14),
         )
 
         // Assert the state holds a valid start and end dates.
@@ -450,7 +450,7 @@ class DateRangePickerTest {
         // Select a different set of dates through an API call
         dateRangePickerState.setSelection(
             startDate = LocalDate.of(2019, 1, 4),
-            endDate = LocalDate.of(2019, 1, 23)
+            endDate = LocalDate.of(2019, 1, 23),
         )
 
         rule.runOnIdle {
@@ -582,7 +582,7 @@ class DateRangePickerTest {
                     // 04/12/2022
                     initialSelectedStartDateMillis = 1649721600000L + 10000L,
                     // 04/13/2022
-                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours
+                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours,
                 )
             DateRangePicker(state = dateRangePickerState)
         }
@@ -631,7 +631,7 @@ class DateRangePickerTest {
                     // 04/12/2022
                     initialSelectedStartDateMillis = 1649721600000L + 10000L,
                     // 04/13/2022
-                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours
+                    initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours,
                 )
             DateRangePicker(state = dateRangePickerState)
         }
@@ -665,7 +665,7 @@ class DateRangePickerTest {
         // Setting the selection to a year that is out of range.
         dateRangePickerState.setSelection(
             dayInUtcMilliseconds(year = 1999, month = 5, dayOfMonth = 11),
-            null
+            null,
         )
 
         // Assert that the start date is null.
@@ -688,7 +688,7 @@ class DateRangePickerTest {
         // Expecting an exception since the start date is after the end date.
         dateRangePickerState.setSelection(
             startDateMillis = dayInUtcMilliseconds(year = 2000, month = 10, dayOfMonth = 10),
-            endDateMillis = dayInUtcMilliseconds(year = 1998, month = 10, dayOfMonth = 10)
+            endDateMillis = dayInUtcMilliseconds(year = 1998, month = 10, dayOfMonth = 10),
         )
 
         // Expecting the selected dates to be null.
@@ -800,6 +800,7 @@ class DateRangePickerTest {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun state_initWithJavaTimeApi() {
@@ -813,13 +814,13 @@ class DateRangePickerTest {
                 rememberDateRangePickerState(
                     initialSelectedStartDateMillis = startDateInUtcMillis,
                     initialSelectedEndDateMillis = endDateInUtcMillis,
-                    initialDisplayedMonthMillis = monthInUtcMillis
+                    initialDisplayedMonthMillis = monthInUtcMillis,
                 )
             dateRangePickerStateWithJavaTimeApi =
                 rememberDateRangePickerState(
                     initialSelectedStartDate = LocalDate.of(2022, 4, 12),
                     initialSelectedEndDate = LocalDate.of(2022, 6, 20),
-                    initialDisplayedMonth = YearMonth.of(2024, 1)
+                    initialDisplayedMonth = YearMonth.of(2024, 1),
                 )
         }
 
@@ -854,6 +855,7 @@ class DateRangePickerTest {
             .isEqualTo(dateRangePickerStateWithJavaTimeApi.displayMode)
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun state_initWithJavaTimeApi_withoutRemember() {
@@ -865,14 +867,14 @@ class DateRangePickerTest {
                 locale = Locale.getDefault(),
                 initialSelectedStartDateMillis = startDateInUtcMillis,
                 initialSelectedEndDateMillis = endDateInUtcMillis,
-                initialDisplayedMonthMillis = monthInUtcMillis
+                initialDisplayedMonthMillis = monthInUtcMillis,
             )
         val dateRangePickerStateWithJavaTimeApi =
             DateRangePickerState(
                 locale = Locale.getDefault(),
                 initialSelectedStartDate = LocalDate.of(2022, 4, 12),
                 initialSelectedEndDate = LocalDate.of(2022, 6, 20),
-                initialDisplayedMonth = YearMonth.of(2024, 1)
+                initialDisplayedMonth = YearMonth.of(2024, 1),
             )
         assertThat(dateRangePickerState.selectedStartDateMillis).isEqualTo(startDateInUtcMillis)
         assertThat(dateRangePickerState.selectedEndDateMillis).isEqualTo(endDateInUtcMillis)
@@ -927,13 +929,13 @@ class DateRangePickerTest {
                 dateRangePickerState =
                     rememberDateRangePickerState(
                         initialDisplayedMonthMillis = monthInUtcMillis,
-                        selectableDates = selectableDates
+                        selectableDates = selectableDates,
                     )
                 // Apply a Modifier.weight(1f) to ensure that the Button below will be visible.
                 DateRangePicker(state = dateRangePickerState, modifier = Modifier.weight(1f))
                 Button(
                     onClick = { selectableDates = allDisabled },
-                    modifier = Modifier.testTag("disableSelection")
+                    modifier = Modifier.testTag("disableSelection"),
                 ) {
                     Text("Disable selection")
                 }
@@ -993,15 +995,15 @@ class DateRangePickerTest {
                         rememberDateRangePickerState(
                             initialDisplayedMonthMillis = monthInUtcMillis,
                             initialSelectedStartDateMillis = startSelectionMillis,
-                            initialSelectedEndDateMillis = endSelectionMillis
+                            initialSelectedEndDateMillis = endSelectionMillis,
                         ),
                     colors =
                         MaterialTheme.colorScheme.defaultDatePickerColors.copy(
                             dayContentColor = Color.Blue,
                             selectedDayContentColor = Color.Red,
                             headlineContentColor = Color.Yellow,
-                            dayInSelectionRangeContentColor = Color.Green
-                        )
+                            dayInSelectionRangeContentColor = Color.Green,
+                        ),
                 )
             }
         }

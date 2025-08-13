@@ -43,10 +43,7 @@ class SelectionLayoutTest {
     fun singleLayout_verifySimpleParameters() {
         val selection = getSelection()
         val layout =
-            getSingleSelectionLayoutForTest(
-                isStartHandle = true,
-                previousSelection = selection,
-            )
+            getSingleSelectionLayoutForTest(isStartHandle = true, previousSelection = selection)
         assertThat(layout.isStartHandle).isTrue()
         assertThat(layout.previousSelection).isEqualTo(selection)
     }
@@ -55,10 +52,7 @@ class SelectionLayoutTest {
     fun layoutBuilder_verifySimpleParameters() {
         val selection = getSelection()
         val layout =
-            buildSelectionLayoutForTest(
-                isStartHandle = true,
-                previousSelection = selection,
-            ) {
+            buildSelectionLayoutForTest(isStartHandle = true, previousSelection = selection) {
                 appendInfoForTest()
             }
         assertThat(layout.isStartHandle).isTrue()
@@ -91,19 +85,13 @@ class SelectionLayoutTest {
     @Test
     fun size_layoutBuilderSizeMoreThanOne_returnsSize() {
         val selection = buildSelectionLayoutForTest {
-            appendInfoForTest(
-                selectableId = 1L,
-                endYHandleDirection = AFTER,
-            )
+            appendInfoForTest(selectableId = 1L, endYHandleDirection = AFTER)
             appendInfoForTest(
                 selectableId = 2L,
                 startYHandleDirection = BEFORE,
                 endYHandleDirection = AFTER,
             )
-            appendInfoForTest(
-                selectableId = 3L,
-                startYHandleDirection = BEFORE,
-            )
+            appendInfoForTest(selectableId = 3L, startYHandleDirection = BEFORE)
         }
         assertThat(selection.size).isEqualTo(3)
     }
@@ -297,30 +285,21 @@ class SelectionLayoutTest {
     @Test
     fun crossStatus_singleLayout_collapsed() {
         val layout =
-            getSingleSelectionLayoutForTest(
-                rawStartHandleOffset = 0,
-                rawEndHandleOffset = 0,
-            )
+            getSingleSelectionLayoutForTest(rawStartHandleOffset = 0, rawEndHandleOffset = 0)
         assertThat(layout.crossStatus).isEqualTo(CrossStatus.COLLAPSED)
     }
 
     @Test
     fun crossStatus_singleLayout_crossed() {
         val layout =
-            getSingleSelectionLayoutForTest(
-                rawStartHandleOffset = 1,
-                rawEndHandleOffset = 0,
-            )
+            getSingleSelectionLayoutForTest(rawStartHandleOffset = 1, rawEndHandleOffset = 0)
         assertThat(layout.crossStatus).isEqualTo(CrossStatus.CROSSED)
     }
 
     @Test
     fun crossStatus_singleLayout_notCrossed() {
         val layout =
-            getSingleSelectionLayoutForTest(
-                rawStartHandleOffset = 0,
-                rawEndHandleOffset = 1,
-            )
+            getSingleSelectionLayoutForTest(rawStartHandleOffset = 0, rawEndHandleOffset = 1)
         assertThat(layout.crossStatus).isEqualTo(CrossStatus.NOT_CROSSED)
     }
 
@@ -744,7 +723,7 @@ class SelectionLayoutTest {
         val layout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(null)).isTrue()
     }
@@ -754,7 +733,7 @@ class SelectionLayoutTest {
         val layout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         val otherLayout = buildSelectionLayoutForTest {
             appendInfoForTest()
@@ -769,13 +748,13 @@ class SelectionLayoutTest {
             getSingleSelectionLayoutForTest(
                 isStartHandle = true,
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         val otherLayout =
             getSingleSelectionLayoutForTest(
                 isStartHandle = false,
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(otherLayout)).isTrue()
     }
@@ -785,26 +764,23 @@ class SelectionLayoutTest {
         val layout =
             getSingleSelectionLayoutForTest(
                 rawStartHandleOffset = 0,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         val otherLayout =
             getSingleSelectionLayoutForTest(
                 rawStartHandleOffset = 1,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(otherLayout)).isTrue()
     }
 
     @Test
     fun shouldRecomputeSelection_singleLayout_noPreviousSelection_returnsTrue() {
-        val layout =
-            getSingleSelectionLayoutForTest(
-                rawPreviousHandleOffset = 5,
-            )
+        val layout = getSingleSelectionLayoutForTest(rawPreviousHandleOffset = 5)
         val otherLayout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(otherLayout)).isTrue()
     }
@@ -814,7 +790,7 @@ class SelectionLayoutTest {
         val layout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(layout)).isFalse()
     }
@@ -824,12 +800,12 @@ class SelectionLayoutTest {
         val layout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         val otherLayout =
             getSingleSelectionLayoutForTest(
                 rawPreviousHandleOffset = 5,
-                previousSelection = getSelection()
+                previousSelection = getSelection(),
             )
         assertThat(layout.shouldRecomputeSelection(otherLayout)).isFalse()
     }
@@ -854,7 +830,7 @@ class SelectionLayoutTest {
         val otherLayout =
             getSingleSelectionLayoutForTest(
                 previousSelection = getSelection(),
-                rawPreviousHandleOffset = 5
+                rawPreviousHandleOffset = 5,
             )
         assertThat(layout.shouldRecomputeSelection(otherLayout)).isTrue()
     }
@@ -1174,7 +1150,7 @@ class SelectionLayoutTest {
                 startOffset = 5,
                 endSelectableId = 1L,
                 endOffset = 0,
-                handlesCrossed = true
+                handlesCrossed = true,
             )
         assertThat(layout.createSubSelections(selection).toMap()).containsExactly(1L, selection)
     }
@@ -1203,7 +1179,7 @@ class SelectionLayoutTest {
                 startOffset = 5,
                 endSelectableId = 1L,
                 endOffset = 0,
-                handlesCrossed = true
+                handlesCrossed = true,
             )
         assertThat(layout.createSubSelections(selection).toMap())
             .containsExactly(
@@ -1213,7 +1189,7 @@ class SelectionLayoutTest {
                     endSelectableId = 1L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 2L,
                 getSelection(
@@ -1221,7 +1197,7 @@ class SelectionLayoutTest {
                     endSelectableId = 2L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
             )
     }
@@ -1257,7 +1233,7 @@ class SelectionLayoutTest {
                 startOffset = 5,
                 endSelectableId = 1L,
                 endOffset = 0,
-                handlesCrossed = true
+                handlesCrossed = true,
             )
         assertThat(layout.createSubSelections(selection).toMap())
             .containsExactly(
@@ -1267,7 +1243,7 @@ class SelectionLayoutTest {
                     endSelectableId = 1L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 2L,
                 getSelection(
@@ -1275,7 +1251,7 @@ class SelectionLayoutTest {
                     endSelectableId = 2L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 3L,
                 getSelection(
@@ -1283,7 +1259,7 @@ class SelectionLayoutTest {
                     endSelectableId = 3L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
             )
     }
@@ -1326,7 +1302,7 @@ class SelectionLayoutTest {
                 startOffset = 5,
                 endSelectableId = 1L,
                 endOffset = 0,
-                handlesCrossed = true
+                handlesCrossed = true,
             )
         assertThat(layout.createSubSelections(selection).toMap())
             .containsExactly(
@@ -1336,7 +1312,7 @@ class SelectionLayoutTest {
                     endSelectableId = 1L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 2L,
                 getSelection(
@@ -1344,7 +1320,7 @@ class SelectionLayoutTest {
                     endSelectableId = 2L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 3L,
                 getSelection(
@@ -1352,7 +1328,7 @@ class SelectionLayoutTest {
                     endSelectableId = 3L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
                 4L,
                 getSelection(
@@ -1360,7 +1336,7 @@ class SelectionLayoutTest {
                     endSelectableId = 4L,
                     startOffset = 5,
                     endOffset = 0,
-                    handlesCrossed = true
+                    handlesCrossed = true,
                 ),
             )
     }
@@ -1403,7 +1379,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 0,
                 endSelectableId = 2L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1425,7 +1401,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 2L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1447,7 +1423,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 4,
                 endSelectableId = 2L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1469,7 +1445,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 2L,
-                endOffset = 1
+                endOffset = 1,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1491,7 +1467,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 0,
                 endSelectableId = 3L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1514,7 +1490,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 3L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1537,7 +1513,7 @@ class SelectionLayoutTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 3L,
-                endOffset = 0
+                endOffset = 0,
             )
         val layout =
             getSelectionLayoutFake(
@@ -1572,7 +1548,7 @@ class SelectionLayoutTest {
                 isStartHandle = isStartHandle,
                 previousSelection = previousSelection,
                 selectableIdOrderingComparator = selectableIdOrderingComparator,
-                block = block
+                block = block,
             )
             .let { assertNotNull(it) }
     }
@@ -1633,7 +1609,7 @@ class SelectionLayoutTest {
             endXHandleDirection = endXHandleDirection,
             endYHandleDirection = endYHandleDirection,
             rawPreviousHandleOffset = rawPreviousHandleOffset,
-            textLayoutResult = layoutResult
+            textLayoutResult = layoutResult,
         )
     }
 
@@ -1664,7 +1640,7 @@ class SelectionLayoutTest {
             rawPreviousHandleOffset = rawPreviousHandleOffset,
             previousSelectionRange = previousSelection?.toTextRange() ?: TextRange.Zero,
             isStartOfSelection = isStartOfSelection,
-            isStartHandle = isStartHandle
+            isStartHandle = isStartHandle,
         )
     }
 }

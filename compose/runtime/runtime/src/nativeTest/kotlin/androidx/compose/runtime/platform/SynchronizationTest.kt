@@ -37,8 +37,9 @@ private fun nest(lock: SynchronizedObject, nestedLocks: Int, count: AtomicInt) {
 }
 
 /**
- * Test is taken from [kotlinx-atomicfu](https://github.com/Kotlin/kotlinx-atomicfu) with a few modifications.
-*/
+ * Test is taken from [kotlinx-atomicfu](https://github.com/Kotlin/kotlinx-atomicfu) with a few
+ * modifications.
+ */
 @OptIn(ObsoleteWorkersApi::class)
 class SynchronizedTest {
     @Test
@@ -48,18 +49,14 @@ class SynchronizedTest {
             val counter = AtomicInt(0)
             val so = makeSynchronizedObject()
             workers.forEach { worker ->
-                worker.execute(TransferMode.SAFE, {
-                    counter to so
-                }) { (count, lock) ->
+                worker.execute(TransferMode.SAFE, { counter to so }) { (count, lock) ->
                     repeat(increments) {
                         val nestedLocks = (1..3).random()
                         nest(lock, nestedLocks, count)
                     }
                 }
             }
-            workers.forEach {
-                it.requestTermination().result
-            }
+            workers.forEach { it.requestTermination().result }
             assertEquals(nWorkers * increments, counter.value)
         }
     }
@@ -71,9 +68,7 @@ class SynchronizedTest {
             val counters = Array(nLocks) { AtomicInt(0) }
             val locks = Array(nLocks) { makeSynchronizedObject() }
             workers.forEach { worker ->
-                worker.execute(TransferMode.SAFE, {
-                    counters to locks
-                }) { (counters, locks) ->
+                worker.execute(TransferMode.SAFE, { counters to locks }) { (counters, locks) ->
                     locks.forEachIndexed { i, lock ->
                         repeat(increments) {
                             synchronized(lock) {
@@ -84,9 +79,7 @@ class SynchronizedTest {
                     }
                 }
             }
-            workers.forEach {
-                it.requestTermination().result
-            }
+            workers.forEach { it.requestTermination().result }
             assertEquals(nWorkers * nLocks * increments, counters.sumOf { it.value })
         }
     }

@@ -53,7 +53,7 @@ fun Modifier.windowInsetsStartWidth(insets: WindowInsets) =
                 name = "insetsStartWidth"
                 properties["insets"] = insets
             },
-            startCalc
+            startCalc,
         )
     )
 
@@ -85,7 +85,7 @@ fun Modifier.windowInsetsEndWidth(insets: WindowInsets) =
                 name = "insetsEndWidth"
                 properties["insets"] = insets
             },
-            endCalc
+            endCalc,
         )
     )
 
@@ -114,7 +114,7 @@ fun Modifier.windowInsetsTopHeight(insets: WindowInsets) =
                 name = "insetsTopHeight"
                 properties["insets"] = insets
             },
-            topCalc
+            topCalc,
         )
     )
 
@@ -137,7 +137,7 @@ fun Modifier.windowInsetsBottomHeight(insets: WindowInsets) =
                 name = "insetsBottomHeight"
                 properties["insets"] = insets
             },
-            bottomCalc
+            bottomCalc,
         )
     )
 
@@ -151,13 +151,13 @@ private val bottomCalc: WindowInsets.(Density) -> Int = { getBottom(it) }
 private class DerivedWidthModifier(
     private val insets: WindowInsets,
     inspectorInfo: InspectorInfo.() -> Unit,
-    private val widthCalc: WindowInsets.(LayoutDirection, Density) -> Int
+    private val widthCalc: WindowInsets.(LayoutDirection, Density) -> Int,
 ) : LayoutModifier, ModifierLocalConsumer, InspectorValueInfo(inspectorInfo) {
     private var unconsumedInsets: WindowInsets by mutableStateOf(insets)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val width = unconsumedInsets.widthCalc(layoutDirection, this)
         if (width == 0) {
@@ -193,13 +193,13 @@ private class DerivedWidthModifier(
 private class DerivedHeightModifier(
     private val insets: WindowInsets,
     inspectorInfo: InspectorInfo.() -> Unit,
-    private val heightCalc: WindowInsets.(Density) -> Int
+    private val heightCalc: WindowInsets.(Density) -> Int,
 ) : LayoutModifier, ModifierLocalConsumer, InspectorValueInfo(inspectorInfo) {
     private var unconsumedInsets: WindowInsets by mutableStateOf(insets)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val height = unconsumedInsets.heightCalc(this)
         if (height == 0) {

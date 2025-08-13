@@ -108,7 +108,7 @@ fun VerticalDragHandle(
                         measurable.measure(
                             Constraints.fixed(
                                 dragHandleSize.width.fastRoundToInt(),
-                                dragHandleSize.height.fastRoundToInt()
+                                dragHandleSize.height.fastRoundToInt(),
                             )
                         )
                     layout(placeable.width, placeable.height) { placeable.placeRelative(0, 0) }
@@ -230,7 +230,7 @@ object VerticalDragHandleDefaults {
     fun colors(
         color: Color = Color.Unspecified,
         pressedColor: Color = Color.Unspecified,
-        draggedColor: Color = Color.Unspecified
+        draggedColor: Color = Color.Unspecified,
     ): DragHandleColors =
         with(MaterialTheme.colorScheme.colors) {
             DragHandleColors(
@@ -261,7 +261,7 @@ object VerticalDragHandleDefaults {
     fun shapes(
         shape: Shape? = null,
         pressedShape: Shape? = null,
-        draggedShape: Shape? = null
+        draggedShape: Shape? = null,
     ): DragHandleShapes =
         with(MaterialTheme.shapes.shapes) {
             DragHandleShapes(
@@ -291,7 +291,7 @@ object VerticalDragHandleDefaults {
     fun sizes(
         size: DpSize = DpSize.Unspecified,
         pressedSize: DpSize = DpSize.Unspecified,
-        draggedSize: DpSize = DpSize.Unspecified
+        draggedSize: DpSize = DpSize.Unspecified,
     ): DragHandleSizes =
         with(sizes) {
             DragHandleSizes(
@@ -327,14 +327,14 @@ object VerticalDragHandleDefaults {
         DragHandleSizes(
             size = DpSize(DragHandleTokens.Width, DragHandleTokens.Height),
             pressedSize = DpSize(DragHandleTokens.PressedWidth, DragHandleTokens.PressedHeight),
-            draggedSize = DpSize(DragHandleTokens.DraggedWidth, DragHandleTokens.DraggedHeight)
+            draggedSize = DpSize(DragHandleTokens.DraggedWidth, DragHandleTokens.DraggedHeight),
         )
 }
 
 private fun Modifier.pressable(
     interactionSource: MutableInteractionSource,
     onPressed: () -> Unit,
-    onReleasedOrCancelled: () -> Unit
+    onReleasedOrCancelled: () -> Unit,
 ): Modifier =
     pointerInput(interactionSource) {
         awaitEachGesture {

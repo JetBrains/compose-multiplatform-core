@@ -90,7 +90,7 @@ fun VerticalDivider(
 
 @Deprecated(
     message = "Renamed to HorizontalDivider",
-    replaceWith = ReplaceWith("HorizontalDivider(modifier, thickness, color)")
+    replaceWith = ReplaceWith("HorizontalDivider(modifier, thickness, color)"),
 )
 @Composable
 fun Divider(

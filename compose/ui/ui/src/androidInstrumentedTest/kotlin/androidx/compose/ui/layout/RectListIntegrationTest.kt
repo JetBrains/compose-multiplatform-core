@@ -38,6 +38,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -434,7 +435,7 @@ class RectListIntegrationTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = {}
+                        onPress = {},
                     )
             )
         }
@@ -576,6 +577,74 @@ class RectListIntegrationTest {
 
     @Test
     @SmallTest
+    fun testRotatedChildBoxOffset() {
+        rule.setContent {
+            Column(Modifier.testTag("outer").graphicsLayer { rotationZ = 45f }) {
+                Box(Modifier.height(100.dp))
+                Box(Modifier.testTag("inner").size(100.dp))
+            }
+        }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(-56.dp, 65.dp, 85.dp, 206.dp)
+    }
+
+    @Test
+    @SmallTest
+    fun testRotatedChildBoxOffsetUpdated() {
+        var rotation by mutableFloatStateOf(0f)
+        rule.setContent {
+            Column(Modifier.testTag("outer").graphicsLayer { rotationZ = rotation }) {
+                Box(Modifier.height(100.dp))
+                Box(Modifier.testTag("inner").size(100.dp))
+            }
+        }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(0.dp, 100.dp, 100.dp, 200.dp)
+
+        rule.runOnIdle { rotation = 45f }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(-56.dp, 65.dp, 85.dp, 206.dp)
+    }
+
+    @Test
+    @SmallTest
+    fun testRotatedGrandchildBoxOffset() {
+        rule.setContent {
+            Column(Modifier.testTag("outer").graphicsLayer { rotationZ = 45f }) {
+                Box(Modifier.height(100.dp))
+                Box { Box(Modifier.testTag("inner").size(100.dp)) }
+            }
+        }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(-56.dp, 65.dp, 85.dp, 206.dp)
+    }
+
+    @Test
+    @SmallTest
+    fun testRotatedGrandchildBoxOffsetUpdated() {
+        var rotation by mutableFloatStateOf(0f)
+        rule.setContent {
+            Column(Modifier.testTag("outer").graphicsLayer { rotationZ = rotation }) {
+                Box(Modifier.height(100.dp))
+                Box { Box(Modifier.testTag("inner").size(100.dp)) }
+            }
+        }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(0.dp, 100.dp, 100.dp, 200.dp)
+
+        rule.runOnIdle { rotation = 45f }
+
+        rule.onNodeWithTag("outer").assertRectDp(0.dp, 0.dp, 100.dp, 200.dp)
+        rule.onNodeWithTag("inner").assertRectDp(-56.dp, 65.dp, 85.dp, 206.dp)
+    }
+
+    @Test
+    @SmallTest
     fun testScaledBox() {
         var toggle by mutableStateOf(true)
         rule.setContent {
@@ -687,7 +756,7 @@ class RectListIntegrationTest {
             lazyListState = lazyListState,
             rootSizePx = rootSizePx,
             viewPortCount = viewPortCount,
-            pages = pages
+            pages = pages,
         )
 
         with(rule.density) {
@@ -709,7 +778,7 @@ class RectListIntegrationTest {
                     left = 0.dp,
                     top = 0.dp,
                     right = rootSizePx.toDp(),
-                    bottom = listItemHeight.toDp()
+                    bottom = listItemHeight.toDp(),
                 )
 
             rule.onNodeWithTag("Item-6").assertRectCount(5)
@@ -734,7 +803,7 @@ class RectListIntegrationTest {
             lazyListState = lazyListState,
             rootSizePx = rootSizePx,
             viewPortCount = viewPortCount,
-            pages = pages
+            pages = pages,
         )
 
         with(rule.density) {
@@ -764,7 +833,7 @@ class RectListIntegrationTest {
                     left = 0.dp,
                     top = 0.dp,
                     right = rootSizePx.toDp(),
-                    bottom = listItemHeight.toDp()
+                    bottom = listItemHeight.toDp(),
                 )
 
             rule.onNodeWithTag("Item-8").assertRectCount(5)
@@ -823,44 +892,38 @@ class RectListIntegrationTest {
         }
     }
 
-    internal fun SemanticsNodeInteraction.assertRectDp(
-        left: Dp,
-        top: Dp,
-        right: Dp,
-        bottom: Dp,
-    ) = withRect { l, t, r, b ->
-        if (
-            !approxEquals(left, l) ||
-                !approxEquals(top, t) ||
-                !approxEquals(right, r) ||
-                !approxEquals(bottom, b)
-        ) {
-            val actualL = convertToDp(l)
-            val actualT = convertToDp(t)
-            val actualR = convertToDp(r)
-            val actualB = convertToDp(b)
+    internal fun SemanticsNodeInteraction.assertRectDp(left: Dp, top: Dp, right: Dp, bottom: Dp) =
+        withRect { l, t, r, b ->
+            if (
+                !approxEquals(left, l) ||
+                    !approxEquals(top, t) ||
+                    !approxEquals(right, r) ||
+                    !approxEquals(bottom, b)
+            ) {
+                val actualL = convertToDp(l)
+                val actualT = convertToDp(t)
+                val actualR = convertToDp(r)
+                val actualB = convertToDp(b)
 
-            val expectDpString = "[$left, $top, $right, $bottom]"
-            val actualDpString = "[$actualL, $actualT, $actualR, $actualB]"
+                val expectDpString = "[$left, $top, $right, $bottom]"
+                val actualDpString = "[$actualL, $actualT, $actualR, $actualB]"
 
-            throw ComparisonFailure(
-                "expected <$expectDpString> but was: <$actualDpString>",
-                expectDpString,
-                actualDpString
-            )
+                throw ComparisonFailure(
+                    "expected <$expectDpString> but was: <$actualDpString>",
+                    expectDpString,
+                    actualDpString,
+                )
+            }
         }
-    }
 
-    internal fun SemanticsNodeInteraction.assertRectTopWithinRange(
-        min: Dp,
-        max: Dp,
-    ) = withRect { _, t, _, _ ->
-        val topDp = convertToDp(t)
+    internal fun SemanticsNodeInteraction.assertRectTopWithinRange(min: Dp, max: Dp) =
+        withRect { _, t, _, _ ->
+            val topDp = convertToDp(t)
 
-        if (topDp < min || topDp > max) {
-            error("top was $topDp but was expected to be between [$min, $max]")
+            if (topDp < min || topDp > max) {
+                error("top was $topDp but was expected to be between [$min, $max]")
+            }
         }
-    }
 
     inline internal fun SemanticsNodeInteraction.withRect(
         crossinline block: Density.(l: Int, t: Int, r: Int, b: Int) -> Unit

@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.animation.AnimatedContentTransitionScope#slideIntoContainer-mOhB8PU(int, androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>, kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Integer>):
+    Binary breaking change: Added method androidx.compose.animation.AnimatedContentTransitionScope.slideIntoContainer-mOhB8PU(int,androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>,kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Integer>)
+AddedAbstractMethod: androidx.compose.animation.AnimatedContentTransitionScope#slideOutOfContainer-mOhB8PU(int, androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>, kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Integer>):
+    Binary breaking change: Added method androidx.compose.animation.AnimatedContentTransitionScope.slideOutOfContainer-mOhB8PU(int,androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>,kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Integer>)
+AddedAbstractMethod: androidx.compose.animation.SizeTransform#createAnimationSpec-TemP2vQ(long, long):
+    Binary breaking change: Added method androidx.compose.animation.SizeTransform.createAnimationSpec-TemP2vQ(long,long)

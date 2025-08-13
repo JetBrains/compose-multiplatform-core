@@ -44,10 +44,7 @@ class LoadingIndicatorTest {
         val progress = mutableFloatStateOf(0f)
 
         rule.setContent {
-            LoadingIndicator(
-                modifier = Modifier.testTag(TestTag),
-                progress = { progress.value },
-            )
+            LoadingIndicator(modifier = Modifier.testTag(TestTag), progress = { progress.value })
         }
 
         rule.onNodeWithTag(TestTag).assertIsDisplayed()
@@ -108,7 +105,7 @@ class LoadingIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             ContainedLoadingIndicator(
                 modifier = Modifier.testTag(TestTag),
-                progress = { progress.value }
+                progress = { progress.value },
             )
         }
 
@@ -130,7 +127,7 @@ class LoadingIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             ContainedLoadingIndicator(
                 modifier = Modifier.testTag(TestTag),
-                progress = { Float.NaN }
+                progress = { Float.NaN },
             )
         }
         // The ProgressBarRangeInfo should indicate a current value of zero.

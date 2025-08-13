@@ -19,19 +19,28 @@ package androidx.compose.mpp.demo
 import androidx.compose.mpp.demo.accessibility.AndroidAccessibilityDemos
 import androidx.compose.mpp.demo.bug.BugReproducers
 import androidx.compose.mpp.demo.components.Components
+import androidx.compose.mpp.demo.graphics.Blending
+import androidx.compose.mpp.demo.graphics.BrushAndShadows
+import androidx.compose.mpp.demo.graphics.GraphicsLayerSettings
 import androidx.compose.mpp.demo.textfield.android.AndroidTextFieldSamples
 import androidx.compose.mpp.demo.textfield.android.TextBrushDemo
+
+private val GraphicsComponents = Screen.Selection(
+    "Graphics",
+    Screen.Example("Blending") { Blending() },
+    Screen.Example("Brush & Shadows") { BrushAndShadows() },
+    Screen.Example("GraphicsLayerSettings") { GraphicsLayerSettings() },
+)
 
 val MainScreen = Screen.Selection(
     "Demo",
     Components,
     BugReproducers,
+    GraphicsComponents,
     Screen.Example("Example1") { Example1() },
     Screen.Example("ImageViewer") { ImageViewer() },
     Screen.Example("LottieAnimation") { LottieAnimation() },
     Screen.Fullscreen("ApplicationLayouts") { ApplicationLayouts(it) },
-    Screen.Example("GraphicsLayerSettings") { GraphicsLayerSettings() },
-    Screen.Example("Blending") { Blending() },
     Screen.Example("InteropOrder") { InteropOrder() },
     AndroidTextFieldSamples,
     Screen.Example("Android TextBrushDemo") { TextBrushDemo() },

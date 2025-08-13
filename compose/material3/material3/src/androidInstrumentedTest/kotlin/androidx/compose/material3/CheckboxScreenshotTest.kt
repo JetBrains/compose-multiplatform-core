@@ -15,7 +15,6 @@
  */
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,7 +57,7 @@ import org.junit.runners.Parameterized
 
 @MediumTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @get:Rule val rule = createComposeRule()
@@ -126,7 +125,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 TriStateCheckbox(
                     state = ToggleableState.Indeterminate,
                     modifier = wrap,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -161,7 +160,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     state = ToggleableState.Indeterminate,
                     enabled = false,
                     modifier = wrap,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -176,7 +175,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Checkbox(
                     modifier = wrap,
                     checked = isChecked.value,
-                    onCheckedChange = { isChecked.value = it }
+                    onCheckedChange = { isChecked.value = it },
                 )
             }
         }
@@ -203,7 +202,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Checkbox(
                     modifier = wrap,
                     checked = isChecked.value,
-                    onCheckedChange = { isChecked.value = it }
+                    onCheckedChange = { isChecked.value = it },
                 )
             }
         }
@@ -248,7 +247,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Checkbox(
                     modifier = wrap.focusRequester(focusRequester),
                     checked = true,
-                    onCheckedChange = {}
+                    onCheckedChange = {},
                 )
             }
         }
@@ -274,7 +273,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         checkmarkColor = Color.Green,
                         disabledCheckedColor = Color.Red.copy(alpha = 0.38f),
                         disabledUncheckedColor = Color.Gray.copy(alpha = 0.38f),
-                        disabledIndeterminateColor = Color.Magenta.copy(alpha = 0.38f)
+                        disabledIndeterminateColor = Color.Magenta.copy(alpha = 0.38f),
                     )
                 Checkboxes(colors = colors)
             }
@@ -304,7 +303,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         uncheckedBorderColor = Color.Black,
                         disabledBorderColor = Color.Red.copy(alpha = 0.38f),
                         disabledUncheckedBorderColor = Color.Blue,
-                        disabledIndeterminateBorderColor = Color.LightGray
+                        disabledIndeterminateBorderColor = Color.LightGray,
                     )
                 Checkboxes(colors = colors)
             }
@@ -322,7 +321,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Stroke(
                     width = with(LocalDensity.current) { CheckboxDefaults.StrokeWidth.toPx() },
                     cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
+                    join = StrokeJoin.Round,
                 )
             Box(wrap.testTag(wrapperTestTag)) {
                 Checkbox(
@@ -330,7 +329,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     checked = true,
                     onCheckedChange = {},
                     checkmarkStroke = stroke,
-                    outlineStroke = stroke
+                    outlineStroke = stroke,
                 )
             }
         }
@@ -345,7 +344,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Stroke(
                     width = with(LocalDensity.current) { CheckboxDefaults.StrokeWidth.toPx() / 4 },
                     cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
+                    join = StrokeJoin.Round,
                 )
             Box(wrap.testTag(wrapperTestTag)) {
                 Checkbox(
@@ -353,7 +352,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     checked = false,
                     onCheckedChange = {},
                     checkmarkStroke = stroke,
-                    outlineStroke = stroke
+                    outlineStroke = stroke,
                 )
             }
         }
@@ -367,7 +366,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Stroke(
                     width = with(LocalDensity.current) { CheckboxDefaults.StrokeWidth.toPx() },
                     cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
+                    join = StrokeJoin.Round,
                 )
             Box(wrap.testTag(wrapperTestTag)) {
                 TriStateCheckbox(
@@ -375,7 +374,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     checkmarkStroke = stroke,
                     outlineStroke = stroke,
                     modifier = wrap,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -389,7 +388,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
             state = ToggleableState.Off,
             onClick = {},
             enabled = false,
-            colors = colors
+            colors = colors,
         )
         TriStateCheckbox(state = ToggleableState.On, onClick = {}, colors = colors)
         TriStateCheckbox(state = ToggleableState.On, onClick = {}, enabled = false, colors = colors)
@@ -398,7 +397,7 @@ class CheckboxScreenshotTest(private val scheme: ColorSchemeWrapper) {
             state = ToggleableState.Indeterminate,
             onClick = {},
             enabled = false,
-            colors = colors
+            colors = colors,
         )
         Checkbox(checked = false, onCheckedChange = {}, colors = colors)
         Checkbox(checked = false, onCheckedChange = {}, enabled = false, colors = colors)

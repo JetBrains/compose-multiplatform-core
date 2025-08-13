@@ -61,17 +61,16 @@ sealed interface LazyLayoutMeasureScope : MeasureScope {
      */
     @Deprecated(
         "Please use compose and call Measurable.measure",
-        ReplaceWith("compose(index).map { it.measure(constraints) }")
+        ReplaceWith("compose(index).map { it.measure(constraints) }"),
     )
     @ExperimentalFoundationApi
     fun measure(index: Int, constraints: Constraints): List<Placeable>
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 internal class LazyLayoutMeasureScopeImpl
 internal constructor(
     private val itemContentFactory: LazyLayoutItemContentFactory,
-    private val subcomposeMeasureScope: SubcomposeMeasureScope
+    private val subcomposeMeasureScope: SubcomposeMeasureScope,
 ) : LazyLayoutMeasureScope, MeasureScope by subcomposeMeasureScope {
 
     private val itemProvider = itemContentFactory.itemProvider()
@@ -98,6 +97,7 @@ internal constructor(
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Deprecated("Please use compose and measure")
     override fun measure(index: Int, constraints: Constraints): List<Placeable> {
         val cachedPlaceable = placeablesCache[index]

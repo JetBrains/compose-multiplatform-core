@@ -37,7 +37,7 @@ interface Scrollable2DState {
      */
     suspend fun scroll(
         scrollPriority: MutatePriority = MutatePriority.Default,
-        block: suspend Scroll2DScope.() -> Unit
+        block: suspend Scroll2DScope.() -> Unit,
     )
 
     /**
@@ -64,15 +64,17 @@ interface Scrollable2DState {
     val isScrollInProgress: Boolean
 
     /**
-     * Whether this [Scrollable2DState] can scroll at a given vector [angle] in rads. We also
-     * provide Scrollable2DState.canScroll(offset: Offset) as an utility for checking against an
-     * angle provided through an [Offset].
+     * Whether this [Scrollable2DState] can scroll using [offset]. This means that this state has
+     * enough space to apply offsets on the direction represented by [offset]. Inferring
+     * directionality from [offset] can be achieved using the angle offered by atan(offset.y,
+     * offset.x). Note that returning `true` here does not imply that offset *will* be consumed. The
+     * Scrollable2DState may decide not to handle the incoming offset (such as if it is already
+     * being scrolled separately).
      *
-     * Note that `true` here does not imply that delta *will* be consumed - the Scrollable2DState
-     * may decide not to handle the incoming delta (such as if it is already being scrolled
-     * separately).
+     * @param offset An offset in pixels representing the 2D vector to check against.
+     * @return Whether this state can scroll in the direction given by [offset].
      */
-    fun canScroll(angle: Float): Boolean
+    fun canScroll(offset: Offset): Boolean
 }
 
 /** Scope used for suspending scroll blocks */
@@ -139,7 +141,7 @@ private class DefaultScrollable2DState(val onDelta: (Offset) -> Offset) : Scroll
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend Scroll2DScope.() -> Unit
+        block: suspend Scroll2DScope.() -> Unit,
     ): Unit = coroutineScope {
         scrollMutex.mutateWith(scrollScope, scrollPriority) {
             isScrollingState.value = true
@@ -158,5 +160,5 @@ private class DefaultScrollable2DState(val onDelta: (Offset) -> Offset) : Scroll
     override val isScrollInProgress: Boolean
         get() = isScrollingState.value
 
-    override fun canScroll(angle: Float): Boolean = true
+    override fun canScroll(offset: Offset): Boolean = true
 }

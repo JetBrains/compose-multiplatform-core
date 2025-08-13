@@ -73,9 +73,7 @@ internal data class SharedBoundsNodeElement(val sharedElementState: SharedElemen
  * visible. Once the target bounds are calculated, the bounds animation will happen during the
  * approach pass.
  */
-internal class SharedBoundsNode(
-    state: SharedElementInternalState,
-) :
+internal class SharedBoundsNode(state: SharedElementInternalState) :
     ApproachLayoutModifierNode,
     Modifier.Node(),
     DrawModifierNode,
@@ -92,7 +90,7 @@ internal class SharedBoundsNode(
             // coordinates, hence shared elements.
             return Rect(
                 rootCoords.localPositionOf(approachCoordinates),
-                approachCoordinates.size.toSize()
+                approachCoordinates.size.toSize(),
             )
         }
 
@@ -167,7 +165,7 @@ internal class SharedBoundsNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Lookahead pass: Record lookahead size and lookahead coordinates
         val placeable = measurable.measure(constraints)
@@ -281,7 +279,7 @@ internal class SharedBoundsNode(
             val (w, h) =
                 state.placeHolderSize.calculateSize(
                     requireLookaheadLayoutCoordinates().size,
-                    IntSize(placeable.width, placeable.height)
+                    IntSize(placeable.width, placeable.height),
                 )
             return layout(w, h) { approachPlaceMatchInTransition(placeable) }
         }
@@ -293,7 +291,7 @@ internal class SharedBoundsNode(
 
     override fun ApproachMeasureScope.approachMeasure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Approach pass. Animation may not have started, or if the animation isn't
         // running, we'll measure with current bounds.
@@ -325,7 +323,7 @@ internal class SharedBoundsNode(
                     state.userState,
                     sharedElement.currentBoundsWhenMatched!!,
                     layoutDirection,
-                    requireDensity()
+                    requireDensity(),
                 )
             } else {
                 null

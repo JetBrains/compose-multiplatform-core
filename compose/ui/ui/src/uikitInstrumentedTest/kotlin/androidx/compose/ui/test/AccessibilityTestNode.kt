@@ -302,13 +302,19 @@ internal fun UIKitInstrumentedTest.assertAccessibilityTree(
     assertAccessibilityTree(validator)
 }
 
-internal fun UIKitInstrumentedTest.findNodeWithTag(tag: String) = findNodeOrNull {
-    it.identifier == tag
-} ?: fail("Unable to find node with identifier: $tag")
+internal fun UIKitInstrumentedTest.findNodeWithTag(tag: String) = findNodeWithTagOrNull(tag)
+    ?: fail("Unable to find node with identifier: $tag")
 
-internal fun UIKitInstrumentedTest.findNodeWithLabel(label: String) = findNodeOrNull {
+internal fun UIKitInstrumentedTest.findNodeWithTagOrNull(tag: String) = findNodeOrNull {
+    it.identifier == tag
+}
+
+internal fun UIKitInstrumentedTest.findNodeWithLabel(label: String) = findNodeWithLabelOrNull(label)
+    ?: fail("Unable to find node with label: $label")
+
+internal fun UIKitInstrumentedTest.findNodeWithLabelOrNull(label: String) = findNodeOrNull {
     it.label == label
-} ?: fail("Unable to find node with label: $label")
+}
 
 internal fun UIKitInstrumentedTest.findNodeOrNull(
     isValid: (AccessibilityTestNode) -> Boolean

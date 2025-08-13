@@ -23,11 +23,21 @@ import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIEvent
 import platform.UIKit.UIView
+import androidx.compose.ui.uikit.utils.CMPScrollView
 
 internal class UIKitTransparentContainerView(
     var onLayoutSubviews: () -> Unit = {}
-) : UIView(CGRectZero.readValue()) {
+) : CMPScrollView(CGRectZero.readValue()) {
     private var onAppeared: (() -> Unit)? = null
+
+    init {
+        showsHorizontalScrollIndicator = false
+        showsVerticalScrollIndicator = false
+        panGestureRecognizer.setEnabled(false)
+        bounces = false
+    }
+
+    override fun drawsFocusRingWhenChildrenFocused(): Boolean = false
 
     fun runOnceOnAppeared(block: () -> Unit) {
         onAppeared = {

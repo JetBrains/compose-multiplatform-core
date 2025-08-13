@@ -170,10 +170,11 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 api project(":compose:ui:ui-text")
                 api project(":compose:ui:ui-unit")
                 api project(":compose:ui:ui-util")
-                api("org.jetbrains.androidx.lifecycle:lifecycle-common:2.8.4")
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.8.4")
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.8.4")
+                api(project(":lifecycle:lifecycle-common"))
+                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation(project(":lifecycle:lifecycle-runtime-compose"))
+                implementation(project(":lifecycle:lifecycle-viewmodel"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
             }
 
             androidMain.dependencies {
@@ -213,23 +214,22 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(project(":compose:ui:ui-uikit"))
                 }
             }
-            notMobileMain.dependsOn(skikoMain)
             desktopMain {
-                dependsOn(notMobileMain)
+                dependsOn(skikoMain)
                 dependencies {
                     implementation(libs.kotlinStdlibJdk8)
                 }
             }
 
-            jsNativeMain.dependsOn(skikoMain)
-            nativeMain.dependsOn(jsNativeMain)
-            jsWasmMain.dependsOn(jsNativeMain)
-            jsWasmMain.dependsOn(notMobileMain)
-            macosMain.dependsOn(notMobileMain)
+            nonJvmMain.dependsOn(skikoMain)
+            nativeMain.dependsOn(nonJvmMain)
+            webMain.dependsOn(nonJvmMain)
+            webMain.dependsOn(skikoMain)
+            macosMain.dependsOn(skikoMain)
 
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
                 dependencies {
                     api(libs.skikoCommon)
                 }
@@ -237,7 +237,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             wasmJsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
                 dependencies {
                     implementation(libs.kotlinStdlib)
                     implementation(libs.create("skikoWasm"))

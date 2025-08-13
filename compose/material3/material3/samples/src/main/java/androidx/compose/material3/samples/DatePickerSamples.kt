@@ -40,16 +40,21 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
@@ -73,14 +78,13 @@ import java.util.Calendar
 import java.util.TimeZone
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
 fun DatePickerSample() {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Pre-select a date for January 4, 2020
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = 1578096000000)
@@ -88,7 +92,7 @@ fun DatePickerSample() {
 
         Text(
             "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
 }
@@ -101,7 +105,7 @@ fun DatePickerSample() {
 fun DatePickerApi26Sample() {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Pre-select a date for April 15, 2023
         val datePickerState =
@@ -110,12 +114,11 @@ fun DatePickerApi26Sample() {
 
         Text(
             "Selected date: ${datePickerState.getSelectedDate() ?: "no selection"}",
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -148,14 +151,14 @@ fun DatePickerDialogSample() {
                             )
                         }
                     },
-                    enabled = confirmEnabled.value
+                    enabled = confirmEnabled.value,
                 ) {
                     Text("OK")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { openDialog.value = false }) { Text("Cancel") }
-            }
+            },
         ) {
             // The verticalScroll will allow scrolling to show the entire month in case there is not
             // enough horizontal space (for example, when in landscape mode).
@@ -163,13 +166,12 @@ fun DatePickerDialogSample() {
             // those cases.
             DatePicker(
                 state = datePickerState,
-                modifier = Modifier.verticalScroll(rememberScrollState())
+                modifier = Modifier.verticalScroll(rememberScrollState()),
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -204,17 +206,16 @@ fun DatePickerWithDateSelectableDatesSample() {
 
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         DatePicker(state = datePickerState)
         Text(
             "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -225,7 +226,7 @@ fun DateInputSample() {
 
         Text(
             "Entered date timestamp: ${state.selectedDateMillis ?: "no input"}",
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
 }
@@ -249,10 +250,17 @@ fun DateRangePickerSample() {
                     .background(DatePickerDefaults.colors().containerColor)
                     .padding(start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = { /* dismiss the UI */ }) {
-                Icon(Icons.Filled.Close, contentDescription = "Localized description")
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = { PlainTooltip { Text("Close") } },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = { /* dismiss the UI */ }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
             }
             TextButton(
                 onClick = {
@@ -261,7 +269,7 @@ fun DateRangePickerSample() {
                         snackState.showSnackbar("Saved range (timestamps): $range")
                     }
                 },
-                enabled = state.selectedEndDateMillis != null
+                enabled = state.selectedEndDateMillis != null,
             ) {
                 Text(text = "Save")
             }
@@ -285,7 +293,7 @@ fun DateRangePickerApi26Sample() {
     val state =
         rememberDateRangePickerState(
             initialSelectedStartDate = LocalDate.of(2023, 4, 15),
-            initialSelectedEndDate = LocalDate.of(2023, 4, 20)
+            initialSelectedEndDate = LocalDate.of(2023, 4, 20),
         )
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
         // Add a row with "Save" and dismiss actions.
@@ -295,10 +303,17 @@ fun DateRangePickerApi26Sample() {
                     .background(DatePickerDefaults.colors().containerColor)
                     .padding(start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = { /* dismiss the UI */ }) {
-                Icon(Icons.Filled.Close, contentDescription = "Localized description")
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = { PlainTooltip { Text("Close") } },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = { /* dismiss the UI */ }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
             }
             TextButton(
                 onClick = {
@@ -307,7 +322,7 @@ fun DateRangePickerApi26Sample() {
                         snackState.showSnackbar("Saved range: $range")
                     }
                 },
-                enabled = state.getSelectedEndDate() != null
+                enabled = state.getSelectedEndDate() != null,
             ) {
                 Text(text = "Save")
             }
@@ -317,7 +332,6 @@ fun DateRangePickerApi26Sample() {
 }
 
 @RequiresApi(Build.VERSION_CODES.N)
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -329,11 +343,11 @@ fun DatePickerCustomLocaleSample() {
     CompositionLocalProvider(
         LocalContext provides newContext,
         LocalConfiguration provides config,
-        LocalLayoutDirection provides LayoutDirection.Rtl
+        LocalLayoutDirection provides LayoutDirection.Rtl,
     ) {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Pre-select a date for January 4, 2020
             // Initialize date picker with the preferred locale. Here we create a state directly,
@@ -343,14 +357,14 @@ fun DatePickerCustomLocaleSample() {
                 DatePickerState(
                     initialSelectedDateMillis = 1578096000000,
                     // Set to "HE" locale.
-                    locale = preferredLocales.get(0)
+                    locale = preferredLocales.get(0),
                 )
             }
             DatePicker(state = datePickerState, modifier = Modifier.padding(16.dp))
 
             Text(
                 "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }
@@ -369,11 +383,11 @@ fun DatePickerCustomLocaleApi26Sample() {
     CompositionLocalProvider(
         LocalContext provides newContext,
         LocalConfiguration provides config,
-        LocalLayoutDirection provides LayoutDirection.Rtl
+        LocalLayoutDirection provides LayoutDirection.Rtl,
     ) {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Pre-select a date for January 4, 2020
             // Initialize date picker with the preferred locale. Here we create a state directly,
@@ -383,14 +397,14 @@ fun DatePickerCustomLocaleApi26Sample() {
                 DatePickerState(
                     initialSelectedDate = LocalDate.of(2020, 1, 4),
                     // Set to "HE" locale.
-                    locale = preferredLocales.get(0)
+                    locale = preferredLocales.get(0),
                 )
             }
             DatePicker(state = datePickerState, modifier = Modifier.padding(16.dp))
 
             Text(
                 "Selected date: ${datePickerState.getSelectedDate() ?: "no selection"}",
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }

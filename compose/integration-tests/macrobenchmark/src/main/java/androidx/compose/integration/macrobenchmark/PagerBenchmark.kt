@@ -61,12 +61,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -75,7 +75,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.Grid)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -97,12 +97,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -112,7 +112,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.Grid)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -131,12 +131,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -145,7 +145,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.List)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -167,12 +167,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -182,7 +182,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.List)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -201,12 +201,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -215,7 +215,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.WebView)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -237,12 +237,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -252,7 +252,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.WebView)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -271,12 +271,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -285,7 +285,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FullScreenImage)
                 intent.action = Action
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -307,12 +307,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -322,7 +322,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Tab, true)
                 intent.action = Action
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -342,12 +342,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -356,7 +356,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FixedSizeImage)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -378,12 +378,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -393,7 +393,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FixedSizeImage)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -412,12 +412,12 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                     FrameTimingGfxInfoMetric(),
                     TraceSectionMetric(
                         sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum
+                        mode = TraceSectionMetric.Mode.Sum,
                     ),
                     TraceSectionMetric(
                         sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum
-                    )
+                        mode = TraceSectionMetric.Mode.Sum,
+                    ),
                 ),
             compilationMode = compilationMode,
             iterations = 5,
@@ -426,7 +426,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.ListOfPager)
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val pager = device.findObject(By.desc("List"))
             // Setting a gesture margin is important otherwise gesture nav is triggered.

@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.jvm.JvmInline
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DateInputContent(
     selectedDateMillis: Long?,
@@ -65,7 +64,7 @@ internal fun DateInputContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    focusRequester: FocusRequester?
+    focusRequester: FocusRequester?,
 ) {
     // Obtain the DateInputFormat for the default Locale.
     val dateInputFormat =
@@ -83,7 +82,7 @@ internal fun DateInputContent(
                 errorDatePattern = errorDatePattern,
                 errorDateOutOfYearRange = errorDateOutOfYearRange,
                 errorInvalidNotAllowed = errorInvalidNotAllowed,
-                errorInvalidRangeInput = "" // Not used for a single date input
+                errorInvalidRangeInput = "", // Not used for a single date input
             )
         }
     val pattern = dateInputFormat.patternWithDelimiters.uppercase()
@@ -94,7 +93,7 @@ internal fun DateInputContent(
         label = {
             Text(
                 labelText,
-                modifier = Modifier.semantics { contentDescription = "$labelText, $pattern" }
+                modifier = Modifier.semantics { contentDescription = "$labelText, $pattern" },
             )
         },
         placeholder = { Text(pattern, modifier = Modifier.clearAndSetSemantics {}) },
@@ -109,11 +108,10 @@ internal fun DateInputContent(
         dateInputFormat = dateInputFormat,
         locale = calendarModel.locale,
         colors = colors,
-        focusRequester = focusRequester
+        focusRequester = focusRequester,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DateInputTextField(
     modifier: Modifier,
@@ -127,7 +125,7 @@ internal fun DateInputTextField(
     dateInputFormat: DateInputFormat,
     locale: CalendarLocale,
     colors: DatePickerColors,
-    focusRequester: FocusRequester?
+    focusRequester: FocusRequester?,
 ) {
     var text by
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
@@ -142,10 +140,10 @@ internal fun DateInputTextField(
                             calendarModel.parse(
                                 date = text.text,
                                 pattern = dateInputFormat.patternWithoutDelimiters,
-                                locale = locale
+                                locale = locale,
                             ),
                         inputIdentifier = inputIdentifier,
-                        locale = locale
+                        locale = locale,
                     )
             }
             mutableStateOf(initialError)
@@ -182,13 +180,13 @@ internal fun DateInputTextField(
                         calendarModel.parse(
                             date = trimmedText,
                             pattern = dateInputFormat.patternWithoutDelimiters,
-                            locale = locale
+                            locale = locale,
                         )
                     errorText.value =
                         dateInputValidator.validate(
                             dateToValidate = parsedDate,
                             inputIdentifier = inputIdentifier,
-                            locale = locale
+                            locale = locale,
                         )
                     // Set the parsed date only if the error validation returned an empty string.
                     // Otherwise, set it to null, as the validation failed.
@@ -222,10 +220,10 @@ internal fun DateInputTextField(
             KeyboardOptions(
                 autoCorrectEnabled = false,
                 keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
+                imeAction = ImeAction.Done,
             ),
         singleLine = true,
-        colors = colors.dateTextFieldColors
+        colors = colors.dateTextFieldColors,
     )
 
     LaunchedEffect(Unit) {
@@ -243,7 +241,7 @@ internal fun DateInputTextField(
                 calendarModel.formatWithPattern(
                     it,
                     dateInputFormat.patternWithoutDelimiters,
-                    locale
+                    locale,
                 )
             text =
                 TextFieldValue(
@@ -254,7 +252,7 @@ internal fun DateInputTextField(
                             TextRange.Zero
                         } else {
                             TextRange(initialText.length, initialText.length)
-                        }
+                        },
                 )
         }
     }
@@ -280,7 +278,6 @@ internal fun DateInputTextField(
  *   and one of the input dates is out of order (i.e. the user inputs a start date that is after the
  *   end date, or an end date that is before the start date)
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Stable
 internal class DateInputValidator(
     private val yearRange: IntRange,
@@ -290,7 +287,7 @@ internal class DateInputValidator(
     private val errorDatePattern: String,
     private val errorDateOutOfYearRange: String,
     private val errorInvalidNotAllowed: String,
-    private val errorInvalidRangeInput: String
+    private val errorInvalidRangeInput: String,
 ) {
     /**
      * the currently selected start date in milliseconds. Only checked against when the
@@ -316,7 +313,7 @@ internal class DateInputValidator(
     fun validate(
         dateToValidate: CalendarDate?,
         inputIdentifier: InputIdentifier,
-        locale: CalendarLocale
+        locale: CalendarLocale,
     ): String {
         if (dateToValidate == null) {
             return formatString(errorDatePattern, dateInputFormat.patternWithDelimiters.uppercase())
@@ -325,8 +322,8 @@ internal class DateInputValidator(
         if (!yearRange.contains(dateToValidate.year)) {
             return formatString(
                 errorDateOutOfYearRange,
-                yearRange.first.toLocalString(),
-                yearRange.last.toLocalString()
+                yearRange.first.toLocalString(locale = locale),
+                yearRange.last.toLocalString(locale = locale),
             )
         }
         // Check that the provided SelectableDates allows this date to be selected.
@@ -339,8 +336,8 @@ internal class DateInputValidator(
                     errorInvalidNotAllowed,
                     dateFormatter.formatDate(
                         dateMillis = dateToValidate.utcTimeMillis,
-                        locale = locale
-                    )
+                        locale = locale,
+                    ),
                 )
             }
         }
@@ -392,7 +389,6 @@ internal value class InputIdentifier internal constructor(internal val value: In
  * A [VisualTransformation] for date input. The transformation will automatically display the date
  * delimiters provided by the [DateInputFormat] as the date is being entered into the text field.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private class DateVisualTransformation(private val dateInputFormat: DateInputFormat) :
     VisualTransformation {
 

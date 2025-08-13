@@ -94,7 +94,7 @@ fun Modifier.focusRestorer(fallback: FocusRequester = Default): Modifier =
 @Deprecated(
     "Use focusRestorer(FocusRequester) instead",
     ReplaceWith("this.focusRestorer(onRestoreFailed())"),
-    DeprecationLevel.WARNING
+    DeprecationLevel.WARNING,
 )
 fun Modifier.focusRestorer(onRestoreFailed: (() -> FocusRequester)?): Modifier =
     focusRestorer(fallback = onRestoreFailed?.invoke() ?: Default)

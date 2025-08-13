@@ -45,7 +45,7 @@ class ColorMatrixTest {
             16f,
             17f,
             18f,
-            19f
+            19f,
         )
 
     private var colorMatrix = ColorMatrix(source)
@@ -130,7 +130,7 @@ class ColorMatrixTest {
                 3f,
                 2f,
                 1f,
-                0f
+                0f,
             )
         colorMatrix.set(ColorMatrix(fArray))
         ret = colorMatrix.values
@@ -162,7 +162,7 @@ class ColorMatrixTest {
                 3f,
                 2f,
                 1f,
-                0f
+                0f,
             )
         colorMatrix.set(ColorMatrix(fArray))
         ret = colorMatrix.values
@@ -213,14 +213,14 @@ class ColorMatrixTest {
                 0.0f,
                 0.0f,
                 1.0f,
-                0.0f
+                0.0f,
             )
         for (i in ret.indices) {
             assertEquals(
                 expected[i],
                 ret[i],
                 tolerance,
-                "Expected: $expected[i] at index: $i received: $ret[i]"
+                "Expected: $expected[i] at index: $i received: $ret[i]",
             )
         }
     }
@@ -270,7 +270,7 @@ class ColorMatrixTest {
                     0.0f,
                     0.0f,
                     1.0f,
-                    0.0f
+                    0.0f,
                 )
                 .contentEquals(colorMatrix.values)
         )
@@ -300,7 +300,7 @@ class ColorMatrixTest {
                     0.0f,
                     0.0f,
                     1.0f,
-                    0.0f
+                    0.0f,
                 )
                 .contentEquals(colorMatrix.values)
         )
@@ -348,7 +348,7 @@ class ColorMatrixTest {
                 3f,
                 2f,
                 1f,
-                0f
+                0f,
             )
         val floatB =
             floatArrayOf(
@@ -371,7 +371,7 @@ class ColorMatrixTest {
                 1f,
                 1f,
                 1f,
-                1f
+                1f,
             )
         val matrix = ColorMatrix(floatA)
         matrix *= ColorMatrix(floatB)
@@ -397,7 +397,7 @@ class ColorMatrixTest {
                     10.0f,
                     10.0f,
                     10.0f,
-                    10.0f
+                    10.0f,
                 )
                 .contentEquals(ret)
         )

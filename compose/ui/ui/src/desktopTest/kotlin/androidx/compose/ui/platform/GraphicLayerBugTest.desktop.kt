@@ -84,14 +84,13 @@ class GraphicLayerBugDesktopTest {
                 coroutineException = throwable
             }
         ) {
-            CanvasLayersComposeScene(coroutineContext = coroutineContext).apply {
-                body(this)
-                close()
+            CanvasLayersComposeScene(coroutineContext = coroutineContext).use {
+                body(it)
             }
         }
 
         if (coroutineException != null) {
-            throw coroutineException!!
+            throw coroutineException
         }
     }
 }

@@ -174,20 +174,15 @@ private fun ColorTile(text: String, color: Color) {
         borderColor = Color.Black
     }
 
-    OutlinedCard(
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Surface(
-            modifier = Modifier.height(221.dp).fillMaxWidth(),
-            color = color,
-        ) {
+    OutlinedCard(border = BorderStroke(1.dp, borderColor)) {
+        Surface(modifier = Modifier.height(221.dp).fillMaxWidth(), color = color) {
             Text(
                 text,
                 Modifier.padding(4.dp),
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         if (color.luminance() < .25) Color.White else Color.Black
-                    )
+                    ),
             )
         }
     }

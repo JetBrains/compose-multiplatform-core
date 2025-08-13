@@ -518,11 +518,11 @@ class FocusSearchLeftInteropTest(private val moveFocusProgrammatically: Boolean)
             Row {
                 AndroidView(
                     factory = { FocusableView(it).apply { view2 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState2 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState2 = it },
                 )
                 AndroidView(
                     factory = { FocusableView(it).apply { view1 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState1 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState1 = it },
                 )
             }
         }
@@ -550,11 +550,11 @@ class FocusSearchLeftInteropTest(private val moveFocusProgrammatically: Boolean)
             Row {
                 AndroidView(
                     factory = { FocusableView(it).apply { view2 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState2 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState2 = it },
                 )
                 AndroidView(
                     factory = { FocusableView(it).apply { view1 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState1 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState1 = it },
                 )
             }
         }

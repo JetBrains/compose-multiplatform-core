@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
@@ -41,7 +40,7 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @LargeTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
@@ -134,13 +133,13 @@ class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 modifier = Modifier.testTag(TestTag).size(340.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ClockFace(
                     modifier = Modifier.then(ClockFaceSizeModifier()),
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
         }
@@ -157,13 +156,13 @@ class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 modifier = Modifier.testTag(TestTag).size(300.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ClockFace(
                     modifier = Modifier.then(ClockFaceSizeModifier()),
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
         }

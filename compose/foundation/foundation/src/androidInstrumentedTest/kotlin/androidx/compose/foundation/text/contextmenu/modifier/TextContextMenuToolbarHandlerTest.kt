@@ -68,7 +68,7 @@ class TextContextMenuToolbarHandlerTest {
             CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides fakeProvider) {
                 Box(
                     Modifier.onGloballyPositioned { coordinates = it }
-                        .addTextContextMenuComponents { testNumberItem(1) }
+                        .appendTextContextMenuComponents { testNumberItem(1) }
                         .textContextMenuToolbarHandler(
                             requester = toolbarRequester,
                             computeContentBounds = { destinationCoordinates ->

@@ -85,7 +85,7 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
             }
             return MutableSharedFlow<Unit>(
                     replay = 1,
-                    onBufferOverflow = BufferOverflow.DROP_LATEST
+                    onBufferOverflow = BufferOverflow.DROP_LATEST,
                 )
                 .also { backingStylusHandwritingTrigger = it }
         }
@@ -94,7 +94,7 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ) {
         startInput {
             it.startInput(
@@ -102,7 +102,7 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
                 textInputModifierNode,
                 imeOptions,
                 onEditCommand,
-                onImeActionPerformed
+                onImeActionPerformed,
             )
         }
     }
@@ -136,7 +136,7 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
                         LegacyTextInputMethodRequest(
                             view = view,
                             localToScreen = ::localToScreen,
-                            inputMethodManager = inputMethodManager
+                            inputMethodManager = inputMethodManager,
                         )
 
                     if (isStylusHandwritingSupported) {
@@ -186,14 +186,14 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) {
         currentRequest?.updateTextLayoutResult(
             textFieldValue,
             offsetMapping,
             textLayoutResult,
             innerTextFieldBounds,
-            decorationBoxBounds
+            decorationBoxBounds,
         )
     }
 
@@ -258,7 +258,7 @@ internal class LegacyTextInputMethodRequest(
         textInputNode: LegacyPlatformTextInputServiceAdapter.LegacyPlatformTextInputNode?,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ) {
         state = value
         this.imeOptions = imeOptions
@@ -296,7 +296,7 @@ internal class LegacyTextInputMethodRequest(
                             includeInsertionMarker: Boolean,
                             includeCharacterBounds: Boolean,
                             includeEditorBounds: Boolean,
-                            includeLineBounds: Boolean
+                            includeLineBounds: Boolean,
                         ) {
                             cursorAnchorInfoController.requestUpdate(
                                 immediate,
@@ -304,7 +304,7 @@ internal class LegacyTextInputMethodRequest(
                                 includeInsertionMarker,
                                 includeCharacterBounds,
                                 includeEditorBounds,
-                                includeLineBounds
+                                includeLineBounds,
                             )
                         }
 
@@ -319,7 +319,7 @@ internal class LegacyTextInputMethodRequest(
                     },
                 legacyTextFieldState = legacyTextFieldState,
                 textFieldSelectionManager = textFieldSelectionManager,
-                viewConfiguration = viewConfiguration
+                viewConfiguration = viewConfiguration,
             )
             .also {
                 ics.add(WeakReference(it))
@@ -357,7 +357,7 @@ internal class LegacyTextInputMethodRequest(
                     selectionStart = newValue.selection.min,
                     selectionEnd = newValue.selection.max,
                     compositionStart = state.composition?.min ?: -1,
-                    compositionEnd = state.composition?.max ?: -1
+                    compositionEnd = state.composition?.max ?: -1,
                 )
             }
             return
@@ -390,7 +390,7 @@ internal class LegacyTextInputMethodRequest(
                 rect.left.roundToInt(),
                 rect.top.roundToInt(),
                 rect.right.roundToInt(),
-                rect.bottom.roundToInt()
+                rect.bottom.roundToInt(),
             )
 
         // Requesting rectangle too early after obtaining focus may bring view into wrong place
@@ -413,14 +413,14 @@ internal class LegacyTextInputMethodRequest(
         offsetMapping: OffsetMapping,
         textLayoutResult: TextLayoutResult,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) {
         cursorAnchorInfoController.updateTextLayoutResult(
             textFieldValue,
             offsetMapping,
             textLayoutResult,
             innerTextFieldBounds,
-            decorationBoxBounds
+            decorationBoxBounds,
         )
     }
 

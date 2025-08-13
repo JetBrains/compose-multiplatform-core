@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -53,7 +52,7 @@ import org.junit.runner.RunWith
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TextSelectionColorsScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -199,7 +198,7 @@ private fun FilledTextFieldTestContent(colorScheme: ColorScheme) {
             TextField(
                 value = TextFieldText,
                 onValueChange = {},
-                modifier = Modifier.requiredWidth(280.dp)
+                modifier = Modifier.requiredWidth(280.dp),
             )
         }
     }
@@ -213,7 +212,7 @@ private fun OutlinedTextFieldTestContent(colorScheme: ColorScheme) {
             OutlinedTextField(
                 value = TextFieldText,
                 onValueChange = {},
-                modifier = Modifier.requiredWidth(280.dp)
+                modifier = Modifier.requiredWidth(280.dp),
             )
         }
     }
@@ -224,6 +223,6 @@ private val TextFieldText =
     TextFieldValue(
         text = "Selected text",
         selection = TextRange(0, 8),
-        composition = TextRange(0, 8)
+        composition = TextRange(0, 8),
     )
 private const val Tag = "TestTag"

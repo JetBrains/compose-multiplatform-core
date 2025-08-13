@@ -144,7 +144,7 @@ fun FloatingActionButton(
         contentColor,
         elevation,
         interactionSource,
-        content
+        content,
     )
 
 @Composable
@@ -171,15 +171,11 @@ private fun FloatingActionButton(
         contentColor = contentColor,
         tonalElevation = elevation.tonalElevation(),
         shadowElevation = elevation.shadowElevation(interactionSource = interactionSource).value,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         ProvideContentColorTextStyle(contentColor = contentColor, textStyle = textStyle) {
             Box(
-                modifier =
-                    Modifier.defaultMinSize(
-                        minWidth = minWidth,
-                        minHeight = minHeight,
-                    ),
+                modifier = Modifier.defaultMinSize(minWidth = minWidth, minHeight = minHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 content()
@@ -420,7 +416,7 @@ fun SmallExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = SmallExtendedFabPaddingStart,
-                    end = SmallExtendedFabPaddingEnd
+                    end = SmallExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -486,7 +482,7 @@ fun MediumExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = MediumExtendedFabPaddingStart,
-                    end = MediumExtendedFabPaddingEnd
+                    end = MediumExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -552,7 +548,7 @@ fun LargeExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = LargeExtendedFabPaddingStart,
-                    end = LargeExtendedFabPaddingEnd
+                    end = LargeExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -902,7 +898,7 @@ fun ExtendedFloatingActionButton(
                     )
                     .padding(start = startPadding, end = endPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center
+            horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center,
         ) {
             icon()
             AnimatedVisibility(
@@ -1104,13 +1100,13 @@ object FloatingActionButtonDefaults {
         defaultElevation: Dp = 0.dp,
         pressedElevation: Dp = 0.dp,
         focusedElevation: Dp = 0.dp,
-        hoveredElevation: Dp = 0.dp
+        hoveredElevation: Dp = 0.dp,
     ): FloatingActionButtonElevation =
         FloatingActionButtonElevation(
             defaultElevation,
             pressedElevation,
             focusedElevation,
-            hoveredElevation
+            hoveredElevation,
         )
 }
 
@@ -1134,7 +1130,7 @@ fun Modifier.animateFloatingActionButton(
     alignment: Alignment,
     targetScale: Float = FloatingActionButtonDefaults.ShowHideTargetScale,
     scaleAnimationSpec: AnimationSpec<Float>? = null,
-    alphaAnimationSpec: AnimationSpec<Float>? = null
+    alphaAnimationSpec: AnimationSpec<Float>? = null,
 ): Modifier {
     return this.then(
         FabVisibleModifier(
@@ -1142,7 +1138,7 @@ fun Modifier.animateFloatingActionButton(
             alignment = alignment,
             targetScale = targetScale,
             scaleAnimationSpec = scaleAnimationSpec,
-            alphaAnimationSpec = alphaAnimationSpec
+            alphaAnimationSpec = alphaAnimationSpec,
         )
     )
 }
@@ -1152,7 +1148,7 @@ internal data class FabVisibleModifier(
     private val alignment: Alignment,
     private val targetScale: Float,
     private val scaleAnimationSpec: AnimationSpec<Float>? = null,
-    private val alphaAnimationSpec: AnimationSpec<Float>? = null
+    private val alphaAnimationSpec: AnimationSpec<Float>? = null,
 ) : ModifierNodeElement<FabVisibleNode>() {
 
     override fun create(): FabVisibleNode =
@@ -1230,7 +1226,7 @@ internal class FabVisibleNode(
         alignment: Alignment,
         targetScale: Float,
         scaleAnimationSpec: AnimationSpec<Float>?,
-        alphaAnimationSpec: AnimationSpec<Float>?
+        alphaAnimationSpec: AnimationSpec<Float>?,
     ) {
         this.alignment = alignment
         this.targetScale = targetScale
@@ -1243,7 +1239,7 @@ internal class FabVisibleNode(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
                     scaleAnimationSpec
-                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastSpatialSpec()
+                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastSpatialSpec(),
             )
         }
 
@@ -1253,7 +1249,7 @@ internal class FabVisibleNode(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
                     alphaAnimationSpec
-                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastEffectsSpec()
+                        ?: currentValueOf(MaterialTheme.LocalMotionScheme).fastEffectsSpec(),
             )
         }
     }
@@ -1290,7 +1286,7 @@ internal constructor(
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
             }
 
@@ -1299,7 +1295,7 @@ internal constructor(
                 defaultElevation = defaultElevation,
                 pressedElevation = pressedElevation,
                 hoveredElevation = hoveredElevation,
-                focusedElevation = focusedElevation
+                focusedElevation = focusedElevation,
             )
         }
 
@@ -1360,7 +1356,7 @@ private class FloatingActionButtonElevationAnimatable(
     private var defaultElevation: Dp,
     private var pressedElevation: Dp,
     private var hoveredElevation: Dp,
-    private var focusedElevation: Dp
+    private var focusedElevation: Dp,
 ) {
     private val animatable = Animatable(defaultElevation, Dp.VectorConverter)
 
@@ -1380,7 +1376,7 @@ private class FloatingActionButtonElevationAnimatable(
         defaultElevation: Dp,
         pressedElevation: Dp,
         hoveredElevation: Dp,
-        focusedElevation: Dp
+        focusedElevation: Dp,
     ) {
         this.defaultElevation = defaultElevation
         this.pressedElevation = pressedElevation
@@ -1463,7 +1459,7 @@ private fun extendedFabCollapseAnimation() =
 private fun extendedFabExpandAnimation() =
     fadeIn(
         // TODO Load the motionScheme tokens from the component tokens file
-        animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
+        animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
     ) +
         expandHorizontally(
             animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),

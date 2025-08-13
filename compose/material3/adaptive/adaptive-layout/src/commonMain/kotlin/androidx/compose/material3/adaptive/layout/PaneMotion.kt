@@ -156,7 +156,7 @@ object PaneMotionDefaults {
         spring(
             dampingRatio = 0.8f,
             stiffness = 380f,
-            visibilityThreshold = IntRectVisibilityThreshold
+            visibilityThreshold = IntRectVisibilityThreshold,
         )
 
     /**
@@ -169,15 +169,12 @@ object PaneMotionDefaults {
             dampingRatio = 0.8f,
             stiffness = 380f,
             delayedRatio = 0.1f,
-            visibilityThreshold = IntRectVisibilityThreshold
+            visibilityThreshold = IntRectVisibilityThreshold,
         )
 
     /** The default [FiniteAnimationSpec] used to animate panes' visibility. */
     val VisibilityAnimationSpec: FiniteAnimationSpec<Float> =
-        spring(
-            dampingRatio = 0.8f,
-            stiffness = 380f,
-        )
+        spring(dampingRatio = 0.8f, stiffness = 380f)
 
     /**
      * The derived [FiniteAnimationSpec] that can be used to animate panes' positions when the
@@ -527,7 +524,7 @@ sealed interface PaneMotion {
 
             internal fun calculate(
                 previousValue: PaneAdaptedValue,
-                currentValue: PaneAdaptedValue
+                currentValue: PaneAdaptedValue,
             ): Type {
                 val wasShown = previousValue != PaneAdaptedValue.Hidden
                 val isShown = currentValue != PaneAdaptedValue.Hidden
@@ -631,7 +628,7 @@ sealed interface PaneMotion {
 internal fun <T> calculatePaneMotion(
     previousScaffoldValue: PaneScaffoldValue<T>,
     currentScaffoldValue: PaneScaffoldValue<T>,
-    paneOrder: PaneScaffoldHorizontalOrder<T>
+    paneOrder: PaneScaffoldHorizontalOrder<T>,
 ): List<PaneMotion> {
     val numOfPanes = paneOrder.size
     val paneMotionTypes = Array(numOfPanes) { PaneMotion.Type.Hidden }
@@ -751,7 +748,7 @@ internal val IntRectToVector: TwoWayConverter<IntRect, AnimationVector4D> =
                 it.left.toFloat(),
                 it.top.toFloat(),
                 it.right.toFloat(),
-                it.bottom.toFloat()
+                it.bottom.toFloat(),
             )
         },
         convertFromVector = {
@@ -759,9 +756,9 @@ internal val IntRectToVector: TwoWayConverter<IntRect, AnimationVector4D> =
                 it.v1.fastRoundToInt(),
                 it.v2.fastRoundToInt(),
                 it.v3.fastRoundToInt(),
-                it.v4.fastRoundToInt()
+                it.v4.fastRoundToInt(),
             )
-        }
+        },
     )
 
 internal class DerivedSizeAnimationSpec(private val boundsSpec: FiniteAnimationSpec<IntRect>) :
@@ -818,7 +815,7 @@ internal class DelayedSpringSpec<T>(
     dampingRatio: Float = Spring.DampingRatioNoBouncy,
     stiffness: Float = Spring.StiffnessMedium,
     private val delayedRatio: Float,
-    visibilityThreshold: T? = null
+    visibilityThreshold: T? = null,
 ) : FiniteAnimationSpec<T> {
     private val originalSpringSpec = spring(dampingRatio, stiffness, visibilityThreshold)
 
@@ -842,7 +839,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
         return if (playTimeNanos <= delayedTimeNanos) {
@@ -852,7 +849,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 playTimeNanos - delayedTimeNanos,
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             )
         }
     }
@@ -861,7 +858,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
         return if (playTimeNanos <= delayedTimeNanos) {
@@ -871,7 +868,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 playTimeNanos - delayedTimeNanos,
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             )
         }
     }
@@ -884,7 +881,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
     private fun updateDelayedTimeNanosIfNeeded(
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ) {
         if (
             initialValue != cachedInitialValue ||
@@ -895,7 +892,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 originalVectorizedSpringSpec.getDurationNanos(
                     initialValue,
                     targetValue,
-                    initialVelocity
+                    initialVelocity,
                 )
             delayedTimeNanos = (cachedOriginalDurationNanos * delayedRatio).toLong()
         }

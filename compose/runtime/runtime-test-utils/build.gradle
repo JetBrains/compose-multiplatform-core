@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-
 import androidx.build.AndroidXComposePlugin
 import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
 import androidx.build.Publish
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -51,28 +51,64 @@ kotlin {
     mingwX64()
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(libs.kotlinStdlib)
-            implementation(projectOrArtifact(":compose:runtime:runtime"))
-            implementation kotlin("test")
-            implementation(libs.kotlinCoroutinesTest)
-            implementation(libs.kotlinReflect)
-        }
-
-        nonJvmMain {
-            dependsOn(commonMain)
+        commonMain {
             dependencies {
-                implementation(libs.atomicFu)
+                implementation(libs.kotlinStdlibCommon)
+                implementation(project(":compose:runtime:runtime"))
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(libs.kotlinReflect)
             }
         }
-        targets.all { target ->
-            if (target.platformType !in [
-                    KotlinPlatformType.androidJvm,
-                    KotlinPlatformType.jvm,
-                    KotlinPlatformType.common
-            ]) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonJvmMain)
+
+        jvmMain {
+            dependsOn(commonMain)
+        }
+
+        androidMain {
+            dependsOn(jvmMain)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+        }
+
+        nativeMain {
+            dependsOn(commonMain)
+        }
+
+        unixMain {
+            dependsOn(nativeMain)
+        }
+
+        darwinMain {
+            dependsOn(unixMain)
+        }
+
+        linuxMain {
+            dependsOn(unixMain)
+        }
+
+        webMain {
+            dependsOn(commonMain)
+        }
+
+        jsMain {
+            dependsOn(webMain)
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                if (target.konanTarget.family.appleFamily) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+                } else if (target.konanTarget.family == Family.LINUX) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                 }
             }
         }

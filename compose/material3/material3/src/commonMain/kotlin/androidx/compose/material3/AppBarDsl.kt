@@ -117,12 +117,7 @@ internal class AppBarScopeImpl() : AppBarScope, AppBarItemProvider {
         enabled: Boolean,
     ) {
         items.add(
-            ClickableAppBarItem(
-                onClick = onClick,
-                icon = icon,
-                enabled = enabled,
-                label = label,
-            )
+            ClickableAppBarItem(onClick = onClick, icon = icon, enabled = enabled, label = label)
         )
     }
 
@@ -156,16 +151,21 @@ internal class ClickableAppBarItem(
     private val onClick: () -> Unit,
     private val icon: @Composable () -> Unit,
     private val enabled: Boolean,
-    private val label: String
+    private val label: String,
 ) : AppBarItem {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun AppbarContent() {
-        IconButton(
-            onClick = onClick,
-            enabled = enabled,
-            content = icon,
-        )
+        // Icon buttons should have a tooltip associated with them.
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(label) } },
+            state = rememberTooltipState(),
+        ) {
+            IconButton(onClick = onClick, enabled = enabled, content = icon)
+        }
     }
 
     @Composable
@@ -176,7 +176,7 @@ internal class ClickableAppBarItem(
             onClick = {
                 onClick()
                 state.dismiss()
-            }
+            },
         )
     }
 }
@@ -186,17 +186,26 @@ internal class ToggleableAppBarItem(
     private val onCheckedChange: (Boolean) -> Unit,
     private val icon: @Composable () -> Unit,
     private val enabled: Boolean,
-    private val label: String
+    private val label: String,
 ) : AppBarItem {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun AppbarContent() {
-        IconToggleButton(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-            content = icon,
-        )
+        // Icon buttons should have a tooltip associated with them.
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(label) } },
+            state = rememberTooltipState(),
+        ) {
+            IconToggleButton(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                content = icon,
+            )
+        }
     }
 
     @Composable
@@ -207,7 +216,7 @@ internal class ToggleableAppBarItem(
             onClick = {
                 onCheckedChange(!checked)
                 state.dismiss()
-            }
+            },
         )
     }
 }
@@ -270,7 +279,7 @@ private class AppBarOverflowStateImpl : AppBarOverflowState {
                         totalItemCount = it[0]
                         visibleItemCount = it[1]
                     }
-                }
+                },
             )
     }
 }
@@ -278,11 +287,11 @@ private class AppBarOverflowStateImpl : AppBarOverflowState {
 internal class OverflowMeasurePolicy(
     private val overflowState: AppBarOverflowState,
     val maxItemCount: Int,
-    private val isVertical: Boolean = false
+    private val isVertical: Boolean = false,
 ) : MultiContentMeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
         val (contentMeasurables, overflowMeasurables) = measurables

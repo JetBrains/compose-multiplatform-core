@@ -173,7 +173,7 @@ class LayoutInspectorTree {
         node: InspectorNode,
         kind: ParameterKind,
         maxRecursions: Int,
-        maxInitialIterableSize: Int
+        maxInitialIterableSize: Int,
     ): List<NodeParameter> {
         val parameters = node.parametersByKind(kind)
         return parameters.mapIndexed { index, parameter ->
@@ -186,7 +186,7 @@ class LayoutInspectorTree {
                 kind,
                 index,
                 maxRecursions,
-                maxInitialIterableSize
+                maxInitialIterableSize,
             )
         }
     }
@@ -203,7 +203,7 @@ class LayoutInspectorTree {
         startIndex: Int,
         maxElements: Int,
         maxRecursions: Int,
-        maxInitialIterableSize: Int
+        maxInitialIterableSize: Int,
     ): NodeParameter? {
         val parameters = node.parametersByKind(reference.kind)
         if (reference.parameterIndex !in parameters.indices) {
@@ -220,7 +220,7 @@ class LayoutInspectorTree {
             startIndex,
             maxElements,
             maxRecursions,
-            maxInitialIterableSize
+            maxInitialIterableSize,
         )
     }
 

@@ -78,7 +78,7 @@ fun BasicTooltipBox(
     modifier: Modifier = Modifier,
     focusable: Boolean = true,
     enableUserInput: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     Box {
@@ -88,7 +88,7 @@ fun BasicTooltipBox(
                 state = state,
                 scope = scope,
                 focusable = focusable,
-                content = tooltip
+                content = tooltip,
             )
         }
 
@@ -96,7 +96,7 @@ fun BasicTooltipBox(
             enableUserInput = enableUserInput,
             state = state,
             modifier = modifier,
-            content = content
+            content = content,
         )
     }
 
@@ -109,7 +109,7 @@ private fun WrappedAnchor(
     enableUserInput: Boolean,
     state: BasicTooltipState,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val longPressLabel = BasicTooltipStrings.label()
@@ -130,7 +130,7 @@ private fun TooltipPopup(
     state: BasicTooltipState,
     scope: CoroutineScope,
     focusable: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val tooltipDescription = BasicTooltipStrings.description()
     Popup(
@@ -211,7 +211,7 @@ private fun Modifier.anchorSemantics(
     label: String,
     enabled: Boolean,
     state: BasicTooltipState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ): Modifier =
     if (enabled) {
         this.semantics(mergeDescendants = true) {
@@ -220,7 +220,7 @@ private fun Modifier.anchorSemantics(
                 action = {
                     scope.launch { state.show() }
                     true
-                }
+                },
             )
         }
     } else this
@@ -242,13 +242,13 @@ private fun Modifier.anchorSemantics(
 fun rememberBasicTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): BasicTooltipState =
     remember(isPersistent, mutatorMutex) {
         BasicTooltipStateImpl(
             initialIsVisible = initialIsVisible,
             isPersistent = isPersistent,
-            mutatorMutex = mutatorMutex
+            mutatorMutex = mutatorMutex,
         )
     }
 
@@ -269,12 +269,12 @@ fun rememberBasicTooltipState(
 fun BasicTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): BasicTooltipState =
     BasicTooltipStateImpl(
         initialIsVisible = initialIsVisible,
         isPersistent = isPersistent,
-        mutatorMutex = mutatorMutex
+        mutatorMutex = mutatorMutex,
     )
 
 @Stable
@@ -282,7 +282,7 @@ fun BasicTooltipState(
 private class BasicTooltipStateImpl(
     initialIsVisible: Boolean,
     override val isPersistent: Boolean,
-    private val mutatorMutex: MutatorMutex
+    private val mutatorMutex: MutatorMutex,
 ) : BasicTooltipState {
     override var isVisible by mutableStateOf(initialIsVisible)
 

@@ -16,10 +16,19 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.internal.hasText
+import androidx.compose.foundation.text.DesktopTextContextMenuItems
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Copy
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Cut
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Paste
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithLocalization
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.awtEventOrNull
-import androidx.compose.ui.input.pointer.PointerEvent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 /**
  * Magnification is not supported on desktop.
@@ -33,9 +42,46 @@ internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
     isStartHandle: Boolean
 ): Boolean = isSelectionHandleInVisibleBoundDefault(isStartHandle)
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-7819
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     manager: TextFieldSelectionManager,
     coroutineScope: CoroutineScope,
-): Modifier = this
+): Modifier = addTextContextMenuComponentsWithLocalization { localization ->
+    fun TextContextMenuBuilderScope.textFieldItem(
+        item: DesktopTextContextMenuItems,
+        enabled: Boolean,
+        onClick: () -> Unit,
+    ) {
+        item(
+            key = item.key,
+            label = item.label(localization),
+            enabled = enabled,
+            onClick = {
+                onClick()
+                close()
+            }
+        )
+    }
 
+    fun TextContextMenuBuilderScope.textFieldSuspendItem(
+        item: DesktopTextContextMenuItems,
+        enabled: Boolean,
+        onClick: suspend () -> Unit,
+    ) {
+        textFieldItem(item, enabled) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
+        }
+    }
+
+    with(manager) {
+        separator()
+        textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
+        textFieldSuspendItem(Copy, enabled = canCopy()) { copy(cancelSelection = false) }
+        textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+        textFieldItem(SelectAll, enabled = canSelectAll()) { selectAll() }
+        separator()
+    }
+}
+
+internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean {
+    return clipboard?.getClipEntry()?.hasText() == true
+}

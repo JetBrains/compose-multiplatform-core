@@ -106,7 +106,7 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
             currentRegistry =
                 SaveableStateRegistry(
                     restoredValues = savedMap,
-                    canBeSaved = { original.canBeSaved(it) }
+                    canBeSaved = { original.canBeSaved(it) },
                 )
             shouldEmitChildren = true
         }
@@ -123,5 +123,5 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
 }
 
 internal expect fun platformEncodeDecode(
-    savedState: Map<String, List<Any?>>,
+    savedState: Map<String, List<Any?>>
 ): Map<String, List<Any?>>

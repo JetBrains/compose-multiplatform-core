@@ -22,7 +22,5 @@ import kotlinx.coroutines.*
 // TODO: Make a proper implementation with timeoutMs
 //  https://youtrack.jetbrains.com/issue/CMP-662
 actual suspend fun testWithTimeout(timeoutMs: Long, block: suspend CoroutineScope.() -> Unit) {
-    GlobalScope.launch {
-        block()
-    }
+    GlobalScope.launch { block() }
 }

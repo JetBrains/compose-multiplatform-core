@@ -137,7 +137,7 @@ class ButtonTest {
                 Button(
                     modifier = Modifier.testTag(ButtonTestTag),
                     onClick = onClick,
-                    enabled = enabled
+                    enabled = enabled,
                 ) {
                     Text("Hello")
                 }
@@ -198,7 +198,7 @@ class ButtonTest {
             Button(onClick = { /* Do something! */ }, modifier = Modifier.testTag(ButtonTestTag)) {
                 Text(
                     "Button",
-                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                 )
             }
         }
@@ -208,12 +208,12 @@ class ButtonTest {
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
             24.dp,
-            "padding between the start of the button and the start of the text."
+            "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             24.dp,
-            "padding between the end of the text and the end of the button."
+            "padding between the end of the text and the end of the button.",
         )
         buttonBounds.height.assertIsEqualTo(ButtonDefaults.MinHeight, "height of button.")
     }
@@ -224,7 +224,7 @@ class ButtonTest {
             Button(
                 onClick = { /* Do something! */ },
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                modifier = Modifier.testTag(ButtonTestTag)
+                modifier = Modifier.testTag(ButtonTestTag),
             ) {
                 Icon(
                     Icons.Filled.Favorite,
@@ -232,12 +232,12 @@ class ButtonTest {
                     modifier =
                         Modifier.size(ButtonDefaults.IconSize).testTag(IconTestTag).semantics(
                             mergeDescendants = true
-                        ) {}
+                        ) {},
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text(
                     "Like",
-                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                 )
             }
         }
@@ -248,17 +248,17 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             16.dp,
-            "Padding between start of button and start of icon."
+            "Padding between start of button and start of icon.",
         )
 
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.IconSpacing,
-            "Padding between end of icon and start of text."
+            "Padding between end of icon and start of text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             24.dp,
-            "padding between end of text and end of button."
+            "padding between end of text and end of button.",
         )
     }
 
@@ -268,7 +268,7 @@ class ButtonTest {
             TextButton(
                 onClick = { /* Do something! */ },
                 contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-                modifier = Modifier.testTag(ButtonTestTag)
+                modifier = Modifier.testTag(ButtonTestTag),
             ) {
                 Icon(
                     Icons.Filled.Favorite,
@@ -276,12 +276,12 @@ class ButtonTest {
                     modifier =
                         Modifier.size(ButtonDefaults.IconSize).testTag(IconTestTag).semantics(
                             mergeDescendants = true
-                        ) {}
+                        ) {},
                 )
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text(
                     "Like",
-                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                    modifier = Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                 )
             }
         }
@@ -292,17 +292,17 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             12.dp,
-            "Padding between start of text button and start of icon."
+            "Padding between start of text button and start of icon.",
         )
 
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.IconSpacing,
-            "Padding between end of icon and start of text."
+            "Padding between end of icon and start of text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             16.dp,
-            "padding between end of text and end of text button."
+            "padding between end of text and end of text button.",
         )
     }
 
@@ -458,7 +458,7 @@ class ButtonTest {
                 Button(
                     onClick = { /* Do something! */ },
                     modifier = Modifier.heightIn(size).testTag(ButtonTestTag),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -466,13 +466,13 @@ class ButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTestTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         modifier =
-                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -484,19 +484,19 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expectedStartPadding,
-            "padding between start of button and start of icon"
+            "padding between start of button and start of icon",
         )
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.ExtraSmallIconSpacing,
-            "spacing between icon and label"
+            "spacing between icon and label",
         )
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expectedEndPadding,
-            "padding between end of label and end of button"
+            "padding between end of label and end of button",
         )
         buttonBounds.height.assertIsEqualTo(
             ButtonDefaults.ExtraSmallContainerHeight,
-            "height of button"
+            "height of button",
         )
     }
 
@@ -516,7 +516,7 @@ class ButtonTest {
                 Button(
                     onClick = { /* Do something! */ },
                     modifier = Modifier.heightIn(size).testTag(ButtonTestTag),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -524,13 +524,13 @@ class ButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTestTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         modifier =
-                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -542,19 +542,19 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expectedStartPadding,
-            "padding between start of button and start of icon"
+            "padding between start of button and start of icon",
         )
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.MediumIconSpacing,
-            "spacing between icon and label"
+            "spacing between icon and label",
         )
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expectedEndPadding,
-            "padding between end of label and end of button"
+            "padding between end of label and end of button",
         )
         buttonBounds.height.assertIsEqualTo(
             ButtonDefaults.MediumContainerHeight,
-            "height of button"
+            "height of button",
         )
     }
 
@@ -574,7 +574,7 @@ class ButtonTest {
                 Button(
                     onClick = { /* Do something! */ },
                     modifier = Modifier.heightIn(size).testTag(ButtonTestTag),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -582,13 +582,13 @@ class ButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTestTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         modifier =
-                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -600,15 +600,15 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expectedStartPadding,
-            "padding between start of button and start of icon"
+            "padding between start of button and start of icon",
         )
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.LargeIconSpacing,
-            "spacing between icon and label"
+            "spacing between icon and label",
         )
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expectedEndPadding,
-            "padding between end of label and end of button"
+            "padding between end of label and end of button",
         )
         buttonBounds.height.assertIsEqualTo(ButtonDefaults.LargeContainerHeight, "height of button")
     }
@@ -629,7 +629,7 @@ class ButtonTest {
                 Button(
                     onClick = { /* Do something! */ },
                     modifier = Modifier.heightIn(size).testTag(ButtonTestTag),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                    contentPadding = ButtonDefaults.contentPaddingFor(size),
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -637,13 +637,13 @@ class ButtonTest {
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size))
                                 .testTag(IconTestTag)
-                                .semantics(mergeDescendants = true) {}
+                                .semantics(mergeDescendants = true) {},
                     )
                     Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         modifier =
-                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {}
+                            Modifier.testTag(TextTestTag).semantics(mergeDescendants = true) {},
                     )
                 }
             }
@@ -655,19 +655,19 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expectedStartPadding,
-            "padding between start of button and start of icon"
+            "padding between start of button and start of icon",
         )
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.ExtraLargeIconSpacing,
-            "spacing between icon and label"
+            "spacing between icon and label",
         )
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expectedEndPadding,
-            "padding between end of label and end of button"
+            "padding between end of label and end of button",
         )
         buttonBounds.height.assertIsEqualTo(
             ButtonDefaults.ExtraLargeContainerHeight,
-            "height of button"
+            "height of button",
         )
     }
 
@@ -688,8 +688,8 @@ class ButtonTest {
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = shapeColor,
-                            contentColor = shapeColor
-                        )
+                            contentColor = shapeColor,
+                        ),
                 ) {
                     Text("Button")
                 }
@@ -703,7 +703,7 @@ class ButtonTest {
                 density = rule.density,
                 shapeColor = shapeColor,
                 backgroundColor = backgroundColor,
-                shape = shape
+                shape = shape,
             )
     }
 
@@ -724,8 +724,8 @@ class ButtonTest {
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = shapeColor,
-                            contentColor = shapeColor
-                        )
+                            contentColor = shapeColor,
+                        ),
                 ) {
                     Text("Button")
                 }
@@ -741,7 +741,7 @@ class ButtonTest {
                 density = rule.density,
                 shapeColor = shapeColor,
                 backgroundColor = backgroundColor,
-                shape = shape
+                shape = shape,
             )
     }
 }

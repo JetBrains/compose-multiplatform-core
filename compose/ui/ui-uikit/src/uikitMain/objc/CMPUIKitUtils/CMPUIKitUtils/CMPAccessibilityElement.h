@@ -45,12 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)accessibilityDecrement;
 
-// Private SDK method. Calls when the item is swipe-to-focused in VoiceOver.
-- (BOOL)accessibilityScrollToVisible;
-
-// Private SDK method. Calls when the item is swipe-to-focused in VoiceOver.
-- (BOOL)accessibilityScrollToVisibleWithChild:(id)child;
-
 - (void)accessibilityElementDidBecomeFocused;
 
 - (void)accessibilityElementDidLoseFocus;
@@ -59,11 +53,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)accessibilityPerformEscape;
 
-- (__nullable id)accessibilityElementAtIndex:(NSInteger)index;
+- (NSArray *)accessibilityElements;
 
-- (NSInteger)accessibilityElementCount;
+- (void)setAccessibilityElements:(nullable NSArray *)accessibilityElements;
 
-- (NSInteger)indexOfAccessibilityElement:(id)element;
+- (BOOL)drawsFocusRingWhenChildrenFocused;
 
 @end
 

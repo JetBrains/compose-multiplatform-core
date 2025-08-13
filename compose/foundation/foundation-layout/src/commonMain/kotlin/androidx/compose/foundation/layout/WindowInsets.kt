@@ -257,7 +257,7 @@ fun WindowInsets(
     left: Dp = 0.dp,
     top: Dp = 0.dp,
     right: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): WindowInsets = FixedDpInsets(left, top, right, bottom)
 
 @Immutable
@@ -265,7 +265,7 @@ private class FixedIntInsets(
     private val leftVal: Int,
     private val topVal: Int,
     private val rightVal: Int,
-    private val bottomVal: Int
+    private val bottomVal: Int,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int = leftVal
 
@@ -307,7 +307,7 @@ private class FixedDpInsets(
     private val leftDp: Dp,
     private val topDp: Dp,
     private val rightDp: Dp,
-    private val bottomDp: Dp
+    private val bottomDp: Dp,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection) =
         with(density) { leftDp.roundToPx() }
@@ -481,7 +481,7 @@ private class AddedInsets(private val first: WindowInsets, private val second: W
 @Stable
 private class ExcludeInsets(
     private val included: WindowInsets,
-    private val excluded: WindowInsets
+    private val excluded: WindowInsets,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection) =
         (included.getLeft(density, layoutDirection) - excluded.getLeft(density, layoutDirection))

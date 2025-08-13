@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
@@ -60,7 +61,9 @@ import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleText
 import javax.accessibility.AccessibleValue
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -182,7 +185,7 @@ class AccessibilityTest {
     }
 
     @Test
-    fun hideFromA11yMakesComponentInvisible() = runDesktopA11yTest {
+    fun hideFromA11yMakesAccessibleUnavailable() = runDesktopA11yTest {
         test.setContent {
             Text(
                 text = "Hello",
@@ -193,8 +196,8 @@ class AccessibilityTest {
             )
         }
 
-        assertFalse("Component should be invisible to accessibility, but isn't") {
-            test.onNodeWithTag("text").fetchAccessibleComponent().isVisible
+        assertFails("Component should be invisible to accessibility, but isn't") {
+            test.onNodeWithTag("text").fetchAccessible()
         }
     }
 
@@ -300,7 +303,26 @@ class AccessibilityTest {
         test.onNodeWithTag("box").fetchAccessibleComponent().let {
             assertEquals(size, it.size.toDpSize())
         }
-   }
+    }
+
+    @Test
+    fun mergeDescendantsMergesText() = runDesktopA11yTest {
+        test.setContent {
+            Row(
+                Modifier
+                    .testTag("text")
+                    .semantics(mergeDescendants = true) {}
+            ) {
+                Text("Hello")
+                Text("World")
+            }
+        }
+
+        test.onNodeWithTag("text").apply {
+            assertTextContains("Hello")
+            assertTextContains("World")
+        }
+    }
 
 }
 
@@ -387,7 +409,7 @@ internal class ComposeA11yTestScope(
             }
         }
 
-        throw AssertionError("Failed: Accessible exists")
+        throw AssertionError("Failed: Accessible does not exist")
     }
 
     fun SemanticsNodeInteraction.fetchAccessibleComponent(): AccessibleComponent =
@@ -442,5 +464,14 @@ internal class ComposeA11yTestScope(
             actual = fetchAccessible().accessibleContext!!.accessibleValue.currentAccessibleValue,
             message = "Current accessible value expected to, but does not equal: $number",
         )
+    }
+
+    /**
+     * Asserts that the text of the accessible
+     */
+    fun SemanticsNodeInteraction.assertTextContains(value: String) {
+        val text = fetchAccessible().composeAccessibleContext.text
+        assertNotNull(text, "Text is null")
+        assertTrue(value in text, "Text does not contain $value")
     }
 }

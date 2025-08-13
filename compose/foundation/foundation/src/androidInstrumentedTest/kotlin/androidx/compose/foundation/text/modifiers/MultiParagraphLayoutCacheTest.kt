@@ -108,7 +108,7 @@ class MultiParagraphLayoutCacheTest {
             Int.MAX_VALUE,
             -1,
             null,
-            null
+            null,
         )
         val after = textDelegate.intrinsicHeight(20, LayoutDirection.Ltr)
         assertThat(original).isLessThan(after)
@@ -124,7 +124,7 @@ class MultiParagraphLayoutCacheTest {
                         text = text,
                         style = TextStyle.Default.copy(fontSize = fontSize),
                         fontFamilyResolver = fontFamilyResolver,
-                        minLines = 1
+                        minLines = 1,
                     )
                     .also { it.density = this }
             val withMinLinesLayout =
@@ -132,7 +132,7 @@ class MultiParagraphLayoutCacheTest {
                         text = text,
                         style = TextStyle.Default.copy(fontSize = fontSize),
                         fontFamilyResolver = fontFamilyResolver,
-                        minLines = 3
+                        minLines = 3,
                     )
                     .also { it.density = this }
 
@@ -253,7 +253,7 @@ class MultiParagraphLayoutCacheTest {
         val constraints =
             Constraints(
                 maxWidth = textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr) / 4,
-                maxHeight = (fontSize * 2.7).roundToInt() // fully fits at most 2 lines
+                maxHeight = (fontSize * 2.7).roundToInt(), // fully fits at most 2 lines
             )
         textDelegate.layoutWithConstraints(constraints, LayoutDirection.Ltr)
         val layoutResult = textDelegate.textLayoutResult
@@ -355,7 +355,7 @@ class MultiParagraphLayoutCacheTest {
         text: AnnotatedString,
         constraints: Constraints,
         overflow: TextOverflow = TextOverflow.Clip,
-        softWrap: Boolean = true
+        softWrap: Boolean = true,
     ) {
         val layoutCache =
             MultiParagraphLayoutCache(
@@ -365,7 +365,7 @@ class MultiParagraphLayoutCacheTest {
                     overflow = overflow,
                     softWrap = softWrap,
                     maxLines = 1,
-                    autoSize = autoSize
+                    autoSize = autoSize,
                 )
                 .also { it.density = density }
 
@@ -382,7 +382,7 @@ class MultiParagraphLayoutCacheTest {
     private fun testAutoSize_fontSizeNotFittingConstraints_overflows(
         autoSize: TextAutoSize,
         text: AnnotatedString,
-        constraints: Constraints
+        constraints: Constraints,
     ) {
         val layoutCache =
             MultiParagraphLayoutCache(
@@ -392,7 +392,7 @@ class MultiParagraphLayoutCacheTest {
                     overflow = TextOverflow.Clip,
                     softWrap = false,
                     maxLines = 1,
-                    autoSize = autoSize
+                    autoSize = autoSize,
                 )
                 .also { it.density = density }
 
@@ -417,7 +417,7 @@ class MultiParagraphLayoutCacheTest {
         testAutoSize_fontSizeFittingConstraints_doesntOverflow(
             autoSize = autoSize,
             text = AnnotatedString(text),
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
@@ -432,7 +432,7 @@ class MultiParagraphLayoutCacheTest {
         testAutoSize_fontSizeNotFittingConstraints_overflows(
             autoSize = autoSize,
             text = AnnotatedString(text),
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
@@ -449,7 +449,7 @@ class MultiParagraphLayoutCacheTest {
         testAutoSize_fontSizeFittingConstraints_doesntOverflow(
             autoSize = autoSize,
             text = AnnotatedString(text),
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
@@ -466,7 +466,7 @@ class MultiParagraphLayoutCacheTest {
         testAutoSize_fontSizeNotFittingConstraints_overflows(
             autoSize = autoSize,
             text = AnnotatedString(text),
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
@@ -484,7 +484,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Clip,
-                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp)
+                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp),
                 )
                 .also { it.density = density }
 
@@ -533,10 +533,10 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = widthPerCharacter * 0.5,
                             maxFontSize = widthPerCharacter * 0.9,
-                            stepSize = (0.5).sp
+                            stepSize = (0.5).sp,
                         ),
                     // Use maxLines to ensure that the text would be ellipsized if it was too big
-                    maxLines = 1
+                    maxLines = 1,
                 )
                 .also { it.density = density }
 
@@ -570,10 +570,10 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = minFontSize,
                             maxFontSize = maxFontSize,
-                            stepSize = 1.sp
+                            stepSize = 1.sp,
                         ),
                     // StartEllipsis only happens for single-line text
-                    maxLines = 1
+                    maxLines = 1,
                 )
                 .also { it.density = density }
 
@@ -606,8 +606,8 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = minFontSize,
                             maxFontSize = maxFontSize,
-                            stepSize = 1.sp
-                        )
+                            stepSize = 1.sp,
+                        ),
                 )
                 .also { it.density = density }
 
@@ -647,10 +647,10 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = minFontSize,
                             maxFontSize = maxFontSize,
-                            stepSize = 1.sp
+                            stepSize = 1.sp,
                         ),
                     // MiddleEllipsis only happens for single-line text
-                    maxLines = 1
+                    maxLines = 1,
                 )
                 .also { it.density = density }
 
@@ -683,8 +683,8 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = minFontSize,
                             maxFontSize = maxFontSize,
-                            stepSize = 1.sp
-                        )
+                            stepSize = 1.sp,
+                        ),
                 )
                 .also { it.density = density }
 
@@ -726,8 +726,8 @@ class MultiParagraphLayoutCacheTest {
                         TextAutoSize.StepBased(
                             minFontSize = minFontSize,
                             maxFontSize = maxFontSize,
-                            stepSize = 1.sp
-                        )
+                            stepSize = 1.sp,
+                        ),
                 )
                 .also { it.density = density }
 
@@ -783,7 +783,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Visible,
-                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp)
+                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp),
                 )
                 .also { it.density = density }
 
@@ -805,7 +805,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontSize = 5.sp, fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Clip,
-                    autoSize = AutoSizePreset(arrayOf(5.12.em)) // = 25.6sp
+                    autoSize = AutoSizePreset(arrayOf(5.12.em)), // = 25.6sp
                 )
                 .also { it.density = density }
 
@@ -818,7 +818,7 @@ class MultiParagraphLayoutCacheTest {
         layoutCache.updateAutoSize(
             text = text,
             fontSize = 5.sp,
-            autoSize = AutoSizePreset(arrayOf(), fallbackFontSize = 5.14.em)
+            autoSize = AutoSizePreset(arrayOf(), fallbackFontSize = 5.14.em),
         )
 
         // 5.14 .em / 25.7.sp should overflow
@@ -838,7 +838,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontSize = 0.01.em, fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Clip,
-                    autoSize = AutoSizePreset(arrayOf(2.em))
+                    autoSize = AutoSizePreset(arrayOf(2.em)),
                 )
                 .also { it.density = density }
 
@@ -859,7 +859,7 @@ class MultiParagraphLayoutCacheTest {
             object : TextAutoSize {
                 override fun TextAutoSizeLayoutScope.getFontSize(
                     constraints: Constraints,
-                    text: AnnotatedString
+                    text: AnnotatedString,
                 ) = returnFontSize
 
                 override fun equals(other: Any?) = this === other
@@ -873,7 +873,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Clip,
-                    autoSize = fakeAutoSize(1.em)
+                    autoSize = fakeAutoSize(1.em),
                 )
                 .also { it.density = density }
 
@@ -900,7 +900,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontFamily = fontFamily),
                     fontFamilyResolver = fontFamilyResolver,
                     minLines = 2,
-                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp)
+                    autoSize = TextAutoSize.StepBased(20.sp, 51.sp, 1.sp),
                 )
                 .also { it.density = density }
 
@@ -1006,7 +1006,7 @@ class MultiParagraphLayoutCacheTest {
             object : TextAutoSize {
                 override fun TextAutoSizeLayoutScope.getFontSize(
                     constraints: Constraints,
-                    text: AnnotatedString
+                    text: AnnotatedString,
                 ): TextUnit {
                     performLayout(constraints, text, 110.sp)
                     performLayout(constraints, text, 112.sp)
@@ -1026,7 +1026,7 @@ class MultiParagraphLayoutCacheTest {
         val testSchedulerControlledFontFamilyResolver =
             createFontFamilyResolver(
                 context = context,
-                coroutineContext = this.coroutineContext + fontFamilyResolutionJob
+                coroutineContext = this.coroutineContext + fontFamilyResolutionJob,
             )
 
         val typefaceLoader = AsyncTestTypefaceLoader()
@@ -1036,7 +1036,7 @@ class MultiParagraphLayoutCacheTest {
                 AnnotatedString("aaaaaaaaa"),
                 autoSize,
                 style = TextStyle(fontFamily = fauxFont.toFontFamily()),
-                fontFamilyResolver = testSchedulerControlledFontFamilyResolver
+                fontFamilyResolver = testSchedulerControlledFontFamilyResolver,
             )
 
         autoSizeLayoutCache.layoutWithConstraints(constraints, LayoutDirection.Ltr)
@@ -1077,7 +1077,7 @@ class MultiParagraphLayoutCacheTest {
                     style = TextStyle(fontSize = 1.sp),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 5
+                    maxLines = 5,
                 )
                 .also { it.density = density }
         textDelegate.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
@@ -1092,7 +1092,7 @@ class MultiParagraphLayoutCacheTest {
                 fontFamilyResolver,
                 text.spanStyles,
                 maxLines = 5,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         assertThat(actual.height).isEqualTo(expected.height)
     }
@@ -1131,7 +1131,7 @@ class MultiParagraphLayoutCacheTest {
             maxLines = Int.MAX_VALUE,
             minLines = DefaultMinLines,
             placeholders = null,
-            autoSize = null
+            autoSize = null,
         )
         subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
         subject.density = Density(2f, 3f)
@@ -1144,7 +1144,7 @@ class MultiParagraphLayoutCacheTest {
         fontSize: TextUnit,
         autoSize: TextAutoSize,
         overflow: TextOverflow = TextOverflow.Clip,
-        softWrap: Boolean = true
+        softWrap: Boolean = true,
     ) =
         update(
             text = AnnotatedString(text),
@@ -1155,7 +1155,7 @@ class MultiParagraphLayoutCacheTest {
             maxLines = Int.MAX_VALUE,
             minLines = DefaultMinLines,
             placeholders = null,
-            autoSize = autoSize
+            autoSize = autoSize,
         )
 
     private fun createLayoutCache(
@@ -1163,14 +1163,14 @@ class MultiParagraphLayoutCacheTest {
         autoSize: TextAutoSize? = null,
         style: TextStyle = TextStyle(fontFamily = fontFamily),
         maxLines: Int = Int.MAX_VALUE,
-        fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver
+        fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver,
     ): MultiParagraphLayoutCache {
         return MultiParagraphLayoutCache(
                 text = text,
                 style = style,
                 fontFamilyResolver = fontFamilyResolver,
                 autoSize = autoSize,
-                maxLines = maxLines
+                maxLines = maxLines,
             )
             .also { it.density = density }
     }

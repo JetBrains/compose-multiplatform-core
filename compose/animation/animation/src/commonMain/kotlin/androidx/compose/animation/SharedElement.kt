@@ -161,7 +161,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
 
     fun onLookaheadPlaced(
         placementScope: Placeable.PlacementScope,
-        state: SharedElementInternalState
+        state: SharedElementInternalState,
     ) {
         updateTargetBoundsProvider()
         if (foundMatch && state.boundsAnimation.target) {
@@ -176,7 +176,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
                         with(state.sharedElement.scope) {
                             state.sharedElement.scope.lookaheadRoot.localPositionOf(
                                 it,
-                                includeMotionFrameOfReference = false
+                                includeMotionFrameOfReference = false,
                             )
                         }
 
@@ -187,7 +187,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
                             ?: TargetData(
                                 lookaheadSize,
                                 topLeft - structuralOffset,
-                                structuralOffset
+                                structuralOffset,
                             )
 
                     // Only update bounds when offset is updated so as to not accidentally fire
@@ -286,7 +286,7 @@ internal class SharedElementInternalState(
     overlayClip: SharedTransitionScope.OverlayClip,
     renderInOverlayDuringTransition: Boolean,
     userState: SharedTransitionScope.SharedContentState,
-    zIndex: Float
+    zIndex: Float,
 ) : LayerRenderer, RememberObserver {
 
     override var zIndex: Float by mutableFloatStateOf(zIndex)

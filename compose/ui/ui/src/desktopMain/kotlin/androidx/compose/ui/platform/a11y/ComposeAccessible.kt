@@ -46,7 +46,7 @@ import java.awt.FontMetrics
 import java.awt.Point
 import java.awt.Rectangle
 import java.awt.event.FocusListener
-import java.util.Locale
+import java.util.*
 import javax.accessibility.Accessible
 import javax.accessibility.AccessibleAction
 import javax.accessibility.AccessibleComponent
@@ -61,15 +61,11 @@ import javax.accessibility.AccessibleText
 import javax.accessibility.AccessibleTextSequence
 import javax.accessibility.AccessibleValue
 import javax.swing.text.AttributeSet
-import kotlin.math.roundToInt
-import org.jetbrains.skia.BreakIterator
 import javax.swing.text.SimpleAttributeSet
+import kotlin.math.roundToInt
 import kotlinx.atomicfu.atomic
+import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skiko.nativeInitializeAccessible
-
-private fun <T> SemanticsConfiguration.getFirstOrNull(key: SemanticsPropertyKey<List<T>>): T? {
-    return getOrNull(key)?.firstOrNull()
-}
 
 private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>
 
@@ -139,11 +135,8 @@ internal class ComposeAccessible(
         val setSelection
             get() = semanticsConfig.getOrNull(SemanticsActions.SetSelection)
         val text
-            // TODO should we concatenate the texts instead of getting only the first one
-            // Concatenation seems to be reasonable eg, for button with two text nodes inside
-            // but conflicts with setText action
             get() = semanticsConfig.getOrNull(SemanticsProperties.EditableText)
-                ?: semanticsConfig.getFirstOrNull(SemanticsProperties.Text)
+                ?: semanticsConfig.getOrNull(SemanticsProperties.Text)?.mergeText()
 
         val textLayoutResult: TextLayoutResult?
             get() {
@@ -255,9 +248,9 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleDescription(): String? {
-            // TODO concatenate values?
             return semanticsConfig
-                .getFirstOrNull(SemanticsProperties.ContentDescription)
+                .getOrNull(SemanticsProperties.ContentDescription)
+                ?.mergeText()
         }
 
         override fun getAccessibleParent(): Accessible? {
@@ -362,11 +355,8 @@ internal class ComposeAccessible(
             return semanticsNode.size.toAwtDimension()
         }
 
-        @Suppress("DEPRECATION")
         override fun isVisible(): Boolean =
-            !semanticsNode.outerSemanticsNode.requireCoordinator(Nodes.Semantics).isTransparent() &&
-                !semanticsConfig.contains(SemanticsProperties.InvisibleToUser) &&
-                !semanticsConfig.contains(SemanticsProperties.HideFromAccessibility)
+            !semanticsNode.outerSemanticsNode.requireCoordinator(Nodes.Semantics).isTransparent()
 
         override fun isEnabled(): Boolean =
             semanticsConfig.getOrNull(SemanticsProperties.Disabled) == null
@@ -432,7 +422,12 @@ internal class ComposeAccessible(
                 scrollBy != null -> AccessibleRole.SCROLL_PANE
                 setText != null -> AccessibleRole.TEXT
                 text != null -> AccessibleRole.LABEL
-                progressBarRangeInfo != null -> AccessibleRole.PROGRESS_BAR
+                progressBarRangeInfo != null -> {
+                    if (semanticsConfig.getOrNull(SemanticsActions.SetProgress) != null)
+                        AccessibleRole.SLIDER
+                    else
+                        AccessibleRole.PROGRESS_BAR
+                }
                 isContainer != null -> AccessibleRole.GROUP_BOX
                 isTraversalGroup != null -> AccessibleRole.GROUP_BOX
                 else -> AccessibleRole.UNKNOWN
@@ -482,6 +477,11 @@ internal class ComposeAccessible(
                         if (selected == true)
                             add(AccessibleState.SELECTED)
                     }
+                }
+
+                if (accessibleRole.let { it == AccessibleRole.SLIDER || it == AccessibleRole.PROGRESS_BAR }) {
+                    // Without this, VoiceOver says "Circular Slider".
+                    add(AccessibleState.HORIZONTAL)
                 }
             }
         }
@@ -860,6 +860,8 @@ internal class ComposeAccessible(
         override fun doAccessibleAction(i: Int): Boolean {
             return accessibleAction?.doAccessibleAction(i) ?: false
         }
+
+        private fun List<CharSequence>.mergeText() = joinToString(", ")
     }
 }
 

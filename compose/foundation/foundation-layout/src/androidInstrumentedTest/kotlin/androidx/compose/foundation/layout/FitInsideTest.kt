@@ -21,8 +21,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.InsetsRulers.SystemBars
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.SystemBars
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
@@ -67,7 +67,9 @@ class FitInsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitInside(SystemBars).onPlaced { insideCoordinates = it }
+                    Modifier.fillMaxSize().fitInside(SystemBars.current).onPlaced {
+                        insideCoordinates = it
+                    }
                 )
             }
         }
@@ -97,7 +99,7 @@ class FitInsideTest {
                                 placeable.place(0, 0)
                             }
                         }
-                        .fitInside(SystemBars)
+                        .fitInside(SystemBars.current)
                         .size(size)
                         .onPlaced { insideCoordinates = it }
                 )

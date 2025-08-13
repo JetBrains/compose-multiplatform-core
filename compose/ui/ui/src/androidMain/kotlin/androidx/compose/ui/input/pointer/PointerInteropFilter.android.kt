@@ -66,7 +66,7 @@ import androidx.compose.ui.viewinterop.AndroidViewHolder
  */
 fun Modifier.pointerInteropFilter(
     requestDisallowInterceptTouchEvent: (RequestDisallowInterceptTouchEvent)? = null,
-    onTouchEvent: (MotionEvent) -> Boolean
+    onTouchEvent: (MotionEvent) -> Boolean,
 ): Modifier =
     composed(
         inspectorInfo =
@@ -195,7 +195,7 @@ internal class PointerInteropFilter : PointerInputModifier {
          * We intercepted the event stream, or the Android View no longer wanted to receive events
          * for the current event stream.
          */
-        NotDispatching
+        NotDispatching,
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -216,7 +216,7 @@ internal class PointerInteropFilter : PointerInputModifier {
             override fun onPointerEvent(
                 pointerEvent: PointerEvent,
                 pass: PointerEventPass,
-                bounds: IntSize
+                bounds: IntSize,
             ) {
                 val changes = pointerEvent.changes
 

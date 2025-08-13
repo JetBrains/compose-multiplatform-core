@@ -68,7 +68,7 @@ class PointerInteropFilterComposeHookupTest {
                                     Modifier.spyGestureFilter { eventStringLog.add(it.name) }
                                         .pointerInteropFilter(
                                             disallowInterceptRequester,
-                                            motionEventCallback
+                                            motionEventCallback,
                                         )
                                         .requiredSize(100f.toDp(), 100f.toDp())
                             )
@@ -80,8 +80,8 @@ class PointerInteropFilterComposeHookupTest {
                 parent,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
             root = activity.findViewById(android.R.id.content)
         }
@@ -97,7 +97,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle { root.dispatchTouchEvent(down) }
@@ -116,7 +116,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -126,7 +126,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -150,7 +150,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -160,7 +160,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -184,7 +184,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -194,7 +194,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -204,7 +204,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -229,7 +229,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -239,7 +239,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val down2 =
             MotionEvent(
@@ -249,7 +249,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -272,7 +272,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -282,7 +282,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -308,7 +308,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -318,7 +318,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -345,7 +345,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move1 =
             MotionEvent(
@@ -355,7 +355,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
         val move2 =
             MotionEvent(
@@ -365,7 +365,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 51f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -394,7 +394,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -404,7 +404,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val downB =
             MotionEvent(
@@ -414,7 +414,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val moveB =
             MotionEvent(
@@ -424,7 +424,7 @@ class PointerInteropFilterComposeHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {

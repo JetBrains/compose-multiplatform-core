@@ -119,7 +119,7 @@ class ConfigurationScreenWidthHeightDetector : Detector(), SourceCodeScanner {
                 scope = node,
                 location = context.getNameLocation(node),
                 message =
-                    "Using Configuration.$referencedFieldName instead of LocalWindowInfo.current.containerSize"
+                    "Using Configuration.$referencedFieldName instead of LocalWindowInfo.current.containerSize",
             )
         context.report(incident, map())
     }
@@ -140,8 +140,8 @@ class ConfigurationScreenWidthHeightDetector : Detector(), SourceCodeScanner {
                 Severity.WARNING,
                 Implementation(
                     ConfigurationScreenWidthHeightDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

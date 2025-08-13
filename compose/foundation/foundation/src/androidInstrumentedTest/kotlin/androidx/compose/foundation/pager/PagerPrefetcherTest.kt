@@ -269,7 +269,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
         composePager(
             initialPage = initialIndex,
             initialPageOffsetFraction = 5 / pageSizePx.toFloat(),
-            contentPadding = PaddingValues(mainAxis = halfItemSize)
+            contentPadding = PaddingValues(mainAxis = halfItemSize),
         )
 
         rule.onNodeWithTag("${initialIndex - 1}").assertIsDisplayed()
@@ -319,7 +319,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
                                 pagerState = rememberPagerState { 1000 }
                                 HorizontalOrVerticalPager(
                                     modifier = Modifier.mainAxisSize(pageSizeDp * 1.5f),
-                                    state = pagerState
+                                    state = pagerState,
                                 ) {
                                     Spacer(
                                         Modifier.mainAxisSize(pageSizeDp)
@@ -357,7 +357,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
             pagerState = rememberPagerState { 1000 }
             HorizontalOrVerticalPager(
                 modifier = Modifier.mainAxisSize(pageSizeDp * 1.5f),
-                state = pagerState
+                state = pagerState,
             ) {
                 composedItems.add(it)
                 Spacer(
@@ -421,10 +421,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
 
     @Test
     fun overflowFromLargePageCountDoesNotPrefetchStartPages() {
-        composePager(
-            pageCount = Int.MAX_VALUE,
-            initialPage = Int.MAX_VALUE - 3,
-        )
+        composePager(pageCount = Int.MAX_VALUE, initialPage = Int.MAX_VALUE - 3)
 
         rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
 
@@ -452,7 +449,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
         initialPage: Int = 0,
         initialPageOffsetFraction: Float = 0f,
         reverseLayout: Boolean = false,
-        contentPadding: PaddingValues = PaddingValues(0.dp)
+        contentPadding: PaddingValues = PaddingValues(0.dp),
     ) {
         createPager(
             modifier = Modifier.mainAxisSize(pageSizeDp * 1.5f),
@@ -467,12 +464,12 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
                 object : PageSize {
                     override fun Density.calculateMainAxisPageSize(
                         availableSpace: Int,
-                        pageSpacing: Int
+                        pageSpacing: Int,
                     ): Int {
                         return pageSizePx
                     }
                 }
-            }
+            },
         ) {
             touchSlope = LocalViewConfiguration.current.touchSlop
             DisposableEffect(it) {
@@ -499,7 +496,7 @@ class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(
                 ParamConfig(Orientation.Vertical, beyondViewportPageCount = 0),
                 ParamConfig(Orientation.Vertical, beyondViewportPageCount = 1),
                 ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 0),
-                ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 1)
+                ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 1),
             )
     }
 }

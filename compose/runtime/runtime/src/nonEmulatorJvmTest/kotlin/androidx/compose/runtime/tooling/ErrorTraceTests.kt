@@ -55,9 +55,7 @@ class ErrorTraceTests {
 
     @Test
     fun recompose() =
-        exceptionTest(
-            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
-        ) {
+        exceptionTest("<lambda>(ErrorTraceTests.kt:<unknown line>)") {
             var state by mutableStateOf(false)
             compose {
                 if (state) {
@@ -76,7 +74,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceComposables.kt:77)",
             "ReusableComposeNode(Composables.kt:<line number>)",
             "Linear(ErrorTraceComposables.kt:73)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { Linear { throwTestException() } }
         }
@@ -88,7 +86,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceComposables.kt:77)",
             "ReusableComposeNode(Composables.kt:<line number>)",
             "Linear(ErrorTraceComposables.kt:73)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -110,7 +108,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceComposables.kt:87)",
             "ReusableComposeNode(Composables.kt:<line number>)",
             "InlineLinear(ErrorTraceComposables.kt:83)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { InlineLinear { throwTestException() } }
         }
@@ -122,7 +120,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceComposables.kt:87)",
             "ReusableComposeNode(Composables.kt:<line number>)",
             "InlineLinear(ErrorTraceComposables.kt:83)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
 
@@ -143,7 +141,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "InlineWrapper(ErrorTraceComposables.kt:57)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose {
                 InlineWrapper {
@@ -162,7 +160,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "InlineWrapper(ErrorTraceComposables.kt:57)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
 
@@ -186,7 +184,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "Repeated(ErrorTraceComposables.kt:94)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose {
                 Repeated(List(10) { it }) {
@@ -201,7 +199,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "Repeated(ErrorTraceComposables.kt:94)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
 
@@ -224,7 +222,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "<lambda>(ErrorTraceComposables.kt:66)",
             "Subcompose(ErrorTraceComposables.kt:62)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { Subcompose { throwTestException() } }
         }
@@ -235,7 +233,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "<lambda>(ErrorTraceComposables.kt:66)",
             "Subcompose(ErrorTraceComposables.kt:62)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
 
@@ -256,7 +254,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "ComposableWithDefaults(ErrorTraceComposables.kt:109)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { ComposableWithDefaults { throwTestException() } }
         }
@@ -266,7 +264,7 @@ class ErrorTraceTests {
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "ComposableWithDefaults(ErrorTraceComposables.kt:109)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
 
@@ -286,7 +284,7 @@ class ErrorTraceTests {
     fun setContentRemember() =
         exceptionTest(
             "remember(ErrorTraceTests.kt:<unknown line>)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { remember { throwTestException() } }
         }
@@ -296,7 +294,7 @@ class ErrorTraceTests {
         exceptionTest(
             "remember(Effects.kt:<unknown line>)",
             "DisposableEffect(Effects.kt:<line number>)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { DisposableEffect(Unit) { throwTestException() } }
         }
@@ -306,7 +304,7 @@ class ErrorTraceTests {
         exceptionTest(
             "remember(Effects.kt:<unknown line>)",
             "DisposableEffect(Effects.kt:<line number>)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -330,7 +328,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:<unknown line>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "ReusableContent(Composables.kt:<line number>)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -348,7 +346,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "ReusableContentHost(Composables.kt:<line number>)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var active by mutableStateOf(true)
             compose {
@@ -368,7 +366,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "InlineWrapper(ErrorTraceComposables.kt:57)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { InlineWrapper { NodeWithCallbacks(onAttach = { throwTestException() }) } }
         }
@@ -380,7 +378,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -404,7 +402,7 @@ class ErrorTraceTests {
             // (b/380272059): groupless source information is missing here after recomposition
             //                "<lambda>(ErrorTraceTests.kt:<line number>)",
             //                "InlineWrapper(ErrorTraceComposables.kt:148)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -425,7 +423,7 @@ class ErrorTraceTests {
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "InlineWrapper(ErrorTraceComposables.kt:57)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             val list = listOf(1, 2, 3)
             var content: (@Composable () -> Unit)? = null
@@ -444,7 +442,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { Wrapper { NodeWithCallbacks(onUpdate = { throwTestException() }) } }
         }
@@ -456,7 +454,7 @@ class ErrorTraceTests {
             "NodeWithCallbacks(ErrorTraceComposables.kt:122)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "Wrapper(ErrorTraceComposables.kt:149)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -486,7 +484,7 @@ class ErrorTraceTests {
             "<lambda>(Composer.kt:<line number>)",
             "<lambda>(MovableContent.kt:<unknown line>)",
             "MovableWrapper(ErrorTraceComposables.kt:156)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             compose { MovableWrapper { throwTestException() } }
         }
@@ -499,7 +497,7 @@ class ErrorTraceTests {
             "<lambda>(Composer.kt:<line number>)",
             "<lambda>(MovableContent.kt:<unknown line>)",
             "MovableWrapper(ErrorTraceComposables.kt:156)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -522,7 +520,7 @@ class ErrorTraceTests {
             "<lambda>(MovableContent.kt:<unknown line>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "WrappedMovableContent(ErrorTraceComposables.kt:166)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -553,7 +551,7 @@ class ErrorTraceTests {
             "<lambda>(MovableContent.kt:<unknown line>)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "WrappedMovableContent(ErrorTraceComposables.kt:166)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(false)
             compose {
@@ -586,7 +584,7 @@ class ErrorTraceTests {
             "Wrapper(ErrorTraceComposables.kt:149)",
             "<lambda>(ErrorTraceTests.kt:<line number>)",
             "WrappedMovableContent(ErrorTraceComposables.kt:166)",
-            "<lambda>(ErrorTraceTests.kt:<line number>)"
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
         ) {
             var state by mutableStateOf(true)
             compose {

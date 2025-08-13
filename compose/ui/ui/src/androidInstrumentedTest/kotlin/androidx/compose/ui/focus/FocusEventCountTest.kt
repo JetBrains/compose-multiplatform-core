@@ -457,7 +457,7 @@ class FocusEventCountTest(private val focusEventType: String) {
                 Modifier.then(
                     if (addFocusEvent) Modifier.onFocusEvent({ parentFocusEvents.add(it) })
                     else Modifier
-                )
+                ),
             ) {
                 FocusTargetModifierNodeBox(
                     childFocusTargetModifierNode,
@@ -465,7 +465,7 @@ class FocusEventCountTest(private val focusEventType: String) {
                         .then(
                             if (addFocusEvent) Modifier.onFocusEvent({ childFocusEvents.add(it) })
                             else Modifier
-                        )
+                        ),
                 )
             }
         }
@@ -499,14 +499,14 @@ class FocusEventCountTest(private val focusEventType: String) {
                     .then(
                         if (addFocusEvent) Modifier.onFocusEvent({ parentFocusEvents.add(it) })
                         else Modifier
-                    )
+                    ),
             ) {
                 FocusTargetModifierNodeBox(
                     childFocusTargetModifierNode,
                     Modifier.then(
                         if (addFocusEvent) Modifier.onFocusEvent({ childFocusEvents.add(it) })
                         else Modifier
-                    )
+                    ),
                 )
             }
         }
@@ -750,7 +750,7 @@ class FocusEventCountTest(private val focusEventType: String) {
 private fun FocusTargetModifierNodeBox(
     focusTargetModifierNode: FocusTargetModifierNode,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit = {}
+    content: @Composable BoxScope.() -> Unit = {},
 ) {
     val node = remember {
         object : DelegatingNode() {

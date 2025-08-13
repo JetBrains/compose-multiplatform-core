@@ -36,19 +36,16 @@ class CanvasLayersComposeSceneTest {
     @Test
     fun sceneSizeChangeTriggersInvalidation() = runTest(StandardTestDispatcher()) {
         var invalidationCount = 0
-        val scene = CanvasLayersComposeScene(
+        CanvasLayersComposeScene(
             size = IntSize(100, 100),
             coroutineContext = coroutineContext,
             invalidate = { invalidationCount++ }
-        )
-        try {
+        ).use { scene ->
             scene.setContent { Box(Modifier.fillMaxSize()) }
 
             assertEquals(1, invalidationCount)
             scene.size = IntSize(120, 120)
             assertEquals(2, invalidationCount)
-        } finally {
-            scene.close()
         }
     }
 
@@ -56,11 +53,10 @@ class CanvasLayersComposeSceneTest {
     fun cancelClickForGestureOwner() = runTest(StandardTestDispatcher()) {
         var rootCancelled = false
         var popupCancelled = false
-        val scene = CanvasLayersComposeScene(
+        CanvasLayersComposeScene(
             size = IntSize(100, 100),
             coroutineContext = coroutineContext,
-        )
-        try {
+        ).use { scene ->
             scene.setContent {
                 Box(modifier = Modifier.fillMaxSize().onCancel { rootCancelled = true })
 
@@ -74,8 +70,6 @@ class CanvasLayersComposeSceneTest {
 
             assertFalse(rootCancelled)
             assertTrue(popupCancelled)
-        } finally {
-            scene.close()
         }
     }
 }

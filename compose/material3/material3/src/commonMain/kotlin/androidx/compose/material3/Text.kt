@@ -135,7 +135,7 @@ fun Text(
                 fontFamily = fontFamily,
                 textDecoration = textDecoration,
                 fontStyle = fontStyle,
-                letterSpacing = letterSpacing
+                letterSpacing = letterSpacing,
             ),
         onTextLayout = onTextLayout,
         overflow = overflow,
@@ -245,7 +245,7 @@ fun Text(
                 fontFamily = fontFamily,
                 textDecoration = textDecoration,
                 fontStyle = fontStyle,
-                letterSpacing = letterSpacing
+                letterSpacing = letterSpacing,
             ),
         onTextLayout = onTextLayout,
         overflow = overflow,
@@ -259,7 +259,7 @@ fun Text(
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with autoSize instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun Text(
@@ -304,7 +304,7 @@ fun Text(
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with autoSize instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun Text(
@@ -351,7 +351,7 @@ fun Text(
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun Text(
@@ -370,7 +370,7 @@ fun Text(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         text = text,
@@ -395,7 +395,7 @@ fun Text(
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun Text(
@@ -415,7 +415,7 @@ fun Text(
     maxLines: Int = Int.MAX_VALUE,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         text = text,
@@ -483,11 +483,7 @@ private fun rememberTextLinkStyles(): TextLinkStyles {
     val primaryColor = MaterialTheme.colorScheme.primary
     return remember(primaryColor) {
         TextLinkStyles(
-            style =
-                SpanStyle(
-                    color = primaryColor,
-                    textDecoration = TextDecoration.Underline,
-                )
+            style = SpanStyle(color = primaryColor, textDecoration = TextDecoration.Underline)
         )
     }
 }

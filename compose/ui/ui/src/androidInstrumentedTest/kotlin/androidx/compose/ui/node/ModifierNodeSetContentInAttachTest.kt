@@ -90,7 +90,7 @@ class ModifierNodeSetContentInAttachTest {
                             if (isDragging) {
                                 Modifier.drawInOverlay()
                             } else Modifier
-                        ),
+                        )
             )
         }
 
@@ -216,10 +216,7 @@ private class DrawInOverlayNode(compositionContext: CompositionContext) :
         lastDisposable = null
     }
 
-    private fun addViewToOverlay(
-        context: Context,
-        localView: View,
-    ): DisposableHandle {
+    private fun addViewToOverlay(context: Context, localView: View): DisposableHandle {
         val view =
             ComposeView(context).apply {
                 setParentCompositionContext(compositionContext)

@@ -162,11 +162,11 @@ private object DpHeightSizeClasses {
 internal fun WindowSizeClass.Companion.computeFromDpSize(
     windowSize: DpSize,
     supportedWidthSizeClasses: Set<Dp> = DpWidthSizeClasses.Default,
-    supportedHeightSizeClasses: Set<Dp> = DpHeightSizeClasses.Default
+    supportedHeightSizeClasses: Set<Dp> = DpHeightSizeClasses.Default,
 ) =
     WindowSizeClass(
         supportedWidthSizeClasses.filter { windowSize.width >= it }.maxOf { it.value },
-        supportedHeightSizeClasses.filter { windowSize.height >= it }.maxOf { it.value }
+        supportedHeightSizeClasses.filter { windowSize.height >= it }.maxOf { it.value },
     )
 
 /**
@@ -195,5 +195,5 @@ internal fun WindowSizeClass.Companion.computeFromDpSize(
 internal fun WindowSizeClass.Companion.computeFromDpSizeV2(
     windowSize: DpSize,
     supportedWidthSizeClasses: Set<Dp> = DpWidthSizeClasses.DefaultV2,
-    supportedHeightSizeClasses: Set<Dp> = DpHeightSizeClasses.Default
+    supportedHeightSizeClasses: Set<Dp> = DpHeightSizeClasses.Default,
 ) = computeFromDpSize(windowSize, supportedWidthSizeClasses, supportedHeightSizeClasses)

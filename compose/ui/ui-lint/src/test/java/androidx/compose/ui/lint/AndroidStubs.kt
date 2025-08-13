@@ -46,7 +46,7 @@ public class Context {
             1ND0QTekKLVYH67EmpGBKxjMdMsE64daoQdyH4MiAzvQ2SDAxMAIcjiQ5ATy
             ZIE0I5Bm1drOwLgRyACaAiTZwIIgkpuBB6pUCqqUiXEDmjoOIMkLNpoPAIc3
             ZUAnAQAA
-            """
+            """,
         )
 
     val Resources =
@@ -72,7 +72,7 @@ public class Resources {
             XMWE8dJYvmufC/YPutjKZFJzWDj7ZOrW62CcJZzN5sv/cL9sl4TBfUe/NZEz
             +ll2Ee/FKXJ5I0YCio+IHko3lUyS++fvoDcphCOadcNU9AjDvfVkb03o9Y8v
             6nGHHu0AlRLTZjcBAAA=
-            """
+            """,
         )
 
     val Configuration =
@@ -98,6 +98,6 @@ public class Configuration {
             0jPro1RhffFCoGvC+JddsdTr0MJk6SomTG5E+bZ5Ltg/2GIbSX7vGl/ypbTm
             8F/0SXsh5sji4YhFGCCPE+Hgr1P7StRhdLPOA/3jd9Bbtx5FTTuYRB13IZMf
             blk3qhEBAAA=
-            """
+            """,
         )
 }

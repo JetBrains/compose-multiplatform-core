@@ -63,7 +63,7 @@ class FocusRequester @RememberInComposition constructor() {
     @Deprecated(
         message = "use the version the has a FocusDirection",
         replaceWith = ReplaceWith("this.requestFocus()"),
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     fun requestFocus() {
         requestFocus(Enter)

@@ -21,6 +21,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.Default
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -133,9 +134,9 @@ fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.Default,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
-    scrollState: ScrollState = rememberScrollState()
+    scrollState: ScrollState = rememberScrollState(),
 ) {
     val obfuscationMaskState = rememberUpdatedState(textObfuscationCharacter)
     val secureTextFieldController = remember { SecureTextFieldController(obfuscationMaskState) }
@@ -147,7 +148,9 @@ fun BasicSecureTextField(
     // revealing last typed character depends on two conditions;
     // 1 - Requested Obfuscation method
     // 2 - if the system allows it
-    val revealLastTypedEnabled = textObfuscationMode == TextObfuscationMode.RevealLastTyped
+    val revealLastTypedEnabled =
+        textObfuscationMode == TextObfuscationMode.RevealLastTyped &&
+            platformAllowsRevealLastTyped()
 
     // while toggling between obfuscation methods if the revealing gets disabled, reset the reveal.
     LaunchedEffect(revealLastTypedEnabled) {
@@ -206,7 +209,7 @@ fun BasicSecureTextField(
             codepointTransformation = codepointTransformation,
             decorator = decorator,
             isPassword = true,
-            scrollState = scrollState
+            scrollState = scrollState,
         )
     }
 }
@@ -317,7 +320,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                     onPasteRequested: (() -> Unit)?,
                     onCutRequested: (() -> Unit)?,
                     onSelectAllRequested: (() -> Unit)?,
-                    onAutofillRequested: (() -> Unit)?
+                    onAutofillRequested: (() -> Unit)?,
                 ) {
                     currentToolbar.showMenu(
                         rect = rect,
@@ -325,7 +328,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                         onSelectAllRequested = onSelectAllRequested,
                         onCopyRequested = null,
                         onCutRequested = null,
-                        onAutofillRequested = onAutofillRequested
+                        onAutofillRequested = onAutofillRequested,
                     )
                 }
             }
@@ -333,9 +336,12 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalTextToolbar provides copyDisabledToolbar, content)
 }
 
+/** Whether the underlying platform allows the reveal last typed behavior. */
+@Composable internal expect fun platformAllowsRevealLastTyped(): Boolean
+
 @Deprecated(
     message = "Please use the overload that takes in readOnly parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
@@ -370,13 +376,13 @@ fun BasicSecureTextField(
         cursorBrush = cursorBrush,
         decorator = decorator,
         textObfuscationMode = textObfuscationMode,
-        textObfuscationCharacter = textObfuscationCharacter
+        textObfuscationCharacter = textObfuscationCharacter,
     )
 }
 
 @Deprecated(
     message = "Please use the overload that takes in scrollState parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
@@ -413,6 +419,6 @@ fun BasicSecureTextField(
         decorator = decorator,
         textObfuscationMode = textObfuscationMode,
         textObfuscationCharacter = textObfuscationCharacter,
-        scrollState = rememberScrollState()
+        scrollState = rememberScrollState(),
     )
 }

@@ -296,7 +296,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             destination = other.objectArgs,
             destinationOffset = other.objectArgsSize - op.objects,
             startIndex = objectArgsSize - op.objects,
-            endIndex = objectArgsSize
+            endIndex = objectArgsSize,
         )
         objectArgs.fill(null, objectArgsSize - op.objects, objectArgsSize)
 
@@ -305,7 +305,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             destination = other.intArgs,
             destinationOffset = other.intArgsSize - op.ints,
             startIndex = intArgsSize - op.ints,
-            endIndex = intArgsSize
+            endIndex = intArgsSize,
         )
 
         objectArgsSize -= op.objects
@@ -343,7 +343,7 @@ internal class Operations : OperationsDebugStringFormattable() {
         applier: Applier<*>,
         slots: SlotWriter,
         rememberManager: RememberManager,
-        errorContext: OperationErrorContext?
+        errorContext: OperationErrorContext?,
     ) {
         drain {
             with(operation) {
@@ -383,7 +383,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             parameter1: IntParameter,
             value1: Int,
             parameter2: IntParameter,
-            value2: Int
+            value2: Int,
         ) =
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
@@ -406,7 +406,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             parameter2: IntParameter,
             value2: Int,
             parameter3: IntParameter,
-            value3: Int
+            value3: Int,
         ) =
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
@@ -441,7 +441,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             parameter1: ObjectParameter<T>,
             value1: T,
             parameter2: ObjectParameter<U>,
-            value2: U
+            value2: U,
         ) =
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
@@ -464,7 +464,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             parameter2: ObjectParameter<U>,
             value2: U,
             parameter3: ObjectParameter<V>,
-            value3: V
+            value3: V,
         ) =
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
@@ -494,7 +494,7 @@ internal class Operations : OperationsDebugStringFormattable() {
             parameter3: ObjectParameter<V>,
             value3: V,
             parameter4: ObjectParameter<W>,
-            value4: W
+            value4: W,
         ) =
             with(stack) {
                 if (EnableDebugRuntimeChecks) {
@@ -566,7 +566,7 @@ internal class Operations : OperationsDebugStringFormattable() {
     @Deprecated(
         "toString() will return the default implementation from Any. " +
             "Did you mean to use toDebugString()?",
-        ReplaceWith("toDebugString()")
+        ReplaceWith("toDebugString()"),
     )
     override fun toString(): String {
         return super.toString()

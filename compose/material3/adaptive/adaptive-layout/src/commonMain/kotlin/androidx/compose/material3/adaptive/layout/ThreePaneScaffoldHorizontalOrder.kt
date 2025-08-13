@@ -27,7 +27,7 @@ class ThreePaneScaffoldHorizontalOrder
 internal constructor(
     internal val firstPane: ThreePaneScaffoldRole,
     internal val secondPane: ThreePaneScaffoldRole,
-    internal val thirdPane: ThreePaneScaffoldRole
+    internal val thirdPane: ThreePaneScaffoldRole,
 ) : PaneScaffoldHorizontalOrder<ThreePaneScaffoldRole> {
     init {
         require(firstPane != secondPane && secondPane != thirdPane && firstPane != thirdPane) {
@@ -126,5 +126,5 @@ enum class ThreePaneScaffoldRole {
      * layout adaptation and usually contains the additional info which will only be shown under
      * user interaction.
      */
-    Tertiary
+    Tertiary,
 }

@@ -1,5 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                    assertThat((it - expected).x).isWithin(0.01f)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/Scrollable2DTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                    assertThat((it - expected).y).isWithin(0.01f)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/Scrollable2DTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                assertThat((consumed - expectedConsumed).x).isWithin(0.001f)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/Scrollable2DTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                assertThat((consumed - expectedConsumed).y).isWithin(0.001f)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/Scrollable2DTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                    assertThat(it - expected).isWithin(0.01f)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ScrollableTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `isWithin` is not used"
+        errorLine1="                assertThat(consumed.x - expectedConsumed).isWithin(0.001f)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ScrollableTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="            assertThat(texts.isEmpty())"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidUnitTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
 
     <issue
         id="LambdaStructuralEquality"
@@ -143,15 +206,6 @@
         errorLine2="                                   ~~~~~~~~~~~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/BasicMarqueeTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Optional Modifier parameter should have a default value of `Modifier`"
-        errorLine1="private fun OuterBox(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable () -> Unit) {"
-        errorLine2="                     ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/contextmenu/provider/BasicTextContextMenuProviderTest.kt"/>
     </issue>
 
     <issue
@@ -508,7 +562,7 @@
     <issue
         id="PrimitiveInCollection"
         message="method createItemsBeforeList has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>"
+        errorLine1="    pinnedItems: List&lt;Int>,"
         errorLine2="                 ~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListMeasure.kt"/>

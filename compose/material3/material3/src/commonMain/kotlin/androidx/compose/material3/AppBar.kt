@@ -43,8 +43,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBarState.Companion.Saver
-import androidx.compose.material3.DefaultSingleRowTopAppBarOverride.SingleRowTopAppBar
-import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride.TwoRowsTopAppBar
 import androidx.compose.material3.TopAppBarState.Companion.Saver
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
@@ -215,8 +213,7 @@ fun TopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBar(
     title: @Composable () -> Unit,
@@ -340,8 +337,7 @@ fun CenterAlignedTopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CenterAlignedTopAppBar(
     title: @Composable () -> Unit,
@@ -545,8 +541,7 @@ fun MediumTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MediumTopAppBar(
     title: @Composable () -> Unit,
@@ -796,8 +791,7 @@ fun LargeTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun LargeTopAppBar(
     title: @Composable () -> Unit,
@@ -1408,7 +1402,7 @@ private fun BottomAppBarLayout(
                         activeScrollBehavior.state,
                         velocity,
                         activeScrollBehavior.flingAnimationSpec,
-                        activeScrollBehavior.snapAnimationSpec
+                        activeScrollBehavior.snapAnimationSpec,
                     )
                 },
             )
@@ -1499,7 +1493,6 @@ interface TopAppBarScrollBehavior {
 }
 
 /** Contains default values used for the top app bar implementations. */
-@ExperimentalMaterial3Api
 object TopAppBarDefaults {
 
     /**
@@ -1914,7 +1907,6 @@ object TopAppBarDefaults {
  *   offset height offset should be between zero and [initialHeightOffsetLimit].
  * @param initialContentOffset the initial value for [TopAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
 @Composable
 fun rememberTopAppBarState(
     initialHeightOffsetLimit: Float = -Float.MAX_VALUE,
@@ -1936,7 +1928,6 @@ fun rememberTopAppBarState(
  * @param initialHeightOffset the initial value for [TopAppBarState.heightOffset]
  * @param initialContentOffset the initial value for [TopAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
 @Stable
 class TopAppBarState(
     initialHeightOffsetLimit: Float,
@@ -2043,7 +2034,6 @@ class TopAppBarState(
  * @constructor create an instance with arbitrary colors, see [TopAppBarColors] for a factory method
  *   using the default material3 spec
  */
-@ExperimentalMaterial3Api
 @Stable
 class TopAppBarColors(
     val containerColor: Color,
@@ -2758,7 +2748,7 @@ val LocalSingleRowTopAppBarOverride: ProvidableCompositionLocal<SingleRowTopAppB
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class
+    ExperimentalMaterial3ComponentOverrideApi::class,
 )
 @Composable
 private fun TwoRowsTopAppBar(
@@ -3587,7 +3577,7 @@ private fun rememberTouchExplorationService() =
     rememberAccessibilityServiceState(
         listenToTouchExplorationState = true,
         listenToSwitchAccessState = false,
-        listenToVoiceAccessState = false
+        listenToVoiceAccessState = false,
     )
 
 // An easing function used to compute the alpha value that is applied to the top title part of a

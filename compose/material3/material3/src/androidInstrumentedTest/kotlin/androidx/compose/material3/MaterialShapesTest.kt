@@ -48,7 +48,7 @@ class MaterialShapesTest {
                 shape.createOutline(
                     Size(100f, 100f),
                     LocalLayoutDirection.current,
-                    density = LocalDensity.current
+                    density = LocalDensity.current,
                 )
         }
         assertThat(outline).isNotNull()
@@ -65,13 +65,13 @@ class MaterialShapesTest {
                 shape.createOutline(
                     Size(100f, 100f),
                     LocalLayoutDirection.current,
-                    density = LocalDensity.current
+                    density = LocalDensity.current,
                 )
             outline2 =
                 shape.createOutline(
                     Size(50f, 50f),
                     LocalLayoutDirection.current,
-                    density = LocalDensity.current
+                    density = LocalDensity.current,
                 )
         }
         assertThat(outline1).isNotNull()

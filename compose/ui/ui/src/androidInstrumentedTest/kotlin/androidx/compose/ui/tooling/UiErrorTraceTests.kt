@@ -446,7 +446,7 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     private fun assertFirstContentFrame(
         traceContext: TestTraceContext,
-        assertion: (TraceFrame) -> Boolean
+        assertion: (TraceFrame) -> Boolean,
     ) {
         assertTrace(traceContext) { t ->
             val lambdaFrame = t.indexOfLast { it.file == CurrentTestFile && it.name == "<lambda>" }

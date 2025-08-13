@@ -57,7 +57,7 @@ internal class MultiParagraphLayoutCache(
     private var maxLines: Int = Int.MAX_VALUE,
     private var minLines: Int = DefaultMinLines,
     private var placeholders: List<AnnotatedString.Range<Placeholder>>? = null,
-    private var autoSize: TextAutoSize? = null
+    private var autoSize: TextAutoSize? = null,
 ) {
     /** Convert min max lines into actual constraints */
     private var mMinLinesConstrainer: MinLinesConstrainer? = null
@@ -194,7 +194,7 @@ internal class MultiParagraphLayoutCache(
                 textLayoutResult(
                     layoutDirection = layoutDirection,
                     finalConstraints = finalConstraints,
-                    multiParagraph = layoutCache!!.multiParagraph
+                    multiParagraph = layoutCache!!.multiParagraph,
                 )
             return true
         }
@@ -236,7 +236,7 @@ internal class MultiParagraphLayoutCache(
 
     private fun useMinLinesConstrainer(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Constraints {
         val localMin =
             MinLinesConstrainer.from(
@@ -244,7 +244,7 @@ internal class MultiParagraphLayoutCache(
                     layoutDirection,
                     style,
                     density!!,
-                    fontFamilyResolver
+                    fontFamilyResolver,
                 )
                 .also { mMinLinesConstrainer = it }
         return localMin.coerceMinLines(inConstraints = constraints, minLines = minLines)
@@ -267,12 +267,12 @@ internal class MultiParagraphLayoutCache(
                 density!!,
                 layoutDirection,
                 fontFamilyResolver,
-                finalConstraints
+                finalConstraints,
             ),
             multiParagraph,
             finalConstraints.constrain(
                 IntSize(layoutWidth.ceilToIntPx(), multiParagraph.height.ceilToIntPx())
-            )
+            ),
         )
     }
 
@@ -309,7 +309,7 @@ internal class MultiParagraphLayoutCache(
         maxLines: Int,
         minLines: Int,
         placeholders: List<AnnotatedString.Range<Placeholder>>?,
-        autoSize: TextAutoSize?
+        autoSize: TextAutoSize?,
     ) {
         this.text = text
         this.style = style
@@ -343,7 +343,7 @@ internal class MultiParagraphLayoutCache(
                     style = resolveDefaults(style, layoutDirection),
                     density = density!!,
                     fontFamilyResolver = fontFamilyResolver,
-                    placeholders = placeholders.orEmpty()
+                    placeholders = placeholders.orEmpty(),
                 )
             } else {
                 localIntrinsics
@@ -361,7 +361,7 @@ internal class MultiParagraphLayoutCache(
      */
     private fun layoutText(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): MultiParagraph {
         val localParagraphIntrinsics = setLayoutDirection(layoutDirection)
 
@@ -372,10 +372,10 @@ internal class MultiParagraphLayoutCache(
                     constraints,
                     softWrap,
                     overflow,
-                    localParagraphIntrinsics.maxIntrinsicWidth
+                    localParagraphIntrinsics.maxIntrinsicWidth,
                 ),
             maxLines = finalMaxLines(softWrap, overflow, maxLines),
-            overflow = overflow
+            overflow = overflow,
         )
     }
 
@@ -385,7 +385,7 @@ internal class MultiParagraphLayoutCache(
      */
     private fun TextLayoutResult?.newLayoutWillBeDifferent(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Boolean {
         // no layout yet
         if (this == null) return true
@@ -455,7 +455,7 @@ internal class MultiParagraphLayoutCache(
         override fun performLayout(
             constraints: Constraints,
             text: AnnotatedString,
-            fontSize: TextUnit
+            fontSize: TextUnit,
         ): TextLayoutResult {
             val styleBeforeLayout = style
             // If the cache is populated with a SP [TextUnit] and [performLayout]'s requested
@@ -474,11 +474,7 @@ internal class MultiParagraphLayoutCache(
 
             val multiParagraph = layoutText(layoutConstraints, intrinsicsLayoutDirection!!)
             val layoutResult =
-                textLayoutResult(
-                    intrinsicsLayoutDirection!!,
-                    layoutConstraints,
-                    multiParagraph,
-                )
+                textLayoutResult(intrinsicsLayoutDirection!!, layoutConstraints, multiParagraph)
             lastLayoutResult = layoutResult
             style = styleBeforeLayout
             return layoutResult

@@ -56,7 +56,7 @@ internal class LazyLayoutScrollDeltaBetweenPasses {
     internal fun updateScrollDeltaForApproach(
         delta: Float,
         density: Density,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
     ) {
         if (delta <= with(density) { DeltaThresholdForScrollAnimation.toPx() }) {
             // If the delta is within the threshold, scroll by the delta amount instead of animating
@@ -79,7 +79,7 @@ internal class LazyLayoutScrollDeltaBetweenPasses {
                     _scrollDeltaBetweenPasses.animateTo(
                         0f,
                         spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 0.5f),
-                        true
+                        true,
                     )
                 }
         }

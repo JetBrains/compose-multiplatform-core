@@ -57,11 +57,7 @@ class OnFirstVisibleTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onFirstVisible(
-                                minFractionVisible = 1.0f,
-                            ) {
-                                called++
-                            }
+                            .onFirstVisible(minFractionVisible = 1.0f) { called++ }
                             .size(100.dp)
                     )
                 }
@@ -104,11 +100,7 @@ class OnFirstVisibleTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onFirstVisible(
-                                minFractionVisible = 0f,
-                            ) {
-                                called++
-                            }
+                            .onFirstVisible(minFractionVisible = 0f) { called++ }
                             .size(100.dp)
                     )
                 }
@@ -155,11 +147,7 @@ class OnFirstVisibleTest {
                 Column {
                     Box(
                         Modifier.offset(y = top.dp)
-                            .onFirstVisible(
-                                minFractionVisible = 0.5f,
-                            ) {
-                                called++
-                            }
+                            .onFirstVisible(minFractionVisible = 0.5f) { called++ }
                             .size(100.dp)
                     )
                 }
@@ -208,14 +196,7 @@ class OnFirstVisibleTest {
         rule.setContent {
             Column {
                 Column {
-                    Box(
-                        Modifier.onFirstVisible(
-                                minFractionVisible = 0f,
-                            ) {
-                                called++
-                            }
-                            .size(100.dp)
-                    )
+                    Box(Modifier.onFirstVisible(minFractionVisible = 0f) { called++ }.size(100.dp))
                 }
             }
         }
@@ -228,14 +209,7 @@ class OnFirstVisibleTest {
         rule.setContent {
             Column {
                 Column {
-                    Box(
-                        Modifier.onFirstVisible(
-                                minFractionVisible = 1f,
-                            ) {
-                                called++
-                            }
-                            .size(100.dp)
-                    )
+                    Box(Modifier.onFirstVisible(minFractionVisible = 1f) { called++ }.size(100.dp))
                 }
             }
         }
@@ -248,14 +222,7 @@ class OnFirstVisibleTest {
         rule.setContent {
             Column {
                 Column {
-                    Box(
-                        Modifier.onFirstVisible(
-                                minFractionVisible = 1f,
-                            ) {
-                                called++
-                            }
-                            .size(5000.dp)
-                    )
+                    Box(Modifier.onFirstVisible(minFractionVisible = 1f) { called++ }.size(5000.dp))
                 }
             }
         }
@@ -272,11 +239,7 @@ class OnFirstVisibleTest {
             LazyColumn(state = lazyListState, modifier = Modifier.testTag("lazy")) {
                 items(200) { index ->
                     Box(
-                        Modifier.onFirstVisible(
-                                minFractionVisible = 1f,
-                            ) {
-                                stats[index]++
-                            }
+                        Modifier.onFirstVisible(minFractionVisible = 1f) { stats[index]++ }
                             .fillMaxWidth()
                             .height(100.dp)
                     )

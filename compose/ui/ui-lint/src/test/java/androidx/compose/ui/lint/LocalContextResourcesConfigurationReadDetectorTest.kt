@@ -35,7 +35,7 @@ class LocalContextResourcesConfigurationReadDetectorTest : LintDetectorTest() {
     override fun getIssues(): MutableList<Issue> =
         mutableListOf(
             LocalContextResourcesConfigurationReadDetector.LocalContextConfigurationRead,
-            LocalContextResourcesConfigurationReadDetector.LocalContextResourcesRead
+            LocalContextResourcesConfigurationReadDetector.LocalContextResourcesRead,
         )
 
     val LocalContextStub =
@@ -73,7 +73,7 @@ class LocalContextResourcesConfigurationReadDetectorTest : LintDetectorTest() {
             +ysKnzPs85EvMDXCT13BO7iLaZINuoqs0XCZzb7j/jcUvlzjsPAiY6miRvs7
             sj6k+LPHyDUx10SlSdkukIjFJh7h8TFYgidYOsZEgnwCN8HTxMiTfwE44RI/
             mwQAAA==
-            """
+            """,
         )
 
     @Test
@@ -101,7 +101,7 @@ class LocalContextResourcesConfigurationReadDetectorTest : LintDetectorTest() {
                 Stubs.CompositionLocal,
                 AndroidStubs.Context,
                 AndroidStubs.Resources,
-                AndroidStubs.Configuration
+                AndroidStubs.Configuration,
             )
             .run()
             .expect(
@@ -183,7 +183,7 @@ Autofix for src/test/test.kt line 9: Replace with LocalResources.current:
                 Stubs.CompositionLocal,
                 AndroidStubs.Context,
                 AndroidStubs.Resources,
-                AndroidStubs.Configuration
+                AndroidStubs.Configuration,
             )
             .run()
             .expect(

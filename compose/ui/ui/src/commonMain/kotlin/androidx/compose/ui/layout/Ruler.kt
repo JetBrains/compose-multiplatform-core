@@ -34,7 +34,7 @@ sealed class Ruler(internal val calculate: (PlacementScope.(Float) -> Float)?) {
     internal abstract fun calculateCoordinate(
         coordinate: Float,
         sourceCoordinates: LayoutCoordinates,
-        targetCoordinates: LayoutCoordinates
+        targetCoordinates: LayoutCoordinates,
     ): Float
 }
 
@@ -55,7 +55,7 @@ class VerticalRuler private constructor(calculation: (PlacementScope.(Float) -> 
     override fun calculateCoordinate(
         coordinate: Float,
         sourceCoordinates: LayoutCoordinates,
-        targetCoordinates: LayoutCoordinates
+        targetCoordinates: LayoutCoordinates,
     ): Float {
         val offset = Offset(coordinate, sourceCoordinates.size.height / 2f)
         return targetCoordinates.localPositionOf(sourceCoordinates, offset).x
@@ -110,7 +110,7 @@ class HorizontalRuler private constructor(calculation: (PlacementScope.(Float) -
     override fun calculateCoordinate(
         coordinate: Float,
         sourceCoordinates: LayoutCoordinates,
-        targetCoordinates: LayoutCoordinates
+        targetCoordinates: LayoutCoordinates,
     ): Float {
         val offset = Offset(sourceCoordinates.size.width / 2f, coordinate)
         return targetCoordinates.localPositionOf(sourceCoordinates, offset).y
@@ -150,7 +150,7 @@ class HorizontalRuler private constructor(calculation: (PlacementScope.(Float) -
 private fun PlacementScope.mergeRulerValues(
     useGreater: Boolean,
     rulers: Array<out Ruler>,
-    defaultValue: Float
+    defaultValue: Float,
 ): Float {
     var value = Float.NaN
     rulers.forEach {

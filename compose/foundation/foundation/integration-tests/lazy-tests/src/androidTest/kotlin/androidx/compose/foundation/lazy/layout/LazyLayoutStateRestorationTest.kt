@@ -259,7 +259,7 @@ class LazyLayoutStateRestorationTest {
         itemCount: () -> Int,
         itemIsVisible: (Int) -> Boolean = { true },
         indexToKey: (Int) -> Any = { getDefaultLazyLayoutKey(it) },
-        content: @Composable (Int) -> Unit
+        content: @Composable (Int) -> Unit,
     ) {
         val provider =
             remember(itemCount, indexToKey, content as Any) {

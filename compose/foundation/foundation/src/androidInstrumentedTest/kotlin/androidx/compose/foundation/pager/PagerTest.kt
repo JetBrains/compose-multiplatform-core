@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
@@ -109,6 +110,22 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     @Test
+    fun userScrollEnabledIsOn_shouldAllowMouseWheelScroll() {
+        // Arrange
+        createPager(initialPage = 5, userScrollEnabled = true, modifier = Modifier.fillMaxSize())
+
+        onPager().performMouseInput {
+            mouseWheelScrollAcrossMainAxis(
+                context = composeView!!.context,
+                deltaPx = pagerSize.toFloat() * 2.7f,
+            )
+        }
+
+        rule.runOnIdle { assertThat(pagerState.currentPage).isEqualTo(8) }
+        confirmPageIsInCorrectPosition(pagerState.currentPage)
+    }
+
+    @Test
     fun pageCount_pagerOnlyContainsGivenPageCountItems() {
         // Arrange
 
@@ -128,10 +145,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     fun mutablePageCount_assertPagesAreChangedIfCountIsChanged() {
         // Arrange
         val pageCount = mutableStateOf(2)
-        createPager(
-            pageCount = { pageCount.value },
-            modifier = Modifier.fillMaxSize(),
-        )
+        createPager(pageCount = { pageCount.value }, modifier = Modifier.fillMaxSize())
 
         rule.onNodeWithTag("3").assertDoesNotExist()
 
@@ -268,7 +282,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                     composingPages += index
                     onDispose { composingPages -= index }
                 }
-            }
+            },
         )
         rule.waitForIdle()
 
@@ -287,7 +301,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
             HorizontalPager(
                 modifier = Modifier.fillMaxSize().testTag("pager"),
                 state = pagerState,
-                key = { data[it] }
+                key = { data[it] },
             ) {
                 Spacer(Modifier.fillMaxSize())
             }
@@ -320,7 +334,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                         if (previousFlingBehavior == null) {
                             previousFlingBehavior = it
                         }
-                    }
+                    },
             ) {
                 Page(index = it)
             }
@@ -338,7 +352,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
         createPager(
             modifier = Modifier.size(500.dp),
             pageSize = { PageSize.Fixed(100.dp) },
-            pageCount = { 3 }
+            pageCount = { 3 },
         )
 
         confirmPageIsInCorrectPosition(0, pageToVerifyPosition = 0)
@@ -357,7 +371,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                     },
                 state = rememberPagerState(initialPage = 5) { 40 }.also { pagerState = it },
                 pageSize = PageSize.Fixed(250.dp), // make sure pages bleed in the layout
-                snapPosition = snapPosition.value
+                snapPosition = snapPosition.value,
             ) {
                 Page(index = it)
             }
@@ -390,7 +404,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                     },
                 state = rememberPagerState(initialPage = 5) { 40 }.also { pagerState = it },
                 pageSize = PageSize.Fixed(100.dp),
-                snapPosition = SnapPosition.Center // snap position that depends on pager size
+                snapPosition = SnapPosition.Center, // snap position that depends on pager size
             ) {
                 Page(index = it)
             }
@@ -427,7 +441,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                     },
                 state = rememberPagerState(initialPage = 5) { 40 }.also { pagerState = it },
                 pageSize = pageSizeDp.value,
-                snapPosition = SnapPosition.End // snap position that depends on page size
+                snapPosition = SnapPosition.End, // snap position that depends on page size
             ) {
                 Page(index = it)
             }
@@ -459,7 +473,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
             object : PageSize {
                 override fun Density.calculateMainAxisPageSize(
                     availableSpace: Int,
-                    pageSpacing: Int
+                    pageSpacing: Int,
                 ): Int = 0
             }
 
@@ -485,7 +499,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     fun contentPadding_largerThanConstraints_measuresAsZero() {
         createPager(
             modifier = Modifier.requiredSize(100.dp),
-            contentPadding = PaddingValues(200.dp)
+            contentPadding = PaddingValues(200.dp),
         )
 
         assertThat(pagerState.pageSize).isEqualTo(0)
@@ -500,10 +514,10 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                 object : PageSize {
                     override fun Density.calculateMainAxisPageSize(
                         availableSpace: Int,
-                        pageSpacing: Int
+                        pageSpacing: Int,
                     ) = availableSpace - 1
                 }
-            }
+            },
         )
 
         assertThat(pagerState.pageSize).isEqualTo(0)
@@ -523,7 +537,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
                             firstItemOffset = it.visiblePagesInfo.firstOrNull()?.offset ?: 0
                         }
                 }
-            }
+            },
         )
 
         rule.runOnIdle { runBlocking { pagerState.scrollBy(1f) } }
@@ -570,7 +584,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
         override fun applyToScroll(
             delta: Offset,
             source: NestedScrollSource,
-            performScroll: (Offset) -> Offset
+            performScroll: (Offset) -> Offset,
         ): Offset {
             applyToScrollCalledCount++
             return performScroll(delta)
@@ -578,7 +592,7 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
 
         override suspend fun applyToFling(
             velocity: Velocity,
-            performFling: suspend (Velocity) -> Velocity
+            performFling: suspend (Velocity) -> Velocity,
         ) {
             applyToFlingCalledCount++
             performFling(velocity)

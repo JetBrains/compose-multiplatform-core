@@ -19,5 +19,4 @@ package androidx.compose.runtime
 @JsFun("(obj, index) => obj[index]")
 private external fun dynamicGetInt(obj: JsAny, index: String): Int?
 
-@JsFun("(obj) => typeof obj")
-private external fun jsTypeOf(a: JsAny?): String
+@JsFun("(obj) => typeof obj") private external fun jsTypeOf(a: JsAny?): String

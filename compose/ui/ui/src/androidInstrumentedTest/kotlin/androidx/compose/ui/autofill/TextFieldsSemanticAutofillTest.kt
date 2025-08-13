@@ -98,7 +98,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
                 BasicTextField(
                     value = passwordInput,
@@ -106,7 +106,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(passwordTag).semantics {
                             contentType = ContentType.Password
-                        }
+                        },
                 )
             }
         }
@@ -149,7 +149,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }
@@ -185,7 +185,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }
@@ -224,7 +224,7 @@ class TextFieldsSemanticAutofillTest {
                         modifier =
                             Modifier.testTag(usernameTag).semantics {
                                 contentType = ContentType.Username
-                            }
+                            },
                     )
                 }
             }

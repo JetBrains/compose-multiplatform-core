@@ -41,7 +41,6 @@ import androidx.compose.material.Checkbox
 import androidx.compose.material.CursorDropdownMenu
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -56,12 +55,9 @@ import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.Notification
@@ -73,8 +69,6 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
-import java.awt.event.ActionEvent
-import java.awt.event.ActionListener
 import javax.swing.JButton
 
 @Composable
@@ -168,7 +162,10 @@ fun WindowScope.Content(
                     Spacer(modifier = Modifier.height(30.dp))
                     Button("Exit app", AppState::closeAll, Color(232, 100, 100))
                     Spacer(modifier = Modifier.height(30.dp))
-                    SwingActionButton("JButton", { AppState.amount.value++ })
+                    SwingActionButton(
+                        text = "JButton",
+                        action = { AppState.amount.value++ }
+                    )
                 }
                 Column(
                     modifier = Modifier.padding(start = 30.dp, top = 50.dp, end = 30.dp)
@@ -267,7 +264,6 @@ fun WindowScope.Content(
             dialogState.value = false
             println("Dialog window is dismissed.")
         }
-        @OptIn(ExperimentalMaterialApi::class)
         when (AppState.dialogType.value) {
             DialogType.Common -> Dialog(
                 onDismissRequest = dismiss
@@ -491,10 +487,7 @@ fun TextFieldWithSuggestions() {
                 singleLine = true,
                 onValueChange = {
                     text.value = it
-                    if (text.value.isNotEmpty())
-                        showMenu.value = true
-                    else
-                        showMenu.value = false
+                    showMenu.value = text.value.isNotEmpty()
                 },
                 modifier = Modifier.height(14.dp),
             )
@@ -556,11 +549,7 @@ fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
         modifier = Modifier.size(200.dp, 35.dp),
         factory = {
             JButton(text).apply {
-                addActionListener(object : ActionListener {
-                    public override fun actionPerformed(e: ActionEvent) {
-                        action?.invoke()
-                    }
-                })
+                addActionListener { action?.invoke() }
             }
         },
         update = { component ->
@@ -570,7 +559,7 @@ fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
 }
 
 @Composable
-fun ApplicationScope.SecondaryWindow(onCloseRequest: () -> Unit) = Window(
+fun SecondaryWindow(onCloseRequest: () -> Unit) = Window(
     onCloseRequest = onCloseRequest,
     state = rememberWindowState(size = DpSize(400.dp, 200.dp)),
     undecorated = AppState.undecorated.value,

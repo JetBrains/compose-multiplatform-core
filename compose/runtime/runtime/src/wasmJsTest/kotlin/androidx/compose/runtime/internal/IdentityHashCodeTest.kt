@@ -38,7 +38,6 @@ class IdentityHashCodeTest {
 
         assertEquals(set.size, 2)
     }
-
 }
 
 private class DefaultImpl {
