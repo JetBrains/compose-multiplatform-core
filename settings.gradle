@@ -166,7 +166,7 @@ switch (cacheSetting) {
         }
 }
 
-rootProject.name = "androidx"
+rootProject.name = "compose-multiplatform-core"
 
 dependencyResolutionManagement {
     versionCatalogs {
