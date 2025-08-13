@@ -818,6 +818,9 @@ private fun Project.configureNode() {
 }
 
 private fun Project.configureBinaryen() {
+    if (ProjectLayoutType.isPlayground(project)) {
+        return
+    }
     // https://youtrack.jetbrains.com/issue/KT-74840
     rootProject.extensions.findByType<BinaryenRootExtension>()?.let { binaryen ->
         @Suppress("DEPRECATION")

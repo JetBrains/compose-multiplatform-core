@@ -43,9 +43,9 @@ dependencies {
     implementation(project(":paging:paging-compose"))
     implementation(project(":paging:paging-compose:paging-compose-samples"))
 
-    ksp(project(":room:room-compiler"))
-    implementation(project(":room:room-ktx"))
-    implementation(project(":room:room-paging"))
+    ksp("androidx.room:room-compiler:2.7.0")
+    implementation("androidx.room:room-ktx:2.7.0")
+    implementation("androidx.room:room-paging:2.7.0")
 }
 
 androidx {
