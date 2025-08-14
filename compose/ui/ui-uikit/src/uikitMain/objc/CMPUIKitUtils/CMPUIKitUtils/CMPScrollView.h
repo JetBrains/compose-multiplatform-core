@@ -23,4 +23,6 @@
 - (BOOL)accessibilityScrollLeftPageSupported;
 - (BOOL)accessibilityScrollRightPageSupported;
 
+- (BOOL)drawsFocusRingWhenChildrenFocused;
+
 @end

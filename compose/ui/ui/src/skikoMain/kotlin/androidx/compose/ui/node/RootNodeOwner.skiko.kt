@@ -28,18 +28,14 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
-import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillManager
-import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusOwnerImpl
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.PlatformFocusOwner
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.SkiaGraphicsContext
@@ -63,6 +59,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
+import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DefaultHapticFeedback
@@ -90,15 +87,12 @@ import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastAll
-import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
@@ -401,7 +395,12 @@ internal class RootNodeOwner(
 
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
-        val rootModifier = EmptySemanticsElement(rootSemanticsNode)
+        val rootModifier = if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
+                RulerProviderModifierElement(platformContext.windowInsets)
+            } else {
+                Modifier
+            }
+            .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
                 onExit = {
                     // if focusDirection is forward/backward,
@@ -435,8 +434,11 @@ internal class RootNodeOwner(
         override val accessibilityManager = DefaultAccessibilityManager()
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
         override val textToolbar get() = platformContext.textToolbar
-        override val autofillTree = AutofillTree()
-        override val autofill: Autofill?  get() = null
+        @Suppress("DEPRECATION")
+        override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
+        @Suppress("DEPRECATION")
+        override val autofill: androidx.compose.ui.autofill.Autofill?
+            get() = null
         // TODO https://youtrack.jetbrains.com/issue/CMP-1572
         override val autofillManager: AutofillManager? get() = null
         override val density get() = this@RootNodeOwner.density
@@ -808,7 +810,7 @@ internal class RootNodeOwner(
         }
 
         @ExperimentalComposeUiApi
-        override fun setAccessibilityEventBatchIntervalMillis(accessibilityInterval: Long) {
+        override fun setAccessibilityEventBatchIntervalMillis(intervalMillis: Long) {
         }
     }
 
