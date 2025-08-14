@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -537,10 +536,6 @@ private fun getLayoutDirection() =
         UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
-
-private class MotionDurationScaleImpl: MotionDurationScale {
-    override var scaleFactor by mutableStateOf(1f)
-}
 
 private class ComposeLayersHolder(
     private val useSeparateRenderThreadWhenPossible: Boolean,
