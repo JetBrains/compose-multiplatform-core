@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9928B7FF2D32CD78006277AD /* LauncherHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9928B7FE2D32CD75006277AD /* LauncherHost.swift */; };
+		9928B7FF2D32CD78006277AD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9928B7FE2D32CD75006277AD /* main.swift */; };
 		9928B8042D330AB6006277AD /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9928B8032D330AB6006277AD /* IOKit.framework */; };
 		9928B82C2D3422C1006277AD /* Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9928B82B2D3422C1006277AD /* Launcher.swift */; };
 		99AEE0582DCC020200AAC8AE /* Launcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9928B82B2D3422C1006277AD /* Launcher.swift */; };
@@ -48,7 +48,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		9928B7FE2D32CD75006277AD /* LauncherHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherHost.swift; sourceTree = "<group>"; };
+		9928B7FE2D32CD75006277AD /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9928B8032D330AB6006277AD /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.1.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		9928B82B2D3422C1006277AD /* Launcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Launcher.swift; sourceTree = "<group>"; };
 		997DFCE32B18D99E000B56B5 /* Launcher.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Launcher.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -131,7 +131,7 @@
 		997DFCFB2B18E5D3000B56B5 /* LauncherHost */ = {
 			isa = PBXGroup;
 			children = (
-				9928B7FE2D32CD75006277AD /* LauncherHost.swift */,
+				9928B7FE2D32CD75006277AD /* main.swift */,
 			);
 			path = LauncherHost;
 			sourceTree = "<group>";
@@ -293,7 +293,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9928B7FF2D32CD78006277AD /* LauncherHost.swift in Sources */,
+				9928B7FF2D32CD78006277AD /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,7 +376,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -436,7 +436,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
