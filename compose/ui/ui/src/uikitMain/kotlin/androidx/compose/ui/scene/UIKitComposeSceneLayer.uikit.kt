@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.Canvas
@@ -29,6 +30,8 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.LocalUIViewController
+import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
@@ -61,6 +64,7 @@ internal class UIKitComposeSceneLayer(
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
+    private val interfaceOrientationState: State<InterfaceOrientation>
 ) : ComposeSceneLayer {
 
     override var focusable: Boolean = focusedViewsList != null
@@ -92,7 +96,8 @@ internal class UIKitComposeSceneLayer(
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
-        backGestureDispatcher = backGestureDispatcher
+        backGestureDispatcher = backGestureDispatcher,
+        interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
     }
