@@ -47,8 +47,32 @@ public class CameraStateAdapter @Inject constructor() {
 
     @GuardedBy("lock") private var currentCameraStateError: CameraState.StateError? = null
 
+    @GuardedBy("lock") private var isRemoved = false
+
     init {
         postCameraState(CameraInternal.State.CLOSED)
+    }
+
+    /**
+     * Forces the state to CLOSED with a ERROR_CAMERA_REMOVED error.
+     *
+     * This is called when the camera is physically removed or becomes permanently unavailable,
+     * providing an immediate state update to clients.
+     */
+    public fun onRemoved() {
+        val error = CameraState.StateError.create(CameraState.ERROR_CAMERA_REMOVED)
+        synchronized(lock) {
+            if (isRemoved) return
+
+            Log.debug { "Camera is removed, forcing state to CLOSED." }
+            isRemoved = true
+            currentCameraInternalState = CameraInternal.State.CLOSED
+            currentCameraStateError = error
+            postCameraState(currentCameraInternalState, currentCameraStateError)
+
+            // Clear the graph reference as it's no longer valid.
+            currentGraph = null
+        }
     }
 
     public fun onGraphUpdated(cameraGraph: CameraGraph): Unit =
@@ -64,6 +88,12 @@ public class CameraStateAdapter @Inject constructor() {
 
     public fun onGraphStateUpdated(cameraGraph: CameraGraph, graphState: GraphState): Unit =
         synchronized(lock) {
+            // Ignore any events if the camera has been marked as removed.
+            if (isRemoved) {
+                Log.warn { "Ignoring graph state update $graphState on removed camera." }
+                return
+            }
+
             Log.debug { "$cameraGraph state updated to $graphState" }
             handleStateTransition(cameraGraph, graphState)
         }
@@ -95,7 +125,7 @@ public class CameraStateAdapter @Inject constructor() {
 
     private fun postCameraState(
         internalState: CameraInternal.State,
-        stateError: CameraState.StateError? = null
+        stateError: CameraState.StateError? = null,
     ) {
         cameraInternalState.postValue(internalState)
         cameraState.setOrPostValue(CameraState.create(internalState.toCameraState(), stateError))
@@ -108,7 +138,7 @@ public class CameraStateAdapter @Inject constructor() {
      */
     internal fun calculateNextState(
         currentState: CameraInternal.State,
-        graphState: GraphState
+        graphState: GraphState,
     ): CombinedCameraState? =
         when (currentState) {
             CameraInternal.State.CLOSED ->
@@ -124,18 +154,18 @@ public class CameraStateAdapter @Inject constructor() {
                         if (graphState.willAttemptRetry) {
                             CombinedCameraState(
                                 CameraInternal.State.OPENING,
-                                graphState.cameraError.toCameraStateError()
+                                graphState.cameraError.toCameraStateError(),
                             )
                         } else {
                             if (isRecoverableError(graphState.cameraError)) {
                                 CombinedCameraState(
                                     CameraInternal.State.PENDING_OPEN,
-                                    graphState.cameraError.toCameraStateError()
+                                    graphState.cameraError.toCameraStateError(),
                                 )
                             } else {
                                 CombinedCameraState(
                                     CameraInternal.State.CLOSING,
-                                    graphState.cameraError.toCameraStateError()
+                                    graphState.cameraError.toCameraStateError(),
                                 )
                             }
                         }
@@ -151,12 +181,12 @@ public class CameraStateAdapter @Inject constructor() {
                         if (isRecoverableError(graphState.cameraError)) {
                             CombinedCameraState(
                                 CameraInternal.State.PENDING_OPEN,
-                                graphState.cameraError.toCameraStateError()
+                                graphState.cameraError.toCameraStateError(),
                             )
                         } else {
                             CombinedCameraState(
                                 CameraInternal.State.CLOSED,
-                                graphState.cameraError.toCameraStateError()
+                                graphState.cameraError.toCameraStateError(),
                             )
                         }
                     else -> null
@@ -168,7 +198,7 @@ public class CameraStateAdapter @Inject constructor() {
                     is GraphStateError ->
                         CombinedCameraState(
                             CameraInternal.State.CLOSING,
-                            graphState.cameraError.toCameraStateError()
+                            graphState.cameraError.toCameraStateError(),
                         )
                     else -> null
                 }
@@ -180,12 +210,12 @@ public class CameraStateAdapter @Inject constructor() {
                         if (isRecoverableError(graphState.cameraError)) {
                             CombinedCameraState(
                                 CameraInternal.State.PENDING_OPEN,
-                                graphState.cameraError.toCameraStateError()
+                                graphState.cameraError.toCameraStateError(),
                             )
                         } else {
                             CombinedCameraState(
                                 CameraInternal.State.CLOSED,
-                                graphState.cameraError.toCameraStateError()
+                                graphState.cameraError.toCameraStateError(),
                             )
                         }
                     else -> null
@@ -195,7 +225,7 @@ public class CameraStateAdapter @Inject constructor() {
 
     internal data class CombinedCameraState(
         val state: CameraInternal.State,
-        val error: CameraState.StateError? = null
+        val error: CameraState.StateError? = null,
     )
 
     public companion object {

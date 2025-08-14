@@ -17,16 +17,18 @@
 package androidx.xr.compose.subspace
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.GroupEntity
 
 /**
  * A layout composable that arranges its children in a horizontal sequence. For arranging children
@@ -34,32 +36,74 @@ import androidx.xr.scenecore.ContentlessEntity
  *
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param alignment The default alignment for child elements within the row.
- * @param curveRadius The radial distance (in Dp) of the polar coordinate system of this row. It is
- *   a positive value. Setting this value to Dp.Infinity or a non-positive value will flatten the
- *   row. When a row is curved, its elements will be oriented so that they lie tangent to the curved
- *   row. A typical curved row has a curve radius of 825.dp.
- * @param name A string name to associated with the SpatialRow. This can be useful identifying the
- *   SpatialRow when debugging spatial applications.
  * @param content The composable content to be laid out horizontally in the row.
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialRow(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
-    curveRadius: Dp = Dp.Infinity,
-    name: String = defaultSpatialRowName(),
     content: @Composable @SubspaceComposable SpatialRowScope.() -> Unit,
 ) {
+    SpatialRow(modifier, alignment, Dp.Infinity, content)
+}
+
+/**
+ * A layout composable that arranges its children in a curved horizontal sequence.
+ *
+ * @param modifier Appearance modifiers to apply to this Composable.
+ * @param alignment The default alignment for child elements within the row.
+ * @param curveRadius Defines the curve of the row by specifying its radius in Dp. A larger radius
+ *   creates a gentler curve (less curvature), while a smaller positive radius results in a sharper
+ *   curve (more curvature). Using [Dp.Infinity] or a non-positive value (zero or negative) makes
+ *   the row straight. When curved, row items are angled to follow the curve's path. This value is
+ *   the radial distance in the polar coordinate system.
+ * @param content The composable content to be laid out horizontally in the row.
+ */
+@Composable
+@SubspaceComposable
+public fun SpatialCurvedRow(
+    modifier: SubspaceModifier = SubspaceModifier,
+    alignment: SpatialAlignment = SpatialAlignment.Center,
+    curveRadius: Dp = SpatialCurvedRowDefaults.curveRadius,
+    content: @Composable @SubspaceComposable SpatialRowScope.() -> Unit,
+) {
+    SpatialRow(modifier, alignment, curveRadius, content)
+}
+
+/**
+ * A layout composable that arranges its children in a horizontal sequence. For arranging children
+ * vertically, see [SpatialColumn].
+ *
+ * @param modifier Appearance modifiers to apply to this Composable.
+ * @param alignment The default alignment for child elements within the row.
+ * @param curveRadius Defines the curve of the row by specifying its radius in Dp. A larger radius
+ *   creates a gentler curve (less curvature), while a smaller positive radius results in a sharper
+ *   curve (more curvature). Using [Dp.Infinity] or a non-positive value (zero or negative) makes
+ *   the row straight. When curved, row items are angled to follow the curve's path. This value is
+ *   the radial distance in the polar coordinate system.
+ * @param content The composable content to be laid out horizontally in the row.
+ */
+@Composable
+@SubspaceComposable
+private fun SpatialRow(
+    modifier: SubspaceModifier,
+    alignment: SpatialAlignment,
+    curveRadius: Dp,
+    content: @Composable @SubspaceComposable SpatialRowScope.() -> Unit,
+) {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+
+    val coreGroupEntity = remember {
+        CoreGroupEntity(
+            GroupEntity.create(session, name = entityName("SpatialRow"), pose = Pose.Identity)
+        )
+    }
+
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialRowScopeInstance.content() },
-        coreEntity =
-            rememberCoreContentlessEntity {
-                ContentlessEntity.create(this, name = name, pose = Pose.Identity)
-            },
-        name = name,
+        coreEntity = coreGroupEntity,
         measurePolicy =
             RowColumnMeasurePolicy(
                 orientation = LayoutOrientation.Horizontal,
@@ -71,7 +115,6 @@ public fun SpatialRow(
 
 /** Scope for customizing the layout of children within a [SpatialRow]. */
 @LayoutScopeMarker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialRowScope {
     /**
      * Sizes the element's width proportionally to its [weight] relative to other weighted sibling
@@ -112,6 +155,12 @@ public interface SpatialRowScope {
     public fun SubspaceModifier.align(alignment: SpatialAlignment.Depth): SubspaceModifier
 }
 
+/** Contains the default values used by [SpatialCurvedRow]. */
+public object SpatialCurvedRowDefaults {
+    /** Default curve radius used by [SpatialCurvedRow]. */
+    public val curveRadius: Dp = 825.dp
+}
+
 internal object SpatialRowScopeInstance : SpatialRowScope {
     override fun SubspaceModifier.weight(weight: Float, fill: Boolean): SubspaceModifier {
         require(weight > 0.0) { "invalid weight $weight; must be greater than zero" }
@@ -130,10 +179,4 @@ internal object SpatialRowScopeInstance : SpatialRowScope {
     override fun SubspaceModifier.align(alignment: SpatialAlignment.Depth): SubspaceModifier {
         return this then RowColumnAlignElement(depthSpatialAlignment = alignment)
     }
-}
-
-private var spatialRowNamePart: Int = 0
-
-private fun defaultSpatialRowName(): String {
-    return "SpatialRow-${spatialRowNamePart++}"
 }

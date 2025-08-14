@@ -32,6 +32,6 @@ interface InsertOrUpsertFunctionBinderProvider {
     fun provide(
         declared: XType,
         params: List<ShortcutQueryParameter>,
-        forUpsert: Boolean
+        forUpsert: Boolean,
     ): InsertOrUpsertFunctionBinder
 }

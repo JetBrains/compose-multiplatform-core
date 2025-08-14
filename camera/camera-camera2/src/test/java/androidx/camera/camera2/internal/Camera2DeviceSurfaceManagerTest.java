@@ -16,7 +16,13 @@
 
 package androidx.camera.camera2.internal;
 
+import static androidx.testutils.AssertionsKt.assertThrows;
+
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,7 +35,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
-import android.os.Build;
+import android.os.Looper;
 import android.util.Size;
 import android.view.WindowManager;
 
@@ -42,7 +48,9 @@ import androidx.camera.core.CameraXConfig;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
+import androidx.camera.core.impl.CameraUpdateException;
 import androidx.camera.core.impl.ImageFormatConstants;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize;
 import androidx.camera.core.impl.SurfaceConfig.ConfigType;
@@ -61,12 +69,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
-import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowCameraCharacteristics;
 import org.robolectric.shadows.ShadowCameraManager;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -74,13 +85,15 @@ import java.util.concurrent.TimeoutException;
 /** Robolectric test for {@link Camera2DeviceSurfaceManager} class */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@LooperMode(LooperMode.Mode.INSTRUMENTATION_TEST)
 public final class Camera2DeviceSurfaceManagerTest {
     private static final String LEGACY_CAMERA_ID = "0";
     private static final String LIMITED_CAMERA_ID = "1";
     private static final String FULL_CAMERA_ID = "2";
     private static final String LEVEL3_CAMERA_ID = "3";
     private static final int DEFAULT_SENSOR_ORIENTATION = 90;
+    private static final StreamUseCase DEFAULT_STREAM_USE_CASE =
+            SurfaceConfig.DEFAULT_STREAM_USE_CASE;
     private final Size mDisplaySize = new Size(1280, 720);
     private final Size mAnalysisSize = new Size(640, 480);
     private final Size mPreviewSize = mDisplaySize;
@@ -117,7 +130,6 @@ public final class Camera2DeviceSurfaceManagerTest {
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private CameraDeviceSurfaceManager mSurfaceManager;
-    private UseCaseConfigFactory mUseCaseConfigFactory;
     private FakeCameraFactory mCameraFactory;
 
     @Before
@@ -139,6 +151,8 @@ public final class Camera2DeviceSurfaceManagerTest {
 
     @After
     public void tearDown() throws ExecutionException, InterruptedException, TimeoutException {
+        // Executes any pending tasks on the main looper, including LiveData observers.
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
         CameraXUtil.shutdown().get(10000, TimeUnit.MILLISECONDS);
     }
 
@@ -160,7 +174,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVAnalysisSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.VGA);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -170,7 +184,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVPreviewSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mPreviewSize);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mPreviewSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -180,7 +194,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVRecordSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mRecordSize);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mRecordSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, SurfaceConfig.ConfigSize.RECORD);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -190,7 +204,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVMaximumSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mMaximumSize);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mMaximumSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, ConfigSize.MAXIMUM);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -201,7 +215,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mAnalysisSize);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, ConfigSize.VGA);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -212,7 +226,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mPreviewSize);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mPreviewSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -223,7 +237,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mRecordSize);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mRecordSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.RECORD);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -234,10 +248,97 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mMaximumSize);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mMaximumSize, DEFAULT_STREAM_USE_CASE);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
+    }
+
+    @Test
+    public void onCamerasUpdated_removesCombinationForUnavailableCamera()
+            throws CameraUpdateException {
+        // Arrange: Initial state contains LEGACY_CAMERA_ID.
+        // Verify we can get a config for it.
+        SurfaceConfig initialConfig = mSurfaceManager.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
+        assertNotNull(initialConfig);
+
+        // Act: Update the list to no longer include the legacy camera.
+        List<String> newCameraIds = Arrays.asList(LIMITED_CAMERA_ID, FULL_CAMERA_ID);
+        mSurfaceManager.onCamerasUpdated(newCameraIds);
+
+        // Assert: Querying the removed camera now throws an exception, while others still work.
+        assertThrows(IllegalArgumentException.class, () ->
+                mSurfaceManager.transformSurfaceConfig(CameraMode.DEFAULT, LEGACY_CAMERA_ID,
+                        ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE));
+
+        SurfaceConfig configForRemainingCamera = mSurfaceManager.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                LIMITED_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
+        assertNotNull(configForRemainingCamera);
+    }
+
+    @Test
+    public void onCamerasUpdated_addsNewCombination() throws CameraUpdateException {
+        // Arrange: Add a new camera to the system that wasn't in the initial set.
+        // Verify it doesn't exist in the manager yet.
+        String newCameraId = "20";
+        assertThrows(IllegalArgumentException.class, () ->
+                mSurfaceManager.transformSurfaceConfig(CameraMode.DEFAULT, newCameraId,
+                        ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE));
+        addCamera(newCameraId, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+                null, CameraCharacteristics.LENS_FACING_BACK);
+
+        // Act: Update the surface manager with the new camera ID included.
+        List<String> newCameraIds = Arrays.asList(
+                LEGACY_CAMERA_ID, LIMITED_CAMERA_ID, FULL_CAMERA_ID, LEVEL3_CAMERA_ID, newCameraId
+        );
+        mSurfaceManager.onCamerasUpdated(newCameraIds);
+
+        // Assert: We can now get a valid configuration for the newly added camera.
+        SurfaceConfig newConfig = mSurfaceManager.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                newCameraId, ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
+        assertNotNull(newConfig);
+    }
+
+    @Test
+    public void onCamerasUpdated_throwsException_andAbortsTransaction() {
+        // Arrange: The manager is initialized with cameras "0", "1", "2", "3".
+        // Add a new "bad" camera that will cause an exception during processing.
+        String badCameraId = "bad-camera";
+        CameraManager cameraManager = (CameraManager) ApplicationProvider.getApplicationContext()
+                .getSystemService(Context.CAMERA_SERVICE);
+
+        // This will cause an exception
+        CameraCharacteristics badCharacteristic =
+                ShadowCameraCharacteristics.newCameraCharacteristics();
+        ((ShadowCameraManager) Shadow.extract(cameraManager))
+                .addCamera(badCameraId, badCharacteristic);
+
+        // Act & Assert: Attempt to update to a list containing the good and bad new cameras.
+        // This should throw a CameraUpdateException.
+        List<String> newCameraIds = Collections.singletonList(badCameraId);
+        try {
+            mSurfaceManager.onCamerasUpdated(newCameraIds);
+            // If this line is reached, the test should fail.
+            fail("Expected CameraUpdateException was not thrown.");
+        } catch (Exception e) {
+            // The correct exception was thrown. Test passes.
+            // We can also assert that the cause is what we expect.
+            assertThat(e).isInstanceOf(CameraUpdateException.class);
+        }
+
+        // Assert: The state should not have changed. The transaction must be fully aborted.
+        // 1. The 'bad' new camera should NOT have been added.
+        assertThrows(IllegalArgumentException.class, () ->
+                mSurfaceManager.transformSurfaceConfig(CameraMode.DEFAULT, badCameraId,
+                        ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE));
+
+        // 2. An original camera should still exist.
+        assertNotNull(mSurfaceManager.transformSurfaceConfig(CameraMode.DEFAULT, LIMITED_CAMERA_ID,
+                ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE));
     }
 
     private void setupCamera() {
@@ -310,8 +411,9 @@ public final class Camera2DeviceSurfaceManagerTest {
         } catch (ExecutionException | InterruptedException e) {
             throw new IllegalStateException("Unable to initialize CameraX for test.");
         }
+        // Executes any pending tasks on the main looper, including LiveData observers.
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
         mSurfaceManager = cameraX.getCameraDeviceSurfaceManager();
-        mUseCaseConfigFactory = cameraX.getDefaultConfigFactory();
     }
 
     private CameraXConfig createFakeAppConfig() {
@@ -329,13 +431,13 @@ public final class Camera2DeviceSurfaceManagerTest {
                 };
 
         // Create default configuration factory
-        UseCaseConfigFactory.Provider factoryProvider = context -> new Camera2UseCaseConfigFactory(
-                context);
+        UseCaseConfigFactory.Provider factoryProvider = Camera2UseCaseConfigFactory::new;
 
         CameraXConfig.Builder appConfigBuilder =
                 new CameraXConfig.Builder()
                         .setCameraFactoryProvider(
-                                (ignored0, ignored1, ignored2, ignored3) -> mCameraFactory)
+                                (ignored0, ignored1, ignored2,
+                                        ignored3, ignored4, ignored5) -> mCameraFactory)
                         .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
                         .setUseCaseConfigFactoryProvider(factoryProvider);
 

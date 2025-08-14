@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 import android.util.Range;
 
 import androidx.camera.core.impl.Config;
@@ -33,7 +32,6 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class Camera2ImplConfigTest {
     private static final int INVALID_TEMPLATE_TYPE = -1;
     private static final int INVALID_COLOR_CORRECTION_MODE = -1;

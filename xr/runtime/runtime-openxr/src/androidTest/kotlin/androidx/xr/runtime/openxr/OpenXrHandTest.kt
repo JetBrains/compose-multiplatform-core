@@ -16,23 +16,25 @@
 
 package androidx.xr.runtime.openxr
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.internal.HandJointType
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandJointType
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 // TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
-// supports a
-// lower SDK version.
+// supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -44,29 +46,34 @@ class OpenXrHandTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit private var openXrManager: OpenXrManager
-    lateinit private var underTest: OpenXrHand
+    private lateinit var openXrManager: OpenXrManager
+    private lateinit var underTest: OpenXrHand
 
     @Before
     fun setUp() {
         underTest = OpenXrHand(isLeftHand = true)
     }
 
+    @Ignore(
+        "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
+    )
     @Test
     fun update_updatesActiveStatus() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
-        check(!underTest.isActive)
+        check(underTest.trackingState != TrackingState.TRACKING)
 
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
-        // they
-        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        assertThat(underTest.isActive).isTrue()
+        // they come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        assertThat(underTest.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
+    @Ignore(
+        "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
+    )
     @Test
     fun update_updateHandJoints() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -75,13 +82,25 @@ class OpenXrHandTest {
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
-        // they
-        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        assertThat(underTest.handJoints).hasSize(1)
-        assertThat(underTest.handJoints[HandJointType.PALM]!!.rotation)
-            .isEqualTo(Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-        assertThat(underTest.handJoints[HandJointType.PALM]!!.translation)
-            .isEqualTo(Vector3(5.0f, 6.0f, 7.0f))
+        // they come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        val fetchedHandJoints = underTest.handJoints
+        assertThat(fetchedHandJoints.size).isEqualTo(HandJointType.entries.size)
+        for (jointType in HandJointType.entries) {
+            val jointTypeIndex = jointType.ordinal.toFloat()
+            assertThat(underTest.handJoints[jointType]!!.rotation)
+                .isEqualTo(
+                    Quaternion(
+                        jointTypeIndex + 0.1f,
+                        jointTypeIndex + 0.2f,
+                        jointTypeIndex + 0.3f,
+                        jointTypeIndex + 0.4f,
+                    )
+                )
+            assertThat(underTest.handJoints[jointType]!!.translation)
+                .isEqualTo(
+                    Vector3(jointTypeIndex + 0.5f, jointTypeIndex + 0.6f, jointTypeIndex + 0.7f)
+                )
+        }
     }
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
@@ -91,6 +110,7 @@ class OpenXrHandTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
+            openXrManager.configure(Config(handTracking = Config.HandTrackingMode.BOTH))
 
             testBody()
 

@@ -23,8 +23,7 @@ public class MyDao_Impl(
   init {
     this.__db = __db
     this.__insertAdapterOfMyEntity = object : EntityInsertAdapter<MyEntity>() {
-      protected override fun createQuery(): String =
-          "INSERT OR ABORT INTO `MyEntity` (`pk`,`data`) VALUES (?,?)"
+      protected override fun createQuery(): String = "INSERT OR ABORT INTO `MyEntity` (`pk`,`data`) VALUES (?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: MyEntity) {
         val _tmp: Long? = FooConverter.toLong(entity.pk)
@@ -43,8 +42,7 @@ public class MyDao_Impl(
     }
   }
 
-  public override fun addEntity(item: MyEntity): Unit = performBlocking(__db, false, true) {
-      _connection ->
+  public override fun addEntity(item: MyEntity): Unit = performBlocking(__db, false, true) { _connection ->
     __insertAdapterOfMyEntity.insert(_connection, item)
   }
 
@@ -75,7 +73,7 @@ public class MyDao_Impl(
           _tmpData = FooConverter.fromString(_tmp_1)
           _result = MyEntity(_tmpPk,_tmpData)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
         }
         _result
       } finally {

@@ -36,6 +36,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.StressTestRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -61,7 +62,7 @@ private const val DEFAULT_BACK_CAMERA_ID = "0"
 class SwitchCameraStressTest(
     private val configName: String,
     private val cameraXConfig: CameraXConfig,
-    private val extensionMode: Int
+    private val extensionMode: Int,
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -95,12 +96,12 @@ class SwitchCameraStressTest(
                     arrayOf(
                         CAMERA2_IMPLEMENTATION_OPTION,
                         Camera2Config.defaultConfig(),
-                        extensionMode
+                        extensionMode,
                     ),
                     arrayOf(
                         CAMERA_PIPE_IMPLEMENTATION_OPTION,
                         CameraPipeConfig.defaultConfig(),
-                        extensionMode
+                        extensionMode,
                     ),
                 )
             }
@@ -113,6 +114,7 @@ class SwitchCameraStressTest(
     fun setup() {
         assumeTrue(CameraUtil.deviceHasCamera())
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumePcsSupportedForImageCapture(context)
         ProcessCameraProvider.configureInstance(cameraXConfig)
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
@@ -124,12 +126,12 @@ class SwitchCameraStressTest(
         val isBackCameraSupported =
             extensionsManager.isExtensionAvailable(
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                extensionMode
+                extensionMode,
             )
         val isFrontCameraSupported =
             extensionsManager.isExtensionAvailable(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
-                extensionMode
+                extensionMode,
             )
 
         // Checks whether the extension mode can be supported first before launching the activity.
@@ -141,7 +143,7 @@ class SwitchCameraStressTest(
             startingExtensionMode =
                 CameraXExtensionsTestUtil.getFirstSupportedExtensionMode(
                     extensionsManager,
-                    DEFAULT_BACK_CAMERA_ID
+                    DEFAULT_BACK_CAMERA_ID,
                 )
         }
 

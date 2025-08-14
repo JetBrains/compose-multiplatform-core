@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -41,7 +40,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class BadgeScreenshotTest {
 
     @get:Rule val composeTestRule = createComposeRule()
@@ -54,7 +53,7 @@ class BadgeScreenshotTest {
             MaterialTheme(darkColors()) {
                 Box(
                     Modifier.size(56.dp).semantics(mergeDescendants = true) {}.testTag(TestTag),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     BadgedBox(badge = { Badge { Text("8") } }) { Icon(Icons.Filled.Favorite, null) }
                 }
@@ -101,7 +100,7 @@ class BadgeScreenshotTest {
                             }
                         },
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -128,7 +127,7 @@ class BadgeScreenshotTest {
                             }
                         },
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -145,7 +144,7 @@ class BadgeScreenshotTest {
                     text = { BadgedBox(badge = { Badge() }) { Text("TAB") } },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag)
+                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag),
                 )
             }
         }
@@ -166,7 +165,7 @@ class BadgeScreenshotTest {
                     },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag)
+                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag),
                 )
             }
         }
@@ -187,7 +186,7 @@ class BadgeScreenshotTest {
                     },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag)
+                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag),
                 )
             }
         }
@@ -209,7 +208,7 @@ class BadgeScreenshotTest {
                     text = { Text("TAB") },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag)
+                    modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(TestTag),
                 )
             }
         }

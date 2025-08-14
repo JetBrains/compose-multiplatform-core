@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -23,7 +24,9 @@ import java.time.Instant
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+@Config(minSdk = 28)
 @RunWith(AndroidJUnit4::class)
 class StepsRecordTest {
 
@@ -65,6 +68,7 @@ class StepsRecordTest {
         }
     }
 
+    @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun invalidSteps_tooFewCount_throws() {
         assertFailsWith<IllegalArgumentException> {

@@ -33,7 +33,7 @@ internal object FragmentUtils {
         filename: String = TEST_DOCUMENT_FILE,
         nextState: Lifecycle.State,
         orientation: Int,
-        onDocumentLoading: (() -> Unit)? = null
+        onDocumentLoading: (() -> Unit)? = null,
     ): FragmentScenario<T> {
         val context = InstrumentationRegistry.getInstrumentation().context
         val inputStream = context.assets.open(filename)
@@ -46,10 +46,10 @@ internal object FragmentUtils {
         // Load the document in the fragment
         scenario.onFragment { fragment ->
             // Increment pdf load idling resource to wait for background task to complete.
-            if (fragment is TestPdfViewerFragment) {
+            if (fragment is TestPdfViewerFragmentV1) {
                 fragment.pdfLoadingIdlingResource.increment()
                 fragment.documentUri = TestUtils.saveStream(inputStream, fragment.requireContext())
-            } else if (fragment is TestPdfViewerFragmentV2) {
+            } else if (fragment is TestPdfViewerFragment) {
                 fragment.pdfLoadingIdlingResource.increment()
                 fragment.documentUri = TestUtils.saveStream(inputStream, fragment.requireContext())
             }

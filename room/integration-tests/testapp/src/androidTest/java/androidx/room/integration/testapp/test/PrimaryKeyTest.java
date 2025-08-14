@@ -34,6 +34,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +51,11 @@ public class PrimaryKeyTest {
     public void setup() {
         mDatabase = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(),
                 PKeyTestDatabase.class).build();
+    }
+
+    @After
+    public void teardown() {
+        mDatabase.close();
     }
 
     @Test

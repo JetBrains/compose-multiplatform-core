@@ -21,7 +21,6 @@ import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
-import java.time.Instant.EPOCH
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 
@@ -34,18 +33,23 @@ class MetadataTestHelperTest {
     }
 
     @Test
-    fun populatedWithTestValues_allMetadataFieldsSet_copyValues() = runTest {
+    fun populatedWithTestValues_allMetadataFieldsSet_overridesValues() = runTest {
         val metadata =
-            Metadata.activelyRecorded(
-                clientRecordId = "clientId",
-                clientRecordVersion = 321,
-                device =
-                    Device(
-                        manufacturer = "some company",
-                        model = "best model",
-                        type = Device.TYPE_PHONE,
-                    )
-            )
+            Metadata.autoRecorded(
+                    clientRecordId = "clientId",
+                    clientRecordVersion = 321,
+                    device =
+                        Device(
+                            manufacturer = "some company",
+                            model = "best model",
+                            type = Device.TYPE_WATCH,
+                        ),
+                )
+                .populatedWithTestValues(
+                    id = "id_to_be_overwritten",
+                    dataOrigin = DataOrigin("package.to.be.overwritten"),
+                    lastModifiedTime = Instant.ofEpochMilli(654321),
+                )
         val updatedMetadata =
             metadata.populatedWithTestValues(
                 id = testId,
@@ -64,13 +68,15 @@ class MetadataTestHelperTest {
     }
 
     @Test
-    fun populatedWithTestValues_noMetadataFieldsSet_defaultValues() = runTest {
-        val metadata = Metadata.unknownRecordingMethod()
+    fun populatedWithTestValues_noMetadataFieldsSet_copiesExistingValues() = runTest {
+        val metadata =
+            Metadata.unknownRecordingMethod()
+                .populatedWithTestValues(testId, testDataOrigin, testLastModifiedTime)
         val updatedMetadata = metadata.populatedWithTestValues()
 
-        assertThat(updatedMetadata.id).isEqualTo("")
-        assertThat(updatedMetadata.dataOrigin).isEqualTo(DataOrigin(""))
-        assertThat(updatedMetadata.lastModifiedTime).isEqualTo(EPOCH)
+        assertThat(updatedMetadata.id).isEqualTo(metadata.id)
+        assertThat(updatedMetadata.dataOrigin).isEqualTo(metadata.dataOrigin)
+        assertThat(updatedMetadata.lastModifiedTime).isEqualTo(metadata.lastModifiedTime)
 
         assertThat(updatedMetadata.recordingMethod).isEqualTo(metadata.recordingMethod)
         assertThat(updatedMetadata.clientRecordId).isNull()

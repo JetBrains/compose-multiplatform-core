@@ -25,7 +25,7 @@ import androidx.sqlite.throwSQLiteException
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public actual class BundledSQLiteStatement(
     private val connectionPointer: Long,
-    private val statementPointer: Long
+    private val statementPointer: Long,
 ) : SQLiteStatement {
 
     @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
@@ -152,11 +152,11 @@ private external fun nativeGetLong(pointer: Long, index: Int): Long
 
 private external fun nativeGetText(pointer: Long, index: Int): String
 
-private external fun nativeGetColumnType(pointer: Long, index: Int): Int
-
 private external fun nativeGetColumnCount(pointer: Long): Int
 
 private external fun nativeGetColumnName(pointer: Long, index: Int): String
+
+private external fun nativeGetColumnType(pointer: Long, index: Int): Int
 
 private external fun nativeReset(pointer: Long)
 

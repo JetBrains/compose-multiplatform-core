@@ -67,13 +67,7 @@ public final class CameraValidator {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
                 && Api34Impl.getDeviceId(context) != Context.DEVICE_ID_DEFAULT) {
 
-            // Get the list of cameras available for this virtual device
             Set<CameraInternal> availableCameras = cameraRepository.getCameras();
-            if (availableCameras.isEmpty()) {
-                // No cameras found, throw an exception
-                throw new CameraIdListIncorrectException("No cameras available", 0, null);
-            }
-
             // Log details and skip validation since we have at least one camera
             Logger.d(TAG, "Virtual device with ID: " + Api34Impl.getDeviceId(context)
                     + " has " + availableCameras.size() + " cameras. Skipping validation.");
@@ -148,7 +142,7 @@ public final class CameraValidator {
     /** The exception for the b/167201193: incorrect camera id list. */
     public static class CameraIdListIncorrectException extends Exception {
 
-        private int mAvailableCameraCount;
+        private final int mAvailableCameraCount;
 
         public CameraIdListIncorrectException(@Nullable String message,
                 int availableCameraCount, @Nullable Throwable cause) {

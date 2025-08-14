@@ -96,9 +96,9 @@ class DataClassProcessorTest {
                     public class ${MY_DATA_CLASS.simpleNames.single()} extends foo.bar.x.BaseClass {
                         public String myProperty;
                     }
-                    """
+                    """,
                     ),
-                    Source.java("foo.bar.x.BaseClass", parent)
+                    Source.java("foo.bar.x.BaseClass", parent),
                 )
         ) { invocation ->
             val dataClass =
@@ -106,7 +106,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "myProperty" }, notNullValue())
@@ -214,7 +214,7 @@ class DataClassProcessorTest {
             assertThat(parent.property.name, `is`("myPoint"))
             assertThat(
                 parent.dataClass.typeName,
-                `is`(XClassName.get("foo.bar", "MyDataClass", "Point"))
+                `is`(XClassName.get("foo.bar", "MyDataClass", "Point")),
             )
         }
     }
@@ -268,7 +268,7 @@ class DataClassProcessorTest {
             assertThat(dataClass.properties.size, `is`(5))
             assertThat(
                 dataClass.properties.map { it.columnName },
-                `is`(listOf("id", "foox", "fooy2", "foobarlat", "foobarlng"))
+                `is`(listOf("id", "foox", "fooy2", "foobarlat", "foobarlng")),
             )
         }
     }
@@ -284,7 +284,7 @@ class DataClassProcessorTest {
                 public int x;
                 public int y;
             }
-            """
+            """,
             )
         val base =
             Source.java(
@@ -296,7 +296,7 @@ class DataClassProcessorTest {
                 @Embedded
                 public T genericProperty;
             }
-            """
+            """,
             )
         singleRunFullClass(
             """
@@ -306,12 +306,12 @@ class DataClassProcessorTest {
                 }
                 """,
             point,
-            base
+            base,
         ) { dataClass, _ ->
             assertThat(dataClass.properties.size, `is`(3))
             assertThat(
                 dataClass.properties.map { it.columnName }.toSet(),
-                `is`(setOf("x", "y", "normalProperty"))
+                `is`(setOf("x", "y", "normalProperty")),
             )
             val pointProperty =
                 dataClass.embeddedProperties.first { it.property.name == "genericProperty" }
@@ -403,7 +403,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<UserSummary> user;
                 """,
-            COMMON.USER_SUMMARY
+            COMMON.USER_SUMMARY,
         ) { _, _ ->
         }
     }
@@ -416,7 +416,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public User user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, _ ->
         }
     }
@@ -430,7 +430,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
@@ -448,7 +448,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<NotAnEntity> user;
                 """,
-            COMMON.NOT_AN_ENTITY
+            COMMON.NOT_AN_ENTITY,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.NOT_ENTITY_OR_VIEW)
@@ -479,14 +479,14 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "idk", entityColumn = "uid")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindParentEntityProperty(
                         "foo.bar.MyDataClass",
                         "idk",
-                        listOf("id")
+                        listOf("id"),
                     )
                 )
             }
@@ -501,14 +501,14 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "idk")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindEntityProperty(
                         "foo.bar.User",
                         "idk",
-                        listOf("uid", "name", "lastName", "age")
+                        listOf("uid", "name", "lastName", "age"),
                     )
                 )
             }
@@ -552,7 +552,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "foo", entityColumn = "uid")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, _ ->
             assertThat(dataClass.relations.first().parentProperty.columnName, `is`("foo"))
         }
@@ -572,7 +572,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid", entity = User.class)
                 public List<UserWithNested> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -587,7 +587,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, invocation ->
             // trigger assignment evaluation
             RelationCollector.createCollectors(invocation.context, dataClass.relations)
@@ -600,7 +600,7 @@ class DataClassProcessorTest {
                         parentAffinity = SQLTypeAffinity.TEXT,
                         childAffinity = SQLTypeAffinity.INTEGER,
                         parentColumn = "id",
-                        childColumn = "uid"
+                        childColumn = "uid",
                     )
                 )
             }
@@ -615,7 +615,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
             assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
@@ -632,14 +632,14 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid", projection={"i_dont_exist"})
                 public List<User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.relationBadProject(
                         "foo.bar.User",
                         listOf("i_dont_exist"),
-                        listOf("uid", "name", "lastName", "ageColumn")
+                        listOf("uid", "name", "lastName", "ageColumn"),
                     )
                 )
             }
@@ -656,7 +656,7 @@ class DataClassProcessorTest {
                 public void setUser(List<User> user){ this.user = user;}
                 public User getUser(){return null;}
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(CANNOT_FIND_GETTER_FOR_PROPERTY)
@@ -673,7 +673,7 @@ class DataClassProcessorTest {
                         entity = User.class)
                 public List<Integer> userIds;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, _ ->
             assertThat(dataClass.relations.size, `is`(1))
             val rel = dataClass.relations.first()
@@ -691,7 +691,7 @@ class DataClassProcessorTest {
                         entity = User.class)
                 public List<String> userNames;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, _ ->
             assertThat(dataClass.relations.size, `is`(1))
             val rel = dataClass.relations.first()
@@ -708,7 +708,7 @@ class DataClassProcessorTest {
                 @Relation(parentColumn = "id", entityColumn = "uid")
                 public List<? extends User> user;
                 """,
-            COMMON.USER
+            COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
             assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
@@ -747,7 +747,7 @@ class DataClassProcessorTest {
                 public int uid;
                 public int friendId;
             }
-            """
+            """,
             )
         singleRun(
             """
@@ -761,17 +761,17 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
             assertThat(dataClass.relations.first().junction, notNullValue())
             assertThat(
                 dataClass.relations.first().junction!!.parentProperty.columnName,
-                `is`("uid")
+                `is`("uid"),
             )
             assertThat(
                 dataClass.relations.first().junction!!.entityProperty.columnName,
-                `is`("friendId")
+                `is`("friendId"),
             )
             invocation.assertCompilationResult { hasNoWarnings() }
         }
@@ -792,7 +792,7 @@ class DataClassProcessorTest {
                 public int uid;
                 public int friendId;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -806,7 +806,7 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
         }
@@ -842,7 +842,7 @@ class DataClassProcessorTest {
                 public int uid;
                 public int friendId;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -853,7 +853,7 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
         }
@@ -874,7 +874,7 @@ class DataClassProcessorTest {
                 public int friendFrom;
                 public int uid;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -886,14 +886,14 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindJunctionParentProperty(
                         "foo.bar.UserFriendsXRef",
                         "id",
-                        listOf("friendFrom", "uid")
+                        listOf("friendFrom", "uid"),
                     )
                 )
             }
@@ -915,7 +915,7 @@ class DataClassProcessorTest {
                 public int friendA;
                 public int friendB;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -927,14 +927,14 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindJunctionEntityProperty(
                         "foo.bar.UserFriendsXRef",
                         "uid",
-                        listOf("friendA", "friendB")
+                        listOf("friendA", "friendB"),
                     )
                 )
             }
@@ -956,7 +956,7 @@ class DataClassProcessorTest {
                 public int friendA;
                 public int friendB;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -970,14 +970,14 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindJunctionParentProperty(
                         "foo.bar.UserFriendsXRef",
                         "bad_col",
-                        listOf("friendA", "friendB")
+                        listOf("friendA", "friendB"),
                     )
                 )
             }
@@ -999,7 +999,7 @@ class DataClassProcessorTest {
                 public int friendA;
                 public int friendB;
             }
-        """
+        """,
             )
         singleRun(
             """
@@ -1013,14 +1013,14 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     relationCannotFindJunctionEntityProperty(
                         "foo.bar.UserFriendsXRef",
                         "bad_col",
-                        listOf("friendA", "friendB")
+                        listOf("friendA", "friendB"),
                     )
                 )
             }
@@ -1042,7 +1042,7 @@ class DataClassProcessorTest {
                     public int uid;
                     public int friendId;
                 }
-            """
+            """,
             )
         singleRun(
             """
@@ -1053,7 +1053,7 @@ class DataClassProcessorTest {
                 public List<User> user;
                 """,
             COMMON.USER,
-            junctionEntity
+            junctionEntity,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasWarningCount(2)
@@ -1071,7 +1071,7 @@ class DataClassProcessorTest {
             $HEADER
             int id;
             $FOOTER
-            """
+            """,
             )
         runProcessorTest(sources = listOf(dataClass)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS)
@@ -1080,7 +1080,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.BIND_TO_STMT,
-                        null
+                        null,
                     )
                     .process()
             assertThat(dataClass1, notNullValue())
@@ -1089,7 +1089,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.BIND_TO_STMT,
-                        null
+                        null,
                     )
                     .process()
             assertThat(dataClass2, sameInstance(dataClass1))
@@ -1099,7 +1099,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        null
+                        null,
                     )
                     .process()
             assertThat(dataClass3, notNullValue())
@@ -1110,7 +1110,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.TWO_WAY,
-                        null
+                        null,
                     )
                     .process()
             assertThat(dataClass4, notNullValue())
@@ -1122,7 +1122,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.TWO_WAY,
-                        null
+                        null,
                     )
                     .process()
             assertThat(dataClass5, sameInstance(dataClass4))
@@ -1138,7 +1138,7 @@ class DataClassProcessorTest {
                     affinity = SQLTypeAffinity.TEXT,
                     columnName = "foo",
                     parent = null,
-                    indexed = false
+                    indexed = false,
                 )
             val fakeEmbedded = EmbeddedProperty(fakeProperty, "", null)
 
@@ -1147,7 +1147,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.TWO_WAY,
-                        fakeEmbedded
+                        fakeEmbedded,
                     )
                     .process()
             assertThat(dataClass6, notNullValue())
@@ -1160,7 +1160,7 @@ class DataClassProcessorTest {
                         invocation.context,
                         element,
                         PropertyProcessor.BindingScope.TWO_WAY,
-                        fakeEmbedded
+                        fakeEmbedded,
                     )
                     .process()
             assertThat(dataClass7, sameInstance(dataClass6))
@@ -1194,7 +1194,7 @@ class DataClassProcessorTest {
             assertThat((param as Constructor.Param.PropertyParam).property.name, `is`("mName"))
             assertThat(
                 dataClass.properties.find { it.name == "mName" }?.setter?.callType,
-                `is`(CallType.CONSTRUCTOR)
+                `is`(CallType.CONSTRUCTOR),
             )
         }
     }
@@ -1214,7 +1214,7 @@ class DataClassProcessorTest {
             assertThat((param as Constructor.Param.PropertyParam).property.name, `is`("mName"))
             assertThat(
                 dataClass.properties.find { it.name == "mName" }?.setter?.callType,
-                `is`(CallType.CONSTRUCTOR)
+                `is`(CallType.CONSTRUCTOR),
             )
         }
     }
@@ -1234,7 +1234,7 @@ class DataClassProcessorTest {
                     ProcessorErrors.ambiguousConstructor(
                         MY_DATA_CLASS.canonicalName,
                         "name",
-                        listOf("mName", "_name")
+                        listOf("mName", "_name"),
                     )
                 )
             }
@@ -1323,11 +1323,11 @@ class DataClassProcessorTest {
             assertThat(dataClass.constructor?.params?.size, `is`(2))
             assertThat(
                 dataClass.properties.find { it.name == "mName" }?.setter?.callType,
-                `is`(CallType.CONSTRUCTOR)
+                `is`(CallType.CONSTRUCTOR),
             )
             assertThat(
                 dataClass.properties.find { it.name == "mLastName" }?.setter?.callType,
-                `is`(CallType.CONSTRUCTOR)
+                `is`(CallType.CONSTRUCTOR),
             )
         }
     }
@@ -1345,7 +1345,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.BIND_TO_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(process2.constructor, nullValue())
@@ -1365,7 +1365,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.TWO_WAY,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(process2.constructor, notNullValue())
@@ -1418,7 +1418,7 @@ class DataClassProcessorTest {
             public MyDataClass(String uid, List<String> items) {
             }
             """,
-            COMMON.USER
+            COMMON.USER,
         ) { _, _ ->
         }
     }
@@ -1730,7 +1730,7 @@ class DataClassProcessorTest {
                 "foo.bar.TestData.AllDefaultVars",
                 "foo.bar.TestData.SomeDefaultVals",
                 "foo.bar.TestData.SomeDefaultVars",
-                "foo.bar.TestData.WithJvmOverloads"
+                "foo.bar.TestData.WithJvmOverloads",
             )
             .forEach {
                 runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
@@ -1738,7 +1738,7 @@ class DataClassProcessorTest {
                             context = invocation.context,
                             element = invocation.processingEnv.requireTypeElement(it),
                             bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                            parent = null
+                            parent = null,
                         )
                         .process()
                     invocation.assertCompilationResult { hasNoWarnings() }
@@ -1756,7 +1756,7 @@ class DataClassProcessorTest {
                             "foo.bar.TestData.WithJvmOverloads"
                         ),
                     bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -1776,7 +1776,7 @@ class DataClassProcessorTest {
                 public String foo;
                 public String bar;
             }
-            """
+            """,
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val dataClass =
@@ -1784,7 +1784,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "foo" }, notNullValue())
@@ -1814,7 +1814,7 @@ class DataClassProcessorTest {
                           return this.foo;
                         }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1823,7 +1823,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "foo" }, notNullValue())
@@ -1851,7 +1851,7 @@ class DataClassProcessorTest {
                           this.foo = foo;
                         }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1860,7 +1860,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "foo" }, notNullValue())
@@ -1883,7 +1883,7 @@ class DataClassProcessorTest {
                         @ColumnInfo(name = "my_bar")
                         public String bar;
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1892,7 +1892,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "foo" }, notNullValue())
@@ -1914,7 +1914,7 @@ class DataClassProcessorTest {
                         public String foo;
                         public String bar;
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1923,7 +1923,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             assertThat(dataClass.properties.find { it.name == "foo" }, notNullValue())
@@ -1949,7 +1949,7 @@ class DataClassProcessorTest {
                         public String getFoo() { return foo; }
                         public String getBar() { return bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1957,7 +1957,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.BIND_TO_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
         }
@@ -1978,7 +1978,7 @@ class DataClassProcessorTest {
                         public String getFoo() { return foo; }
                         public String getBar() { return bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -1986,7 +1986,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.TWO_WAY,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -2010,7 +2010,7 @@ class DataClassProcessorTest {
                         public String getFoo() { return foo; }
                         public String getBar() { return bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -2018,7 +2018,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -2042,7 +2042,7 @@ class DataClassProcessorTest {
                         public void setFoo(String foo) { this.foo = foo; }
                         public void setBar(String bar) { this.bar = bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -2050,7 +2050,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.BIND_TO_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -2074,7 +2074,7 @@ class DataClassProcessorTest {
                         public void setFoo(String foo) { this.foo = foo; }
                         public void setBar(String bar) { this.bar = bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -2082,7 +2082,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.TWO_WAY,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -2106,7 +2106,7 @@ class DataClassProcessorTest {
                         public void setFoo(String foo) { this.foo = foo; }
                         public void setBar(String bar) { this.bar = bar; }
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -2114,7 +2114,7 @@ class DataClassProcessorTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
         }
@@ -2133,7 +2133,7 @@ class DataClassProcessorTest {
                     ) {
                         var isbn2: String? = null
                     }
-                    """
+                    """,
                 )
             )
         ) { invocation ->
@@ -2142,7 +2142,7 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement("foo.bar.Book"),
                         bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                        parent = null
+                        parent = null,
                     )
                     .process()
             val fields = result.properties.associateBy { it.name }
@@ -2153,7 +2153,7 @@ class DataClassProcessorTest {
                         propertyName = "isbn",
                         jvmName = if (invocation.isKsp2) "isbn" else "getIsbn",
                         type = stringType,
-                        callType = CallType.SYNTHETIC_FUNCTION
+                        callType = CallType.SYNTHETIC_FUNCTION,
                     )
                 )
             assertThat(fields["isbn"]?.setter)
@@ -2162,7 +2162,7 @@ class DataClassProcessorTest {
                         propertyName = "isbn",
                         jvmName = "isbn",
                         type = stringType,
-                        callType = CallType.CONSTRUCTOR
+                        callType = CallType.CONSTRUCTOR,
                     )
                 )
 
@@ -2172,7 +2172,7 @@ class DataClassProcessorTest {
                         propertyName = "isbn2",
                         jvmName = if (invocation.isKsp2) "isbn2" else "getIsbn2",
                         type = stringType.makeNullable(),
-                        callType = CallType.SYNTHETIC_FUNCTION
+                        callType = CallType.SYNTHETIC_FUNCTION,
                     )
                 )
             assertThat(fields["isbn2"]?.setter)
@@ -2181,7 +2181,7 @@ class DataClassProcessorTest {
                         propertyName = "isbn2",
                         jvmName = if (invocation.isKsp2) "setbn2" else "setIsbn2",
                         type = stringType.makeNullable(),
-                        callType = CallType.SYNTHETIC_FUNCTION
+                        callType = CallType.SYNTHETIC_FUNCTION,
                     )
                 )
         }
@@ -2196,7 +2196,7 @@ class DataClassProcessorTest {
                             context = invocation.context,
                             element = invocation.processingEnv.requireTypeElement(it),
                             bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                            parent = null
+                            parent = null,
                         )
                         .process()
 
@@ -2213,7 +2213,7 @@ class DataClassProcessorTest {
         code: String,
         vararg sources: Source,
         classpath: List<File> = emptyList(),
-        handler: (DataClass, XTestInvocation) -> Unit
+        handler: (DataClass, XTestInvocation) -> Unit,
     ) {
         val dataClassCode =
             """
@@ -2226,7 +2226,7 @@ class DataClassProcessorTest {
             code = dataClassCode,
             sources = sources,
             classpath = classpath,
-            handler = handler
+            handler = handler,
         )
     }
 
@@ -2234,7 +2234,7 @@ class DataClassProcessorTest {
         code: String,
         vararg sources: Source,
         classpath: List<File> = emptyList(),
-        handler: (DataClass, XTestInvocation) -> Unit
+        handler: (DataClass, XTestInvocation) -> Unit,
     ) {
         val dataClassSource = Source.java(MY_DATA_CLASS.canonicalName, code)
         val all = sources.toList() + dataClassSource
@@ -2244,10 +2244,10 @@ class DataClassProcessorTest {
                         context = invocation.context,
                         element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                         bindingScope = PropertyProcessor.BindingScope.TWO_WAY,
-                        parent = null
+                        parent = null,
                     )
                     .process(),
-                invocation
+                invocation,
             )
         }
     }
@@ -2297,6 +2297,6 @@ class DataClassProcessorTest {
                 @Embedded(prefix = "nullable_") val nullableVal: AllNullableVals?
             )
         }
-        """
+        """,
         )
 }

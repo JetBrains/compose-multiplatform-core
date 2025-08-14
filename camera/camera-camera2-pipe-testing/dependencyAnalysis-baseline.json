@@ -4,11 +4,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "api"
     },
     {
       "coordinates": {
@@ -16,7 +15,7 @@
         "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "toConfiguration": "api"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

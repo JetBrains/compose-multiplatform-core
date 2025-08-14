@@ -17,7 +17,6 @@
 package androidx.camera.video.internal.encoder
 
 import android.media.MediaCodec
-import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -25,12 +24,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class BufferCopiedEncodedDataTest(
     private val sourceOffset: Int,
     private val sourceSize: Int,

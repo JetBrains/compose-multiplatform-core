@@ -47,6 +47,7 @@ import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingPolicy
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -56,11 +57,15 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.math.roundToInt
+import kotlin.test.assertFailsWith
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Before
@@ -267,6 +272,32 @@ class ComposeUiTestTest {
             var i = 0
             CoroutineScope(coroutineContext).launch { i = 10 }
             assertThat(i).isEqualTo(10)
+        }
+
+    @Test
+    fun timeoutInAndroidComposeUiTestEnvironment() =
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+            val testEnvironment =
+                AndroidComposeUiTestEnvironment<ComponentActivity>(testTimeout = 1.milliseconds) {
+                    scenario.getActivity()
+                }
+
+            assertFailsWith(AndroidComposeUiTestTimeoutException::class) {
+                testEnvironment.runTest { withContext(Dispatchers.Default) { delay(100) } }
+            }
+            Unit
+        }
+
+    @Test
+    fun assertsInAndroidComposeUiTestEnvironment() =
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+            val testEnvironment =
+                AndroidComposeUiTestEnvironment<ComponentActivity> { scenario.getActivity() }
+
+            assertFailsWith(AssertionError::class) {
+                testEnvironment.runTest { assertThat(1.0).isEqualTo(2) }
+            }
+            Unit
         }
 
     class MyCustomElement(val value: String) : AbstractCoroutineContextElement(MyCustomElement) {

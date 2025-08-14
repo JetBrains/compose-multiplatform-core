@@ -37,7 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class SynchronizedCaptureSessionStateCallbackTest {
     private CameraCaptureSession.StateCallback mMockCameraCaptureSessionStateCallback;
     private SynchronizedCaptureSession.StateCallback mMockStateCallback;

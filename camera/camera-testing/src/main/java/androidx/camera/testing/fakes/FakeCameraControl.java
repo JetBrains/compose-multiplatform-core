@@ -20,11 +20,9 @@ import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_CANCELLED;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_FAILED;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_SUCCESSFUL;
-import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.MAX_OUTPUT_SIZE;
 
 import static java.util.Objects.requireNonNull;
 
-import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
@@ -52,7 +50,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.testing.imagecapture.CaptureResult;
 import androidx.camera.testing.impl.FakeCameraCapturePipeline;
-import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
 import androidx.core.util.Pair;
@@ -447,15 +444,6 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public @NonNull SessionConfig getSessionConfig() {
         return mSessionConfigBuilder.build();
-    }
-
-    /**
-     * Returns a {@link Rect} corresponding to
-     * {@link FakeCameraDeviceSurfaceManager#MAX_OUTPUT_SIZE}.
-     */
-    @Override
-    public @NonNull Rect getSensorRect() {
-        return new Rect(0, 0, MAX_OUTPUT_SIZE.getWidth(), MAX_OUTPUT_SIZE.getHeight());
     }
 
     /**

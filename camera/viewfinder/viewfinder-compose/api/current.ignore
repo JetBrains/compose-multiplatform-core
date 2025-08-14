@@ -1,0 +1,11 @@
+// Baseline format: 1.0
+AddedMethod: androidx.camera.viewfinder.compose.CoordinateTransformer#transform(androidx.compose.ui.geometry.Offset):
+    Added method androidx.camera.viewfinder.compose.CoordinateTransformer.transform(androidx.compose.ui.geometry.Offset)
+AddedMethod: androidx.camera.viewfinder.compose.CoordinateTransformerKt#MutableCoordinateTransformer(androidx.compose.ui.graphics.Matrix):
+    Added method androidx.camera.viewfinder.compose.CoordinateTransformerKt.MutableCoordinateTransformer(androidx.compose.ui.graphics.Matrix)
+
+
+RemovedMethod: androidx.camera.viewfinder.compose.CoordinateTransformer#transform(long):
+    Binary breaking change: Removed method androidx.camera.viewfinder.compose.CoordinateTransformer.transform(long)
+RemovedMethod: androidx.camera.viewfinder.compose.CoordinateTransformerKt#MutableCoordinateTransformer(float[]):
+    Binary breaking change: Removed method androidx.camera.viewfinder.compose.CoordinateTransformerKt.MutableCoordinateTransformer(float[])

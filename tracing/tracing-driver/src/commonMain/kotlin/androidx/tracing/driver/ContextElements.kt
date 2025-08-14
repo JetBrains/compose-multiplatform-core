@@ -21,9 +21,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
 /** An [AbstractCoroutineContextElement] that can hold to the [List] of current `flowId`s.. */
-internal class FlowContextElement(internal val flowIds: List<Long>) :
+@PublishedApi
+internal class FlowContextElement(@PublishedApi internal val flowId: Long) :
     AbstractCoroutineContextElement(KEY) {
-
     internal companion object {
         internal val KEY: CoroutineContext.Key<FlowContextElement> =
             object : CoroutineContext.Key<FlowContextElement> {}
@@ -31,6 +31,7 @@ internal class FlowContextElement(internal val flowIds: List<Long>) :
 }
 
 /** Useful in the context of structured concurrency to keep track of flows. */
+@PublishedApi
 internal suspend fun obtainFlowContext(): FlowContextElement? {
     return coroutineContext[FlowContextElement.KEY]
 }

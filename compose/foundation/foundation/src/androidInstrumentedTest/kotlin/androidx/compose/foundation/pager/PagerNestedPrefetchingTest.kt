@@ -52,10 +52,7 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun initParameters(): Array<Any> =
-            arrayOf(
-                ParamConfig(Orientation.Vertical),
-                ParamConfig(Orientation.Horizontal),
-            )
+            arrayOf(ParamConfig(Orientation.Vertical), ParamConfig(Orientation.Horizontal))
     }
 
     sealed interface Action {
@@ -66,7 +63,6 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
 
     private val pageSizePx = 30
     private val oageSizeDp = with(rule.density) { pageSizePx.toDp() }
-    private val activeNodes = mutableSetOf<String>()
     private val scheduler = TestPrefetchScheduler()
 
     @Test
@@ -191,7 +187,7 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
 
     private fun composeListOfPagers(
         lazyListState: LazyListState,
-        createNestedPagerState: (index: Int) -> PagerState = { PagerState { 10 } }
+        createNestedPagerState: (index: Int) -> PagerState = { PagerState { 10 } },
     ) {
         rule.setContent {
             LazyList(
@@ -206,7 +202,7 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(100) { index ->
                     TrackActiveNodesEffect(index)
@@ -217,7 +213,7 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
                                 .testTag(tagFor(index))
                                 .trackWhenMeasured(index),
                         state = nestedState,
-                        pageSize = PageSize.Fixed(oageSizeDp)
+                        pageSize = PageSize.Fixed(oageSizeDp),
                     ) { page ->
                         TrackActiveNodesEffect(index, page)
                         Spacer(

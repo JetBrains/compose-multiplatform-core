@@ -18,7 +18,7 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
+import android.util.Range
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Request
@@ -54,11 +54,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class UseCaseCameraRequestControlTest {
     private val surface = FakeSurface()
@@ -81,7 +79,6 @@ class UseCaseCameraRequestControlTest {
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,
             threads = useCaseThreads,
-            sessionProcessorManager = null,
             templateParamsOverride = NoOpTemplateParamsOverride,
         )
     private val requestControl =
@@ -109,7 +106,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -118,7 +115,7 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.FLASH_MODE,
-                    CaptureRequest.FLASH_MODE_SINGLE
+                    CaptureRequest.FLASH_MODE_SINGLE,
                 )
                 .build()
 
@@ -132,7 +129,7 @@ class UseCaseCameraRequestControlTest {
         requestControl
             .setConfigAsync(
                 type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig
+                config = camera2CameraControlConfig,
             )
             .await()
 
@@ -173,7 +170,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -182,14 +179,14 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                    CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                 )
                 .build()
 
         // Act
         requestControl.setConfigAsync(
             type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-            config = camera2CameraControlConfig
+            config = camera2CameraControlConfig,
         )
         requestControl.setParametersAsync(
             values = mapOf(CaptureRequest.CONTROL_AE_MODE to CaptureRequest.CONTROL_AE_MODE_OFF)
@@ -227,10 +224,10 @@ class UseCaseCameraRequestControlTest {
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
                         CaptureRequest.CONTROL_AE_MODE,
-                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                     )
                     .build(),
-            tags = mapOf(testCamera2InteropTagKey to testCamera2InteropTagValue)
+            tags = mapOf(testCamera2InteropTagKey to testCamera2InteropTagValue),
         )
         requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
 
@@ -252,7 +249,7 @@ class UseCaseCameraRequestControlTest {
 
                 override fun onCaptureCompleted(
                     captureConfigId: Int,
-                    cameraCaptureResult: CameraCaptureResult
+                    cameraCaptureResult: CameraCaptureResult,
                 ) {
                     latch.countDown()
                 }
@@ -271,10 +268,10 @@ class UseCaseCameraRequestControlTest {
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
                         CaptureRequest.CONTROL_AE_MODE,
-                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                     )
                     .build(),
-            listeners = setOf(testRequestListener)
+            listeners = setOf(testRequestListener),
         )
         requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
 
@@ -318,7 +315,7 @@ class UseCaseCameraRequestControlTest {
                     Camera2ImplConfig.Builder()
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                         .build()
                 )
@@ -327,7 +324,7 @@ class UseCaseCameraRequestControlTest {
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.FLASH_MODE,
-                    CaptureRequest.FLASH_MODE_SINGLE
+                    CaptureRequest.FLASH_MODE_SINGLE,
                 )
                 .build()
 
@@ -341,7 +338,7 @@ class UseCaseCameraRequestControlTest {
         requestControl
             .setConfigAsync(
                 type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig
+                config = camera2CameraControlConfig,
             )
             .await()
 
@@ -350,6 +347,26 @@ class UseCaseCameraRequestControlTest {
         val lastRequest = fakeCameraGraph.fakeCameraGraphSession.repeatingRequests.removeLastKt()
         assertThat(lastRequest.template!!.value)
             .isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_RECORD).value)
+    }
+
+    @Test
+    fun sessionConfigExpectedFrameRateRangeShouldSetToRequest(): Unit = runBlocking {
+        // Arrange
+        val expectedFrameRateRange = Range(60, 60)
+
+        val sessionConfigBuilder =
+            SessionConfig.Builder().also { sessionConfigBuilder ->
+                sessionConfigBuilder.setExpectedFrameRateRange(expectedFrameRateRange)
+                sessionConfigBuilder.addSurface(surface)
+            }
+
+        // Act
+        requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
+
+        // Assert.
+        val lastRequest = fakeCameraGraph.fakeCameraGraphSession.repeatingRequests.last()
+        assertThat(lastRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE])
+            .isEqualTo(expectedFrameRateRange)
     }
 
     private fun UseCaseCameraRequestControl.setSessionConfigAsync(
@@ -363,14 +380,15 @@ class UseCaseCameraRequestControlTest {
                 setOf(
                     CameraCallbackMap.createFor(
                         sessionConfig.repeatingCameraCaptureCallbacks,
-                        useCaseThreads.backgroundExecutor
+                        useCaseThreads.backgroundExecutor,
                     )
                 ),
             template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
             streams =
                 fakeUseCaseGraphConfig.getStreamIdsFromSurfaces(
                     sessionConfig.repeatingCaptureConfig.surfaces
-                )
+                ),
+            sessionConfig = sessionConfig,
         )
 }
 
@@ -380,7 +398,7 @@ private class TestRequestListener : Request.Listener {
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         latch.countDown()
     }

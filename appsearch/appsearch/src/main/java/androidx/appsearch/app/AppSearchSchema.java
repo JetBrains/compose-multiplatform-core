@@ -1691,6 +1691,9 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          * Returns the list of indexable nested properties for the nested document.
          */
         @FlaggedApi(Flags.FLAG_ENABLE_GET_PARENT_TYPES_AND_INDEXABLE_NESTED_PROPERTIES)
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES)
         public @NonNull List<String> getIndexableNestedProperties() {
             DocumentIndexingConfigParcel indexingConfigParcel =
                     mPropertyConfigParcel.getDocumentIndexingConfigParcel();

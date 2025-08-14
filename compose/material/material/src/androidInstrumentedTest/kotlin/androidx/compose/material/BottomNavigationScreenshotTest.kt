@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterialApi::class)
 class BottomNavigationScreenshotTest {
 
@@ -72,7 +71,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "bottomNavigation_lightTheme_defaultColors"
+            goldenIdentifier = "bottomNavigation_lightTheme_defaultColors",
         )
     }
 
@@ -94,7 +93,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "bottomNavigation_lightTheme_defaultColors_pressed"
+            goldenIdentifier = "bottomNavigation_lightTheme_defaultColors_pressed",
         )
     }
 
@@ -111,7 +110,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.surface,
                     selectedContentColor = MaterialTheme.colors.primary,
-                    unselectedContentColor = MaterialTheme.colors.onSurface
+                    unselectedContentColor = MaterialTheme.colors.onSurface,
                 )
             }
         }
@@ -120,7 +119,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "bottomNavigation_lightTheme_surfaceColors"
+            goldenIdentifier = "bottomNavigation_lightTheme_surfaceColors",
         )
     }
 
@@ -138,7 +137,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.surface,
                     selectedContentColor = MaterialTheme.colors.primary,
-                    unselectedContentColor = MaterialTheme.colors.onSurface
+                    unselectedContentColor = MaterialTheme.colors.onSurface,
                 )
             }
         }
@@ -147,7 +146,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "bottomNavigation_lightTheme_surfaceColors_pressed"
+            goldenIdentifier = "bottomNavigation_lightTheme_surfaceColors_pressed",
         )
     }
 
@@ -168,7 +167,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "bottomNavigation_darkTheme_defaultColors"
+            goldenIdentifier = "bottomNavigation_darkTheme_defaultColors",
         )
     }
 
@@ -190,7 +189,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "bottomNavigation_darkTheme_defaultColors_pressed"
+            goldenIdentifier = "bottomNavigation_darkTheme_defaultColors_pressed",
         )
     }
 
@@ -210,7 +209,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.surface,
                     selectedContentColor = MaterialTheme.colors.primary,
-                    unselectedContentColor = MaterialTheme.colors.onSurface
+                    unselectedContentColor = MaterialTheme.colors.onSurface,
                 )
             }
         }
@@ -219,7 +218,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "bottomNavigation_darkTheme_surfaceColors"
+            goldenIdentifier = "bottomNavigation_darkTheme_surfaceColors",
         )
     }
 
@@ -237,7 +236,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.surface,
                     selectedContentColor = MaterialTheme.colors.primary,
-                    unselectedContentColor = MaterialTheme.colors.onSurface
+                    unselectedContentColor = MaterialTheme.colors.onSurface,
                 )
             }
         }
@@ -246,7 +245,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "bottomNavigation_darkTheme_surfaceColors_pressed"
+            goldenIdentifier = "bottomNavigation_darkTheme_surfaceColors_pressed",
         )
     }
 
@@ -263,7 +262,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.primary,
                     selectedContentColor = MaterialTheme.colors.onPrimary,
-                    unselectedContentColor = MaterialTheme.colors.onPrimary
+                    unselectedContentColor = MaterialTheme.colors.onPrimary,
                 )
             }
         }
@@ -272,7 +271,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "bottomNavigation_darkTheme_primaryColors"
+            goldenIdentifier = "bottomNavigation_darkTheme_primaryColors",
         )
     }
 
@@ -290,7 +289,7 @@ class BottomNavigationScreenshotTest {
                     interactionSource,
                     backgroundColor = MaterialTheme.colors.primary,
                     selectedContentColor = MaterialTheme.colors.onPrimary,
-                    unselectedContentColor = MaterialTheme.colors.onPrimary
+                    unselectedContentColor = MaterialTheme.colors.onPrimary,
                 )
             }
         }
@@ -299,7 +298,7 @@ class BottomNavigationScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "bottomNavigation_darkTheme_primaryColors_pressed"
+            goldenIdentifier = "bottomNavigation_darkTheme_primaryColors_pressed",
         )
     }
 
@@ -316,7 +315,7 @@ class BottomNavigationScreenshotTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -354,17 +353,17 @@ private fun DefaultBottomNavigation(interactionSource: MutableInteractionSource)
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = true,
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             BottomNavigationItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
-                onClick = {}
+                onClick = {},
             )
             BottomNavigationItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
-                onClick = {}
+                onClick = {},
             )
         }
     }
@@ -386,7 +385,7 @@ private fun CustomBottomNavigation(
     interactionSource: MutableInteractionSource,
     backgroundColor: Color,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     // Apply default emphasis
     @Suppress("NAME_SHADOWING")
@@ -399,21 +398,21 @@ private fun CustomBottomNavigation(
                 onClick = {},
                 interactionSource = interactionSource,
                 selectedContentColor = selectedContentColor,
-                unselectedContentColor = unselectedContentColor
+                unselectedContentColor = unselectedContentColor,
             )
             BottomNavigationItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
                 onClick = {},
                 selectedContentColor = selectedContentColor,
-                unselectedContentColor = unselectedContentColor
+                unselectedContentColor = unselectedContentColor,
             )
             BottomNavigationItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
                 onClick = {},
                 selectedContentColor = selectedContentColor,
-                unselectedContentColor = unselectedContentColor
+                unselectedContentColor = unselectedContentColor,
             )
         }
     }

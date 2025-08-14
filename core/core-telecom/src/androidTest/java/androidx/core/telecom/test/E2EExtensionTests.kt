@@ -92,8 +92,8 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 actions =
                     setOf(
                         ParticipantExtensionImpl.RAISE_HAND_ACTION,
-                        ParticipantExtensionImpl.KICK_PARTICIPANT_ACTION
-                    )
+                        ParticipantExtensionImpl.KICK_PARTICIPANT_ACTION,
+                    ),
             )
 
         /** Provide all the combinations of parameters that should be tested for each run */
@@ -106,7 +106,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     TestParameters(SERVICE_SOURCE_V2, CallAttributesCompat.DIRECTION_OUTGOING),
                     // Bkwds compat tests with incoming/outgoing calls
                     TestParameters(SERVICE_SOURCE_CONNSRV, CallAttributesCompat.DIRECTION_INCOMING),
-                    TestParameters(SERVICE_SOURCE_CONNSRV, CallAttributesCompat.DIRECTION_OUTGOING)
+                    TestParameters(SERVICE_SOURCE_CONNSRV, CallAttributesCompat.DIRECTION_OUTGOING),
                 )
                 .toList()
         }
@@ -126,7 +126,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         val extension =
             scope.addParticipantExtension(
                 onActiveParticipantChanged = activeParticipantState::emit,
-                onParticipantsUpdated = participantState::emit
+                onParticipantsUpdated = participantState::emit,
             )
 
         suspend fun waitForParticipants(expected: Set<Participant>) {
@@ -148,11 +148,11 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
 
     internal class CachedMeetingSummary(scope: CallExtensionScope) {
         private val participantState = MutableStateFlow<Int>(0)
-        private val activeParticipantState = MutableStateFlow<String?>("")
+        private val activeParticipantState = MutableStateFlow<CharSequence?>("")
         val extension =
             scope.addMeetingSummaryExtension(
                 onCurrentSpeakerChanged = activeParticipantState::emit,
-                onParticipantCountChanged = participantState::emit
+                onParticipantCountChanged = participantState::emit,
             )
 
         suspend fun waitForParticipantCount(expected: Int) {
@@ -275,7 +275,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 voipAppControl,
                 callback,
                 listOf(CAPABILITY_PARTICIPANT_WITH_ACTIONS),
-                parameters.direction
+                parameters.direction,
             )
             TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)
             try {
@@ -304,7 +304,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 voipAppControl,
                 callback,
                 listOf(getParticipantCapability(emptySet())),
-                parameters.direction
+                parameters.direction,
             )
 
             val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
@@ -317,7 +317,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         hasConnected = true
                         assertTrue(
                             "Participants are not supported",
-                            participants.extension.isSupported
+                            participants.extension.isSupported,
                         )
                         // Wait for initial state
                         participants.waitForParticipants(emptySet())
@@ -326,10 +326,16 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         meetingSummary.waitForActiveParticipant(null)
                         // Test VOIP -> ICS connection by updating state
                         val currentParticipants = TestUtils.generateParticipants(2)
+                        // add a duplicate element to verify duplicates are removed internally
+                        val participantsWithDuplicate =
+                            currentParticipants.toMutableList().apply {
+                                add(currentParticipants.first())
+                            }
                         voipAppControl.updateParticipants(
-                            currentParticipants.map { it.toParticipantParcelable() }
+                            participantsWithDuplicate.map { it.toParticipantParcelable() }
                         )
                         participants.waitForParticipants(currentParticipants.toSet())
+                        assertEquals(2, currentParticipants.size)
                         meetingSummary.waitForParticipantCount(currentParticipants.size)
                         voipAppControl.updateActiveParticipant(
                             currentParticipants[0].toParticipantParcelable()
@@ -353,6 +359,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
      * Run 10 iterations of adding a new call + setting up extensions to test that we do not hit
      * this condition.
      */
+    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 35) // b/438225286
     @LargeTest
     @Test(timeout = 10000)
     fun testVoipAndIcsWithParticipantsRace() = runBlocking {
@@ -370,7 +377,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     voipAppControl,
                     requestId,
                     listOf(getParticipantCapability(emptySet())),
-                    parameters.direction
+                    parameters.direction,
                 )
                 var hasConnected = false
                 with(ics) {
@@ -415,7 +422,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     listOf(
                         getParticipantCapability(setOf(ParticipantExtensionImpl.RAISE_HAND_ACTION))
                     ),
-                    parameters.direction
+                    parameters.direction,
                 )
 
             val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
@@ -475,7 +482,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 voipAppControl,
                 callback,
                 listOf(getCallIconCapability(setOf())),
-                parameters.direction
+                parameters.direction,
             )
             val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
             var hasConnected = false
@@ -514,7 +521,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             try {
                 mContext.registerReceiver(
                     globalMuteStateReceiver,
-                    IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED)
+                    IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED),
                 )
                 val voipAppControl = bindToVoipAppWithExtensions()
                 val callback = TestCallCallbackListener(this)
@@ -524,7 +531,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         voipAppControl,
                         callback,
                         listOf(getLocalSilenceCapability(setOf())),
-                        parameters.direction
+                        parameters.direction,
                     )
 
                 val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
@@ -554,7 +561,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                                     false,
                                     "2",
                                     callback,
-                                    globalMuteStateReceiver
+                                    globalMuteStateReceiver,
                                 )
                             }
 
@@ -579,7 +586,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                                     false,
                                     "4",
                                     callback,
-                                    globalMuteStateReceiver
+                                    globalMuteStateReceiver,
                                 )
                             }
                             call.disconnect()
@@ -597,7 +604,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         expectedValue: Boolean,
         tag: String,
         cb: TestCallCallbackListener,
-        receiver: TestMuteStateReceiver
+        receiver: TestMuteStateReceiver,
     ) {
         if (VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) {
             cb.waitForGlobalMuteState(expectedValue, tag)
@@ -626,7 +633,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                             setOf(ParticipantExtensionImpl.KICK_PARTICIPANT_ACTION)
                         )
                     ),
-                    parameters.direction
+                    parameters.direction,
                 )
 
             val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
@@ -646,7 +653,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         assertEquals(
                             "Never received response to kickParticipant request",
                             CallControlResult.Success(),
-                            kickParticipant.requestKickParticipant(currentParticipants[0])
+                            kickParticipant.requestKickParticipant(currentParticipants[0]),
                         )
                         callback.waitForKickParticipant(voipCallId, currentParticipants[0])
 
@@ -667,13 +674,13 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         voipAppControl: ITestAppControl,
         requestId: Int,
         capabilities: List<Capability>,
-        direction: Int
+        direction: Int,
     ) {
         // add a call to verify capability exchange IS made with ICS
         voipAppControl.addCall(
             requestId,
             capabilities,
-            direction == CallAttributesCompat.DIRECTION_OUTGOING
+            direction == CallAttributesCompat.DIRECTION_OUTGOING,
         )
     }
 
@@ -685,7 +692,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         voipAppControl: ITestAppControl,
         callback: TestCallCallbackListener,
         capabilities: List<Capability>,
-        direction: Int
+        direction: Int,
     ): String {
         val requestId = mRequestIdGenerator.getAndIncrement()
         createVoipCallAsync(voipAppControl, requestId, capabilities, direction)
@@ -699,7 +706,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         if (Build.VERSION.SDK_INT < VERSION_CODES.UPSIDE_DOWN_CAKE) {
             assumeTrue(
                 "skipping this test, must be running at least U",
-                parameters.serviceSource == SERVICE_SOURCE_CONNSRV
+                parameters.serviceSource == SERVICE_SOURCE_CONNSRV,
             )
         }
         when (parameters.serviceSource) {
@@ -714,12 +721,12 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             if (parameters.serviceSource == SERVICE_SOURCE_V2) {
                 Intent(
                     InstrumentationRegistry.getInstrumentation().context,
-                    VoipAppWithExtensionsControl::class.java
+                    VoipAppWithExtensionsControl::class.java,
                 )
             } else {
                 Intent(
                     InstrumentationRegistry.getInstrumentation().context,
-                    VoipAppWithExtensionsControlLocal::class.java
+                    VoipAppWithExtensionsControlLocal::class.java,
                 )
             }
         return ITestAppControl.Stub.asInterface(voipAppServiceRule.bindService(serviceIntent))
@@ -729,7 +736,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         return createCapability(
             id = Extensions.PARTICIPANT,
             version = ParticipantExtensionImpl.VERSION,
-            actions = actions
+            actions = actions,
         )
     }
 
@@ -737,7 +744,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         return createCapability(
             id = Extensions.LOCAL_CALL_SILENCE,
             version = LocalCallSilenceExtensionImpl.VERSION,
-            actions = actions
+            actions = actions,
         )
     }
 
@@ -745,7 +752,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         return createCapability(
             id = Extensions.CALL_ICON,
             version = CallIconExtensionImpl.VERSION,
-            actions = actions
+            actions = actions,
         )
     }
 }

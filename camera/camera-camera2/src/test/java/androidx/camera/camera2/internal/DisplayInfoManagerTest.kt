@@ -33,7 +33,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowDisplay
@@ -43,7 +42,6 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @Suppress("DEPRECATION") // getRealSize
 class DisplayInfoManagerTest {
 
@@ -170,14 +168,14 @@ class DisplayInfoManagerTest {
     }
 
     @Test
-    fun canReturnDifferentPreviewSize_refreshIsCalled() {
+    fun canReturnDifferentPreviewSize_refreshPreviewSizeIsCalled() {
         // Arrange
         val displayInfoManager =
             spy(DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()))
 
         // Act
         displayInfoManager.previewSize
-        displayInfoManager.refresh()
+        displayInfoManager.refreshPreviewSize()
         displayInfoManager.previewSize
 
         // Assert

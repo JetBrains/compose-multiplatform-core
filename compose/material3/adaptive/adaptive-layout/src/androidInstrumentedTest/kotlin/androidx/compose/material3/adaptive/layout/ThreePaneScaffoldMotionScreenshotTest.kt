@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.adaptive.layout
 
-import android.os.Build
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -41,7 +40,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class ThreePaneScaffoldMotionScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -386,9 +385,7 @@ class ThreePaneScaffoldMotionScreenshotTest {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-internal fun SampleThreePaneScaffold(
-    scaffoldState: ThreePaneScaffoldState,
-) {
+internal fun SampleThreePaneScaffold(scaffoldState: ThreePaneScaffoldState) {
     ThreePaneScaffold(
         modifier = Modifier.fillMaxSize().testTag(ThreePaneScaffoldTestTag),
         scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
@@ -398,7 +395,7 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "SecondaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
                 ) {}
             }
         },
@@ -406,10 +403,10 @@ internal fun SampleThreePaneScaffold(
             AnimatedPane(modifier = Modifier.testTag(tag = "TertiaryPane")) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
                 ) {}
             }
-        }
+        },
     ) {
         AnimatedPane(modifier = Modifier.testTag(tag = "PrimaryPane")) {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {}

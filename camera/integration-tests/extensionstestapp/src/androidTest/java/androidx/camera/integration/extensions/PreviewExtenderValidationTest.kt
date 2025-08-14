@@ -54,7 +54,6 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewExtenderValidationTest(private val config: CameraXExtensionTestParams) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -132,7 +131,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // NoSuchMethodError will be thrown if getSupportedResolutions is not implemented in
@@ -141,7 +140,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.O_MR1)
     fun returnsNullFromOnPresetSession_whenAPILevelOlderThan28() {
         // Creates the ImageCaptureExtenderImpl to check that onPresetSession() returns null when
         // API level is older than 28.
@@ -149,7 +148,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         assertThat(impl.onPresetSession()).isNull()
     }
@@ -160,16 +159,15 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
             CameraXExtensionsTestUtil.createPreviewExtenderImpl(
                 config.extensionMode,
                 config.cameraId,
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
-        when (val processorType = impl.processorType) {
+        when (impl.processorType) {
             ProcessorType.PROCESSOR_TYPE_NONE -> assertThat(impl.processor).isNull()
             ProcessorType.PROCESSOR_TYPE_REQUEST_UPDATE_ONLY ->
                 assertThat(impl.processor).isInstanceOf(RequestUpdateProcessorImpl::class.java)
             ProcessorType.PROCESSOR_TYPE_IMAGE_PROCESSOR ->
                 assertThat(impl.processor).isInstanceOf(PreviewImageProcessorImpl::class.java)
-            else -> throw IllegalArgumentException("Unexpected ProcessorType: $processorType")
         }
     }
 }

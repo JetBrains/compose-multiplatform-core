@@ -33,7 +33,6 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
-import android.os.Build;
 
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.CameraControl;
@@ -60,7 +59,6 @@ import java.util.concurrent.ExecutionException;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class ZoomControlTest {
     private static final String CAMERA0_ID = "0";
     private static final String CAMERA1_ID = "1";

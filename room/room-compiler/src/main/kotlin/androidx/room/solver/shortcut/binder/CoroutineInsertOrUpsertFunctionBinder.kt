@@ -32,14 +32,14 @@ import androidx.room.vo.ShortcutQueryParameter
 class CoroutineInsertOrUpsertFunctionBinder(
     val typeArg: XType,
     adapter: InsertOrUpsertFunctionAdapter?,
-    private val continuationParamName: String
+    private val continuationParamName: String,
 ) : InsertOrUpsertFunctionBinder(adapter) {
 
     override fun convertAndReturn(
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, Any>>,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         if (adapter == null) {
             return
@@ -58,17 +58,17 @@ class CoroutineInsertOrUpsertFunctionBinder(
                             parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
                             parameterName = connectionVar,
                             returnTypeName = adapter.returnType.asTypeName().box(),
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             adapter.generateFunctionBody(
                                 scope = scope,
                                 parameters = parameters,
                                 adapters = adapters,
-                                connectionVar = connectionVar
+                                connectionVar = connectionVar,
                             )
                         }
-                    }
+                    },
             )
         scope.builder.add("return %L", performBlock)
     }

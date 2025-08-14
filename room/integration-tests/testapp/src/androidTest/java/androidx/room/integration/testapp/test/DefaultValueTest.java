@@ -134,6 +134,7 @@ public class DefaultValueTest {
         assertThat(sample.available, is(true));
         assertThat(sample.serial, is(0));
         assertThat((double) sample.timestamp.getTime(), is(closeTo(now, 3000)));
+        db.close();
     }
 
     @Test
@@ -148,5 +149,6 @@ public class DefaultValueTest {
         assertThat(sample.available, is(true));
         assertThat(sample.serial, is(0));
         assertThat((double) sample.timestamp.getTime(), is(closeTo(now, 3000)));
+        db.close();
     }
 }

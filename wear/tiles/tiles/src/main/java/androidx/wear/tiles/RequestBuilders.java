@@ -19,6 +19,7 @@ package androidx.wear.tiles;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.DeviceParametersProto;
@@ -28,6 +29,7 @@ import androidx.wear.tiles.proto.RequestProto;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 
 /** Builders for request messages used to fetch tiles and resources. */
@@ -41,10 +43,6 @@ public final class RequestBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class TileRequest {
         private final RequestProto.TileRequest mImpl;
-
-        TileRequest(RequestProto.TileRequest impl) {
-            this.mImpl = impl;
-        }
 
         /**
          * Gets the {@link androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters}
@@ -81,6 +79,17 @@ public final class RequestBuilders {
             return mImpl.getTileId();
         }
 
+        private final ProtoLayoutScope mScope;
+
+        TileRequest(RequestProto.TileRequest impl) {
+            this(impl, /* scope= */ null);
+        }
+
+        TileRequest(RequestProto.TileRequest impl, @Nullable ProtoLayoutScope scope) {
+            this.mImpl = impl;
+            this.mScope = scope != null ? scope : new ProtoLayoutScope();
+        }
+
         /**
          * Gets the {@link androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters} object
          * describing the device requesting the tile update.
@@ -88,7 +97,6 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getDeviceConfiguration()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.DeviceParametersBuilders.@Nullable DeviceParameters
                 getDeviceParameters() {
             if (mImpl.hasDeviceConfiguration()) {
@@ -106,13 +114,41 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getCurrentState()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.StateBuilders.@Nullable State getState() {
             if (mImpl.hasCurrentState()) {
                 return androidx.wear.tiles.StateBuilders.State.fromProto(mImpl.getCurrentState());
             } else {
                 return null;
             }
+        }
+
+        /**
+         * Gets the {@link Instant} representing the last time the tile was visible.
+         *
+         * <p>If the tile has never been visible, or the last time it was visible is not known, this
+         * will return {@link Instant#EPOCH}.
+         *
+         * <p>The returned value is not persistent across reboots or when the tile is removed from
+         * the carousel and added again.
+         */
+        @RequiresSchemaVersion(major = 1, minor = 600)
+        public @NonNull Instant getLastVisibleTime() {
+            return Instant.ofEpochMilli(mImpl.getLastVisibleMillis());
+        }
+
+        /**
+         * Returns {@link ProtoLayoutScope} object that is required for methods to create resources
+         * or pending intents, and it will automatically register them for a tile.
+         */
+        public @NonNull ProtoLayoutScope getScope() {
+            return mScope;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull TileRequest fromProto(
+                RequestProto.@NonNull TileRequest proto, @NonNull ProtoLayoutScope scope) {
+            return new TileRequest(proto, scope);
         }
 
         /** Creates a new wrapper instance from the proto. */
@@ -186,7 +222,7 @@ public final class RequestBuilders {
             @Deprecated
             public @NonNull Builder setDeviceParameters(
                     androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
-                                    deviceParameters) {
+                            deviceParameters) {
                 mImpl.setDeviceConfiguration(deviceParameters.toProto());
                 return this;
             }
@@ -201,6 +237,17 @@ public final class RequestBuilders {
             public @NonNull Builder setState(
                     androidx.wear.tiles.StateBuilders.@NonNull State state) {
                 mImpl.setCurrentState(state.toProto());
+                return this;
+            }
+
+            /**
+             * Sets the {@link Instant} representing the last time the tile was visible.
+             *
+             * <p>If not set, defaults to {@link Instant#EPOCH}.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setLastVisibleTime(@NonNull Instant instant) {
+                mImpl.setLastVisibleMillis(instant.toEpochMilli());
                 return this;
             }
 
@@ -273,7 +320,6 @@ public final class RequestBuilders {
          * @deprecated Use {@link #getDeviceConfiguration()} instead.
          */
         @Deprecated
-        @SuppressWarnings("deprecation") // for backward compatibility
         public androidx.wear.tiles.DeviceParametersBuilders.@Nullable DeviceParameters
                 getDeviceParameters() {
             if (mImpl.hasDeviceConfiguration()) {
@@ -371,10 +417,9 @@ public final class RequestBuilders {
              * @deprecated Use {@link setDeviceConfiguration(DeviceParameters)} instead.
              */
             @Deprecated
-            @SuppressWarnings("deprecation") // for backward compatibility
             public @NonNull Builder setDeviceParameters(
                     androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
-                                    deviceParameters) {
+                            deviceParameters) {
                 mImpl.setDeviceConfiguration(deviceParameters.toProto());
                 return this;
             }

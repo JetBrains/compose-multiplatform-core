@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.integration.layout.depthstackingapp
 
 import android.os.Bundle
@@ -36,6 +37,7 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 
 class DepthStackingApp : ComponentActivity() {
@@ -48,13 +50,13 @@ class DepthStackingApp : ComponentActivity() {
     private fun SpatialContent() {
         val panelSize = SubspaceModifier.width(200.dp).height(200.dp)
 
-        SpatialPanel(modifier = panelSize.offset(0.dp, 0.dp, (-50).dp), name = "BackPanel") {
+        SpatialPanel(modifier = panelSize.offset(0.dp, 0.dp, (-50).dp).testTag("BackPanel")) {
             PanelContent(Color.Red, "Back Panel")
         }
-        SpatialPanel(modifier = panelSize, name = "MiddlePanel") {
+        SpatialPanel(modifier = panelSize.testTag("MiddlePanel")) {
             PanelContent(Color.White, "Middle Panel")
         }
-        SpatialPanel(modifier = panelSize.offset(0.dp, 0.dp, 50.dp), name = "Front Panel") {
+        SpatialPanel(modifier = panelSize.offset(0.dp, 0.dp, 50.dp).testTag("FrontPanel")) {
             PanelContent(Color.Blue, "Front Panel")
         }
     }
@@ -64,14 +66,14 @@ class DepthStackingApp : ComponentActivity() {
     private fun PanelContent(color: Color, text: String) {
         Box(
             modifier = Modifier.background(color).fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column {
                 Text(
                     text = text,
                     textAlign = TextAlign.Center,
                     fontSize = 20.sp,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             }
         }

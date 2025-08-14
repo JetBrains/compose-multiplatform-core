@@ -18,6 +18,8 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.Interaction
@@ -32,14 +34,17 @@ import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextI
 import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
+import androidx.compose.foundation.text.selection.SelectedTextType
 import androidx.compose.foundation.text.selection.SelectionHandleAnchor
 import androidx.compose.foundation.text.selection.SelectionHandleInfo
 import androidx.compose.foundation.text.selection.SelectionHandleInfoKey
 import androidx.compose.foundation.text.selection.SimpleLayout
 import androidx.compose.foundation.text.selection.TextFieldSelectionHandle
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
+import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
+import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
-import androidx.compose.foundation.text.selection.selectionGestureInput
+import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
 import androidx.compose.foundation.text.selection.textFieldMagnifier
 import androidx.compose.foundation.text.selection.updateSelectionTouchMode
 import androidx.compose.runtime.Composable
@@ -60,6 +65,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Rect
@@ -114,6 +120,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.max
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -258,10 +265,10 @@ internal fun CoreTextField(
                     style = textStyle,
                     softWrap = softWrap,
                     density = density,
-                    fontFamilyResolver = fontFamilyResolver
+                    fontFamilyResolver = fontFamilyResolver,
                 ),
                 recomposeScope = scope,
-                keyboardController = keyboardController
+                keyboardController = keyboardController,
             )
         }
     state.update(
@@ -274,7 +281,7 @@ internal fun CoreTextField(
         onValueChange,
         keyboardActions,
         focusManager,
-        selectionBackgroundColor
+        selectionBackgroundColor,
     )
 
     // notify the EditProcessor of value every recomposition
@@ -299,13 +306,18 @@ internal fun CoreTextField(
     manager.focusRequester = focusRequester
     manager.editable = !readOnly
     manager.enabled = enabled
+    @OptIn(ExperimentalFoundationApi::class)
+    if (ComposeFoundationFlags.isSmartSelectionEnabled) {
+        manager.platformSelectionBehaviors =
+            rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
+    }
 
     // Focus
     val focusModifier =
         Modifier.textFieldFocusModifier(
             enabled = enabled,
             focusRequester = focusRequester,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         ) {
             if (state.hasFocus == it.isFocused) {
                 return@textFieldFocusModifier
@@ -332,7 +344,7 @@ internal fun CoreTextField(
                             value,
                             state.textDelegate,
                             layoutResult.value,
-                            offsetMapping
+                            offsetMapping,
                         )
                     }
                 }
@@ -354,7 +366,7 @@ internal fun CoreTextField(
                             state,
                             manager.value,
                             imeOptions,
-                            manager.offsetMapping
+                            manager.offsetMapping,
                         )
                     } else {
                         endInputSession(state)
@@ -379,7 +391,7 @@ internal fun CoreTextField(
                                 layoutResult,
                                 state.processor,
                                 offsetMapping,
-                                state.onValueChange
+                                state.onValueChange,
                             )
                             // Won't enter cursor state when text is empty.
                             if (state.textDelegate.text.isNotEmpty()) {
@@ -391,10 +403,12 @@ internal fun CoreTextField(
                     }
                 }
             }
-            .selectionGestureInput(
-                mouseSelectionObserver = manager.mouseSelectionObserver,
-                textDragObserver = manager.touchSelectionObserver,
-            )
+            .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
+                awaitSelectionGestures(
+                    manager.mouseSelectionObserver,
+                    manager.touchSelectionObserver,
+                )
+            }
             .pointerHoverIcon(PointerIcon.Text)
 
     val drawModifier =
@@ -409,7 +423,7 @@ internal fun CoreTextField(
                         offsetMapping,
                         layoutResult.value,
                         state.highlightPaint,
-                        state.selectionBackgroundColor
+                        state.selectionBackgroundColor,
                     )
                 }
             }
@@ -443,7 +457,7 @@ internal fun CoreTextField(
                                 inputSession,
                                 value,
                                 offsetMapping,
-                                layoutResult
+                                layoutResult,
                             )
                         }
                     }
@@ -463,7 +477,7 @@ internal fun CoreTextField(
             offsetMapping,
             manager,
             imeOptions,
-            focusRequester
+            focusRequester,
         )
 
     val showCursor = enabled && !readOnly && windowInfo.isWindowFocused && !state.hasHighlight()
@@ -480,7 +494,7 @@ internal fun CoreTextField(
                     editProcessor = state.processor,
                     imeOptions = imeOptions,
                     onValueChange = state.onValueChange,
-                    onImeActionPerformed = state.onImeActionPerformed
+                    onImeActionPerformed = state.onImeActionPerformed,
                 )
         }
         onDispose { /* do nothing */ }
@@ -520,13 +534,23 @@ internal fun CoreTextField(
             }
         }
 
-    val autofillHighlightColor = LocalAutofillHighlightColor.current
+    val autofillHighlightBrush =
+        resolveAutofillHighlight(
+            brush = LocalAutofillHighlightBrush.current,
+            color = LocalAutofillHighlightColor.current,
+            defaultColor = autofillHighlightColor(),
+        )
     val drawDecorationModifier =
-        Modifier.drawBehind {
+        Modifier.drawWithContent {
+            drawContent()
+            // Autofill highlight is drawn on top of the content — this way the coloring appears
+            // over any Material background applied.
             if (state.autofillHighlightOn || state.justAutofilled) {
-                drawRect(color = autofillHighlightColor)
+                drawRect(brush = autofillHighlightBrush)
             }
         }
+
+    val overscrollEffect = rememberTextFieldOverscrollEffect()
 
     // Modifiers that should be applied to the outer text field container. Usually those include
     // gesture and semantics modifiers.
@@ -539,10 +563,11 @@ internal fun CoreTextField(
             .interceptDPadAndMoveFocus(state, focusManager)
             .previewKeyEventToDeselectOnBack(state, manager)
             .then(textKeyInputModifier)
-            .textFieldScrollable(scrollerPosition, interactionSource, enabled)
+            .textFieldScrollable(scrollerPosition, interactionSource, enabled, overscrollEffect)
             .then(pointerModifier)
             .then(semanticsModifier)
             .onGloballyPositioned @DontMemoize { state.layoutResult?.decorationBoxCoordinates = it }
+            .addContextMenuComponents(manager, coroutineScope)
 
     val showHandleAndMagnifier =
         enabled && state.hasFocus && state.isInTouchMode && windowInfo.isWindowFocused
@@ -584,7 +609,7 @@ internal fun CoreTextField(
                         object : MeasurePolicy {
                             override fun MeasureScope.measure(
                                 measurables: List<Measurable>,
-                                constraints: Constraints
+                                constraints: Constraints,
                             ): MeasureResult {
                                 val prevProxy =
                                     Snapshot.withoutReadObservation { state.layoutResult }
@@ -594,7 +619,7 @@ internal fun CoreTextField(
                                         state.textDelegate,
                                         constraints,
                                         layoutDirection,
-                                        prevResult
+                                        prevResult,
                                     )
                                 if (prevResult != result) {
                                     state.layoutResult =
@@ -628,19 +653,19 @@ internal fun CoreTextField(
                                     alignmentLines =
                                         mapOf(
                                             FirstBaseline to result.firstBaseline.fastRoundToInt(),
-                                            LastBaseline to result.lastBaseline.fastRoundToInt()
-                                        )
+                                            LastBaseline to result.lastBaseline.fastRoundToInt(),
+                                        ),
                                 ) {}
                             }
 
                             override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int
+                                height: Int,
                             ): Int {
                                 state.textDelegate.layoutIntrinsics(layoutDirection)
                                 return state.textDelegate.maxIntrinsicWidth
                             }
-                        }
+                        },
                 )
 
                 SelectionToolbarAndHandles(
@@ -649,7 +674,7 @@ internal fun CoreTextField(
                         state.handleState != HandleState.None &&
                             state.layoutCoordinates != null &&
                             state.layoutCoordinates!!.isAttached &&
-                            showHandleAndMagnifier
+                            showHandleAndMagnifier,
                 )
 
                 if (
@@ -666,7 +691,7 @@ internal fun CoreTextField(
 private fun CoreTextFieldRootBox(
     modifier: Modifier,
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(modifier, propagateMinConstraints = true) { ContextMenuArea(manager, content) }
 }
@@ -700,7 +725,7 @@ internal enum class HandleState {
      * TextField will exit this state and enters [HandleState.Selection] state. Also notice that
      * TextField won't enter this state if the current input text is empty.
      */
-    Cursor
+    Cursor,
 }
 
 /**
@@ -711,7 +736,7 @@ internal enum class HandleState {
 internal enum class Handle {
     Cursor,
     SelectionStart,
-    SelectionEnd
+    SelectionEnd,
 }
 
 /**
@@ -720,7 +745,7 @@ internal enum class Handle {
  */
 private fun Modifier.previewKeyEventToDeselectOnBack(
     state: LegacyTextFieldState,
-    manager: TextFieldSelectionManager
+    manager: TextFieldSelectionManager,
 ) = onPreviewKeyEvent { keyEvent ->
     if (state.handleState == HandleState.Selection && keyEvent.cancelsTextSelection()) {
         manager.deselect()
@@ -881,6 +906,9 @@ internal class LegacyTextFieldState(
     val onImeActionPerformed: (ImeAction) -> Unit = { imeAction ->
         keyboardActionRunner.runAction(imeAction)
     }
+    val onImeActionPerformedWithResult: (ImeAction) -> Boolean = { imeAction ->
+        keyboardActionRunner.runAction(imeAction)
+    }
 
     /** The paint used to draw highlight backgrounds. */
     val highlightPaint: Paint = Paint()
@@ -903,7 +931,7 @@ internal class LegacyTextFieldState(
         onValueChange: (TextFieldValue) -> Unit,
         keyboardActions: KeyboardActions,
         focusManager: FocusManager,
-        selectionBackgroundColor: Color
+        selectionBackgroundColor: Color,
     ) {
         this.onValueChangeOriginal = onValueChange
         this.selectionBackgroundColor = selectionBackgroundColor
@@ -933,7 +961,7 @@ internal class LegacyTextFieldState(
 internal fun tapToFocus(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
-    allowKeyboard: Boolean
+    allowKeyboard: Boolean,
 ) {
     if (!state.hasFocus) {
         focusRequester.requestFocus()
@@ -947,7 +975,7 @@ private fun startInputSession(
     state: LegacyTextFieldState,
     value: TextFieldValue,
     imeOptions: ImeOptions,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     state.inputSession =
         TextFieldDelegate.onFocus(
@@ -956,7 +984,7 @@ private fun startInputSession(
             state.processor,
             imeOptions,
             state.onValueChange,
-            state.onImeActionPerformed
+            state.onImeActionPerformed,
         )
     notifyFocusedRect(state, value, offsetMapping)
 }
@@ -992,7 +1020,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
     value: TextFieldValue,
     textDelegate: TextDelegate,
     textLayoutResult: TextLayoutResult,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     val selectionEndInTransformed = offsetMapping.originalToTransformed(value.selection.max)
     val selectionEndBounds =
@@ -1008,7 +1036,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
                     computeSizeForDefaultText(
                         textDelegate.style,
                         textDelegate.density,
-                        textDelegate.fontFamilyResolver
+                        textDelegate.fontFamilyResolver,
                     )
                 Rect(0f, 0f, 1.0f, defaultSize.height.toFloat())
             }
@@ -1036,14 +1064,14 @@ private fun SelectionToolbarAndHandles(manager: TextFieldSelectionManager, show:
                             TextFieldSelectionHandle(
                                 isStartHandle = true,
                                 direction = startDirection,
-                                manager = manager
+                                manager = manager,
                             )
                         }
                         if (manager.state?.showSelectionHandleEnd == true) {
                             TextFieldSelectionHandle(
                                 isStartHandle = false,
                                 direction = endDirection,
-                                manager = manager
+                                manager = manager,
                             )
                         }
                     }
@@ -1091,7 +1119,7 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
                                 anchor = SelectionHandleAnchor.Middle,
                                 visible = true,
                             )
-                    }
+                    },
         )
     }
 }
@@ -1100,14 +1128,14 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
 internal expect fun CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
-    minTouchTargetSize: DpSize = DpSize.Unspecified
+    minTouchTargetSize: DpSize = DpSize.Unspecified,
 )
 
 // TODO(b/262648050) Try to find a better API.
 private fun notifyFocusedRect(
     state: LegacyTextFieldState,
     value: TextFieldValue,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     // If this reports state reads it causes an invalidation cycle.
     // This function doesn't need to be invalidated anyway because it's already explicitly called
@@ -1123,7 +1151,16 @@ private fun notifyFocusedRect(
             layoutCoordinates,
             inputSession,
             state.hasFocus,
-            offsetMapping
+            offsetMapping,
         )
     }
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.addContextMenuComponents(
+    textFieldSelectionManager: TextFieldSelectionManager,
+    coroutineScope: CoroutineScope,
+): Modifier =
+    if (ComposeFoundationFlags.isNewContextMenuEnabled)
+        addBasicTextFieldTextContextMenuComponents(textFieldSelectionManager, coroutineScope)
+    else this

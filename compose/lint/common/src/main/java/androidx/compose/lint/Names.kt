@@ -56,6 +56,12 @@ object Names {
         val ReusableContent = Name(PackageName, "ReusableContent")
         val Key = Name(PackageName, "key")
         val StructuralEqualityPolicy = Name(PackageName, "structuralEqualityPolicy")
+
+        object Annotation {
+            val PackageName = Package(Runtime.PackageName, "annotation")
+            val FrequentlyChangingValue = Name(PackageName, "FrequentlyChangingValue")
+            val RememberInComposition = Name(PackageName, "RememberInComposition")
+        }
     }
 
     object Ui {

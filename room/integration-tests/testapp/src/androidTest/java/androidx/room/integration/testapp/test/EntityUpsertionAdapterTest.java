@@ -122,14 +122,15 @@ public class EntityUpsertionAdapterTest{
         mUpdateAdapterToy = new EntityDeletionOrUpdateAdapter<Toy>(mTestDatabase) {
             @Override
             protected @NonNull String createQuery() {
-                return "UPDATE `Toy` SET `mName` = ?, `mPetId` = ? WHERE `mPetId`"
+                return "UPDATE `Toy` SET `mName` = ?, `mPetId` = ? WHERE `mId`"
                         + " = ?";
             }
 
             @Override
             protected void bind(@NonNull SupportSQLiteStatement statement, Toy entity) {
                 statement.bindString(1, entity.getName());
-                statement.bindLong(3, entity.getPetId());
+                statement.bindLong(2, entity.getPetId());
+                statement.bindLong(3, entity.getId());
             }
         };
 
@@ -224,7 +225,7 @@ public class EntityUpsertionAdapterTest{
         try {
             mUpsertionAdapterToy.upsertAndReturnId(testToy);
         } catch (SQLiteConstraintException ex) {
-            assertThat(ex.toString().contains("foreign key"));
+            assertThat(ex.toString()).contains("FOREIGN KEY");
         }
     }
 
@@ -251,7 +252,7 @@ public class EntityUpsertionAdapterTest{
         try {
             mUpsertionAdapterToy.upsertAndReturnId(testToy2);
         } catch (SQLiteConstraintException ex) {
-            assertThat(ex.toString().contains("2067"));
+            assertThat(ex.toString()).contains("2067");
         }
     }
 

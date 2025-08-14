@@ -15,13 +15,11 @@
  */
 package androidx.room.integration.kotlintestapp.test
 
-import android.os.Build
 import androidx.room.integration.kotlintestapp.dao.DependencyDao
 import androidx.room.integration.kotlintestapp.vo.DataClassFromDependency
 import androidx.room.integration.kotlintestapp.vo.EmbeddedFromDependency
 import androidx.room.integration.kotlintestapp.vo.PojoFromDependency
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
@@ -68,7 +66,6 @@ class DependencyDaoTest : TestDatabaseTest() {
         assertThat(dao.findPojo(5), `is`(nullValue()))
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Test
     fun getRelation() {
         val foo1 = DataClassFromDependency(id = 3, name = "foo")

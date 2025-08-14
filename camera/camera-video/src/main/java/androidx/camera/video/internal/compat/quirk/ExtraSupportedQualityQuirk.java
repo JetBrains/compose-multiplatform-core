@@ -112,7 +112,7 @@ public class ExtraSupportedQualityQuirk implements Quirk {
         Map<Integer, EncoderProfilesProxy> extraEncoderProfilesMap = new HashMap<>();
         extraEncoderProfilesMap.put(QUALITY_480P, profiles480p);
         // Update QUALITY_HIGH if necessary.
-        Size sizeHigh = new Size(videoProfileHigh.getWidth(), videoProfileHigh.getHeight());
+        Size sizeHigh = videoProfileHigh.getResolution();
         if (getArea(RESOLUTION_480P) > getArea(sizeHigh)) {
             extraEncoderProfilesMap.put(QUALITY_HIGH, profiles480p);
         }

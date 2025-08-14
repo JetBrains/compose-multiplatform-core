@@ -146,7 +146,7 @@ class RxRoomTest {
         val tableSet: Set<String> = HashSet(listOf(*tables))
         val flowable = RxRoom.createFlowable(mDatabase, false, tables, Callable { value.get() })
         val consumer = CountingConsumer()
-        flowable.subscribe(consumer)
+        val disposable = flowable.subscribe(consumer)
         drain()
         val observer = mAddedObservers[0]
         // no value because it is null
@@ -165,6 +165,7 @@ class RxRoomTest {
         drain()
         // no value
         assertThat(consumer.mCount).isEqualTo(2)
+        disposable.dispose()
     }
 
     @Test
@@ -175,7 +176,7 @@ class RxRoomTest {
         val tableSet: Set<String> = HashSet(listOf(*tables))
         val flowable = RxRoom.createObservable(mDatabase, false, tables, Callable { value.get() })
         val consumer = CountingConsumer()
-        flowable.subscribe(consumer)
+        val disposable = flowable.subscribe(consumer)
         drain()
         val observer = mAddedObservers[0]
         // no value because it is null
@@ -194,6 +195,7 @@ class RxRoomTest {
         drain()
         // no value
         assertThat(consumer.mCount).isEqualTo(2)
+        disposable.dispose()
     }
 
     @Test
@@ -204,7 +206,7 @@ class RxRoomTest {
                 mDatabase,
                 false,
                 arrayOf("a"),
-                Callable { throw Exception("i want exception") }
+                Callable { throw Exception("i want exception") },
             )
         val subscriber = TestSubscriber<String>()
         flowable.subscribe(subscriber)
@@ -221,7 +223,7 @@ class RxRoomTest {
                 mDatabase,
                 false,
                 arrayOf("a"),
-                Callable { throw Exception("i want exception") }
+                Callable { throw Exception("i want exception") },
             )
         val observer = TestObserver<String>()
         flowable.subscribe(observer)

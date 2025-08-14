@@ -18,7 +18,6 @@ package androidx.camera.camera2;
 
 import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraXConfig;
@@ -28,7 +27,6 @@ import androidx.test.core.app.ApplicationProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowCameraCharacteristics;
@@ -38,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class CameraXConfigTest {
     @Test
     public void canInitializeWithGetAvailableCamerasLimiterWhenNoCamera() throws Exception {

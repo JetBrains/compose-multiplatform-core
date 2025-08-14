@@ -19,7 +19,6 @@ package androidx.camera.extensions.internal.sessionprocessor
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.media.Image
-import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -27,12 +26,10 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CaptureResultImageMatcherTest {
     private val matcher = CaptureResultImageMatcher()
 

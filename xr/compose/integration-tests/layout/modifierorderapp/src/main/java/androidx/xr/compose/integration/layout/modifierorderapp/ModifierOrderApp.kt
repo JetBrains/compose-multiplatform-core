@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.integration.layout.modifierorderapp
 
 import android.os.Bundle
@@ -42,6 +43,7 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onGloballyPositioned
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.scale
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 
 class ModifierOrderApp : ComponentActivity() {
@@ -68,8 +70,8 @@ class ModifierOrderApp : ComponentActivity() {
                     .onGloballyPositioned {
                         Log.i("ModifierOrderApp", "BackPanel position: ${it.poseInRoot}")
                     }
-                    .offset(y = (-100).dp),
-            name = "Back Panel",
+                    .offset(y = (-100).dp)
+                    .testTag("Back Panel")
         ) {
             PanelContent(Color.Red, "Back Panel")
         }
@@ -79,8 +81,8 @@ class ModifierOrderApp : ComponentActivity() {
                     .onGloballyPositioned {
                         Log.i("ModifierOrderApp", "MiddlePanel position: ${it.poseInRoot}")
                     }
-                    .scale(0.9f),
-            name = "Middle Panel",
+                    .scale(0.9f)
+                    .testTag("Middle Panel")
         ) {
             PanelContent(Color.White, "Middle Panel")
         }
@@ -92,8 +94,8 @@ class ModifierOrderApp : ComponentActivity() {
                     .onGloballyPositioned {
                         Log.i("ModifierOrderApp", "FrontPanel position: ${it.poseInRoot}")
                     }
-                    .offset(y = 100.dp),
-            name = "Front Panel",
+                    .offset(y = 100.dp)
+                    .testTag("Front Panel")
         ) {
             PanelContent(Color.Blue, "Front Panel")
         }
@@ -104,14 +106,14 @@ class ModifierOrderApp : ComponentActivity() {
     private fun PanelContent(color: Color, text: String) {
         Box(
             modifier = Modifier.background(color).fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column {
                 Text(
                     text = text,
                     textAlign = TextAlign.Center,
                     fontSize = 20.sp,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             }
         }

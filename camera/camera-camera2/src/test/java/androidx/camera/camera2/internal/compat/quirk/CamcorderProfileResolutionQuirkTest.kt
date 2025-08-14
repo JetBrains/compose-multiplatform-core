@@ -20,7 +20,6 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
@@ -32,7 +31,6 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
@@ -41,7 +39,6 @@ private const val CAMERA_ID_0 = "0"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CamcorderProfileResolutionQuirkTest {
 
     @Test
@@ -77,14 +74,14 @@ class CamcorderProfileResolutionQuirkTest {
 
     private fun createCameraCharacteristicsCompat(
         hardwareLevel: Int = CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-        supportedSizes: Array<Size> = emptyArray()
+        supportedSizes: Array<Size> = emptyArray(),
     ): CameraCharacteristicsCompat {
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
 
         shadowCharacteristics.set(
             CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL,
-            hardwareLevel
+            hardwareLevel,
         )
 
         val mockMap = mock(StreamConfigurationMap::class.java)
@@ -98,7 +95,7 @@ class CamcorderProfileResolutionQuirkTest {
 
         return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
             characteristics,
-            CAMERA_ID_0
+            CAMERA_ID_0,
         )
     }
 }

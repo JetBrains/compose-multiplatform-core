@@ -489,7 +489,7 @@ package androidx.health.services.client.data {
     property public androidx.health.services.client.data.ExerciseTypeConfig? exerciseTypeConfig;
     property public boolean isAutoPauseAndResumeEnabled;
     property public boolean isGpsEnabled;
-    property @FloatRange(from=0.0) public float swimmingPoolLengthMeters;
+    property public float swimmingPoolLengthMeters;
     field public static final androidx.health.services.client.data.ExerciseConfig.Companion Companion;
     field public static final float SWIMMING_POOL_LENGTH_UNSPECIFIED = 0.0f;
   }
@@ -1034,8 +1034,8 @@ package androidx.health.services.client.data {
     ctor public LocationAccuracy(@FloatRange(from=0.0) double horizontalPositionErrorMeters, optional @FloatRange(from=0.0) double verticalPositionErrorMeters);
     method public double getHorizontalPositionErrorMeters();
     method public double getVerticalPositionErrorMeters();
-    property @FloatRange(from=0.0) public double horizontalPositionErrorMeters;
-    property @FloatRange(from=0.0) public double verticalPositionErrorMeters;
+    property public double horizontalPositionErrorMeters;
+    property public double verticalPositionErrorMeters;
     field public static final androidx.health.services.client.data.LocationAccuracy.Companion Companion;
   }
 
@@ -1075,8 +1075,8 @@ package androidx.health.services.client.data {
     method public double getLongitude();
     property public double altitude;
     property public double bearing;
-    property @FloatRange(from=-90.0, to=90.0) public double latitude;
-    property @FloatRange(from=-180.0, to=180.0) public double longitude;
+    property public double latitude;
+    property public double longitude;
     field public static final double ALTITUDE_UNAVAILABLE = (0.0/0.0);
     field public static final double BEARING_UNAVAILABLE = (0.0/0.0);
   }

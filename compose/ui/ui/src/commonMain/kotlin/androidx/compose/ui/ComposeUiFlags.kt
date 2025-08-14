@@ -65,32 +65,126 @@ object ComposeUiFlags {
     @Suppress("MutableBareField") @JvmField var isRectTrackingEnabled: Boolean = true
 
     /**
-     * Selecting flag to enable the change new onPostFling nested scroll behavior for ongoing
-     * flings. If a nested scroll node is removed from the tree before sending the onPostFling
-     * callback, we will hold on to the next node in the tree so we have a handle to send the
-     * information after the fling finish/is cancelled.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var NewNestedScrollFlingDispatchingEnabled: Boolean = true
-
-    /**
      * With this flag on, the new semantic version of Autofill APIs will be enabled. Turning this
      * flag off will disable the new Semantic Autofill APIs, and the new refactored semantics.
      */
-    @Suppress("MutableBareField") @JvmField var isSemanticAutofillEnabled: Boolean = false
+    @Suppress("MutableBareField") @JvmField var isSemanticAutofillEnabled: Boolean = true
 
     /**
      * This enables fixes for View focus. The changes are large enough to require a flag to allow
      * disabling them.
      */
-    @Suppress("MutableBareField") @JvmField var isViewFocusFixEnabled: Boolean = true
+    @Suppress("MutableBareField") @JvmField var isViewFocusFixEnabled: Boolean = false
 
     /**
-     * With this flag on, the new focus state management implementation is enabled. The new
-     * implementation removes the focus state previously stored in each FocusTargetNode and instead
-     * keeps track of the current active focus node centrally in FocusOwnerImpl. This change reduces
-     * the cost of initializing the focus system.
+     * This flag enables an alternate approach to fixing the issues addressed by the
+     * [isViewFocusFixEnabled] flag.
      */
-    @Suppress("MutableBareField") @JvmField var isTrackFocusEnabled: Boolean = true
+    @Suppress("MutableBareField")
+    @JvmField
+    var isBypassUnfocusableComposeViewEnabled: Boolean = true
+
+    /**
+     * This flag enables a fix for b/378570682. For API >=26. We attempt to manually find the next
+     * focusable item for 1-D focus search cases when Compose does not have any focusable content.
+     */
+    @Suppress("MutableBareField") @JvmField var isPre26FocusFinderFixEnabled: Boolean = false
+
+    /**
+     * This flag enables a fix for b/388590015. The view system ignores an invalid prevFocusRect
+     * when requestFocus is called, so we support this behavior in Compose too.
+     */
+    @Suppress("MutableBareField") @JvmField var isIgnoreInvalidPrevFocusRectEnabled: Boolean = true
+
+    /**
+     * When an embedded view that is focused is removed from the hierarchy, it triggers a
+     * requestFocus() which tries to re-assign focus before the previous composition is complete.
+     * This flag enables a fix for this issue.
+     */
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isRemoveFocusedViewFixEnabled: Boolean = false
+
+    /**
+     * Enable WindowInsets rulers:
+     * * `SystemBarsRulers`
+     * * `ImeRulers`
+     * * `StatusBarsRulers`
+     * * `NavigationBarsRulers`
+     * * `CaptionBarRulers`
+     * * `MandatorySystemGesturesRulers`
+     * * `TappableElementRulers`
+     * * `WaterfallRulers`
+     * * `SafeDrawingRulers`
+     * * `SafeGesturesRulers`
+     * * `SafeContentRulers`
+     */
+    // off for b/410868572
+    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
+
+    /**
+     * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
+     * if it is in touch mode, it will exit touch mode first, then try to request focus on the node.
+     */
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isFocusActionExitsTouchModeEnabled: Boolean = false
+
+    /**
+     * With this flag on, Modifier.focusRestorer() will not pin the item that needs to be restored.
+     * Users are responsible for providing a key for the item that needs to be restored b/330696779.
+     */
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isNoPinningInFocusRestorationEnabled: Boolean = false
+
+    /**
+     * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
+     * frame, not as part of a regular recomposition phase. It allows to not block the drawing
+     * phase, improving the scrolling performance for lazy layouts.
+     */
+    @Suppress("MutableBareField") @JvmField var isOutOfFrameDeactivationEnabled: Boolean = true
+
+    /** Enable clearing focus when a focused item is removed from a lazyList. */
+    @Deprecated("This flag is no longer needed.")
+    @Suppress("MutableBareField", "unused")
+    @JvmField
+    var isClearFocusOnResetEnabled: Boolean = false
+
+    /**
+     * With this flag on, the adaptive refresh rate (ARR) feature will be enabled. A preferred frame
+     * rate can be set on a Composable through frame rate modifier: [Modifier.preferredFrameRate]
+     */
+    @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
+
+    /** Flag for enabling the fix for using the correct node for nested scroll operations. */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollDispatcherNodeFixEnabled: Boolean = true
+
+    /** Flag for enabling indirect touch event navigation gestures in Compose. */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isIndirectTouchNavigationGestureDetectorEnabled: Boolean = true
+
+    /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
+    @Suppress("MutableBareField") @JvmField var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
+
+    /** Flag for enabling the performance optimization for content capture. */
+    @Suppress("MutableBareField") @JvmField var isContentCaptureOptimizationEnabled: Boolean = true
+
+    /**
+     * Flag for enabling nested scroll interop fix for propagating integers, this fixes an issue
+     * with interop between compose and views nested scroll where small deltas with the wrong sign
+     * were being scaled up due to the rounding used.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isNestedScrollInteropIntegerPropagationEnabled: Boolean = false
+
+    /** This flag enables clearing focus on pointer down by default. */
+    @Suppress("MutableBareField") @JvmField var isClearFocusOnPointerDownEnabled: Boolean = false
 }

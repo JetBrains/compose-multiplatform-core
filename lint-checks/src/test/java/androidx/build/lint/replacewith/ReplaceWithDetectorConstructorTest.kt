@@ -28,7 +28,7 @@ class ReplaceWithDetectorConstructorTest {
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.ConstructorStaticClass")
+                javaSample("replacewith.ConstructorStaticClass"),
             )
 
         val expected =
@@ -57,7 +57,7 @@ Fix for src/replacewith/ConstructorStaticClass.java line 25: Replace with `Strin
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.ConstructorNonStaticClass")
+                javaSample("replacewith.ConstructorNonStaticClass"),
             )
 
         val expected =
@@ -86,7 +86,7 @@ Fix for src/replacewith/ConstructorNonStaticClass.java line 25: Replace with `In
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.ConstructorToStaticMethod")
+                javaSample("replacewith.ConstructorToStaticMethod"),
             )
 
         val expected =
@@ -115,7 +115,7 @@ Fix for src/replacewith/ConstructorToStaticMethod.java line 25: Replace with `Re
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                ktSample("replacewith.ConstructorStaticClassKotlin")
+                ktSample("replacewith.ConstructorStaticClassKotlin"),
             )
 
         val expected =
@@ -144,7 +144,7 @@ Fix for src/replacewith/ConstructorStaticClassKotlin.kt line 22: Replace with `S
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                ktSample("replacewith.ConstructorNonStaticClassKotlin")
+                ktSample("replacewith.ConstructorNonStaticClassKotlin"),
             )
 
         val expected =
@@ -173,7 +173,7 @@ Fix for src/replacewith/ConstructorNonStaticClassKotlin.kt line 22: Replace with
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                ktSample("replacewith.ConstructorToStaticMethodKotlin")
+                ktSample("replacewith.ConstructorToStaticMethodKotlin"),
             )
 
         val expected =

@@ -48,7 +48,7 @@ internal object UnicodeRenderableManager {
             // version 5: https://unicode.org/Public/emoji/5.0/emoji-data.txt
             // version 11: https://unicode.org/Public/emoji/11.0/emoji-data.txt
             "\u265F\uFE0F", // BLACK_CHESS_PAWN
-            "\u267E\uFE0F" // PERMANENT_PAPER_SIGN
+            "\u267E\uFE0F", // PERMANENT_PAPER_SIGN
         )
 
     /**

@@ -136,10 +136,10 @@ class ImmutableVecTest {
     }
 
     @Test
-    fun asImmutable_returnsThis() {
+    fun toImmutable_returnsThis() {
         val vec = ImmutableVec(1f, 2f)
 
-        assertThat(vec.asImmutable()).isSameInstanceAs(vec)
+        assertThat(vec.toImmutable()).isSameInstanceAs(vec)
     }
 
     @Test

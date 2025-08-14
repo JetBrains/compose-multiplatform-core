@@ -89,14 +89,14 @@ fun SharedElementInLazyStaggeredGridDemo() {
                     state = state,
                     columns = StaggeredGridCells.Adaptive(150.dp),
                     verticalItemSpacing = 8.dp,
-                    horizontalArrangement = Arrangement.run { spacedBy(8.dp) }
+                    horizontalArrangement = Arrangement.run { spacedBy(8.dp) },
                 ) {
                     itemsIndexed(listCats, key = { index, _ -> index }) { _, cat ->
                         CatItem(
                             cat = cat,
                             onClick = { selectedCat = cat },
                             scope = this@AnimatedContent,
-                            modifier = Modifier.animateItem(placementSpec = tween(500))
+                            modifier = Modifier.animateItem(placementSpec = tween(500)),
                         )
                     }
                 }
@@ -113,16 +113,21 @@ fun SharedTransitionScope.CatItem(
     cat: Cat,
     onClick: () -> Unit,
     scope: AnimatedVisibilityScope,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isEnabled: SharedTransitionScope.SharedContentState.() -> Boolean = { true },
 ) {
     Box(
         modifier =
             modifier
                 .sharedBounds(
-                    sharedContentState = rememberSharedContentState(key = "${cat.name}-bounds"),
+                    sharedContentState =
+                        rememberSharedContentState(
+                            key = "${cat.name}-bounds",
+                            config = SharedContentConfig(isEnabled),
+                        ),
                     boundsTransform = boundsTransition,
                     animatedVisibilityScope = scope,
-                    clipInOverlayDuringTransition = OverlayClip(shapeForSharedElement)
+                    clipInOverlayDuringTransition = OverlayClip(shapeForSharedElement),
                 )
                 .background(Color.White, shapeForSharedElement)
                 .clip(shapeForSharedElement)
@@ -131,11 +136,11 @@ fun SharedTransitionScope.CatItem(
             cat = cat,
             modifier =
                 Modifier.sharedElement(
-                    rememberSharedContentState(key = cat.name),
+                    rememberSharedContentState(key = cat.name, SharedContentConfig(isEnabled)),
                     animatedVisibilityScope = scope,
                     boundsTransform = boundsTransition,
                 ),
-            onClick = onClick
+            onClick = onClick,
         )
     }
 }
@@ -146,11 +151,11 @@ fun SharedTransitionScope.CatItem(
 fun SharedTransitionScope.CatDetails(
     cat: Cat,
     scope: AnimatedVisibilityScope,
-    onConfirmClick: () -> Unit
+    onConfirmClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier =
@@ -159,7 +164,7 @@ fun SharedTransitionScope.CatDetails(
                         sharedContentState = rememberSharedContentState(key = "${cat.name}-bounds"),
                         animatedVisibilityScope = scope,
                         boundsTransform = boundsTransition,
-                        clipInOverlayDuringTransition = OverlayClip(shapeForSharedElement)
+                        clipInOverlayDuringTransition = OverlayClip(shapeForSharedElement),
                     )
                     .background(Color.White, shapeForSharedElement)
                     .clip(shapeForSharedElement)
@@ -172,7 +177,7 @@ fun SharedTransitionScope.CatDetails(
                         animatedVisibilityScope = scope,
                         boundsTransform = boundsTransition,
                     ),
-                onClick = { onConfirmClick() }
+                onClick = { onConfirmClick() },
             )
             Text(
                 text =
@@ -205,12 +210,9 @@ fun CatContent(cat: Cat, modifier: Modifier = Modifier, onClick: () -> Unit) {
             painter = painterResource(id = cat.image),
             modifier = Modifier.fillMaxWidth(),
             contentScale = ContentScale.FillWidth,
-            contentDescription = null
+            contentDescription = null,
         )
-        Text(
-            text = cat.name,
-            modifier = Modifier.wrapContentWidth().padding(8.dp),
-        )
+        Text(text = cat.name, modifier = Modifier.wrapContentWidth().padding(8.dp))
     }
 }
 

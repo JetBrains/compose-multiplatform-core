@@ -31,6 +31,7 @@ plugins {
 dependencies {
     implementation(libs.kotlinStdlib)
     implementation(libs.junit)
+    implementation(gradleTestKit())
 }
 
 androidx {

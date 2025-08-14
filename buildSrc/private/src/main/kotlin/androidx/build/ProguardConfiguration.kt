@@ -67,11 +67,11 @@ internal fun Project.setUpBlankProguardFileForAarIfNeeded(buildType: LibraryBuil
  * Add a blank consumer proguard rules file to the AAR if the library has not set up an explicit set
  * of rules.
  */
-@Suppress("UnstableApiUsage")
+@Suppress("UnstableApiUsage") // b/393137152
 internal fun Project.setUpBlankProguardFileForKmpAarIfNeeded(consumerKeepRules: ConsumerKeepRules) {
     if (consumerKeepRules.files.isEmpty()) {
-        file(project.blankProguardRules())
         consumerKeepRules.publish = true
+        consumerKeepRules.files.add(blankProguardRules())
     }
 }
 

@@ -68,7 +68,7 @@ class QueryInterceptorTest {
         database =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    QueryInterceptorTestDatabase::class.java
+                    QueryInterceptorTestDatabase::class.java,
                 )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .setQueryCallback(testCoroutineScope.coroutineContext) { sqlQuery, bindArgs ->
@@ -93,7 +93,7 @@ class QueryInterceptorTest {
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
-            listOf("Insert", "Inserted a placeholder query")
+            listOf("Insert", "Inserted a placeholder query"),
         )
         assertTransactionQueries()
     }
@@ -118,7 +118,7 @@ class QueryInterceptorTest {
             "UPDATE OR ABORT `queryInterceptorTestDatabase` SET `id` " +
                 "= ?,`description` = ? " +
                 "WHERE `id` = ?",
-            listOf("Insert", "Updated the placeholder query", "Insert")
+            listOf("Insert", "Updated the placeholder query", "Insert"),
         )
         assertTransactionQueries()
     }
@@ -137,17 +137,19 @@ class QueryInterceptorTest {
 
     @Test
     fun testLoggingSupportSQLiteQuery() = runTest {
-        database.openHelper.writableDatabase.query(
-            SimpleSQLiteQuery(
-                "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
-                    "VALUES (?,?)",
-                arrayOf("3", "Description")
+        val c =
+            database.openHelper.writableDatabase.query(
+                SimpleSQLiteQuery(
+                    "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
+                        "VALUES (?,?)",
+                    arrayOf("3", "Description"),
+                )
             )
-        )
+        c.close()
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
-            listOf("3", "Description")
+            listOf("3", "Description"),
         )
     }
 
@@ -156,28 +158,30 @@ class QueryInterceptorTest {
         database.openHelper.writableDatabase.execSQL(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
-            arrayOf("3", "Description")
+            arrayOf("3", "Description"),
         )
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
-            listOf("3", "Description")
+            listOf("3", "Description"),
         )
     }
 
     @Test
     fun testNullBindArgument() = runTest {
-        database.openHelper.writableDatabase.query(
-            SimpleSQLiteQuery(
-                "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
-                    "VALUES (?,?)",
-                arrayOf("ID", null)
+        val c =
+            database.openHelper.writableDatabase.query(
+                SimpleSQLiteQuery(
+                    "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
+                        "VALUES (?,?)",
+                    arrayOf("ID", null),
+                )
             )
-        )
+        c.close()
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`," +
                 "`description`) VALUES (?,?)",
-            listOf("ID", null)
+            listOf("ID", null),
         )
     }
 
@@ -206,7 +210,7 @@ class QueryInterceptorTest {
         val dbBuilder =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    QueryInterceptorTestDatabase::class.java
+                    QueryInterceptorTestDatabase::class.java,
                 )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .setQueryCallback(testCoroutineScope.coroutineContext) { sqlQuery, bindArgs ->
@@ -224,7 +228,7 @@ class QueryInterceptorTest {
         assertQueryLogged(
             "INSERT OR ABORT INTO `queryInterceptorTestDatabase` (`id`,`description`) " +
                 "VALUES (?,?)",
-            listOf("Insert", "Inserted a placeholder query")
+            listOf("Insert", "Inserted a placeholder query"),
         )
         assertTransactionQueries()
     }

@@ -46,7 +46,7 @@ data class Constructor(val element: XExecutableElement, val params: List<Param>)
                 builder.addStatement(
                     "%L = %L",
                     outVar,
-                    XCodeBlock.ofNewInstance(element.enclosingElement.asClassName(), args)
+                    XCodeBlock.ofNewInstance(element.enclosingElement.asClassName(), args),
                 )
             }
             element.isMethod() -> {
@@ -63,7 +63,7 @@ data class Constructor(val element: XExecutableElement, val params: List<Param>)
                         outVar,
                         element.enclosingElement.asClassName(),
                         methodName,
-                        args
+                        args,
                     )
                 }
             }

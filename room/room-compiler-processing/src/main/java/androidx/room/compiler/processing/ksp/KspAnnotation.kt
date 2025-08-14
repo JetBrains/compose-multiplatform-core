@@ -48,7 +48,19 @@ internal class KspAnnotation(val env: KspProcessingEnv, val ksAnnotated: KSAnnot
         wrap(ksAnnotated.defaultArguments)
     }
 
-    override val annotationValues: List<XAnnotationValue> by lazy { wrap(ksAnnotated.arguments) }
+    override val annotationValues: List<XAnnotationValue> by lazy {
+        val defaultValuesByName = defaultValues.associateBy { it.name }
+        wrap(ksAnnotated.arguments).mapNotNull {
+            if (it.value != null) {
+                return@mapNotNull it
+            }
+            val default = defaultValuesByName[it.name]
+            if (default?.value != null) {
+                return@mapNotNull default
+            }
+            null
+        }
+    }
 
     private fun wrap(source: List<KSValueArgument>): List<XAnnotationValue> {
         // KSAnnotated.arguments / KSAnnotated.defaultArguments isn't guaranteed to have the same

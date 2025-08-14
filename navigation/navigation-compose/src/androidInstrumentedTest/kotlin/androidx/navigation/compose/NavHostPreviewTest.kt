@@ -72,9 +72,7 @@ class NavHostPreviewTest {
 @Preview
 @Composable
 fun NavHostPreview() {
-    CompositionLocalProvider(
-        LocalInspectionMode provides true,
-    ) {
+    CompositionLocalProvider(LocalInspectionMode provides true) {
         Box(Modifier.fillMaxSize().background(Color.Red)) {
             NavHost(navController = rememberNavController(), startDestination = "home") {
                 composable("home") {
@@ -90,9 +88,7 @@ fun NavHostPreview() {
 @Preview
 @Composable
 fun NavHostWithDialogPreview() {
-    CompositionLocalProvider(
-        LocalInspectionMode provides true,
-    ) {
+    CompositionLocalProvider(LocalInspectionMode provides true) {
         val navController = rememberNavController()
         Box(Modifier.fillMaxSize().background(Color.Red)) {
             NavHost(navController = navController, startDestination = "home") {

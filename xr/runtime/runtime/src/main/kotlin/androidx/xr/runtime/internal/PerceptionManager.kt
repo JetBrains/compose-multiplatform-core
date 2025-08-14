@@ -17,6 +17,7 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.UUID
@@ -48,6 +49,13 @@ public interface PerceptionManager {
     /** Deletes a persisted [Anchor] from local storage. */
     public fun unpersistAnchor(uuid: UUID)
 
+    /** Checks the VPS availability at the given location. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult
+
     /** Returns the list of all known trackables. */
     public val trackables: Collection<Trackable>
 
@@ -56,4 +64,19 @@ public interface PerceptionManager {
 
     /** Hand tracking information for the right [Hand]. Only available on supported platforms. */
     public val rightHand: Hand?
+
+    /** AR device tracking information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice
+
+    /** View Cameras information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>
+
+    /** [Earth] tracking information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val earth: Earth
+
+    /** Collection of [DepthMap]s for the current frame */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val depthMaps: List<DepthMap>
+
+    /** Face tracking information for the face. Only available on supported platforms. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?
 }

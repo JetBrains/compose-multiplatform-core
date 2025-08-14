@@ -7,7 +7,31 @@
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.8.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.collection:collection",
+        "resolvedVersion": "1.1.0"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

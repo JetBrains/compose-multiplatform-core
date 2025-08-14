@@ -23,7 +23,7 @@ import androidx.room.compiler.processing.javac.kotlin.KmAnnotationContainer
 
 internal class JavacKmAnnotation(
     private val env: JavacProcessingEnv,
-    private val kmAnnotation: KmAnnotationContainer
+    private val kmAnnotation: KmAnnotationContainer,
 ) : InternalXAnnotation() {
 
     override val name: String

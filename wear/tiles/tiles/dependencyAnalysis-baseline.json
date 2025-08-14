@@ -20,15 +20,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "com.google.guava:guava",
         "resolvedVersion": "33.3.1-jre"
       },
@@ -80,6 +71,13 @@
         "identifier": ":wear:protolayout:protolayout-proto"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":wear:protolayout:protolayout-proto"
+      },
+      "toConfiguration": "testImplementation"
     }
   ]
 }

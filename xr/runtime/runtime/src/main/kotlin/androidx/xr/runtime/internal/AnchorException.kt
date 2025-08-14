@@ -20,9 +20,30 @@ import androidx.annotation.RestrictTo
 
 /** Custom class for exceptions related to [Anchor] APIs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-sealed public class AnchorException(message: String) : Exception(message)
+open public class AnchorException(message: String, cause: Throwable? = null) :
+    Exception(message, cause)
 
 /** Anchor resource limit was reached when attempting to create an anchor. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class AnchorResourcesExhaustedException :
-    AnchorException("Unable to create anchor. Anchor resources exhausted.")
+public class AnchorResourcesExhaustedException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Anchor resources exhausted.", cause)
+
+/** Camera is not tracking when attempting to create an anchor. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorNotTrackingException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Camera is not tracking.", cause)
+
+/** Anchor was not loaded from a valid UUID. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorInvalidUuidException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Invalid UUID provided.", cause)
+
+/** Anchor was not created due to an authorization error. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorNotAuthorizedException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Not authorized.", cause)
+
+/** Anchor was not created due to an unsupported location. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorUnsupportedLocationException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Unsupported location.", cause)

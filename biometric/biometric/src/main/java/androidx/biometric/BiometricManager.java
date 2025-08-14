@@ -32,6 +32,11 @@ import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
+import androidx.biometric.utils.AuthenticatorUtils;
+import androidx.biometric.utils.CryptoObjectUtils;
+import androidx.biometric.utils.DeviceUtils;
+import androidx.biometric.utils.KeyguardUtils;
+import androidx.biometric.utils.PackageUtils;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -104,23 +109,33 @@ public class BiometricManager {
      * This device either doesn't have this feature enabled, or it's not considered in a
      * high-risk environment that requires extra security measures for accessing sensitive data.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final int BIOMETRIC_ERROR_IDENTITY_CHECK_NOT_ACTIVE = 20;
+
+    /**
+     * Biometrics is not allowed to verify the user in apps. It's for internal use only. This
+     * error code, introduced in API 35, was previously covered by ERROR_HW_UNAVAILABLE and
+     * doesn't need to be public. Therefore, for backward compatibility, this error will be
+     * converted to BIOMETRIC_ERROR_HW_UNAVAILABLE.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static final int BIOMETRIC_ERROR_NOT_ENABLED_FOR_APPS = 21;
 
     /**
      * A status code that may be returned when checking for biometric authentication.
      */
     @IntDef({
-        BIOMETRIC_SUCCESS,
-        BIOMETRIC_STATUS_UNKNOWN,
-        BIOMETRIC_ERROR_UNSUPPORTED,
-        BIOMETRIC_ERROR_HW_UNAVAILABLE,
-        BIOMETRIC_ERROR_NONE_ENROLLED,
-        BIOMETRIC_ERROR_NO_HARDWARE,
-        BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED
+            BIOMETRIC_SUCCESS,
+            BIOMETRIC_STATUS_UNKNOWN,
+            BIOMETRIC_ERROR_UNSUPPORTED,
+            BIOMETRIC_ERROR_HW_UNAVAILABLE,
+            BIOMETRIC_ERROR_NONE_ENROLLED,
+            BIOMETRIC_ERROR_NO_HARDWARE,
+            BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED,
+            BIOMETRIC_ERROR_NOT_ENABLED_FOR_APPS
     })
     @Retention(RetentionPolicy.SOURCE)
-    @interface AuthenticationStatus {}
+    @interface AuthenticationStatus {
+    }
 
     /**
      * Types of authenticators, defined at a level of granularity supported by
@@ -133,6 +148,13 @@ public class BiometricManager {
      * @see BiometricPrompt.PromptInfo.Builder#setAllowedAuthenticators(int)
      */
     public interface Authenticators {
+
+        /**
+         * Placeholder for the theoretical strongest biometric security tier.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        int BIOMETRIC_MAX_STRENGTH = 0x0001;
+
         /**
          * Any biometric (e.g. fingerprint, iris, or face) on the device that meets or exceeds the
          * requirements for <strong>Class 3</strong> (formerly <strong>Strong</strong>), as defined
@@ -151,6 +173,12 @@ public class BiometricManager {
         int BIOMETRIC_WEAK = 0x00FF;
 
         /**
+         * Placeholder for the theoretical weakest biometric security tier.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        int BIOMETRIC_MIN_STRENGTH = 0x7FFF;
+
+        /**
          * The non-biometric credential used to secure the device (i.e. PIN, pattern, or password).
          * This should typically only be used in combination with a biometric auth type, such as
          * {@link #BIOMETRIC_WEAK}.
@@ -158,12 +186,35 @@ public class BiometricManager {
         int DEVICE_CREDENTIAL = 1 << 15;
 
         /**
-         * The bit is used to request for Identity Check.
-         * TODO(b/375693808): Once framework identity check authenticator constant is public,
-         * update the doc here.
+         * The bit is used to request for Identity Check. Identity Check is a feature added in
+         * API 36, which requires class 3 biometric authentication to access sensitive surfaces when
+         * the device is outside trusted places.
+         *
+         * <p>
+         * The requirements to trigger Identity Check are as follows:
+         * <ol>
+         * <li>User must have enabled the toggle for Identity Check in settings </li>
+         * <li>User must have enrollments for at least one BIOMETRIC_STRONG sensor</li>
+         * <li>The device is determined to be in a high risk environment, for example if it is
+         * outside of the user's trusted locations or fails to meet similar conditions</li>
+         * <li>The Identity Check requirements bit must be true</li>
+         * </ol>
+         * </p>
+         *
+         * <p>
+         * If all the above conditions are satisfied, only BIOMETRIC_STRONG sensors will be
+         * eligible for authentication, and device credential fallback will be dropped.
+         *  <p>
+         * For backward compatibility: If identity check isn't supported on the current
+         * API level:
+         * <ul>
+         * <li>a. if there are other allowed authenticators bits, identity check will be ignored and
+         * use the others for authentication;</li>
+         * <li>b. if IDENTITY_CHECK is the only allowed authenticators bit, identity check will be
+         * ignored and the default authenticator will be used.</li>
+         * </ul>
          */
         @RequiresPermission(SET_BIOMETRIC_DIALOG_ADVANCED)
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
         int IDENTITY_CHECK = 1 << 16;
     }
 
@@ -173,10 +224,12 @@ public class BiometricManager {
     @IntDef(flag = true, value = {
         Authenticators.BIOMETRIC_STRONG,
         Authenticators.BIOMETRIC_WEAK,
-        Authenticators.DEVICE_CREDENTIAL
+        Authenticators.DEVICE_CREDENTIAL,
+        Authenticators.IDENTITY_CHECK
     })
     @Retention(RetentionPolicy.SOURCE)
-    @interface AuthenticatorTypes {}
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public @interface AuthenticatorTypes {}
 
     private static final int AUTH_MODALITY_NONE = 0;
     private static final int AUTH_MODALITY_CREDENTIAL = 1;
@@ -224,20 +277,20 @@ public class BiometricManager {
          * Provides a localized string that can be used as the label for a button that invokes
          * {@link BiometricPrompt}.
          *
-         * <p>When possible, this method should use the given authenticator requirements to more
-         * precisely specify the authentication type that will be used. For example, if
-         * <strong>Class 3</strong> biometric authentication is requested on a device with a
-         * <strong>Class 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor,
-         * the returned string should indicate that fingerprint authentication will be used.
+         * <p>This method will use the provided authenticator requirements to more precisely
+         * specify the authentication type that will be used. For example, if <strong>Class
+         * 3</strong> biometric authentication is requested on a device with a <strong>Class
+         * 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor, the returned
+         * string will indicate that fingerprint authentication will be used.
          *
-         * <p>This method should also try to specify which authentication method(s) will be used in
-         * practice when multiple authenticators meet the given requirements. For example, if
-         * biometric authentication is requested on a device with both face and fingerprint sensors
-         * but the user has selected face as their preferred method, the returned string should
-         * indicate that face authentication will be used.
+         * <p>The method will also specify which authentication method(s) will be used in practice
+         * when multiple authenticators meet the given requirements. For example, if biometric
+         * authentication is requested on a device with both face and fingerprint sensors but the
+         * user has selected face as their preferred method, the returned string will indicate
+         * that face authentication will be used.
          *
          * <p>This method may return {@code null} if none of the requested authenticator types are
-         * available, but this should <em>not</em> be relied upon for checking the status of
+         * available, but do <em>not</em> reply upon this API for checking the status of
          * authenticators. Instead, use {@link #canAuthenticate(int)}.
          *
          * @return The label for a button that invokes {@link BiometricPrompt} for authentication.
@@ -258,20 +311,20 @@ public class BiometricManager {
          * Provides a localized string that can be shown while the user is authenticating with
          * {@link BiometricPrompt}.
          *
-         * <p>When possible, this method should use the given authenticator requirements to more
-         * precisely specify the authentication type that will be used. For example, if
-         * <strong>Class 3</strong> biometric authentication is requested on a device with a
-         * <strong>Class 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor,
-         * the returned string should indicate that fingerprint authentication will be used.
+         * <p>This method will use the provided authenticator requirements to more precisely
+         * specify the authentication type that will be used. For example, if <strong>Class
+         * 3</strong> biometric authentication is requested on a device with a <strong>Class
+         * 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor, the returned
+         * string will indicate that fingerprint authentication will be used.
          *
-         * <p>This method should also try to specify which authentication method(s) will be used in
-         * practice when multiple authenticators meet the given requirements. For example, if
-         * biometric authentication is requested on a device with both face and fingerprint sensors
-         * but the user has selected face as their preferred method, the returned string should
-         * indicate that face authentication will be used.
+         * <p>The method will also specify which authentication method(s) will be used in practice
+         * when multiple authenticators meet the given requirements. For example, if biometric
+         * authentication is requested on a device with both face and fingerprint sensors but the
+         * user has selected face as their preferred method, the returned string will indicate
+         * that face authentication will be used.
          *
          * <p>This method may return {@code null} if none of the requested authenticator types are
-         * available, but this should <em>not</em> be relied upon for checking the status of
+         * available, but do <em>not</em> reply upon this method for checking the status of
          * authenticators. Instead, use {@link #canAuthenticate(int)}.
          *
          * @return A message to be shown on {@link BiometricPrompt} during authentication.
@@ -292,21 +345,21 @@ public class BiometricManager {
          * Provides a localized string that can be shown as the title for an app setting that
          * allows authentication with {@link BiometricPrompt}.
          *
-         * <p>When possible, this method should use the given authenticator requirements to more
-         * precisely specify the authentication type that will be used. For example, if
-         * <strong>Class 3</strong> biometric authentication is requested on a device with a
-         * <strong>Class 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor,
-         * the returned string should indicate that fingerprint authentication will be used.
+         * <p>This method will use the provided authenticator requirements to more precisely
+         * specify the authentication type that will be used. For example, if <strong>Class
+         * 3</strong> biometric authentication is requested on a device with a <strong>Class
+         * 3</strong> fingerprint sensor and a <strong>Class 2</strong> face sensor, the returned
+         * string will indicate that fingerprint authentication will be used.
          *
-         * <p>This method should <em>not</em> try to specify which authentication method(s) will be
+         * <p>This method will <em>not</em> try to specify which authentication method(s) will be
          * used in practice when multiple authenticators meet the given requirements. For example,
          * if biometric authentication is requested on a device with both face and fingerprint
-         * sensors, the returned string should indicate that either face or fingerprint
+         * sensors, the returned string will indicate that either face or fingerprint
          * authentication may be used, regardless of whether the user has enrolled or selected
          * either as their preferred method.
          *
          * <p>This method may return {@code null} if none of the requested authenticator types are
-         * supported by the system, but this should <em>not</em> be relied upon for checking the
+         * supported by the system, but do <em>not</em> reply upon this method for checking the
          * status of authenticators. Instead, use {@link #canAuthenticate(int)} or
          * {@link android.content.pm.PackageManager#hasSystemFeature(String)}.
          *
@@ -753,7 +806,11 @@ public class BiometricManager {
                 Log.e(TAG, "Failure in canAuthenticate(). BiometricManager was null.");
                 return BIOMETRIC_ERROR_HW_UNAVAILABLE;
             }
-            return Api30Impl.canAuthenticate(mBiometricManager, authenticators);
+            final int canAuthenticate = Api30Impl.canAuthenticate(mBiometricManager,
+                    authenticators);
+            // Convert BIOMETRIC_ERROR_NOT_ENABLED_FOR_APPS to BIOMETRIC_ERROR_HW_UNAVAILABLE
+            return (canAuthenticate == BIOMETRIC_ERROR_NOT_ENABLED_FOR_APPS)
+                    ? BIOMETRIC_ERROR_HW_UNAVAILABLE : canAuthenticate;
         }
         return canAuthenticateCompat(authenticators);
     }
@@ -765,7 +822,8 @@ public class BiometricManager {
      * it directly, instead of via canAuthenticate().
      */
     @SuppressLint("WrongConstant")
-    boolean isIdentityCheckAvailable() {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public boolean isIdentityCheckAvailable() {
         if (mIsIdentityCheckAvailable != null) {
             return mIsIdentityCheckAvailable;
         }
@@ -996,6 +1054,8 @@ public class BiometricManager {
          * @return An instance of {@link android.hardware.biometrics.BiometricManager.Strings}.
          */
         @RequiresPermission(Manifest.permission.USE_BIOMETRIC)
+        // This is expected because AndroidX and framework annotation are not identical
+        @SuppressWarnings("WrongConstant")
         static android.hardware.biometrics.BiometricManager.@NonNull Strings getStrings(
                 android.hardware.biometrics.@NonNull BiometricManager biometricManager,
                 @AuthenticatorTypes int authenticators) {
@@ -1068,6 +1128,8 @@ public class BiometricManager {
          * {@link android.hardware.biometrics.BiometricManager#canAuthenticate(int)}.
          */
         @AuthenticationStatus
+        // This is expected because AndroidX and framework annotation are not identical
+        @SuppressWarnings("WrongConstant")
         static int canAuthenticate(
                 android.hardware.biometrics.@NonNull BiometricManager biometricManager,
                 @AuthenticatorTypes int authenticators) {
@@ -1105,6 +1167,8 @@ public class BiometricManager {
          * {@link android.hardware.biometrics.BiometricManager#canAuthenticate()}.
          */
         @AuthenticationStatus
+        // This is expected because AndroidX and framework annotation are not identical
+        @SuppressWarnings("WrongConstant")
         static int canAuthenticate(
                 android.hardware.biometrics.@NonNull BiometricManager biometricManager) {
             return biometricManager.canAuthenticate();

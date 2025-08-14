@@ -66,8 +66,7 @@ public class MyDao_Impl(
         val _columnIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
         val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
         val _columnIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
-        val _result: MutableMap<Artist, MutableList<Song>> =
-            LinkedHashMap<Artist, MutableList<Song>>()
+        val _result: MutableMap<Artist, MutableList<Song>> = LinkedHashMap<Artist, MutableList<Song>>()
         while (_stmt.step()) {
           val _key: Artist
           val _tmpArtistId: String
@@ -106,8 +105,7 @@ public class MyDao_Impl(
         val _columnIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
         val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
         val _columnIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
-        val _result: MutableMap<Artist, MutableList<Song>> =
-            LinkedHashMap<Artist, MutableList<Song>>()
+        val _result: MutableMap<Artist, MutableList<Song>> = LinkedHashMap<Artist, MutableList<Song>>()
         while (_stmt.step()) {
           val _key: Artist
           val _tmpArtistId: String
@@ -139,8 +137,7 @@ public class MyDao_Impl(
   }
 
   public override fun getArtistSongCount(): Map<Artist, Int> {
-    val _sql: String =
-        "SELECT Artist.*, COUNT(songId) as songCount FROM Artist JOIN Song ON Artist.artistId = Song.artistKey GROUP BY artistId"
+    val _sql: String = "SELECT Artist.*, COUNT(songId) as songCount FROM Artist JOIN Song ON Artist.artistId = Song.artistKey GROUP BY artistId"
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
@@ -177,8 +174,7 @@ public class MyDao_Impl(
       try {
         val _columnIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
         val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
-        val _result: MutableMap<Artist, MutableList<String>> =
-            LinkedHashMap<Artist, MutableList<String>>()
+        val _result: MutableMap<Artist, MutableList<String>> = LinkedHashMap<Artist, MutableList<String>>()
         while (_stmt.step()) {
           val _key: Artist
           val _tmpArtistId: String

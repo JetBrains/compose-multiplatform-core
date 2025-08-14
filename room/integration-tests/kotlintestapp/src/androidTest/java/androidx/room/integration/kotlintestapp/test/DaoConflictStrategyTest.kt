@@ -26,6 +26,7 @@ import androidx.room.integration.kotlintestapp.vo.Toy
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class DaoConflictStrategyTest {
+    private lateinit var mDb: TestDatabase
     private lateinit var mToyDao: ToyDao
     private lateinit var mOriginalToy: Toy
     private lateinit var mPetDao: PetDao
@@ -41,14 +43,18 @@ class DaoConflictStrategyTest {
     @Before
     fun createDbAndSetUpToys() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        val db: TestDatabase =
-            Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
-        mToyDao = db.toyDao()
-        mPetDao = db.petDao()
+        mDb = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
+        mToyDao = mDb.toyDao()
+        mPetDao = mDb.petDao()
         mPet = TestUtil.createPet(1)
         mOriginalToy = Toy(10, "originalToy", 1)
         mPetDao.insertOrReplace(mPet)
         mToyDao.insert(mOriginalToy)
+    }
+
+    @After
+    fun teardown() {
+        mDb.close()
     }
 
     @Test

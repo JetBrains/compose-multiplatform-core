@@ -90,7 +90,7 @@ internal class HandwritingTestStylusInjectScope(semanticsNode: SemanticsNode) :
     override fun moveWithHistoryMultiPointer(
         relativeHistoricalTimes: List<Long>,
         historicalCoordinates: List<List<Offset>>,
-        delayMillis: Long
+        delayMillis: Long,
     ) {
         // Not needed for this test because Android only support one stylus pointer.
     }
@@ -229,5 +229,5 @@ private fun obtainMotionEvent(downTime: Long, eventTime: Long, action: Int, x: F
         /* deviceId= */ 0,
         /* edgeFlags= */ 0,
         /* source= */ InputDeviceCompat.SOURCE_STYLUS,
-        /* flags= */ 0
+        /* flags= */ 0,
     )

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,7 +55,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class MaterialShapesScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -72,7 +71,7 @@ class MaterialShapesScreenshotTest {
                 Button(
                     onClick = {},
                     modifier = Modifier.requiredSize(56.dp),
-                    shape = morphShape(progress = 0f)
+                    shape = morphShape(progress = 0f),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -88,7 +87,7 @@ class MaterialShapesScreenshotTest {
                 Button(
                     onClick = {},
                     modifier = Modifier.requiredSize(56.dp),
-                    shape = morphShape(progress = 0.5f)
+                    shape = morphShape(progress = 0.5f),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -104,7 +103,7 @@ class MaterialShapesScreenshotTest {
                 Button(
                     onClick = {},
                     modifier = Modifier.requiredSize(56.dp),
-                    shape = morphShape(progress = 1f)
+                    shape = morphShape(progress = 1f),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -120,7 +119,7 @@ class MaterialShapesScreenshotTest {
                 LazyVerticalGrid(
                     columns = GridCells.FixedSize(64.dp),
                     contentPadding = PaddingValues(2.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     allShapes().forEach { polygon ->
                         item {
@@ -174,7 +173,7 @@ class MaterialShapesScreenshotTest {
             MaterialShapes.PixelCircle,
             MaterialShapes.PixelTriangle,
             MaterialShapes.Bun,
-            MaterialShapes.Heart
+            MaterialShapes.Heart,
         )
     }
 
@@ -184,7 +183,7 @@ class MaterialShapesScreenshotTest {
             override fun createOutline(
                 size: Size,
                 layoutDirection: LayoutDirection,
-                density: Density
+                density: Density,
             ): Outline {
                 val matrix = Matrix()
                 matrix.scale(size.width, size.height)

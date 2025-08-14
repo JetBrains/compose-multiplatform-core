@@ -21,6 +21,7 @@ import java.util.Properties
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
+import org.gradle.testkit.runner.GradleRunner
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.Description
@@ -167,6 +168,13 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
         return latestVersionNode
     }
 
+    fun setUpGradleVersion(runner: GradleRunner, version: String) {
+        runner.withGradleVersion(version)
+        props.gradlePrebuiltsPath?.let { path ->
+            runner.withGradleDistribution(File(path, "gradle-$version-bin.zip").toURI())
+        }
+    }
+
     private fun copyLocalProperties() {
         var foundSdk = false
 
@@ -222,6 +230,8 @@ data class ProjectProps(
     val repositoryUrls: List<String>,
     // Not available in playground projects.
     val prebuiltsPath: String?,
+    // Not available in playground projects.
+    val gradlePrebuiltsPath: String?,
 ) {
     companion object {
         private fun Properties.getCanonicalPath(key: String): String {
@@ -271,6 +281,8 @@ data class ProjectProps(
                 kspVersion = properties.getProperty("kspVersion"),
                 agpDependency = properties.getProperty("agpDependency"),
                 prebuiltsPath = properties.getOptionalCanonicalPath("prebuiltsRelativePath"),
+                gradlePrebuiltsPath =
+                    properties.getOptionalCanonicalPath("gradlePrebuiltsRelativePath"),
             )
         }
     }

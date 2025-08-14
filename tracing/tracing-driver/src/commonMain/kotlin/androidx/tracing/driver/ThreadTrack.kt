@@ -16,10 +16,7 @@
 
 package androidx.tracing.driver
 
-import perfetto.protos.MutableThreadDescriptor
-import perfetto.protos.MutableTrackDescriptor
-
-/** Represents a track for a Thread like construct in Perfetto. */
+/** [Track] representing a `Thread` in the specified [ProcessTrack]. */
 public open class ThreadTrack(
     /** The thread id. */
     internal val id: Int,
@@ -27,20 +24,18 @@ public open class ThreadTrack(
     internal val name: String,
     /** The process track that the thread belongs to. */
     internal val process: ProcessTrack,
-) : EventTrack(context = process.context, uuid = monotonicId()) {
+) : SliceTrack(context = process.context, uuid = monotonicId()) {
 
     init {
-        emitPacket(immediateDispatch = true) { packet ->
+        emitTraceEvent(immediateDispatch = true) { packet ->
             packet.setPreamble(
-                this,
-                MutableTrackDescriptor(
+                TrackDescriptor(
+                    name = name,
                     uuid = uuid,
-                    thread =
-                        MutableThreadDescriptor(
-                            thread_name = name,
-                            pid = process.id,
-                            tid = id,
-                        )
+                    parentUuid = DEFAULT_LONG,
+                    pid = process.id,
+                    tid = id,
+                    type = TRACK_DESCRIPTOR_TYPE_THREAD,
                 )
             )
         }

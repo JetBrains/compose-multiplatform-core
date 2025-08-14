@@ -18,33 +18,40 @@ package androidx.xr.scenecore.impl;
 
 import static java.lang.Math.max;
 
+import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
 
-import androidx.annotation.Nullable;
-import androidx.xr.extensions.Consumer;
-import androidx.xr.extensions.XrExtensions;
-import androidx.xr.extensions.node.ReformEvent;
-import androidx.xr.extensions.node.ReformOptions;
-import androidx.xr.extensions.node.Vec3;
+import androidx.xr.runtime.internal.AnchorEntity;
+import androidx.xr.runtime.internal.AnchorPlacement;
+import androidx.xr.runtime.internal.Dimensions;
+import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.MovableComponent;
+import androidx.xr.runtime.internal.MoveEvent;
+import androidx.xr.runtime.internal.MoveEventListener;
+import androidx.xr.runtime.internal.PlaneSemantic;
+import androidx.xr.runtime.internal.PlaneType;
+import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
+import androidx.xr.runtime.math.Ray;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.JxrPlatformAdapter.AnchorEntity;
-import androidx.xr.scenecore.JxrPlatformAdapter.AnchorPlacement;
-import androidx.xr.scenecore.JxrPlatformAdapter.Dimensions;
-import androidx.xr.scenecore.JxrPlatformAdapter.Entity;
-import androidx.xr.scenecore.JxrPlatformAdapter.MovableComponent;
-import androidx.xr.scenecore.JxrPlatformAdapter.MoveEvent;
-import androidx.xr.scenecore.JxrPlatformAdapter.MoveEventListener;
-import androidx.xr.scenecore.JxrPlatformAdapter.PlaneSemantic;
-import androidx.xr.scenecore.JxrPlatformAdapter.PlaneType;
-import androidx.xr.scenecore.JxrPlatformAdapter.Ray;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
 import androidx.xr.scenecore.impl.perception.Session;
+
+import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.function.Consumer;
+import com.android.extensions.xr.node.ReformEvent;
+import com.android.extensions.xr.node.ReformOptions;
+import com.android.extensions.xr.node.Vec3;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -114,7 +121,7 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
-    public boolean onAttach(Entity entity) {
+    public boolean onAttach(@NonNull Entity entity) {
         if (mEntity != null) {
             Log.e(TAG, "Already attached to entity " + mEntity);
             return false;
@@ -130,27 +137,28 @@ class MovableComponentImpl implements MovableComponent {
                         : reformFlags;
         reformFlags =
                 mScaleInZ ? reformFlags | ReformOptions.FLAG_SCALE_WITH_DISTANCE : reformFlags;
-        reformOptions.setFlags(reformFlags);
-        reformOptions.setEnabledReform(reformOptions.getEnabledReform() | ReformOptions.ALLOW_MOVE);
-        reformOptions.setScaleWithDistanceMode(
-                translateScaleWithDistanceMode(mScaleWithDistanceMode));
+        ReformOptions unused = reformOptions.setFlags(reformFlags);
+        unused =
+                reformOptions
+                        .setEnabledReform(
+                                reformOptions.getEnabledReform() | ReformOptions.ALLOW_MOVE)
+                        .setScaleWithDistanceMode(
+                                translateScaleWithDistanceMode(mScaleWithDistanceMode));
 
         // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
         if (entity instanceof PanelEntityImpl && mCurrentSize == null) {
             mCurrentSize = ((PanelEntityImpl) entity).getSize();
         }
         if (mCurrentSize != null) {
-            reformOptions.setCurrentSize(
-                    new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
+            unused =
+                    reformOptions.setCurrentSize(
+                            new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
         }
         if (mUserAnchorable && mSystemMovable && mReformEventConsumer == null) {
-            mReformEventConsumer =
-                    reformEvent -> {
-                        Pair<Pose, Entity> unused = getUpdatedReformEventPoseAndParent(reformEvent);
-                    };
+            mReformEventConsumer = reformEvent -> getUpdatedReformEventPoseAndParent(reformEvent);
         }
-        mLastPose = entity.getPose();
-        mLastScale = entity.getScale();
+        mLastPose = entity.getPose(Space.PARENT);
+        mLastScale = entity.getScale(Space.PARENT);
         ((AndroidXrEntity) entity).updateReformOptions();
         if (mReformEventConsumer != null) {
             ((AndroidXrEntity) entity)
@@ -160,10 +168,11 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
-    public void onDetach(Entity entity) {
+    public void onDetach(@NonNull Entity entity) {
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
-        reformOptions.setEnabledReform(
-                reformOptions.getEnabledReform() & ~ReformOptions.ALLOW_MOVE);
+        ReformOptions unused =
+                reformOptions.setEnabledReform(
+                        reformOptions.getEnabledReform() & ~ReformOptions.ALLOW_MOVE);
         // Clear any flags that were set by this component.
         int reformFlags = reformOptions.getFlags();
         reformFlags =
@@ -172,7 +181,7 @@ class MovableComponentImpl implements MovableComponent {
                         : reformFlags;
         reformFlags =
                 mScaleInZ ? reformFlags & ~ReformOptions.FLAG_SCALE_WITH_DISTANCE : reformFlags;
-        reformOptions.setFlags(reformFlags);
+        unused = reformOptions.setFlags(reformFlags);
         ((AndroidXrEntity) entity).updateReformOptions();
         if (mReformEventConsumer != null) {
             ((AndroidXrEntity) entity).removeReformEventConsumer(mReformEventConsumer);
@@ -182,16 +191,22 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
-    public void setSize(Dimensions dimensions) {
+    public void setSize(@NonNull Dimensions dimensions) {
         mCurrentSize = dimensions;
         if (mEntity == null) {
             Log.i(TAG, "setSize called before component is attached to an Entity.");
             return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        reformOptions.setCurrentSize(
-                new Vec3(dimensions.width, dimensions.height, dimensions.depth));
+        ReformOptions unused =
+                reformOptions.setCurrentSize(
+                        new Vec3(dimensions.width, dimensions.height, dimensions.depth));
         ((AndroidXrEntity) mEntity).updateReformOptions();
+    }
+
+    @Override
+    public Dimensions getSize() {
+        return mCurrentSize;
     }
 
     @Override
@@ -210,13 +225,15 @@ class MovableComponentImpl implements MovableComponent {
             return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        reformOptions.setScaleWithDistanceMode(
-                translateScaleWithDistanceMode(scaleWithDistanceMode));
+        ReformOptions unused =
+                reformOptions.setScaleWithDistanceMode(
+                        translateScaleWithDistanceMode(scaleWithDistanceMode));
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
     @Override
-    public void addMoveEventListener(Executor executor, MoveEventListener moveEventListener) {
+    public void addMoveEventListener(
+            @NonNull Executor executor, @NonNull MoveEventListener moveEventListener) {
         if (mReformEventConsumer != null) {
             ((AndroidXrEntity) mEntity).removeReformEventConsumer(mReformEventConsumer);
         }
@@ -226,8 +243,12 @@ class MovableComponentImpl implements MovableComponent {
                         return;
                     }
                     if (reformEvent.getState() == ReformEvent.REFORM_STATE_START) {
-                        mInitialParent = mEntity.getParent();
+                        mInitialParent =
+                                mEntity.getParent() != null
+                                        ? mEntity.getParent()
+                                        : mActivitySpaceImpl;
                     }
+
                     Pose newPose;
                     Entity updatedParent = null;
                     if (mUserAnchorable) {
@@ -241,13 +262,16 @@ class MovableComponentImpl implements MovableComponent {
                                         reformEvent.getProposedPosition(),
                                         reformEvent.getProposedOrientation());
                     }
-                    Vector3 newScale = RuntimeUtils.getVector3(reformEvent.getProposedScale());
+                    Vector3 newScale =
+                            mScaleInZ
+                                    ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
+                                    : mLastScale;
                     Entity disposeEntity = null;
 
                     Entity parent = updatedParent;
                     mMoveEventListenersMap.forEach(
                             (listener, listenerExecutor) ->
-                                    executor.execute(
+                                    listenerExecutor.execute(
                                             () ->
                                                     listener.onMoveEvent(
                                                             new MoveEvent(
@@ -306,10 +330,11 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
-    public void removeMoveEventListener(MoveEventListener moveEventListener) {
+    public void removeMoveEventListener(@NonNull MoveEventListener moveEventListener) {
         mMoveEventListenersMap.remove(moveEventListener);
     }
 
+    @CanIgnoreReturnValue
     private Pair<Pose, Entity> getUpdatedReformEventPoseAndParent(ReformEvent reformEvent) {
         if (reformEvent.getState() == ReformEvent.REFORM_STATE_END && shouldRenderPlaneShadow()) {
             mPanelShadowRenderer.destroy();
@@ -319,7 +344,7 @@ class MovableComponentImpl implements MovableComponent {
                         reformEvent.getProposedPosition(), reformEvent.getProposedOrientation());
         Pair<Pose, Entity> updatedEntity = updatePoseWithPlanes(proposedPose, reformEvent);
         if (mSystemMovable) {
-            mEntity.setPose(updatedEntity.first);
+            mEntity.setPose(updatedEntity.first, Space.PARENT);
         }
         return updatedEntity;
     }
@@ -351,6 +376,16 @@ class MovableComponentImpl implements MovableComponent {
 
             PlaneData planeData = plane.getData(dataTimeNs);
             if (planeData == null) {
+                continue;
+            }
+            // Ignore the plane if the Pose is invalid.
+            if (planeData.centerPose.tx() == 0
+                    && planeData.centerPose.ty() == 0
+                    && planeData.centerPose.tz() == 0
+                    && planeData.centerPose.qx() == 0
+                    && planeData.centerPose.qy() == 0
+                    && planeData.centerPose.qz() == 0
+                    && planeData.centerPose.qw() == 0) {
                 continue;
             }
             Pose planePoseUpdate = updatePoseForPlane(planeData, updatedPoseInOpenXr);
@@ -401,7 +436,9 @@ class MovableComponentImpl implements MovableComponent {
             // TODO: b/367754233 - Revisit if this needs to use ActivitySpaceScale or
             // WorldSpaceScale.
             mEntity.setScale(
-                    mEntity.getWorldSpaceScale().div(mActivitySpaceImpl.getWorldSpaceScale()));
+                    mEntity.getWorldSpaceScale()
+                            .scale(mActivitySpaceImpl.getWorldSpaceScale().inverse()),
+                    Space.PARENT);
             mEntity.setParent(mActivitySpaceImpl);
             checkAndDisposeAnchorEntity();
             mCreatedAnchorEntity = null;
@@ -429,8 +466,7 @@ class MovableComponentImpl implements MovableComponent {
 
     // Gets the anchor placement settings for the given plane data, if it is null the entity should
     // not be anchored to this plane.
-    @Nullable
-    private AnchorPlacementImpl getAnchorPlacementIfAnchorable(PlaneData planeData) {
+    private @Nullable AnchorPlacementImpl getAnchorPlacementIfAnchorable(PlaneData planeData) {
         if (!mUserAnchorable || !mSystemMovable) {
             return null;
         }
@@ -462,8 +498,13 @@ class MovableComponentImpl implements MovableComponent {
             PlaneData anchorablePlaneData,
             AnchorPlacementImpl anchorPlacement,
             Long dataTimeNs) {
+        Context entityContext = null;
+        if (mEntity instanceof AndroidXrEntity) {
+            entityContext = ((AndroidXrEntity) mEntity).getContext();
+        }
         AnchorEntityImpl anchorEntity =
                 AnchorEntityImpl.createAnchorFromPlane(
+                        entityContext,
                         mExtensions.createNode(),
                         plane,
                         new Pose(),
@@ -484,7 +525,7 @@ class MovableComponentImpl implements MovableComponent {
         // the
         // anchor entity's scale.
         Vector3 entityScale = mEntity.getWorldSpaceScale();
-        mEntity.setScale(entityScale);
+        mEntity.setScale(entityScale, Space.PARENT);
         Quaternion planeRotation =
                 RuntimeUtils.fromPerceptionPose(anchorablePlaneData.centerPose).getRotation();
         Pose rotatedPose =
@@ -511,8 +552,7 @@ class MovableComponentImpl implements MovableComponent {
         return Pair.create(poseToAnchor, anchorEntity);
     }
 
-    @Nullable
-    private Pose updatePoseForPlane(PlaneData planeData, Pose proposedPoseInOpenXr) {
+    private @Nullable Pose updatePoseForPlane(PlaneData planeData, Pose proposedPoseInOpenXr) {
         // Get the pose as related to the center of the plane.
 
         Pose centerPose = RuntimeUtils.fromPerceptionPose(planeData.centerPose);
@@ -550,11 +590,11 @@ class MovableComponentImpl implements MovableComponent {
         if (!shouldRenderPlaneShadow()) {
             return;
         }
-        mPanelShadowRenderer.updatePanelPose(proposedPose, planePose, (PanelEntityImpl) mEntity);
+        mPanelShadowRenderer.updatePanelPose(proposedPose, planePose, (BasePanelEntity) mEntity);
     }
 
     private boolean shouldRenderPlaneShadow() {
-        return mEntity instanceof PanelEntityImpl && mSystemMovable;
+        return mEntity instanceof BasePanelEntity && mSystemMovable;
     }
 
     // Checks if there is a created anchor entity and if it should be disposed. If so, disposes of
@@ -569,8 +609,7 @@ class MovableComponentImpl implements MovableComponent {
         }
     }
 
-    private static @ReformOptions.ScaleWithDistanceMode int translateScaleWithDistanceMode(
-            @ScaleWithDistanceMode int scale) {
+    private static int translateScaleWithDistanceMode(@ScaleWithDistanceMode int scale) {
         switch (scale) {
             case ScaleWithDistanceMode.DMM:
                 return ReformOptions.SCALE_WITH_DISTANCE_MODE_DMM;

@@ -23,9 +23,9 @@ import kotlinx.coroutines.Dispatchers
 
 class PagingTest : BasePagingTest() {
 
-    override fun getRoomDatabase(): SampleDatabase {
+    override fun getRoomDatabase(): PagingDatabase {
         val tempFile = createTempFile("test.db").also { it.toFile().deleteOnExit() }
-        return Room.databaseBuilder<SampleDatabase>(name = tempFile.toString())
+        return Room.databaseBuilder<PagingDatabase>(name = tempFile.toString())
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()

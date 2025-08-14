@@ -16,14 +16,12 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
-import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.junit.runners.model.FrameworkMethod
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.internal.bytecode.InstrumentationConfiguration
 
 /**
@@ -65,7 +63,6 @@ public class DataWithInlineClassJUnitTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class DataWithInlineClassRobolectricTest {
     @Test
     public fun inlineClassesAreEqualInRobolectric() {

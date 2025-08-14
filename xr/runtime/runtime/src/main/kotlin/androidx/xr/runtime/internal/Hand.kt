@@ -17,82 +17,58 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.HandJointType
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
-
-/** Represents the type of hand joint. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public enum class HandJointType {
-    /** The center of the palm. Often used as a reference point for hand tracking. */
-    PALM,
-    /** The wrist joint, where the hand connects to the forearm. */
-    WRIST,
-
-    // Thumb Joints
-    /** The base of the thumb (the first joint connecting the thumb to the palm). */
-    THUMB_METACARPAL,
-    /** The second joint of the thumb, closer to the palm. */
-    THUMB_PROXIMAL,
-    /** The third joint of the thumb, further from the palm. */
-    THUMB_DISTAL,
-    /** The tip of the thumb. */
-    THUMB_TIP,
-
-    // Index Finger Joints
-    /** The base of the index finger, connecting it to the hand. */
-    INDEX_METACARPAL,
-    /** The first joint of the index finger, closer to the palm. */
-    INDEX_PROXIMAL,
-    /** The second joint of the index finger, between the proximal and distal joints. */
-    INDEX_INTERMEDIATE,
-    /** The third joint of the index finger, closest to the fingertip. */
-    INDEX_DISTAL,
-    /** The tip of the index finger. */
-    INDEX_TIP,
-
-    // Middle Finger Joints
-    /** The base of the middle finger, connecting it to the hand. */
-    MIDDLE_METACARPAL,
-    /** The first joint of the middle finger, closer to the palm. */
-    MIDDLE_PROXIMAL,
-    /** The second joint of the middle finger, between the proximal and distal joints. */
-    MIDDLE_INTERMEDIATE,
-    /** The third joint of the middle finger, closest to the fingertip. */
-    MIDDLE_DISTAL,
-    /** The tip of the middle finger. */
-    MIDDLE_TIP,
-
-    // Ring Finger Joints
-    /** The base of the ring finger, connecting it to the hand. */
-    RING_METACARPAL,
-    /** The first joint of the ring finger, closer to the palm. */
-    RING_PROXIMAL,
-    /** The second joint of the ring finger, between the proximal and distal joints. */
-    RING_INTERMEDIATE,
-    /** The third joint of the ring finger, closest to the fingertip. */
-    RING_DISTAL,
-    /** The tip of the ring finger. */
-    RING_TIP,
-
-    // Little Finger (Pinky) Joints
-    /** The base of the little finger (pinky), connecting it to the hand. */
-    LITTLE_METACARPAL,
-    /** The first joint of the little finger, closer to the palm. */
-    LITTLE_PROXIMAL,
-    /** The second joint of the little finger, between the proximal and distal joints. */
-    LITTLE_INTERMEDIATE,
-    /** The third joint of the little finger, closest to the fingertip. */
-    LITTLE_DISTAL,
-    /** The tip of the little finger (pinky). */
-    LITTLE_TIP,
-}
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
+import java.nio.FloatBuffer
 
 /** Describes a hand. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface Hand {
 
-    /** The value describing if the hand is active. */
-    public val isActive: Boolean
+    public companion object {
+        /**
+         * Parses the hand joint data from the buffer.
+         *
+         * @param trackingState the current [TrackingState] of the hand.
+         * @param handJointsBuffer the [ByteBuffer] containing the pose of each joint in the hand.
+         * @return a map of [HandJointType] to [Pose] representing the current pose of each joint in
+         *   the hand.
+         */
+        @JvmStatic
+        public fun parseHandJoint(
+            trackingState: TrackingState,
+            handJointsBuffer: FloatBuffer,
+        ): Map<HandJointType, Pose> {
+            if (trackingState != TrackingState.TRACKING) {
+                return emptyMap()
+            }
+            val buffer = handJointsBuffer.duplicate()
+            val jointCount = HandJointType.values().size
+            val poses = mutableListOf<Pose>()
+            repeat(jointCount) {
+                val qx = buffer.get()
+                val qy = buffer.get()
+                val qz = buffer.get()
+                val qw = buffer.get()
+                val px = buffer.get()
+                val py = buffer.get()
+                val pz = buffer.get()
+                poses.add(Pose(Vector3(px, py, pz), Quaternion(qx, qy, qz, qw)))
+            }
+            return HandJointType.values().zip(poses).toMap()
+        }
+    }
+
+    /** The current [TrackingState] of the hand's data. */
+    public val trackingState: TrackingState
+
+    /** The value describing the data of the hand, including trackingState and handJoints' poses. */
+    public val handJointsBuffer: FloatBuffer
 
     /** The value describing the poses of the hand joints. */
     public val handJoints: Map<HandJointType, Pose>
+        get() = parseHandJoint(trackingState, handJointsBuffer)
 }

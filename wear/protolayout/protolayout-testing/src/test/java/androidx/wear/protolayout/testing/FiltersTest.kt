@@ -32,11 +32,17 @@ import androidx.wear.protolayout.LayoutElementBuilders.Row
 import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.ModifiersBuilders.Background
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.ModifiersBuilders.Semantics
 import androidx.wear.protolayout.TypeBuilders.StringProp
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
+import androidx.wear.protolayout.expression.PlatformEventSources
+import androidx.wear.protolayout.expression.PlatformHealthSources
+import androidx.wear.protolayout.expression.PlatformHealthSources.Keys
 import androidx.wear.protolayout.expression.dynamicDataMapOf
 import androidx.wear.protolayout.expression.intAppDataKey
 import androidx.wear.protolayout.expression.mapTo
@@ -44,6 +50,7 @@ import androidx.wear.protolayout.layout.basicText
 import androidx.wear.protolayout.modifiers.loadAction
 import androidx.wear.protolayout.types.LayoutString
 import androidx.wear.protolayout.types.asLayoutConstraint
+import androidx.wear.protolayout.types.asLayoutString
 import androidx.wear.protolayout.types.layoutString
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -150,16 +157,77 @@ class FiltersTest {
 
     @Test
     fun hasDynamicText() {
+        val staticContent = "static content"
+        val textContent =
+            DynamicString.constant("dynamic content")
+                .asLayoutString(staticContent, staticContent.asLayoutConstraint())
+        val testElement = basicText(textContent)
+
+        assert(hasText("dynamic content").matches(testElement))
+        assert(hasText(staticContent).not().matches(testElement))
+    }
+
+    @Test
+    fun hasDynamicTextFromPlatformData() {
+        val staticContent = "static content"
+        val textContent =
+            PlatformHealthSources.heartRateBpm()
+                .format()
+                .asLayoutString(staticContent, staticContent.asLayoutConstraint())
+        val testElement = basicText(textContent)
+        val heartRateValue = 76.5F
+
+        assert(
+            hasText("$heartRateValue")
+                .matches(
+                    testElement,
+                    TestContext(dynamicDataMapOf(Keys.HEART_RATE_BPM mapTo heartRateValue)),
+                )
+        )
+
+        // when the dynamic data evaluation fails, due to lack of data in the pipeline, fall back to
+        // use the static text
+        assert(hasText(staticContent).matches(testElement))
+    }
+
+    @Test
+    fun hasDynamicTextFromPlatformEvent() {
+        val staticContent = "static content"
+        val visibleContent = "visible"
+        val invisibleContent = "invisible"
         val textContent =
             LayoutString(
-                "static content",
-                DynamicString.constant("dynamic content"),
-                "static content".asLayoutConstraint()
+                staticContent,
+                DynamicString.onCondition(PlatformEventSources.isLayoutVisible())
+                    .use(visibleContent)
+                    .elseUse(invisibleContent),
+                staticContent.asLayoutConstraint(),
             )
         val testElement = basicText(textContent)
 
-        assert(hasText(textContent).matches(testElement))
-        assert(hasText("blabla").not().matches(testElement))
+        assert(
+            hasText(visibleContent)
+                .matches(
+                    testElement,
+                    TestContext(
+                        dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo true)
+                    ),
+                )
+        )
+
+        assert(
+            hasText(invisibleContent)
+                .matches(
+                    testElement,
+                    TestContext(
+                        dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo false)
+                    ),
+                )
+        )
+
+        // when the dynamic data evaluation fails, due to lack of data in the pipeline, fall back to
+        // use the static text
+        assert(hasText(staticContent).matches(testElement))
     }
 
     @Test
@@ -191,12 +259,49 @@ class FiltersTest {
     }
 
     @Test
+    fun hasDynamicColor_onBackground() {
+        val stateKey = AppDataKey<DynamicColor>("color")
+        val testBox =
+            Box.Builder()
+                .setModifiers(
+                    Modifiers.Builder()
+                        .setBackground(
+                            Background.Builder()
+                                .setColor(
+                                    ColorProp.Builder(Color.BLUE)
+                                        .setDynamicValue(DynamicColor.from(stateKey))
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+
+        assert(hasColor(Color.BLUE).matches(testBox))
+        assert(
+            hasColor(Color.MAGENTA)
+                .matches(
+                    testBox,
+                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.MAGENTA))),
+                )
+        )
+        assert(
+            hasColor(Color.CYAN)
+                .matches(
+                    testBox,
+                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.CYAN))),
+                )
+        )
+    }
+
+    @Test
     fun hasColor_onTextStyle() {
         val testText =
             basicText(
                 "text".layoutString,
                 fontStyle =
-                    FontStyle.Builder().setColor(ColorProp.Builder(Color.CYAN).build()).build()
+                    FontStyle.Builder().setColor(ColorProp.Builder(Color.CYAN).build()).build(),
             )
 
         assert(hasColor(Color.CYAN).matches(testText))
@@ -375,5 +480,90 @@ class FiltersTest {
         assert(hasDescendant(hasImage("image")).matches(testLayout))
         assert(hasDescendant(hasText("text")).matches(testLayout))
         assert(hasDescendant(hasImage("image") and isClickable()).not().matches(testLayout))
+    }
+
+    @Test
+    fun hasSymmetricCorner() {
+        val cornerRadius = 8.5F
+        val testLayout =
+            Box.Builder()
+                .setModifiers(
+                    Modifiers.Builder()
+                        .setBackground(
+                            Background.Builder()
+                                .setCorner(Corner.Builder().setRadius(dp(cornerRadius)).build())
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+
+        assert(hasAllCorners(cornerRadius).matches(testLayout))
+        assert(hasAllCorners(cornerRadius + 1F).not().matches(testLayout))
+    }
+
+    @Test
+    fun hasAsymmetricCorner() {
+        val radii = floatArrayOf(1F, 2F, 3F, 4F, 5F, 6F, 7F, 8F)
+        val testLayout =
+            Box.Builder()
+                .setModifiers(
+                    Modifiers.Builder()
+                        .setBackground(
+                            Background.Builder()
+                                .setCorner(
+                                    Corner.Builder()
+                                        .setTopLeftRadius(dp(radii[0]), dp(radii[1]))
+                                        .setTopRightRadius(dp(radii[2]), dp(radii[3]))
+                                        .setBottomLeftRadius(dp(radii[4]), dp(radii[5]))
+                                        .setBottomRightRadius(dp(radii[6]), dp(radii[7]))
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+
+        assert(hasTopLeftCorner(radii[0], radii[1]).matches(testLayout))
+        assert(hasTopRightCorner(radii[2], radii[3]).matches(testLayout))
+        assert(hasBottomLeftCorner(radii[4], radii[5]).matches(testLayout))
+        assert(hasBottomRightCorner(radii[6], radii[7]).matches(testLayout))
+    }
+
+    @Test
+    fun hasOneOverrideCorner() {
+        val cornerRadius = 8.5F
+        val bottomLeftXRadius = 9.5F
+        val bottomLeftYRadius = 9.5F
+        val testLayout =
+            Box.Builder()
+                .setModifiers(
+                    Modifiers.Builder()
+                        .setBackground(
+                            Background.Builder()
+                                .setCorner(
+                                    Corner.Builder()
+                                        .setRadius(dp(cornerRadius))
+                                        .setBottomLeftRadius(
+                                            dp(bottomLeftXRadius),
+                                            dp(bottomLeftYRadius),
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+
+        assert(hasAllCorners(cornerRadius).not().matches(testLayout))
+        assert(
+            (hasTopLeftCorner(cornerRadius, cornerRadius) and
+                    hasTopRightCorner(cornerRadius, cornerRadius) and
+                    hasBottomLeftCorner(bottomLeftXRadius, bottomLeftYRadius) and
+                    hasBottomRightCorner(cornerRadius, cornerRadius))
+                .matches(testLayout)
+        )
     }
 }

@@ -16,25 +16,34 @@
 
 import androidx.build.KmpPlatformsKt
 import androidx.build.KotlinTarget
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
+import com.google.devtools.ksp.gradle.KspAATask
 import org.apache.commons.io.FileUtils
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
 import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("com.google.devtools.ksp")
     id("androidx.room")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.room.integration.multiplatformtestapp"
+        androidResources.enable = true
+    }
     ios()
     jvm()
     linux()
     mac()
+    tvos()
+    watchos()
+
     sourceSets {
         commonTest {
             dependencies {
@@ -47,11 +56,17 @@ androidXMultiplatform {
                 implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.kotlinSerializationCore)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
             }
+        }
+        // b/432783733: Test source set dedicating to room-paging since watchOS and tvOS are not
+        // supported targets.
+        pagingCommonTest {
+            dependsOn(commonTest)
         }
         androidInstrumentedTest {
             dependsOn(commonTest)
+            dependsOn(pagingCommonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.testRunner)
@@ -60,6 +75,7 @@ androidXMultiplatform {
         }
         jvmTest {
             dependsOn(commonTest)
+            dependsOn(pagingCommonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
             }
@@ -67,24 +83,31 @@ androidXMultiplatform {
         nativeTest {
             dependsOn(commonTest)
         }
-        nonIosNativeTest {
+        // Host OSes (Linux and Mac)
+        hostNativeTest {
+            dependsOn(nativeTest)
+            dependsOn(pagingCommonTest)
+        }
+        // iOS, watchOS and tvOS families, but not Mac OS
+        appleOsNativeTest {
             dependsOn(nativeTest)
         }
-        if (KmpPlatformsKt.enableMac(project)) {
-            iosTest {
-                dependsOn(nativeTest)
-            }
+        // iOS family
+        iosTest {
+            dependsOn(appleOsNativeTest)
+            dependsOn(pagingCommonTest)
         }
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                def test = target.compilations["test"]
-                if (target.konanTarget.family == Family.IOS) {
-                    test.defaultSourceSet {
-                        dependsOn(iosTest)
-                    }
-                } else {
-                    test.defaultSourceSet {
-                        dependsOn(nonIosNativeTest)
+                target.compilations["test"].defaultSourceSet {
+                    if (target.konanTarget.family in [Family.IOS, Family.WATCHOS, Family.TVOS]) {
+                        if (target.konanTarget.family == Family.IOS) {
+                            dependsOn(iosTest)
+                        } else {
+                            dependsOn(appleOsNativeTest)
+                        }
+                    } else {
+                        dependsOn(hostNativeTest)
                     }
                 }
             }
@@ -95,27 +118,44 @@ androidXMultiplatform {
 // TODO(b/325111583): Create a helper function to configure KSP with KMP targets
 dependencies {
     def roomCompilerDependency = project(":room:room-compiler")
-    add("kspAndroidAndroidTest", roomCompilerDependency) // Android instrumentation test
-    add("kspAndroidTest", roomCompilerDependency) // Android unit test
+    add("kspAndroidInstrumentedTest", roomCompilerDependency) // Android instrumentation test
+    add("kspAndroidUnitTest", roomCompilerDependency) // Android unit test
     add("kspJvmTest", roomCompilerDependency)
     add("kspLinuxX64Test", roomCompilerDependency)
     if (KmpPlatformsKt.enableMac(project)) {
-        add("kspIosSimulatorArm64Test", roomCompilerDependency)
+        add("kspIosArm64Test", roomCompilerDependency)
         add("kspIosX64Test", roomCompilerDependency)
+        add("kspIosSimulatorArm64Test", roomCompilerDependency)
         add("kspMacosX64Test", roomCompilerDependency)
         add("kspMacosArm64Test", roomCompilerDependency)
+        add("kspTvosArm64Test", roomCompilerDependency)
+        add("kspTvosX64Test", roomCompilerDependency)
+        add("kspTvosSimulatorArm64Test", roomCompilerDependency)
+        add("kspWatchosArm64Test", roomCompilerDependency)
+        add("kspWatchosX64Test", roomCompilerDependency)
+        add("kspWatchosSimulatorArm64Test", roomCompilerDependency)
     }
 }
 
-android {
-    namespace = "androidx.room.integration.multiplatformtestapp"
-}
-
-// Copy schema files to the iOS binary output test directory that will be part of the bundle's
-// resources and read with NSBundle. This needs to be replaced with a more proper mechanism.
+// Copy schema files to the iOS / watchOS / tvOS binary output test directory that will be part of
+// the bundle's resources and read with NSBundle. This needs to be replaced with a more proper
+// mechanism. See https://youtrack.jetbrains.com/issue/KT-39194
 // TODO(b/317909626): Should be configured by Room Gradle Plugin
 tasks.withType(KotlinNativeLink).configureEach { task ->
-    if (name.contains("linkDebugTestIos")) {
+    def isAppleOsTarget = task.target in [
+            KonanTarget.IOS_ARM64,
+            KonanTarget.IOS_X64,
+            KonanTarget.IOS_SIMULATOR_ARM64,
+            KonanTarget.TVOS_ARM64,
+            KonanTarget.TVOS_X64,
+            KonanTarget.TVOS_SIMULATOR_ARM64,
+            KonanTarget.WATCHOS_ARM32,
+            KonanTarget.WATCHOS_ARM64,
+            KonanTarget.WATCHOS_X64,
+            KonanTarget.WATCHOS_SIMULATOR_ARM64,
+            KonanTarget.WATCHOS_DEVICE_ARM64
+    ].collect { it.INSTANCE.name }
+    if (isAppleOsTarget) {
         def inputSchemaDir = layout.projectDirectory.dir("schemas-ksp").getAsFile()
         def outputSchemaDir = new File(task.destinationDirectory.getAsFile().get(), "/schemas-ksp")
         task.doLast {
@@ -125,15 +165,28 @@ tasks.withType(KotlinNativeLink).configureEach { task ->
 }
 
 room {
-    schemaDirectory(
-            provider { layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath() }
-    )
+    schemaDirectory(layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath())
 }
 
 androidx {
-    kotlinTarget = KotlinTarget.KOTLIN_2_0
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 
-ksp {
-    useKsp2 = true
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(AndroidLintAnalysisTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(LintModelWriterTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+afterEvaluate {
+    // This project has commonTest/ sources, but none of these contain actual tests. This means that
+    // testAndroidHostTest will attempt to run as it has sources, but there will be no tests to run.
+    // Starting Gradle 9.0.0 this is an error, hence we disable this task here.
+    tasks.named("testAndroidHostTest") { it.enabled = false }
 }

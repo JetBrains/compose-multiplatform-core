@@ -70,6 +70,7 @@ public class PojoTest {
                         new AvgWeightByAge(15, 12)
                 )
         ));
+        db.close();
     }
 
     @Test

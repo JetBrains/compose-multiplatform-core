@@ -47,8 +47,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -96,21 +94,9 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         Preconditions.checkNotNull(request);
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
         return FutureUtil.execute(mExecutor, () -> {
-            AppSearchBatchResult.Builder<String, GenericDocument> resultBuilder =
-                    new AppSearchBatchResult.Builder<>();
-
-            Map<String, List<String>> typePropertyPaths = request.getProjections();
             CallerAccess access = new CallerAccess(mContext.getPackageName());
-            for (String id : request.getIds()) {
-                try {
-                    GenericDocument document = mAppSearchImpl.globalGetDocument(packageName,
-                            databaseName, request.getNamespace(), id, typePropertyPaths, access);
-                    resultBuilder.setSuccess(id, document);
-                } catch (Throwable t) {
-                    resultBuilder.setResult(id, throwableToFailedResult(t));
-                }
-            }
-            return resultBuilder.build();
+            return mAppSearchImpl.batchGetDocuments(packageName, databaseName, request, access,
+                    /*callStatsBuilder=*/null);
         });
     }
 
@@ -129,7 +115,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                     // Global reader could read blobs that are written by other apps. We skip the
                     // verification that the handle's package name and database name must match
                     // to the caller.
-                    ParcelFileDescriptor pfd = mAppSearchImpl.globalOpenReadBlob(handle, access);
+                    ParcelFileDescriptor pfd = mAppSearchImpl.globalOpenReadBlob(handle, access,
+                            /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, pfd);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -181,7 +168,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         Preconditions.checkNotNull(databaseName);
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
         return FutureUtil.execute(mExecutor,
-                () -> mAppSearchImpl.getSchema(packageName, databaseName, mSelfCallerAccess));
+                () -> mAppSearchImpl.getSchema(packageName, databaseName, mSelfCallerAccess,
+                        /*callStatsBuilder=*/null));
     }
 
     @Override

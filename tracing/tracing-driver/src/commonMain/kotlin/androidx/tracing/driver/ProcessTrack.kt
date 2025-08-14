@@ -17,8 +17,6 @@
 package androidx.tracing.driver
 
 import androidx.collection.mutableScatterMapOf
-import perfetto.protos.MutableProcessDescriptor
-import perfetto.protos.MutableTrackDescriptor
 
 /** Represents a track for a process in a perfetto trace. */
 public open class ProcessTrack(
@@ -28,55 +26,23 @@ public open class ProcessTrack(
     internal val id: Int,
     /** The name of the process. */
     internal val name: String,
-) : EventTrack(context = context, uuid = monotonicId()) {
-    internal val packetLock = Any()
+) : SliceTrack(context = context, uuid = monotonicId()) {
     internal val threads = mutableScatterMapOf<String, ThreadTrack>()
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
 
     init {
-        emitPacket(immediateDispatch = true) { packet ->
-            synchronized(packetLock) {
-                packet.setPreamble(
-                    this,
-                    MutableTrackDescriptor(
-                        uuid = uuid,
-                        process = MutableProcessDescriptor(id, process_name = name)
+        synchronized(packetLock) {
+            emitTraceEvent(immediateDispatch = true) { event ->
+                event.setPreamble(
+                    TrackDescriptor(
+                        name,
+                        uuid,
+                        parentUuid = DEFAULT_LONG,
+                        type = TRACK_DESCRIPTOR_TYPE_PROCESS,
+                        pid = id,
+                        tid = DEFAULT_INT,
                     )
                 )
-            }
-        }
-    }
-
-    public override fun beginSection(name: String, flowIds: List<Long>) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitPacket { packet ->
-                    packet.setBeginSectionWithFlows(uuid, sequenceId, name, flowIds)
-                }
-            }
-        }
-    }
-
-    public override fun beginSection(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitPacket { packet -> packet.setBeginSection(uuid, sequenceId, name) }
-            }
-        }
-    }
-
-    public override fun endSection() {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitPacket { packet -> packet.setEndSection(uuid, sequenceId) }
-            }
-        }
-    }
-
-    public override fun instant() {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitPacket { packet -> packet.setInstantEvent(uuid, sequenceId) }
             }
         }
     }
@@ -113,11 +79,7 @@ private const val EMPTY_PROCESS_ID = -1
 private const val EMPTY_PROCESS_NAME = "Empty Process"
 
 internal class EmptyProcessTrack(context: EmptyTraceContext) :
-    ProcessTrack(
-        context = context,
-        id = EMPTY_PROCESS_ID,
-        name = EMPTY_PROCESS_NAME,
-    ) {
+    ProcessTrack(context = context, id = EMPTY_PROCESS_ID, name = EMPTY_PROCESS_NAME) {
 
     private val emptyContext: EmptyTraceContext = context
 

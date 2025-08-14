@@ -21,7 +21,6 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 import androidx.build.AndroidXConfig
@@ -46,7 +45,7 @@ repackage {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api(libs.kotlinPoet)
+    api("com.squareup:kotlinpoet:2.0.0")
     api(project(":privacysandbox:tools:tools-core-external-protobuf"))
     // Must be compileOnly to not bring in protobufLite in runtime
     // Repackaged protobufLite brought in by
@@ -86,5 +85,4 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2022"
     description = "Core utilities for Privacy Sandbox Tools."
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

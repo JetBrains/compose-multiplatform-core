@@ -142,12 +142,18 @@ public final class AppSearchBlobHandle extends AbstractSafeParcelable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AppSearchBlobHandle)) return false;
+    public boolean equals(@Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AppSearchBlobHandle)) {
+            return false;
+        }
 
         AppSearchBlobHandle that = (AppSearchBlobHandle) o;
-        if (!Arrays.equals(mSha256Digest, that.mSha256Digest)) return false;
+        if (!Arrays.equals(mSha256Digest, that.mSha256Digest)) {
+            return false;
+        }
         return mPackageName.equals(that.mPackageName) && mDatabaseName.equals(that.mDatabaseName)
                 && mNamespace.equals(that.mNamespace);
     }

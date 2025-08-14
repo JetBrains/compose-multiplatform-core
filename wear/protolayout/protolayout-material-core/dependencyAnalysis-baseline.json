@@ -12,15 +12,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:core",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.test:rules",
         "resolvedVersion": "1.7.0-alpha01"
       },
@@ -37,15 +28,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "org.robolectric:shadowapi",
         "resolvedVersion": "4.14"
       },
@@ -57,6 +39,13 @@
         "identifier": ":wear:protolayout:protolayout-expression"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":wear:protolayout:protolayout-expression"
+      },
+      "toConfiguration": "testImplementation"
     }
   ]
 }

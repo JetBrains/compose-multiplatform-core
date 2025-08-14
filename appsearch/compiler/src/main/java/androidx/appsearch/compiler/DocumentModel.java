@@ -17,6 +17,7 @@ package androidx.appsearch.compiler;
 
 import static androidx.appsearch.compiler.IntrospectionHelper.generateClassHierarchy;
 import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentAnnotation;
+import static androidx.room.compiler.processing.compat.XConverters.toJavac;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
@@ -25,6 +26,8 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.MetadataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
+import androidx.room.compiler.processing.XProcessingEnv;
+import androidx.room.compiler.processing.XTypeElement;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -38,21 +41,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
 
 /**
  * Processes @Document annotations.
  *
  * @see AnnotatedGetterAndFieldAccumulator for the DocumentModel's invariants with regards to its
  * getter and field definitions.
- *
- * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class DocumentModel {
@@ -60,16 +58,16 @@ class DocumentModel {
 
     private final IntrospectionHelper mHelper;
 
-    private final Elements mElementUtil;
+    private final XProcessingEnv mEnv;
 
-    private final TypeElement mClass;
+    private final XTypeElement mClass;
 
     // The name of the original class annotated with @Document
     private final String mQualifiedDocumentClassName;
 
     private final String mSchemaName;
 
-    private final LinkedHashSet<TypeElement> mParentTypes;
+    private final LinkedHashSet<XTypeElement> mParentTypes;
 
     private final LinkedHashSet<AnnotatedGetterOrField> mAnnotatedGettersAndFields;
 
@@ -82,25 +80,25 @@ class DocumentModel {
     private final @NonNull DocumentClassCreationInfo mDocumentClassCreationInfo;
 
     private DocumentModel(
-            @NonNull ProcessingEnvironment env,
-            @NonNull TypeElement clazz,
-            @Nullable TypeElement generatedAutoValueElement)
-            throws ProcessingException {
-        if (clazz.getModifiers().contains(Modifier.PRIVATE)) {
-            throw new ProcessingException("@Document annotated class is private", clazz);
+            @NonNull XProcessingEnv env,
+            @NonNull XTypeElement clazz,
+            @Nullable XTypeElement generatedAutoValueElement)
+            throws ProcessingException, XProcessingException {
+        if (clazz.isPrivate()) {
+            throw new XProcessingException("@Document annotated class is private", clazz);
         }
 
-        mHelper = new IntrospectionHelper(env);
-        mElementUtil = env.getElementUtils();
+        mHelper = new IntrospectionHelper(toJavac(env));
+        mEnv = env;
         mClass = clazz;
         mQualifiedDocumentClassName = generatedAutoValueElement != null
-                ? generatedAutoValueElement.getQualifiedName().toString()
-                : clazz.getQualifiedName().toString();
+                ? generatedAutoValueElement.getQualifiedName()
+                : clazz.getQualifiedName();
         mParentTypes = getParentSchemaTypes(clazz);
 
-        List<TypeElement> classHierarchy = generateClassHierarchy(clazz);
+        List<TypeElement> classHierarchy = generateClassHierarchy(toJavac(clazz));
         mSchemaName = computeSchemaName(classHierarchy);
-        mAnnotatedGettersAndFields = scanAnnotatedGettersAndFields(classHierarchy, env);
+        mAnnotatedGettersAndFields = scanAnnotatedGettersAndFields(classHierarchy);
 
         requireNoDuplicateMetadataProperties();
         mIdAnnotatedGetterOrField = requireGetterOrFieldMatchingPredicate(
@@ -113,20 +111,21 @@ class DocumentModel {
                 /* errorMessage= */"All @Document classes must have exactly one field annotated "
                         + "with @Namespace");
 
-        LinkedHashSet<ExecutableElement> allMethods = mHelper.getAllMethods(clazz);
+        LinkedHashSet<ExecutableElement> allMethods =
+                mHelper.getAllMethods(toJavac(clazz));
         mAccessors = inferPropertyAccessors(mAnnotatedGettersAndFields, allMethods, mHelper);
-        mDocumentClassCreationInfo =
-                DocumentClassCreationInfo.infer(clazz, mAnnotatedGettersAndFields, mHelper);
+        mDocumentClassCreationInfo = DocumentClassCreationInfo.infer(
+                toJavac(clazz), mAnnotatedGettersAndFields, mHelper);
     }
 
-    private static LinkedHashSet<AnnotatedGetterOrField> scanAnnotatedGettersAndFields(
-            @NonNull List<TypeElement> hierarchy,
-            @NonNull ProcessingEnvironment env) throws ProcessingException {
+    private LinkedHashSet<AnnotatedGetterOrField> scanAnnotatedGettersAndFields(
+            @NonNull List<TypeElement> hierarchy) throws ProcessingException {
         AnnotatedGetterAndFieldAccumulator accumulator = new AnnotatedGetterAndFieldAccumulator();
         for (TypeElement type : hierarchy) {
             for (Element enclosedElement : type.getEnclosedElements()) {
                 AnnotatedGetterOrField getterOrField =
-                        AnnotatedGetterOrField.tryCreateFor(enclosedElement, env);
+                        AnnotatedGetterOrField.tryCreateFor(
+                                enclosedElement, toJavac(mEnv));
                 if (getterOrField == null) {
                     continue;
                 }
@@ -168,15 +167,15 @@ class DocumentModel {
      * predicate.
      *
      * @return The matched getter/field.
-     * @throws ProcessingException with the error message if no match.
+     * @throws XProcessingException with the error message if no match.
      */
     private @NonNull AnnotatedGetterOrField requireGetterOrFieldMatchingPredicate(
             @NonNull Predicate<AnnotatedGetterOrField> predicate,
-            @NonNull String errorMessage) throws ProcessingException {
+            @NonNull String errorMessage) throws XProcessingException {
         return mAnnotatedGettersAndFields.stream()
                 .filter(predicate)
                 .findFirst()
-                .orElseThrow(() -> new ProcessingException(errorMessage, mClass));
+                .orElseThrow(() -> new XProcessingException(errorMessage, mClass));
     }
 
     /**
@@ -185,8 +184,8 @@ class DocumentModel {
      * @throws ProcessingException if the @{@code Document}-annotated class is invalid.
      */
     public static DocumentModel createPojoModel(
-            @NonNull ProcessingEnvironment env, @NonNull TypeElement clazz)
-            throws ProcessingException {
+            @NonNull XProcessingEnv env, @NonNull XTypeElement clazz)
+            throws ProcessingException, XProcessingException {
         return new DocumentModel(env, clazz, null);
     }
 
@@ -197,13 +196,14 @@ class DocumentModel {
      * @throws ProcessingException if the @{@code Document}-annotated class is invalid.
      */
     public static DocumentModel createAutoValueModel(
-            @NonNull ProcessingEnvironment env, @NonNull TypeElement clazz,
-            @NonNull TypeElement generatedAutoValueElement)
-            throws ProcessingException {
+            @NonNull XProcessingEnv env,
+            @NonNull XTypeElement clazz,
+            @NonNull XTypeElement generatedAutoValueElement)
+            throws ProcessingException, XProcessingException {
         return new DocumentModel(env, clazz, generatedAutoValueElement);
     }
 
-    public @NonNull TypeElement getClassElement() {
+    public @NonNull XTypeElement getClassElement() {
         return mClass;
     }
 
@@ -223,7 +223,7 @@ class DocumentModel {
     /**
      * Returns the set of parent classes specified in @Document via the "parent" parameter.
      */
-    public @NonNull Set<TypeElement> getParentTypes() {
+    public @NonNull Set<XTypeElement> getParentTypes() {
         return mParentTypes;
     }
 
@@ -287,22 +287,23 @@ class DocumentModel {
     /**
      * Returns the parent types mentioned within the {@code @Document} annotation.
      */
-    private @NonNull LinkedHashSet<TypeElement> getParentSchemaTypes(
-            @NonNull TypeElement documentClass) throws ProcessingException {
-        AnnotationMirror documentAnnotation = requireNonNull(getDocumentAnnotation(documentClass));
+    private @NonNull LinkedHashSet<XTypeElement> getParentSchemaTypes(
+            @NonNull XTypeElement documentClass) throws XProcessingException {
+        AnnotationMirror documentAnnotation = requireNonNull(
+                getDocumentAnnotation(toJavac(documentClass)));
         Map<String, Object> params = mHelper.getAnnotationParams(documentAnnotation);
-        LinkedHashSet<TypeElement> parentsSchemaTypes = new LinkedHashSet<>();
+        LinkedHashSet<XTypeElement> parentsSchemaTypes = new LinkedHashSet<>();
         Object parentsParam = params.get("parent");
         if (parentsParam instanceof List) {
             for (Object parent : (List<?>) parentsParam) {
                 String parentClassName = parent.toString();
                 parentClassName = parentClassName.substring(0,
                         parentClassName.length() - CLASS_SUFFIX.length());
-                parentsSchemaTypes.add(mElementUtil.getTypeElement(parentClassName));
+                parentsSchemaTypes.add(mEnv.findTypeElement(parentClassName));
             }
         }
         if (!parentsSchemaTypes.isEmpty() && params.get("name").toString().isEmpty()) {
-            throw new ProcessingException(
+            throw new XProcessingException(
                     "All @Document classes with a parent must explicitly provide a name",
                     mClass);
         }
@@ -338,7 +339,7 @@ class DocumentModel {
         TypeElement rootDocumentClass = hierarchy.get(0);
         AnnotationMirror rootDocumentAnnotation = getDocumentAnnotation(rootDocumentClass);
         if (rootDocumentAnnotation == null) {
-            return mClass.getSimpleName().toString();
+            return mClass.getName();
         }
         // Documents don't need an explicit name annotation, can use the class name
         return rootDocumentClass.getSimpleName().toString();

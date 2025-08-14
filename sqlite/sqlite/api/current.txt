@@ -18,11 +18,14 @@ package androidx.sqlite {
 
   public interface SQLiteConnection extends java.lang.AutoCloseable {
     method public void close();
+    method public default boolean inTransaction();
     method public androidx.sqlite.SQLiteStatement prepare(String sql);
   }
 
   public interface SQLiteDriver {
+    method public default boolean hasConnectionPool();
     method public androidx.sqlite.SQLiteConnection open(String fileName);
+    property public default boolean hasConnectionPool;
   }
 
   public interface SQLiteStatement extends java.lang.AutoCloseable {
@@ -51,6 +54,8 @@ package androidx.sqlite {
     method public void reset();
     method public boolean step();
   }
+
+  public typealias SQLiteException = android.database.SQLException;
 
 }
 

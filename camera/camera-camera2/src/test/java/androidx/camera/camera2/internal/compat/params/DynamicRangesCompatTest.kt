@@ -48,7 +48,6 @@ import org.robolectric.shadows.ShadowCameraCharacteristics
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class DynamicRangesCompatTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
@@ -239,7 +238,7 @@ private const val CAMERA_ID = "0"
 fun newCameraCharacteristicsCompat(): CameraCharacteristicsCompat {
     return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
         ShadowCameraCharacteristics.newCameraCharacteristics(),
-        CAMERA_ID
+        CAMERA_ID,
     )
 }
 

@@ -21,7 +21,7 @@ package androidx.core.content {
   }
 
   public final class ContextKt {
-    method public static inline <reified T> T? getSystemService(android.content.Context);
+    method @KotlinOnly public static inline <reified T> T? getSystemService(android.content.Context);
     method public static inline void withStyledAttributes(android.content.Context, optional android.util.AttributeSet? set, int[] attrs, optional @AttrRes int defStyleAttr, optional @StyleRes int defStyleRes, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
     method public static inline void withStyledAttributes(android.content.Context, @StyleRes int resourceId, int[] attrs, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
   }
@@ -339,10 +339,14 @@ package androidx.core.os {
     method @RequiresApi(31) public static <R, E extends java.lang.Throwable> android.os.OutcomeReceiver<R,E> asOutcomeReceiver(kotlin.coroutines.Continuation<? super R>);
   }
 
+  public final class ParcelKt {
+    method public static inline <T> T use(android.os.Parcel, kotlin.jvm.functions.Function1<? super android.os.Parcel,? extends T> block);
+  }
+
   public final class PersistableBundleKt {
-    method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf();
-    method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
-    method @RequiresApi(21) public static android.os.PersistableBundle toPersistableBundle(java.util.Map<java.lang.String,? extends java.lang.Object?>);
+    method public static android.os.PersistableBundle persistableBundleOf();
+    method public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
+    method public static android.os.PersistableBundle toPersistableBundle(java.util.Map<java.lang.String,? extends java.lang.Object?>);
   }
 
   public final class TraceKt {
@@ -391,7 +395,7 @@ package androidx.core.text {
   }
 
   public final class SpannedStringKt {
-    method public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
+    method @KotlinOnly public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
     method public static inline android.text.Spanned toSpanned(CharSequence);
   }
 
@@ -474,12 +478,12 @@ package androidx.core.util {
   }
 
   public final class RangeKt {
-    method @RequiresApi(21) public static inline infix <T extends java.lang.Comparable<? super T>> android.util.Range<T> and(android.util.Range<T>, android.util.Range<T> other);
-    method @RequiresApi(21) public static inline operator <T extends java.lang.Comparable<? super T>> android.util.Range<T> plus(android.util.Range<T>, android.util.Range<T> other);
-    method @RequiresApi(21) public static inline operator <T extends java.lang.Comparable<? super T>> android.util.Range<T> plus(android.util.Range<T>, T value);
-    method @RequiresApi(21) public static inline infix <T extends java.lang.Comparable<? super T>> android.util.Range<T> rangeTo(T, T that);
-    method @RequiresApi(21) public static <T extends java.lang.Comparable<? super T>> kotlin.ranges.ClosedRange<T> toClosedRange(android.util.Range<T>);
-    method @RequiresApi(21) public static <T extends java.lang.Comparable<? super T>> android.util.Range<T> toRange(kotlin.ranges.ClosedRange<T>);
+    method public static inline infix <T extends java.lang.Comparable<? super T>> android.util.Range<T> and(android.util.Range<T>, android.util.Range<T> other);
+    method public static inline operator <T extends java.lang.Comparable<? super T>> android.util.Range<T> plus(android.util.Range<T>, android.util.Range<T> other);
+    method public static inline operator <T extends java.lang.Comparable<? super T>> android.util.Range<T> plus(android.util.Range<T>, T value);
+    method public static inline infix <T extends java.lang.Comparable<? super T>> android.util.Range<T> rangeTo(T, T that);
+    method public static <T extends java.lang.Comparable<? super T>> kotlin.ranges.ClosedRange<T> toClosedRange(android.util.Range<T>);
+    method public static <T extends java.lang.Comparable<? super T>> android.util.Range<T> toRange(kotlin.ranges.ClosedRange<T>);
   }
 
   public final class RunnableKt {
@@ -487,11 +491,11 @@ package androidx.core.util {
   }
 
   public final class SizeKt {
-    method @RequiresApi(21) public static inline operator int component1(android.util.Size);
-    method @RequiresApi(21) public static inline operator float component1(android.util.SizeF);
+    method public static inline operator int component1(android.util.Size);
+    method public static inline operator float component1(android.util.SizeF);
     method public static inline operator float component1(androidx.core.util.SizeFCompat);
-    method @RequiresApi(21) public static inline operator int component2(android.util.Size);
-    method @RequiresApi(21) public static inline operator float component2(android.util.SizeF);
+    method public static inline operator int component2(android.util.Size);
+    method public static inline operator float component2(android.util.SizeF);
     method public static inline operator float component2(androidx.core.util.SizeFCompat);
   }
 
@@ -639,7 +643,7 @@ package androidx.core.view {
     method public static inline void setPadding(android.view.View, @Px int size);
     method public static inline void setVisible(android.view.View, boolean);
     method public static inline void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<? super android.view.ViewGroup.LayoutParams,kotlin.Unit> block);
-    method public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParamsTyped(android.view.View, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> block);
+    method @KotlinOnly public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<T,kotlin.Unit> block);
     method public static inline void updatePadding(android.view.View, optional @Px int left, optional @Px int top, optional @Px int right, optional @Px int bottom);
     method public static inline void updatePaddingRelative(android.view.View, optional @Px int start, optional @Px int top, optional @Px int end, optional @Px int bottom);
     property public static kotlin.sequences.Sequence<android.view.View> android.view.View.allViews;

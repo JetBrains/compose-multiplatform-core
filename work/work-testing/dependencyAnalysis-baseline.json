@@ -20,28 +20,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.room:room-runtime",
-        "resolvedVersion": "2.6.1"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.test.espresso:espresso-core",
         "resolvedVersion": "3.7.0-alpha01"
       },
       "fromConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.test:core",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     },
     {
       "coordinates": {
@@ -94,11 +76,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -115,15 +96,6 @@
         "resolvedVersion": "2.28.2"
       },
       "fromConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     }
   ]
 }

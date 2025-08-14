@@ -40,6 +40,7 @@ import java.util.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,9 +59,14 @@ class BoxedNonNullTypesTest {
         db =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    MyDb::class.java
+                    MyDb::class.java,
                 )
                 .build()
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test
@@ -172,22 +178,15 @@ class BoxedNonNullTypesTest {
         assertThat(db.myDao().getAsNullableListenableFuture().get()).isEqualTo(null)
     }
 
-    @Entity
-    data class MyEntity(
-        val value: Long,
-        @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    )
+    @Entity data class MyEntity(val value: Long, @PrimaryKey(autoGenerate = true) val id: Int = 0)
 
     @Entity
-    data class MyNullableEntity(
-        val value: Long?,
-        @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    )
+    data class MyNullableEntity(val value: Long?, @PrimaryKey(autoGenerate = true) val id: Int = 0)
 
     @Database(
         entities = [MyEntity::class, MyNullableEntity::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     abstract class MyDb : RoomDatabase() {
         abstract fun myDao(): MyDao

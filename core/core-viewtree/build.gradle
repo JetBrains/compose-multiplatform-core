@@ -36,9 +36,7 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinTest)
 }
 
 android {

@@ -40,6 +40,7 @@ import androidx.test.filters.SmallTest;
 
 import com.google.common.collect.Lists;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
@@ -52,6 +53,8 @@ import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.TestScheduler;
 import io.reactivex.subscribers.TestSubscriber;
 
+import kotlin.Unit;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,6 +66,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.LockSupport;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -614,6 +618,7 @@ public class RxJava2Test extends TestDatabaseTest {
                 return mailList.equals(Lists.newArrayList(mail0, mail1));
             }
         });
+        db.close();
     }
 
     @Test
@@ -690,5 +695,47 @@ public class RxJava2Test extends TestDatabaseTest {
 
         testObserver.assertNoValues();
         testObserver.assertNotTerminated();
+    }
+
+    @Test
+    public void createCompletable_cancellable() {
+        TestObserver<Void> testObserver = new TestObserver<>();
+        Completable completable = RxRoom.createCompletable(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return Unit.INSTANCE;
+                });
+        completable.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
+    }
+
+    @Test
+    public void createSingle_cancellable() {
+        TestObserver<String> testObserver = new TestObserver<>();
+        Single<String> single = RxRoom.createSingle(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return "";
+                });
+        single.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
+    }
+
+    @Test
+    public void createMaybe_cancellable() {
+        TestObserver<String> testObserver = new TestObserver<>();
+        Maybe<String> maybe = RxRoom.createMaybe(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return "";
+                });
+        maybe.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
     }
 }

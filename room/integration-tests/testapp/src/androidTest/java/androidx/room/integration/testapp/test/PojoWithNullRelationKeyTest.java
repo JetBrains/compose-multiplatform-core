@@ -35,6 +35,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,6 +54,11 @@ public class PojoWithNullRelationKeyTest {
         mDatabase = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(),
                 NullRelationDatabase.class).build();
         mDao = mDatabase.getDao();
+    }
+
+    @After
+    public void teardown() {
+        mDatabase.close();
     }
 
     @Test

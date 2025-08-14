@@ -16,13 +16,12 @@
 
 package androidx.compose.ui.autofill
 
-import android.os.Build
 import android.util.SparseArray
 import android.view.View
 import android.view.autofill.AutofillValue
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.LocalAutofillHighlightBrush
 import androidx.compose.foundation.text.LocalAutofillHighlightColor
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
@@ -36,7 +35,9 @@ import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentType
@@ -59,7 +60,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26)
-@RequiresApi(Build.VERSION_CODES.O)
 class TextFieldsSemanticAutofillTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
@@ -101,7 +101,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
                 BasicTextField(
                     value = passwordInput,
@@ -109,7 +109,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(passwordTag).semantics {
                             contentType = ContentType.Password
-                        }
+                        },
                 )
             }
         }
@@ -152,7 +152,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }
@@ -188,7 +188,7 @@ class TextFieldsSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }
@@ -218,6 +218,7 @@ class TextFieldsSemanticAutofillTest {
 
         rule.setContent {
             view = LocalView.current
+            @Suppress("DEPRECATION")
             CompositionLocalProvider(LocalAutofillHighlightColor provides customHighlightColor) {
                 Column {
                     TextField(
@@ -227,7 +228,7 @@ class TextFieldsSemanticAutofillTest {
                         modifier =
                             Modifier.testTag(usernameTag).semantics {
                                 contentType = ContentType.Username
-                            }
+                            },
                     )
                 }
             }
@@ -251,5 +252,103 @@ class TextFieldsSemanticAutofillTest {
 
         // Custom autofill highlight color should now appear
         rule.onNodeWithTag(usernameTag).captureToImage().assertContainsColor(customHighlightColor)
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun performAutofill_customBrush_gradientHighlight() {
+        lateinit var view: View
+        val usernameTag = "username_tag"
+        var usernameInput by mutableStateOf("")
+        val gradientStartColor = Color.Blue
+        val gradientEndColor = Color.Green
+        val customBrush = Brush.horizontalGradient(listOf(gradientStartColor, gradientEndColor))
+
+        rule.setContent {
+            view = LocalView.current
+            // Provide the custom Brush to the new local
+            CompositionLocalProvider(LocalAutofillHighlightBrush provides customBrush) {
+                TextField(
+                    value = usernameInput,
+                    onValueChange = { usernameInput = it },
+                    modifier =
+                        Modifier.testTag(usernameTag).semantics {
+                            contentType = ContentType.Username
+                        },
+                )
+            }
+        }
+
+        // Ensure neither gradient color appears before autofill
+        rule
+            .onNodeWithTag(usernameTag)
+            .captureToImage()
+            .assertDoesNotContainColor(gradientStartColor)
+            .assertDoesNotContainColor(gradientEndColor)
+
+        val usernameId = rule.onNodeWithTag(usernameTag).semanticsId()
+        rule.runOnIdle {
+            view.autofill(
+                SparseArray<AutofillValue>().apply {
+                    append(usernameId, AutofillValue.forText("testUsername"))
+                }
+            )
+        }
+        rule.waitForIdle()
+
+        // After autofill, verify that both colors of the gradient are present
+        rule
+            .onNodeWithTag(usernameTag)
+            .captureToImage()
+            .assertContainsColor(gradientStartColor)
+            .assertContainsColor(gradientEndColor)
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun performAutofill_legacyColorOverridesBrush() {
+        lateinit var view: View
+        val usernameTag = "username_tag"
+        var usernameInput by mutableStateOf("")
+        val legacyColor = Color.Magenta
+        val brushColor = Color.Cyan
+        val customBrush = SolidColor(brushColor)
+
+        rule.setContent {
+            view = LocalView.current
+            // Provide BOTH a legacy color and a new brush
+            @Suppress("DEPRECATION")
+            CompositionLocalProvider(
+                LocalAutofillHighlightColor provides legacyColor,
+                LocalAutofillHighlightBrush provides customBrush,
+            ) {
+                TextField(
+                    value = usernameInput,
+                    onValueChange = { usernameInput = it },
+                    modifier =
+                        Modifier.testTag(usernameTag).semantics {
+                            contentType = ContentType.Username
+                        },
+                )
+            }
+        }
+
+        val usernameId = rule.onNodeWithTag(usernameTag).semanticsId()
+        rule.runOnIdle {
+            view.autofill(
+                SparseArray<AutofillValue>().apply {
+                    append(usernameId, AutofillValue.forText("testUsername"))
+                }
+            )
+        }
+        rule.waitForIdle()
+
+        // Assert that the color from the Brush was NOT drawn
+        rule.onNodeWithTag(usernameTag).captureToImage().assertDoesNotContainColor(brushColor)
+
+        // Assert that the legacy color correctly overrode the brush and WAS drawn
+        rule.onNodeWithTag(usernameTag).captureToImage().assertContainsColor(legacyColor)
     }
 }

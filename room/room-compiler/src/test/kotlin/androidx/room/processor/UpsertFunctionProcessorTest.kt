@@ -35,11 +35,11 @@ class UpsertFunctionProcessorTest :
 
     override fun missingPrimaryKey(
         partialEntityName: String,
-        primaryKeyName: List<String>
+        primaryKeyName: List<String>,
     ): String {
         return ProcessorErrors.missingPrimaryKeysInPartialEntityForUpsert(
             partialEntityName,
-            primaryKeyName
+            primaryKeyName,
         )
     }
 
@@ -54,7 +54,7 @@ class UpsertFunctionProcessorTest :
     override fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): UpsertFunction {
         return UpsertFunctionProcessor(baseContext, containing, executableElement).process()
     }

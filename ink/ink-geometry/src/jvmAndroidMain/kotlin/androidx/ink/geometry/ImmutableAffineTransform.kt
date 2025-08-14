@@ -83,7 +83,7 @@ public constructor(
     ) : this(values[0], values[1], values[2], values[3], values[4], values[5])
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public override fun asImmutable(): ImmutableAffineTransform = this
+    public override fun toImmutable(): ImmutableAffineTransform = this
 
     /**
      * Component-wise equality operator for [ImmutableAffineTransform].
@@ -137,19 +137,16 @@ public constructor(
         public fun scaleY(scaleFactor: Float): ImmutableAffineTransform = scale(1f, scaleFactor)
 
         /** Returns a transformation that shears in the x-direction by the given factor. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
         @JvmStatic
         public fun shearX(shearFactor: Float): ImmutableAffineTransform =
             ImmutableAffineTransform(1f, shearFactor, 0f, 0f, 1f, 0f)
 
         /** Returns a transformation that shears in the y-direction by the given factor. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
         @JvmStatic
         public fun shearY(shearFactor: Float): ImmutableAffineTransform =
             ImmutableAffineTransform(1f, 0f, 0f, shearFactor, 1f, 0f)
 
         /** Returns a transformation that rotates by the given angle, centered about the origin. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
         @JvmStatic
         public fun rotate(@AngleRadiansFloat angleOfRotation: Float): ImmutableAffineTransform {
             val sin = sin(angleOfRotation)

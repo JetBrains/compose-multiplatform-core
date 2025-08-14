@@ -23,12 +23,12 @@ import kotlinx.serialization.Serializable
 /** Data class that holds the schema information for an [androidx.room.Entity] property. */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class FieldBundle(
-    @SerialName("fieldPath") val fieldPath: String,
-    @SerialName("columnName") val columnName: String,
-    @SerialName("affinity") val affinity: String,
-    @SerialName("notNull") val isNonNull: Boolean = false,
-    @SerialName("defaultValue") val defaultValue: String? = null,
+public class FieldBundle(
+    @SerialName("fieldPath") public val fieldPath: String,
+    @SerialName("columnName") public val columnName: String,
+    @SerialName("affinity") public val affinity: String,
+    @SerialName("notNull") public val isNonNull: Boolean = false,
+    @SerialName("defaultValue") public val defaultValue: String? = null,
 ) : SchemaEquality<FieldBundle> {
 
     override fun isSchemaEqual(other: FieldBundle): Boolean {

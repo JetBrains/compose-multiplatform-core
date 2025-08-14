@@ -34,7 +34,7 @@ import com.google.auto.value.AutoValue.CopyAnnotations
 /** Delegate to process generated AutoValue class as a data class. */
 class AutoValueDataClassProcessorDelegate(
     private val context: Context,
-    private val autoValueElement: XTypeElement
+    private val autoValueElement: XTypeElement,
 ) : DataClassProcessor.Delegate {
 
     private val autoValueDeclaredType: XType by lazy { autoValueElement.type }
@@ -51,7 +51,7 @@ class AutoValueDataClassProcessorDelegate(
                 context.logger.w(
                     Warning.MISSING_COPY_ANNOTATIONS,
                     it,
-                    ProcessorErrors.MISSING_COPY_ANNOTATIONS
+                    ProcessorErrors.MISSING_COPY_ANNOTATIONS,
                 )
             }
         }
@@ -65,7 +65,7 @@ class AutoValueDataClassProcessorDelegate(
                     TARGET_METHOD_ANNOTATIONS.first { method.hasAnnotation(it) }.java.simpleName
                 context.logger.e(
                     method,
-                    ProcessorErrors.invalidAnnotationTarget(annotationName, method.kindName())
+                    ProcessorErrors.invalidAnnotationTarget(annotationName, method.kindName()),
                 )
             }
     }
@@ -85,7 +85,7 @@ class AutoValueDataClassProcessorDelegate(
         properties: List<Property>,
         embeddedProperties: List<EmbeddedProperty>,
         relations: List<androidx.room.vo.Relation>,
-        constructor: Constructor?
+        constructor: Constructor?,
     ): DataClass {
         return DataClass(
             element = element,
@@ -93,7 +93,7 @@ class AutoValueDataClassProcessorDelegate(
             properties = properties,
             embeddedProperties = embeddedProperties,
             relations = relations,
-            constructor = constructor
+            constructor = constructor,
         )
     }
 

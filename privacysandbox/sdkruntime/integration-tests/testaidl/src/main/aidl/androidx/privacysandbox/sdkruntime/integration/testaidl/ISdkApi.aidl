@@ -16,7 +16,31 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testaidl;
 
+import androidx.privacysandbox.sdkruntime.integration.testaidl.IClientImportanceListener;
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback;
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkActivityHandler;
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo;
+
 interface ISdkApi {
-    String getMessage();
-    boolean invert(boolean value);
+    String doSomething(String param);
+
+    oneway void loadSdk(in String sdkName, in Bundle params, in ILoadSdkCallback callback);
+
+    List<LoadedSdkInfo> getSandboxedSdks();
+    List<LoadedSdkInfo> getAppOwnedSdks();
+
+    List<String> callDoSomethingOnSandboxedSdks(String param);
+    List<String> callDoSomethingOnAppOwnedSdks(String param);
+
+    oneway void triggerSandboxDeath();
+
+    String getClientPackageName();
+
+    void writeToFile(String filename, String data);
+    @nullable String readFromFile(String filename);
+
+    void registerClientImportanceListener(in IClientImportanceListener listener);
+    void unregisterClientImportanceListener(in IClientImportanceListener listener);
+
+    IBinder registerSdkActivityHandler(in ISdkActivityHandler appSideActivityHandler);
 }

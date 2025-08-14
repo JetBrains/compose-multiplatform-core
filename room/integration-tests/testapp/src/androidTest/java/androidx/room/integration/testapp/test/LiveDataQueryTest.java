@@ -23,7 +23,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import android.content.Context;
-import android.os.Build;
 
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule;
 import androidx.lifecycle.Lifecycle;
@@ -52,9 +51,9 @@ import androidx.room.integration.testapp.vo.UserAndAllPets;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,6 +77,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class LiveDataQueryTest extends TestDatabaseTest {
     @Rule
     public CountingTaskExecutorRule mExecutorRule = new CountingTaskExecutorRule();
+
+    @After
+    public void teardown() throws InterruptedException, TimeoutException {
+        mExecutorRule.drainTasks(5, TimeUnit.SECONDS);
+    }
 
     @Test
     public void observeById() throws InterruptedException, ExecutionException, TimeoutException {
@@ -316,10 +320,11 @@ public class LiveDataQueryTest extends TestDatabaseTest {
         assertThat(observer.get().songs.size(), is(2));
         assertThat(observer.get().songs.get(0), is(mSong1));
         assertThat(observer.get().songs.get(1), is(mSong2));
+
+        db.close();
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     public void withWithClause() throws ExecutionException, InterruptedException,
             TimeoutException {
         LiveData<List<String>> actual =
@@ -378,6 +383,8 @@ public class LiveDataQueryTest extends TestDatabaseTest {
         Mail mail = TestUtil.createMail(1, "subject", "body");
         mailDao.insert(mail);
         assertThat(observer.get().get(0), is(mail));
+
+        db.close();
     }
 
     @Test
@@ -436,6 +443,8 @@ public class LiveDataQueryTest extends TestDatabaseTest {
         songDao.insert(song2);
 
         assertThat(songObserver.get().get(1), is(song2));
+
+        db.close();
     }
 
     @MediumTest

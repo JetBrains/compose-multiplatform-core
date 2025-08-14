@@ -92,7 +92,7 @@ class AmbiguousColumnResolverBenchmark(
             val result =
                 AmbiguousColumnResolver.resolve(
                     resultColumns = resultColumns.toTypedArray(),
-                    mappings = mappings.map { it.toTypedArray() }.toTypedArray()
+                    mappings = mappings.map { it.toTypedArray() }.toTypedArray(),
                 )
             runWithMeasurementDisabled {
                 result.forEachIndexed { i, resultMapping ->

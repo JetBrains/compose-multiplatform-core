@@ -245,7 +245,7 @@ public enum class TimeDifferenceStyle(internal val wireStyle: Int) {
      * into the seven character limit then a shorter form will be used instead, e.g. `1356d` instead
      * of `1356 days`.
      */
-    SHORT_WORDS_SINGLE_UNIT(WireComplicationText.DIFFERENCE_STYLE_SHORT_WORDS_SINGLE_UNIT)
+    SHORT_WORDS_SINGLE_UNIT(WireComplicationText.DIFFERENCE_STYLE_SHORT_WORDS_SINGLE_UNIT),
 }
 
 /** A [ComplicationText] that represents a time difference. */
@@ -305,7 +305,7 @@ public class TimeDifferenceComplicationText internal constructor(delegate: WireC
     private constructor(
         private val style: TimeDifferenceStyle,
         private val startInstant: Instant?,
-        private val endInstant: Instant?
+        private val endInstant: Instant?,
     ) {
         private var text: CharSequence? = null
         private var displayAsNow: Boolean? = null
@@ -320,7 +320,7 @@ public class TimeDifferenceComplicationText internal constructor(delegate: WireC
          */
         public constructor(
             style: TimeDifferenceStyle,
-            countUpTimeReference: CountUpTimeReference
+            countUpTimeReference: CountUpTimeReference,
         ) : this(style, null, countUpTimeReference.instant)
 
         /**
@@ -332,7 +332,7 @@ public class TimeDifferenceComplicationText internal constructor(delegate: WireC
          */
         public constructor(
             style: TimeDifferenceStyle,
-            countDownTimeReference: CountDownTimeReference
+            countDownTimeReference: CountDownTimeReference,
         ) : this(style, countDownTimeReference.instant, null)
 
         /**
@@ -403,7 +403,7 @@ public class TimeDifferenceComplicationText internal constructor(delegate: WireC
 public enum class TimeFormatStyle(internal val wireStyle: Int) {
     DEFAULT(WireComplicationText.FORMAT_STYLE_DEFAULT),
     UPPER_CASE(WireComplicationText.FORMAT_STYLE_UPPER_CASE),
-    LOWER_CASE(WireComplicationText.FORMAT_STYLE_LOWER_CASE)
+    LOWER_CASE(WireComplicationText.FORMAT_STYLE_LOWER_CASE),
 }
 
 /** A [ComplicationText] that shows a formatted time. */
@@ -565,6 +565,8 @@ internal fun WireComplicationText.toApiComplicationText(
 /** Converts a [TimeZone] into an equivalent [java.util.TimeZone]. */
 internal fun TimeZone.asJavaTimeZone(): java.util.TimeZone = java.util.TimeZone.getTimeZone(this.id)
 
+internal fun java.util.TimeZone.asIcuTimeZone(): TimeZone = TimeZone.getTimeZone(this.id)
+
 /** [ComplicationText] implementation that delegates to a [WireTimeDependentText] instance. */
 private class DelegatingTimeDependentText(private val delegate: WireTimeDependentText) :
     ComplicationText {
@@ -645,7 +647,7 @@ internal fun ComplicationText.asWearSdkComplicationText(): WearSdkComplicationTe
                     setStyle((wireFormat.timeDependentText as TimeFormatText).style)
                     setFormat((wireFormat.timeDependentText as TimeFormatText).formatString)
                     setTimeZone(
-                        (wireFormat.timeDependentText as TimeFormatText).timeZone as TimeZone?
+                        (wireFormat.timeDependentText as TimeFormatText).timeZone?.asIcuTimeZone()
                     )
                 }
                 .build()

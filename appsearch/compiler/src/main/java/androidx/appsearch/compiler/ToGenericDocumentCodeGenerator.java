@@ -19,6 +19,7 @@ package androidx.appsearch.compiler;
 import static androidx.appsearch.compiler.CodegenUtils.createNewArrayExpr;
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
 
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
@@ -29,7 +30,6 @@ import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.SerializerClass;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
@@ -77,7 +77,7 @@ class ToGenericDocumentCodeGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(GENERIC_DOCUMENT_CLASS)
                 .addAnnotation(Override.class)
-                .addParameter(ClassName.get(mModel.getClassElement()), "document")
+                .addParameter(toJavaPoet(mModel.getClassElement().asClassName()), "document")
                 .addException(APPSEARCH_EXCEPTION_CLASS);
 
         // Construct a new GenericDocument.Builder with the namespace, id, and schema type
@@ -281,7 +281,7 @@ class ToGenericDocumentCodeGenerator {
                             return collectionForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case ARRAY:
                         if (longSerializer != null) { // CustomType[]: 2d
@@ -293,7 +293,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case SINGLE:
                         if (longSerializer != null) { // CustomType: 3d
@@ -313,7 +313,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveDoubleArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // double[]: 2b
@@ -322,7 +322,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                         }
                     case SINGLE:
                         if (getterOrField.getJvmType() instanceof PrimitiveType) {
@@ -341,7 +341,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveBooleanArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // boolean[]: 2b
@@ -350,7 +350,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                         }
                     case SINGLE:
                         if (getterOrField.getJvmType() instanceof PrimitiveType) {
@@ -369,7 +369,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBytePrimitiveArrayType);
+                                /* targetArrayComponentType= */mHelper.bytePrimitiveArrayType);
                     case ARRAY: // byte[][]: 2b
                         return arrayUseDirectly(annotation, getterOrField);
                     case SINGLE: // byte[]: 2e

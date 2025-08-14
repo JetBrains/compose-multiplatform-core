@@ -7,7 +7,7 @@
         "identifier": "androidx.annotation:annotation-experimental",
         "resolvedVersion": "1.4.1"
       },
-      "fromConfiguration": "androidTestImplementation"
+      "toConfiguration": "implementation"
     },
     {
       "coordinates": {
@@ -23,7 +23,23 @@
         "identifier": "androidx.arch.core:core-common",
         "resolvedVersion": "2.2.0"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.arch.core:core-common",
+        "resolvedVersion": "2.2.0"
+      },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-common",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -36,10 +52,34 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-common",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.lifecycle:lifecycle-livedata-core",
         "resolvedVersion": "2.3.1"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -64,15 +104,6 @@
         "resolvedVersion": "1.8.0-alpha01"
       },
       "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "com.google.auto.value:auto-value-annotations",
-        "resolvedVersion": "1.6.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "compileOnly"
     },
     {
       "coordinates": {
@@ -113,15 +144,6 @@
         "resolvedVersion": "1.3"
       },
       "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
     },
     {
       "coordinates": {

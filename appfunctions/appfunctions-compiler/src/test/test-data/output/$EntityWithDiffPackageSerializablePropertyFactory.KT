@@ -1,39 +1,37 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import com.testdata.differentPackage.`$DiffPackageSerializableFactory`
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
-public class `$EntityWithDiffPackageSerializablePropertyFactory` :
-    AppFunctionSerializableFactory<EntityWithDiffPackageSerializableProperty> {
-  override fun fromAppFunctionData(appFunctionData: AppFunctionData):
-      EntityWithDiffPackageSerializableProperty {
+public class `$EntityWithDiffPackageSerializablePropertyFactory` : AppFunctionSerializableFactory<EntityWithDiffPackageSerializableProperty> {
+  override fun fromAppFunctionData(appFunctionData: AppFunctionData): EntityWithDiffPackageSerializableProperty {
     val diffPackageSerializableFactory = `$DiffPackageSerializableFactory`()
 
-    val inputSerializableData = appFunctionData.getAppFunctionData("inputSerializable")
-    val inputSerializable =
-        diffPackageSerializableFactory.fromAppFunctionData(inputSerializableData)
-    val serializableListData = appFunctionData.getAppFunctionDataList("serializableList") ?:
-        emptyList()
+    val inputSerializableData = checkNotNull(appFunctionData.getAppFunctionData("inputSerializable"))
+    val inputSerializable = diffPackageSerializableFactory.fromAppFunctionData(inputSerializableData)
+    val serializableListData = checkNotNull(appFunctionData.getAppFunctionDataList("serializableList"))
     val serializableList = serializableListData.map { data ->
       diffPackageSerializableFactory.fromAppFunctionData(data)
     }
 
-    return EntityWithDiffPackageSerializableProperty(inputSerializable, serializableList)
+    val resultEntityWithDiffPackageSerializableProperty = EntityWithDiffPackageSerializableProperty(inputSerializable, serializableList)
+    return resultEntityWithDiffPackageSerializableProperty
   }
 
-  override
-      fun toAppFunctionData(entityWithDiffPackageSerializableProperty: EntityWithDiffPackageSerializableProperty):
-      AppFunctionData {
+  override fun toAppFunctionData(appFunctionSerializable: EntityWithDiffPackageSerializableProperty): AppFunctionData {
+    val entityWithDiffPackageSerializableProperty_appFunctionSerializable = appFunctionSerializable
     val diffPackageSerializableFactory = `$DiffPackageSerializableFactory`()
 
     val builder = AppFunctionData.Builder("com.testdata.EntityWithDiffPackageSerializableProperty")
-    builder.setAppFunctionData("inputSerializable",
-        diffPackageSerializableFactory.toAppFunctionData(entityWithDiffPackageSerializableProperty.inputSerializable))
-    builder.setAppFunctionDataList("serializableList",
-        entityWithDiffPackageSerializableProperty.serializableList.map{ diffPackageSerializable ->
+    val inputSerializable = entityWithDiffPackageSerializableProperty_appFunctionSerializable.inputSerializable
+    builder.setAppFunctionData("inputSerializable", diffPackageSerializableFactory.toAppFunctionData(inputSerializable))
+    val serializableList = entityWithDiffPackageSerializableProperty_appFunctionSerializable.serializableList
+    builder.setAppFunctionDataList("serializableList", serializableList.map{ diffPackageSerializable ->
       diffPackageSerializableFactory.toAppFunctionData(diffPackageSerializable)
     })
 

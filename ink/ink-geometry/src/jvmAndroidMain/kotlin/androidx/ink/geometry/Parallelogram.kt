@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2024-2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
-import androidx.ink.geometry.internal.ParallelogramNative
+import androidx.ink.nativeloader.NativeLoader
+import androidx.ink.nativeloader.UsedByNative
 import kotlin.math.abs
 
 /**
@@ -109,6 +110,14 @@ public abstract class Parallelogram internal constructor() {
     public abstract val shearFactor: Float
 
     /**
+     * Returns an [ImmutableParallelogram] that is equivalent to this [Parallelogram]. If this
+     * [Parallelogram] is immutable, the returned [ImmutableParallelogram] will be the same
+     * instance.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract fun toImmutable(): ImmutableParallelogram
+
+    /**
      * Returns the signed area of the [Parallelogram]. If either the width or the height is zero,
      * this will be equal to zero; if the width is non-zero, then this will have the same sign as
      * the height.
@@ -121,7 +130,6 @@ public abstract class Parallelogram internal constructor() {
      * Performance-sensitive code should use the [computeBoundingBox] overload that takes a
      * pre-allocated [MutableBox], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeBoundingBox(): ImmutableBox {
         return ParallelogramNative.createBoundingBox(
             center.x,
@@ -130,13 +138,10 @@ public abstract class Parallelogram internal constructor() {
             height,
             rotation,
             shearFactor,
-            ImmutableBox::class.java,
-            ImmutableVec::class.java,
         )
     }
 
     /** Returns the minimum bounding box containing the [Parallelogram]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeBoundingBox(outBox: MutableBox): MutableBox {
         ParallelogramNative.populateBoundingBox(
             center.x,
@@ -169,7 +174,6 @@ public abstract class Parallelogram internal constructor() {
      * Performance-sensitive code should use the [computeSemiAxes] overload that takes a
      * pre-allocated [MutableVec]s, so that instances can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeSemiAxes(): List<ImmutableVec> {
         return ParallelogramNative.createSemiAxes(
                 center.x,
@@ -178,7 +182,6 @@ public abstract class Parallelogram internal constructor() {
                 height,
                 rotation,
                 shearFactor,
-                ImmutableVec::class.java,
             )
             .toList()
     }
@@ -187,7 +190,6 @@ public abstract class Parallelogram internal constructor() {
      * Fills the [MutableVec]s with the semi axes of this [Parallelogram]. For definition please see
      * [computeSemiAxes] above.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeSemiAxes(outAxis1: MutableVec, outAxis2: MutableVec) {
         ParallelogramNative.populateSemiAxes(
             center.x,
@@ -214,7 +216,6 @@ public abstract class Parallelogram internal constructor() {
      * Performance-sensitive code should use the [computeCorners] overload that takes pre-allocated
      * [MutableVec]s, so that instances can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeCorners(): List<ImmutableVec> {
         return ParallelogramNative.createCorners(
                 center.x,
@@ -223,7 +224,6 @@ public abstract class Parallelogram internal constructor() {
                 height,
                 rotation,
                 shearFactor,
-                ImmutableVec::class.java,
             )
             .toList()
     }
@@ -233,7 +233,6 @@ public abstract class Parallelogram internal constructor() {
      *
      * For explanation of order, please see [computeCorners] above.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeCorners(
         outCorner1: MutableVec,
         outCorner2: MutableVec,
@@ -258,8 +257,7 @@ public abstract class Parallelogram internal constructor() {
      * Returns whether the given point is contained within the Box. Points that lie exactly on the
      * Box's boundary are considered to be contained.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    public fun contains(point: ImmutableVec): Boolean {
+    public operator fun contains(point: ImmutableVec): Boolean {
         return ParallelogramNative.contains(
             center.x,
             center.y,
@@ -278,17 +276,17 @@ public abstract class Parallelogram internal constructor() {
      * [other.width] is less than [tolerance], and likewise for [height], [rotation], and
      * [shearFactor].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun isAlmostEqual(
         other: Parallelogram,
         @FloatRange(from = 0.0) tolerance: Float,
     ): Boolean =
-        abs(center.x - other.center.x) < tolerance &&
-            abs(center.y - other.center.y) < tolerance &&
-            abs(width - other.width) < tolerance &&
-            abs(height - other.height) < tolerance &&
-            abs(rotation - other.rotation) < tolerance &&
-            abs(shearFactor - other.shearFactor) < tolerance
+        this === other ||
+            (abs(center.x - other.center.x) < tolerance &&
+                abs(center.y - other.center.y) < tolerance &&
+                abs(width - other.width) < tolerance &&
+                abs(height - other.height) < tolerance &&
+                abs(rotation - other.rotation) < tolerance &&
+                abs(shearFactor - other.shearFactor) < tolerance)
 
     public companion object {
         /**
@@ -342,4 +340,92 @@ public abstract class Parallelogram internal constructor() {
                     "shearFactor=$shearFactor)"
             }
     }
+}
+
+/** Native helper functions for Parallelogram. */
+@UsedByNative
+internal object ParallelogramNative {
+
+    init {
+        NativeLoader.load()
+    }
+
+    @UsedByNative
+    external fun createBoundingBox(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+    ): ImmutableBox
+
+    @UsedByNative
+    external fun populateBoundingBox(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+        outBox: MutableBox,
+    )
+
+    @UsedByNative
+    external fun createSemiAxes(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+    ): Array<ImmutableVec>
+
+    @UsedByNative
+    external fun populateSemiAxes(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+        outAxis1: MutableVec,
+        outAxis2: MutableVec,
+    )
+
+    @UsedByNative
+    external fun createCorners(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+    ): Array<ImmutableVec>
+
+    @UsedByNative
+    external fun populateCorners(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+        outCorner1: MutableVec,
+        outCorner2: MutableVec,
+        outCorner3: MutableVec,
+        outCorner4: MutableVec,
+    )
+
+    @UsedByNative
+    external fun contains(
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        rotation: Float,
+        shearFactor: Float,
+        pointX: Float,
+        pointY: Float,
+    ): Boolean
 }

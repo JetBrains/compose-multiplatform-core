@@ -38,13 +38,13 @@
         <action android:id="@+id/finish" app:popUpTo="@id/start_test" />
         <action android:id="@+id/finish_self" app:popUpTo="@id/second_test"
             app:popUpToInclusive="true" />
-        <deepLink app:uri="android-app://androidx.navigation.test/test/{arg2}"
-            app:action="test.action" app:mimeType="type/test"/>
+        <deepLink app:uri="android-app://androidx.navigation.test/test/{arg2}"/>
         <deepLink app:uri="android-app://androidx.navigation.test/test/{arg1}/{arg2}"
             app:action="" />
     </test>
     <test android:id="@+id/nonNullableArg_test">
         <argument android:name="arg3" app:argType="integer" app:nullable="false" />
+        <deepLink app:uri="test-app://test/{arg3}"/>
         <deepLink app:uri="test-app://test/{arg3}"
             app:action="test.action2" app:mimeType="type/test2"/>
         <deepLink app:uri="test-app://test?arg={arg3}"

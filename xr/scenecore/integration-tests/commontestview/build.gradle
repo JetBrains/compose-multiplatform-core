@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 
 plugins {
@@ -33,7 +34,7 @@ android {
     defaultConfig {
         // TODO: This should be lower, possibly 21.
         //       Address API calls that require higher versions.
-        minSdkVersion 34
+        minSdk = 34
     }
     namespace = "androidx.xr.scenecore.samples.commontestview"
 }
@@ -43,8 +44,6 @@ androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Shared view code used across the SceneCore test apps."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }
 
 dependencies {

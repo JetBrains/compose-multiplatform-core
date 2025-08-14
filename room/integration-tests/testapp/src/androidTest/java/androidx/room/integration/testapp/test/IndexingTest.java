@@ -110,6 +110,7 @@ public class IndexingTest {
                 + " ON `foo_table` (`field2`)"));
         assertThat(indices.get(3).sql, is("CREATE INDEX `index_foo_table_my_field`"
                 + " ON `foo_table` (`my_field`)"));
+        db.close();
     }
 
     @Test
@@ -119,5 +120,6 @@ public class IndexingTest {
         db.entity1Dao().insert(new Entity1(1, "a", "b", "c"));
         List<Entity1> result = db.entity1Dao().indexedBy("b");
         assertThat(result.size(), is(1));
+        db.close();
     }
 }

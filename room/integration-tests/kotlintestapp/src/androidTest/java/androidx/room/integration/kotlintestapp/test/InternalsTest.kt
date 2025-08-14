@@ -26,6 +26,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -44,7 +45,7 @@ class InternalsTest {
     internal class InternalEntity(
         @PrimaryKey internal val id: Long,
         internal val internalField: String,
-        val publicField: String
+        val publicField: String,
     ) {
         // these are added to have setters
         internal var internalFieldProp: String = ""
@@ -95,9 +96,14 @@ class InternalsTest {
         db =
             Room.inMemoryDatabaseBuilder(
                     InstrumentationRegistry.getInstrumentation().targetContext,
-                    InternalDb::class.java
+                    InternalDb::class.java,
                 )
                 .build()
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test

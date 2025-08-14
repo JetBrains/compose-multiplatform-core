@@ -52,19 +52,18 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.mockito:mockito-core",
-        "resolvedVersion": "4.0.0"
+        "identifier": "org.jetbrains.kotlinx:kotlinx-serialization-core",
+        "resolvedVersion": "1.6.3"
       },
       "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
+        "identifier": "org.mockito:mockito-core",
+        "resolvedVersion": "4.0.0"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "testImplementation"
     }
   ]
 }

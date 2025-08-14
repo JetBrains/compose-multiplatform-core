@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -70,5 +69,4 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2020"
     description = "AndroidX Hilt Extension Compiler"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

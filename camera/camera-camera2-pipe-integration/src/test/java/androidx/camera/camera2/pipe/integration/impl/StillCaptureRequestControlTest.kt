@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
@@ -61,13 +60,11 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StillCaptureRequestControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -101,13 +98,13 @@ class StillCaptureRequestControlTest {
                 TorchControl(fakeCameraProperties, fakeState3AControl, fakeUseCaseThreads),
                 NotUseFlashModeTorchFor3aUpdate,
             ),
-            fakeUseCaseThreads
+            fakeUseCaseThreads,
         )
 
     private val captureConfigList =
         listOf(
             CaptureConfig.Builder().apply { addSurface(fakeSurface) }.build(),
-            CaptureConfig.Builder().apply { addSurface(fakeSurface) }.build()
+            CaptureConfig.Builder().apply { addSurface(fakeSurface) }.build(),
         )
 
     @Before
@@ -204,7 +201,7 @@ class StillCaptureRequestControlTest {
                     listener.onTotalCaptureResult(
                         FakeRequestMetadata(),
                         FrameNumber(0),
-                        FakeFrameInfo()
+                        FakeFrameInfo(),
                     )
                 }
             }
@@ -226,7 +223,7 @@ class StillCaptureRequestControlTest {
                     listener.onTotalCaptureResult(
                         FakeRequestMetadata(),
                         FrameNumber(0),
-                        FakeFrameInfo()
+                        FakeFrameInfo(),
                     )
                 }
             }
@@ -250,7 +247,7 @@ class StillCaptureRequestControlTest {
                     listener.onFailed(
                         fakeRequestMetadata,
                         frameNumber,
-                        FakeRequestFailure(fakeRequestMetadata, frameNumber)
+                        FakeRequestFailure(fakeRequestMetadata, frameNumber),
                     )
                 }
             }
@@ -390,7 +387,7 @@ class StillCaptureRequestControlTest {
             val requestFutures =
                 listOf(
                     stillCaptureRequestControl.issueCaptureRequests(),
-                    stillCaptureRequestControl.issueCaptureRequests()
+                    stillCaptureRequestControl.issueCaptureRequests(),
                 )
 
             // reset after all operations are done
@@ -432,10 +429,7 @@ class StillCaptureRequestControlTest {
 
     private fun initUseCaseCameraScopeObjects(isSurfaceSetupSuccessful: Deferred<Boolean>) {
         fakeCameraGraphSession = FakeCameraGraphSession()
-        fakeCameraGraph =
-            FakeCameraGraph(
-                fakeCameraGraphSession = fakeCameraGraphSession,
-            )
+        fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
         fakeUseCaseGraphConfig =
             UseCaseGraphConfig(
                 graph = fakeCameraGraph,
@@ -454,7 +448,6 @@ class StillCaptureRequestControlTest {
             UseCaseCameraState(
                 useCaseGraphConfig = fakeUseCaseGraphConfig,
                 threads = fakeUseCaseThreads,
-                sessionProcessorManager = null,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =
@@ -476,7 +469,6 @@ class StillCaptureRequestControlTest {
                         useCaseGraphConfig = fakeUseCaseGraphConfig,
                         useCaseCameraState = fakeUseCaseCameraState,
                         useTorchAsFlash = NotUseTorchAsFlash,
-                        sessionProcessorManager = null,
                         flashControl =
                             FlashControl(
                                 cameraProperties = fakeCameraProperties,

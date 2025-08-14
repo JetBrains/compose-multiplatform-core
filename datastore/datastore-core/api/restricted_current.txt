@@ -34,7 +34,15 @@ package androidx.datastore.core {
     method public <T> androidx.datastore.core.DataStore<T> create(androidx.datastore.core.Storage<T> storage, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler);
     method public <T> androidx.datastore.core.DataStore<T> create(androidx.datastore.core.Storage<T> storage, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler, optional java.util.List<? extends androidx.datastore.core.DataMigration<T>> migrations);
     method public <T> androidx.datastore.core.DataStore<T> create(androidx.datastore.core.Storage<T> storage, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler, optional java.util.List<? extends androidx.datastore.core.DataMigration<T>> migrations, optional kotlinx.coroutines.CoroutineScope scope);
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public <T> androidx.datastore.core.DataStore<T> createInDeviceProtectedStorage(android.content.Context context, String fileName, androidx.datastore.core.Serializer<T> serializer);
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public <T> androidx.datastore.core.DataStore<T> createInDeviceProtectedStorage(android.content.Context context, String fileName, androidx.datastore.core.Serializer<T> serializer, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler);
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public <T> androidx.datastore.core.DataStore<T> createInDeviceProtectedStorage(android.content.Context context, String fileName, androidx.datastore.core.Serializer<T> serializer, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler, optional java.util.List<? extends androidx.datastore.core.DataMigration<T>> migrations);
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public <T> androidx.datastore.core.DataStore<T> createInDeviceProtectedStorage(android.content.Context context, String fileName, androidx.datastore.core.Serializer<T> serializer, optional androidx.datastore.core.handlers.ReplaceFileCorruptionHandler<T>? corruptionHandler, optional java.util.List<? extends androidx.datastore.core.DataMigration<T>> migrations, optional kotlinx.coroutines.CoroutineScope scope);
     field public static final androidx.datastore.core.DataStoreFactory INSTANCE;
+  }
+
+  public final class DeviceProtectedDataStoreFile {
+    method @RequiresApi(android.os.Build.VERSION_CODES.N) public static java.io.File deviceProtectedDataStoreFile(android.content.Context, String fileName);
   }
 
   public final class FileStorage<T> implements androidx.datastore.core.Storage<T> {
@@ -101,6 +109,8 @@ package androidx.datastore.core {
   public interface WriteScope<T> extends androidx.datastore.core.ReadScope<T> {
     method public suspend Object? writeData(T value, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
+
+  public typealias IOException = java.io.IOException;
 
 }
 

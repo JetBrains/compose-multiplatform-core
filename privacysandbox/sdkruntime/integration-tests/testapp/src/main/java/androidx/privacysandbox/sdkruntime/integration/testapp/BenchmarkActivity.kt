@@ -23,10 +23,10 @@ import kotlinx.coroutines.runBlocking
 class BenchmarkActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val api = TestAppApi(applicationContext)
+        val api = TestAppApi(this)
         val sdkApi = runBlocking { api.loadTestSdk() }
-        val invertResult = sdkApi.invert(false)
-        if (!invertResult) {
+        val result = sdkApi.doSomething("42")
+        if (result != "TestSdk result is 42") {
             throw RuntimeException("Something went wrong")
         }
     }

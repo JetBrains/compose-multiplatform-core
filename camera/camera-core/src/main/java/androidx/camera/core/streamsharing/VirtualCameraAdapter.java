@@ -68,6 +68,7 @@ import androidx.camera.core.processing.util.OutConfig;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -166,16 +167,17 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
 
         // Merge Preview stabilization and video stabilization configs.
         for (UseCase useCase : mChildren) {
-            if (useCase.getCurrentConfig().getVideoStabilizationMode()
+            UseCaseConfig<?> useCaseConfig = requireNonNull(mChildrenConfigsMap.get(useCase));
+            if (useCaseConfig.getVideoStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getVideoStabilizationMode());
+                        useCaseConfig.getVideoStabilizationMode());
             }
 
-            if (useCase.getCurrentConfig().getPreviewStabilizationMode()
+            if (useCaseConfig.getPreviewStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getPreviewStabilizationMode());
+                        useCaseConfig.getPreviewStabilizationMode());
             }
         }
     }
@@ -196,15 +198,15 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         }
     }
 
-    void notifyStateAttached() {
+    void notifySessionStart() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateAttached();
+            useCase.onSessionStart();
         }
     }
 
-    void notifyStateDetached() {
+    void notifySessionStop() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateDetached();
+            useCase.onSessionStop();
         }
     }
 
@@ -247,6 +249,9 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
                             getRotationDegrees(sharingInputEdge.getSensorToBufferTransform()),
                             isViewportSet);
             selectedChildSizes.put(useCase, preferredChildSize.getOriginalSelectedChildSize());
+            Logger.d(TAG,
+                    "Selected child size: " + preferredChildSize.getOriginalSelectedChildSize()
+                            + ", useCase: " + useCase);
         }
         return selectedChildSizes;
     }
@@ -513,17 +518,28 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
     }
 
     CameraCaptureCallback createCameraCaptureCallback() {
-        return new CameraCaptureCallback() {
-            @Override
-            public void onCaptureCompleted(int captureConfigId,
-                    @NonNull CameraCaptureResult cameraCaptureResult) {
-                super.onCaptureCompleted(captureConfigId, cameraCaptureResult);
-                for (UseCase child : mChildren) {
+        // Use static class + WeakReference to avoid the reference being held in
+        // CameraCaptureCallback. On some device, the cameraCaptureCallback could be held in
+        // camera framework.
+        return new VirtualCameraCaptureCallback(this);
+    }
+
+    static class VirtualCameraCaptureCallback extends CameraCaptureCallback {
+        private final WeakReference<VirtualCameraAdapter> mVirtualCameraAdapterRef;
+        VirtualCameraCaptureCallback(VirtualCameraAdapter virtualCameraAdapter) {
+            mVirtualCameraAdapterRef = new WeakReference<>(virtualCameraAdapter);
+        }
+        @Override
+        public void onCaptureCompleted(int captureConfigId,
+                @NonNull CameraCaptureResult cameraCaptureResult) {
+            VirtualCameraAdapter virtualCameraAdapter = mVirtualCameraAdapterRef.get();
+            if (virtualCameraAdapter != null) {
+                for (UseCase child : virtualCameraAdapter.mChildren) {
                     sendCameraCaptureResultToChild(cameraCaptureResult,
                             child.getSessionConfig(), captureConfigId);
                 }
             }
-        };
+        }
     }
 
     static void sendCameraCaptureResultToChild(

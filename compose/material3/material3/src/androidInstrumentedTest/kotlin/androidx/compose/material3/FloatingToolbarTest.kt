@@ -17,7 +17,10 @@
 package androidx.compose.material3
 
 import android.os.Build
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -42,6 +46,7 @@ import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
 import androidx.compose.material3.FloatingToolbarExitDirection.Companion.Bottom
 import androidx.compose.material3.FloatingToolbarExitDirection.Companion.End
+import androidx.compose.material3.FloatingToolbarExitDirection.Companion.Start
 import androidx.compose.material3.internal.Strings
 import androidx.compose.material3.internal.getString
 import androidx.compose.runtime.Composable
@@ -82,6 +87,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -95,101 +101,202 @@ class FloatingToolbarTest {
     @get:Rule val rule = createComposeRule()
 
     @Test
-    fun horizontalFloatingToolbar_scrolledPositioning() {
+    fun horizontalFloatingToolbar_default_scrolledPositioning() {
         lateinit var scrollBehavior: FloatingToolbarScrollBehavior
         lateinit var colors: FloatingToolbarColors
-        var backgroundColor = Color.Unspecified
-        val scrollHeightOffsetDp = 20.dp
-        var scrollHeightOffsetPx = 0f
-        var containerSizePx = 0f
-        val screenOffsetDp = ScreenOffset
-        var screenOffsetPx = 0f
 
         rule.setMaterialContent(lightColorScheme()) {
-            backgroundColor = MaterialTheme.colorScheme.background
             colors = FloatingToolbarDefaults.standardFloatingToolbarColors()
             scrollBehavior =
                 FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = Bottom)
-            scrollHeightOffsetPx = with(LocalDensity.current) { scrollHeightOffsetDp.toPx() }
-            containerSizePx =
-                with(LocalDensity.current) { FloatingToolbarDefaults.ContainerSize.toPx() }
-            screenOffsetPx = with(LocalDensity.current) { screenOffsetDp.toPx() }
             HorizontalFloatingToolbar(
-                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(y = -screenOffsetDp),
+                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(y = -ScreenOffset),
                 expanded = false,
                 scrollBehavior = scrollBehavior,
                 shape = RectangleShape,
                 content = {
-                    IconButton(onClick = { /* doSomething() */ }) {
+                    // Use a 48dp IconButton to test this without any additional paddings that the
+                    // minimumInteractiveBalancedPadding might have added.
+                    IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
-        assertThat(scrollBehavior.state.offsetLimit).isEqualTo(-(containerSizePx + screenOffsetPx))
-        // Simulate scrolled content.
-        rule.runOnIdle {
-            scrollBehavior.state.offset = -scrollHeightOffsetPx
-            scrollBehavior.state.contentOffset = -scrollHeightOffsetPx
-        }
-        rule.waitForIdle()
-        rule.onNodeWithTag(FloatingToolbarTestTag).captureToImage().assertPixels(null) { pos ->
-            val scrolled = (scrollHeightOffsetPx - screenOffsetPx).roundToInt()
-            when (pos.y) {
-                0 -> backgroundColor
-                scrolled - 2 -> backgroundColor
-                scrolled -> colors.toolbarContainerColor
-                else -> null
-            }
-        }
+        scrollAndCheckState(
+            scrollBehavior = scrollBehavior,
+            scrollBy = 20.dp,
+            scrolledBackgroundColor = colors.toolbarContainerColor,
+        )
     }
 
     @Test
-    fun verticalFloatingToolbar_scrolledPositioning() {
-        lateinit var scrollBehavior: FloatingToolbarScrollBehavior
+    fun horizontalFloatingToolbar_custom_scrolledPositioning() {
+        val scrollBehavior =
+            ExitAlwaysFloatingToolbarScrollBehavior(
+                exitDirection = Bottom,
+                state =
+                    FloatingToolbarState(
+                        initialOffsetLimit = -Float.MAX_VALUE,
+                        initialOffset = 0f,
+                        initialContentOffset = 0f,
+                    ),
+                snapAnimationSpec = spring(),
+                flingAnimationSpec = splineBasedDecay<Float>(rule.density),
+            )
         lateinit var colors: FloatingToolbarColors
-        var backgroundColor = Color.Unspecified
-        val scrollHeightOffsetDp = 20.dp
-        var scrollHeightOffsetPx = 0f
-        var containerSizePx = 0f
-        val screenOffsetDp = ScreenOffset
-        var screenOffsetPx = 0f
 
         rule.setMaterialContent(lightColorScheme()) {
             colors = FloatingToolbarDefaults.standardFloatingToolbarColors()
-            backgroundColor = MaterialTheme.colorScheme.background
-            scrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = End)
-            scrollHeightOffsetPx = with(LocalDensity.current) { scrollHeightOffsetDp.toPx() }
-            containerSizePx =
-                with(LocalDensity.current) { FloatingToolbarDefaults.ContainerSize.toPx() }
-            screenOffsetPx = with(LocalDensity.current) { screenOffsetDp.toPx() }
-            VerticalFloatingToolbar(
-                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(x = -screenOffsetDp),
+            HorizontalFloatingToolbar(
+                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(y = -ScreenOffset),
                 expanded = false,
                 scrollBehavior = scrollBehavior,
                 shape = RectangleShape,
                 content = {
-                    IconButton(onClick = { /* doSomething() */ }) {
+                    // Use a 48dp IconButton to test this without any additional paddings that the
+                    // minimumInteractiveBalancedPadding might have added.
+                    IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
+
+        scrollAndCheckState(
+            scrollBehavior = scrollBehavior,
+            scrollBy = 20.dp,
+            scrolledBackgroundColor = colors.toolbarContainerColor,
+        )
+    }
+
+    // Regression test for b/406014787
+    @Test
+    fun horizontalFloatingToolbar_interactiveSize_doesNotResizeToolbar() {
+
+        rule
+            .setMaterialContentForSizeAssertions {
+                val text = listOf("Long Text", "Y", "M3", "M", "W", "D")
+
+                HorizontalFloatingToolbar(
+                    expanded = false,
+                    collapsedShadowElevation = 5.dp,
+                    content = {
+                        text.forEach {
+                            Box(Modifier.minimumInteractiveComponentSize()) { Text(it) }
+                        }
+                    },
+                )
+            }
+            .assertHeightIsEqualTo(64.0.dp)
+    }
+
+    @Test
+    fun verticalFloatingToolbar_default_scrolledPositioning() {
+        lateinit var scrollBehavior: FloatingToolbarScrollBehavior
+        lateinit var colors: FloatingToolbarColors
+
+        rule.setMaterialContent(lightColorScheme()) {
+            colors = FloatingToolbarDefaults.standardFloatingToolbarColors()
+            scrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = End)
+            VerticalFloatingToolbar(
+                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(x = -ScreenOffset),
+                expanded = false,
+                scrollBehavior = scrollBehavior,
+                shape = RectangleShape,
+                content = {
+                    // Use a 48dp IconButton to test this without any additional paddings that the
+                    // minimumInteractiveBalancedPadding might have added.
+                    IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                },
+            )
+        }
+
+        scrollAndCheckState(
+            scrollBehavior = scrollBehavior,
+            scrollBy = 20.dp,
+            scrolledBackgroundColor = colors.toolbarContainerColor,
+        )
+    }
+
+    @Test
+    fun verticalFloatingToolbar_custom_scrolledPositioning() {
+        val scrollBehavior =
+            ExitAlwaysFloatingToolbarScrollBehavior(
+                exitDirection = End,
+                state =
+                    FloatingToolbarState(
+                        initialOffsetLimit = -Float.MAX_VALUE,
+                        initialOffset = 0f,
+                        initialContentOffset = 0f,
+                    ),
+                snapAnimationSpec = spring(),
+                flingAnimationSpec = splineBasedDecay<Float>(rule.density),
+            )
+        lateinit var colors: FloatingToolbarColors
+
+        rule.setMaterialContent(lightColorScheme()) {
+            colors = FloatingToolbarDefaults.standardFloatingToolbarColors()
+            VerticalFloatingToolbar(
+                modifier = Modifier.testTag(FloatingToolbarTestTag).offset(x = -ScreenOffset),
+                expanded = false,
+                scrollBehavior = scrollBehavior,
+                shape = RectangleShape,
+                content = {
+                    // Use a 48dp IconButton to test this without any additional paddings that the
+                    // minimumInteractiveBalancedPadding might have added.
+                    IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                },
+            )
+        }
+
+        scrollAndCheckState(
+            scrollBehavior = scrollBehavior,
+            scrollBy = 20.dp,
+            scrolledBackgroundColor = colors.toolbarContainerColor,
+        )
+    }
+
+    private fun scrollAndCheckState(
+        scrollBehavior: FloatingToolbarScrollBehavior,
+        scrollBy: Dp,
+        scrolledBackgroundColor: Color,
+    ) {
+        val scrollByPx: Float
+        val containerSizePx: Float
+        val screenOffsetPx: Float
+        with(rule.density) {
+            scrollByPx = scrollBy.toPx()
+            containerSizePx = FloatingToolbarDefaults.ContainerSize.toPx()
+            screenOffsetPx = ScreenOffset.toPx()
+        }
+        val backgroundColor = lightColorScheme().background
+        val orientation =
+            when (scrollBehavior.exitDirection) {
+                Start,
+                End -> Orientation.Horizontal
+                else -> Orientation.Vertical
+            }
 
         assertThat(scrollBehavior.state.offsetLimit).isEqualTo(-(containerSizePx + screenOffsetPx))
         // Simulate scrolled content.
         rule.runOnIdle {
-            scrollBehavior.state.offset = -scrollHeightOffsetPx
-            scrollBehavior.state.contentOffset = -scrollHeightOffsetPx
+            scrollBehavior.state.offset = -scrollByPx
+            scrollBehavior.state.contentOffset = -scrollByPx
         }
         rule.waitForIdle()
         rule.onNodeWithTag(FloatingToolbarTestTag).captureToImage().assertPixels(null) { pos ->
-            val scrolled = (scrollHeightOffsetPx - screenOffsetPx).roundToInt()
-            when (pos.x) {
+            val scrolled = (scrollByPx - screenOffsetPx).roundToInt()
+            val position = if (orientation == Orientation.Horizontal) pos.x else pos.y
+            when (position) {
                 0 -> backgroundColor
-                scrolled - 2 -> backgroundColor
-                scrolled -> colors.toolbarContainerColor
+                scrolled - 2 -> backgroundColor // 2px (1px buffer) before the scrolled position
+                scrolled -> scrolledBackgroundColor
                 else -> null
             }
         }
@@ -211,7 +318,7 @@ class FloatingToolbarTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -238,7 +345,7 @@ class FloatingToolbarTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -261,7 +368,7 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
@@ -283,7 +390,7 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Check, contentDescription = "Localized description")
                     }
-                }
+                },
             )
         }
 
@@ -308,7 +415,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -334,7 +441,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -359,7 +466,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -385,7 +492,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -415,7 +522,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -447,7 +554,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a width of the default content padding
@@ -472,7 +579,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -498,7 +605,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -523,7 +630,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -549,7 +656,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -579,7 +686,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             .assertHeightIsEqualTo(
@@ -611,7 +718,7 @@ class FloatingToolbarTest {
                             Icon(Icons.Filled.Check, contentDescription = "Localized description")
                         }
                     },
-                    content = {}
+                    content = {},
                 )
             }
             // Expecting a height of the default content padding
@@ -906,7 +1013,7 @@ class FloatingToolbarTest {
                 onCollapsed = { expanded = false },
                 toolbarNestedScrollEnabled = false,
                 initialValue = expanded,
-                reverseLayout = true
+                reverseLayout = true,
             )
         }
 
@@ -926,7 +1033,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
         }
 
@@ -949,7 +1056,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
             thresholdPx =
                 with(LocalDensity.current) {
@@ -983,7 +1090,7 @@ class FloatingToolbarTest {
             VerticalNestedScrollTestContent(
                 onExpanded = { expanded = true },
                 onCollapsed = { expanded = false },
-                initialValue = expanded
+                initialValue = expanded,
             )
             thresholdPx = with(LocalDensity.current) { customThreshold.toPx() }
         }
@@ -1005,6 +1112,7 @@ class FloatingToolbarTest {
     }
 
     @Test
+    @Ignore("b/422764590")
     fun verticalFloatingToolbar_scrollBehavior() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =
@@ -1040,6 +1148,7 @@ class FloatingToolbarTest {
     }
 
     @Test
+    @Ignore("b/422736884")
     fun horizontalFloatingToolbar_scrollBehavior() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =
@@ -1091,11 +1200,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1129,11 +1238,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1167,11 +1276,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1205,11 +1314,11 @@ class FloatingToolbarTest {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
-                }
+                },
             ) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag)
+                    modifier = Modifier.testTag(FloatingToolbarMainContentTestTag),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -1328,7 +1437,7 @@ class FloatingToolbarTest {
         onCollapsed: () -> Unit,
         toolbarNestedScrollEnabled: Boolean = true,
         initialValue: Boolean = true,
-        reverseLayout: Boolean = false
+        reverseLayout: Boolean = false,
     ) {
         Column(
             modifier =
@@ -1338,7 +1447,7 @@ class FloatingToolbarTest {
                             expanded = initialValue,
                             reverseLayout = reverseLayout,
                             onExpand = onExpanded,
-                            onCollapse = onCollapsed
+                            onCollapse = onCollapsed,
                         )
                     } else {
                         Modifier
@@ -1347,7 +1456,7 @@ class FloatingToolbarTest {
             Box(modifier = Modifier.fillMaxWidth().height(80.dp))
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().testTag(MainLayoutTag).weight(1f),
-                reverseLayout = reverseLayout
+                reverseLayout = reverseLayout,
             ) {
                 items(100) {
                     Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)) {
@@ -1361,7 +1470,6 @@ class FloatingToolbarTest {
 
     @Composable
     private fun ToolbarFab() {
-
         FloatingToolbarDefaults.StandardFloatingActionButton(
             modifier = Modifier.testTag(FloatingActionButtonTestTag),
             onClick = { /* doSomething() */ },
@@ -1383,7 +1491,7 @@ class FloatingToolbarTest {
         }
         IconButton(
             onClick = { /* doSomething() */ },
-            modifier = Modifier.testTag(FloatingToolbarContentLastItemTestTag)
+            modifier = Modifier.testTag(FloatingToolbarContentLastItemTestTag),
         ) {
             Icon(Icons.Filled.MoreVert, contentDescription = "Localized description")
         }

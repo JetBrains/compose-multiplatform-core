@@ -18,6 +18,8 @@ package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Icing options for AppSearch local-storage. Note, these values are not necessarily the defaults
  * set in {@link com.google.android.icing.proto.IcingSearchEngineOptions} proto.
@@ -25,8 +27,33 @@ import androidx.annotation.RestrictTo;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
+    public int getMaxTokenLength() {
+        return DEFAULT_MAX_TOKEN_LENGTH;
+    }
+
+    @Override
+    public int getIndexMergeSize() {
+        return DEFAULT_INDEX_MERGE_SIZE;
+    }
+
+    @Override
     public boolean getDocumentStoreNamespaceIdFingerprint() {
         return true;
+    }
+
+    @Override
+    public float getOptimizeRebuildIndexThreshold() {
+        return 0.9f;
+    }
+
+    @Override
+    public int getCompressionLevel() {
+        return DEFAULT_COMPRESSION_LEVEL;
+    }
+
+    @Override
+    public int getCompressionMemLevel() {
+        return DEFAULT_COMPRESSION_MEM_LEVEL;
     }
 
     @Override
@@ -40,12 +67,61 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     }
 
     @Override
+    public boolean getUsePreMappingWithFileBackedVector() {
+        return false;
+    }
+
+    @Override
     public boolean getUsePersistentHashMap() {
         return true;
     }
 
     @Override
+    public int getMaxPageBytesLimit() {
+        return DEFAULT_MAX_PAGE_BYTES_LIMIT;
+    }
+
+    @Override
+    public int getMaxPageBytesLimitForVm() {
+        return DEFAULT_MAX_PAGE_BYTES_LIMIT;
+    }
+    @Override
+    public int getIntegerIndexBucketSplitThreshold() {
+        return DEFAULT_INTEGER_INDEX_BUCKET_SPLIT_THRESHOLD;
+    }
+
+    @Override
+    public boolean getLiteIndexSortAtIndexing() {
+        return DEFAULT_LITE_INDEX_SORT_AT_INDEXING;
+    }
+
+    @Override
+    public int getLiteIndexSortSize() {
+        return DEFAULT_LITE_INDEX_SORT_SIZE;
+    }
+
+    @Override
+    public boolean getUseNewQualifiedIdJoinIndex() {
+        return DEFAULT_USE_NEW_QUALIFIED_ID_JOIN_INDEX;
+    }
+
+    @Override
     public boolean getBuildPropertyExistenceMetadataHits() {
         return true;
+    }
+
+    @Override
+    public long getOrphanBlobTimeToLiveMs() {
+        return DEFAULT_ORPHAN_BLOB_TIME_TO_LIVE_MS;
+    }
+
+    @Override
+    public @NonNull String getIcuDataFileAbsolutePath() {
+        return DEFAULT_ICU_DATA_FILE_ABSOLUTE_PATH;
+    }
+
+    @Override
+    public int getCompressionThresholdBytes() {
+        return DEFAULT_COMPRESSION_THRESHOLD_BYTES;
     }
 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
@@ -46,6 +47,7 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
@@ -63,6 +65,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.IntSize
@@ -146,9 +149,7 @@ class SemanticsTests {
         fun Modifier.count() = semantics { count++ }
         rule.setContent {
             recomposeScope = currentRecomposeScope
-            Box(
-                modifier = Modifier.count().count().count(),
-            )
+            Box(modifier = Modifier.count().count().count())
         }
         rule.runOnIdle {
             if (ComposeUiFlags.isSemanticAutofillEnabled) {
@@ -276,37 +277,119 @@ class SemanticsTests {
     @Test
     fun contentTypeProperty() {
         rule.setContent {
-            Box(
-                Modifier.testTag(TestTag).semantics {
-                    testProperty = ContentType.Username.toString()
-                }
-            )
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics { contentType = ContentType.Username }
+            ) {}
         }
 
         rule
-            .onNodeWithTag(TestTag)
-            .assertUnmergedTestPropertyEquals(ContentType.Username.toString())
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.ContentType, ContentType.Username)
+            )
 
-        rule.onNodeWithTag(TestTag).assertTestPropertyEquals(ContentType.Username.toString())
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.ContentType, ContentType.Username)
+            )
     }
 
     @Test
     fun contentDataTypeProperty() {
         rule.setContent {
-            Surface {
-                Box(
-                    Modifier.testTag(TestTag).semantics {
-                        testProperty = ContentDataType.Text.toString()
-                    }
-                )
-            }
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics { contentDataType = ContentDataType.Text }
+            ) {}
         }
 
         rule
-            .onNodeWithTag(TestTag)
-            .assertUnmergedTestPropertyEquals(ContentDataType.Text.toString())
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.ContentDataType,
+                    ContentDataType.Text,
+                )
+            )
 
-        rule.onNodeWithTag(TestTag).assertTestPropertyEquals(ContentDataType.Text.toString())
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.ContentDataType,
+                    ContentDataType.Text,
+                )
+            )
+    }
+
+    @Test
+    fun fillableDataProperty() {
+        rule.setContent {
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics {
+                    FillableData("foo")?.let { fillableData = it }
+                }
+            ) {}
+        }
+
+        rule
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher("fillableData") {
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.getCharSequence() ==
+                        "foo"
+                }
+            )
+
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher("fillableData") {
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.getCharSequence() ==
+                        "foo"
+                }
+            )
+    }
+
+    @Test
+    fun onFillDataAction() {
+        val actionLabel = "fill"
+        var receivedData: FillableData? = null
+        rule.setContent {
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics {
+                    onFillData(
+                        label = actionLabel,
+                        action = {
+                            receivedData = it
+                            true
+                        },
+                    )
+                }
+            ) {}
+        }
+
+        val fillableData = FillableData("foo")
+        rule.onNodeWithTag(TestTag).performSemanticsAction(SemanticsActions.OnFillData) {
+            fillableData?.let { data -> it(data) }
+        }
+
+        assertThat(receivedData?.getCharSequence()).isEqualTo("foo")
+        fillableData?.let { data ->
+            val fillMatcher =
+                SemanticsMatcher("fill") { node ->
+                    // Assert that the SemanticsAction.OnFillData exists,
+                    node.config.getOrNull(SemanticsActions.OnFillData)?.let { action ->
+                        // has the correct label and,
+                        action.label == actionLabel
+                        // when invoked with the provided data, the action returns true.
+                        && action.action?.invoke(data) == true
+                    } ?: false
+                }
+
+            rule.onNodeWithTag(TestTag, useUnmergedTree = true).assert(fillMatcher)
+            rule.onNodeWithTag(TestTag).assert(fillMatcher)
+        }
     }
 
     @Test
@@ -719,7 +802,7 @@ class SemanticsTests {
         rule
             .onNodeWithTag(TestTag)
             .assertDoesNotHaveProperty(SemanticsProperties.ContentDescription)
-        rule.onNodeWithContentDescription(label) // assert exists
+        rule.onNodeWithContentDescription(label).assertExists()
     }
 
     @Test
@@ -775,7 +858,7 @@ class SemanticsTests {
                         }
                     )
                 },
-                content = content
+                content = content,
             )
         }
 
@@ -997,8 +1080,8 @@ class SemanticsTests {
                     ValueElement("mergeDescendants", true),
                     ValueElement(
                         "properties",
-                        mapOf("PaneTitle" to "testTitle", "Focused" to false, "Role" to Role.Image)
-                    )
+                        mapOf("PaneTitle" to "testTitle", "Focused" to false, "Role" to Role.Image),
+                    ),
                 )
         }
     }
@@ -1049,7 +1132,7 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundInParent() {
+    fun testBoundsInParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp()).semantics {}) {
@@ -1067,10 +1150,38 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundInParent_boundInRootWhenNoParent() {
+    fun testBoundsInParent_boundsInRootWhenNoParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp())) {
+                    Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
+                        Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        val bounds = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().boundsInParent
+        assertEquals(Rect(30.0f, 50.0f, 31.0f, 51.0f), bounds)
+    }
+
+    @Test
+    fun testBoundsInParent_boundsInRootWhenParentIsNotImportantForBounds() {
+        val notImportantForBoundsSemanticsModifier =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override val isImportantForBounds = false
+
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(100.toDp())
+                        .padding(10.toDp(), 20.toDp())
+                        .elementFor(notImportantForBoundsSemanticsModifier)
+                ) {
                     Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
                         Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
                     }
@@ -1117,7 +1228,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
         )
         assertEquals(false, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
 
@@ -1133,7 +1244,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
         )
         assertEquals(true, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
     }
@@ -1160,7 +1271,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
         )
         assertEquals(false, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
 
@@ -1176,7 +1287,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
         )
         assertEquals(true, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
     }
@@ -1186,13 +1297,7 @@ class SemanticsTests {
         var density = Float.NaN
         rule.setContent {
             with(LocalDensity.current) { density = 1.sp.toPx() }
-            Surface {
-                Text(
-                    AnnotatedString("hello"),
-                    Modifier.testTag(TestTag),
-                    fontSize = 14.sp,
-                )
-            }
+            Surface { Text(AnnotatedString("hello"), Modifier.testTag(TestTag), fontSize = 14.sp) }
         }
 
         val config = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
@@ -1214,6 +1319,16 @@ class SemanticsTests {
 
 private fun SemanticsNodeInteraction.assertDoesNotHaveProperty(property: SemanticsPropertyKey<*>) {
     assert(SemanticsMatcher.keyNotDefined(property))
+}
+
+fun SemanticsNodeInteraction.assertContentDataTypeEquals(
+    expected: ContentDataType
+): SemanticsNodeInteraction {
+    val actual = fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDataType)
+    assert(actual == expected) {
+        "ContentDataType assertion failed.\nExpected: '$expected'\nActual: '$actual'"
+    }
+    return this
 }
 
 private val TestProperty =
@@ -1243,7 +1358,7 @@ private fun CountingLayout(modifier: Modifier, counter: Counter) {
                     counter.count++
                     layout(constraints.minWidth, constraints.minHeight) {}
                 }
-            }
+            },
     )
 }
 
@@ -1262,7 +1377,7 @@ private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable
                 with(placeables.filterNotNull()) {
                     Pair(
                         max(maxByOrNull { it.width }?.width ?: 0, constraints.minWidth),
-                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight)
+                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight),
                     )
                 }
             layout(width, height) {
@@ -1286,7 +1401,7 @@ private fun SimpleSubcomposeLayout(
     contentOne: @Composable () -> Unit,
     positionOne: Offset,
     contentTwo: @Composable () -> Unit,
-    positionTwo: Offset
+    positionTwo: Offset,
 ) {
     SubcomposeLayout(modifier) { constraints ->
         val layoutWidth = constraints.maxWidth
@@ -1310,12 +1425,12 @@ private fun SimpleSubcomposeLayout(
 
 private enum class TestSlot {
     First,
-    Second
+    Second,
 }
 
 internal fun SemanticsMod(
     mergeDescendants: Boolean = false,
-    properties: SemanticsPropertyReceiver.() -> Unit
+    properties: SemanticsPropertyReceiver.() -> Unit,
 ): CoreSemanticsModifierNode {
     return CoreSemanticsModifierNode(
         mergeDescendants = mergeDescendants,

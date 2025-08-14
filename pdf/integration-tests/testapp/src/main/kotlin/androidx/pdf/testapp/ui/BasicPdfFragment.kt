@@ -35,14 +35,14 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.databinding.BasicPdfFragmentBinding
-import androidx.pdf.viewer.fragment.PdfViewerFragment
+import androidx.pdf.viewer.fragment.PdfViewerFragmentV1
 import com.google.android.material.button.MaterialButton
 
 @SuppressLint("RestrictedApiAndroidX")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class BasicPdfFragment : Fragment(), OpCancellationHandler {
 
-    private var pdfViewerFragment: PdfViewerFragment? = null
+    private var pdfViewerFragment: PdfViewerFragmentV1? = null
     private var isPdfViewInitialized = false
 
     @VisibleForTesting
@@ -52,17 +52,14 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (pdfViewerFragment == null) {
-            pdfViewerFragment =
-                childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG)
-                    as PdfViewerFragment?
-        }
+        pdfViewerFragment =
+            childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragmentV1?
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
 
@@ -97,14 +94,14 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
                 BundleCompat.getSerializable<FragmentType>(
                     it,
                     FRAGMENT_TYPE_KEY,
-                    FragmentType::class.java
+                    FragmentType::class.java,
                 )
             }
 
         pdfViewerFragment =
             when (fragmentType) {
                 FragmentType.BASIC_FRAGMENT -> HostFragment()
-                FragmentType.STYLED_FRAGMENT -> StyledPdfViewerFragment.newInstance()
+                FragmentType.STYLED_FRAGMENT -> StyledPdfViewerFragmentV1.newInstance()
                 else -> HostFragment()
             }
 
@@ -157,7 +154,7 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
 
         enum class FragmentType {
             BASIC_FRAGMENT,
-            STYLED_FRAGMENT
+            STYLED_FRAGMENT,
         }
 
         fun newInstance(

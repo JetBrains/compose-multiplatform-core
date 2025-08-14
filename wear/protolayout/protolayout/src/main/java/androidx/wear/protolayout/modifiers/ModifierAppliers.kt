@@ -32,6 +32,7 @@ import androidx.wear.protolayout.ModifiersBuilders.Semantics
 import androidx.wear.protolayout.TypeBuilders.BoolProp
 import androidx.wear.protolayout.TypeBuilders.FloatProp
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
+import androidx.wear.protolayout.modifiers.LayoutModifier.Element
 
 /** Creates a [ModifiersBuilders.Modifiers] from a [LayoutModifier]. */
 @SuppressLint("ProtoLayoutMinSchema")
@@ -85,4 +86,10 @@ fun LayoutModifier.toProtoLayoutModifiers(): ModifiersBuilders.Modifiers {
             }
         }
         .build()
+}
+
+/** Base class for all modifiers that can merge to a ProtoLayout modifiers builder. */
+internal interface BaseProtoLayoutModifiersElement<T> : Element {
+    /** Merges the modifier to the passed in builder. */
+    fun mergeTo(initialBuilder: T?): T?
 }

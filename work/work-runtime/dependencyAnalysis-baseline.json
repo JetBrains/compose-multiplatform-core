@@ -15,7 +15,31 @@
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.8.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.arch.core:core-common",
+        "resolvedVersion": "2.2.0"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -63,6 +87,14 @@
         "identifier": "androidx.room:room-runtime",
         "resolvedVersion": "2.6.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.room:room-runtime",
+        "resolvedVersion": "2.6.1"
+      },
       "toConfiguration": "api"
     },
     {
@@ -71,7 +103,23 @@
         "identifier": "androidx.sqlite:sqlite-framework",
         "resolvedVersion": "2.4.0"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.sqlite:sqlite-framework",
+        "resolvedVersion": "2.4.0"
+      },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.sqlite:sqlite",
+        "resolvedVersion": "2.4.0"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -148,11 +196,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "api",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -161,6 +208,14 @@
         "resolvedVersion": "1.7.3"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

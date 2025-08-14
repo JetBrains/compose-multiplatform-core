@@ -31,8 +31,10 @@ android {
 
 dependencies {
     api(libs.kotlinStdlib)
+    api(libs.kotlinCoroutinesCore)
     api("androidx.annotation:annotation:1.8.1")
 
     implementation(project(":privacysandbox:sdkruntime:integration-tests:testaidl"))
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
+    implementation("androidx.activity:activity:1.9.3")
 }

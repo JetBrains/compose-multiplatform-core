@@ -32,6 +32,8 @@ import java.util.Objects;
  * Utility class for {@link Context} related operations.
  */
 public final class ContextUtil {
+    private static final int DEVICE_ID_DEFAULT = 0;
+
     /**
      * Gets the application context and preserves the attribution tag and device id.
      */
@@ -84,6 +86,22 @@ public final class ContextUtil {
         return application;
     }
 
+    /**
+     * Returns the default device ID.
+     */
+    public static int getDefaultDeviceId() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                ? Api34Impl.DEVICE_ID_DEFAULT : DEVICE_ID_DEFAULT;
+    }
+
+    /**
+     * Returns the device ID associated with the given {@link Context}.
+     */
+    public static int getDeviceId(@NonNull Context context) {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                ? Api34Impl.getDeviceId(context) : getDefaultDeviceId();
+    }
+
     private ContextUtil() {
     }
 
@@ -110,6 +128,8 @@ public final class ContextUtil {
     private static class Api34Impl {
         private Api34Impl() {
         }
+
+        static final int DEVICE_ID_DEFAULT = Context.DEVICE_ID_DEFAULT;
 
         static @NonNull Context createDeviceContext(@NonNull Context context, int deviceId) {
             return context.createDeviceContext(deviceId);

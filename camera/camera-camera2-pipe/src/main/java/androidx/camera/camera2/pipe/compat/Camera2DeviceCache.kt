@@ -16,20 +16,28 @@
 
 package androidx.camera.camera2.pipe.compat
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import androidx.annotation.GuardedBy
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.config.CameraPipeContext
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
+import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
@@ -48,7 +56,10 @@ internal class Camera2DeviceCache
 constructor(
     private val cameraManager: Provider<CameraManager>,
     private val threads: Threads,
+    @CameraPipeContext private val context: Context,
     packageManager: PackageManager,
+    private val cameraErrorListener: CameraErrorListener,
+    private val cameraDeviceSetupCompatFactoryProvider: Provider<CameraDeviceSetupCompatFactory>,
 ) {
     private val scope =
         CoroutineScope(threads.lightweightDispatcher + CoroutineName("Camera2DeviceCache"))
@@ -57,6 +68,14 @@ constructor(
     @GuardedBy("lock") private var openableCameras: List<CameraId>? = null
 
     @GuardedBy("lock") private var concurrentCameras: Set<Set<CameraId>>? = null
+
+    @GuardedBy("lock")
+    private val cameraDeviceSetupCache =
+        mutableMapOf<CameraId, Deferred<CameraDeviceSetupCompat?>>()
+
+    @GuardedBy("lock")
+    private val camera2DeviceSetupWrapperCache =
+        mutableMapOf<CameraId, Deferred<Camera2DeviceSetupWrapper?>>()
 
     private val minimumCameraCount = estimateMinInternalCameraCount(packageManager)
 
@@ -67,11 +86,80 @@ constructor(
     val cameraIds: Flow<List<CameraId>> =
         createCameraIdListFlow()
             .distinctUntilChanged()
-            .shareIn(
-                scope,
-                SharingStarted.WhileSubscribed(),
-                replay = 1,
-            )
+            .shareIn(scope, SharingStarted.WhileSubscribed(), replay = 1)
+    private val cameraDeviceSetupCompatFactory by lazy {
+        cameraDeviceSetupCompatFactoryProvider.get()
+    }
+
+    /**
+     * Retrieves a cached or new [CameraDeviceSetupCompat], returning `null` on failure.
+     *
+     * Failed initialization attempts are removed from the cache to allow for retries, which may
+     * succeed if the failure was due to a transient state (e.g. CameraAccessException).
+     */
+    suspend fun getOrInitializeDeviceSetupCompat(cameraId: CameraId): CameraDeviceSetupCompat? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return null
+        val deferred =
+            synchronized(lock) {
+                cameraDeviceSetupCache.getOrPut(cameraId) {
+                    scope.async(threads.backgroundDispatcher) {
+                        Log.debug { "Initializing CameraDeviceSetupCompat for $cameraId" }
+                        catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                            cameraDeviceSetupCompatFactory.getCameraDeviceSetupCompat(
+                                cameraId.value
+                            )
+                        }
+                    }
+                }
+            }
+
+        val deferredResult = deferred.await()
+
+        if (deferredResult == null) {
+            Log.debug { "Removing null CameraDeviceSetupCompat from cache for $cameraId" }
+            synchronized(lock) { cameraDeviceSetupCache.remove(cameraId, deferred) }
+        }
+        return deferredResult
+    }
+
+    /**
+     * Retrieves a cached or new [Camera2DeviceSetupWrapper], returning `null` on failure.
+     *
+     * Failed initialization attempts are removed from the cache to allow for retries, which may
+     * succeed if the failure was due to a transient state (e.g. CameraAccessException).
+     */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    suspend fun getOrInitializeDeviceSetupWrapper(cameraId: CameraId): Camera2DeviceSetupWrapper? {
+        val deferred =
+            synchronized(lock) {
+                camera2DeviceSetupWrapperCache.getOrPut(cameraId) {
+                    scope.async(threads.backgroundDispatcher) {
+                        val isSupported =
+                            catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                                cameraManager.get().isCameraDeviceSetupSupported(cameraId.value)
+                            }
+
+                        if (isSupported != true) {
+                            return@async null
+                        }
+                        Log.debug { "Initializing CameraDeviceSetup for $cameraId" }
+                        catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                                cameraManager.get().getCameraDeviceSetup(cameraId.value)
+                            }
+                            ?.let { cameraDeviceSetup ->
+                                Camera2DeviceSetup(cameraDeviceSetup, cameraId, cameraErrorListener)
+                            }
+                    }
+                }
+            }
+        val deferredResult = deferred.await()
+
+        if (deferredResult == null) {
+            Log.debug { "Removing null camera2DeviceSetupWrapper from cache for $cameraId" }
+            synchronized(lock) { camera2DeviceSetupWrapperCache.remove(cameraId, deferred) }
+        }
+        return deferredResult
+    }
 
     suspend fun getCameraIds(): List<CameraId> {
         val cachedCameras = synchronized(lock) { openableCameras }
@@ -135,7 +223,7 @@ constructor(
 
     private fun ProducerScope<List<CameraId>>.onCameraAvailabilityChanged(
         cameraId: String,
-        isAvailable: Boolean
+        isAvailable: Boolean,
     ) {
         val cachedCameraIds = synchronized(lock) { openableCameras }
         val cameraIdsRead =
@@ -161,7 +249,7 @@ constructor(
 
     private fun getUpdatedCameraIds(
         cachedCameraIds: List<CameraId>?,
-        cameraIdsRead: List<CameraId>?
+        cameraIdsRead: List<CameraId>?,
     ): List<CameraId>? {
         if (cameraIdsRead != null) {
             if (isValidCameraIds(cameraIdsRead)) {

@@ -85,7 +85,7 @@ fun TimePickerSample() {
                     Text("Ok")
                 }
             },
-            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Ok") } },
+            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
             modeToggleButton = {},
         ) {
             TimePicker(state = state)
@@ -131,7 +131,7 @@ fun TimeInputSample() {
                     Text("Ok")
                 }
             },
-            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Ok") } },
+            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
             modeToggleButton = {},
         ) {
             TimeInput(state = state)
@@ -181,7 +181,7 @@ fun TimePickerSwitchableSample() {
             },
             dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
             modeToggleButton = {
-                if (configuration.screenHeightDp > 400) {
+                if (configuration.screenHeightDp.dp > MinHeightForTimePicker) {
                     TimePickerDialogDefaults.DisplayModeToggle(
                         onDisplayModeChange = {
                             displayMode =
@@ -191,10 +191,10 @@ fun TimePickerSwitchableSample() {
                                     TimePickerDisplayMode.Picker
                                 }
                         },
-                        displayMode = displayMode
+                        displayMode = displayMode,
                     )
                 }
-            }
+            },
         ) {
             if (
                 displayMode == TimePickerDisplayMode.Picker &&

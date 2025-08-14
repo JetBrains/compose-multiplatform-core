@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk
@@ -48,11 +47,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class CaptureConfigAdapterTest {
     private val fakeUseCaseThreads by lazy {
@@ -60,11 +57,7 @@ class CaptureConfigAdapterTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(
-            cameraScope,
-            executor,
-            dispatcher,
-        )
+        UseCaseThreads(cameraScope, executor, dispatcher)
     }
     private val fakeCameraProperties = FakeCameraProperties()
     private val surface = FakeSurface()
@@ -86,7 +79,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         }
     }
@@ -103,7 +96,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         }
 
@@ -137,7 +130,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         request.listeners.forEach { listener -> listener.onAborted(request) }
 
@@ -164,7 +157,7 @@ class CaptureConfigAdapterTest {
                 .apply {
                     setCaptureRequestOption(
                         CaptureRequest.FLASH_MODE,
-                        CaptureRequest.FLASH_MODE_OFF
+                        CaptureRequest.FLASH_MODE_OFF,
                     )
                 }
                 .build()
@@ -174,7 +167,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert
@@ -205,7 +198,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert
@@ -236,7 +229,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert, the options of the single capture should have higher priority.

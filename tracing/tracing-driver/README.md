@@ -17,12 +17,10 @@ To start recording traces, you need to create an instance of a
 
 ```kotlin
 val driver = TraceDriver(
-    // A unique sequence id identifying the program emitting traces.
-    sequenceId = 1,
     // The trace sink. Determines where traces are stored.
     // The library provides an implementation to a tracing sink out of the box.
     // You can also write your own implementation of a TraceSink.
-    sink = JvmTraceSink(File("/path/to/trace/directory")),
+    sink = JvmTraceSink(sequenceId = 1, baseDir = File("/path/to/trace/directory")),
     // If injecting an instance of Driver, setting this to `false` means that no traces will be
     // emitted to the sink. You don't have to change all the call sites where traces are captured.
     isEnabled = true
@@ -126,9 +124,9 @@ val counter = process.getOrCreateCounterTrack("MemoryUsage")
 To emit metrics you can:
 
 ```kotlin
-counter.emitLongCounterPacket(longValue)
+counter.setCounter(longValue)
 // Or
-counter.emitDoubleCounterPacket(doubleValue)
+counter.setCounter(doubleValue)
 ```
 
 ![Counters](images/counters.jpg "Count based metrics")

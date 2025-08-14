@@ -2,7 +2,7 @@
 package androidx.core.haptics {
 
   public final class HapticAttributes {
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public HapticAttributes(android.media.AudioAttributes attrs);
+    ctor public HapticAttributes(android.media.AudioAttributes attrs);
     ctor @RequiresApi(android.os.Build.VERSION_CODES.R) public HapticAttributes(android.os.VibrationAttributes attrs);
     ctor public HapticAttributes(int usage);
     ctor public HapticAttributes(int usage, optional int flags);
@@ -25,7 +25,7 @@ package androidx.core.haptics {
   }
 
   public static final class HapticAttributes.Builder {
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public HapticAttributes.Builder(android.media.AudioAttributes attrs);
+    ctor public HapticAttributes.Builder(android.media.AudioAttributes attrs);
     ctor @RequiresApi(android.os.Build.VERSION_CODES.R) public HapticAttributes.Builder(android.os.VibrationAttributes attrs);
     ctor public HapticAttributes.Builder(androidx.core.haptics.HapticAttributes attrs);
     ctor public HapticAttributes.Builder(int usage);
@@ -96,7 +96,7 @@ package androidx.core.haptics.device {
 package androidx.core.haptics.extensions {
 
   public final class HapticAttributesUtils {
-    method @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public static android.media.AudioAttributes toAudioAttributes(androidx.core.haptics.HapticAttributes);
+    method public static android.media.AudioAttributes toAudioAttributes(androidx.core.haptics.HapticAttributes);
     method @RequiresApi(android.os.Build.VERSION_CODES.R) public static android.os.VibrationAttributes toVibrationAttributes(androidx.core.haptics.HapticAttributes);
   }
 
@@ -164,7 +164,7 @@ package androidx.core.haptics.signal {
     method public float getAmplitudeScale();
     method public int getType();
     method public androidx.core.haptics.signal.CompositionSignal.PrimitiveAtom withAmplitudeScale(@FloatRange(from=0.0, to=1.0) float newAmplitudeScale);
-    property @FloatRange(from=0.0, to=1.0) public float amplitudeScale;
+    property public float amplitudeScale;
     property public int type;
     field public static final int CLICK = 1; // 0x1
     field public static final androidx.core.haptics.signal.CompositionSignal.PrimitiveAtom.Companion Companion;

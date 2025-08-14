@@ -47,7 +47,7 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
           abstract fun getDao(): MyDao
         }
         """
-                .trimIndent()
+                .trimIndent(),
         )
 
     @Test
@@ -131,11 +131,11 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -220,11 +220,11 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -309,11 +309,11 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -398,12 +398,12 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
             compiledFiles = compileFiles(listOf(COMMON.LONG_SPARSE_ARRAY)),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -488,12 +488,12 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources = listOf(src, databaseSrc),
             compiledFiles = compileFiles(listOf(COMMON.ARRAY_MAP)),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
+            expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
 
@@ -550,7 +550,7 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val artistKey: ByteArray
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
@@ -637,13 +637,13 @@ class DaoRelationshipKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 val songKey: Long,
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runTest(
             sources =
                 listOf(src, databaseSrc, COMMON.DATA_SOURCE_FACTORY, COMMON.POSITIONAL_DATA_SOURCE),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            withKsp2 = false
+            withKsp2 = false,
         )
     }
 }

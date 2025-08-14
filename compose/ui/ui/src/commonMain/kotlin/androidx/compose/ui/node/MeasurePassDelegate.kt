@@ -61,7 +61,9 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         private set
 
     private var measuredOnce = false
-    private var placedOnce = false
+    var placedOnce = false
+        private set
+
     val lastConstraints: Constraints?
         get() =
             if (measuredOnce) {
@@ -76,7 +78,9 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
     internal var measuredByParent: LayoutNode.UsageByParent = LayoutNode.UsageByParent.NotUsed
     internal var duringAlignmentLinesQuery = false
 
-    private var lastPosition: IntOffset = IntOffset.Zero
+    internal var lastPosition: IntOffset = IntOffset.Zero
+        private set
+
     private var lastLayerBlock: (GraphicsLayerScope.() -> Unit)? = null
     private var lastExplicitLayer: GraphicsLayer? = null
     private var lastZIndex: Float = 0f
@@ -202,11 +206,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
             layoutNodeLayoutDelegate.coordinatesAccessedDuringPlacement = false
             with(layoutNode) {
                 val owner = requireOwner()
-                owner.snapshotObserver.observeLayoutSnapshotReads(
-                    this,
-                    affectsLookahead = false,
-                    block = layoutChildrenBlock
-                )
+                owner.snapshotObserver.observeLayoutSnapshotReads(this, block = layoutChildrenBlock)
             }
             layoutState = oldLayoutState
 
@@ -322,7 +322,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
                 outerCoordinator.placeWithLayer(
                     placeOuterCoordinatorPosition,
                     layer,
-                    placeOuterCoordinatorZIndex
+                    placeOuterCoordinatorZIndex,
                 )
             } else if (layerBlock == null) {
                 outerCoordinator.place(placeOuterCoordinatorPosition, placeOuterCoordinatorZIndex)
@@ -330,7 +330,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
                 outerCoordinator.placeWithLayer(
                     placeOuterCoordinatorPosition,
                     placeOuterCoordinatorZIndex,
-                    layerBlock
+                    layerBlock,
                 )
             }
         }
@@ -409,7 +409,9 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
      * Performs measure with the given constraints and perform necessary state mutations before and
      * after the measurement.
      */
-    internal fun performMeasure(constraints: Constraints) {
+    // inlined as used only in one place to not add extra function call overhead
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun performMeasure(constraints: Constraints) {
         checkPrecondition(layoutState == LayoutState.Idle) {
             "layout state is not idle before measure starts"
         }
@@ -419,7 +421,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         layoutNode
             .requireOwner()
             .snapshotObserver
-            .observeMeasureSnapshotReads(layoutNode, affectsLookahead = false, performMeasureBlock)
+            .observeMeasureSnapshotReads(layoutNode, performMeasureBlock)
         // The resulting layout state might be Ready. This can happen when the layout node's
         // own modifier is querying an alignment line during measurement, therefore we
         // need to also layout the layout node.
@@ -544,7 +546,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
     override fun placeAt(
         position: IntOffset,
         zIndex: Float,
-        layerBlock: (GraphicsLayerScope.() -> Unit)?
+        layerBlock: (GraphicsLayerScope.() -> Unit)?,
     ) {
         placeSelf(position, zIndex, layerBlock, null)
     }
@@ -578,7 +580,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         position: IntOffset,
         zIndex: Float,
         layerBlock: (GraphicsLayerScope.() -> Unit)?,
-        layer: GraphicsLayer?
+        layer: GraphicsLayer?,
     ) {
         withComposeStackTrace(layoutNode) {
             isPlacedByParent = true
@@ -628,21 +630,18 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
         position: IntOffset,
         zIndex: Float,
         layerBlock: (GraphicsLayerScope.() -> Unit)?,
-        layer: GraphicsLayer?
+        layer: GraphicsLayer?,
     ) {
         requirePrecondition(!layoutNode.isDeactivated) { "place is called on a deactivated node" }
         layoutState = LayoutState.LayingOut
 
-        val firstPlacement = !placedOnce
         lastPosition = position
         lastZIndex = zIndex
         lastLayerBlock = layerBlock
         lastExplicitLayer = layer
-        placedOnce = true
         onNodePlacedCalled = false
 
         val owner = layoutNode.requireOwner()
-        owner.rectManager.onLayoutPositionChanged(layoutNode, position, firstPlacement)
         if (!layoutPending && isPlaced) {
             outerCoordinator.placeSelfApparentToRealOffset(position, zIndex, layerBlock, layer)
             onNodePlaced()
@@ -655,12 +654,12 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
             placeOuterCoordinatorLayer = layer
             owner.snapshotObserver.observeLayoutModifierSnapshotReads(
                 layoutNode,
-                affectsLookahead = false,
-                block = placeOuterCoordinatorBlock
+                block = placeOuterCoordinatorBlock,
             )
         }
 
         layoutState = LayoutState.Idle
+        placedOnce = true
     }
 
     /**

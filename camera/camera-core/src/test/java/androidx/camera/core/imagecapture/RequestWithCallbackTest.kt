@@ -17,7 +17,6 @@
 package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
-import android.os.Build
 import android.os.Looper.getMainLooper
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED
@@ -37,13 +36,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [RequestWithCallback] */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class RequestWithCallbackTest {
 
     private lateinit var abortError: ImageCaptureException

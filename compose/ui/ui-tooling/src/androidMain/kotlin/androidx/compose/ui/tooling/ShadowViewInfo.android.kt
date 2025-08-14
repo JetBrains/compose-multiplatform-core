@@ -60,7 +60,7 @@ private constructor(var parent: ShadowViewInfo?, private val viewInfo: ViewInfo)
             viewInfo.location,
             _children.map { it.toViewInfo() },
             viewInfo.layoutInfo,
-            viewInfo.name
+            viewInfo.name,
         )
 }
 

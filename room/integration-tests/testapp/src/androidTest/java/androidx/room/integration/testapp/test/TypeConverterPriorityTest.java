@@ -34,6 +34,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.jspecify.annotations.NonNull;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +56,11 @@ public class TypeConverterPriorityTest {
                 InstrumentationRegistry.getInstrumentation().getTargetContext(),
                 TestDatabase.class
         ).build();
+    }
+
+    @After
+    public void teardown() {
+        mDB.close();
     }
 
     @Test

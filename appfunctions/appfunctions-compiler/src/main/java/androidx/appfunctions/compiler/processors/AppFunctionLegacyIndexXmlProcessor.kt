@@ -16,9 +16,11 @@
 
 package androidx.appfunctions.compiler.processors
 
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.compiler.core.createElementWithTextNode
+import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -42,13 +44,18 @@ import org.w3c.dom.Element
  * The new indexer will index additional properties based on the schema defined in SDK instead of
  * the pre-defined one in AppSearch.
  */
-class AppFunctionLegacyIndexXmlProcessor(
-    private val codeGenerator: CodeGenerator,
-) : SymbolProcessor {
+class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerator) :
+    SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
+        val resolvedAnnotatedSerializableProxies =
+            ResolvedAnnotatedSerializableProxies(
+                appFunctionSymbolResolver.resolveAllAnnotatedSerializableProxiesFromModule()
+            )
         generateLegacyIndexXml(
-            AppFunctionSymbolResolver(resolver).getAnnotatedAppFunctionsFromAllModules()
+            appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
+            resolvedAnnotatedSerializableProxies,
         )
         return emptyList()
     }
@@ -61,13 +68,16 @@ class AppFunctionLegacyIndexXmlProcessor(
      */
     private fun generateLegacyIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ) {
         if (appFunctionsByClass.isEmpty()) {
             return
         }
         val appFunctionMetadataList =
             appFunctionsByClass.flatMap {
-                it.createAppFunctionMetadataList().map { it.toAppFunctionMetadataDocument() }
+                it.createAppFunctionMetadataList(resolvedAnnotatedSerializableProxies).map {
+                    it.toAppFunctionMetadataDocument()
+                }
             }
         writeXmlFile(appFunctionMetadataList, appFunctionsByClass)
     }
@@ -100,11 +110,11 @@ class AppFunctionLegacyIndexXmlProcessor(
             .createNewFile(
                 Dependencies(
                     aggregating = true,
-                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray()
+                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray(),
                 ),
                 XML_PACKAGE_NAME,
                 XML_FILE_NAME,
-                XML_EXTENSION
+                XML_EXTENSION,
             )
             .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
     }
@@ -117,24 +127,23 @@ class AppFunctionLegacyIndexXmlProcessor(
                 createElementWithTextNode(XmlElement.APP_FUNCTION_ID_TAG, appFunctionMetadata.id)
             )
 
-            val schemaDetail = appFunctionMetadata.schema
-            if (schemaDetail != null) {
+            val schemaName = appFunctionMetadata.schemaName
+            val schemaCategory = appFunctionMetadata.schemaCategory
+            val schemaVersion = appFunctionMetadata.schemaVersion
+            if (schemaName != null && schemaCategory != null && schemaVersion != null) {
                 appendChild(
                     createElementWithTextNode(
                         XmlElement.APP_FUNCTION_SCHEMA_CATEGORY_TAG,
-                        schemaDetail.schemaCategory,
+                        schemaCategory,
                     )
                 )
                 appendChild(
-                    createElementWithTextNode(
-                        XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG,
-                        schemaDetail.schemaName,
-                    )
+                    createElementWithTextNode(XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG, schemaName)
                 )
                 appendChild(
                     createElementWithTextNode(
                         XmlElement.APP_FUNCTION_SCHEMA_VERSION_TAG,
-                        schemaDetail.schemaVersion.toString(),
+                        schemaVersion.toString(),
                     )
                 )
             }
@@ -145,9 +154,6 @@ class AppFunctionLegacyIndexXmlProcessor(
                 )
             )
         }
-
-    private fun Document.createElementWithTextNode(elementName: String, text: String): Element =
-        createElement(elementName).apply { appendChild(createTextNode(text)) }
 
     private companion object {
         private const val XML_PACKAGE_NAME = "assets"

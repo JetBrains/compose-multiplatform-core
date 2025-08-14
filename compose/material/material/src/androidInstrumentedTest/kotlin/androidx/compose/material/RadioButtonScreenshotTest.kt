@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
@@ -51,7 +50,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class RadioButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -123,7 +122,7 @@ class RadioButtonScreenshotTest {
                 RadioButton(
                     selected = false,
                     onClick = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -165,7 +164,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }
@@ -199,7 +198,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }

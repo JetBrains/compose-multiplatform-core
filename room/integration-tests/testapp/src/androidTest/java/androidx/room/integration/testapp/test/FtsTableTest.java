@@ -34,6 +34,7 @@ import androidx.test.filters.SmallTest;
 
 import com.google.common.collect.Lists;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,6 +55,11 @@ public class FtsTableTest {
         mDatabase = Room.inMemoryDatabaseBuilder(context, FtsTestDatabase.class).build();
         mMailDao = mDatabase.getMailDao();
         mSongDao = mDatabase.getSongDao();
+    }
+
+    @After
+    public void teardown() {
+        mDatabase.close();
     }
 
     @Test

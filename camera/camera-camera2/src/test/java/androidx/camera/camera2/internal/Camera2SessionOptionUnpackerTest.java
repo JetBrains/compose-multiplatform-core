@@ -54,8 +54,7 @@ import org.robolectric.util.ReflectionHelpers;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.camera2.impl" })
+@org.robolectric.annotation.Config(instrumentedPackages = { "androidx.camera.camera2.impl" })
 public final class Camera2SessionOptionUnpackerTest {
 
     private static final Size RESOLUTION_HD = new Size(1280, 720);

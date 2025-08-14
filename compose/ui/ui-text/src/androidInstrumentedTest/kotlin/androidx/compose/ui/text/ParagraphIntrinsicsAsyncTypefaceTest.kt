@@ -103,13 +103,11 @@ class ParagraphIntrinsicsAsyncTypefaceTest {
         text: String,
         fontFamilyResolver: FontFamily.Resolver,
         fontFamily: FontFamily?,
-        spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf()
+        spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
     ): AndroidParagraphIntrinsics {
         return AndroidParagraphIntrinsics(
             text,
-            TextStyle.Default.copy(
-                fontFamily = fontFamily,
-            ),
+            TextStyle.Default.copy(fontFamily = fontFamily),
             spanStyles,
             listOf(),
             fontFamilyResolver,

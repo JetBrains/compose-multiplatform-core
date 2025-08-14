@@ -20,12 +20,15 @@ import android.os.CancellationSignal;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
+import android.webkit.WebView;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.UiThread;
+import androidx.core.os.OutcomeReceiverCompat;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -35,6 +38,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -126,7 +130,7 @@ public interface Profile {
     }
 
     /**
-     * Starts a URL prefetch request. Must be called from the UI thread.
+     * Starts a URL prefetch request.
      * <p>
      * All WebViews associated with this Profile will use a URL request
      * matching algorithm during execution of all variants of
@@ -161,7 +165,7 @@ public interface Profile {
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
+    @AnyThread
     @ExperimentalUrlPrefetch
     void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -169,7 +173,7 @@ public interface Profile {
             @NonNull OutcomeReceiverCompat<Void, PrefetchException> operationCallback);
 
     /**
-     * Starts a URL prefetch request. Must be called from the UI thread.
+     * Starts a URL prefetch request.
      * <p>
      * All WebViews associated with this Profile will use a URL request
      * matching algorithm during execution of all variants of
@@ -205,7 +209,7 @@ public interface Profile {
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
+    @AnyThread
     @ExperimentalUrlPrefetch
     void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -245,6 +249,7 @@ public interface Profile {
      * a prerender request. This applies specifically to WebViews that are
      * associated with this Profile.
      * <p>
+     *
      * @param speculativeLoadingConfig the config to set for this profile session.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING_CONFIG,
@@ -254,4 +259,151 @@ public interface Profile {
     void setSpeculativeLoadingConfig(@NonNull SpeculativeLoadingConfig
             speculativeLoadingConfig);
 
+    /**
+     * Denotes that the WarmUpRendererProcess API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalWarmUpRendererProcess {
+    }
+
+    /**
+     * Initiates warm-up of the renderer process associated with this Profile.
+     * <p>
+     * If no renderer currently exists for the profile, this will kick off the process of
+     * starting one in the background. This call does not block or guarantee that the
+     * renderer will be fully started by the time it returns.
+     * <p>
+     * This can be used to reduce perceived latency when a renderer is needed shortly after.
+     */
+    @RequiresFeature(name = WebViewFeature.WARM_UP_RENDERER_PROCESS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalWarmUpRendererProcess
+    void warmUpRendererProcess();
+
+    /**
+     * Denotes that the OriginMatchedHeader API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalOriginMatchedHeader {
+    }
+
+    /**
+     * Set a custom header to be applied to HTTP requests to the specified origins.
+     * <p>
+     * It applies to all requests that are initiated after this method is called, including
+     * prefetch requests and requests sent from service workers.
+     * It does <em>not</em> apply the header to WebSocket requests.
+     *
+     * <p>Headers added through this API will be present in the set returned by
+     * {@link WebResourceRequest#getRequestHeaders()} provided in
+     * {@link android.webkit.WebViewClient#shouldInterceptRequest(WebView, WebResourceRequest)}
+     * and {@link android.webkit.ServiceWorkerClient#shouldInterceptRequest(WebResourceRequest)}.
+     * <p>
+     * Calling this method again with the same {@code headerName} parameter will overwrite any
+     * previously set mapping.
+     *
+     * @param headerName  A
+     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
+     * @param headerValue A
+     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
+     * @param originRules a set of origin rules following the same format as
+     *                    {@link WebViewCompat#addWebMessageListener}
+     */
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalOriginMatchedHeader
+    void setOriginMatchedHeader(@NonNull String headerName,
+            @NonNull String headerValue, @NonNull Set<String> originRules);
+
+    /**
+     * Returns true if the profile has a value set for the given header name.
+     *
+     * @param headerName A
+     *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
+     * @return {@code true} if there is a value mapped for the provided {@code
+     *                   headerName}, {code false} otherwise.
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalOriginMatchedHeader
+    boolean hasOriginMatchedHeader(@NonNull String headerName);
+
+    /**
+     * Removes the specified header from the set of headers attached to requests.
+     * <p>
+     * It is safe to call this method even if {@code headerName} has not previously been set via
+     * {@link #setOriginMatchedHeader(String, String, Set)}
+     *
+     * @param headerName Header to remove.
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalOriginMatchedHeader
+    void clearOriginMatchedHeader(@NonNull String headerName);
+
+    /**
+     * Remove any currently set headers from being applied to network requests.
+     *
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalOriginMatchedHeader
+    void clearAllOriginMatchedHeaders();
+
+    /**
+     * Denotes that the Profile#preconnect API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalPreconnect {
+    }
+
+    /**
+     * Preconnects to the given origin, this can speed up future loads.
+     * <p>
+     * Opens a connection to the provided origin, performing DNS lookup and TCP/TLS handshakes. This
+     * can speed up future loads to the origin which could use the open connection. The connection
+     * will remain open (and can be reused by future loads) until it times out (roughly 30s).
+     * <p>
+     * The main benefit of this API is to preconnect to origins that haven't yet been visited by a
+     * WebView - it provides no further performance benefit to origins that have already been
+     * loaded.
+     * <p>
+     * Note: Preconnect operates on origins, but for convenience full URLs can be provided. A call
+     * with a full URL (such as `https://www.example.com/index.html`) will be treated as a call to
+     * the origin (`https://www.example.com`).
+     * <p>
+     * Multiple origins can be connected to by calling this API multiple times.
+     * <p>
+     * See: <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preconnect">HTML Preconnect Specification</a>
+     *
+     * @param url A url containing the origin to open a connection to.
+     */
+    @RequiresFeature(name = WebViewFeature.PRECONNECT,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalPreconnect
+    default void preconnect(@NonNull String url) {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#preconnect is not implemented.");
+    }
 }

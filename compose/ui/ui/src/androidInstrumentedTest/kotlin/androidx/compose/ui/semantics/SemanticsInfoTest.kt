@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -69,6 +70,7 @@ class SemanticsInfoTest {
         // Assert extension Functions.
         assertThat(rootSemantics.nearestParentThatHasSemantics()).isNull()
         assertThat(rootSemantics.findMergingSemanticsParent()).isNull()
+        assertThat(rootSemantics.boundsInParent).isEqualTo(Rect.Zero)
     }
 
     @Test
@@ -120,7 +122,7 @@ class SemanticsInfoTest {
             .comparingElementsUsing(SemanticsConfigurationComparator)
             .containsExactly(
                 SemanticsConfiguration().apply { testTag = "item1" },
-                SemanticsConfiguration().apply { testTag = "item2" }
+                SemanticsConfiguration().apply { testTag = "item2" },
             )
             .inOrder()
 
@@ -128,7 +130,7 @@ class SemanticsInfoTest {
             .comparingElementsUsing(SemanticsConfigurationComparator)
             .containsExactly(
                 SemanticsConfiguration().apply { testTag = "item1" },
-                SemanticsConfiguration().apply { testTag = "item2" }
+                SemanticsConfiguration().apply { testTag = "item2" },
             )
             .inOrder()
 
@@ -147,7 +149,7 @@ class SemanticsInfoTest {
             .comparingElementsUsing(SemanticsConfigurationComparator)
             .containsExactly(
                 SemanticsConfiguration().apply { testTag = "item1" },
-                SemanticsConfiguration().apply { testTag = "item2" }
+                SemanticsConfiguration().apply { testTag = "item2" },
             )
             .inOrder()
 
@@ -212,7 +214,7 @@ class SemanticsInfoTest {
                 SemanticsConfiguration().apply { testTag = "child2" },
                 null,
                 null,
-                null
+                null,
             )
             .inOrder()
         assertThat(testTarget.semanticsConfiguration?.getOrNull(TestTag)).isEqualTo("testTarget")
@@ -313,7 +315,7 @@ class SemanticsInfoTest {
 
     private fun ComposeContentTestRule.getSemanticsInfoForTag(
         tag: String,
-        useUnmergedTree: Boolean = true
+        useUnmergedTree: Boolean = true,
     ): SemanticsInfo? {
         return semanticsOwner[onNodeWithTag(tag, useUnmergedTree).semanticsId()]
     }
@@ -327,7 +329,7 @@ class SemanticsInfoTest {
                             expected != null &&
                             actual.getOrNull(TestTag) == expected.getOrNull(TestTag))
                 },
-                "has same test tag as "
+                "has same test tag as ",
             )
     }
 }

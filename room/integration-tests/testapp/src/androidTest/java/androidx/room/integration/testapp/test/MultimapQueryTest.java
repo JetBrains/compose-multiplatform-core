@@ -56,7 +56,9 @@ import com.google.common.collect.ImmutableSetMultimap;
 import io.reactivex.Flowable;
 
 import org.hamcrest.MatcherAssert;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,7 +80,7 @@ import java.util.concurrent.TimeoutException;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MultimapQueryTest {
-    // TODO: (b/191265082) Handle duplicate column names in JOINs
+    private MusicTestDatabase mDb;
     private MusicDao mMusicDao;
 
     private final Song mRhcpSong1 = new Song(
@@ -213,9 +215,14 @@ public class MultimapQueryTest {
     @Before
     public void createDb() {
         Context context = ApplicationProvider.getApplicationContext();
-        MusicTestDatabase db = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
+        mDb = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
                 .build();
-        mMusicDao = db.getDao();
+        mMusicDao = mDb.getDao();
+    }
+
+    @After
+    public void closeDb() {
+        mDb.close();
     }
 
     /**
@@ -1130,7 +1137,7 @@ public class MultimapQueryTest {
                     )
             );
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage().contains("column 'cat' does not exist"));
+            assertThat(e.getMessage()).contains("Column 'cat' does not exist");
         }
     }
 
@@ -1145,7 +1152,7 @@ public class MultimapQueryTest {
         );
 
         Map<Artist, List<Album>> map = mMusicDao.getArtistAndAlbumsLeftJoin();
-        assertThat(map.containsKey(mTheClash));
+        assertThat(map).containsKey(mTheClash);
         assertThat(map.get(mTheClash)).isEmpty();
     }
 
@@ -1165,6 +1172,7 @@ public class MultimapQueryTest {
     }
 
     @Test
+    @Ignore("b/431001028")
     public void testLeftJoinGuava() {
         mMusicDao.addArtists(mRhcp, mAcDc, mTheClash, mPinkFloyd);
         mMusicDao.addAlbums(
@@ -1175,7 +1183,7 @@ public class MultimapQueryTest {
         );
 
         ImmutableListMultimap<Artist, Album> map = mMusicDao.getArtistAndAlbumsLeftJoinGuava();
-        assertThat(map.containsKey(mTheClash));
+        assertThat(map).containsKey(mTheClash);
         assertThat(map.get(mTheClash)).isEmpty();
     }
 
@@ -1190,7 +1198,7 @@ public class MultimapQueryTest {
         );
 
         Map<Artist, List<String>> map = mMusicDao.getArtistAndAlbumNamesLeftJoin();
-        assertThat(map.containsKey(mTheClash));
+        assertThat(map).containsKey(mTheClash);
         assertThat(map.get(mTheClash)).isEmpty();
 
     }
@@ -1206,7 +1214,7 @@ public class MultimapQueryTest {
         );
 
         Map<Album, Artist> map = mMusicDao.getAlbumToArtistLeftJoin();
-        assertThat(map.containsKey(mHighwayToHell));
+        assertThat(map).containsKey(mHighwayToHell);
         assertThat(map.get(mHighwayToHell)).isEqualTo(mAcDc);
     }
 
@@ -1221,7 +1229,7 @@ public class MultimapQueryTest {
         );
 
         Map<Artist, Album> map = mMusicDao.getArtistToAlbumLeftJoin();
-        assertThat(map.containsKey(mAcDc));
+        assertThat(map).containsKey(mAcDc);
         assertThat(map.get(mAcDc)).isEqualTo(mHighwayToHell);
     }
 

@@ -4,15 +4,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:core",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
       },
@@ -25,6 +16,14 @@
         "resolvedVersion": "1.7.3"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

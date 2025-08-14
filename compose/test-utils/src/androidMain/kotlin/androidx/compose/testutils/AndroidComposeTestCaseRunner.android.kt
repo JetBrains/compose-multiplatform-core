@@ -32,6 +32,8 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
@@ -49,7 +51,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 /** Factory method to provide implementation of [ComposeBenchmarkScope]. */
 fun <T : ComposeTestCase> createAndroidComposeBenchmarkRunner(
     testCaseFactory: () -> T,
-    activity: ComponentActivity
+    activity: ComponentActivity,
 ): ComposeBenchmarkScope<T> {
     return AndroidComposeTestCaseRunner(testCaseFactory, activity)
 }
@@ -57,7 +59,7 @@ fun <T : ComposeTestCase> createAndroidComposeBenchmarkRunner(
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
     private val testCaseFactory: () -> T,
-    private val activity: ComponentActivity
+    private val activity: ComponentActivity,
 ) : ComposeBenchmarkScope<T> {
 
     override val measuredWidth: Int
@@ -230,7 +232,7 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
             /* l= */ 0,
             /* t= */ 0,
             /* r= */ view.measuredWidth,
-            /* b= */ view.measuredHeight
+            /* b= */ view.measuredHeight,
         )
         simulationState = SimulationState.LayoutDone
     }
@@ -332,7 +334,7 @@ private enum class SimulationState {
     DrawPrepared,
     DrawInProgress,
     DrawDone,
-    RecomposeDone
+    RecomposeDone,
 }
 
 private fun findViewRootForTest(activity: Activity): ViewRootForTest? {
@@ -444,4 +446,7 @@ private class ContinuationCountInterceptor(private val parentInterceptor: Contin
     }
 }
 
-private const val InternallyLaunchedCoroutines = 4
+private val InternallyLaunchedCoroutines =
+    if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isContentCaptureOptimizationEnabled)
+        3
+    else 4

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.Duration
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import org.junit.rules.TestRule
@@ -123,7 +124,7 @@ fun <A : ComponentActivity> createAndroidComposeRule(
 ): AndroidComposeTestRule<ActivityScenarioRule<A>, A> =
     AndroidComposeTestRule(
         activityRule = ActivityScenarioRule(activityClass),
-        activityProvider = ::getActivityFromTestRule
+        activityProvider = ::getActivityFromTestRule,
     )
 
 /**
@@ -150,12 +151,12 @@ fun <A : ComponentActivity> createAndroidComposeRule(
 @ExperimentalTestApi
 fun <A : ComponentActivity> createAndroidComposeRule(
     activityClass: Class<A>,
-    effectContext: CoroutineContext = EmptyCoroutineContext
+    effectContext: CoroutineContext = EmptyCoroutineContext,
 ): AndroidComposeTestRule<ActivityScenarioRule<A>, A> =
     AndroidComposeTestRule(
         activityRule = ActivityScenarioRule(activityClass),
         activityProvider = ::getActivityFromTestRule,
-        effectContext = effectContext
+        effectContext = effectContext,
     )
 
 /**
@@ -178,7 +179,7 @@ fun createEmptyComposeRule(): ComposeTestRule =
                 "createEmptyComposeRule() does not provide an Activity to set Compose content in." +
                     " Launch and use the Activity yourself, or use createAndroidComposeRule()."
             )
-        }
+        },
     )
 
 /**
@@ -210,14 +211,14 @@ fun createEmptyComposeRule(
                 "createEmptyComposeRule() does not provide an Activity to set Compose content in." +
                     " Launch and use the Activity yourself, or use createAndroidComposeRule()."
             )
-        }
+        },
     )
 
 @OptIn(ExperimentalTestApi::class)
 class AndroidComposeTestRule<R : TestRule, A : ComponentActivity>
 private constructor(
     val activityRule: R,
-    private val environment: AndroidComposeUiTestEnvironment<A>
+    private val environment: AndroidComposeUiTestEnvironment<A>,
 ) : ComposeContentTestRule {
     private val composeTest = environment.test
 
@@ -241,7 +242,7 @@ private constructor(
      */
     constructor(
         activityRule: R,
-        activityProvider: (R) -> A
+        activityProvider: (R) -> A,
     ) : this(
         activityRule = activityRule,
         effectContext = EmptyCoroutineContext,
@@ -277,7 +278,14 @@ private constructor(
         activityProvider: (R) -> A,
     ) : this(
         activityRule,
-        AndroidComposeUiTestEnvironment(effectContext) { activityProvider(activityRule) },
+        AndroidComposeUiTestEnvironment(
+            effectContext = effectContext,
+            // Since now it calls kotlinx.coroutines.test.runTest under the hood,
+            // to preserve the behaviour compatibility we set an Infinite timeout
+            testTimeout = Duration.INFINITE,
+        ) {
+            activityProvider(activityRule)
+        },
     )
 
     /**
@@ -298,12 +306,6 @@ private constructor(
                         base.evaluate()
                     } catch (t: Throwable) {
                         blockException = t
-                    } finally {
-                        // Remove all compose content in a controlled environment. Content may or
-                        // may not dispose cleanly. The Activity teardown is going to dispose all
-                        // of the compositions anyway, so we need to preemptively try now where we
-                        // can catch any exceptions.
-                        runOnUiThread { environment.tryDiscardAllCompositions() }
                     }
 
                     // Throw the aggregate exception. May be from the test body or from the cleanup.
@@ -320,7 +322,7 @@ private constructor(
 
     @Deprecated(
         message = "Do not instantiate this Statement, use AndroidComposeTestRule instead",
-        level = DeprecationLevel.ERROR
+        level = DeprecationLevel.ERROR,
     )
     inner class AndroidComposeStatement(private val base: Statement) : Statement() {
         override fun evaluate() {
@@ -362,7 +364,7 @@ private constructor(
     override fun waitUntil(
         conditionDescription: String,
         timeoutMillis: Long,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     ) {
         composeTest.waitUntil(conditionDescription, timeoutMillis, condition)
     }
@@ -391,12 +393,12 @@ private constructor(
 
     override fun onNode(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean
+        useUnmergedTree: Boolean,
     ): SemanticsNodeInteraction = composeTest.onNode(matcher, useUnmergedTree)
 
     override fun onAllNodes(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean
+        useUnmergedTree: Boolean,
     ): SemanticsNodeInteractionCollection = composeTest.onAllNodes(matcher, useUnmergedTree)
 
     override fun setContent(composable: @Composable () -> Unit) = composeTest.setContent(composable)

@@ -28,6 +28,7 @@ import org.robolectric.annotation.Config
 class ActivityOptionsCompatTest {
 
     @Config(minSdk = 33)
+    @Suppress("deprecation")
     @Test
     fun testSetPendingIntentBackgroundActivityStartMode() {
         val activityOptionsCompat = ActivityOptionsCompat.makeBasic()

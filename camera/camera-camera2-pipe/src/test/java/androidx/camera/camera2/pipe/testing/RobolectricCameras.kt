@@ -25,7 +25,6 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.camera2.pipe.CameraId
@@ -38,7 +37,6 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowApplication
 import org.robolectric.shadows.ShadowCameraCharacteristics
@@ -106,7 +104,7 @@ public object RobolectricCameras {
                 characteristics,
                 FakeCamera2MetadataProvider(),
                 emptyMap(),
-                emptySet()
+                emptySet(),
             )
 
         val callback = CameraStateCallback(cameraId)
@@ -137,7 +135,7 @@ public object RobolectricCameras {
         val cameraId: CameraId,
         val characteristics: CameraCharacteristics,
         val metadata: CameraMetadata,
-        val cameraDevice: CameraDevice
+        val cameraDevice: CameraDevice,
     )
 
     private class CameraStateCallback(private val cameraId: CameraId) :
@@ -162,7 +160,6 @@ public object RobolectricCameras {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class RobolectricCamerasTest {
     private val mainLooper = shadowOf(Looper.getMainLooper())
 

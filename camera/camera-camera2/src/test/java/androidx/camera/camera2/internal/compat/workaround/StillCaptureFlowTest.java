@@ -31,7 +31,6 @@ import android.os.Build;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.util.ReflectionHelpers;
 
@@ -42,7 +41,6 @@ import java.util.List;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class StillCaptureFlowTest {
     @ParameterizedRobolectricTestRunner.Parameters
     public static Collection<Object[]> data() {

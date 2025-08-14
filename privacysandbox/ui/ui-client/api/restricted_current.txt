@@ -15,15 +15,12 @@ package androidx.privacysandbox.ui.client {
 
 package androidx.privacysandbox.ui.client.view {
 
-  public final class SandboxedSdkUiKt {
-    method @androidx.compose.runtime.Composable public static void SandboxedSdkUi(androidx.privacysandbox.ui.core.SandboxedUiAdapter sandboxedUiAdapter, optional androidx.compose.ui.Modifier modifier, optional boolean providerUiOnTop, optional androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener? sandboxedSdkViewEventListener);
-  }
-
   public final class SandboxedSdkView extends android.view.ViewGroup {
     ctor public SandboxedSdkView(android.content.Context context);
     ctor public SandboxedSdkView(android.content.Context context, optional android.util.AttributeSet? attrs);
-    method public void orderProviderUiAboveClientUi(boolean providerUiOnTop);
-    method public void setAdapter(androidx.privacysandbox.ui.core.SandboxedUiAdapter sandboxedUiAdapter);
+    method @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.ChangingContentUiZOrderApi public void orderProviderUiAboveClientUi(boolean providerUiOnTop);
+    method public void preserveSessionOnWindowDetachment(optional boolean preserveSessionOnWindowDetachment);
+    method public void setAdapter(androidx.privacysandbox.ui.core.SandboxedUiAdapter? sandboxedUiAdapter);
     method public void setEventListener(androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener? eventListener);
   }
 

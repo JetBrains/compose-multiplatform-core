@@ -20,11 +20,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:core",
-        "resolvedVersion": "1.7.0-alpha01"
+        "identifier": "androidx.core:core",
+        "resolvedVersion": "1.3.2"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -33,15 +32,6 @@
         "resolvedVersion": "1.7.0-alpha01"
       },
       "fromConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     },
     {
       "coordinates": {
@@ -58,6 +48,14 @@
         "resolvedVersion": "18.0.1"
       },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "com.google.android.gms:play-services-tasks",
+        "resolvedVersion": "18.0.1"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

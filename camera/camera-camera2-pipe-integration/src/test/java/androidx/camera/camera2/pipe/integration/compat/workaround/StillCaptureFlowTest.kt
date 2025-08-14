@@ -29,13 +29,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
 class StillCaptureFlowTest(
     private val brand: String,
     private val model: String,
@@ -74,7 +72,7 @@ class StillCaptureFlowTest(
                         "SM-A716B",
                         CONTROL_AE_MODE_ON,
                         TEMPLATE_STILL_CAPTURE,
-                        false
+                        false,
                     )
                 )
                 add(
@@ -83,7 +81,7 @@ class StillCaptureFlowTest(
                         "SM-A716B",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        true
+                        true,
                     )
                 )
                 add(
@@ -92,7 +90,7 @@ class StillCaptureFlowTest(
                         "SM-A716B",
                         CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        true
+                        true,
                     )
                 )
                 add(
@@ -101,7 +99,7 @@ class StillCaptureFlowTest(
                         "SM-A716B",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_PREVIEW,
-                        false
+                        false,
                     )
                 )
 
@@ -111,7 +109,7 @@ class StillCaptureFlowTest(
                         "SM-A716U",
                         CONTROL_AE_MODE_ON,
                         TEMPLATE_STILL_CAPTURE,
-                        false
+                        false,
                     )
                 )
                 add(
@@ -120,7 +118,7 @@ class StillCaptureFlowTest(
                         "SM-A716U",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        true
+                        true,
                     )
                 )
                 add(
@@ -129,7 +127,7 @@ class StillCaptureFlowTest(
                         "SM-A716U",
                         CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        true
+                        true,
                     )
                 )
                 add(
@@ -138,7 +136,7 @@ class StillCaptureFlowTest(
                         "SM-A716U",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_PREVIEW,
-                        false
+                        false,
                     )
                 )
 
@@ -148,7 +146,7 @@ class StillCaptureFlowTest(
                         "Pixel 2",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        false
+                        false,
                     )
                 )
                 add(
@@ -157,7 +155,7 @@ class StillCaptureFlowTest(
                         "G3",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        false
+                        false,
                     )
                 )
                 add(
@@ -166,7 +164,7 @@ class StillCaptureFlowTest(
                         "SM-A722",
                         CONTROL_AE_MODE_ON_AUTO_FLASH,
                         TEMPLATE_STILL_CAPTURE,
-                        false
+                        false,
                     )
                 )
             }

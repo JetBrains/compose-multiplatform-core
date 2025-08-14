@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 internal class QueryInterceptorDatabase(
     private val delegate: SupportSQLiteDatabase,
     private val queryCallbackScope: CoroutineScope,
-    private val queryCallback: RoomDatabase.QueryCallback
+    private val queryCallback: RoomDatabase.QueryCallback,
 ) : SupportSQLiteDatabase by delegate {
 
     override fun compileStatement(sql: String): SupportSQLiteStatement {
@@ -98,6 +98,7 @@ internal class QueryInterceptorDatabase(
         query.bindTo(queryInterceptorProgram)
         queryCallbackScope.launch {
             queryCallback.onQuery(query.sql, queryInterceptorProgram.bindArgsCache)
+            queryInterceptorProgram.close()
         }
         return delegate.query(query)
     }
@@ -107,6 +108,7 @@ internal class QueryInterceptorDatabase(
         query.bindTo(queryInterceptorProgram)
         queryCallbackScope.launch {
             queryCallback.onQuery(query.sql, queryInterceptorProgram.bindArgsCache)
+            queryInterceptorProgram.close()
         }
         return delegate.query(query)
     }

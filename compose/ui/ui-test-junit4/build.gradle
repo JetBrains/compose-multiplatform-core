@@ -22,18 +22,19 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.test.junit4"
+    }
     jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -97,23 +98,7 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
             }
         }
-
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:animation:animation-core"))
-                implementation(project(":compose:material:material"))
-                implementation(project(":compose:test-utils"))
-                implementation(libs.truth)
-                implementation(libs.robolectric)
-            }
-        }
     }
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.ui.test.junit4"
 }
 
 androidx {
@@ -122,6 +107,4 @@ androidx {
     inceptionYear = "2020"
     description = "Compose testing integration with JUnit4"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

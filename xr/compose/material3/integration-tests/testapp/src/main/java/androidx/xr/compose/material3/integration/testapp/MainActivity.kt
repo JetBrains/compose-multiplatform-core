@@ -55,7 +55,7 @@ import androidx.xr.compose.material3.EnableXrComponentOverrides
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.material3.LocalNavigationBarOrbiterProperties
 import androidx.xr.compose.material3.LocalNavigationRailOrbiterProperties
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.material3.LocalShortNavigationBarOrbiterProperties
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,19 +68,32 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Content() {
     var navSuiteType: NavigationSuiteType? by remember { mutableStateOf(null) }
-    var edgeOffset: EdgeOffset? by remember { mutableStateOf(null) }
+    var orbiterPosition: OrbiterPosition by remember { mutableStateOf(OrbiterPosition.Outside) }
+    val orbiterOffsetType = orbiterPosition.getOffsetType()
+    val orbiterOffset = navSuiteType.calculateOffsetForPosition(orbiterPosition)
 
     var navSuiteSelectedItem by remember { mutableStateOf(NavSuiteItem.HOME) }
 
     CompositionLocalProvider(
         LocalNavigationBarOrbiterProperties provides
-            DefaultNavigationBarOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationBarOrbiterProperties.copy(
+                offset = orbiterOffset,
+                offsetType = orbiterOffsetType,
+            ),
         LocalNavigationRailOrbiterProperties provides
-            DefaultNavigationRailOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationRailOrbiterProperties.copy(
+                offset = orbiterOffset,
+                offsetType = orbiterOffsetType,
+            ),
+        LocalShortNavigationBarOrbiterProperties provides
+            DefaultNavigationBarOrbiterProperties.copy(
+                offset = orbiterOffset,
+                offsetType = orbiterOffsetType,
+            ),
     ) {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
-                NavSuiteItem.values().forEach { item ->
+                NavSuiteItem.entries.forEach { item ->
                     item(
                         selected = navSuiteSelectedItem == item,
                         onClick = { navSuiteSelectedItem = item },
@@ -101,8 +114,10 @@ private fun Content() {
                 }
                 NavSuiteItem.SETTINGS -> {
                     XrSettingsPane(
+                        selectedNavSuiteType = navSuiteType,
+                        selectedOrbiterPosition = orbiterPosition,
                         onNavSuiteTypeChanged = { navSuiteType = it },
-                        onOrbiterEdgeOffsetChanged = { edgeOffset = it },
+                        onOrbiterPositionChanged = { orbiterPosition = it },
                     )
                 }
             }
@@ -125,4 +140,11 @@ private fun Home() {
     )
 }
 
-private const val TAG = "MainActivity"
+enum class OrbiterPosition {
+    /** The default, outside-positioned Orbiter, as defined in the implementation. */
+    Outside,
+    /** An inside-positioned Orbiter. */
+    Inside,
+    /** An overlapping-positioned Orbiter. */
+    Overlapping,
+}

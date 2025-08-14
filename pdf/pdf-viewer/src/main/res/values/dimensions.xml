@@ -18,6 +18,8 @@
     <dimen name="viewer_fastscroll_edge_offset">24dp</dimen>
     <dimen name="viewer_doc_padding_y">4dp</dimen>
     <dimen name="viewer_doc_padding_x">0dp</dimen>
+    <dimen name="top_page_margin">3dp</dimen>
+    <dimen name="page_spacing">8dp</dimen>
 
     <!--Edit button FAB -->
     <dimen name="viewer_edit_fab_margin_bottom">16dp</dimen>
@@ -27,20 +29,14 @@
     <dimen name="find_in_file_button_size">48dp</dimen>
 
     <dimen name="text_select_handle_touch_size">48dp</dimen>
-    <dimen name="pdf_horizontal_padding">0dp</dimen>
+    <dimen name="pdf_horizontal_margin">0dp</dimen>
+    <dimen name="pdf_horizontal_margin_w840dp">40dp</dimen>
 
     <!--Fast scroller -->
-    <dimen name="default_thumb_width">16dp</dimen>
-    <dimen name="default_thumb_height">16dp</dimen>
-    <dimen name="default_track_width">9dp</dimen>
-    <dimen name="default_track_height">9dp</dimen>
-    <dimen name="scrubber_edge_offset">3dp</dimen>
-    <dimen name="page_indicator_height">12dp</dimen>
-    <dimen name="page_indicator_right_margin">3dp</dimen>
-    <dimen name="page_indicator_text_offset">9dp</dimen>
-    <dimen name="page_indicator_text_offset_x">1dp</dimen>
-    <dimen name="page_indicator_text_offset_y">20dp</dimen>
-    <dimen name="page_indicator_text_size">4.8dp</dimen>
+    <dimen name="scroll_thumb_margin_end">0dp</dimen>
+    <dimen name="page_indicator_right_margin">42dp</dimen>
+    <dimen name="page_indicator_text_offset">12dp</dimen>
+    <dimen name="page_indicator_text_size">12sp</dimen>
     <dimen name="scroller_top_margin">2dp</dimen>
     <dimen name="scroller_bottom_margin">2dp</dimen>
 </resources>

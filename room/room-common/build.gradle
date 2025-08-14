@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
@@ -33,13 +34,13 @@ plugins {
 
 androidXMultiplatform {
     js()
-    jvm() {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
     wasmJs()
+    tvos()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -54,7 +55,8 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinTestForWasmTests)
             }
         }
 
@@ -74,6 +76,20 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
@@ -89,6 +105,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
-    legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_2_0
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

@@ -64,7 +64,7 @@ data class ExtensionUiState(
     val meetingSummaryUiState: MeetingSummaryUiState,
     val localCallSilenceUiState: LocalCallSilenceExtensionUiState?,
     val participantUiState: ParticipantExtensionUiState?,
-    val callIconUiState: CallIconExtensionUiState?
+    val callIconUiState: CallIconExtensionUiState?,
 )
 
 @OptIn(ExperimentalAppActions::class)
@@ -84,18 +84,18 @@ class ExtensionProvider : PreviewParameterProvider<ExtensionUiState> {
                             false,
                             isHandRaised = false,
                             isSelf = true,
-                            onKickParticipant = { CallControlResult.Success() }
+                            onKickParticipant = { CallControlResult.Success() },
                         ),
                         ParticipantUiState(
                             "Betty Lapone",
                             true,
                             isHandRaised = true,
                             isSelf = false,
-                            onKickParticipant = { CallControlResult.Success() }
-                        )
-                    )
+                            onKickParticipant = { CallControlResult.Success() },
+                        ),
+                    ),
                 ),
-                CallIconExtensionUiState(null)
+                CallIconExtensionUiState(null),
             )
         )
 }
@@ -104,7 +104,7 @@ class ExtensionProvider : PreviewParameterProvider<ExtensionUiState> {
 @Preview(showBackground = true, wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE)
 @Composable
 fun ExtensionsContent(
-    @PreviewParameter(ExtensionProvider::class) extensionUiState: ExtensionUiState,
+    @PreviewParameter(ExtensionProvider::class) extensionUiState: ExtensionUiState
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(6.dp)) {
 
@@ -115,18 +115,18 @@ fun ExtensionsContent(
                 if (extensionUiState.callIconUiState == null) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Image(
                             painter = painterResource(R.drawable.android),
                             contentDescription = "Default Image",
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
                         )
                     }
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Image(
                             bitmap =
@@ -135,7 +135,7 @@ fun ExtensionsContent(
                                         .asImageBitmap(),
                             contentDescription = "Bitmap Image",
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(48.dp),
                         )
                     }
                 }
@@ -145,13 +145,13 @@ fun ExtensionsContent(
                 if (extensionUiState.localCallSilenceUiState == null) {
                     Text(
                         modifier = Modifier.fillMaxWidth().padding(6.dp),
-                        text = "<Local Call Silence is NOT supported>"
+                        text = "<Local Call Silence is NOT supported>",
                     )
                 } else {
                     val scope = rememberCoroutineScope()
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         OutlinedIconButton(
                             onClick = {
@@ -171,13 +171,13 @@ fun ExtensionsContent(
                                 Icon(
                                     modifier = Modifier.size(48.dp),
                                     painter = painterResource(R.drawable.mic_off_24px),
-                                    contentDescription = "call is locally silenced"
+                                    contentDescription = "call is locally silenced",
                                 )
                             } else {
                                 Icon(
                                     modifier = Modifier.size(48.dp),
                                     painter = painterResource(R.drawable.mic),
-                                    contentDescription = "call mic is hot"
+                                    contentDescription = "call mic is hot",
                                 )
                             }
                         }
@@ -191,7 +191,7 @@ fun ExtensionsContent(
             Text("Participants")
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     "Participant Count: ${extensionUiState.meetingSummaryUiState.participantCount}"
@@ -202,7 +202,7 @@ fun ExtensionsContent(
             if (extensionUiState.participantUiState == null) {
                 Text(
                     modifier = Modifier.fillMaxWidth().padding(6.dp),
-                    text = "<Participants is NOT supported>"
+                    text = "<Participants is NOT supported>",
                 )
             } else if (extensionUiState.participantUiState.participants.isEmpty()) {
                 Text(modifier = Modifier.padding(horizontal = 6.dp), text = "<No Participants>")
@@ -221,7 +221,7 @@ fun ExtensionsContent(
                                 extensionUiState.participantUiState.isRaiseHandSupported,
                                 onRaiseHandStateChanged =
                                     extensionUiState.participantUiState.onRaiseHandStateChanged,
-                                it
+                                it,
                             )
                         } else {
                             NonActiveParticipantContent(
@@ -229,7 +229,7 @@ fun ExtensionsContent(
                                 extensionUiState.participantUiState.isRaiseHandSupported,
                                 onRaiseHandStateChanged =
                                     extensionUiState.participantUiState.onRaiseHandStateChanged,
-                                it
+                                it,
                             )
                         }
                         Spacer(Modifier.padding(vertical = 6.dp))
@@ -245,14 +245,14 @@ fun NonActiveParticipantContent(
     isKickSupported: Boolean,
     isRaiseHandSupported: Boolean,
     onRaiseHandStateChanged: suspend (Boolean) -> Unit,
-    participant: ParticipantUiState
+    participant: ParticipantUiState,
 ) {
     ElevatedCard {
         ParticipantContent(
             isKickSupported,
             isRaiseHandSupported,
             onRaiseHandStateChanged,
-            participant
+            participant,
         )
     }
 }
@@ -262,16 +262,14 @@ fun ActiveParticipantContent(
     isKickSupported: Boolean,
     isRaiseHandSupported: Boolean,
     onRaiseHandStateChanged: suspend (Boolean) -> Unit,
-    participant: ParticipantUiState
+    participant: ParticipantUiState,
 ) {
-    OutlinedCard(
-        border = BorderStroke(3.dp, Color.Black),
-    ) {
+    OutlinedCard(border = BorderStroke(3.dp, Color.Black)) {
         ParticipantContent(
             isKickSupported,
             isRaiseHandSupported,
             onRaiseHandStateChanged,
-            participant
+            participant,
         )
     }
 }
@@ -281,17 +279,17 @@ fun ParticipantContent(
     isKickSupported: Boolean,
     isRaiseHandSupported: Boolean,
     onRaiseHandStateChanged: suspend (Boolean) -> Unit,
-    participant: ParticipantUiState
+    participant: ParticipantUiState,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(6.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         val scope = rememberCoroutineScope()
         Icon(
             Icons.Rounded.Face,
             modifier = Modifier.size(48.dp),
-            contentDescription = "Caller Icon"
+            contentDescription = "Caller Icon",
         )
         Spacer(modifier = Modifier.padding(horizontal = 6.dp))
         Text(participant.name)
@@ -300,7 +298,7 @@ fun ParticipantContent(
             if (participant.isHandRaised) {
                 Icon(
                     painter = painterResource(R.drawable.waving_hand_24px),
-                    contentDescription = "hand raised"
+                    contentDescription = "hand raised",
                 )
             }
         }
@@ -316,11 +314,11 @@ fun ParticipantContent(
                             onRaiseHandStateChanged(false)
                             isRaiseHandEnabled = true
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.waving_hand_24px),
-                        contentDescription = "lower hand request"
+                        contentDescription = "lower hand request",
                     )
                 }
             } else {
@@ -332,11 +330,11 @@ fun ParticipantContent(
                             onRaiseHandStateChanged(true)
                             isRaiseHandEnabled = true
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.waving_hand_24px),
-                        contentDescription = "raise hand request"
+                        contentDescription = "raise hand request",
                     )
                 }
             }
@@ -353,7 +351,7 @@ fun ParticipantContent(
                         participant.onKickParticipant()
                         isKickEnabled = true
                     }
-                }
+                },
             ) {
                 Text("Kick")
             }

@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Slider
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -50,7 +51,6 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.width
-import androidx.xr.compose.unit.Meter
 import kotlin.math.roundToInt
 
 class UxTestApp : ComponentActivity() {
@@ -87,24 +87,18 @@ class UxTestApp : ComponentActivity() {
 }
 
 @Composable
-fun TestPanel(initialElevationLevel: SpatialElevationLevel, levelName: String) {
-    var elevation by
-        remember(initialElevationLevel) {
-            mutableStateOf(Meter(initialElevationLevel.level).toDp())
-        }
+fun TestPanel(elevationLevel: Dp, levelName: String) {
+    var elevation by remember(elevationLevel) { mutableStateOf(elevationLevel) }
     Column(Modifier.width(200.dp)) {
         Box(Modifier.background(Color.White)) {
-            Text(
-                "Initial Level: $levelName at ${Meter(initialElevationLevel.level).toDp()}",
-                Modifier.padding(10.dp),
-            )
+            Text("Initial Level: $levelName at $elevationLevel", Modifier.padding(10.dp))
         }
 
         Subspace {
             SpatialPanel(SubspaceModifier.offset(z = elevation)) {
                 Box(
                     Modifier.size(200.dp).background(Color.White),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text("${elevation.value.roundToInt().dp}", fontSize = 8.em)
                 }

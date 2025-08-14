@@ -24,7 +24,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
@@ -40,7 +39,6 @@ private val SUPPORTED_RESOLUTIONS = listOf(RESOLUTION_1, RESOLUTION_2)
 /** Unit test for [ResolutionCorrector]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ResolutionCorrectorTest {
 
     private var mResolutionCorrector: ResolutionCorrector? = null
@@ -106,7 +104,7 @@ class ResolutionCorrectorTest {
         val result =
             resolutionCorrector.insertOrPrioritize(
                 SurfaceConfig.ConfigType.PRIV,
-                SUPPORTED_RESOLUTIONS
+                SUPPORTED_RESOLUTIONS,
             )
         Truth.assertThat(result).containsExactlyElementsIn(SUPPORTED_RESOLUTIONS)
     }

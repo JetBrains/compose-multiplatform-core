@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -36,9 +35,7 @@ plugins {
 androidXMultiplatform {
     ios()
     js()
-    jvm {
-        withJava()
-    }
+    jvm()
     linux()
     mac()
     mingwX64()
@@ -75,8 +72,20 @@ androidXMultiplatform {
             }
         }
 
-        jvmTest {
+        nonJsMain {
+            dependsOn(commonMain)
+        }
+
+        nonJsTest {
             dependsOn(commonTest)
+        }
+
+        jvmMain {
+            dependsOn(nonJsMain)
+        }
+
+        jvmTest {
+            dependsOn(nonJsTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
@@ -89,11 +98,12 @@ androidXMultiplatform {
         }
 
         nativeMain {
+            dependsOn(nonJsMain)
             dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonJsTest)
         }
 
         unixMain {
@@ -121,15 +131,23 @@ androidXMultiplatform {
         }
 
         wasmJsMain {
+            dependsOn(nonJsMain)
             dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
         }
 
         wasmJsTest {
+            dependsOn(nonJsTest)
             dependsOn(webTest)
         }
 
         jsMain {
             dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
         }
 
         jsTest {
@@ -173,8 +191,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Standalone efficient collections."
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     // TODO: b/326456246
     optOutJSpecify = true
 }

@@ -93,7 +93,7 @@ fun ListDetailPaneScaffold(
         paneExpansionState
             ?: rememberDefaultPaneExpansionState(
                 keyProvider = { value },
-                mutable = paneExpansionDragHandle != null
+                mutable = paneExpansionDragHandle != null,
             )
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
@@ -104,7 +104,7 @@ fun ListDetailPaneScaffold(
         tertiaryPane = extraPane,
         paneExpansionDragHandle = paneExpansionDragHandle,
         paneExpansionState = expansionState,
-        primaryPane = detailPane
+        primaryPane = detailPane,
     )
 }
 
@@ -180,7 +180,7 @@ fun ListDetailPaneScaffold(
         paneExpansionState
             ?: rememberDefaultPaneExpansionState(
                 keyProvider = { scaffoldState.targetState },
-                mutable = paneExpansionDragHandle != null
+                mutable = paneExpansionDragHandle != null,
             )
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
@@ -191,7 +191,7 @@ fun ListDetailPaneScaffold(
         tertiaryPane = extraPane,
         paneExpansionDragHandle = paneExpansionDragHandle,
         paneExpansionState = expansionState,
-        primaryPane = detailPane
+        primaryPane = detailPane,
     )
 }
 
@@ -213,7 +213,7 @@ object ListDetailPaneScaffoldDefaults {
         ThreePaneScaffoldAdaptStrategies(
             detailPaneAdaptStrategy,
             listPaneAdaptStrategy,
-            extraPaneAdaptStrategy
+            extraPaneAdaptStrategy,
         )
 
     /**
@@ -225,7 +225,7 @@ object ListDetailPaneScaffoldDefaults {
         ThreePaneScaffoldHorizontalOrder(
             ThreePaneScaffoldRole.Secondary,
             ThreePaneScaffoldRole.Primary,
-            ThreePaneScaffoldRole.Tertiary
+            ThreePaneScaffoldRole.Tertiary,
         )
 }
 

@@ -19,13 +19,15 @@ package androidx.compose.ui.test
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration
 import kotlinx.coroutines.test.TestResult
 
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
-    block: suspend ComposeUiTest.() -> Unit
+    testTimeout: Duration,
+    block: suspend ComposeUiTest.() -> Unit,
 ): TestResult = implementedInJetBrainsFork()
 
 @ExperimentalTestApi
@@ -44,7 +46,7 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     actual fun waitUntil(
         conditionDescription: String?,
         timeoutMillis: Long,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     )
 
     actual fun setContent(composable: @Composable () -> Unit)

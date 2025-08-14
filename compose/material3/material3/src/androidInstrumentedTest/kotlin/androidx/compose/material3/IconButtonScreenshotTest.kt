@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -57,7 +56,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class IconButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -159,7 +158,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 IconButton(
                     onClick = { /* doSomething() */ },
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -289,7 +288,7 @@ class IconButtonScreenshotTest {
                 FilledIconToggleButton(
                     checked = false,
                     onCheckedChange = { /* doSomething() */ },
-                    enabled = false
+                    enabled = false,
                 ) {
                     Icon(Icons.Outlined.Favorite, contentDescription = "Localized description")
                 }
@@ -376,7 +375,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 FilledTonalIconToggleButton(
                     checked = false,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Outlined.Favorite, contentDescription = "Localized description")
                 }
@@ -391,7 +390,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 FilledTonalIconToggleButton(
                     checked = false,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Outlined.Favorite, contentDescription = "Localized description")
                 }
@@ -406,7 +405,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 FilledTonalIconToggleButton(
                     checked = true,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -421,7 +420,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 FilledTonalIconToggleButton(
                     checked = true,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -472,11 +471,11 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 OutlinedIconToggleButton(
                     checked = false,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(
                         Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
             }
@@ -490,11 +489,11 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 OutlinedIconToggleButton(
                     checked = false,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(
                         Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Localized description"
+                        contentDescription = "Localized description",
                     )
                 }
             }
@@ -508,7 +507,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 OutlinedIconToggleButton(
                     checked = true,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -523,7 +522,7 @@ class IconButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 OutlinedIconToggleButton(
                     checked = true,
-                    onCheckedChange = { /* doSomething() */ }
+                    onCheckedChange = { /* doSomething() */ },
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }

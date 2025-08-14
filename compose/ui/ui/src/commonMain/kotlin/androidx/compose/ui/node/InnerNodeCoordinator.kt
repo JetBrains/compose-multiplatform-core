@@ -187,7 +187,7 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
         pointerType: PointerType,
-        isInLayer: Boolean
+        isInLayer: Boolean,
     ) {
         var inLayer = isInLayer
         var hitTestChildren = false
@@ -217,13 +217,16 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
                             pointerPosition,
                             hitTestResult,
                             pointerType,
-                            inLayer
+                            inLayer,
                         )
                         val wasHit = hitTestResult.hasHit()
                         val continueHitTest: Boolean
                         if (!wasHit) {
                             continueHitTest = true
-                        } else if (child.outerCoordinator.shouldSharePointerInputWithSiblings()) {
+                        } else if (
+                            child.outerCoordinator.shouldSharePointerInputWithSiblings() ||
+                                hitTestSource.shouldIgnoreHitNode(child)
+                        ) {
                             hitTestResult.acceptHits()
                             continueHitTest = true
                         } else {

@@ -100,6 +100,11 @@
     <string name="mute_audio_audio_is_muted">Audio is muted.</string>
     <string name="mute_audio_audio_is_unmuted">Audio is unmuted.</string>
 
+    <!-- PaymentRequest -->
+    <string name="payment_request_activity_title">PaymentRequest</string>
+    <string name="payment_request_toggle_label">PaymentRequest enabled:</string>
+    <string name="has_enrolled_instrument_toggle_label">hasEnrolledInstrument enabled:</string>
+
     <!-- Proxy Override -->
     <string name="proxy_override_activity_title">Proxy Override</string>
     <string name="proxy_override_requests_served">Requests served: %d</string>
@@ -112,6 +117,7 @@
     <string name="process_global_config_activity_title">Process Global Config</string>
     <string name="data_directory_suffix_activity_title">Data Directory Suffix</string>
     <string name="directory_base_path_activity_title">Directory Base Path</string>
+    <string name="ui_thread_startup_mode_activity_title">UI Thread Startup Mode</string>
 
     <!-- Requested With Header -->
     <string name="requested_with_activity_title">X-Requested-With header allow-list</string>
@@ -124,6 +130,7 @@
     <string name="user_agent_metadata_override_mode">User-Agent Metadata</string>
     <string name="user_agent_metadata_without_override">Without Overrides</string>
     <string name="user_agent_metadata_with_override">With Overrides</string>
+    <string name="user_agent_metadata_with_override_form_factors">With Overrides Form Factors</string>
 
     <!-- Async StartUp Metadata -->
     <string name="async_startup_activity_title">Async StartUp</string>

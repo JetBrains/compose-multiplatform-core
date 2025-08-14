@@ -20,7 +20,6 @@ package androidx.camera.camera2.internal.compat.quirk;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 import android.util.Range;
 
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
@@ -31,7 +30,6 @@ import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowCameraCharacteristics;
@@ -41,7 +39,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class AeFpsRangeLegacyQuirkTest {
 
     private static final String ANY_CAMERA_ID = "0";

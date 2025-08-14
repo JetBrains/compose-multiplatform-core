@@ -44,7 +44,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
         fun createInsert(
             context: Context,
             returnType: XType,
-            params: List<ShortcutQueryParameter>
+            params: List<ShortcutQueryParameter>,
         ): InsertOrUpsertFunctionAdapter? {
             return createFunction(
                 context = context,
@@ -54,14 +54,14 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                 multiParamSingleReturnError =
                     ProcessorErrors.INSERT_MULTI_PARAM_SINGLE_RETURN_MISMATCH,
                 singleParamMultiReturnError =
-                    ProcessorErrors.INSERT_SINGLE_PARAM_MULTI_RETURN_MISMATCH
+                    ProcessorErrors.INSERT_SINGLE_PARAM_MULTI_RETURN_MISMATCH,
             )
         }
 
         fun createUpsert(
             context: Context,
             returnType: XType,
-            params: List<ShortcutQueryParameter>
+            params: List<ShortcutQueryParameter>,
         ): InsertOrUpsertFunctionAdapter? {
             return createFunction(
                 context = context,
@@ -71,7 +71,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                 multiParamSingleReturnError =
                     ProcessorErrors.UPSERT_MULTI_PARAM_SINGLE_RETURN_MISMATCH,
                 singleParamMultiReturnError =
-                    ProcessorErrors.UPSERT_SINGLE_PARAM_MULTI_RETURN_MISMATCH
+                    ProcessorErrors.UPSERT_SINGLE_PARAM_MULTI_RETURN_MISMATCH,
             )
         }
 
@@ -81,7 +81,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
             params: List<ShortcutQueryParameter>,
             functionInfoClass: (returnInfo: ReturnInfo, returnType: XType) -> FunctionInfo,
             multiParamSingleReturnError: String,
-            singleParamMultiReturnError: String
+            singleParamMultiReturnError: String,
         ): InsertOrUpsertFunctionAdapter? {
             val functionReturnType = getReturnType(returnType)
             if (
@@ -91,7 +91,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                         functionReturnType,
                         params,
                         multiParamSingleReturnError,
-                        singleParamMultiReturnError
+                        singleParamMultiReturnError,
                     )
             ) {
                 val functionInfo = functionInfoClass(functionReturnType, returnType)
@@ -105,7 +105,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
             returnInfo: ReturnInfo,
             params: List<ShortcutQueryParameter>,
             multiParamSingleReturnError: String,
-            singleParamMultiReturnError: String
+            singleParamMultiReturnError: String,
         ): Boolean {
             if (params.isEmpty() || params.size > 1) {
                 return returnInfo == ReturnInfo.VOID ||
@@ -138,7 +138,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                 ReturnInfo.UNIT,
                 ReturnInfo.ID_ARRAY,
                 ReturnInfo.ID_ARRAY_BOX,
-                ReturnInfo.ID_LIST
+                ReturnInfo.ID_LIST,
             )
         }
 
@@ -179,7 +179,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
         scope: CodeGenScope,
         connectionVar: String,
         parameters: List<ShortcutQueryParameter>,
-        adapters: Map<String, Pair<XPropertySpec, Any>>
+        adapters: Map<String, Pair<XPropertySpec, Any>>,
     ) {
         scope.builder.apply {
             val hasReturnValue =
@@ -200,7 +200,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                             upsertAdapter.name,
                             functionInfo.functionName,
                             connectionVar,
-                            param.name
+                            param.name,
                         )
                         .let {
                             if (
@@ -211,7 +211,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                             ) {
                                 XCodeBlock.ofCast(
                                     typeName = functionInfo.returnInfo.typeName,
-                                    expressionBlock = it
+                                    expressionBlock = it,
                                 )
                             } else {
                                 it
@@ -248,7 +248,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                             addLocalVariable(
                                 name = resultVar,
                                 typeName = returnType.asTypeName(),
-                                assignExpr = resultFormat
+                                assignExpr = resultFormat,
                             )
                         } else {
                             addStatement("%L", resultFormat)
@@ -283,15 +283,15 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
         SINGLE_ID("AndReturnId", XTypeName.PRIMITIVE_LONG), // return long
         ID_ARRAY(
             "AndReturnIdsArray",
-            XTypeName.getArrayName(XTypeName.PRIMITIVE_LONG)
+            XTypeName.getArrayName(XTypeName.PRIMITIVE_LONG),
         ), // return long[]
         ID_ARRAY_BOX(
             "AndReturnIdsArrayBox",
-            XTypeName.getArrayName(XTypeName.BOXED_LONG)
+            XTypeName.getArrayName(XTypeName.BOXED_LONG),
         ), // return Long[]
         ID_LIST(
             "AndReturnIdsList",
-            CommonTypeNames.LIST.parametrizedBy(XTypeName.BOXED_LONG)
+            CommonTypeNames.LIST.parametrizedBy(XTypeName.BOXED_LONG),
         ), // return List<Long>
     }
 }

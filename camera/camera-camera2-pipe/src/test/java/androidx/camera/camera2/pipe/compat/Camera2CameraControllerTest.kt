@@ -59,7 +59,6 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Camera2CameraControllerTest {
     private val cameraId = CameraId.fromCamera2Id("0")
     private val testScope = TestScope()
@@ -83,6 +82,7 @@ class Camera2CameraControllerTest {
         Camera2Quirks(FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata)))
     private val fakeTimeSource: TimeSource = mock()
     private val fakeGraphId = CameraGraphId.nextId()
+    private val fakeShutdownListener: Camera2CameraController.ShutdownListener = mock()
 
     private val fakeSurfaceTexture = SurfaceTexture(0).apply { setDefaultBufferSize(1280, 720) }
     private val fakeSurface = Surface(fakeSurfaceTexture)
@@ -102,6 +102,7 @@ class Camera2CameraControllerTest {
             fakeCamera2Quirks,
             fakeTimeSource,
             fakeGraphId,
+            fakeShutdownListener,
         )
     }
 
@@ -256,7 +257,7 @@ class Camera2CameraControllerTest {
                     CameraError.ERROR_CAMERA_OPENER,
                     cameraAvailable,
                     null,
-                    TimestampNs(0L)
+                    TimestampNs(0L),
                 )
             )
 
@@ -266,7 +267,7 @@ class Camera2CameraControllerTest {
                     CameraError.ERROR_GRAPH_CONFIG,
                     cameraAvailable,
                     null,
-                    TimestampNs(0L)
+                    TimestampNs(0L),
                 )
             )
         }

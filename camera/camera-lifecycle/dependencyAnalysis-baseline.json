@@ -4,6 +4,22 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.annotation:annotation-experimental",
+        "resolvedVersion": "1.4.1"
+      },
+      "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.8.1"
       },
@@ -44,15 +60,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "com.google.auto.value:auto-value-annotations",
-        "resolvedVersion": "1.6.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "compileOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "com.google.guava:guava",
         "resolvedVersion": "28.1-android"
       },
@@ -65,24 +72,6 @@
         "resolvedVersion": "4.13.2"
       },
       "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
     },
     {
       "coordinates": {

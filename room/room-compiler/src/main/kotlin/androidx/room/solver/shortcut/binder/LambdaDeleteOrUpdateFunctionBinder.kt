@@ -37,13 +37,13 @@ import androidx.room.vo.ShortcutQueryParameter
 class LambdaDeleteOrUpdateFunctionBinder(
     val typeArg: XType,
     val functionName: XMemberName,
-    adapter: DeleteOrUpdateFunctionAdapter?
+    adapter: DeleteOrUpdateFunctionAdapter?,
 ) : DeleteOrUpdateFunctionBinder(adapter) {
     override fun convertAndReturn(
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, XTypeSpec>>,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         if (adapter == null) {
             return
@@ -61,17 +61,17 @@ class LambdaDeleteOrUpdateFunctionBinder(
                             parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
                             parameterName = connectionVar,
                             returnTypeName = typeArg.asTypeName(),
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             adapter.generateFunctionBody(
                                 scope = scope,
                                 parameters = parameters,
                                 adapters = adapters,
-                                connectionVar = connectionVar
+                                connectionVar = connectionVar,
                             )
                         }
-                    }
+                    },
             )
         scope.builder.add("return %L", performBlock)
     }

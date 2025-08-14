@@ -225,9 +225,15 @@ public interface Features {
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link
-     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)}
+     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)}.
      */
     String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
+     */
+    String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
@@ -324,6 +330,13 @@ public interface Features {
             "SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM";
 
     /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers whether to use isolated
+     * storage for user data.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    String ISOLATED_STORAGE = "ISOLATED_STORAGE";
+
+    /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers the use of the
      * "minOrDefault" and "maxOrDefault" functions in ranking expressions.
      *
@@ -344,6 +357,13 @@ public interface Features {
     @ExperimentalAppSearchApi
     String SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE =
             "SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * {@link SearchSpec.Builder#setRetrieveEmbeddingMatchInfos(boolean)}.
+     */
+    @ExperimentalAppSearchApi
+    String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
 
     /**
      * Returns whether a feature is supported at run-time. Feature support depends on the

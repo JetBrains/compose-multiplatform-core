@@ -21,31 +21,31 @@ package androidx.room.concurrent
 import androidx.annotation.RestrictTo
 import kotlin.concurrent.AtomicInt as KotlinAtomicInt
 
-actual class AtomicInt actual constructor(initialValue: Int) {
+public actual class AtomicInt actual constructor(initialValue: Int) {
     private val delegate: KotlinAtomicInt = KotlinAtomicInt(initialValue)
 
-    actual fun get(): Int = delegate.value
+    public actual fun get(): Int = delegate.value
 
-    actual fun set(value: Int) {
+    public actual fun set(value: Int) {
         delegate.value = value
     }
 
-    actual fun compareAndSet(expect: Int, update: Int): Boolean =
+    public actual fun compareAndSet(expect: Int, update: Int): Boolean =
         delegate.compareAndSet(expect, update)
 
-    actual fun incrementAndGet(): Int = delegate.incrementAndGet()
+    public actual fun incrementAndGet(): Int = delegate.incrementAndGet()
 
-    actual fun getAndIncrement(): Int = delegate.getAndIncrement()
+    public actual fun getAndIncrement(): Int = delegate.getAndIncrement()
 
-    actual fun decrementAndGet(): Int = delegate.decrementAndGet()
+    public actual fun decrementAndGet(): Int = delegate.decrementAndGet()
 }
 
-actual class AtomicBoolean actual constructor(initialValue: Boolean) {
+public actual class AtomicBoolean actual constructor(initialValue: Boolean) {
     private val delegate: KotlinAtomicInt = KotlinAtomicInt(toInt(initialValue))
 
-    actual fun get(): Boolean = delegate.value == 1
+    public actual fun get(): Boolean = delegate.value == 1
 
-    actual fun compareAndSet(expect: Boolean, update: Boolean): Boolean =
+    public actual fun compareAndSet(expect: Boolean, update: Boolean): Boolean =
         delegate.compareAndSet(toInt(expect), toInt(update))
 
     private fun toInt(value: Boolean) = if (value) 1 else 0

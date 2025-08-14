@@ -16,12 +16,13 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.activity.BackEventCompat
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
@@ -47,7 +48,7 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3Api::class)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @get:Rule val rule = createComposeRule()
 
@@ -551,10 +552,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberSearchBarState(initialValue = SearchBarValue.Expanded)
             val colors =
-                SearchBarDefaults.colors(
-                    containerColor = Color.Yellow,
-                    dividerColor = Color.Green,
-                )
+                SearchBarDefaults.colors(containerColor = Color.Yellow, dividerColor = Color.Green)
             ExpandedFullScreenSearchBar(
                 modifier = Modifier.testTag(testTag),
                 state = state,
@@ -641,10 +639,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberSearchBarState(initialValue = SearchBarValue.Expanded)
             val colors =
-                SearchBarDefaults.colors(
-                    containerColor = Color.Yellow,
-                    dividerColor = Color.Green,
-                )
+                SearchBarDefaults.colors(containerColor = Color.Yellow, dividerColor = Color.Green)
             ExpandedDockedSearchBar(
                 modifier = Modifier.testTag(testTag),
                 state = state,
@@ -661,6 +656,59 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             )
         }
         assertAgainstGolden("searchBar_docked_customColors")
+    }
+
+    @Test
+    fun appBarWithSearch_withNavigationIconAndActions() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState = rememberSearchBarState()
+            AppBarWithSearch(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        searchBarState = searchBarState,
+                        textFieldState = rememberTextFieldState(),
+                        onSearch = {},
+                        placeholder = { Text("Hint") },
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Account",
+                        )
+                    }
+                },
+            )
+        }
+        assertAgainstGolden("appBarWithSearch_withNavigationIconAndActions_${scheme.name}")
+    }
+
+    @Test
+    fun appBarWithSearch_withoutNavigationIconAndActions() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState = rememberSearchBarState()
+            AppBarWithSearch(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        searchBarState = searchBarState,
+                        textFieldState = rememberTextFieldState(),
+                        onSearch = {},
+                        placeholder = { Text("Hint") },
+                    )
+                },
+            )
+        }
+        assertAgainstGolden("appBarWithSearch_withoutNavigationIconAndActions_${scheme.name}")
     }
 
     private fun assertAgainstGolden(goldenName: String) {
@@ -693,7 +741,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     touchX = 0f,
                     touchY = 0f,
                     progress = 0f,
-                    swipeEdge = BackEventCompat.EDGE_LEFT
+                    swipeEdge = BackEventCompat.EDGE_LEFT,
                 )
             )
         }
@@ -703,7 +751,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     touchX = 0f,
                     touchY = 0f,
                     progress = progress,
-                    swipeEdge = BackEventCompat.EDGE_LEFT
+                    swipeEdge = BackEventCompat.EDGE_LEFT,
                 )
             )
         }

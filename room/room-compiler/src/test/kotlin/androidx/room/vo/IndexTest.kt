@@ -33,7 +33,7 @@ class IndexTest {
         val index = Index("foo", false, listOf(mockField("bar"), mockField("baz")), emptyList())
         MatcherAssert.assertThat(
             index.createQuery("my_table"),
-            CoreMatchers.`is`("CREATE INDEX IF NOT EXISTS `foo` ON `my_table` (`bar`, `baz`)")
+            CoreMatchers.`is`("CREATE INDEX IF NOT EXISTS `foo` ON `my_table` (`bar`, `baz`)"),
         )
     }
 
@@ -44,7 +44,7 @@ class IndexTest {
             index.createQuery("my_table"),
             CoreMatchers.`is`(
                 "CREATE UNIQUE INDEX IF NOT EXISTS `foo` ON `my_table` (`bar`, `baz`)"
-            )
+            ),
         )
     }
 
@@ -55,13 +55,13 @@ class IndexTest {
                 name = "foo",
                 unique = false,
                 fields = listOf(mockField("bar"), mockField("baz")),
-                orders = listOf(IndexOrder.ASC, IndexOrder.DESC)
+                orders = listOf(IndexOrder.ASC, IndexOrder.DESC),
             )
         MatcherAssert.assertThat(
             index.createQuery("my_table"),
             CoreMatchers.`is`(
                 "CREATE INDEX IF NOT EXISTS `foo` ON `my_table` (`bar` ASC, `baz` DESC)"
-            )
+            ),
         )
     }
 
@@ -72,7 +72,7 @@ class IndexTest {
             name = columnName + "_field",
             affinity = SQLTypeAffinity.TEXT,
             type = type,
-            columnName = columnName
+            columnName = columnName,
         )
     }
 }

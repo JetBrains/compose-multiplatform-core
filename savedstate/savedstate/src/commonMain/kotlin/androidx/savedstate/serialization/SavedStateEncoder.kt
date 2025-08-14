@@ -20,7 +20,9 @@ import androidx.savedstate.SavedState
 import androidx.savedstate.read
 import androidx.savedstate.savedState
 import androidx.savedstate.write
+import kotlin.jvm.JvmOverloads
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -30,61 +32,52 @@ import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.serializer
 
 /**
- * Encode a serializable object to a [SavedState] with an explicit serializer, which can be a custom
- * or third-party one.
+ * Serializes the [value] of type [T] into an equivalent [SavedState] using [KSerializer] retrieved
+ * from the reified type parameter.
  *
- * @sample androidx.savedstate.encodeWithExplicitSerializer
- * @param serializer The serializer to use.
+ * **Format not stable:** The internal structure of the returned [SavedState] is subject to change
+ * in future releases for optimization. While it is guaranteed to be compatible with
+ * [decodeFromSavedState], direct manipulation of its encoded format using keys is not recommended.
+ *
+ * @sample androidx.savedstate.encode
  * @param value The serializable object to encode.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
- * @throws SerializationException if [value] cannot be serialized.
+ * @throws SerializationException in case of any encoding-specific error.
+ * @see decodeFromSavedState
  */
-public fun <T : Any> encodeToSavedState(
-    serializer: SerializationStrategy<T>,
-    value: T
-): SavedState {
-    return encodeToSavedState(serializer, value, SavedStateConfig.DEFAULT)
-}
+public inline fun <reified T : Any> encodeToSavedState(
+    value: T,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+): SavedState =
+    encodeToSavedState(configuration.serializersModule.serializer(), value, configuration)
 
 /**
- * Encode a serializable object to a [SavedState] with an explicit serializer, which can be a custom
- * or third-party one.
+ * Serializes and encodes the given [value] to [SavedState] using the given [serializer].
+ *
+ * **Format not stable:** The internal structure of the returned [SavedState] is subject to change
+ * in future releases for optimization. While it is guaranteed to be compatible with
+ * [decodeFromSavedState], direct manipulation of its encoded format using keys is not recommended.
  *
  * @sample androidx.savedstate.encodeWithExplicitSerializerAndConfig
  * @param serializer The serializer to use.
  * @param value The serializable object to encode.
- * @param config The [SavedStateConfig] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
- * @throws SerializationException if [value] cannot be serialized.
+ * @throws SerializationException in case of any encoding-specific error.
+ * @see decodeFromSavedState
  */
+@JvmOverloads
 public fun <T : Any> encodeToSavedState(
     serializer: SerializationStrategy<T>,
     value: T,
-    config: SavedStateConfig,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
 ): SavedState {
-    return savedState().apply {
-        SavedStateEncoder(this, config).encodeSerializableValue(serializer, value)
-    }
-}
-
-/**
- * Encode a serializable object to a [SavedState] with the default serializer.
- *
- * @sample androidx.savedstate.encode
- * @param value The serializable object to encode.
- * @param config The [SavedStateConfig] to use.
- * @return The encoded [SavedState].
- * @throws SerializationException if [value] cannot be serialized.
- */
-public inline fun <reified T : Any> encodeToSavedState(
-    value: T,
-    config: SavedStateConfig = SavedStateConfig.DEFAULT,
-): SavedState {
-    return encodeToSavedState(
-        serializer = config.serializersModule.serializer<T>(),
-        config = config,
-        value = value
-    )
+    val result = savedState()
+    SavedStateEncoder(result, configuration).encodeSerializableValue(serializer, value)
+    return result
 }
 
 /**
@@ -96,16 +89,17 @@ public inline fun <reified T : Any> encodeToSavedState(
 @OptIn(ExperimentalSerializationApi::class)
 internal class SavedStateEncoder(
     internal val savedState: SavedState,
-    private val config: SavedStateConfig
+    private val configuration: SavedStateConfiguration,
 ) : AbstractEncoder() {
 
     internal var key: String = ""
         private set
 
-    override val serializersModule = config.serializersModule
+    override val serializersModule = configuration.serializersModule
 
-    override fun shouldEncodeElementDefault(descriptor: SerialDescriptor, index: Int): Boolean =
-        false
+    override fun shouldEncodeElementDefault(descriptor: SerialDescriptor, index: Int): Boolean {
+        return configuration.encodeDefaults
+    }
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
         // The key will be property names for classes by default and can be modified with
@@ -117,11 +111,8 @@ internal class SavedStateEncoder(
         return true
     }
 
-    private fun checkDiscriminatorCollisions(
-        savedState: SavedState,
-        elementName: String,
-    ) {
-        if (config.classDiscriminatorMode == ClassDiscriminatorMode.ALL_OBJECTS) {
+    private fun checkDiscriminatorCollisions(savedState: SavedState, elementName: String) {
+        if (configuration.classDiscriminatorMode == ClassDiscriminatorMode.ALL_OBJECTS) {
             val hasClassDiscriminator = savedState.read { contains(CLASS_DISCRIMINATOR_KEY) }
             val hasConflictingElementName = elementName == CLASS_DISCRIMINATOR_KEY
             if (hasClassDiscriminator && hasConflictingElementName) {
@@ -222,28 +213,28 @@ internal class SavedStateEncoder(
         // `{{"first" = 3, "second" = 5}}`, which is more consistent but less
         // efficient.
         return if (key == "") {
-            putClassDiscriminatorIfRequired(config, descriptor, savedState)
+            putClassDiscriminatorIfRequired(configuration, descriptor, savedState)
             this
         } else {
             val childState = savedState()
             savedState.write { putSavedState(key, childState) } // Link child to parent.
-            putClassDiscriminatorIfRequired(config, descriptor, childState)
-            SavedStateEncoder(childState, config)
+            putClassDiscriminatorIfRequired(configuration, descriptor, childState)
+            SavedStateEncoder(childState, configuration)
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     private fun putClassDiscriminatorIfRequired(
-        config: SavedStateConfig,
+        configuration: SavedStateConfiguration,
         descriptor: SerialDescriptor,
         savedState: SavedState,
     ) {
-        if (savedState.read { contains(CLASS_DISCRIMINATOR_KEY) }) {
+        // POLYMORPHIC is handled by kotlinx.serialization.PolymorphicSerializer.
+        if (configuration.classDiscriminatorMode != ClassDiscriminatorMode.ALL_OBJECTS) {
             return
         }
 
-        // POLYMORPHIC is handled by kotlinx.serialization.PolymorphicSerializer.
-        if (config.classDiscriminatorMode != ClassDiscriminatorMode.ALL_OBJECTS) {
+        if (savedState.read { contains(CLASS_DISCRIMINATOR_KEY) }) {
             return
         }
 
@@ -266,7 +257,7 @@ internal class SavedStateEncoder(
     @Suppress("UNCHECKED_CAST")
     private fun <T> encodeFormatSpecificTypes(
         serializer: SerializationStrategy<T>,
-        value: T
+        value: T,
     ): Boolean {
         val encoded = encodeFormatSpecificTypesOnPlatform(serializer, value)
         if (!encoded) {
@@ -293,5 +284,5 @@ internal class SavedStateEncoder(
  */
 internal expect fun <T> SavedStateEncoder.encodeFormatSpecificTypesOnPlatform(
     strategy: SerializationStrategy<T>,
-    value: T
+    value: T,
 ): Boolean

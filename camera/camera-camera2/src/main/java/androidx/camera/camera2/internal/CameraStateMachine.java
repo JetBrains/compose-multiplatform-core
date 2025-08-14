@@ -51,28 +51,35 @@ class CameraStateMachine {
     public void updateState(final CameraInternal.@NonNull State newInternalState,
             final @Nullable StateError stateError) {
         final CameraState newPublicState;
-        switch (newInternalState) {
-            case PENDING_OPEN:
-                newPublicState = onCameraPendingOpen();
-                break;
-            case OPENING:
-                newPublicState = CameraState.create(CameraState.Type.OPENING, stateError);
-                break;
-            case OPEN:
-            case CONFIGURED:
-                newPublicState = CameraState.create(CameraState.Type.OPEN, stateError);
-                break;
-            case CLOSING:
-            case RELEASING:
-                newPublicState = CameraState.create(CameraState.Type.CLOSING, stateError);
-                break;
-            case CLOSED:
-            case RELEASED:
-                newPublicState = CameraState.create(CameraState.Type.CLOSED, stateError);
-                break;
-            default:
-                throw new IllegalStateException(
-                        "Unknown internal camera state: " + newInternalState);
+
+        // Prioritize the REMOVED error to force a public CLOSED state.
+        if (stateError != null && stateError.getCode() == CameraState.ERROR_CAMERA_REMOVED) {
+            newPublicState = CameraState.create(CameraState.Type.CLOSED, stateError);
+        } else {
+            // Standard state mapping for all other cases.
+            switch (newInternalState) {
+                case PENDING_OPEN:
+                    newPublicState = onCameraPendingOpen();
+                    break;
+                case OPENING:
+                    newPublicState = CameraState.create(CameraState.Type.OPENING, stateError);
+                    break;
+                case OPEN:
+                case CONFIGURED:
+                    newPublicState = CameraState.create(CameraState.Type.OPEN, stateError);
+                    break;
+                case CLOSING:
+                case RELEASING:
+                    newPublicState = CameraState.create(CameraState.Type.CLOSING, stateError);
+                    break;
+                case CLOSED:
+                case RELEASED:
+                    newPublicState = CameraState.create(CameraState.Type.CLOSED, stateError);
+                    break;
+                default:
+                    throw new IllegalStateException(
+                            "Unknown internal camera state: " + newInternalState);
+            }
         }
 
         Logger.d(TAG, "New public camera state " + newPublicState + " from " + newInternalState

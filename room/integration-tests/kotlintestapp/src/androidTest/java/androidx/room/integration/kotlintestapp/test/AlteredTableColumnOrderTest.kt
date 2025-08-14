@@ -111,7 +111,7 @@ class AlteredTableColumnOrderTest {
         val A: String,
         val B: String,
         @ColumnInfo(defaultValue = "X") val X: String,
-        val C: String
+        val C: String,
     )
 
     @Dao

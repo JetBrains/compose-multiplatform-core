@@ -22,6 +22,7 @@ import android.os.IBinder;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+@SdkSuppress(minSdkVersion = 29)
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public final class PlaneTest {

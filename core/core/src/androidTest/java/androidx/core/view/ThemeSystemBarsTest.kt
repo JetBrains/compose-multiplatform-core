@@ -28,21 +28,6 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ThemeSystemBarsTest {
-
-    @SdkSuppress(maxSdkVersion = 22)
-    @Test
-    fun statusBar_dark_before_supported() {
-        val scenario = ActivityScenario.launch(LightSystemBarsActivity::class.java)
-
-        val insetsController =
-            scenario.withActivity { WindowCompat.getInsetsController(window, window.decorView) }
-
-        assertThat(insetsController.isAppearanceLightStatusBars).isFalse()
-
-        scenario.close()
-    }
-
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun statusBar_light() {
         val scenario = ActivityScenario.launch(LightSystemBarsActivity::class.java)
@@ -55,7 +40,6 @@ class ThemeSystemBarsTest {
         scenario.close()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun statusBar_dark() {
         val scenario = ActivityScenario.launch(DarkSystemBarsActivity::class.java)

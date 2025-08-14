@@ -24,17 +24,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -54,6 +58,7 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalComposeRuntimeApi::class)
 @MediumTest
 @RunWith(Parameterized::class)
 class UiErrorTraceTests(private val lookahead: Boolean) {
@@ -407,6 +412,26 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         }
     }
 
+    @Test
+    fun layerCrash() {
+        var shouldCrash by mutableStateOf(false)
+        val traceContext =
+            rule.testContent {
+                Box(
+                    Modifier.graphicsLayer {
+                        alpha = if (shouldCrash) 0f else 1f
+                        if (shouldCrash) throwTestException()
+                    }
+                )
+            }
+
+        shouldCrash = true
+        Snapshot.sendApplyNotifications()
+        rule.waitForIdle()
+
+        assertFirstContentFrame(traceContext) { it.name == "Box" }
+    }
+
     private fun AndroidComposeTestRule<*, *>.testContent(
         content: @Composable () -> Unit
     ): TestTraceContext {
@@ -423,9 +448,13 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
             }
         }
 
-        findViewRootForTest(view)!!.setUncaughtExceptionHandler { e, _ ->
-            exceptionHandler.invoke(e)
-        }
+        findViewRootForTest(view)!!.setUncaughtExceptionHandler(
+            object : RootForTest.UncaughtExceptionHandler {
+                override fun onUncaughtException(t: Throwable) {
+                    exceptionHandler.invoke(t)
+                }
+            }
+        )
         view.setContent {
             if (!lookahead) {
                 content()
@@ -439,7 +468,7 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     private fun assertFirstContentFrame(
         traceContext: TestTraceContext,
-        assertion: (TraceFrame) -> Boolean
+        assertion: (TraceFrame) -> Boolean,
     ) {
         assertTrace(traceContext) { t ->
             val lambdaFrame = t.indexOfLast { it.file == CurrentTestFile && it.name == "<lambda>" }

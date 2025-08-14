@@ -25,6 +25,13 @@ import org.junit.runners.JUnit4
 class ImmutableParallelogramTest {
 
     @Test
+    fun toImmutable_returnsInstance() {
+        val parallelogram =
+            ImmutableParallelogram.fromCenterAndDimensions(ImmutableVec(10f, 0f), 6f, 4f)
+        assertThat(parallelogram.toImmutable()).isSameInstanceAs(parallelogram)
+    }
+
+    @Test
     fun fromCenterAndDimensions_constructsCorrectImmutableParallelogram() {
         val parallelogram =
             ImmutableParallelogram.fromCenterAndDimensions(ImmutableVec(10f, 0f), 6f, 4f)

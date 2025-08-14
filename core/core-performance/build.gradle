@@ -39,7 +39,6 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(project(":core:core-performance-testing"))
 }
 
@@ -51,6 +50,7 @@ androidx {
     description = "This library makes it easy for developers to make UI and feature choices based on Android Performance Class level for GMS devices."
     legacyDisableKotlinStrictApiMode = true
     samples(project(":core:core-performance:core-performance-samples"))
+    enableRobolectric()
 }
 
 android {

@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.node.InternalCoreApi
@@ -169,6 +171,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
 
     /**
+     * Indicates whether a pointer down within this view should automatically clear focus, even for
+     * components that remain focusable in touch mode.
+     *
+     * This property should be set prior to first composition.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    var isClearFocusOnPointerDownEnabled = ComposeUiFlags.isClearFocusOnPointerDownEnabled
+
+    /**
      * The Jetpack Compose UI content for this view. Subclasses must implement this method to
      * provide content. Initial composition will occur when the view becomes attached to a window or
      * when [createComposition] is called, whichever comes first.
@@ -302,7 +313,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         )
         setMeasuredDimension(
             child.measuredWidth + paddingLeft + paddingRight,
-            child.measuredHeight + paddingTop + paddingBottom
+            child.measuredHeight + paddingTop + paddingBottom,
         )
     }
 
@@ -314,14 +325,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         left: Int,
         top: Int,
         right: Int,
-        bottom: Int
+        bottom: Int,
     ) {
         getChildAt(0)
             ?.layout(
                 paddingLeft,
                 paddingTop,
                 right - left - paddingRight,
-                bottom - top - paddingBottom
+                bottom - top - paddingBottom,
             )
     }
 
@@ -391,7 +402,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         child: View?,
         index: Int,
         params: LayoutParams?,
-        preventRequestLayout: Boolean
+        preventRequestLayout: Boolean,
     ): Boolean {
         checkAddView()
         return super.addViewInLayout(child, index, params, preventRequestLayout)

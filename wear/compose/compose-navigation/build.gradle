@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 
 plugins {
@@ -59,8 +60,6 @@ android {
     defaultConfig {
         minSdk = 25
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }

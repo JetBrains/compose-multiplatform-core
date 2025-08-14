@@ -49,7 +49,7 @@ class ProvidedAutoMigrationSpecTest {
         helperWithoutSpec =
             MigrationTestHelper(
                 InstrumentationRegistry.getInstrumentation(),
-                ProvidedAutoMigrationDb::class.java
+                ProvidedAutoMigrationDb::class.java,
             )
         val specs: MutableList<AutoMigrationSpec> = ArrayList()
         specs.add(mProvidedSpec)
@@ -58,7 +58,7 @@ class ProvidedAutoMigrationSpecTest {
                 InstrumentationRegistry.getInstrumentation(),
                 ProvidedAutoMigrationDb::class.java,
                 specs,
-                FrameworkSQLiteOpenHelperFactory()
+                FrameworkSQLiteOpenHelperFactory(),
             )
     }
 
@@ -70,10 +70,10 @@ class ProvidedAutoMigrationSpecTest {
                 AutoMigration(
                     from = 1,
                     to = 2,
-                    spec = ProvidedAutoMigrationDb.MyProvidedAutoMigration::class
+                    spec = ProvidedAutoMigrationDb.MyProvidedAutoMigration::class,
                 )
             ],
-        exportSchema = true
+        exportSchema = true,
     )
     abstract class ProvidedAutoMigrationDb : RoomDatabase() {
 
@@ -128,8 +128,9 @@ class ProvidedAutoMigrationSpecTest {
     @Throws(IOException::class)
     fun testOnPostMigrate() {
         createFirstVersion()
-        helperWithSpec.runMigrationsAndValidate(TEST_DB, 2, true)
+        val db = helperWithSpec.runMigrationsAndValidate(TEST_DB, 2, true)
         MatcherAssert.assertThat(mProvidedSpec.mOnPostMigrateCalled, CoreMatchers.`is`(true))
+        db.close()
     }
 
     /** Verifies that the user defined migration is selected over using an autoMigration. */
@@ -148,7 +149,7 @@ class ProvidedAutoMigrationSpecTest {
                         ".migration.ProvidedAutoMigrationSpecTest" +
                         ".ProvidedAutoMigrationDb.MyProvidedAutoMigration) has not " +
                         "been provided."
-                )
+                ),
             )
         }
     }

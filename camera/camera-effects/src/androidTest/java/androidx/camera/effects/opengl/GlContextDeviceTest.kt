@@ -19,7 +19,6 @@ package androidx.camera.effects.opengl
 import android.graphics.SurfaceTexture
 import android.view.Surface
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
@@ -30,7 +29,6 @@ import org.junit.runner.RunWith
 /** Instrumentation tests for [GlContext]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class GlContextDeviceTest {
 
     companion object {

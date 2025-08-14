@@ -103,7 +103,7 @@ class DaoBoxedPrimitiveDelegateTest {
     @Database(
         version = 1,
         entities = [LongFoo::class, StringFoo::class, ByteArrayFoo::class],
-        exportSchema = false
+        exportSchema = false,
     )
     abstract class TestDatabase : RoomDatabase() {
         abstract fun longFooDao(): LongFooDao
@@ -118,7 +118,7 @@ class DaoBoxedPrimitiveDelegateTest {
         val db =
             Room.inMemoryDatabaseBuilder(
                     InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
                 .build()
 
@@ -128,6 +128,7 @@ class DaoBoxedPrimitiveDelegateTest {
         assertThat(db.longFooDao().getItem(1)).isEqualTo(foo)
         db.longFooDao().delete(1)
         assertThat(db.longFooDao().getItem(1)).isNull()
+        db.close()
     }
 
     @Test
@@ -135,7 +136,7 @@ class DaoBoxedPrimitiveDelegateTest {
         val db =
             Room.inMemoryDatabaseBuilder(
                     InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
                 .build()
 
@@ -145,6 +146,7 @@ class DaoBoxedPrimitiveDelegateTest {
         assertThat(db.stringFooDao().getItem("Key")).isEqualTo(foo)
         db.stringFooDao().delete("Key")
         assertThat(db.stringFooDao().getItem("Key")).isNull()
+        db.close()
     }
 
     @Test
@@ -152,11 +154,12 @@ class DaoBoxedPrimitiveDelegateTest {
         val db =
             Room.inMemoryDatabaseBuilder(
                     InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
                 .build()
         val foo = ByteArrayFoo(ByteArray(16), "Elif")
         db.byteArrayFooDao().insert(foo)
         assertThat(db.byteArrayFooDao().getByteArray()).isEqualTo(ByteArray(16))
+        db.close()
     }
 }

@@ -48,7 +48,6 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowTotalCaptureResult
 
-@Config(minSdk = 21)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class ScreenFlashTaskTest {
@@ -299,21 +298,19 @@ class ScreenFlashTaskTest {
         )
     }
 
-    private fun createCameraCharacteristicsCompat(
-        addExternalFlashAeMode: Boolean = false,
-    ) =
+    private fun createCameraCharacteristicsCompat(addExternalFlashAeMode: Boolean = false) =
         CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
             ShadowCameraCharacteristics.newCameraCharacteristics().also {
                 Shadow.extract<ShadowCameraCharacteristics>(it).apply {
                     if (addExternalFlashAeMode) {
                         set(
                             CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES,
-                            intArrayOf(CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
+                            intArrayOf(CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH),
                         )
                     }
                 }
             },
-            CAMERA_ID
+            CAMERA_ID,
         )
 
     internal inner class FakeCamera2CameraControlImpl(
@@ -331,7 +328,7 @@ class ScreenFlashTaskTest {
                 override fun onCameraControlCaptureRequests(
                     captureConfigs: MutableList<CaptureConfig>
                 ) {}
-            }
+            },
         ) {
         private lateinit var captureResultListeners: MutableList<CaptureResultListener>
         var isTorchEnabled = false
@@ -383,7 +380,7 @@ class ScreenFlashTaskTest {
 
     private fun <T : Throwable?> Future<*>.awaitException(
         timeoutMillis: Long,
-        exceptionType: Class<T>
+        exceptionType: Class<T>,
     ) {
         assertThrows(exceptionType) { get(timeoutMillis, TimeUnit.MILLISECONDS) }
     }

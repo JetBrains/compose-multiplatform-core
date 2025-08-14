@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
@@ -754,7 +756,49 @@ class RequestFocusTest {
     }
 
     @Test
+    fun requestFocusOnParentAndThenChild_eventSequence() {
+        // Arrange.
+        val parentFocusRequester = FocusRequester()
+        val childFocusRequester = FocusRequester()
+        val eventSequence = mutableListOf<String>()
+        rule.setFocusableContent {
+            Box(
+                Modifier.focusRequester(parentFocusRequester)
+                    .onFocusChanged { eventSequence.add("Parent $it") }
+                    .focusTarget()
+            ) {
+                Box(
+                    Modifier.focusRequester(childFocusRequester)
+                        .onFocusChanged { eventSequence.add("Child $it") }
+                        .focusTarget()
+                )
+            }
+        }
+        rule.runOnIdle { eventSequence.clear() }
+
+        // Act.
+        rule.runOnIdle { parentFocusRequester.requestFocus() }
+
+        // Assert.
+        rule.runOnIdle { assertThat(eventSequence).containsExactly("Parent Active").inOrder() }
+
+        // Act.
+        rule.runOnIdle {
+            eventSequence.clear()
+            childFocusRequester.requestFocus()
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(eventSequence)
+                .containsExactly("Parent ActiveParent", "Child Active")
+                .inOrder()
+        }
+    }
+
+    @Test
     fun requestFocus_wrongDirection() {
+        val tag1 = "tag 1"
         val tag2 = "tag 2"
         val tag3 = "tag 3"
         lateinit var button2: View
@@ -770,7 +814,11 @@ class RequestFocusTest {
                         orientation = LinearLayout.VERTICAL
                         addView(
                             ComposeView(it).apply {
-                                setContent { Button(onClick = {}) { Text("Button 1") } }
+                                setContent {
+                                    Button(onClick = {}, Modifier.testTag(tag1)) {
+                                        Text("Button 1")
+                                    }
+                                }
                             }
                         )
                         addView(
@@ -794,13 +842,30 @@ class RequestFocusTest {
                             }
                         )
                     }
-                }
+                },
             )
         }
         rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
         rule.runOnIdle { button3.requestFocus() }
         rule.onNodeWithTag(tag3).assertIsFocused()
-        rule.runOnIdle { button2.requestFocus(View.FOCUS_UP, android.graphics.Rect()) }
-        rule.onNodeWithTag(tag2).assertIsFocused()
+
+        val success =
+            rule.runOnIdle { button2.requestFocus(View.FOCUS_UP, android.graphics.Rect()) }
+
+        @OptIn(ExperimentalComposeUiApi::class)
+        when {
+            ComposeUiFlags.isViewFocusFixEnabled -> {
+                assertThat(success).isTrue()
+                rule.onNodeWithTag(tag1).assertIsFocused()
+            }
+            ComposeUiFlags.isBypassUnfocusableComposeViewEnabled &&
+                ComposeUiFlags.isIgnoreInvalidPrevFocusRectEnabled -> {
+                assertThat(success).isTrue()
+                rule.onNodeWithTag(tag2).assertIsFocused()
+            }
+            else -> {
+                assertThat(success).isFalse()
+            }
+        }
     }
 }

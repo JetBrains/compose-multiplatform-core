@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.encoder
 
-import android.os.Build
 import android.util.Range
 import androidx.camera.testing.impl.fakes.FakeVideoEncoderInfo
 import com.google.common.truth.Truth.assertThat
@@ -24,12 +23,10 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SwappedVideoEncoderInfoTest {
 
     @Test

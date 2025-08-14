@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -52,7 +51,7 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalTvMaterial3Api::class)
 class SwitchScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @get:Rule val rule = createComposeRule()
@@ -92,7 +91,7 @@ class SwitchScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Switch(
                     checked = true,
                     onCheckedChange = {},
-                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Green)
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Green),
                 )
             }
         }
@@ -164,7 +163,7 @@ class SwitchScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 Switch(
                     checked = true,
                     onCheckedChange = {},
-                    modifier = Modifier.testTag("switch").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("switch").focusRequester(focusRequester),
                 )
             }
         }

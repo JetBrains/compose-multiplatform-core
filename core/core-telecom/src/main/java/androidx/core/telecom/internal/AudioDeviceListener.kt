@@ -33,7 +33,7 @@ import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getEndpoints
 internal class AudioDeviceListener(
     val mContext: Context,
     val mPreCallEndpoints: PreCallEndpointsUpdater,
-    private val mUuidSessionId: Int
+    private val mUuidSessionId: Int,
 ) : AutoCloseable, AudioDeviceCallback() {
     val mAudioManager = mContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -58,6 +58,7 @@ internal class AudioDeviceListener(
         if (addedDevices != null) {
             mPreCallEndpoints.endpointsAddedUpdate(
                 getEndpointsFromAudioDeviceInfo(mContext, mUuidSessionId, addedDevices.toList())
+                    .filterNotNull()
             )
         }
     }
@@ -66,6 +67,7 @@ internal class AudioDeviceListener(
         if (removedDevices != null) {
             mPreCallEndpoints.endpointsRemovedUpdate(
                 getEndpointsFromAudioDeviceInfo(mContext, mUuidSessionId, removedDevices.toList())
+                    .filterNotNull()
             )
         }
     }

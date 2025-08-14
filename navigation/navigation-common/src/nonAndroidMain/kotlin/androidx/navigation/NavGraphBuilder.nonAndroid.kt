@@ -26,7 +26,7 @@ public actual open class NavGraphBuilder : NavDestinationBuilder<NavGraph> {
     public actual constructor(
         provider: NavigatorProvider,
         startDestination: String,
-        route: String?
+        route: String?,
     ) : super(provider[NavGraphNavigator::class], route) {
         implementedInJetBrainsFork()
     }
@@ -35,7 +35,7 @@ public actual open class NavGraphBuilder : NavDestinationBuilder<NavGraph> {
         provider: NavigatorProvider,
         startDestination: KClass<*>,
         route: KClass<*>?,
-        typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>
+        typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>,
     ) : super(provider[NavGraphNavigator::class], route, typeMap) {
         implementedInJetBrainsFork()
     }
@@ -44,7 +44,7 @@ public actual open class NavGraphBuilder : NavDestinationBuilder<NavGraph> {
         provider: NavigatorProvider,
         startDestination: Any,
         route: KClass<*>?,
-        typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>
+        typeMap: Map<KType, @JvmSuppressWildcards NavType<*>>,
     ) : super(provider[NavGraphNavigator::class], route, typeMap) {
         implementedInJetBrainsFork()
     }

@@ -53,7 +53,7 @@ private enum class InternalType {
     LIST,
     ENUM,
     ENUM_NULLABLE,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -163,9 +163,10 @@ internal fun SerialDescriptor.matchKType(kType: KType): Boolean {
     if (this.isNullable != kType.isMarkedNullable) return false
     val kTypeSerializer = serializerOrNull(kType)
     checkNotNull(kTypeSerializer) {
-        "Custom serializers declared directly on a class field via @Serializable(with = ...) " +
-            "is currently not supported by safe args for both custom types and third-party " +
-            "types. Please use @Serializable or @Serializable(with = ...) on the " +
+        "Cannot find KSerializer for [${this.serialName}]. If applicable, custom KSerializers " +
+            "for custom and third-party KType is currently not supported when declared " +
+            "directly on a class field via @Serializable(with = ...). " +
+            "Please use @Serializable or @Serializable(with = ...) on the " +
             "class or object declaration."
     }
     return this == kTypeSerializer.descriptor
@@ -335,7 +336,7 @@ internal object InternalNavType {
 
             override fun parseValue(
                 value: String,
-                previousValue: Array<String?>?
+                previousValue: Array<String?>?,
             ): Array<String?>? = previousValue?.plus(parseValue(value)) ?: parseValue(value)
 
             override fun valueEquals(value: Array<String?>?, other: Array<String?>?): Boolean =

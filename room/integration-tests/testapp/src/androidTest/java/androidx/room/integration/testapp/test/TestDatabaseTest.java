@@ -35,6 +35,7 @@ import androidx.room.integration.testapp.dao.UserPetDao;
 import androidx.room.integration.testapp.dao.WithClauseDao;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.junit.After;
 import org.junit.Before;
 
 @SuppressWarnings("WeakerAccess")
@@ -71,5 +72,10 @@ public abstract class TestDatabaseTest {
         mRawDao = mDatabase.getRawDao();
         mUserHouseDao = mDatabase.getUserHouseDao();
         mRobotsDao = mDatabase.getRobotsDao();
+    }
+
+    @After
+    public void closeDb() {
+        mDatabase.close();
     }
 }

@@ -32,9 +32,9 @@ plugins {
 apply from: "../../buildSrc/kotlin-dsl-dependency.gradle"
 
 dependencies {
-    implementation(findGradleKotlinDsl())
+    compileOnly(findGradleKotlinDsl())
     implementation(gradleApi())
-    implementation(libs.androidGradlePlugin)
+    implementation(libs.androidGradlePluginApi)
     implementation(libs.kotlinStdlib)
     implementation(libs.protobufGradlePlugin)
     implementation(libs.shadow)
@@ -48,7 +48,7 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        inspection {
+        create("inspection") {
             id = "androidx.inspection"
             implementationClass = "androidx.inspection.gradle.InspectionPlugin"
         }

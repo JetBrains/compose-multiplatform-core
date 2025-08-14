@@ -416,7 +416,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                     XClassName.get("foo.bar", "MyClass", "MyList")
                         .parametrizedBy(
                             CommonTypeNames.STRING.copy(nullable = true),
-                            USER_TYPE_NAME.copy(nullable = true)
+                            USER_TYPE_NAME.copy(nullable = true),
                         )
                         .copy(nullable = true)
                 )
@@ -486,7 +486,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     fun multipleParamCompletable() {
         listOf(
                 RxJava2TypeNames.COMPLETABLE.canonicalName,
-                RxJava3TypeNames.COMPLETABLE.canonicalName
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
             )
             .forEach { type ->
                 singleInsertUpsertShortcutFunction(
@@ -525,7 +525,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "${RxJava2TypeNames.SINGLE.canonicalName}<String>",
                 "${RxJava2TypeNames.MAYBE.canonicalName}<String>",
                 "${RxJava2TypeNames.SINGLE.canonicalName}<User>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<User>"
+                "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -548,7 +548,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "Long[]",
                 "List<Long>",
                 "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>"
+                "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -572,7 +572,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "long",
                 "Long",
                 "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>"
+                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -596,7 +596,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "long",
                 "Long",
                 "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>"
+                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -622,44 +622,44 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 Pair("List<Long>", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST),
                 Pair(
                     RxJava2TypeNames.COMPLETABLE.canonicalName,
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
                 ),
                 Pair(
                     "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
                 ),
                 Pair(
                     "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
                 ),
                 Pair(
                     "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
                 ),
                 Pair(
                     "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
                 ),
                 Pair(
                     RxJava3TypeNames.COMPLETABLE.canonicalName,
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
                 ),
                 Pair(
                     "${RxJava3TypeNames.SINGLE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
                 ),
                 Pair(
                     "${RxJava3TypeNames.SINGLE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
                 ),
                 Pair(
                     "${RxJava3TypeNames.MAYBE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
                 ),
                 Pair(
                     "${RxJava3TypeNames.MAYBE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST
-                )
+                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
+                ),
             )
             .forEach { pair ->
                 val dots =
@@ -668,7 +668,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                             setOf(
                                 InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
                                 InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY,
-                                InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY_BOX
+                                InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY_BOX,
                             )
                     ) {
                         "..."
@@ -707,14 +707,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "ageColumn")
                 int age;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public long foo(Username username);
             """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { insertionUpsertion, _ ->
             assertThat(insertionUpsertion.element.jvmName).isEqualTo("foo")
             assertThat(insertionUpsertion.parameters.size).isEqualTo(1)
@@ -764,14 +764,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "ageColumn")
                 int age;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public void foo(Username usernameA, Username usernameB);
             """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, _ ->
         }
     }
@@ -789,20 +789,20 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 int uid;
                 String name;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public void foo(Username username);
             """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.missingRequiredColumnsInPartialEntity(
                         partialEntityName = USERNAME_TYPE_NAME.toString(CodeLanguage.JAVA),
-                        missingColumnNames = listOf("ageColumn")
+                        missingColumnNames = listOf("ageColumn"),
                     )
                 )
             }
@@ -822,7 +822,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "name")
                 String string;
             }
-            """
+            """,
             )
         val petSource =
             Source.java(
@@ -839,14 +839,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(defaultValue = "0")
                 int age;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = Pet.class)
                 abstract public long foo(PetName petName);
             """,
-            additionalSources = listOf(petNameSource, petSource)
+            additionalSources = listOf(petNameSource, petSource),
         ) { _, _ ->
         }
     }
@@ -864,7 +864,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "name")
                 String string;
             }
-            """
+            """,
             )
         val petSource =
             Source.java(
@@ -879,14 +879,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 int petId;
                 String name;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = Pet.class)
                 abstract public long foo(PetName petName);
             """,
-            additionalSources = listOf(petNameSource, petSource)
+            additionalSources = listOf(petNameSource, petSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(missingPrimaryKey("foo.bar.PetName", listOf("petId")))
@@ -909,7 +909,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "name")
                 String string;
             }
-            """
+            """,
             )
         val petSource =
             Source.java(
@@ -924,14 +924,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 int petId;
                 String name;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = Pet.class)
                 abstract public long foo(PetName petName);
             """,
-            additionalSources = listOf(petNameSource, petSource)
+            additionalSources = listOf(petNameSource, petSource),
         ) { _, _ ->
         }
     }
@@ -950,14 +950,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 String name;
                 long extraField;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public long foo(Username username);
             """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.cannotFindAsEntityProperty("foo.bar.User"))
@@ -982,14 +982,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @Ignore
                 long extraField;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public long foo(Username username);
             """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, _ ->
         }
     }
@@ -1010,7 +1010,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @ColumnInfo(name = "ageColumn")
                 int age;
             }
-            """
+            """,
             )
         val fullnameSource =
             Source.java(
@@ -1024,14 +1024,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 String firstName;
                 String lastName;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public long foo(Username username);
             """,
-            additionalSources = listOf(usernameSource, fullnameSource)
+            additionalSources = listOf(usernameSource, fullnameSource),
         ) { _, _ ->
         }
     }
@@ -1051,7 +1051,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 @Relation(parentColumn = "uid", entityColumn = "ownerId")
                 List<Pet> pets;
             }
-            """
+            """,
             )
         val petSource =
             Source.java(
@@ -1066,14 +1066,14 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 int petId;
                 int ownerId;
             }
-            """
+            """,
             )
         singleInsertUpsertShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public long foo(UserPets userPets);
                 """,
-            additionalSources = listOf(userPetsSource, petSource)
+            additionalSources = listOf(userPetsSource, petSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.INVALID_RELATION_IN_PARTIAL_ENTITY)
@@ -1098,7 +1098,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${ReactiveStreamsTypeNames.PUBLISHER.canonicalName}<Int>",
-                "${KotlinTypeNames.FLOW.canonicalName}<Int>"
+                "${KotlinTypeNames.FLOW.canonicalName}<Int>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutFunction(
@@ -1130,13 +1130,13 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     abstract fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): T
 
     protected fun singleInsertUpsertShortcutMethod(
         vararg input: String,
         additionalSources: List<Source> = emptyList(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.java("foo.bar.MyClass", DAO_PREFIX + input.joinToString("\n") + DAO_SUFFIX)
@@ -1150,7 +1150,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.RX2_SINGLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
-                COMMON.RX3_SINGLE
+                COMMON.RX3_SINGLE,
             )
 
         runProcessorTest(
@@ -1164,7 +1164,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -1172,7 +1172,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 process(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = methods.first()
+                    executableElement = methods.first(),
                 )
             handler(processed, invocation)
         }
@@ -1181,7 +1181,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     protected fun singleInsertUpsertShortcutFunction(
         vararg input: String,
         additionalSources: List<Source> = emptyList(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.kotlin("MyClass.kt", DAO_PREFIX_KT + input.joinToString("\n") + DAO_SUFFIX)
@@ -1205,7 +1205,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.COMPUTABLE_LIVE_DATA,
                 COMMON.PUBLISHER,
                 COMMON.FLOW,
-                COMMON.GUAVA_ROOM
+                COMMON.GUAVA_ROOM,
             )
 
         runProcessorTest(
@@ -1219,7 +1219,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -1227,7 +1227,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 process(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = functions.first()
+                    executableElement = functions.first(),
                 )
             handler(processed, invocation)
         }

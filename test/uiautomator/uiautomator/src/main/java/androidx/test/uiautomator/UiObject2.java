@@ -116,7 +116,7 @@ public class UiObject2 implements Searchable {
         mDisplayDensity = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
     }
 
-    static @Nullable UiObject2 create(@NonNull UiDevice device, @NonNull BySelector selector,
+    static @Nullable UiObject2 create(@NonNull UiDevice device, @Nullable BySelector selector,
             @NonNull AccessibilityNodeInfo cachedNode) {
         try {
             return new UiObject2(device, selector, cachedNode);
@@ -403,7 +403,8 @@ public class UiObject2 implements Searchable {
      *
      * @see TextView#getText()
      */
-    @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
+    // Avoid unnecessary null checks from nullable testing APIs.
+    @SuppressLint({"UnknownNullness", "GetterSetterNullability"})
     public String getText() {
         CharSequence chars = getAccessibilityNodeInfo().getText();
         return chars != null ? chars.toString() : null;
@@ -1003,7 +1004,8 @@ public class UiObject2 implements Searchable {
      * underlying {@link View}. Note that this method can be expensive as it wait for the device to
      * be idle and tries multiple time to refresh the {@link AccessibilityNodeInfo}.
      */
-    private AccessibilityNodeInfo getAccessibilityNodeInfo() {
+    @NonNull
+    public AccessibilityNodeInfo getAccessibilityNodeInfo() {
         if (mCachedNode == null) {
             throw new IllegalStateException("This object has already been recycled.");
         }

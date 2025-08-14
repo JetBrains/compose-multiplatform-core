@@ -100,7 +100,7 @@ public annotation class ForeignKey(
      * @return Whether the foreign key constraint should be deferred until the transaction is
      *   complete. Defaults to `false`.
      */
-    val deferred: Boolean = false
+    val deferred: Boolean = false,
 ) {
     public companion object {
         /**
