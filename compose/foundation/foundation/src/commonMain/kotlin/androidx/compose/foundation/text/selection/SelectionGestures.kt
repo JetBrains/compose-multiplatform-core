@@ -239,7 +239,7 @@ internal suspend fun PointerInputScope.selectionGesturePointerInputBtf2(
  * press instead of immediately looking for drags. If no long press is found, this does not trigger
  * any observer.
  */
-internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
+private suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
     observer: TextDragObserver,
     downEvent: PointerEvent,
 ) {
@@ -352,7 +352,7 @@ private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
 }
 
 /** Gesture handler for mouse selection. */
-internal suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
+private suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
     down: PointerEvent,
