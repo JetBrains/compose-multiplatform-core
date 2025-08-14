@@ -52,7 +52,7 @@ class ExerciseSessionRecordTest {
                             ExerciseSegment(
                                 startTime = Instant.ofEpochMilli(1234L),
                                 endTime = Instant.ofEpochMilli(1235L),
-                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                             )
                         ),
                     laps =
@@ -73,7 +73,7 @@ class ExerciseSessionRecordTest {
                                         longitude = -34.5,
                                         horizontalAccuracy = 0.4.meters,
                                         verticalAccuracy = 1.3.meters,
-                                        altitude = 23.4.meters
+                                        altitude = 23.4.meters,
                                     )
                                 )
                         ),
@@ -94,7 +94,7 @@ class ExerciseSessionRecordTest {
                             ExerciseSegment(
                                 startTime = Instant.ofEpochMilli(1234L),
                                 endTime = Instant.ofEpochMilli(1235L),
-                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                             )
                         ),
                     laps =
@@ -115,7 +115,7 @@ class ExerciseSessionRecordTest {
                                         longitude = -34.5,
                                         horizontalAccuracy = 0.4.meters,
                                         verticalAccuracy = 1.3.meters,
-                                        altitude = 23.4.meters
+                                        altitude = 23.4.meters,
                                     )
                                 )
                         ),
@@ -140,7 +140,7 @@ class ExerciseSessionRecordTest {
                             ExerciseSegment(
                                 startTime = Instant.ofEpochMilli(1234L),
                                 endTime = Instant.ofEpochMilli(1235L),
-                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                             )
                         ),
                     laps =
@@ -169,7 +169,7 @@ class ExerciseSessionRecordTest {
                             ExerciseSegment(
                                 startTime = Instant.ofEpochMilli(1234L),
                                 endTime = Instant.ofEpochMilli(1235L),
-                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                                segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                             )
                         ),
                     laps =
@@ -202,7 +202,7 @@ class ExerciseSessionRecordTest {
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1234L),
                             endTime = Instant.ofEpochMilli(1235L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                         )
                     ),
                 laps =
@@ -279,7 +279,7 @@ class ExerciseSessionRecordTest {
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1233L),
                             endTime = Instant.ofEpochMilli(1235L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                         )
                     ),
                 exerciseRoute = null,
@@ -299,7 +299,7 @@ class ExerciseSessionRecordTest {
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1234L),
                             endTime = Instant.ofEpochMilli(1236L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                         )
                     ),
                 exerciseRoute = null,
@@ -365,10 +365,10 @@ class ExerciseSessionRecordTest {
                                 ExerciseRoute.Location(
                                     time = Instant.ofEpochMilli(1233L),
                                     latitude = 34.5,
-                                    longitude = -34.5
+                                    longitude = -34.5,
                                 )
                             )
-                    )
+                    ),
             )
         }
 
@@ -387,10 +387,10 @@ class ExerciseSessionRecordTest {
                                 ExerciseRoute.Location(
                                     time = Instant.ofEpochMilli(1235L),
                                     latitude = 34.5,
-                                    longitude = -34.5
+                                    longitude = -34.5,
                                 )
                             )
-                    )
+                    ),
             )
         }
     }
@@ -410,12 +410,12 @@ class ExerciseSessionRecordTest {
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1234L),
                             endTime = Instant.ofEpochMilli(1236L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                         ),
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1235L),
                             endTime = Instant.ofEpochMilli(1236L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                         ),
                     ),
                 exerciseRoute = null,
@@ -464,8 +464,8 @@ class ExerciseSessionRecordTest {
                         ExerciseSegment(
                             startTime = Instant.ofEpochMilli(1234L),
                             endTime = Instant.ofEpochMilli(1236L),
-                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK
-                        ),
+                            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK,
+                        )
                     ),
                 exerciseRoute = null,
             )
@@ -489,7 +489,7 @@ class ExerciseSessionRecordTest {
                                         ExerciseRoute.Location(
                                             time = Instant.ofEpochMilli(1235L),
                                             latitude = 34.5,
-                                            longitude = -34.5
+                                            longitude = -34.5,
                                         )
                                     )
                             ),
@@ -504,7 +504,7 @@ class ExerciseSessionRecordTest {
                                 ExerciseRoute.Location(
                                     time = Instant.ofEpochMilli(1235L),
                                     latitude = 34.5,
-                                    longitude = -34.5
+                                    longitude = -34.5,
                                 )
                             )
                     )
@@ -518,7 +518,7 @@ class ExerciseSessionRecordTest {
                         endZoneOffset = null,
                         metadata = Metadata.manualEntry(),
                         exerciseType = EXERCISE_TYPE_BIKING,
-                        exerciseRoute = null
+                        exerciseRoute = null,
                     )
                     .exerciseRouteResult
             )
@@ -542,7 +542,7 @@ class ExerciseSessionRecordTest {
                                 ExerciseSegment(
                                     startTime = Instant.ofEpochMilli(1234L),
                                     endTime = Instant.ofEpochMilli(1235L),
-                                    segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING
+                                    segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING,
                                 )
                             ),
                         laps =
@@ -563,7 +563,7 @@ class ExerciseSessionRecordTest {
                                             longitude = -34.5,
                                             horizontalAccuracy = 0.4.meters,
                                             verticalAccuracy = 1.3.meters,
-                                            altitude = 23.4.meters
+                                            altitude = 23.4.meters,
                                         )
                                     )
                             ),
@@ -586,7 +586,7 @@ class ExerciseSessionRecordTest {
                         metadata = Metadata.manualEntry(),
                         exerciseType = EXERCISE_TYPE_BIKING,
                         exerciseRoute = null,
-                        plannedExerciseSessionId = "some_id"
+                        plannedExerciseSessionId = "some_id",
                     )
                     .plannedExerciseSessionId
             )

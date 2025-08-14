@@ -79,6 +79,7 @@ import androidx.camera.camera2.internal.compat.quirk.CameraQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ConfigureSurfaceToSecondarySessionFailQuirk;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.PreviewOrientationIncorrectQuirk;
+import androidx.camera.camera2.interop.Camera2CaptureRequestConfigurator;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureCallbacks;
@@ -136,6 +137,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Tests for {@link CaptureSession}. This requires an environment where a valid {@link
@@ -145,7 +147,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @SuppressWarnings("unchecked")
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class CaptureSessionTest {
 
     // Enumerate possible SDR transfer functions. This may need to be updated if more transfer
@@ -326,7 +327,7 @@ public final class CaptureSessionTest {
     }
 
     // Set stream use case is not supported before API 33
-    @SdkSuppress(maxSdkVersion = 32, minSdkVersion = 21)
+    @SdkSuppress(maxSdkVersion = 32)
     @Test
     public void setStreamUseCaseNotSupported() {
         ImageReader imageReader0 = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2);
@@ -943,6 +944,27 @@ public final class CaptureSessionTest {
     }
 
     @Test
+    public void issueCaptureRequest_configuratorIsCalled() throws InterruptedException {
+        final AtomicReference<CaptureRequest> captureRequestToVerify = new AtomicReference<>(null);
+        Camera2CaptureRequestConfigurator captureRequestConfigurator = captureRequestToVerify::set;
+        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat, mCameraQuirks,
+                false, captureRequestConfigurator);
+        captureSession.setSessionConfig(mTestParameters0.mSessionConfig);
+        captureSession.open(mTestParameters0.mSessionConfig, mCameraDeviceHolder.get(),
+                mCaptureSessionOpenerBuilder.build());
+
+        assertTrue(mTestParameters0.waitForData());
+
+        assertThat(captureRequestToVerify.get().get(CaptureRequest.CONTROL_AF_MODE)).isEqualTo(
+                CaptureRequest.CONTROL_AF_MODE_AUTO);
+        assertThat(captureRequestToVerify.get().get(
+                CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION)).isEqualTo(
+                mTestParameters0.mEvRange.getUpper());
+        assertThat(captureRequestToVerify.get().get(CaptureRequest.CONTROL_AE_MODE)).isEqualTo(
+                CaptureRequest.CONTROL_AE_MODE_ON);
+    }
+
+    @Test
     public void startStreamingAfterOpenCaptureSession()
             throws InterruptedException, ExecutionException {
         CaptureSession captureSession = createCaptureSession();
@@ -1161,7 +1183,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_whenOpeningCaptureSessions_onClosedShouldBeCalled()
             throws CameraAccessException, InterruptedException, ExecutionException,
             TimeoutException {
@@ -1232,7 +1253,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_captureSessionsOnClosedShouldBeCalled_repeatingStarted()
             throws ExecutionException, InterruptedException, TimeoutException,
             CameraAccessException {
@@ -1284,7 +1304,6 @@ public final class CaptureSessionTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void cameraDisconnected_captureSessionsOnClosedShouldBeCalled_withoutRepeating()
             throws CameraAccessException, InterruptedException, ExecutionException,
             TimeoutException {

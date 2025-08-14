@@ -19,53 +19,61 @@ package androidx.xr.runtime
 import androidx.annotation.RestrictTo
 
 /** Result of a [Session.create] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public sealed class SessionCreateResult
+public sealed class SessionCreateResult
 
 /**
  * Result of a successful [Session.create] call.
  *
  * @property session the [Session] that was created.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SessionCreateSuccess(public val session: Session) : SessionCreateResult()
 
 /**
- * Result of an unsuccessful [Session.create] call. The session was not created due to the required
- * [permissions] not being granted.
+ * Result of an unsuccessful [Session.create] call. The device has a [requiredApk] that is outdated,
+ * was unable to confirm availability, or is not installed.
  *
- * @property permissions the permissions that were not granted.
+ * @property requiredApk the fully qualified name of the package that is missing or needs to be
+ *   updated.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SessionCreatePermissionsNotGranted(public val permissions: List<String>) :
-    SessionCreateResult()
+public class SessionCreateApkRequired(public val requiredApk: String) : SessionCreateResult()
+
+/**
+ * Result of an unsuccessful [Session.create] call. The session was not created due to the device
+ * not supporting a required APK or feature.
+ */
+public class SessionCreateUnsupportedDevice() : SessionCreateResult()
 
 /** Result of a [Session.configure] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public sealed class SessionConfigureResult
+public sealed class SessionConfigureResult
 
 /** Result of a successful [Session.configure] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SessionConfigureSuccess() : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The session was not configured due to the
- * given [SessionConfig] not being supported.
+ * given [Config] not being supported.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SessionConfigureConfigurationNotSupported() : SessionConfigureResult()
 
-/** Result of a [Session.resume] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public sealed class SessionResumeResult
-
-/** Result of a successful [Session.resume] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SessionResumeSuccess() : SessionResumeResult()
+/**
+ * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
+ * not linked.
+ */
+@Suppress("MentionsGoogle")
+public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() :
+    SessionConfigureResult()
 
 /**
- * Result of an unsuccessful [Session.resume] call. The session was not resumed due to the required
- * [permissions] not being granted.
- *
- * @property permissions the permissions that were not granted.
+ * Result of an unsuccessful [Session.configure] call. Required calibration has not been performed
+ * for a requested feature.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SessionResumePermissionsNotGranted(public val permissions: List<String>) :
-    SessionResumeResult()
+public class SessionConfigureCalibrationRequired(
+    public val calibrationType: RequiredCalibrationType
+) : SessionConfigureResult()
+
+/** Result of a [Session.resume] call. */
+public sealed class SessionResumeResult
+
+/** Result of a successful [Session.resume] call. */
+public class SessionResumeSuccess() : SessionResumeResult()

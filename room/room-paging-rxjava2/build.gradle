@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+
 import androidx.build.KotlinTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import androidx.build.SoftwareType
@@ -55,14 +56,10 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "RxJava2 integration in Room Paging"
-    legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_2_0
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
     namespace = "androidx.room.paging.rxjava2"
 }
 
-ksp {
-    useKsp2 = true
-}

@@ -20,7 +20,6 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.DngCreator
 import android.media.ExifInterface
 import android.media.Image
-import android.os.Build
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.imagecapture.FileUtil.moveFileToTarget
 import androidx.camera.core.imagecapture.Utils.ROTATION_DEGREES
@@ -38,13 +37,11 @@ import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [DngImage2Disk] */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class DngImage2DiskTest {
 
     private val dngCreator = mock(DngCreator::class.java)

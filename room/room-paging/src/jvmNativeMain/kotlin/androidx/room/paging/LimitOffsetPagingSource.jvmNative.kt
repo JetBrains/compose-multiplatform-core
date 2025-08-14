@@ -54,7 +54,7 @@ actual constructor(
 
     protected actual open suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
-        itemCount: Int
+        itemCount: Int,
     ): List<Value> {
         throw NotImplementedError(
             "Unexpected call to a function with no implementation that Room is suppose to " +

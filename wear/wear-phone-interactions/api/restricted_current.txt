@@ -67,7 +67,7 @@ package androidx.wear.phone.interactions.authentication {
   public final class OAuthResponse {
     method public int getErrorCode();
     method public android.net.Uri? getResponseUrl();
-    property @androidx.wear.phone.interactions.authentication.RemoteAuthClient.Companion.ErrorCode public int errorCode;
+    property public int errorCode;
     property public android.net.Uri? responseUrl;
   }
 

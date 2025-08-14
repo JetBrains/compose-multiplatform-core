@@ -117,5 +117,5 @@ public annotation class Entity(
      *
      * @return The list of property names.
      */
-    val ignoredColumns: Array<String> = []
+    val ignoredColumns: Array<String> = [],
 )

@@ -50,16 +50,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
+import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -84,6 +85,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
         isDebugInspectorInfoEnabled = true
     }
 
+    @SubspaceComposable
     @Composable
     fun PanelGrid() {
         var curvePercent by remember { mutableFloatStateOf(0.625f) }
@@ -105,7 +107,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     }
                 }
             }
-            SpatialRow(
+            SpatialCurvedRow(
                 modifier = SubspaceModifier.width(2000.dp).height(600.dp),
                 alignment = SpatialAlignment.BottomCenter,
                 curveRadius = curveRadius,
@@ -115,14 +117,14 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
-                        text = "Panel Bottom Left (View)"
+                        text = "Panel Bottom Left (View)",
                     )
                 }
                 SpatialColumn(
                     modifier =
                         SubspaceModifier.width(800.dp).fillMaxHeight().padding(horizontal = 20.dp)
                 ) {
-                    MainPanel(modifier = SubspaceModifier.fillMaxSize())
+                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxSize())
                 }
                 SpatialColumn(modifier = SubspaceModifier.width(200.dp).fillMaxHeight()) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
@@ -156,7 +158,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     Text(text = item, fontSize = 20.sp)
                 }
             }
-            Orbiter(position = OrbiterEdge.End, offset = 24.dp) {
+            Orbiter(position = ContentEdge.End, offset = 24.dp) {
                 IconButton(
                     onClick = { addHighlight = !addHighlight },
                     modifier = Modifier.background(Color.Gray),
@@ -170,17 +172,17 @@ class CurvedPanelAndRowApp : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        val context = LocalContext.current
-        val textView = remember {
-            TextView(context).apply {
-                setText(text)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                setBackgroundColor(LTGRAY)
-                setTextColor(BLACK)
-                setGravity(Gravity.CENTER)
-            }
-        }
-
-        SpatialPanel(view = textView, modifier = modifier)
+        SpatialAndroidViewPanel(
+            factory = { context ->
+                TextView(context).apply {
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                    setBackgroundColor(LTGRAY)
+                    setTextColor(BLACK)
+                    gravity = Gravity.CENTER
+                }
+            },
+            update = { it.text = text },
+            modifier = modifier,
+        )
     }
 }

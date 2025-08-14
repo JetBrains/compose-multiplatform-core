@@ -19,25 +19,26 @@ package androidx.ink.rendering.android.canvas.internal
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.os.Build
+import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
 
 /**
  * Renders Ink objects using [CanvasMeshRenderer], but falls back to using [CanvasPathRenderer] when
- * mesh rendering is not possible.
+ * mesh rendering is not possible. This may happen if the mesh contents were modified (e.g. while in
+ * a serialized form then deserialized) to a mesh format that the mesh renderer doesn't recognize.
  */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 internal class CanvasStrokeUnifiedRenderer(
     private val textureStore: TextureBitmapStore = TextureBitmapStore { null }
 ) : CanvasStrokeRenderer {
 
     private val meshRenderer by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            @OptIn(ExperimentalInkCustomBrushApi::class) CanvasMeshRenderer(textureStore)
+            CanvasMeshRenderer(textureStore)
         } else {
             null
         }
@@ -52,13 +53,21 @@ internal class CanvasStrokeUnifiedRenderer(
             }
         }
         for (groupIndex in 0 until stroke.shape.getRenderGroupCount()) {
-            if (stroke.shape.getOutlineCount(groupIndex) > 0) {
+            if (
+                stroke.shape.getOutlineCount(groupIndex) > 0 ||
+                    // If the stroke has no bounding box, then it can be trivially rendered by the
+                    // path
+                    // renderer (by not drawing anything at all) even if it has no outlines.
+                    stroke.shape.computeBoundingBox() == null
+            ) {
                 return pathRenderer
             }
         }
         throw IllegalArgumentException("Cannot draw $stroke")
     }
 
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override fun draw(
         canvas: Canvas,
         stroke: Stroke,
@@ -69,6 +78,8 @@ internal class CanvasStrokeUnifiedRenderer(
             .draw(canvas, stroke, strokeToScreenTransform, textureAnimationProgress)
     }
 
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override fun draw(
         canvas: Canvas,
         stroke: Stroke,
@@ -79,6 +90,8 @@ internal class CanvasStrokeUnifiedRenderer(
             .draw(canvas, stroke, strokeToScreenTransform, textureAnimationProgress)
     }
 
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -94,6 +107,8 @@ internal class CanvasStrokeUnifiedRenderer(
         )
     }
 
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,

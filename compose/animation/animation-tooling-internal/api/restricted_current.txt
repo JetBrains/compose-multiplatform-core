@@ -5,7 +5,7 @@ package androidx.compose.animation.tooling {
     ctor public ComposeAnimatedProperty(String label, Object value);
     method public String component1();
     method public Object component2();
-    method public androidx.compose.animation.tooling.ComposeAnimatedProperty copy(String label, Object value);
+    method public androidx.compose.animation.tooling.ComposeAnimatedProperty copy(optional String label, optional Object value);
     method public String getLabel();
     method public Object getValue();
     property public String label;

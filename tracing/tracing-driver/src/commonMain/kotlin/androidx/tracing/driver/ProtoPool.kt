@@ -17,8 +17,6 @@
 package androidx.tracing.driver
 
 import androidx.annotation.RestrictTo
-import perfetto.protos.MutableTracePacket
-import perfetto.protos.MutableTrackEvent
 
 // The size of the array
 // This would mean that each pool can queue up to 32 * 32 trace packets
@@ -26,24 +24,21 @@ import perfetto.protos.MutableTrackEvent
 // The size of the pool
 private const val TRACE_PACKET_POOL_ARRAY_POOL_SIZE = 32
 
-internal const val INVALID_INT = -1
-internal const val INVALID_LONG = -1L
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_INT: Int = 0
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_LONG: Long = 0L
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_STRING: String = ""
 
 /** The uber proto pool that knows how to create all the necessary protos. */
+@PublishedApi
 internal class ProtoPool(internal val isDebug: Boolean) {
     internal val tracePacketArrayPool: Pool<PooledTracePacketArray> =
         Pool(size = TRACE_PACKET_POOL_ARRAY_POOL_SIZE, isDebug = isDebug) { pool ->
             PooledTracePacketArray(
                 owner = pool,
-                packets =
-                    Array(TRACE_PACKET_BUFFER_SIZE) {
-                        MutableTracePacket(
-                                trusted_packet_sequence_id = INVALID_INT,
-                                timestamp = INVALID_LONG
-                            )
-                            .apply { track_event = MutableTrackEvent(track_uuid = INVALID_LONG) }
-                    },
-                fillCount = 0
+                packets = Array(TRACE_PACKET_BUFFER_SIZE) { TraceEvent() },
+                fillCount = 0,
             )
         }
 

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -43,7 +42,6 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class Camera2CaptureOptionUnpackerTest {
 
     private Camera2CaptureOptionUnpacker mUnpacker;

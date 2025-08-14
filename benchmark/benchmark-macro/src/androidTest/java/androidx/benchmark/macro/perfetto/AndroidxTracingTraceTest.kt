@@ -27,7 +27,6 @@ import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.benchmark.traceprocessor.toSlices
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.tracing.Trace
 import androidx.tracing.trace
 import kotlin.test.assertEquals
@@ -46,7 +45,6 @@ import org.junit.runner.RunWith
  * These can't be defined in the androidx.tracing library, as Trace capture / validation APIs are
  * only available to the benchmark group.
  */
-@SdkSuppress(minSdkVersion = 23)
 @RunWith(AndroidJUnit4::class)
 class AndroidxTracingTraceTest {
     @get:Rule val linkRule = FileLinkingRule()
@@ -68,13 +66,13 @@ class AndroidxTracingTraceTest {
         perfettoCapture.start(
             PerfettoConfig.Benchmark(
                 appTagPackages = listOf(Packages.TEST),
-                useStackSamplingConfig = false
+                useStackSamplingConfig = false,
             )
         )
 
         assertTrue(
             Trace.isEnabled(),
-            "In-process tracing should be enabled immediately after trace capture is started"
+            "In-process tracing should be enabled immediately after trace capture is started",
         )
 
         repeat(20) {
@@ -99,7 +97,7 @@ class AndroidxTracingTraceTest {
                 }
         }
 
-        perfettoCapture.stop(traceFilePath)
+        perfettoCapture.stop(traceFilePath, null)
 
         val queryResult =
             TraceProcessor.runSingleSessionServer(traceFilePath) { query(query = QUERY) }
@@ -114,7 +112,7 @@ class AndroidxTracingTraceTest {
                     "${PREFIX}counter0.0",
                 ) +
                 List(10) { "$PREFIX${it + 10}" },
-            matchingSlices.map { it.name }
+            matchingSlices.map { it.name },
         )
         matchingSlices.forEach {
             if (it.name.startsWith("${PREFIX}counter")) {

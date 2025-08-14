@@ -59,7 +59,7 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = {},
                 modifier = Modifier.testTag(TEST_TAG),
-                initialTime = LocalTime.now()
+                initialTime = LocalTime.now(),
             )
         }
 
@@ -82,27 +82,27 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = {},
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutesSeconds24H
+                timePickerType = TimePickerType.HoursMinutesSeconds24H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.hour,
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .assertIsDisplayed()
             .assertIsFocused()
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .assertIsDisplayed()
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.second,
-                selectionMode = SelectionMode.Second
+                selectionMode = SelectionMode.Second,
             )
             .assertIsDisplayed()
     }
@@ -114,21 +114,21 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = {},
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutes24H
+                timePickerType = TimePickerType.HoursMinutes24H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.hour,
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .assertIsDisplayed()
             .assertIsFocused()
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .assertIsDisplayed()
     }
@@ -141,21 +141,21 @@ class TimePickerTest {
                 onTimePicked = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutesAmPm12H
+                timePickerType = TimePickerType.HoursMinutesAmPm12H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.get(ChronoField.CLOCK_HOUR_OF_AMPM),
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .assertIsDisplayed()
             .assertIsFocused()
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .assertIsDisplayed()
         rule.onNodeWithText("AM", useUnmergedTree = true).assertIsDisplayed()
@@ -170,14 +170,14 @@ class TimePickerTest {
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .performClick()
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .assertIsFocused()
     }
@@ -190,14 +190,14 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = {},
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutesSeconds24H
+                timePickerType = TimePickerType.HoursMinutesSeconds24H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.hour,
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .performScrollToIndex(expectedHour)
         rule.waitForIdle()
@@ -216,26 +216,26 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = { confirmedTime = it },
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutesSeconds24H
+                timePickerType = TimePickerType.HoursMinutesSeconds24H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.hour,
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .performScrollToIndex(expectedTime.hour)
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .performScrollToIndex(expectedTime.minute)
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.second,
-                selectionMode = SelectionMode.Second
+                selectionMode = SelectionMode.Second,
             )
             .performScrollToIndex(expectedTime.second)
         rule.confirmButton().performClick()
@@ -253,20 +253,20 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = { confirmedTime = it },
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutes24H
+                timePickerType = TimePickerType.HoursMinutes24H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.hour,
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .performScrollToIndex(expectedTime.hour)
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .performScrollToIndex(expectedTime.minute)
         rule.confirmButton().performClick()
@@ -284,20 +284,20 @@ class TimePickerTest {
             TimePicker(
                 onTimePicked = { confirmedTime = it },
                 initialTime = initialTime,
-                timePickerType = TimePickerType.HoursMinutesAmPm12H
+                timePickerType = TimePickerType.HoursMinutesAmPm12H,
             )
         }
 
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.get(ChronoField.CLOCK_HOUR_OF_AMPM),
-                selectionMode = SelectionMode.Hour
+                selectionMode = SelectionMode.Hour,
             )
             .performScrollToIndex(expectedTime.get(ChronoField.CLOCK_HOUR_OF_AMPM) - 1)
         rule
             .onNodeWithTimeValue(
                 selectedValue = initialTime.minute,
-                selectionMode = SelectionMode.Minute
+                selectionMode = SelectionMode.Minute,
             )
             .performScrollToIndex(expectedTime.minute)
         rule.onNodeWithContentDescription("PM").performScrollToIndex(0)
@@ -305,6 +305,146 @@ class TimePickerTest {
         rule.waitForIdle()
 
         assertThat(confirmedTime).isEqualTo(expectedTime)
+    }
+
+    @Test
+    fun parsing_standard12hPattern_isCorrect() {
+        val pattern = "h:mm a"
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(FocusableElement.Hour),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(FocusableElement.Minute),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(FocusableElement.Period),
+            )
+            .inOrder()
+        assertThat(grouped)
+            .containsExactly(
+                TimeLayoutElement.TimeGroup(
+                    listOf(
+                        TimePatternPart.ComponentPart(FocusableElement.Hour),
+                        TimePatternPart.SeparatorPart(":"),
+                        TimePatternPart.ComponentPart(FocusableElement.Minute),
+                    )
+                ),
+                TimeLayoutElement.Standalone(TimePatternPart.SeparatorPart(" ")),
+                TimeLayoutElement.Standalone(TimePatternPart.ComponentPart(FocusableElement.Period)),
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun parsing_periodFirstPattern_isCorrect() {
+        val pattern = "a h:mm"
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(FocusableElement.Period),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(FocusableElement.Hour),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(FocusableElement.Minute),
+            )
+            .inOrder()
+        assertThat(grouped)
+            .containsExactly(
+                TimeLayoutElement.Standalone(
+                    TimePatternPart.ComponentPart(FocusableElement.Period)
+                ),
+                TimeLayoutElement.Standalone(TimePatternPart.SeparatorPart(" ")),
+                TimeLayoutElement.TimeGroup(
+                    listOf(
+                        TimePatternPart.ComponentPart(FocusableElement.Hour),
+                        TimePatternPart.SeparatorPart(":"),
+                        TimePatternPart.ComponentPart(FocusableElement.Minute),
+                    )
+                ),
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun parsing_24hWithSecondsPattern_isCorrect() {
+        val pattern = "HH:mm:ss"
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(FocusableElement.Hour),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(FocusableElement.Minute),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(FocusableElement.Second),
+            )
+            .inOrder()
+        assertThat(grouped)
+            .containsExactly(
+                TimeLayoutElement.TimeGroup(
+                    listOf(
+                        TimePatternPart.ComponentPart(FocusableElement.Hour),
+                        TimePatternPart.SeparatorPart(":"),
+                        TimePatternPart.ComponentPart(FocusableElement.Minute),
+                        TimePatternPart.SeparatorPart(":"),
+                        TimePatternPart.ComponentPart(FocusableElement.Second),
+                    )
+                )
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun parsing_patternWithNoSpaceSeparator_isCorrect() {
+        val pattern = "aK:mm" // e.g. Japanese
+
+        val parsed = parsePattern(pattern)
+
+        // The heuristic should inject a space separator between 'a' and 'K'.
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(FocusableElement.Period),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(FocusableElement.Hour),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(FocusableElement.Minute),
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun parsing_patternWithDotSeparator_isCorrect() {
+        val pattern = "H.mm" // e.g. Finnish
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(FocusableElement.Hour),
+                TimePatternPart.SeparatorPart("."),
+                TimePatternPart.ComponentPart(FocusableElement.Minute),
+            )
+            .inOrder()
+        assertThat(grouped)
+            .containsExactly(
+                TimeLayoutElement.TimeGroup(
+                    listOf(
+                        TimePatternPart.ComponentPart(FocusableElement.Hour),
+                        TimePatternPart.SeparatorPart("."),
+                        TimePatternPart.ComponentPart(FocusableElement.Minute),
+                    )
+                )
+            )
+            .inOrder()
     }
 
     private fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
@@ -328,7 +468,7 @@ class TimePickerTest {
                 contentDescriptionForValue(
                     InstrumentationRegistry.getInstrumentation().context.resources,
                     selectedValue,
-                    selectionMode.contentDescriptionResource
+                    selectionMode.contentDescriptionResource,
                 )
             )
             .onFirst()

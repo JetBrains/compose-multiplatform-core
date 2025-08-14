@@ -18,12 +18,13 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.ui.input.indirect.IndirectTouchEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Density
-import kotlin.jvm.JvmInline
 
 /**
  * The marker interface to be implemented by the root backing the composition. To be used in tests.
@@ -44,6 +45,14 @@ interface RootForTest {
      * @return true if the event was consumed. False otherwise.
      */
     fun sendKeyEvent(keyEvent: KeyEvent): Boolean
+
+    /**
+     * Send this [IndirectTouchEvent] to the focused component in this [Owner].
+     *
+     * @return true if the event was consumed. False otherwise.
+     */
+    @ExperimentalIndirectTouchTypeApi
+    fun sendIndirectTouchEvent(indirectTouchEvent: IndirectTouchEvent): Boolean = false
 
     /**
      * Force accessibility to be enabled for testing.
@@ -78,6 +87,12 @@ interface RootForTest {
      * Sets the [UncaughtExceptionHandler] callback to dispatch layout, measure, and draw exceptions
      * from this Composition to. If this method is called multiple times, the previous callback is
      * discarded.
+     *
+     * The default test runners that ship with the Compose UI test and associated JUnit variation
+     * use this API to reroute exceptions back to the test under execution. Custom test runners may
+     * need to associate their own exception handler to do the same. If the Compose UI Test runner's
+     * exception handler is overwritten, it may lead to unhandled exceptions crashing the
+     * instrumented process and terminating the entire test suite early.
      */
     fun setUncaughtExceptionHandler(handler: UncaughtExceptionHandler?) {
         // Not implemented.
@@ -94,12 +109,12 @@ interface RootForTest {
      * This interface should generally not be used in production, and is intended for error routing
      * or introspection rather than true error recovery.
      */
-    fun interface UncaughtExceptionHandler {
+    interface UncaughtExceptionHandler {
         /**
          * Invoked for testing infrastructure to be able to redirect an exception [t] that occurred
-         * during the specified [phase] of the view. When this function is invoked, the underlying
-         * composition is in an unrecoverable state. The original exception may be re-thrown to
-         * propagate it.
+         * during the layout, measure, or draw phase of the underlying view. When this function is
+         * invoked, the associated composition is in an unrecoverable state. The original exception
+         * may be re-thrown to propagate it.
          *
          * If this callback swallows an exception to prevent a crash, you should expect other
          * follow-up exceptions to be directed here as more operations are executed on the
@@ -108,41 +123,7 @@ interface RootForTest {
          *
          * @param t The exception thrown by the composition hierarchy during the layout, measure, or
          *   draw phase of the associated view.
-         * @param phase An [ExceptionOriginPhase] that indicates when in the view's lifecycle the
-         *   exception originated from, to optionally be used for triage and as extra metadata.
          */
-        fun onUncaughtException(t: Throwable, phase: ExceptionOriginPhase)
-
-        /**
-         * An enumeration of phases that composable content may be executing in when an exception is
-         * thrown to [UncaughtExceptionHandler.onUncaughtException].
-         */
-        @JvmInline
-        value class ExceptionOriginPhase private constructor(private val ordinal: Int) {
-            companion object {
-                /**
-                 * An [UncaughtExceptionHandler.ExceptionOriginPhase] indicating that the throwable
-                 * passed to [UncaughtExceptionHandler.onUncaughtException] was raised during the
-                 * layout phase of composition (which may be either the layout or measure phase of
-                 * the associated ComposeView).
-                 */
-                val Layout
-                    get() = ExceptionOriginPhase(0)
-
-                /**
-                 * An [UncaughtExceptionHandler.ExceptionOriginPhase] indicating that the throwable
-                 * passed to [UncaughtExceptionHandler.onUncaughtException] was raised during the
-                 * draw phase of the composition.
-                 */
-                val Draw
-                    get() = ExceptionOriginPhase(1)
-            }
-        }
+        fun onUncaughtException(t: Throwable)
     }
 }
-
-internal fun UncaughtExceptionHandler.onUncaughtLayoutException(t: Throwable) =
-    onUncaughtException(t, UncaughtExceptionHandler.ExceptionOriginPhase.Layout)
-
-internal fun UncaughtExceptionHandler.onUncaughtDrawException(t: Throwable) =
-    onUncaughtException(t, UncaughtExceptionHandler.ExceptionOriginPhase.Draw)

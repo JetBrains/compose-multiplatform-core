@@ -17,10 +17,9 @@
 package androidx.savedstate.serialization
 
 import android.util.SparseArray
-import androidx.savedstate.serialization.serializers.ParcelableSerializer
 import androidx.savedstate.serialization.serializers.SizeFSerializer
 import androidx.savedstate.serialization.serializers.SizeSerializer
-import androidx.savedstate.serialization.serializers.SparseParcelableArraySerializer
+import androidx.savedstate.serialization.serializers.SparseArraySerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 
@@ -28,17 +27,6 @@ internal actual fun getDefaultSerializersModuleOnPlatform(): SerializersModule =
     contextual(SizeSerializer)
     contextual(SizeFSerializer)
     contextual(SparseArray::class) { argSerializers ->
-        val elementSerializer = argSerializers.first()
-        if (
-            // For `SparseArray<Parcelable>`.
-            elementSerializer.descriptor == polymorphicParcelableDescriptor ||
-                // For `SparseArray<@Serializable(with = MyParcelableSerializer::class)
-                // MyParcelable>`.
-                elementSerializer is ParcelableSerializer
-        ) {
-            SparseParcelableArraySerializer
-        } else {
-            error("Unsupported element type ${elementSerializer.descriptor}")
-        }
+        SparseArraySerializer(argSerializers.first())
     }
 }

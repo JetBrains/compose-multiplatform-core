@@ -68,9 +68,7 @@ public class AppCompatLintDemo extends AppCompatActivity {
         Switch mySwitch = new Switch(this);
         mySwitch.setChecked(true);
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            // The following call should be flagged since we're extending AppCompatActivity
-            setActionBar(new Toolbar(this));
-        }
+        // The following call should be flagged since we're extending AppCompatActivity
+        setActionBar(new Toolbar(this));
     }
 }

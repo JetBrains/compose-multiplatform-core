@@ -16,13 +16,17 @@
 
 package androidx.xr.compose.platform
 
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceOwner
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.PanelEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * An implementation of the [SubspaceOwner] interface, bridging the Compose layout and rendering
@@ -42,6 +46,8 @@ import androidx.xr.scenecore.PanelEntity
 internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
     override val root: SubspaceLayoutNode = SubspaceLayoutNode()
+
+    private val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver(::run)
 
     internal var wrappedComposition: WrappedComposition? = null
 
@@ -63,6 +69,16 @@ internal class AndroidComposeSpatialElement :
      * Tracks whether a layout is currently in progress to avoid recursively triggering a layout.
      */
     private var isLayoutInProgress = false
+
+    internal var rootVolumeConstraints: VolumeConstraints = VolumeConstraints()
+        set(value) {
+            if (field != value) {
+                field = value
+                if (isAttachedToSpatialComposeScene) {
+                    requestRelayout()
+                }
+            }
+        }
 
     init {
         root.attach(this)
@@ -87,6 +103,7 @@ internal class AndroidComposeSpatialElement :
         super.onAttachedToSubspace(spatialComposeScene)
 
         spatialComposeScene.lifecycle.addObserver(this)
+        snapshotStateObserver.start()
         onSubspaceAvailable?.invoke(spatialComposeScene)
         onSubspaceAvailable = null
     }
@@ -95,11 +112,13 @@ internal class AndroidComposeSpatialElement :
         super.onDetachedFromSubspace(spatialComposeScene)
 
         spatialComposeScene.lifecycle.removeObserver(this)
+        snapshotStateObserver.stop()
+        snapshotStateObserver.clear()
     }
 
     override fun onAttach(node: SubspaceLayoutNode) {
-        node.coreEntity?.entity.let { entity ->
-            if (entity is PanelEntity && entity.isMainPanelEntity) {
+        node.coreEntity?.let { entity ->
+            if (entity is CoreMainPanelEntity) {
                 check(windowLeashLayoutNode == null) {
                     "Cannot add $node as there is already another SubspaceLayoutNode for the Window Leash Node"
                 }
@@ -109,8 +128,8 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun onDetach(node: SubspaceLayoutNode) {
-        node.coreEntity?.entity.let { entity ->
-            if (entity is PanelEntity && entity.isMainPanelEntity) {
+        node.coreEntity?.let { entity ->
+            if (entity is CoreMainPanelEntity) {
                 windowLeashLayoutNode = null
             }
         }
@@ -129,7 +148,7 @@ internal class AndroidComposeSpatialElement :
     // TODO: Consider adding stricter control over how this is called here, or at call sites, if it
     // becomes too easy to generate superfluous layouts.
     override fun requestRelayout() {
-        refreshLayout()
+        uiCoroutineScope.launch { refreshLayout() }
     }
 
     // TODO: Add unit tests.
@@ -142,12 +161,10 @@ internal class AndroidComposeSpatialElement :
         isLayoutRequested = false
         isLayoutInProgress = true
 
-        val measureResults =
-            root.measurableLayout.measure(
-                VolumeConstraints(0, VolumeConstraints.INFINITY, 0, VolumeConstraints.INFINITY)
-            )
-
-        (measureResults as SubspaceLayoutNode.MeasurableLayout).placeAt(Pose.Identity)
+        snapshotStateObserver.observeReads(this, onLayoutStateValueChanged) {
+            val measureResults = root.measurableLayout.measure(rootVolumeConstraints)
+            (measureResults as SubspaceLayoutNode.SubspaceMeasurableLayout).placeAt(Pose.Identity)
+        }
 
         Logger.log("AndroidComposeSpatialElement") { root.debugTreeToString() }
         Logger.log("AndroidComposeSpatialElement") { root.debugEntityTreeToString() }
@@ -155,6 +172,15 @@ internal class AndroidComposeSpatialElement :
         isLayoutInProgress = false
         if (isLayoutRequested) {
             refreshLayout()
+        }
+    }
+
+    companion object {
+        // This coroutine scope will launch tasks to the Choreographer on the main thread.
+        private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+
+        private val onLayoutStateValueChanged: (AndroidComposeSpatialElement) -> Unit = {
+            it.requestRelayout()
         }
     }
 }

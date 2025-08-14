@@ -69,7 +69,7 @@ class XExecutableElementTest {
                     }
                 }
                     """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 )
         ) {
@@ -116,7 +116,7 @@ class XExecutableElementTest {
                 void methodPrimitive(int... inputs);
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(subject)) {
             val element = it.processingEnv.requireTypeElement("foo.bar.Baz")
@@ -160,7 +160,7 @@ class XExecutableElementTest {
                 fun String.extFun(vararg inputs: String)
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(subject)) {
             val element = it.processingEnv.requireTypeElement("Subject")
@@ -257,7 +257,7 @@ class XExecutableElementTest {
 
             interface Sub : Base
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val (sources, classpath) =
             if (preCompiled) {
@@ -265,7 +265,11 @@ class XExecutableElementTest {
             } else {
                 listOf(subject) to emptyList<File>()
             }
-        runProcessorTest(sources = sources, classpath = classpath) { invocation ->
+        runProcessorTest(
+            sources = sources,
+            classpath = classpath,
+            kotlincArguments = listOf("-Xjvm-default=disable"),
+        ) { invocation ->
             listOf("Base", "Sub").forEach { className ->
                 val element = invocation.processingEnv.requireTypeElement("foo.bar.$className")
                 element.getMethodByJvmName("noDefault").let { method ->
@@ -345,7 +349,7 @@ class XExecutableElementTest {
             interface Sub2 : Base2<Int, String, Number, Number, Long>
 
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val (sources, classpath) =
             if (preCompiled) {
@@ -353,7 +357,11 @@ class XExecutableElementTest {
             } else {
                 listOf(subject) to emptyList<File>()
             }
-        runProcessorTest(sources = sources, classpath = classpath) { invocation ->
+        runProcessorTest(
+            sources = sources,
+            classpath = classpath,
+            kotlincArguments = listOf("-Xjvm-default=disable"),
+        ) { invocation ->
             listOf("Base", "Sub").forEach { className ->
                 val element = invocation.processingEnv.requireTypeElement("foo.bar.$className")
                 element.getMethodByJvmName("noDefault").let { method ->
@@ -412,7 +420,7 @@ class XExecutableElementTest {
                 suspend fun twoParams(param1:String, param2:Int): Pair<String, Int> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("Subject")
@@ -426,7 +434,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             ParameterizedTypeName.get(
                                 CONTINUATION_JCLASS_NAME,
-                                WildcardTypeName.supertypeOf(UNIT_JCLASS_NAME)
+                                WildcardTypeName.supertypeOf(UNIT_JCLASS_NAME),
                             )
                         )
                     assertThat(cont.nullability).isEqualTo(XNullability.NONNULL)
@@ -439,7 +447,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             ParameterizedTypeName.get(
                                 CONTINUATION_JCLASS_NAME,
-                                WildcardTypeName.supertypeOf(Integer::class.java)
+                                WildcardTypeName.supertypeOf(Integer::class.java),
                             )
                         )
                     assertThat(cont.enclosingElement).isEqualTo(method)
@@ -451,7 +459,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             ParameterizedTypeName.get(
                                 CONTINUATION_JCLASS_NAME,
-                                WildcardTypeName.supertypeOf(Integer::class.java)
+                                WildcardTypeName.supertypeOf(Integer::class.java),
                             )
                         )
                 }
@@ -471,9 +479,9 @@ class XExecutableElementTest {
                                     ParameterizedTypeName.get(
                                         Pair::class.className(),
                                         String::class.typeName(),
-                                        Integer::class.typeName()
+                                        Integer::class.typeName(),
                                     )
-                                )
+                                ),
                             )
                         )
                 }
@@ -503,7 +511,7 @@ class XExecutableElementTest {
                 internal var prop8: String
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val klass = invocation.processingEnv.requireTypeElement("MyDataClass")
@@ -517,7 +525,7 @@ class XExecutableElementTest {
                         "setZ",
                         "setProp4",
                         "getProp4",
-                        "setProp7"
+                        "setProp7",
                     )
                 )
             listOf(
@@ -527,7 +535,7 @@ class XExecutableElementTest {
                     "getProp3",
                     "getProp5",
                     "getProp6",
-                    "getProp8\$main"
+                    "getProp8\$main",
                 )
                 .forEach {
                     klass.getMethodByJvmName(it).let { method ->
@@ -580,7 +588,7 @@ class XExecutableElementTest {
             class Subject : Base<String>()
             class NullableSubject: Base<String?>()
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("Base")
@@ -631,7 +639,7 @@ class XExecutableElementTest {
                 override var y: Int = 1
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSrc =
             Source.java(
@@ -648,7 +656,7 @@ class XExecutableElementTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src, javaSrc)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("MyInterface")
@@ -659,7 +667,7 @@ class XExecutableElementTest {
                 owner: XTypeElement,
                 ownerMethodName: String,
                 base: XTypeElement,
-                baseMethodName: String = ownerMethodName
+                baseMethodName: String = ownerMethodName,
             ): Boolean {
                 val overrider = owner.getMethodByJvmName(ownerMethodName)
                 val overridden = base.getMethodByJvmName(baseMethodName)
@@ -678,7 +686,7 @@ class XExecutableElementTest {
                             owner = subject,
                             ownerMethodName = "getY",
                             base = base,
-                            baseMethodName = "getX"
+                            baseMethodName = "getX",
                         )
                     )
                     .isFalse()
@@ -689,7 +697,7 @@ class XExecutableElementTest {
                             owner = subject,
                             ownerMethodName = "getY",
                             base = subject,
-                            baseMethodName = "getX"
+                            baseMethodName = "getX",
                         )
                     )
                     .isFalse()
@@ -700,7 +708,7 @@ class XExecutableElementTest {
                             owner = base,
                             ownerMethodName = "getX",
                             base = subject,
-                            baseMethodName = "getX"
+                            baseMethodName = "getX",
                         )
                     )
                     .isFalse()
@@ -711,7 +719,7 @@ class XExecutableElementTest {
                             owner = subject,
                             ownerMethodName = "setY",
                             base = base,
-                            baseMethodName = "getY"
+                            baseMethodName = "getY",
                         )
                     )
                     .isFalse()
@@ -722,7 +730,7 @@ class XExecutableElementTest {
                             owner = subject,
                             ownerMethodName = "setY",
                             base = subject,
-                            baseMethodName = "setY"
+                            baseMethodName = "setY",
                         )
                     )
                     .isFalse()
@@ -740,7 +748,7 @@ class XExecutableElementTest {
                 void interfaceMethod();
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaAbstractClass =
             Source.java(
@@ -751,7 +759,7 @@ class XExecutableElementTest {
                 void nonAbstractMethod() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -765,7 +773,7 @@ class XExecutableElementTest {
                 fun nonAbstractMethod() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaInterface, javaAbstractClass, kotlinSource)) {
             invocation ->
@@ -795,7 +803,7 @@ class XExecutableElementTest {
                 var y:Int
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaImpl =
             Source.java(
@@ -812,7 +820,7 @@ class XExecutableElementTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(myInterface, javaImpl)) { invocation ->
             val elm = invocation.processingEnv.requireTypeElement("JavaImpl")
@@ -836,7 +844,7 @@ class XExecutableElementTest {
                 var y:T
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaImpl =
             Source.java(
@@ -853,7 +861,7 @@ class XExecutableElementTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(myInterface, javaImpl)) { invocation ->
             val elm = invocation.processingEnv.requireTypeElement("JavaImpl")
@@ -888,13 +896,13 @@ class XExecutableElementTest {
                 ) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         fun XExecutableElement.defaults() = parameters.map { it.hasDefaultValue }
         runProcessorTest(
             sources = listOf(buildSource(pkg = "app")),
-            classpath = compileFiles(listOf(buildSource(pkg = "lib")))
+            classpath = compileFiles(listOf(buildSource(pkg = "lib"))),
         ) { invocation ->
             listOf("app", "lib")
                 .map { invocation.processingEnv.requireTypeElement("$it.Subject") }
@@ -955,7 +963,7 @@ class XExecutableElementTest {
                                 .filter { it.jvmName == "jvmOverloadsMethod" }
                                 .associateBy(
                                     keySelector = { it.parameters.size },
-                                    valueTransform = { it.defaults() }
+                                    valueTransform = { it.defaults() },
                                 )
                         // JVM overloads is not part of the java stub or metadata, hence we cannot
                         // detect it
@@ -965,7 +973,7 @@ class XExecutableElementTest {
                                 mapOf(
                                     1 to listOf(false),
                                     2 to listOf(false, false),
-                                    3 to listOf(false, true, true)
+                                    3 to listOf(false, true, true),
                                 )
                             )
                     }
@@ -989,7 +997,7 @@ class XExecutableElementTest {
                     }
                 }
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ),
                 Source.kotlin(
                     "KotlinSubject.kt",
@@ -1006,7 +1014,7 @@ class XExecutableElementTest {
                     }
                 }
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ),
                 Source.kotlin(
                     "AccessorThrows.kt",
@@ -1023,12 +1031,12 @@ class XExecutableElementTest {
                     var bothThrows: Int = 3
                 }
                 """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
             )
         runProcessorTest(
             sources = buildSources("app"),
-            classpath = compileFiles(sources = buildSources("lib"))
+            classpath = compileFiles(sources = buildSources("lib")),
         ) { invocation ->
             fun collectExceptions(subject: XTypeElement): List<Pair<String, Set<XTypeName>>> {
                 return (subject.getConstructors() + subject.getDeclaredMethods()).mapNotNull {
@@ -1053,7 +1061,7 @@ class XExecutableElementTest {
                     "multipleThrows" to
                         setOf(
                             IOException::class.asClassName(),
-                            IllegalStateException::class.asClassName()
+                            IllegalStateException::class.asClassName(),
                         )
                 invocation.processingEnv.requireTypeElement("$pkg.KotlinSubject").let { subject ->
                     assertWithMessage(subject.qualifiedName)
@@ -1076,7 +1084,7 @@ class XExecutableElementTest {
                             "setBothThrows" to
                                 setOf(
                                     IllegalStateException::class.asClassName(),
-                                    IllegalArgumentException::class.asClassName()
+                                    IllegalArgumentException::class.asClassName(),
                                 ),
                         )
                 }
@@ -1106,11 +1114,11 @@ class XExecutableElementTest {
                 override fun Int.ext7(): String = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources = listOf(buildSource(pkg = "app")),
-            classpath = compileFiles(listOf(buildSource(pkg = "lib")))
+            classpath = compileFiles(listOf(buildSource(pkg = "lib"))),
         ) { invocation ->
             listOf("app", "lib").forEach { pkg ->
                 val element = invocation.processingEnv.requireTypeElement("$pkg.Foo")
@@ -1134,7 +1142,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             ParameterizedTypeName.get(
                                 ClassName.get(pkg, "Foo"),
-                                String::class.typeName()
+                                String::class.typeName(),
                             )
                         )
                 }
@@ -1143,7 +1151,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             JParameterizedTypeName.get(
                                 JClassName.get(pkg, "Foo"),
-                                JTypeVariableName.get("T")
+                                JTypeVariableName.get("T"),
                             )
                         )
                     if (invocation.isKsp) {
@@ -1168,7 +1176,7 @@ class XExecutableElementTest {
                         .isEqualTo(
                             ParameterizedTypeName.get(
                                 ClassName.get("kotlin.coroutines", "Continuation"),
-                                WildcardTypeName.supertypeOf(String::class.typeName())
+                                WildcardTypeName.supertypeOf(String::class.typeName()),
                             )
                         )
                 }
@@ -1238,7 +1246,7 @@ class XExecutableElementTest {
                 override fun getAndReturnKeyOverridden(key: Item): Item
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val objectMethodNames =
@@ -1340,16 +1348,13 @@ class XExecutableElementTest {
                 internal fun internalValueReturningFun(): ValueClass { TODO() }
             }
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
 
         val sources = buildSources("app")
         val classpath = compileFiles(buildSources("lib"))
-        runProcessorTest(
-            sources = sources,
-            classpath = classpath,
-        ) { invocation ->
+        runProcessorTest(sources = sources, classpath = classpath) { invocation ->
             // we use this to remove the hash added by the compiler for function names that don't
             // have valid JVM names
             // regex: match 7 characters after -
@@ -1409,7 +1414,7 @@ class XExecutableElementTest {
             typealias MyTypeAlias<T> = MyType<T>
             class MyType<T>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             fun XTypeElement.jMethodSignatures(): String {
@@ -1422,7 +1427,7 @@ class XExecutableElementTest {
                             methodElement.parameters.joinToString(",") {
                                 it.type.asTypeName().java.toString()
                             },
-                            methodElement.executableType.returnType.asTypeName().java.toString()
+                            methodElement.executableType.returnType.asTypeName().java.toString(),
                         )
                     }
             }
@@ -1453,8 +1458,8 @@ class XExecutableElementTest {
                     }
                     class Foo<T>
                     """
-                            .trimIndent()
-                    ),
+                            .trimIndent(),
+                    )
                 )
         ) { invocation ->
             val usage = invocation.processingEnv.requireTypeElement("Usage")
@@ -1484,7 +1489,7 @@ class XExecutableElementTest {
         @TestParameter isJava: Boolean,
         @TestParameter isPrecompiled: Boolean,
         @TestParameter hasParametersFlag: Boolean,
-        @TestParameter hasDebugFlag: Boolean
+        @TestParameter hasDebugFlag: Boolean,
     ) {
         val javaSource =
             Source.java(
@@ -1497,7 +1502,7 @@ class XExecutableElementTest {
                 native void jnf(String param1);
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -1509,7 +1514,7 @@ class XExecutableElementTest {
                 abstract fun kaf(param1: String): Unit
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val sources: List<Source> =
@@ -1606,7 +1611,7 @@ class XExecutableElementTest {
             }
             class Bar
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources =
@@ -1620,7 +1625,7 @@ class XExecutableElementTest {
                     compileFiles(listOf(kotlinSource))
                 } else {
                     emptyList()
-                }
+                },
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("foo.bar.Subject")
 
@@ -1653,7 +1658,7 @@ class XExecutableElementTest {
                 fun method(int: Int): Unit = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources =
@@ -1667,7 +1672,7 @@ class XExecutableElementTest {
                     compileFiles(listOf(kotlinSource))
                 } else {
                     emptyList()
-                }
+                },
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val method = subject.getDeclaredMethods().single()

@@ -96,8 +96,8 @@ abstract class MultimapQueryResultAdapter(
                         ProcessorErrors.ambiguousColumn(
                             columnName = ambiguousColumnName,
                             location = location,
-                            typeName = objectTypeName?.toString(context.codeLanguage)
-                        )
+                            typeName = objectTypeName?.toString(context.codeLanguage),
+                        ),
                     )
                 }
         }
@@ -116,7 +116,7 @@ abstract class MultimapQueryResultAdapter(
 
     enum class CollectionValueType(val className: XClassName) {
         LIST(CommonTypeNames.MUTABLE_LIST),
-        SET(CommonTypeNames.MUTABLE_SET)
+        SET(CommonTypeNames.MUTABLE_SET),
     }
 
     companion object {
@@ -136,7 +136,7 @@ abstract class MultimapQueryResultAdapter(
                     Warning.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE,
                     ProcessorErrors.classMustImplementEqualsAndHashCode(
                         keyTypeArg.asTypeName().toString(context.codeLanguage)
-                    )
+                    ),
                 )
             }
 
@@ -202,7 +202,7 @@ abstract class MultimapQueryResultAdapter(
                         ProcessorErrors.cannotMapSpecifiedColumn(
                             errorColumn,
                             resultColumns.map { it.name },
-                            MapColumn::class.java.simpleName
+                            MapColumn::class.java.simpleName,
                         )
                     )
                 }

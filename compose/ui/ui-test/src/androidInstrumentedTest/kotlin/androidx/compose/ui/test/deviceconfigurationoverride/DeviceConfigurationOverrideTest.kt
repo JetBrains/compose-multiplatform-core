@@ -36,9 +36,13 @@ import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
+import androidx.compose.ui.test.Keyboard
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
+import androidx.compose.ui.test.Navigation
 import androidx.compose.ui.test.RoundScreen
+import androidx.compose.ui.test.Touchscreen
+import androidx.compose.ui.test.UiMode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -162,12 +166,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 30.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 40.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -202,12 +206,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 40.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 30.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -242,12 +246,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 3000.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 4000.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -282,12 +286,12 @@ class DeviceConfigurationOverrideTest {
         assertEquals(
             with(actualDensity) { 4000.dp.toPx() },
             actualConstraints!!.maxWidth.toFloat(),
-            0.5f
+            0.5f,
         )
         assertEquals(
             with(actualDensity) { 3000.dp.toPx() },
             actualConstraints!!.maxHeight.toFloat(),
-            0.5f
+            0.5f,
         )
     }
 
@@ -322,7 +326,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -358,7 +362,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -394,7 +398,7 @@ class DeviceConfigurationOverrideTest {
             overriddenDensity.density,
             overriddenConfigurationDensityMultiplier,
             // Compare within half a step of density DPI changes
-            1f / DisplayMetrics.DENSITY_DEFAULT / 2f
+            1f / DisplayMetrics.DENSITY_DEFAULT / 2f,
         )
     }
 
@@ -464,7 +468,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("es-ES"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
     }
 
@@ -484,7 +488,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("ar"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
         assertEquals(LayoutDirection.Rtl, layoutDirection)
         assertEquals(View.LAYOUT_DIRECTION_RTL, configuration.layoutDirection)
@@ -502,7 +506,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             Configuration.UI_MODE_NIGHT_YES,
-            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
         )
     }
 
@@ -518,7 +522,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             Configuration.UI_MODE_NIGHT_NO,
-            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
         )
     }
 
@@ -550,7 +554,6 @@ class DeviceConfigurationOverrideTest {
         assertEquals(500, configuration.fontWeightAdjustment)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun roundScreenOverride_isRound_overridesIsScreenRound() {
         lateinit var configuration: Configuration
@@ -564,7 +567,6 @@ class DeviceConfigurationOverrideTest {
         assertTrue(configuration.isScreenRound)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun roundScreenOverride_isNotRound_overridesIsScreenRound() {
         lateinit var configuration: Configuration
@@ -576,6 +578,125 @@ class DeviceConfigurationOverrideTest {
         }
 
         assertFalse(configuration.isScreenRound)
+    }
+
+    @Test
+    fun keyboardOverride_qwerty_overridesKeyboardConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Keyboard(Configuration.KEYBOARD_QWERTY)
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_NO)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_NO)
+    }
+
+    @Test
+    fun keyboardOverride_hardKeyboardHidden_overridesKeyboardConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Keyboard(
+                    keyboardType = Configuration.KEYBOARD_QWERTY,
+                    isHardKeyboardHidden = true,
+                )
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_NO)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_YES)
+    }
+
+    @Test
+    fun keyboardOverride_hidden_overridesKeyboardConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Keyboard(
+                    keyboardType = Configuration.KEYBOARD_QWERTY,
+                    isHardKeyboardHidden = true,
+                    isHidden = true,
+                )
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_YES)
+        assertEquals(configuration.hardKeyboardHidden, Configuration.HARDKEYBOARDHIDDEN_YES)
+    }
+
+    @Test
+    fun navigationOverride_dpad_overridesNavigationConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Navigation(Configuration.NAVIGATION_DPAD)
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.navigation, Configuration.NAVIGATION_DPAD)
+        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_NO)
+    }
+
+    @Test
+    fun navigationOverride_hidden_overridesNavigationConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Navigation(Configuration.NAVIGATION_DPAD, true)
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.navigation, Configuration.NAVIGATION_DPAD)
+        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_YES)
+    }
+
+    @Test
+    fun touchscreen_false_overridesTouchscreenConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.Touchscreen(false)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.touchscreen, Configuration.TOUCHSCREEN_NOTOUCH)
+    }
+
+    @Test
+    fun uiModeOverride_car_overridesUiModeConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.UiMode(Configuration.UI_MODE_TYPE_CAR)
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        val uiMode = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        assertEquals(uiMode, Configuration.UI_MODE_TYPE_CAR)
     }
 
     @Test
@@ -597,7 +718,7 @@ class DeviceConfigurationOverrideTest {
 
         assertEquals(
             LocaleListCompat.forLanguageTags("ar"),
-            ConfigurationCompat.getLocales(configuration)
+            ConfigurationCompat.getLocales(configuration),
         )
         assertEquals(LayoutDirection.Ltr, layoutDirection)
         assertEquals(View.LAYOUT_DIRECTION_LTR, configuration.layoutDirection)

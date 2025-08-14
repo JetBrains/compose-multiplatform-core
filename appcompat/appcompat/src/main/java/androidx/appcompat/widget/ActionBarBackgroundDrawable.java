@@ -22,8 +22,6 @@ import android.graphics.Outline;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.RequiresApi;
-
 import org.jspecify.annotations.NonNull;
 
 class ActionBarBackgroundDrawable extends Drawable {
@@ -64,7 +62,6 @@ class ActionBarBackgroundDrawable extends Drawable {
     }
 
     @Override
-    @RequiresApi(21)
     public void getOutline(@NonNull Outline outline) {
         if (mContainer.mIsSplit) {
             if (mContainer.mSplitBackground != null) {
@@ -78,7 +75,6 @@ class ActionBarBackgroundDrawable extends Drawable {
         }
     }
 
-    @RequiresApi(21)
     private static class Api21Impl {
         private Api21Impl() {
             // Non-instantiable.

@@ -21,6 +21,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.SideEffect
@@ -66,16 +67,23 @@ public object LocalOnBackPressedDispatcherOwner {
 /**
  * An effect for handling presses of the system back button.
  *
- * Calling this in your composable adds the given lambda to the [OnBackPressedDispatcher] of the
- * [LocalOnBackPressedDispatcherOwner].
+ * This effect registers a callback to be invoked when the system back button is pressed.
  *
- * If this is called by nested composables, if enabled, the inner most composable will consume the
- * call to system back and invoke its lambda. The call will continue to propagate up until it finds
- * an enabled BackHandler.
+ * The [onBack] will be invoked when the system back button is pressed (i.e., `onCompleted`).
+ *
+ * ## Precedence
+ * If multiple [BackHandler] are present in the composition, the one that is composed **last** among
+ * all enabled handlers will be invoked.
+ *
+ * ## Usage
+ * It is important to call this composable **unconditionally**. Use the `enabled` parameter to
+ * control whether the handler is active. This is preferable to conditionally calling [BackHandler]
+ * (e.g., inside an `if` block), as conditional calls can change the order of composition, leading
+ * to unpredictable behavior where different handlers are invoked after recomposition.
  *
  * @sample androidx.activity.compose.samples.BackHandler
- * @param enabled if this BackHandler should be enabled
- * @param onBack the action invoked by pressing the system back
+ * @param enabled If `true`, this handler will be enabled and eligible to handle the back press.
+ * @param onBack The action to be invoked when the system back button is pressed.
  */
 @SuppressWarnings("MissingJvmstatic")
 @Composable

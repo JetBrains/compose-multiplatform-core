@@ -612,9 +612,9 @@ public class AppSearchCompilerTest {
 
         assertThat(compilation).hadErrorContaining(
                 "Field 'wrapped' cannot be read: it is private and has no suitable getters "
-                        + "[public] boolean isWrapped() "
+                        + "[public] boolean wrapped() "
                         + "OR [public] boolean getWrapped() "
-                        + "OR [public] boolean wrapped()");
+                        + "OR [public] boolean isWrapped()");
     }
 
     @Test
@@ -822,8 +822,8 @@ public class AppSearchCompilerTest {
                         + "See the warnings for more details.");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
-                        + "[public] void setId(java.lang.String)|"
-                        + "[public] void id(java.lang.String)");
+                        + "[public] void id(java.lang.String)|"
+                        + "[public] void setId(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Cannot use this constructor to construct the class: "
                         + "\"com.example.appsearch.Gift\". "
@@ -2309,8 +2309,8 @@ public class AppSearchCompilerTest {
                         + "[public] void setNamespace(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
-                        + "[public] void setId(java.lang.String)|"
-                        + "[public] void id(java.lang.String)");
+                        + "[public] void id(java.lang.String)|"
+                        + "[public] void setId(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
                         + "[public] void price(int)|"

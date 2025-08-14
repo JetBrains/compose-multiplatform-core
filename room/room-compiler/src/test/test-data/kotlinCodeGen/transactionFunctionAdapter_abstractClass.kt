@@ -38,13 +38,11 @@ public class MyDao_Impl(
     super@MyDao_Impl.suspendConcrete()
   }
 
-  public override fun concreteWithVararg(vararg arr: Long): Unit = performBlocking(__db, false,
-      true) { _ ->
+  public override fun concreteWithVararg(vararg arr: Long): Unit = performBlocking(__db, false, true) { _ ->
     super@MyDao_Impl.concreteWithVararg(*arr)
   }
 
-  public override suspend fun suspendConcreteWithVararg(vararg arr: Long): Unit =
-      performInTransactionSuspending(__db) {
+  public override suspend fun suspendConcreteWithVararg(vararg arr: Long): Unit = performInTransactionSuspending(__db) {
     super@MyDao_Impl.suspendConcreteWithVararg(*arr)
   }
 

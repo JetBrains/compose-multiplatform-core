@@ -33,7 +33,7 @@ import androidx.room.vo.RawQueryFunction
 class RawQueryFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -44,13 +44,13 @@ class RawQueryFunctionProcessor(
         context.checker.check(
             executableElement.hasAnnotation(RawQuery::class),
             executableElement,
-            ProcessorErrors.MISSING_RAWQUERY_ANNOTATION
+            ProcessorErrors.MISSING_RAWQUERY_ANNOTATION,
         )
 
         context.checker.notUnbound(
             returnType,
             executableElement,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_QUERY_FUNCTIONS
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_QUERY_FUNCTIONS,
         )
 
         val returnsDeferredType = delegate.returnsDeferredType()
@@ -58,7 +58,7 @@ class RawQueryFunctionProcessor(
         context.checker.check(
             !isSuspendFunction || !returnsDeferredType,
             executableElement,
-            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString())
+            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString()),
         )
 
         if (!isSuspendFunction && !returnsDeferredType && !context.isAndroidOnlyTarget()) {
@@ -66,7 +66,7 @@ class RawQueryFunctionProcessor(
             // target platforms include non-Android targets.
             context.logger.e(
                 executableElement,
-                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID
+                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID,
             )
             // TODO(b/332781418): Early return to avoid generating redundant code.
         }
@@ -85,7 +85,7 @@ class RawQueryFunctionProcessor(
                     context.checker.check(
                         keyColumn.isNotEmpty() || valueColumn.isNotEmpty(),
                         executableElement,
-                        ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED
+                        ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED,
                     )
                     putData(MapInfo::class, MapInfo(keyColumn, valueColumn))
                 }
@@ -100,13 +100,13 @@ class RawQueryFunctionProcessor(
                 returnType = returnType,
                 runtimeQueryParam = runtimeQueryParam,
                 inTransaction = inTransaction,
-                queryResultBinder = resultBinder
+                queryResultBinder = resultBinder,
             )
         // TODO: Lift this restriction, to allow for INSERT, UPDATE and DELETE raw statements.
         context.checker.check(
             rawQueryFunction.returnsValue,
             executableElement,
-            ProcessorErrors.RAW_QUERY_BAD_RETURN_TYPE
+            ProcessorErrors.RAW_QUERY_BAD_RETURN_TYPE,
         )
         return rawQueryFunction
     }
@@ -132,7 +132,7 @@ class RawQueryFunctionProcessor(
                                 context = context,
                                 element = it,
                                 bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                                parent = null
+                                parent = null,
                             )
                             .process()
                     val tableNames = pojo.accessedTableNames()
@@ -142,7 +142,7 @@ class RawQueryFunctionProcessor(
                             executableElement,
                             ProcessorErrors.rawQueryBadEntity(
                                 it.type.asTypeName().toString(context.codeLanguage)
-                            )
+                            ),
                         )
                     }
                     tableNames
@@ -163,7 +163,7 @@ class RawQueryFunctionProcessor(
                     msg =
                         ProcessorErrors.parameterCannotBeNullable(
                             parameterName = extractParams.first().name
-                        )
+                        ),
                 )
             }
 
@@ -171,7 +171,7 @@ class RawQueryFunctionProcessor(
                 if (rawQueryType.isAssignableFrom(param)) {
                     return RawQueryFunction.RuntimeQueryParameter(
                         paramName = extractParams[0].name,
-                        typeName = rawQueryType.asTypeName()
+                        typeName = rawQueryType.asTypeName(),
                     )
                 }
             }
@@ -180,7 +180,7 @@ class RawQueryFunctionProcessor(
                 if (supportQueryType.isAssignableFrom(param)) {
                     return RawQueryFunction.RuntimeQueryParameter(
                         paramName = extractParams[0].name,
-                        typeName = supportQueryType.asTypeName()
+                        typeName = supportQueryType.asTypeName(),
                     )
                 }
             }

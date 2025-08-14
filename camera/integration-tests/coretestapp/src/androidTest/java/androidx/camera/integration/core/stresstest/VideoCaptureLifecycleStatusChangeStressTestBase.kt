@@ -31,7 +31,7 @@ import org.junit.Test
 abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
     implName: String,
     cameraConfig: CameraXConfig,
-    cameraId: String
+    cameraId: String,
 ) : LifecycleStatusChangeStressTestBase(implName, cameraConfig, cameraId) {
 
     protected abstract val enableStreamSharing: Boolean
@@ -46,7 +46,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -60,7 +60,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -74,7 +74,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -88,7 +88,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -102,7 +102,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -116,7 +116,7 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
             cameraId,
             useCaseCombination,
             VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            enableStreamSharing = enableStreamSharing,
         )
     }
 }

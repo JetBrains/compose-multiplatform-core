@@ -31,28 +31,34 @@ import androidx.camera.camera2.pipe.integration.config.DaggerCameraAppComponent
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.integration.internal.CameraCompatibilityFilter
 import androidx.camera.camera2.pipe.integration.internal.CameraSelectionOptimizer
+import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.CameraUpdateException
+import androidx.camera.core.impl.Observable
+import androidx.camera.core.internal.StreamSpecsCalculator
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
  * The [CameraFactoryAdapter] is responsible for creating the root dagger component that is used to
  * share resources across Camera instances.
  */
 internal class CameraFactoryAdapter(
-    lazyCameraPipe: Lazy<CameraPipe>,
+    private val lazyCameraPipe: Lazy<CameraPipe>,
     context: Context,
     threadConfig: CameraThreadConfig,
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
-    availableCamerasSelector: CameraSelector?,
-) : CameraFactory {
+    private val availableCamerasSelector: CameraSelector?,
+    private val streamSpecsCalculator: StreamSpecsCalculator,
+) : CameraFactory, CameraFactory.Interrogator {
     private val cameraCoordinator: CameraCoordinatorAdapter =
-        CameraCoordinatorAdapter(
-            lazyCameraPipe.value,
-            lazyCameraPipe.value.cameras(),
-        )
+        CameraCoordinatorAdapter(lazyCameraPipe.value, lazyCameraPipe.value.cameras())
+    private val pipeCameraPresenceObservable: PipeCameraPresenceSource
     private val appComponent: CameraAppComponent by lazy {
         Debug.traceStart { "CameraFactoryAdapter#appComponent" }
         val timeSource = SystemTimeSource()
@@ -65,7 +71,7 @@ internal class CameraFactoryAdapter(
                         threadConfig,
                         lazyCameraPipe.value,
                         camera2InteropCallbacks,
-                        cameraCoordinator
+                        cameraCoordinator,
                     )
                 )
                 .build()
@@ -73,20 +79,68 @@ internal class CameraFactoryAdapter(
         Debug.traceStop()
         result
     }
-    private val availableCameraIds: LinkedHashSet<String>
+    private var availableCameraIds: Set<String> = emptySet()
+    private val lock = Any()
+    private val isShutdown = AtomicBoolean(false)
 
     init {
-        val optimizedCameraIds =
-            CameraSelectionOptimizer.getSelectedAvailableCameraIds(this, availableCamerasSelector)
-
-        // Use a LinkedHashSet to preserve order
-        availableCameraIds =
-            LinkedHashSet(
-                CameraCompatibilityFilter.getBackwardCompatibleCameraIds(
-                    appComponent.getCameraDevices(),
-                    optimizedCameraIds
-                )
+        val initialIds =
+            appComponent.getCameraDevices().awaitCameraIds()?.map { it.value } ?: emptyList()
+        pipeCameraPresenceObservable =
+            PipeCameraPresenceSource(
+                idFlow = lazyCameraPipe.value.cameras().cameraIdsFlow(),
+                coroutineScope =
+                    CoroutineScope(threadConfig.cameraExecutor.asCoroutineDispatcher()),
+                initialCameraIds = initialIds,
+                context = context,
             )
+        onCameraIdsUpdated(initialIds)
+    }
+
+    override fun onCameraIdsUpdated(cameraIds: List<String>) {
+        if (isShutdown.get()) {
+            return
+        }
+
+        val filteredIds = calculateAvailableCameraIds(cameraIds)
+
+        synchronized(lock) {
+            if (isShutdown.get()) {
+                return
+            }
+            if (availableCameraIds == filteredIds) {
+                return // No change
+            }
+            debug { "Updated available camera list: $availableCameraIds -> $filteredIds" }
+            availableCameraIds = filteredIds
+        }
+    }
+
+    /** Previews the result of a camera ID update without changing state. */
+    override fun getAvailableCameraIds(cameraIds: List<String>): List<String> {
+        if (isShutdown.get()) {
+            return emptyList()
+        }
+        // Call the shared helper and return the result as a list
+        return calculateAvailableCameraIds(cameraIds).toList()
+    }
+
+    /** A new private helper that contains the shared filtering logic. */
+    private fun calculateAvailableCameraIds(cameraIds: List<String>): Set<String> {
+        val optimizedIds =
+            CameraSelectionOptimizer.getSelectedAvailableCameraIds(
+                appComponent,
+                availableCamerasSelector,
+                cameraIds.toList(),
+                streamSpecsCalculator,
+            )
+
+        return LinkedHashSet(
+            CameraCompatibilityFilter.getBackwardCompatibleCameraIds(
+                appComponent.getCameraDevices(),
+                optimizedIds,
+            )
+        )
     }
 
     /**
@@ -94,17 +148,27 @@ internal class CameraFactoryAdapter(
      * Use cameraId from set of cameraIds provided by [getAvailableCameraIds] method.
      */
     override fun getCamera(cameraId: String): CameraInternal {
+        if (isShutdown.get()) {
+            throw CameraUpdateException("CameraFactory has been shut down.")
+        }
         val cameraInternal =
             appComponent
                 .cameraBuilder()
                 .config(CameraConfig(CameraId(cameraId)))
+                .streamSpecsCalculator(streamSpecsCalculator)
                 .build()
                 .getCameraInternal()
-        cameraCoordinator.registerCamera(cameraId, cameraInternal)
         return cameraInternal
     }
 
-    override fun getAvailableCameraIds(): Set<String> = availableCameraIds
+    override fun getAvailableCameraIds(): Set<String> =
+        synchronized(lock) {
+            if (isShutdown.get()) {
+                return emptySet()
+            }
+            // Return a copy
+            LinkedHashSet(availableCameraIds)
+        }
 
     override fun getCameraCoordinator(): CameraCoordinator {
         return cameraCoordinator
@@ -112,4 +176,19 @@ internal class CameraFactoryAdapter(
 
     /** This is an implementation specific object that is specific to the integration package */
     override fun getCameraManager(): Any = appComponent
+
+    override fun getCameraPresenceSource(): Observable<List<CameraIdentifier>> {
+        return pipeCameraPresenceObservable
+    }
+
+    override fun shutdown() {
+        if (isShutdown.getAndSet(true)) {
+            return
+        }
+        cameraCoordinator.shutdown()
+        pipeCameraPresenceObservable.stopMonitoring()
+        if (lazyCameraPipe.isInitialized()) {
+            lazyCameraPipe.value.shutdown()
+        }
+    }
 }

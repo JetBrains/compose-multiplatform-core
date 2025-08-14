@@ -27,9 +27,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 
-import androidx.annotation.RequiresApi;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +41,6 @@ import org.robolectric.shadows.ShadowCameraCharacteristics;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class CameraCharacteristicsCompatTest {
     private CameraCharacteristics mCharacteristics;
     private static final int SENSOR_ORIENTATION_VAL = 270;
@@ -103,7 +101,7 @@ public class CameraCharacteristicsCompatTest {
     }
 
     @Config(minSdk = 28)
-    @RequiresApi(28)
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     public void getPhysicalCameraIds_invokeCameraCharacteristics_api28() {
         CameraCharacteristics cameraCharacteristics = mock(CameraCharacteristics.class);

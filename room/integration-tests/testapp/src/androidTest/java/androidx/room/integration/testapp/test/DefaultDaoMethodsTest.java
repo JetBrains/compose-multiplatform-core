@@ -32,6 +32,7 @@ import androidx.room.Update;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -105,12 +106,18 @@ public class DefaultDaoMethodsTest {
     }
 
     private DefaultsDb mDb;
+
     @Before
     public void init() {
         mDb = Room.inMemoryDatabaseBuilder(
                 ApplicationProvider.getApplicationContext(),
                 DefaultsDb.class
         ).build();
+    }
+
+    @After
+    public void teardown() {
+        mDb.close();
     }
 
     @Test

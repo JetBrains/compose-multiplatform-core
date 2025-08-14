@@ -19,8 +19,6 @@ package androidx.xr.scenecore.impl.perception;
 import android.app.Activity;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
@@ -28,7 +26,9 @@ import androidx.xr.scenecore.impl.perception.exceptions.LibraryLoadingException;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -41,8 +41,6 @@ public class PerceptionLibrary {
     private static final String TAG = "PerceptionLibrary";
 
     private static final String NATIVE_LIBRARY_NAME = "androidx.xr.runtime.openxr";
-    private static final ConcurrentHashMap<Activity, Session> sActivitySessionMap =
-            new ConcurrentHashMap<>();
 
     @SuppressWarnings("NonFinalStaticField")
     private static volatile boolean sLibraryLoaded = false;
@@ -84,8 +82,7 @@ public class PerceptionLibrary {
     // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
-    @Nullable
-    public ListenableFuture<Session> initSession(
+    public @Nullable ListenableFuture<Session> initSession(
             @NonNull Activity activity,
             @PerceptionLibraryConstants.OpenXrSpaceType int referenceSpaceType,
             @NonNull ExecutorService executor) {
@@ -109,12 +106,6 @@ public class PerceptionLibrary {
                         future.setException(new IllegalStateException("Session already exists."));
                         return;
                     }
-                    if (sActivitySessionMap.containsKey(activity)) {
-                        future.setException(
-                                new IllegalStateException(
-                                        "Session already exists for the provided activity."));
-                        return;
-                    }
                     Session session = new Session(activity, referenceSpaceType, executor);
                     if (!session.initSession()) {
                         Log.e(TAG, "Failed to initialize a session.");
@@ -122,16 +113,7 @@ public class PerceptionLibrary {
                                 new FailedToInitializeException("Failed to initialize a session."));
                         return;
                     }
-
                     Log.i(TAG, "Loaded perception library.");
-                    // Do another check to make sure another session wasn't created for this
-                    // activity
-                    // while we were initializing it.
-                    if (sActivitySessionMap.putIfAbsent(activity, session) != null) {
-                        future.setException(
-                                new IllegalStateException(
-                                        "Session already exists for the provided activity."));
-                    }
                     mSession = session;
                     future.set(mSession);
                 });
@@ -140,14 +122,12 @@ public class PerceptionLibrary {
 
     /** Returns the previously created session or null. */
     @SuppressWarnings("VisiblySynchronized")
-    @Nullable
-    public synchronized Session getSession() {
+    public synchronized @Nullable Session getSession() {
         return mSession;
     }
 
     /** Returns the activity associated with the session. */
-    @NonNull
-    public Activity getActivity() {
+    public @NonNull Activity getActivity() {
         return mSession.mActivity;
     }
 

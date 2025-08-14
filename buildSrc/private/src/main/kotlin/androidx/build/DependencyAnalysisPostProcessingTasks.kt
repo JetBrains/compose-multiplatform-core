@@ -71,9 +71,9 @@ abstract class ReportDependencyAnalysisAdviceTask : AbstractPostProcessingTask()
 
         val baselineAdvice =
             Gson()
-                .fromJson<AndroidxProjectAdvice>(
+                .fromJson(
                     getDependencyAnalysisBaseline()?.readText(),
-                    AndroidxProjectAdvice::class.java
+                    AndroidxProjectAdvice::class.java,
                 )
 
         val advice =
@@ -113,6 +113,14 @@ abstract class ReportDependencyAnalysisAdviceTask : AbstractPostProcessingTask()
         val advice = StringBuilder()
 
         missingDependencyAdvice.forEach {
+            // Don't fail CI if test source set has misconfigured dependencies
+            if (it.fromConfiguration?.contains("test", ignoreCase = true) == true) {
+                return@forEach
+            }
+            if (it.toConfiguration?.contains("test", ignoreCase = true) == true) {
+                return@forEach
+            }
+
             val isCompileOnly =
                 it.toConfiguration?.endsWith("compileOnly", ignoreCase = true) == true
             val isTransitiveDependencyAdvice =
@@ -181,7 +189,7 @@ internal fun Project.configureDependencyAnalysisPlugin() {
     val updateDependencyAnalysisBaselineTask =
         tasks.register(
             "updateDependencyAnalysisBaseline",
-            UpdateDependencyAnalysisBaseLineTask::class.java
+            UpdateDependencyAnalysisBaseLineTask::class.java,
         ) { task ->
             task.outputFile.set(layout.projectDirectory.file("dependencyAnalysis-baseline.json"))
             task.cacheEvenIfNoOutputs()
@@ -192,10 +200,9 @@ internal fun Project.configureDependencyAnalysisPlugin() {
     val reportDependencyAnalysisAdviceTask =
         tasks.register(
             "reportDependencyAnalysisAdvice",
-            ReportDependencyAnalysisAdviceTask::class.java
+            ReportDependencyAnalysisAdviceTask::class.java,
         ) { task ->
-            var baselineFile = layout.projectDirectory.file("dependencyAnalysis-baseline.json")
-            task.baseLineFile.set(baselineFile)
+            task.baseLineFile.set(layout.projectDirectory.file("dependencyAnalysis-baseline.json"))
             task.cacheEvenIfNoOutputs()
             // DAGP currently doesn't support KMP, enable KMP projects when b/394970486 is resolved
             task.onlyIf { !(task.isKMP) && task.isPublishedLibrary }
@@ -205,7 +212,20 @@ internal fun Project.configureDependencyAnalysisPlugin() {
         extensions.getByType(com.autonomousapps.DependencyAnalysisSubExtension::class.java)
     dependencyAnalysisSubExtension.registerPostProcessingTask(reportDependencyAnalysisAdviceTask)
     dependencyAnalysisSubExtension.registerPostProcessingTask(updateDependencyAnalysisBaselineTask)
+
+    // Ignore advice for runTimeOnly, compileOnly or incorrect dependency configs
+    // since it affects downstream consumers
     dependencyAnalysisSubExtension.issues { it.onIncorrectConfiguration { it.severity("ignore") } }
+    dependencyAnalysisSubExtension.issues { it.onRuntimeOnly { it.severity("ignore") } }
+    dependencyAnalysisSubExtension.issues { it.onCompileOnly { it.severity("ignore") } }
+
+    // DAGP currently doesn't support KMP, enable KMP projects when b/394970486 is resolved
+    // Enable CI check for published libraries
+    if (
+        multiplatformExtension == null && androidXExtension.type == SoftwareType.PUBLISHED_LIBRARY
+    ) {
+        addToBuildOnServer(reportDependencyAnalysisAdviceTask)
+    }
 }
 
 /**
@@ -213,19 +233,19 @@ internal fun Project.configureDependencyAnalysisPlugin() {
  */
 internal data class AndroidxProjectAdvice(
     val projectPath: String,
-    val dependencyAdvice: List<DependencyAdvice>
+    val dependencyAdvice: List<DependencyAdvice>,
 )
 
 internal data class DependencyAdvice(
     val coordinates: Coordinates,
     val fromConfiguration: String?,
-    val toConfiguration: String?
+    val toConfiguration: String?,
 )
 
 internal data class Coordinates(
     val type: String,
     val identifier: String,
-    val resolvedVersion: String?
+    val resolvedVersion: String?,
 )
 
 /** Convert advice reported by DAGP into format suitable for storing in baselines. */
@@ -251,11 +271,11 @@ internal fun ProjectAdvice.toAndroidxProjectAdvice(): AndroidxProjectAdvice {
                         Coordinates(
                             identifier = it.coordinates.identifier,
                             resolvedVersion = resolvedVersion,
-                            type = type
+                            type = type,
                         ),
                     fromConfiguration = it.fromConfiguration,
-                    toConfiguration = it.toConfiguration
+                    toConfiguration = it.toConfiguration,
                 )
-            }
+            },
     )
 }

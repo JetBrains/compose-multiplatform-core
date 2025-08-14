@@ -20,11 +20,13 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
+import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SearchSessionStats;
-import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
+import androidx.appsearch.localstorage.stats.VmInitializationStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
 
 import org.jspecify.annotations.NonNull;
@@ -65,9 +67,9 @@ public interface AppSearchLogger {
     }
 
     /**
-     * Logs {@link SearchStats}
+     * Logs {@link QueryStats}
      */
-    default void logStats(@NonNull SearchStats stats) {
+    default void logStats(@NonNull QueryStats stats) {
         // no-op
     }
 
@@ -117,6 +119,18 @@ public interface AppSearchLogger {
      * respectively.
      */
     default void logStats(@NonNull List<SearchSessionStats> searchSessionsStats) {
+        // no-op
+    }
+
+    /**
+     * Logs {@link PersistToDiskStats}
+     */
+    default void logStats(@NonNull PersistToDiskStats stats) {
+        // no-op
+    }
+
+    /** Logs {@link VmInitializationStats} */
+    default void logStats(@NonNull VmInitializationStats stats) {
         // no-op
     }
 

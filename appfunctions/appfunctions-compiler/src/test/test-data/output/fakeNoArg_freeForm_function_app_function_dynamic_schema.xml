@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeNoArg#noArg</id>
         <enabledByDefault>true</enabledByDefault>
+        <description>A free-form AppFunction without parameters.</description>
         <response>
             <id>unused</id>
             <valueType>
@@ -16,4 +14,7 @@
         </response>
         <functionId>com.testdata.FakeNoArg#noArg</functionId>
     </appfunction>
+    <AppFunctionComponentMetadataDocument>
+        <id>unused</id>
+    </AppFunctionComponentMetadataDocument>
 </appfunctions>

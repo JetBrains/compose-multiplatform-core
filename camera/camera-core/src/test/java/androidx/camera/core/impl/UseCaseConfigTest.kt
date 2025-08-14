@@ -15,20 +15,26 @@
  */
 package androidx.camera.core.impl
 
-import android.os.Build
 import android.util.Range
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import com.google.common.truth.Truth
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class UseCaseConfigTest {
+    @Test
+    fun canGetSessionType() {
+        val useCaseBuilder = FakeUseCaseConfig.Builder()
+        val sessionType = SESSION_TYPE_HIGH_SPEED
+        useCaseBuilder.mutableConfig.insertOption(UseCaseConfig.OPTION_SESSION_TYPE, sessionType)
+        Truth.assertThat(useCaseBuilder.useCaseConfig.sessionType).isEqualTo(sessionType)
+    }
+
     @Test
     fun canGetTargetFrameRate() {
         val useCaseBuilder = FakeUseCaseConfig.Builder()

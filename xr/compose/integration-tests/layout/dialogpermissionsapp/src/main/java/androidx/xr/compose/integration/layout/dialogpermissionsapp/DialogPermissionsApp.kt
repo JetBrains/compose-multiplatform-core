@@ -24,19 +24,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
-import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.resizable
-import androidx.xr.compose.subspace.layout.width
-import androidx.xr.scenecore.PermissionHelper
+import androidx.xr.compose.subspace.layout.size
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 
 /**
- * Creates a new activity which asks for the scene understanding permission. If it is not given will
- * close the app and alert of missing required permissions.
+ * Launches a dialog in the Main Panel for the scene understanding permission. If it is not given,
+ * the app will close and alert of missing required permissions.
  */
 class DialogPermissionsApp : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,20 +47,13 @@ class DialogPermissionsApp : ComponentActivity() {
                     finish()
                 }
             }
-        permissionsLauncher.launch(arrayOf(PermissionHelper.SCENE_UNDERSTANDING_PERMISSION))
+        permissionsLauncher.launch(arrayOf(SCENE_UNDERSTANDING_COARSE))
         setContent { Subspace { SpatialContent() } }
     }
 
     @Composable
     @SubspaceComposable
     private fun SpatialContent() {
-        MainPanel(
-            modifier =
-                SubspaceModifier.offset(100.dp, 200.dp)
-                    .width(100.dp)
-                    .height(100.dp)
-                    .movable()
-                    .resizable()
-        )
+        SpatialMainPanel(modifier = SubspaceModifier.size(600.dp).movable().resizable())
     }
 }

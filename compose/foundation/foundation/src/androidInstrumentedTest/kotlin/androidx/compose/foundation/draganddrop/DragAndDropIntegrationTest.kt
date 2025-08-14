@@ -89,10 +89,7 @@ class AndroidDragAndDropIntegrationTest {
                     Modifier.size(100.dp)
                         .background(Color.Red)
                         .testTag("TestDropTarget")
-                        .dragAndDropTarget(
-                            shouldStartDragAndDrop = { true },
-                            target = dropTarget,
-                        )
+                        .dragAndDropTarget(shouldStartDragAndDrop = { true }, target = dropTarget)
                 )
             }
         }
@@ -148,17 +145,9 @@ private fun UiAutomation.injectMotionEvent(
     screenOffset: Offset,
     eventTime: Long = SystemClock.uptimeMillis(),
 ) {
-    MotionEvent.obtain(
-            downTime,
-            eventTime,
-            action,
-            screenOffset.x,
-            screenOffset.y,
-            0,
-        )
-        .run {
-            source = InputDevice.SOURCE_TOUCHSCREEN
-            injectInputEvent(this, true)
-            recycle()
-        }
+    MotionEvent.obtain(downTime, eventTime, action, screenOffset.x, screenOffset.y, 0).run {
+        source = InputDevice.SOURCE_TOUCHSCREEN
+        injectInputEvent(this, true)
+        recycle()
+    }
 }

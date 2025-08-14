@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -45,7 +44,7 @@ dependencies {
 
 android {
     compileSdk = 35
-    namespace "androidx.compose.ui.test.junit4.accessibility.samples"
+    namespace = "androidx.compose.ui.test.junit4.accessibility.samples"
 }
 
 androidx {
@@ -53,5 +52,4 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
     description = "Contains the sample code for the Androidx Compose UI Test JUnit4 Accessibility library"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

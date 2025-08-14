@@ -44,9 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -58,6 +59,7 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.resizable
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.DpVolumeSize
 
@@ -86,15 +88,17 @@ class ResizablePanelApp : ComponentActivity() {
         // recomposition.
         var onSizeChangeWidth by remember { mutableStateOf(200.dp) }
         var onSizeChangeHeight by remember { mutableStateOf(200.dp) }
-        SpatialColumn(name = "PanelGridColumn") {
+        SpatialColumn(modifier = SubspaceModifier.testTag("PanelGridColumn")) {
             SpatialRow(
                 modifier = SubspaceModifier.fillMaxWidth(),
                 alignment = SpatialAlignment.BottomCenter,
             ) {
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "LeftColumn",
+                        SubspaceModifier.width(400.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("LeftColumn")
                 ) {
                     if (
                         transition.value >= 150f
@@ -131,8 +135,10 @@ class ResizablePanelApp : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(600.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "MiddleColumn",
+                        SubspaceModifier.width(600.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("MiddleColumn")
                 ) {
                     val density = LocalDensity.current
                     SpatialPanel(
@@ -154,7 +160,7 @@ class ResizablePanelApp : ComponentActivity() {
                         )
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
@@ -164,8 +170,10 @@ class ResizablePanelApp : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "RightColumn",
+                        SubspaceModifier.width(400.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("RightColumn")
                 ) {
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
@@ -173,14 +181,14 @@ class ResizablePanelApp : ComponentActivity() {
                         PanelContent("[NOT RESIZABLE] Right Column Panel: ${transition.value}")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(this@ResizablePanelApp, AnotherActivity::class.java),
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
                                 .height(200.dp)
-                                .resizable(true),
-                        name = "ActivityPanel",
+                                .resizable(true)
+                                .testTag("ActivityPanel"),
                     )
                 }
             }

@@ -29,7 +29,6 @@ import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.internal.Camera2UseCaseConfigFactory
 import androidx.camera.camera2.interop.Camera2Interop
@@ -53,6 +52,7 @@ import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
@@ -76,6 +76,7 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CompletableDeferred
@@ -89,13 +90,11 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [StreamSharing]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StreamSharingTest {
 
     companion object {
@@ -123,7 +122,7 @@ class StreamSharingTest {
     private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
         androidx.camera.core.impl.Config.Option.create(
             "test.testOption",
-            Int::class.javaPrimitiveType!!
+            Int::class.javaPrimitiveType!!,
         )
     private val testImplementationOptionValue = 5
 
@@ -138,7 +137,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1, child2),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         defaultConfig = streamSharing.getDefaultConfig(true, useCaseConfigFactory)!!
         effectProcessor = FakeSurfaceProcessorInternal(mainThreadExecutor())
@@ -164,7 +163,7 @@ class StreamSharingTest {
                 PREVIEW or VIDEO_CAPTURE,
                 CameraEffect.TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
                 CameraEffect.OUTPUT_OPTION_ONE_FOR_EACH_TARGET,
-                effectProcessor
+                effectProcessor,
             )
         val preview = Preview.Builder().build()
         val videoCapture = VideoCapture.Builder(Recorder.Builder().build()).build()
@@ -175,7 +174,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(preview, videoCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.setViewPortCropRect(cropRect)
         streamSharing.effect = effect
@@ -202,7 +201,7 @@ class StreamSharingTest {
             FakeSurfaceEffect(
                 PREVIEW or VIDEO_CAPTURE,
                 CameraEffect.TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
-                effectProcessor
+                effectProcessor,
             )
         streamSharing =
             StreamSharing(
@@ -211,7 +210,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.setViewPortCropRect(cropRect)
         streamSharing.effect = effect
@@ -234,7 +233,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.setViewPortCropRect(cropRect)
         streamSharing.effect = effect
@@ -255,7 +254,7 @@ class StreamSharingTest {
             FakeSurfaceEffect(
                 PREVIEW or VIDEO_CAPTURE,
                 CameraEffect.TRANSFORMATION_PASSTHROUGH,
-                effectProcessor
+                effectProcessor,
             )
         streamSharing =
             StreamSharing(
@@ -264,7 +263,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.effect = effect
         // Act: bind effect.
@@ -275,7 +274,7 @@ class StreamSharingTest {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun invokeParentSessionCaptureCallbacks_receivedByChildren() {
         // Arrange.
         val streamUseCaseIntDef = 3L
@@ -362,9 +361,10 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1, imageCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
+        streamSharing.onSessionStart()
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
         imageCapture.targetRotation = Surface.ROTATION_90
 
@@ -373,7 +373,7 @@ class StreamSharingTest {
             directExecutor(),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {}
-            }
+            },
         )
         shadowOf(getMainLooper()).idle()
 
@@ -389,7 +389,7 @@ class StreamSharingTest {
                     .mergeConfigs(
                         camera.cameraInfoInternal, /*extendedConfig*/
                         null, /*cameraDefaultConfig*/
-                        null
+                        null,
                     )
                     .surfaceOccupancyPriority
             )
@@ -419,14 +419,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(unspecifiedChild, hdrChild),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         assertThat(
                 streamSharing
                     .mergeConfigs(
                         camera.cameraInfoInternal, /*extendedConfig*/
                         null, /*cameraDefaultConfig*/
-                        null
+                        null,
                     )
                     .dynamicRange
             )
@@ -456,12 +456,12 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(sdrChild, hdrChild),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.mergeConfigs(
             camera.cameraInfoInternal, /*extendedConfig*/
             null, /*cameraDefaultConfig*/
-            null
+            null,
         )
     }
 
@@ -529,6 +529,34 @@ class StreamSharingTest {
     }
 
     @Test
+    fun sessionConfigMatchesStreamSpec() {
+        streamSharing =
+            StreamSharing(
+                camera,
+                secondaryCamera,
+                CompositionSettings.DEFAULT,
+                CompositionSettings.DEFAULT,
+                setOf(child1),
+                useCaseConfigFactory,
+            )
+        streamSharing.bindToCamera(camera, null, null, defaultConfig)
+
+        // Act: update stream specification.
+        streamSharing.onSuggestedStreamSpecUpdated(
+            StreamSpec.builder(size)
+                .setSessionType(SESSION_TYPE_HIGH_SPEED)
+                .setExpectedFrameRateRange(Range.create(30, 60))
+                .build(),
+            null,
+        )
+
+        // Assert: the session config gets the correct values from stream specification.
+        val sessionConfig = streamSharing.sessionConfig
+        assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_HIGH_SPEED)
+        assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(Range.create(30, 60))
+    }
+
+    @Test
     fun sessionConfigHasStreamSpecImplementationOptions_whenCreatePipeline() {
         // Arrange: set up StreamSharing with ImageCapture as child
         val imageCapture = ImageCapture.Builder().build()
@@ -539,7 +567,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1, imageCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
@@ -548,7 +576,7 @@ class StreamSharingTest {
         streamSpecOptions.insertOption(testImplementationOption, testImplementationOptionValue)
         streamSharing.onSuggestedStreamSpecUpdated(
             StreamSpec.builder(size).setImplementationOptions(streamSpecOptions).build(),
-            null
+            null,
         )
 
         // Assert: the session config gets the correct implementation options from stream
@@ -573,14 +601,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1, imageCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
         var streamSpecOptions = MutableOptionsBundle.create()
         streamSpecOptions.insertOption(testImplementationOption, testImplementationOptionValue)
         streamSharing.updateSuggestedStreamSpec(
             StreamSpec.builder(size).setImplementationOptions(streamSpecOptions).build(),
-            null
+            null,
         )
 
         // Act: update stream specification implementation options.
@@ -609,7 +637,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
@@ -632,14 +660,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
         // Act: update stream specification.
         streamSharing.onSuggestedStreamSpecUpdated(
             StreamSpec.builder(size).setDynamicRange(HLG_10_BIT).build(),
-            null
+            null,
         )
 
         // Assert: the session config gets the correct dynamic range.
@@ -659,7 +687,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(previewBuilder.build()),
-                Camera2UseCaseConfigFactory(context)
+                Camera2UseCaseConfigFactory(context),
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
@@ -668,7 +696,7 @@ class StreamSharingTest {
 
     private fun FakeUseCase.setTagBundleOnSessionConfigAsync(
         key: String,
-        value: String
+        value: String,
     ): Deferred<CameraCaptureResult> {
         val deferredResult = CompletableDeferred<CameraCaptureResult>()
         this.setSessionConfigSupplier {
@@ -678,7 +706,7 @@ class StreamSharingTest {
                 object : CameraCaptureCallback() {
                     override fun onCaptureCompleted(
                         captureConfig: Int,
-                        cameraCaptureResult: CameraCaptureResult
+                        cameraCaptureResult: CameraCaptureResult,
                     ) {
                         deferredResult.complete(cameraCaptureResult)
                     }
@@ -709,7 +737,13 @@ class StreamSharingTest {
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
         // Act: update suggested specs.
-        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
+        streamSharing.onSuggestedStreamSpecUpdated(
+            StreamSpec.builder(size)
+                .setSessionType(SESSION_TYPE_HIGH_SPEED)
+                .setExpectedFrameRateRange(Range(30, 60))
+                .build(),
+            null,
+        )
 
         // Assert: StreamSharing pipeline created.
         val node = streamSharing.sharingNode!!
@@ -719,7 +753,11 @@ class StreamSharingTest {
         assertThat(streamSharing.sessionConfig.repeatingCameraCaptureCallbacks).isNotEmpty()
         // Assert: specs propagated to children.
         assertThat(child1.attachedStreamSpec).isNotNull()
+        assertThat(child1.attachedStreamSpec!!.sessionType).isEqualTo(SESSION_TYPE_HIGH_SPEED)
+        assertThat(child1.attachedStreamSpec!!.expectedFrameRateRange).isEqualTo(Range(30, 60))
         assertThat(child2.attachedStreamSpec).isNotNull()
+        assertThat(child2.attachedStreamSpec!!.sessionType).isEqualTo(SESSION_TYPE_HIGH_SPEED)
+        assertThat(child2.attachedStreamSpec!!.expectedFrameRateRange).isEqualTo(Range(30, 60))
 
         // Act: unbind StreamSharing.
         streamSharing.unbindFromCamera(camera)
@@ -754,7 +792,7 @@ class StreamSharingTest {
         val sessionConfig = streamSharing.sessionConfig
         sessionConfig.errorListener!!.onError(
             sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
         shadowOf(getMainLooper()).idle()
 
@@ -830,12 +868,12 @@ class StreamSharingTest {
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)
         // Act: attach.
-        streamSharing.onStateAttached()
+        streamSharing.onSessionStart()
         // Assert: children attached.
         assertThat(child1.stateAttachedCount).isEqualTo(1)
         assertThat(child2.stateAttachedCount).isEqualTo(1)
         // Act: detach.
-        streamSharing.onStateDetached()
+        streamSharing.onSessionStop()
         // Assert: children not attached.
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)
@@ -877,14 +915,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(preview, videoCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         assertThat(
                 streamSharing
                     .mergeConfigs(
                         camera.cameraInfoInternal, /*extendedConfig*/
                         null, /*cameraDefaultConfig*/
-                        null
+                        null,
                     )
                     .previewStabilizationMode
             )
@@ -906,14 +944,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(preview, videoCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         assertThat(
                 streamSharing
                     .mergeConfigs(
                         camera.cameraInfoInternal, /*extendedConfig*/
                         null, /*cameraDefaultConfig*/
-                        null
+                        null,
                     )
                     .videoStabilizationMode
             )
@@ -932,7 +970,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(preview, imageCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
@@ -956,7 +994,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(preview, imageCapture, videoCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
 
@@ -972,7 +1010,7 @@ class StreamSharingTest {
         getParentTargetFrameRate_fromChildrenTargetFrameRates(
             null,
             null,
-            StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+            StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
         )
 
     @Test
@@ -980,7 +1018,7 @@ class StreamSharingTest {
         getParentTargetFrameRate_fromChildrenTargetFrameRates(
             null,
             Range.create(15, 30),
-            Range.create(15, 30)
+            Range.create(15, 30),
         )
 
     @Test
@@ -988,7 +1026,7 @@ class StreamSharingTest {
         getParentTargetFrameRate_fromChildrenTargetFrameRates(
             Range.create(15, 30),
             null,
-            Range.create(15, 30)
+            Range.create(15, 30),
         )
 
     @Test
@@ -996,7 +1034,7 @@ class StreamSharingTest {
         getParentTargetFrameRate_fromChildrenTargetFrameRates(
             Range.create(15, 30),
             Range.create(25, 40),
-            Range.create(25, 30)
+            Range.create(25, 30),
         )
 
     @Test
@@ -1004,13 +1042,13 @@ class StreamSharingTest {
         getParentTargetFrameRate_fromChildrenTargetFrameRates(
             Range.create(15, 30),
             Range.create(60, 60),
-            Range.create(15, 60)
+            Range.create(15, 60),
         )
 
     private fun getParentTargetFrameRate_fromChildrenTargetFrameRates(
         targetFrameRate1: Range<Int>?,
         targetFrameRate2: Range<Int>?,
-        expectedFrameRate: Range<Int>
+        expectedFrameRate: Range<Int>,
     ) {
         val child1 =
             FakeUseCase(
@@ -1033,14 +1071,14 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(child1, child2),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             )
         assertThat(
                 streamSharing
                     .mergeConfigs(
                         camera.cameraInfoInternal, /*extendedConfig*/
                         null, /*cameraDefaultConfig*/
-                        null
+                        null,
                     )
                     .targetFrameRate
             )

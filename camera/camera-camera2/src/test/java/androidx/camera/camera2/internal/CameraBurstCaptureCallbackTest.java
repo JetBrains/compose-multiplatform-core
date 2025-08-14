@@ -39,7 +39,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class CameraBurstCaptureCallbackTest {
     private CameraCaptureSession mSession;
     private CaptureRequest mRequest0;

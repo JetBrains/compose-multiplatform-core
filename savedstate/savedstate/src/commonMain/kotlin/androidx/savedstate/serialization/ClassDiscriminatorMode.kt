@@ -35,7 +35,7 @@ internal const val CLASS_DISCRIMINATOR_KEY = "type"
  * Default [ClassDiscriminatorMode.POLYMORPHIC] mode adds discriminator only to polymorphic classes.
  * This behavior can be changed to match various JSON schemas.
  *
- * @see SavedStateConfig.classDiscriminatorMode
+ * @see SavedStateConfiguration.classDiscriminatorMode
  */
 public object ClassDiscriminatorMode {
 

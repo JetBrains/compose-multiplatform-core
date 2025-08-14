@@ -25,7 +25,6 @@ import android.util.Size
 import android.util.SizeF
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -74,7 +73,7 @@ class BundleTest {
                 "stringArray" to arrayOf("hey"),
                 "charSequenceArray" to arrayOf<CharSequence>("hey"),
                 "serializableArray" to arrayOf(serializableValue),
-                "serializable" to serializableValue
+                "serializable" to serializableValue,
             )
 
         assertEquals(26, bundle.size())
@@ -114,7 +113,6 @@ class BundleTest {
         assertSame(serializableValue, bundle["serializable"])
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Suppress("DEPRECATION")
     @Test
     fun bundleOfValidApi21() {

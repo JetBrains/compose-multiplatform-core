@@ -51,7 +51,7 @@ internal interface TransformingLazyColumnPrefetchStrategy {
      */
     fun TransformingLazyColumnPrefetchScope.onScroll(
         delta: Float,
-        measureResult: TransformingLazyColumnMeasureResult
+        measureResult: TransformingLazyColumnMeasureResult,
     )
 
     /**
@@ -143,7 +143,7 @@ internal class DefaultTransformingLazyColumnPrefetchStrategy(
 
     override fun TransformingLazyColumnPrefetchScope.onScroll(
         delta: Float,
-        measureResult: TransformingLazyColumnMeasureResult
+        measureResult: TransformingLazyColumnMeasureResult,
     ) {
         if (measureResult.visibleItems.isNotEmpty()) {
             val scrollingForward = delta < 0

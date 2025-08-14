@@ -35,14 +35,14 @@ import kotlin.reflect.KClass
 @Suppress("UnstableApiUsage")
 internal abstract class JavacElement(
     internal val env: JavacProcessingEnv,
-    open val element: Element
+    open val element: Element,
 ) : XElement, XEquality, InternalXAnnotated, XHasModifiers {
 
     abstract val kotlinMetadata: KmData?
 
     override fun <T : Annotation> getAnnotations(
         annotation: KClass<T>,
-        containerAnnotation: KClass<out Annotation>?
+        containerAnnotation: KClass<out Annotation>?,
     ): List<XAnnotation> {
         // if there is a container annotation and annotation is repeated, we'll get the container.
         if (containerAnnotation != null) {
@@ -78,7 +78,7 @@ internal abstract class JavacElement(
 
     override fun hasAnnotation(
         annotation: KClass<out Annotation>,
-        containerAnnotation: KClass<out Annotation>?
+        containerAnnotation: KClass<out Annotation>?,
     ): Boolean {
         return isAnnotationPresent(element, annotation.java) ||
             (containerAnnotation != null && isAnnotationPresent(element, containerAnnotation.java))

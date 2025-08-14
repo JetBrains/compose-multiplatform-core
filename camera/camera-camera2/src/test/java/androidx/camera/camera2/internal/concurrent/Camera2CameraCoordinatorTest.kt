@@ -23,17 +23,21 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl
+import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat
 import androidx.camera.camera2.internal.compat.CameraManagerCompat
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
+import androidx.camera.core.impl.CameraUpdateException
 import androidx.camera.core.impl.utils.MainThreadAsyncHandler
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.test.core.app.ApplicationProvider
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,20 +53,20 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
+import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = ["androidx.camera.camera2.internal"]
-)
+@Config(instrumentedPackages = ["androidx.camera.camera2.internal"])
 class Camera2CameraCoordinatorTest {
+    private val originalFingerprint = Build.FINGERPRINT
 
     private lateinit var cameraCoordinator: CameraCoordinator
+    private lateinit var fakeCameraManagerImpl: FakeCameraManagerImpl
 
     @Before
     fun setup() {
-        val fakeCameraImpl = FakeCameraManagerImpl()
+        fakeCameraManagerImpl = FakeCameraManagerImpl()
         val cameraCharacteristics0 = mock(CameraCharacteristics::class.java)
         Mockito.`when`(cameraCharacteristics0.get(CameraCharacteristics.LENS_FACING))
             .thenReturn(CameraCharacteristics.LENS_FACING_BACK)
@@ -72,6 +76,7 @@ class Camera2CameraCoordinatorTest {
             .thenReturn(
                 intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)
             )
+
         val cameraCharacteristics1 = mock(CameraCharacteristics::class.java)
         Mockito.`when`(cameraCharacteristics1.get(CameraCharacteristics.LENS_FACING))
             .thenReturn(CameraCharacteristics.LENS_FACING_FRONT)
@@ -81,9 +86,16 @@ class Camera2CameraCoordinatorTest {
             .thenReturn(
                 intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)
             )
-        fakeCameraImpl.addCamera("0", cameraCharacteristics0)
-        fakeCameraImpl.addCamera("1", cameraCharacteristics1)
-        cameraCoordinator = Camera2CameraCoordinator(CameraManagerCompat.from(fakeCameraImpl))
+        fakeCameraManagerImpl.addCamera("0", cameraCharacteristics0)
+        fakeCameraManagerImpl.addCamera("1", cameraCharacteristics1)
+        cameraCoordinator =
+            Camera2CameraCoordinator(CameraManagerCompat.from(fakeCameraManagerImpl))
+    }
+
+    @After
+    fun tearDown() {
+        // Restore the original fingerprint after each test
+        setFingerprint(originalFingerprint)
     }
 
     @Test
@@ -145,13 +157,13 @@ class Camera2CameraCoordinatorTest {
         verify(listener)
             .onCameraOperatingModeUpdated(
                 CAMERA_OPERATING_MODE_UNSPECIFIED,
-                CAMERA_OPERATING_MODE_CONCURRENT
+                CAMERA_OPERATING_MODE_CONCURRENT,
             )
         cameraCoordinator.cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
         verify(listener)
             .onCameraOperatingModeUpdated(
                 CAMERA_OPERATING_MODE_CONCURRENT,
-                CAMERA_OPERATING_MODE_SINGLE
+                CAMERA_OPERATING_MODE_SINGLE,
             )
 
         reset(listener)
@@ -173,6 +185,52 @@ class Camera2CameraCoordinatorTest {
             .isEqualTo(CAMERA_OPERATING_MODE_UNSPECIFIED)
     }
 
+    @Test
+    fun onCamerasUpdated_removesConcurrentPair_whenCameraIsRemoved() {
+        // Arrange: Initial state has a concurrent pair {"0", "1"}
+        assertThat(cameraCoordinator.concurrentCameraSelectors).isNotEmpty()
+
+        // Act: Update with a list that only contains camera "0"
+        cameraCoordinator.onCamerasUpdated(listOf("0"))
+
+        // Assert: The concurrent pair should be gone because camera "1" is no longer available.
+        assertThat(cameraCoordinator.concurrentCameraSelectors).isEmpty()
+    }
+
+    @Test
+    fun onCamerasUpdated_filtersPair_whenOneCameraNotCompatible() {
+        // Arrange: Modify camera "1" to not be backward compatible
+        val cameraCharacteristics1 = mock(CameraCharacteristics::class.java)
+        Mockito.`when`(cameraCharacteristics1.get(CameraCharacteristics.LENS_FACING))
+            .thenReturn(CameraCharacteristics.LENS_FACING_FRONT)
+        // No backward compatible capability
+        setFingerprint("fake-fingerprint")
+        Mockito.`when`(
+                cameraCharacteristics1.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+            )
+            .thenReturn(intArrayOf())
+        fakeCameraManagerImpl.addCamera("1", cameraCharacteristics1)
+
+        // Act: Update the coordinator with the new characteristics.
+        cameraCoordinator.onCamerasUpdated(listOf("0", "1"))
+
+        // Assert: The concurrent pair {"0", "1"} should be filtered out.
+        assertThat(cameraCoordinator.concurrentCameraSelectors).isEmpty()
+    }
+
+    @Test
+    fun onCamerasUpdated_throws_whenManagerFails() {
+        // Arrange: Configure the fake manager to throw an exception
+        fakeCameraManagerImpl.setShouldThrowOnGetConcurrent(true)
+
+        // Act & Assert: onCamerasUpdated should throw a CameraUpdateException
+        assertThrows<CameraUpdateException> { cameraCoordinator.onCamerasUpdated(listOf("0", "1")) }
+    }
+
+    private fun setFingerprint(fingerprint: String) {
+        ReflectionHelpers.setStaticField(Build::class.java, "FINGERPRINT", fingerprint)
+    }
+
     private fun createConcurrentCameraInfos(): List<Camera2CameraInfoImpl> {
         val characteristics0 = ShadowCameraCharacteristics.newCameraCharacteristics()
         (Shadow.extract<Any>(
@@ -191,7 +249,7 @@ class Camera2CameraCoordinatorTest {
 
         return listOf(
             Camera2CameraInfoImpl("0", cameraManagerCompat),
-            Camera2CameraInfoImpl("1", cameraManagerCompat)
+            Camera2CameraInfoImpl("1", cameraManagerCompat),
         )
     }
 
@@ -200,10 +258,16 @@ class Camera2CameraCoordinatorTest {
         private val mCameraManagerImpl =
             CameraManagerCompat.CameraManagerCompatImpl.from(
                 ApplicationProvider.getApplicationContext(),
-                MainThreadAsyncHandler.getInstance()
+                MainThreadAsyncHandler.getInstance(),
             )
 
         private val mCameraIdCharacteristics = HashMap<String, CameraCharacteristics>()
+
+        private var mShouldThrowOnGetConcurrent = false
+
+        fun setShouldThrowOnGetConcurrent(shouldThrow: Boolean) {
+            mShouldThrowOnGetConcurrent = shouldThrow
+        }
 
         fun addCamera(cameraId: String, cameraCharacteristics: CameraCharacteristics) {
             mCameraIdCharacteristics[cameraId] = cameraCharacteristics
@@ -214,12 +278,15 @@ class Camera2CameraCoordinatorTest {
         }
 
         override fun getConcurrentCameraIds(): MutableSet<MutableSet<String>> {
+            if (mShouldThrowOnGetConcurrent) {
+                throw CameraAccessExceptionCompat(CameraAccessExceptionCompat.CAMERA_ERROR)
+            }
             return mutableSetOf(mCameraIdCharacteristics.keys)
         }
 
         override fun registerAvailabilityCallback(
             executor: Executor,
-            callback: CameraManager.AvailabilityCallback
+            callback: CameraManager.AvailabilityCallback,
         ) {}
 
         override fun unregisterAvailabilityCallback(callback: CameraManager.AvailabilityCallback) {}
@@ -231,7 +298,7 @@ class Camera2CameraCoordinatorTest {
         override fun openCamera(
             cameraId: String,
             executor: Executor,
-            callback: CameraDevice.StateCallback
+            callback: CameraDevice.StateCallback,
         ) {}
 
         override fun getCameraManager(): CameraManager {

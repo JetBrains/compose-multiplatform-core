@@ -39,6 +39,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.Rule
@@ -57,7 +58,7 @@ class PreKmpKotlinCodeGenTest {
         MigrationTestHelper(
             instrumentation = InstrumentationRegistry.getInstrumentation(),
             databaseClass = PreKmpDatabase::class.java,
-            specs = listOf(PreKmpDatabase.MigrationSpec1To2())
+            specs = listOf(PreKmpDatabase.MigrationSpec1To2()),
         )
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -73,6 +74,11 @@ class PreKmpKotlinCodeGenTest {
                 .build()
     }
 
+    @AfterTest
+    fun teardown() {
+        db.close()
+    }
+
     @Test
     fun simple() {
         db.getTheDao()
@@ -80,7 +86,7 @@ class PreKmpKotlinCodeGenTest {
                 PreKmpDatabase.TheEntity(
                     id = 2,
                     text = "ok",
-                    custom = PreKmpDatabase.CustomData(byteArrayOf())
+                    custom = PreKmpDatabase.CustomData(byteArrayOf()),
                 )
             )
         assertThat(db.getTheDao().query().size).isEqualTo(1)
@@ -121,7 +127,7 @@ abstract class PreKmpDatabase : RoomDatabase() {
     data class TheEntity(
         @PrimaryKey val id: Long,
         val text: String,
-        @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val custom: CustomData
+        @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val custom: CustomData,
     )
 
     class CustomData(val blob: ByteArray)

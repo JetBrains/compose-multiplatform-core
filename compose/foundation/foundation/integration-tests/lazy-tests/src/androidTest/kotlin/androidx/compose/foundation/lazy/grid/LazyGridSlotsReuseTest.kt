@@ -98,7 +98,7 @@ class LazyGridSlotsReuseTest {
             LazyVerticalGrid(
                 GridCells.Fixed(1),
                 Modifier.height(itemsSizeDp * (DefaultMaxItemsToRetain + 0.5f)),
-                state
+                state,
             ) {
                 items(100) { Spacer(Modifier.height(itemsSizeDp).fillMaxWidth().testTag("$it")) }
             }
@@ -331,7 +331,7 @@ class LazyGridSlotsReuseTest {
             LazyVerticalGrid(
                 GridCells.Fixed(1),
                 Modifier.height(itemsSizeDp * (visibleItemsCount - 0.5f)),
-                state
+                state,
             ) {
                 items(100, contentType = { if (it >= startOfType1) 1 else 0 }) {
                     Spacer(Modifier.height(itemsSizeDp).fillMaxWidth().testTag("$it"))
@@ -375,7 +375,7 @@ class LazyGridSlotsReuseTest {
                 item(contentType = "reuse") { content("1") }
                 items(
                     List(100) { it + 2 },
-                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" }
+                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" },
                 ) {
                     content("$it")
                 }

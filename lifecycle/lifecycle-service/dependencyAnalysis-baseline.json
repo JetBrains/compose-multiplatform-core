@@ -38,6 +38,13 @@
         "type": "project",
         "identifier": ":lifecycle:lifecycle-common"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":lifecycle:lifecycle-common"
+      },
       "toConfiguration": "api"
     }
   ]

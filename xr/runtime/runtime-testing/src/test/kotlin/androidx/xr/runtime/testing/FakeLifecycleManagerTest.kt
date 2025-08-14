@@ -16,6 +16,8 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
@@ -75,8 +77,15 @@ class FakeLifecycleManagerTest {
     }
 
     @Test
-    fun configure_beforeCreate_throwsIllegalStateException() {
-        assertFailsWith<IllegalStateException> { underTest.configure() }
+    fun create_hasMissingPermission_throwsSecurityException() {
+        underTest.hasCreatePermission = false
+
+        assertFailsWith<SecurityException> { underTest.create() }
+    }
+
+    @Test
+    fun configure_beforeCreate_doesNotThrowsIllegalStateException() {
+        underTest.configure(Config())
     }
 
     @Test
@@ -84,7 +93,24 @@ class FakeLifecycleManagerTest {
         underTest.create()
         underTest.stop()
 
-        assertFailsWith<IllegalStateException> { underTest.configure() }
+        assertFailsWith<IllegalStateException> { underTest.configure(Config()) }
+    }
+
+    @Test
+    fun configure_hasMissingPermission_throwsSecurityException() {
+        underTest.create()
+        underTest.hasMissingPermission = true
+
+        assertFailsWith<SecurityException> { underTest.configure(Config()) }
+    }
+
+    @Test
+    fun configure_withFaceTrackingEnabled_doesNotSupportFaceTracking_throwsConfigurationNotSupported() {
+        underTest.create()
+        underTest.shouldSupportFaceTracking = false
+        assertFailsWith<ConfigurationNotSupportedException> {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        }
     }
 
     @Test
@@ -218,7 +244,7 @@ class FakeLifecycleManagerTest {
 
         underTest.stop()
 
-        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test
@@ -229,7 +255,7 @@ class FakeLifecycleManagerTest {
 
         underTest.stop()
 
-        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test

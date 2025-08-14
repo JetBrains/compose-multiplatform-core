@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class GradleLikelyBugIssueTest :
     GradleLintDetectorTest(
         detector = DiscouragedGradleMethodDetector(),
-        issues = listOf(DiscouragedGradleMethodDetector.TO_STRING_ON_PROVIDER_ISSUE)
+        issues = listOf(DiscouragedGradleMethodDetector.TO_STRING_ON_PROVIDER_ISSUE),
     ) {
     @Test
     fun `Test usage of Provider#toString`() {

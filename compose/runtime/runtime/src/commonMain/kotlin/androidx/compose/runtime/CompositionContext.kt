@@ -36,8 +36,8 @@ private val EmptyPersistentCompositionLocalMap: PersistentCompositionLocalMap =
  * @see rememberCompositionContext
  */
 @OptIn(InternalComposeApi::class, ExperimentalComposeRuntimeApi::class)
-abstract class CompositionContext internal constructor() {
-    internal abstract val compoundHashKey: Int
+public abstract class CompositionContext internal constructor() {
+    internal abstract val compositeKeyHashCode: CompositeKeyHashCode
     internal abstract val collectingParameterInformation: Boolean
     internal abstract val collectingSourceInformation: Boolean
     internal abstract val collectingCallByInformation: Boolean
@@ -45,7 +45,7 @@ abstract class CompositionContext internal constructor() {
         get() = null
 
     /** The [CoroutineContext] with which effects for the composition will be executed in. */
-    abstract val effectCoroutineContext: CoroutineContext
+    public abstract val effectCoroutineContext: CoroutineContext
     internal abstract val recomposeCoroutineContext: CoroutineContext
 
     /** Associated composition if one exists. */
@@ -53,19 +53,19 @@ abstract class CompositionContext internal constructor() {
 
     internal abstract fun composeInitial(
         composition: ControlledComposition,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     )
 
     internal abstract fun composeInitialPaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ): ScatterSet<RecomposeScopeImpl>
 
     internal abstract fun recomposePaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,
-        invalidScopes: ScatterSet<RecomposeScopeImpl>
+        invalidScopes: ScatterSet<RecomposeScopeImpl>,
     ): ScatterSet<RecomposeScopeImpl>
 
     internal abstract fun reportPausedScope(scope: RecomposeScopeImpl)
@@ -98,7 +98,7 @@ abstract class CompositionContext internal constructor() {
     internal abstract fun movableContentStateReleased(
         reference: MovableContentStateReference,
         data: MovableContentState,
-        applier: Applier<*>
+        applier: Applier<*>,
     )
 
     internal open fun movableContentStateResolve(
@@ -106,4 +106,6 @@ abstract class CompositionContext internal constructor() {
     ): MovableContentState? = null
 
     internal abstract fun reportRemovedComposition(composition: ControlledComposition)
+
+    public abstract fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle
 }

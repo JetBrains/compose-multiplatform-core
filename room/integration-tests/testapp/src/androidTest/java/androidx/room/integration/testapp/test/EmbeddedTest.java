@@ -43,6 +43,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,6 +55,7 @@ import java.util.concurrent.Callable;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class EmbeddedTest {
+    private TestDatabase mDb;
     private UserDao mUserDao;
     private PetDao mPetDao;
     private UserPetDao mUserPetDao;
@@ -63,12 +65,17 @@ public class EmbeddedTest {
     @Before
     public void createDb() {
         Context context = ApplicationProvider.getApplicationContext();
-        TestDatabase db = Room.inMemoryDatabaseBuilder(context, TestDatabase.class).build();
-        mUserDao = db.getUserDao();
-        mPetDao = db.getPetDao();
-        mUserPetDao = db.getUserPetDao();
-        mSchoolDao = db.getSchoolDao();
-        mPetCoupleDao = db.getPetCoupleDao();
+        mDb = Room.inMemoryDatabaseBuilder(context, TestDatabase.class).build();
+        mUserDao = mDb.getUserDao();
+        mPetDao = mDb.getPetDao();
+        mUserPetDao = mDb.getUserPetDao();
+        mSchoolDao = mDb.getSchoolDao();
+        mPetCoupleDao = mDb.getPetCoupleDao();
+    }
+
+    @After
+    public void closeDb() {
+        mDb.close();
     }
 
     @Test

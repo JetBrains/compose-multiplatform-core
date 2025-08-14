@@ -16,30 +16,35 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
+import androidx.xr.runtime.internal.AnchorNotTrackingException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
 /** Test-only implementation of [RuntimeAnchor] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeRuntimeAnchor(
+public class FakeRuntimeAnchor
+internal constructor(
     override var pose: Pose,
-    public val anchorHolder: AnchorHolder? = null,
+    internal val anchorHolder: AnchorHolder? = null,
+    /** Flag to represent available tracking state of the camera when creating the anchor. */
+    public val isTrackingAvailable: Boolean = true,
 ) : RuntimeAnchor {
     init {
-        ++anchorsCreated
-        if (anchorsCreated > ANCHOR_RESOURCE_LIMIT) {
+        if (!isTrackingAvailable) {
+            throw AnchorNotTrackingException()
+        }
+        ++anchorsCreatedCount
+        if (anchorsCreatedCount > ANCHOR_RESOURCE_LIMIT) {
             throw AnchorResourcesExhaustedException()
         }
     }
 
-    override var trackingState: TrackingState = TrackingState.Tracking
+    override var trackingState: TrackingState = TrackingState.TRACKING
 
     override var persistenceState: RuntimeAnchor.PersistenceState =
-        RuntimeAnchor.PersistenceState.NotPersisted
+        RuntimeAnchor.PersistenceState.NOT_PERSISTED
 
     override var uuid: UUID? = null
 
@@ -47,10 +52,17 @@ public class FakeRuntimeAnchor(
     public var isAttached: Boolean = anchorHolder != null
         private set
 
+    /**
+     * Generates a random UUID for the anchor and adds it to [FakePerceptionManager.anchorUuids].
+     *
+     * This function will only be added to the list of anchors returned by
+     * [FakePerceptionManager.getPersistedAnchorUuids] if the [anchorHolder] is a
+     * [FakePerceptionManager].
+     */
     override fun persist() {
         uuid = UUID.randomUUID()
-        persistenceState = RuntimeAnchor.PersistenceState.Persisted
-        anchorHolder?.persistAnchor(this)
+        persistenceState = RuntimeAnchor.PersistenceState.PERSISTED
+        anchorHolder?.onAnchorPersisted(this)
     }
 
     override fun detach() {
@@ -61,7 +73,9 @@ public class FakeRuntimeAnchor(
     }
 
     public companion object {
-        public const val ANCHOR_RESOURCE_LIMIT: Int = 5
-        public var anchorsCreated: Int = 0
+        /** Limit for the number of anchors that can be created. */
+        public const val ANCHOR_RESOURCE_LIMIT: Int = 6
+        /** The current number of anchors created. */
+        @JvmStatic public var anchorsCreatedCount: Int = 0
     }
 }

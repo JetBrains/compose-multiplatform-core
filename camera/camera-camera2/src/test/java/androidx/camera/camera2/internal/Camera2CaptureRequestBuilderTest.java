@@ -23,7 +23,6 @@ import static java.util.Collections.emptyList;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 
 import androidx.camera.camera2.internal.compat.workaround.TemplateParamsOverride;
 import androidx.camera.core.impl.CaptureConfig;
@@ -32,14 +31,12 @@ import androidx.camera.core.impl.Quirks;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.HashMap;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class Camera2CaptureRequestBuilderTest {
 
     @Test

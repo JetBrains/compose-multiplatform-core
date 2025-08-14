@@ -50,6 +50,7 @@ import androidx.core.telecom.internal.CallSessionLegacy
 import androidx.core.telecom.internal.CallStateEvent
 import androidx.core.telecom.internal.JetpackConnectionService
 import androidx.core.telecom.internal.PreCallEndpointsUpdater
+import androidx.core.telecom.internal.ProductionBluetoothDeviceChecker
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.internal.utils.Utils.Companion.hasBluetoothPermissions
 import androidx.core.telecom.internal.utils.Utils.Companion.remapJetpackCapsToPlatformCaps
@@ -99,7 +100,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             CAPABILITY_BASELINE,
             CAPABILITY_SUPPORTS_VIDEO_CALLING,
             CAPABILITY_SUPPORTS_CALL_STREAMING,
-            flag = true
+            flag = true,
         )
         @Retention(AnnotationRetention.SOURCE)
         public annotation class Capability
@@ -270,7 +271,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         onDisconnect: suspend (disconnectCause: DisconnectCause) -> Unit,
         onSetActive: suspend () -> Unit,
         onSetInactive: suspend () -> Unit,
-        block: CallControlScope.() -> Unit
+        block: CallControlScope.() -> Unit,
     ): Unit = coroutineScope {
         // Provide a default empty handler for onEvent
         addCall(
@@ -281,7 +282,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             onSetInactive,
             MutableSharedFlow(),
             onEvent = { _, _ -> },
-            block
+            block,
         )
     }
 
@@ -323,7 +324,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         onDisconnect: suspend (disconnectCause: DisconnectCause) -> Unit,
         onSetActive: suspend () -> Unit,
         onSetInactive: suspend () -> Unit,
-        init: suspend ExtensionInitializationScope.() -> Unit
+        init: suspend ExtensionInitializationScope.() -> Unit,
     ): Unit = coroutineScope {
         Log.v(TAG, "addCall: begin")
         val eventFlow = MutableSharedFlow<CallEvent>()
@@ -342,7 +343,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             onSetActive,
             onSetInactive,
             callStateFlow,
-            onEvent = { event, extras -> eventFlow.emit(CallEvent(event, extras)) }
+            onEvent = { event, extras -> eventFlow.emit(CallEvent(event, extras)) },
         ) {
             Log.d(TAG, "addCall: invoking delegates")
             scope.invokeDelegate(this)
@@ -383,7 +384,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         // The emitted endpoints need to be tracked so that when the device list changes,
         // the added or removed endpoints can be re-emitted as a whole list.  Otherwise, only
         // the added or removed endpoints will be emitted.
-        val callEndpointsUpdater = PreCallEndpointsUpdater(mSendChannel = this.channel)
+        val callEndpointsUpdater = PreCallEndpointsUpdater(sendChannel = this.channel)
         // register an audio callback that will listen for updates
         val audioDeviceListener = AudioDeviceListener(mContext, callEndpointsUpdater, id)
         // register a bluetooth listener to surface connected bluetooth devices instead of just
@@ -419,7 +420,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         onSetInactive: suspend () -> Unit,
         onCallStateEventChanged: MutableSharedFlow<CallStateEvent>,
         onEvent: suspend (event: String, extras: Bundle) -> Unit,
-        block: CallControlScope.() -> Unit
+        block: CallControlScope.() -> Unit,
     ) {
         // This API is not supported for device running anything below Android O (26)
         Utils.verifyBuildVersion()
@@ -433,6 +434,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
 
         val closableCallSession: AutoCloseable?
         // create a call session based off the build version
+        @Suppress("WRONG_ANNOTATION_TARGET") // b/407926117
         @RequiresApi(34)
         if (Utils.hasPlatformV2Apis()) {
             // CompletableDeferred pauses the execution of this method until the CallControl is
@@ -442,6 +444,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             // and propagates CallControlCallbacks that originate in the Platform out to the client.
             val callSession =
                 CallSession(
+                    ProductionBluetoothDeviceChecker(mContext),
                     coroutineContext,
                     callAttributes,
                     onAnswer,
@@ -451,7 +454,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                     callChannels,
                     onCallStateEventChanged,
                     onEvent,
-                    blockingSessionExecution
+                    blockingSessionExecution,
                 )
             closableCallSession = callSession
             /**
@@ -478,7 +481,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                 mDirectExecutor,
                 callControlOutcomeReceiver,
                 callSession as CallControlCallback,
-                callSession as CallEventCallback
+                callSession as CallEventCallback,
             )
 
             pauseExecutionUntilCallIsReadyOrTimeout(openResult, blockingSessionExecution)
@@ -489,7 +492,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                     callSession,
                     callChannels,
                     blockingSessionExecution,
-                    coroutineContext
+                    coroutineContext,
                 )
 
             callSession.sendEvent(EVENT_CALL_READY)
@@ -518,7 +521,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                     onEvent,
                     onCallStateEventChanged,
                     callAttributes.preferredStartingCallEndpoint,
-                    blockingSessionExecution
+                    blockingSessionExecution,
                 )
 
             mConnectionService.createConnectionRequest(mTelecomManager, request)
@@ -527,7 +530,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                 pauseExecutionUntilCallIsReadyOrTimeout(
                     openResult,
                     blockingSessionExecution,
-                    request
+                    request,
                 )
                     as AddCallResult.SuccessCallSessionLegacy
 
@@ -537,7 +540,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                     result.callSessionLegacy,
                     callChannels,
                     blockingSessionExecution,
-                    coroutineContext
+                    coroutineContext,
                 )
 
             // Run the clients code with the session active and exposed via the
@@ -563,7 +566,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                 Log.i(
                     TAG,
                     "addCall: pausing [$coroutineContext] execution" +
-                        " until the CallControl or Connection is ready"
+                        " until the CallControl or Connection is ready",
                 )
                 result = openResult.await()
                 // In the event the platform encountered an exception while adding the call request,
@@ -605,7 +608,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         return PhoneAccountHandle(
             ComponentName(mContext.packageName, className),
             PACKAGE_HANDLE_ID,
-            Process.myUserHandle()
+            Process.myUserHandle(),
         )
     }
 

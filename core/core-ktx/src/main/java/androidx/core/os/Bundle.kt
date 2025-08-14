@@ -16,13 +16,11 @@
 
 package androidx.core.os
 
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Parcelable
 import android.util.Size
 import android.util.SizeF
-import androidx.annotation.RequiresApi
 import java.io.Serializable
 
 /**
@@ -93,10 +91,10 @@ public fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle =
                 else -> {
                     if (value is IBinder) {
                         this.putBinder(key, value)
-                    } else if (Build.VERSION.SDK_INT >= 21 && value is Size) {
-                        BundleApi21ImplKt.putSize(this, key, value)
-                    } else if (Build.VERSION.SDK_INT >= 21 && value is SizeF) {
-                        BundleApi21ImplKt.putSizeF(this, key, value)
+                    } else if (value is Size) {
+                        putSize(key, value)
+                    } else if (value is SizeF) {
+                        putSizeF(key, value)
                     } else {
                         val valueType = value.javaClass.canonicalName
                         throw IllegalArgumentException(
@@ -110,11 +108,3 @@ public fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle =
 
 /** Returns a new empty [Bundle]. */
 public fun bundleOf(): Bundle = Bundle(0)
-
-@RequiresApi(21)
-private object BundleApi21ImplKt {
-    @JvmStatic fun putSize(bundle: Bundle, key: String, value: Size?) = bundle.putSize(key, value)
-
-    @JvmStatic
-    fun putSizeF(bundle: Bundle, key: String, value: SizeF?) = bundle.putSizeF(key, value)
-}

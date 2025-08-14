@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraTimestamp
@@ -44,7 +43,6 @@ import org.robolectric.annotation.Config
 
 /** Tests for [FrameDistributor] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FrameDistributorTest {
 
     private val stream1Config =
@@ -68,13 +66,15 @@ class FrameDistributorTest {
     private val fakeFrameInfo =
         FakeFrameInfo(
             metadata = FakeFrameMetadata(camera = cameraId, frameNumber = cameraFrameNumber),
-            requestMetadata = fakeRequestMetadata
+            requestMetadata = fakeRequestMetadata,
         )
 
     private val fakeFrameBuffer = FakeFrameBuffer()
     private val frameCaptureQueue = FrameCaptureQueue()
     private val frameDistributor =
-        FrameDistributor(imageSimulator.imageSources, frameCaptureQueue, fakeFrameBuffer)
+        FrameDistributor(imageSimulator.imageSources, frameCaptureQueue).also {
+            it.frameStartedListener = fakeFrameBuffer
+        }
 
     @Test
     fun frameDistributorSetupVerification() {
@@ -171,7 +171,7 @@ class FrameDistributorTest {
         frameDistributor.onFailed(
             fakeRequestMetadata,
             cameraFrameNumber,
-            FakeRequestFailure(fakeRequestMetadata, cameraFrameNumber, wasImageCaptured = true)
+            FakeRequestFailure(fakeRequestMetadata, cameraFrameNumber, wasImageCaptured = true),
         )
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
@@ -200,7 +200,7 @@ class FrameDistributorTest {
         frameDistributor.onFailed(
             fakeRequestMetadata,
             cameraFrameNumber,
-            FakeRequestFailure(fakeRequestMetadata, cameraFrameNumber, wasImageCaptured = false)
+            FakeRequestFailure(fakeRequestMetadata, cameraFrameNumber, wasImageCaptured = false),
         )
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)

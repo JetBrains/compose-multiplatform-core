@@ -35,7 +35,6 @@ import androidx.core.os.HandlerCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import org.junit.After
@@ -55,7 +54,6 @@ import org.mockito.Mockito
  */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraDeviceCompatDeviceTest {
     @get:Rule
     val useCamera =
@@ -125,12 +123,12 @@ class CameraDeviceCompatDeviceTest {
                 SessionConfigurationCompat.SESSION_REGULAR,
                 listOf(outputConfig),
                 Dispatchers.Default.asExecutor(),
-                stateCallback
+                stateCallback,
             )
         val deviceCompat =
             CameraDeviceCompat.toCameraDeviceCompat(
                 cameraDevice!!.openAsync().get(),
-                compatHandler!!
+                compatHandler!!,
             )
         try {
             deviceCompat.createCaptureSession(sessionConfig)
@@ -139,7 +137,7 @@ class CameraDeviceCompatDeviceTest {
             // stealing the camera), then we will skip the test.
             Assume.assumeTrue(
                 "Camera disconnected during test.",
-                e.reason != CameraAccessException.CAMERA_DISCONNECTED
+                e.reason != CameraAccessException.CAMERA_DISCONNECTED,
             )
             throw e
         }

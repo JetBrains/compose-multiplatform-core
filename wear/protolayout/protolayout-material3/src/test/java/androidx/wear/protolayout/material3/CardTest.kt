@@ -231,7 +231,7 @@ class CardTest {
                 card(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    backgroundContent = { backgroundImage(IMAGE_ID) }
+                    backgroundContent = { backgroundImage(IMAGE_ID) },
                 ) {
                     text(TEXT.layoutString)
                 }
@@ -251,7 +251,7 @@ class CardTest {
                     modifier =
                         LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
                             .background(color.argb)
-                            .clickable(id = "id")
+                            .clickable(id = "id"),
                 ) {
                     text(TEXT.layoutString)
                 }
@@ -277,7 +277,7 @@ class CardTest {
                             backgroundColor = backgroundColor.argb,
                             titleColor = titleColor.argb,
                             contentColor = contentColor.argb,
-                            timeColor = timeColor.argb
+                            timeColor = timeColor.argb,
                         ),
                     title = { text(TEXT.layoutString) },
                     content = { text(TEXT2.layoutString) },
@@ -312,7 +312,7 @@ class CardTest {
                             titleColor = titleColor.argb,
                             contentColor = contentColor.argb,
                             timeColor = timeColor.argb,
-                            labelColor = labelColor.argb
+                            labelColor = labelColor.argb,
                         ),
                     title = { text(TEXT.layoutString) },
                     content = { text(TEXT2.layoutString) },
@@ -347,11 +347,11 @@ class CardTest {
                             backgroundColor = backgroundColor.argb,
                             titleColor = titleColor.argb,
                             contentColor = contentColor.argb,
-                            secondaryIconColor = iconColor.argb
+                            secondaryIconColor = iconColor.argb,
                         ),
                     title = { this.text(TEXT.layoutString) },
                     content = { this.text(TEXT2.layoutString) },
-                    secondaryIcon = { icon(AVATAR_ID) }
+                    secondaryIcon = { icon(AVATAR_ID) },
                 )
             }
 
@@ -382,11 +382,11 @@ class CardTest {
                             backgroundColor = backgroundColor.argb,
                             titleColor = titleColor.argb,
                             contentColor = contentColor.argb,
-                            secondaryTextColor = secondaryLabelColor.argb
+                            secondaryTextColor = secondaryLabelColor.argb,
                         ),
                     title = { this.text(TEXT.layoutString) },
                     content = { this.text(TEXT2.layoutString) },
-                    secondaryText = { this.text(TEXT4.layoutString) }
+                    secondaryText = { this.text(TEXT4.layoutString) },
                 )
             }
 
@@ -420,7 +420,7 @@ class CardTest {
                         ),
                     title = { text(TEXT.layoutString) },
                     content = { text(TEXT2.layoutString) },
-                    graphic = { text(TEXT_GRAPHIC.layoutString, color = graphicColor.argb) }
+                    graphic = { text(TEXT_GRAPHIC.layoutString, color = graphicColor.argb) },
                 )
             }
 
@@ -455,9 +455,9 @@ class CardTest {
                     graphic = {
                         constructGraphic(
                             mainContent = { circularProgressIndicator() },
-                            iconContent = { icon(AVATAR_ID) }
+                            iconContent = { icon(AVATAR_ID) },
                         )
-                    }
+                    },
                 )
             }
 
@@ -497,9 +497,9 @@ class CardTest {
                     graphic = {
                         constructGraphic(
                             mainContent = { circularProgressIndicator(size = size) },
-                            iconContent = { icon(AVATAR_ID) }
+                            iconContent = { icon(AVATAR_ID) },
                         )
-                    }
+                    },
                 )
             }
 
@@ -521,7 +521,7 @@ class CardTest {
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     width = expand(),
-                    height = height.toDp()
+                    height = height.toDp(),
                 ) {
                     text(TEXT.layoutString)
                 }
@@ -583,7 +583,7 @@ class CardTest {
             materialScope(CONTEXT, DEVICE_CONFIGURATION) {
                 card(
                     onClick = CLICKABLE,
-                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
+                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                 ) {
                     text(TEXT.layoutString)
                 }
@@ -609,7 +609,7 @@ class CardTest {
                     content = { text(TEXT2.layoutString) },
                     time = { text(TEXT3.layoutString) },
                     avatar = { avatarImage(AVATAR_ID) },
-                    label = { text(TEXT4.layoutString) }
+                    label = { text(TEXT4.layoutString) },
                 )
             }
 
@@ -620,7 +620,7 @@ class CardTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     title = { this.text(TEXT.layoutString) },
                     content = { this.text(TEXT2.layoutString) },
-                    secondaryIcon = { avatarImage(AVATAR_ID) }
+                    secondaryIcon = { avatarImage(AVATAR_ID) },
                 )
             }
 
@@ -631,7 +631,7 @@ class CardTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     title = { this.text(TEXT.layoutString) },
                     content = { this.text(TEXT2.layoutString) },
-                    secondaryText = { this.text(TEXT4.layoutString) }
+                    secondaryText = { this.text(TEXT4.layoutString) },
                 )
             }
 
@@ -652,7 +652,7 @@ class CardTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     title = { text(TEXT.layoutString) },
                     content = { text(TEXT2.layoutString) },
-                    graphic = { circularProgressIndicator() }
+                    graphic = { circularProgressIndicator() },
                 )
             }
     }

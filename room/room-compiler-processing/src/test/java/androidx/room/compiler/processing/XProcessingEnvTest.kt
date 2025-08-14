@@ -48,7 +48,7 @@ class XProcessingEnvTest {
                     public class Baz {
                     }
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -94,7 +94,7 @@ class XProcessingEnvTest {
                     }
                 }
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -121,7 +121,7 @@ class XProcessingEnvTest {
             class Baz {
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(source)) { invocation ->
             PRIMITIVE_TYPES.zip(BOXED_PRIMITIVE_TYPES).forEach { (primitive, boxed) ->
@@ -149,7 +149,7 @@ class XProcessingEnvTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) {
             it.processingEnv.requireTypeElement("foo.bar.Outer.Inner").let {
@@ -168,7 +168,7 @@ class XProcessingEnvTest {
                 sources = emptyList(),
                 classpath = emptyList(),
                 javacArguments = listOf("-target", jvmTarget, "-source", jvmTarget),
-                kotlincArguments = listOf("-jvm-target=$jvmTarget")
+                kotlincArguments = listOf("-jvm-target=$jvmTarget"),
             ) { invocation ->
                 val generatedAnnotation = invocation.processingEnv.findGeneratedAnnotation()
                 assertWithMessage("On jvmTarget=$jvmTarget")
@@ -193,7 +193,7 @@ class XProcessingEnvTest {
                 ToBeGenerated x;
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSrc =
             Source.kotlin(
@@ -202,7 +202,7 @@ class XProcessingEnvTest {
             package foo.bar;
             public class AccessGenerated(x: ToBeGenerated)
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         listOf(javaSrc, kotlinSrc).forEach { src ->
             runProcessorTest(sources = listOf(src)) { invocation ->
@@ -227,7 +227,7 @@ class XProcessingEnvTest {
                 """
             class Foo {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) {
             it.processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "intentional failure")
@@ -251,7 +251,7 @@ class XProcessingEnvTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val parent = invocation.processingEnv.requireTypeElement("JavaSubject")
@@ -272,11 +272,11 @@ class XProcessingEnvTest {
                 public class Baz {
                 }
                     """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 ),
             javacArguments = listOf("-source", "11"),
-            kotlincArguments = listOf("-jvm-target=11")
+            kotlincArguments = listOf("-jvm-target=11"),
         ) {
             assertThat(it.processingEnv.jvmVersion).isEqualTo(11)
         }
@@ -325,7 +325,7 @@ class XProcessingEnvTest {
                             val kotlinString: String = TODO()
                         }
                         """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 )
         ) { invocation ->
@@ -358,7 +358,7 @@ class XProcessingEnvTest {
                             val kotlinString: String = TODO()
                         }
                         """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 )
         ) { invocation ->

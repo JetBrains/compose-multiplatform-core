@@ -33,7 +33,7 @@ internal class BoundsAnimation(
     val transitionScope: SharedTransitionScope,
     val transition: Transition<Boolean>,
     animation: Transition<Boolean>.DeferredAnimation<Rect, AnimationVector4D>,
-    boundsTransform: BoundsTransform
+    boundsTransform: BoundsTransform,
 ) {
     var animation: Transition<Boolean>.DeferredAnimation<Rect, AnimationVector4D> by
         mutableStateOf(animation)
@@ -75,12 +75,20 @@ internal class BoundsAnimation(
                 null
             }
 
-    fun animate(currentBounds: Rect, targetBounds: Rect) {
+    fun animate(
+        currentBounds: Rect,
+        targetBounds: Rect,
+        forcedBoundsTransform: BoundsTransform? = null,
+    ) {
         if (transitionScope.isTransitionActive) {
             if (animationState == null) {
                 // Only invoke bounds transform when animation is initialized. This means
                 // boundsTransform will not participate in interruption-handling animations.
-                animationSpec = boundsTransform.transform(currentBounds, targetBounds)
+                animationSpec =
+                    (forcedBoundsTransform ?: boundsTransform).transform(
+                        currentBounds,
+                        targetBounds,
+                    )
             }
             animationState =
                 animation.animate(transitionSpec = { animationSpec }) {

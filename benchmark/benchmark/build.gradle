@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
@@ -49,8 +49,6 @@ android {
             testProguardFiles "proguard-rules.pro"
         }
     }
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false 
 }
 
 androidx {

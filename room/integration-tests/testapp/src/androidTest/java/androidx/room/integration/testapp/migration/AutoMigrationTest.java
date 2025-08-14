@@ -73,6 +73,8 @@ public class AutoMigrationTest {
         );
         final TableInfo info = TableInfo.read(db, AutoMigrationDb.Entity1.TABLE_NAME);
         assertThat(info.columns.size()).isEqualTo(3);
+
+        db.close();
     }
 
     @Test
@@ -114,6 +116,8 @@ public class AutoMigrationTest {
                 ),
                 EmbeddedAutoMigrationDb.EmbeddedEntity1.TABLE_NAME);
         assertThat(info.columns.size()).isEqualTo(3);
+
+        db.close();
     }
 
     /**
@@ -144,6 +148,7 @@ public class AutoMigrationTest {
                 true,
                 MIGRATION_1_0
         );
+        db.close();
     }
 
     private static final Migration MIGRATION_1_2 = new Migration(1, 2) {

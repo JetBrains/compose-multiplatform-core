@@ -17,7 +17,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
@@ -34,7 +33,6 @@ private const val INVALID_COLOR_CORRECTION_MODE = -1
 @ExperimentalCamera2Interop
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Camera2ImplConfigTest {
     @Test
     fun emptyConfigurationDoesNotContainTemplateType() {
@@ -56,7 +54,7 @@ class Camera2ImplConfigTest {
                 .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fakeRange)
                 .setCaptureRequestOption(
                     CaptureRequest.COLOR_CORRECTION_MODE,
-                    CameraMetadata.COLOR_CORRECTION_MODE_FAST
+                    CameraMetadata.COLOR_CORRECTION_MODE_FAST,
                 )
         // Act
         val config = Camera2ImplConfig(builder.build())
@@ -64,7 +62,7 @@ class Camera2ImplConfigTest {
         Truth.assertThat(
                 config.getCaptureRequestOption(
                     CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    valueIfMissing = null
+                    valueIfMissing = null,
                 )
             )
             .isEqualTo(fakeRange)
@@ -72,7 +70,7 @@ class Camera2ImplConfigTest {
         Truth.assertThat(
                 config.getCaptureRequestOption(
                     CaptureRequest.COLOR_CORRECTION_MODE,
-                    INVALID_COLOR_CORRECTION_MODE
+                    INVALID_COLOR_CORRECTION_MODE,
                 )
             )
             .isEqualTo(CameraMetadata.COLOR_CORRECTION_MODE_FAST)
@@ -86,7 +84,7 @@ class Camera2ImplConfigTest {
                 .setCaptureRequestOptionWithPriority(
                     CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_OFF,
-                    androidx.camera.core.impl.Config.OptionPriority.ALWAYS_OVERRIDE
+                    androidx.camera.core.impl.Config.OptionPriority.ALWAYS_OVERRIDE,
                 )
         // Act
         val config = builder.build()
@@ -110,18 +108,18 @@ class Camera2ImplConfigTest {
                 .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fakeRange)
                 .setCaptureRequestOption(
                     CaptureRequest.COLOR_CORRECTION_MODE,
-                    CameraMetadata.COLOR_CORRECTION_MODE_FAST
+                    CameraMetadata.COLOR_CORRECTION_MODE_FAST,
                 )
         val config1 = Camera2ImplConfig(builder.build())
         val builder2 =
             Camera2ImplConfig.Builder()
                 .setCaptureRequestOption(
                     CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON
+                    CaptureRequest.CONTROL_AE_MODE_ON,
                 )
                 .setCaptureRequestOption(
                     CaptureRequest.CONTROL_AWB_MODE,
-                    CaptureRequest.CONTROL_AWB_MODE_AUTO
+                    CaptureRequest.CONTROL_AWB_MODE_AUTO,
                 )
                 .insertAllOptions(config1)
         // Act
@@ -130,14 +128,14 @@ class Camera2ImplConfigTest {
         Truth.assertThat(
                 config2.getCaptureRequestOption(
                     CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    valueIfMissing = null
+                    valueIfMissing = null,
                 )
             )
             .isEqualTo(fakeRange)
         Truth.assertThat(
                 config2.getCaptureRequestOption(
                     CaptureRequest.COLOR_CORRECTION_MODE,
-                    INVALID_COLOR_CORRECTION_MODE
+                    INVALID_COLOR_CORRECTION_MODE,
                 )
             )
             .isEqualTo(CameraMetadata.COLOR_CORRECTION_MODE_FAST)

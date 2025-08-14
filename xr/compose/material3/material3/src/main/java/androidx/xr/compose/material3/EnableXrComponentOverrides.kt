@@ -16,13 +16,23 @@
 
 package androidx.xr.compose.material3
 
+import android.os.Build
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
-import androidx.compose.material3.LocalNavigationBarComponentOverride
-import androidx.compose.material3.LocalNavigationRailComponentOverride
+import androidx.compose.material3.LocalBasicAlertDialogOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarWithFabOverride
+import androidx.compose.material3.LocalNavigationBarOverride
+import androidx.compose.material3.LocalNavigationRailOverride
+import androidx.compose.material3.LocalShortNavigationBarOverride
+import androidx.compose.material3.LocalSingleRowTopAppBarOverride
+import androidx.compose.material3.LocalTwoRowsTopAppBarOverride
+import androidx.compose.material3.LocalVerticalToolbarOverride
+import androidx.compose.material3.LocalVerticalToolbarWithFabOverride
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
 import androidx.compose.material3.adaptive.layout.LocalAnimatedPaneOverride
 import androidx.compose.material3.adaptive.layout.LocalThreePaneScaffoldOverride
-import androidx.compose.material3.adaptive.navigationsuite.LocalNavigationSuiteScaffoldComponentOverride
+import androidx.compose.material3.adaptive.navigationsuite.LocalNavigationSuiteScaffoldOverride
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidedValue
@@ -37,13 +47,18 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 @ExperimentalMaterial3XrApi
 @OptIn(
     ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3AdaptiveComponentOverrideApi::class
+    ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
+    ExperimentalMaterial3Api::class,
 )
 @Composable
 public fun EnableXrComponentOverrides(
     overrideEnabler: XrComponentOverrideEnabler = DefaultXrComponentOverrideEnabler,
     content: @Composable () -> Unit,
 ) {
+    if (Build.VERSION.SDK_INT < 34) {
+        content()
+        return
+    }
     val context = XrComponentOverrideEnablerContextImpl
 
     // Override CompositionLocals for all ComponentOverrides, as specified by the provided enabler.
@@ -54,7 +69,7 @@ public fun EnableXrComponentOverrides(
                     context.shouldOverrideComponent(XrComponentOverride.NavigationSuiteScaffold)
                 if (shouldOverrideNavigationSuiteScaffold) {
                     add(
-                        LocalNavigationSuiteScaffoldComponentOverride provides
+                        LocalNavigationSuiteScaffoldOverride provides
                             XrNavigationSuiteScaffoldOverride
                     )
                 }
@@ -63,23 +78,55 @@ public fun EnableXrComponentOverrides(
                     shouldOverrideNavigationSuiteScaffold ||
                         context.shouldOverrideComponent(XrComponentOverride.NavigationRail)
                 ) {
-                    add(
-                        LocalNavigationRailComponentOverride provides
-                            XrNavigationRailComponentOverride
-                    )
+                    add(LocalNavigationRailOverride provides XrNavigationRailOverride)
                 }
                 if (
                     shouldOverrideNavigationSuiteScaffold ||
                         context.shouldOverrideComponent(XrComponentOverride.NavigationBar)
                 ) {
-                    add(
-                        LocalNavigationBarComponentOverride provides
-                            XrNavigationBarComponentOverride
-                    )
+                    add(LocalNavigationBarOverride provides XrNavigationBarOverride)
+                }
+                if (
+                    shouldOverrideNavigationSuiteScaffold ||
+                        context.shouldOverrideComponent(XrComponentOverride.ShortNavigationBar)
+                ) {
+                    add(LocalShortNavigationBarOverride provides XrShortNavigationBarOverride)
                 }
                 if (context.shouldOverrideComponent(XrComponentOverride.ThreePaneScaffold)) {
                     add(LocalThreePaneScaffoldOverride provides XrThreePaneScaffoldOverride)
                     add(LocalAnimatedPaneOverride provides XrAnimatedPaneOverride)
+                }
+
+                if (context.shouldOverrideComponent(XrComponentOverride.SingleRowTopAppBar)) {
+                    add(LocalSingleRowTopAppBarOverride provides XrSingleRowTopAppBarOverride)
+                }
+                if (context.shouldOverrideComponent(XrComponentOverride.TwoRowsTopAppBar)) {
+                    add(LocalTwoRowsTopAppBarOverride provides XrTwoRowsTopAppBarOverride)
+                }
+
+                if (context.shouldOverrideComponent(XrComponentOverride.BasicAlertDialog)) {
+                    add(LocalBasicAlertDialogOverride provides XrBasicAlertDialogOverride)
+                }
+
+                if (
+                    context.shouldOverrideComponent(XrComponentOverride.HorizontalFloatingToolbar)
+                ) {
+                    add(
+                        LocalHorizontalFloatingToolbarOverride provides
+                            XrHorizontalFloatingToolbarOverride
+                    )
+                    add(
+                        LocalHorizontalFloatingToolbarWithFabOverride provides
+                            XrHorizontalFloatingToolbarWithFabOverride
+                    )
+                }
+
+                if (context.shouldOverrideComponent(XrComponentOverride.VerticalFloatingToolbar)) {
+                    add(LocalVerticalToolbarOverride provides XrVerticalFloatingToolbarOverride)
+                    add(
+                        LocalVerticalToolbarWithFabOverride provides
+                            XrVerticalFloatingToolbarWithFabOverride
+                    )
                 }
             }
         }
@@ -115,29 +162,49 @@ public sealed interface XrComponentOverrideEnablerContext {
 public value class XrComponentOverride private constructor(private val name: String) {
     public companion object {
         /** Material3 NavigationRail. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @get:ExperimentalMaterial3XrApi
         @ExperimentalMaterial3XrApi
         public val NavigationRail: XrComponentOverride = XrComponentOverride("NavigationRail")
 
         /** Material3 NavigationBar. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @get:ExperimentalMaterial3XrApi
         @ExperimentalMaterial3XrApi
         public val NavigationBar: XrComponentOverride = XrComponentOverride("NavigationBar")
 
+        /** Material3 Expressive ShortNavigationBar. */
+        @ExperimentalMaterial3XrApi
+        public val ShortNavigationBar: XrComponentOverride =
+            XrComponentOverride("ShortNavigationBar")
+
         /** Material3 Adaptive NavigationSuiteScaffold. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @get:ExperimentalMaterial3XrApi
         @ExperimentalMaterial3XrApi
         public val NavigationSuiteScaffold: XrComponentOverride =
             XrComponentOverride("NavigationSuiteScaffold")
 
         /** Material3 Adaptive ThreePaneScaffold. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @get:ExperimentalMaterial3XrApi
         @ExperimentalMaterial3XrApi
         public val ThreePaneScaffold: XrComponentOverride = XrComponentOverride("ThreePaneScaffold")
+
+        /** Material3 single-row TopAppBar. */
+        @ExperimentalMaterial3XrApi
+        public val SingleRowTopAppBar: XrComponentOverride =
+            XrComponentOverride("SingleRowTopAppBar")
+
+        /** Material3 two-rows TopAppBar. */
+        @ExperimentalMaterial3XrApi
+        public val TwoRowsTopAppBar: XrComponentOverride = XrComponentOverride("TwoRowsTopAppBar")
+
+        /** Material3 BasicAlertDialog. */
+        @ExperimentalMaterial3XrApi
+        public val BasicAlertDialog: XrComponentOverride = XrComponentOverride("BasicAlertDialog")
+
+        /** Material Expressive VerticalFloatingToolbar. */
+        @ExperimentalMaterial3XrApi
+        public val VerticalFloatingToolbar: XrComponentOverride =
+            XrComponentOverride("VerticalFloatingToolbar")
+
+        /** Material Expressive VerticalFloatingToolbar. */
+        @ExperimentalMaterial3XrApi
+        public val HorizontalFloatingToolbar: XrComponentOverride =
+            XrComponentOverride("HorizontalFloatingToolbar")
     }
 }
 

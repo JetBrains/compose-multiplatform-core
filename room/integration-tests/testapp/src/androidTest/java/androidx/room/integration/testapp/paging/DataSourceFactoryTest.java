@@ -42,6 +42,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,6 +60,11 @@ import java.util.concurrent.TimeoutException;
 public class DataSourceFactoryTest extends TestDatabaseTest {
     @Rule
     public CountingTaskExecutorRule mExecutorRule = new CountingTaskExecutorRule();
+
+    @After
+    public void teardown() throws InterruptedException, TimeoutException {
+        mExecutorRule.drainTasks(5, TimeUnit.SECONDS);
+    }
 
     private interface LivePagedListFactory {
         LiveData<PagedList<User>> create();

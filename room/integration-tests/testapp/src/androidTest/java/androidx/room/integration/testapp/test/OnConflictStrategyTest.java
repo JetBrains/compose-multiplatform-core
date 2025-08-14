@@ -99,6 +99,7 @@ public class OnConflictStrategyTest {
             assertThat(e.getMessage(), is(notNullValue()));
         }
         assertThat(db.animal().allNames(), are(/* empty */));
+        db.close();
     }
 
     @Test
@@ -110,6 +111,7 @@ public class OnConflictStrategyTest {
                 new Animal(2, "Bird"),
                 new Animal(3, "Monkey")));
         assertThat(db.animal().allNames(), are("Dog", "Bird", "Monkey"));
+        db.close();
     }
 
     @Test
@@ -121,6 +123,7 @@ public class OnConflictStrategyTest {
                 new Animal(2, "Bird"),
                 new Animal(3, "Monkey")));
         assertThat(db.animal().allNames(), are("Dog", "Cat", "Monkey"));
+        db.close();
     }
 
     @SuppressWarnings("unchecked")

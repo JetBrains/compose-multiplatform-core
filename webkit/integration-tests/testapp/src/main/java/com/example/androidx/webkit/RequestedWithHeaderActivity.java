@@ -45,6 +45,7 @@ public class RequestedWithHeaderActivity  extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_requested_with_header);
+        WebkitHelpers.enableEdgeToEdge(this);
 
         setTitle(R.string.requested_with_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);

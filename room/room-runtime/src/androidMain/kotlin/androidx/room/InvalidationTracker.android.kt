@@ -23,13 +23,13 @@ import androidx.lifecycle.LiveData
 import androidx.room.InvalidationTracker.Observer
 import androidx.room.concurrent.ReentrantLock
 import androidx.room.concurrent.withLock
+import androidx.room.coroutines.runBlockingUninterruptible
 import androidx.room.support.AutoCloser
 import androidx.sqlite.SQLiteConnection
 import java.lang.ref.WeakReference
 import java.util.concurrent.Callable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.runBlocking
 
 /**
  * The invalidation tracker keeps track of tables modified by queries and notifies its subscribed
@@ -46,13 +46,13 @@ import kotlinx.coroutines.runBlocking
  * [Flow] was created from, then such table is considered 'invalidated' and the [Flow] will emit a
  * new value.
  */
-actual open class InvalidationTracker
+public actual open class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     internal val database: RoomDatabase,
     private val shadowTablesMap: Map<String, String>,
     private val viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    internal vararg val tableNames: String
+    internal vararg val tableNames: String,
 ) {
     private val implementation =
         TriggerBasedInvalidationTracker(
@@ -61,7 +61,7 @@ actual constructor(
             viewTables = viewTables,
             tableNames = tableNames,
             useTempTable = database.useTempTrackingTable,
-            onInvalidatedTablesIds = ::notifyInvalidatedObservers
+            onInvalidatedTablesIds = ::notifyInvalidatedObservers,
         )
 
     private val observerMap = mutableMapOf<Observer, ObserverWrapper>()
@@ -92,14 +92,14 @@ actual constructor(
 
     @Deprecated("No longer called by generated implementation")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    constructor(
+    public constructor(
         database: RoomDatabase,
-        vararg tableNames: String
+        vararg tableNames: String,
     ) : this(
         database = database,
         shadowTablesMap = emptyMap(),
         viewTables = emptyMap(),
-        tableNames = tableNames
+        tableNames = tableNames,
     )
 
     init {
@@ -145,14 +145,11 @@ actual constructor(
      * @see refreshAsync
      */
     internal actual suspend fun sync() {
-        if (database.inCompatibilityMode() && !database.isOpenInternal) {
-            return
-        }
         implementation.syncTriggers()
     }
 
     // TODO(b/309990302): Needed for compatibility with internalBeginTransaction(), not great.
-    @WorkerThread internal fun syncBlocking(): Unit = runBlocking { sync() }
+    @WorkerThread internal fun syncBlocking(): Unit = runBlockingUninterruptible { sync() }
 
     /**
      * Refresh subscribed [Observer]s and [Flow]s asynchronously, invoking [Observer.onInvalidated]
@@ -164,7 +161,7 @@ actual constructor(
      * database via another connection or through [RoomDatabase.useConnection] you might need to
      * invoke this function to trigger invalidation.
      */
-    actual fun refreshAsync() {
+    public actual fun refreshAsync() {
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -176,7 +173,7 @@ actual constructor(
      * invalidations, if so causing this function to return true.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    actual suspend fun refresh(vararg tables: String): Boolean {
+    public actual suspend fun refresh(vararg tables: String): Boolean {
         return implementation.refreshInvalidation(tables, onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -218,7 +215,10 @@ actual constructor(
      *   `true`.
      */
     @JvmOverloads
-    actual fun createFlow(vararg tables: String, emitInitialState: Boolean): Flow<Set<String>> {
+    public actual fun createFlow(
+        vararg tables: String,
+        emitInitialState: Boolean,
+    ): Flow<Set<String>> {
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
         val multiInstanceFlow = multiInstanceInvalidationClient?.createFlow(resolvedTableNames)
@@ -247,10 +247,10 @@ actual constructor(
      * @param observer The observer which listens the database for changes.
      */
     @WorkerThread
-    open fun addObserver(observer: Observer) {
+    public open fun addObserver(observer: Observer) {
         val shouldSync = addObserverOnly(observer)
         if (shouldSync) {
-            runBlocking { implementation.syncTriggers() }
+            runBlockingUninterruptible { implementation.syncTriggers() }
         }
     }
 
@@ -267,7 +267,7 @@ actual constructor(
             ObserverWrapper(
                 observer = observer,
                 tableIds = tableIds,
-                tableNames = resolvedTableNames
+                tableNames = resolvedTableNames,
             )
 
         val currentObserver =
@@ -291,7 +291,7 @@ actual constructor(
      */
     @WorkerThread
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun addWeakObserver(observer: Observer) {
+    public open fun addWeakObserver(observer: Observer) {
         addObserver(WeakObserver(this, observer))
     }
 
@@ -304,10 +304,10 @@ actual constructor(
      * @param observer The observer to remove.
      */
     @WorkerThread
-    open fun removeObserver(observer: Observer): Unit {
+    public open fun removeObserver(observer: Observer): Unit {
         val shouldSync = removeObserverOnly(observer)
         if (shouldSync) {
-            runBlocking { implementation.syncTriggers() }
+            runBlockingUninterruptible { implementation.syncTriggers() }
         }
     }
 
@@ -330,7 +330,7 @@ actual constructor(
      *
      * @see refreshAsync
      */
-    open fun refreshVersionsAsync() {
+    public open fun refreshVersionsAsync() {
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -341,7 +341,7 @@ actual constructor(
      */
     @WorkerThread
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun refreshVersionsSync(): Unit = runBlocking {
+    public open fun refreshVersionsSync(): Unit = runBlockingUninterruptible {
         implementation.refreshInvalidation(emptyArray(), onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -384,11 +384,11 @@ actual constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     @Deprecated(
         message = "Replaced with overload that takes 'inTransaction 'parameter.",
-        replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction")
+        replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction"),
     )
-    open fun <T> createLiveData(
+    public open fun <T> createLiveData(
         tableNames: Array<out String>,
-        computeFunction: Callable<T?>
+        computeFunction: Callable<T?>,
     ): LiveData<T> {
         return createLiveData(tableNames, false, computeFunction)
     }
@@ -408,10 +408,10 @@ actual constructor(
      *   invalidates.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    open fun <T> createLiveData(
+    public open fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: Callable<T?>
+        computeFunction: Callable<T?>,
     ): LiveData<T> {
         // Validate names early to fail fast as actual observer subscription is done once LiveData
         // is observed.
@@ -434,10 +434,10 @@ actual constructor(
      *   invalidates.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    fun <T> createLiveData(
+    public fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: (SQLiteConnection) -> T?
+        computeFunction: (SQLiteConnection) -> T?,
     ): LiveData<T> {
         // Validate names early to fail fast as actual observer subscription is done once LiveData
         // is observed.
@@ -449,7 +449,7 @@ actual constructor(
     internal fun initMultiInstanceInvalidation(
         context: Context,
         name: String,
-        serviceIntent: Intent
+        serviceIntent: Intent,
     ) {
         multiInstanceInvalidationIntent = serviceIntent
         multiInstanceInvalidationClient = MultiInstanceInvalidationClient(context, name, this)
@@ -467,7 +467,7 @@ actual constructor(
      * @param tables The names of the tables this observer is interested in getting notified if they
      *   are modified.
      */
-    abstract class Observer(internal val tables: Array<out String>) {
+    public abstract class Observer(internal val tables: Array<out String>) {
         /**
          * Creates an observer for the given tables and views.
          *
@@ -476,7 +476,7 @@ actual constructor(
          */
         protected constructor(
             firstTable: String,
-            vararg rest: String
+            vararg rest: String,
         ) : this(arrayOf(firstTable, *rest))
 
         /**
@@ -487,7 +487,7 @@ actual constructor(
          *   invalidated. When observing a database view the names of underlying tables will be in
          *   the set instead of the view name.
          */
-        abstract fun onInvalidated(tables: Set<String>)
+        public abstract fun onInvalidated(tables: Set<String>)
 
         internal open val isRemote: Boolean
             get() = false
@@ -497,11 +497,11 @@ actual constructor(
     private data class MultiInstanceClientInitState(
         val context: Context,
         val name: String,
-        val serviceIntent: Intent
+        val serviceIntent: Intent,
     )
 
     // Kept for binary compatibility even if empty. :(
-    companion object
+    public companion object
 }
 
 /**
@@ -513,7 +513,7 @@ actual constructor(
 internal class ObserverWrapper(
     internal val observer: Observer,
     internal val tableIds: IntArray,
-    private val tableNames: Array<out String>
+    private val tableNames: Array<out String>,
 ) {
     init {
         check(tableIds.size == tableNames.size)

@@ -21,9 +21,9 @@ import android.graphics.Matrix
 import androidx.annotation.Px
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.nativeloader.NativeLoader
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.internal.CanvasPathRenderer
 import androidx.ink.rendering.android.canvas.internal.CanvasStrokeUnifiedRenderer
 import androidx.ink.strokes.InProgressStroke
@@ -98,10 +98,11 @@ public interface CanvasStrokeRenderer {
      * blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
-        strokeToScreenTransform: AffineTransform
+        strokeToScreenTransform: AffineTransform,
     ): Unit = draw(canvas, stroke, strokeToScreenTransform, 0f)
 
     /**
@@ -119,7 +120,8 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
@@ -141,6 +143,7 @@ public interface CanvasStrokeRenderer {
      * appear blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: Matrix): Unit =
         draw(canvas, stroke, strokeToScreenTransform, 0f)
 
@@ -159,7 +162,8 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
@@ -177,6 +181,7 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -195,7 +200,8 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -213,6 +219,7 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -231,7 +238,8 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -257,54 +265,33 @@ public interface CanvasStrokeRenderer {
             NativeLoader.load()
         }
 
-        /** Create a [CanvasStrokeRenderer] that is appropriate to the device's API version. */
-        @JvmStatic
-        public fun create(): CanvasStrokeRenderer {
-            @OptIn(ExperimentalInkCustomBrushApi::class)
-            return create(TextureBitmapStore { null }, forcePathRendering = false)
-        }
-
         /**
          * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
          *
          * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
          *   for drawing textured strokes.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-        @ExperimentalInkCustomBrushApi
-        @JvmStatic
-        public fun create(textureStore: TextureBitmapStore): CanvasStrokeRenderer {
-            @OptIn(ExperimentalInkCustomBrushApi::class)
-            return create(textureStore, forcePathRendering = false)
-        }
-
-        /**
-         * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
-         *
-         * @param forcePathRendering Overrides the drawing strategy selected based on API version to
-         *   always draw strokes using [Canvas.drawPath] instead of [Canvas.drawMesh].
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-        @JvmStatic
-        public fun create(forcePathRendering: Boolean): CanvasStrokeRenderer {
-            @OptIn(ExperimentalInkCustomBrushApi::class)
-            return create(TextureBitmapStore { null }, forcePathRendering)
-        }
-
-        /**
-         * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
-         *
-         * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
-         *   for drawing textured strokes.
-         * @param forcePathRendering Overrides the drawing strategy selected based on API version to
-         *   always draw strokes using [Canvas.drawPath] instead of [Canvas.drawMesh].
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-        @ExperimentalInkCustomBrushApi
         @JvmStatic
         public fun create(
-            textureStore: TextureBitmapStore,
+            textureStore: TextureBitmapStore = TextureBitmapStore { null }
+        ): CanvasStrokeRenderer {
+            return create(forcePathRendering = false, textureStore = textureStore)
+        }
+
+        /**
+         * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
+         *
+         * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
+         *   for drawing textured strokes.
+         * @param forcePathRendering Overrides the drawing strategy selected based on API version to
+         *   always draw strokes using [Canvas.drawPath] instead of [Canvas.drawMesh].
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @JvmStatic
+        @JvmOverloads
+        public fun create(
             forcePathRendering: Boolean,
+            textureStore: TextureBitmapStore = TextureBitmapStore { null },
         ): CanvasStrokeRenderer {
             if (!forcePathRendering) return CanvasStrokeUnifiedRenderer(textureStore)
             return CanvasPathRenderer(textureStore)

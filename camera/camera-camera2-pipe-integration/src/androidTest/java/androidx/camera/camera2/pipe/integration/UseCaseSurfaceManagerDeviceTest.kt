@@ -32,7 +32,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.InactiveSurfac
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
-import androidx.camera.camera2.pipe.testing.TestUseCaseCamera
+import androidx.camera.camera2.pipe.integration.testing.TestUseCaseCamera
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.DeferrableSurfaces
 import androidx.camera.core.impl.ImmediateSurface
@@ -70,7 +70,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class UseCaseSurfaceManagerDeviceTest {
 
     @get:Rule
@@ -156,7 +155,7 @@ class UseCaseSurfaceManagerDeviceTest {
      * set the maximum SDK version to S_V2.
      */
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M, maxSdkVersion = Build.VERSION_CODES.S_V2)
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.S_V2)
     fun disconnectOpenedCameraGraph_deferrableSurfaceUsageCountTest() = runBlocking {
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
 
@@ -239,8 +238,8 @@ class UseCaseSurfaceManagerDeviceTest {
                         useCaseThreads,
                         cameraPipe,
                         InactiveSurfaceCloserImpl(),
-                        SessionConfigAdapter(useCases = useCases)
-                    )
+                        SessionConfigAdapter(useCases = useCases),
+                    ),
             )
 
         // Act.
@@ -279,7 +278,7 @@ class UseCaseSurfaceManagerDeviceTest {
             ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2).apply {
                 setOnImageAvailableListener(
                     onImageAvailableListener,
-                    HandlerCompat.createAsync(handlerThread.looper)
+                    HandlerCompat.createAsync(handlerThread.looper),
                 )
             }
 
@@ -302,11 +301,11 @@ class UseCaseSurfaceManagerDeviceTest {
                     camera2ConfigBuilder
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AF_MODE,
-                            CaptureRequest.CONTROL_AF_MODE_AUTO
+                            CaptureRequest.CONTROL_AF_MODE_AUTO,
                         )
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                     addImplementationOptions(camera2ConfigBuilder.build())
                 }

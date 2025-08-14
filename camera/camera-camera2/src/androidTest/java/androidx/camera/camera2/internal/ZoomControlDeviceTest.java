@@ -75,7 +75,6 @@ import java.util.concurrent.TimeoutException;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 @SuppressWarnings("ConstantConditions") // We might hit an NPE, which is fine. It's a test.
 public final class ZoomControlDeviceTest {
     private static final int TOLERANCE = 5;

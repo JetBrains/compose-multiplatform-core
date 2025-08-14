@@ -53,7 +53,7 @@ class GraphicsLayerScopeTest {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density
+                    density: Density,
                 ) = Outline.Rectangle(size.toRect())
             }
         scope.clip = true

@@ -119,6 +119,7 @@ public class DatabaseCallbackTest {
                 .build();
         List<Integer> ids = db.getUserDao().loadIds();
         assertThat(ids, is(empty()));
+        db.close();
     }
 
     @Test
@@ -149,6 +150,8 @@ public class DatabaseCallbackTest {
         // Should not throw an "IllegalStateException: attempt to re-open an already-closed"
         List<Integer> ids = db.getUserDao().loadIds();
         assertThat(ids, is(empty()));
+
+        db.close();
     }
 
     @Test

@@ -49,9 +49,7 @@ import org.junit.runners.model.Statement
  *
  * @property active true to activate this rule.
  */
-public class CameraPipeConfigTestRule(
-    public val active: Boolean,
-) : TestRule {
+public class CameraPipeConfigTestRule(public val active: Boolean) : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
@@ -135,12 +133,18 @@ public class CameraPipeConfigTestRule(
 
         private val allowPresubmitTests =
             listOf(
-                // CoreTestApps
-                "androidx.camera.integration.core.",
                 // Camera-View
                 "androidx.camera.view.",
                 // Camera-Video
                 "androidx.camera.video.",
+                // Benchmark
+                "androidx.camera.integration.benchmark.",
+                // CoreTestApp
+                "androidx.camera.integration.core.",
+                // FeatureGroupTestApp
+                "androidx.camera.integration.featurecombo",
+                // Macrobenchmark
+                "androidx.camera.integration.macrobenchmark.",
                 // UIWidgets
                 "androidx.camera.integration.uiwidgets.",
             )

@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllPrimitiveParamsImpl#allPrimitiveArrayParams</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -117,8 +114,8 @@
                 <isNullable>false</isNullable>
                 <itemType>
                     <id>unused</id>
-                    <isNullable>false</isNullable>
-                    <type>2</type>
+                    <isNullable>true</isNullable>
+                    <type>8</type>
                 </itemType>
                 <type>10</type>
             </dataTypeMetadata>
@@ -134,18 +131,12 @@
                 <type>0</type>
             </valueType>
         </response>
-        <schema>
-            <id>unused</id>
-            <schemaCategory>fake_schema_category</schemaCategory>
-            <schemaName>allPrimitiveParams</schemaName>
-            <schemaVersion>1</schemaVersion>
-        </schema>
+        <schemaCategory>fake_schema_category</schemaCategory>
+        <schemaName>allPrimitiveParams</schemaName>
+        <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllPrimitiveParamsImpl#allPrimitiveArrayParams</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllPrimitiveParamsImpl#allPrimitiveParams</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -216,12 +207,12 @@
                 <type>0</type>
             </valueType>
         </response>
-        <schema>
-            <id>unused</id>
-            <schemaCategory>fake_schema_category</schemaCategory>
-            <schemaName>allPrimitiveParams</schemaName>
-            <schemaVersion>1</schemaVersion>
-        </schema>
+        <schemaCategory>fake_schema_category</schemaCategory>
+        <schemaName>allPrimitiveParams</schemaName>
+        <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllPrimitiveParamsImpl#allPrimitiveParams</functionId>
     </appfunction>
+    <AppFunctionComponentMetadataDocument>
+        <id>unused</id>
+    </AppFunctionComponentMetadataDocument>
 </appfunctions>

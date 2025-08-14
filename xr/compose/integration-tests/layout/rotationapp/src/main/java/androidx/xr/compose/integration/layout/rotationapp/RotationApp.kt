@@ -53,6 +53,7 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.math.Vector3
 import kotlin.math.floor
@@ -108,66 +109,62 @@ class RotationApp : ComponentActivity() {
                     ),
             )
 
-        SpatialColumn(name = "OutermostContainer") {
-            SpatialRow(name = "StatusRow") {
+        SpatialColumn(SubspaceModifier.testTag("OutermostContainer")) {
+            SpatialRow(SubspaceModifier.testTag("StatusRow")) {
                 AppPanel(
-                    modifier = SubspaceModifier.height(80.dp),
-                    name = "StatusPanel",
+                    modifier = SubspaceModifier.height(80.dp).testTag("StatusPanel"),
                     text = "Rotation Axis: ${axisAngle.x}, ${axisAngle.y}, ${axisAngle.z}",
                 )
             }
-            SpatialRow(name = "ContentRow") {
+            SpatialRow(SubspaceModifier.testTag("ContentRow")) {
                 SpatialColumn(
-                    modifier = SubspaceModifier.rotate(axisAngle, rotationValue),
-                    name = "RotatingColumn",
+                    modifier =
+                        SubspaceModifier.rotate(axisAngle, rotationValue).testTag("RotatingColumn")
                 ) {
                     val rotatedColumnPanelModifier = SubspaceModifier.size(200.dp).padding(20.dp)
                     AppPanel(
-                        modifier = rotatedColumnPanelModifier,
-                        name = "TopPanelRotatingColumn",
+                        modifier = rotatedColumnPanelModifier.testTag("TopPanelRotatingColumn"),
                         text = "Top panel: ${rotationValue.roundToInt()}",
                     )
                     AppPanel(
-                        modifier = rotatedColumnPanelModifier,
-                        name = "CenterPanelRotatingColumn",
+                        modifier = rotatedColumnPanelModifier.testTag("CenterPanelRotatingColumn"),
                         text = "Center panel: ${rotationValue.roundToInt()}",
                     )
                     AppPanel(
-                        modifier = rotatedColumnPanelModifier,
-                        name = "BottomPanelRotatingColumn",
+                        modifier = rotatedColumnPanelModifier.testTag("BottomPanelRotatingColumn"),
                         text = "Bottom panel: ${rotationValue.roundToInt()}",
                     )
                 }
-                SpatialColumn(name = "RightmostColumn") {
+                SpatialColumn(SubspaceModifier.testTag("RightmostColumn")) {
                     val rotatedRowPanelModifier = SubspaceModifier.size(200.dp).padding(20.dp)
                     SpatialRow(
-                        modifier = SubspaceModifier.rotate(axisAngle, rotationValue),
-                        name = "RotatingRow",
+                        modifier =
+                            SubspaceModifier.rotate(axisAngle, rotationValue).testTag("RotatingRow")
                     ) {
                         AppPanel(
-                            modifier = rotatedRowPanelModifier,
-                            name = "RightPanelRotatingRow",
+                            modifier = rotatedRowPanelModifier.testTag("LeftPanelRotatingRow"),
                             text = "Left panel: ${rotationValue.roundToInt()}",
                         )
                         AppPanel(
-                            modifier = rotatedRowPanelModifier,
-                            name = "CenterPanelRotatingRow",
+                            modifier = rotatedRowPanelModifier.testTag("CenterPanelRotatingRow"),
                             text = "Center panel: ${rotationValue.roundToInt()}",
                         )
                         AppPanel(
-                            modifier = rotatedRowPanelModifier,
-                            name = "LeftPanelRotatingRow",
+                            modifier = rotatedRowPanelModifier.testTag("RightPanelRotatingRow"),
                             text = "Right panel: ${rotationValue.roundToInt()}",
                         )
                     }
-                    SpatialRow(alignment = SpatialAlignment.Center, name = "RowWithRotatingPanel") {
+                    SpatialRow(
+                        modifier = SubspaceModifier.testTag("RowWithRotatingPanel"),
+                        alignment = SpatialAlignment.Center,
+                    ) {
                         AppPanel(
                             modifier =
                                 SubspaceModifier.width(400.dp)
                                     .height(400.dp)
                                     .padding(20.dp)
-                                    .rotate(axisAngle, rotationValue),
-                            name = "RotatingPanel",
+                                    .rotate(axisAngle, rotationValue)
+                                    .testTag("RotatingPanel"),
                             text = "Rotating Panel: ${rotationValue.roundToInt()}",
                         )
                     }
@@ -178,8 +175,8 @@ class RotationApp : ComponentActivity() {
 
     @SubspaceComposable
     @Composable
-    fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, name: String, text: String = "") {
-        SpatialPanel(modifier = modifier, name = name) { PanelContent(text) }
+    fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
+        SpatialPanel(modifier = modifier) { PanelContent(text) }
     }
 
     @UiComposable

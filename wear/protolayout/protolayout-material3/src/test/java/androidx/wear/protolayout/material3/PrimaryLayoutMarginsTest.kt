@@ -20,6 +20,7 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.wear.protolayout.material3.PrimaryLayoutMargins.Companion.customizedPrimaryLayoutMargin
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.ceil
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.internal.DoNotInstrument
@@ -35,9 +36,9 @@ class PrimaryLayoutMarginsTest {
             customizedPrimaryLayoutMargin(start = start, end = end) as CustomPrimaryLayoutMargins
 
         assertThat(margins.toPadding(SCOPE).start!!.value)
-            .isEqualTo(start * DEVICE_PARAMETERS.screenWidthDp)
+            .isEqualTo(ceil(start * DEVICE_PARAMETERS.screenWidthDp))
         assertThat(margins.toPadding(SCOPE).end!!.value)
-            .isEqualTo(end * DEVICE_PARAMETERS.screenWidthDp)
+            .isEqualTo(ceil(end * DEVICE_PARAMETERS.screenWidthDp))
     }
 
     @Test
@@ -50,11 +51,11 @@ class PrimaryLayoutMarginsTest {
                 as CustomPrimaryLayoutMargins
 
         assertThat(margins.toPadding(SCOPE).start!!.value)
-            .isEqualTo(start * DEVICE_PARAMETERS.screenWidthDp)
+            .isEqualTo(ceil(start * DEVICE_PARAMETERS.screenWidthDp))
         assertThat(margins.toPadding(SCOPE).end!!.value)
-            .isEqualTo(end * DEVICE_PARAMETERS.screenWidthDp)
+            .isEqualTo(ceil(end * DEVICE_PARAMETERS.screenWidthDp))
         assertThat(margins.toPadding(SCOPE).bottom!!.value)
-            .isEqualTo(bottom * DEVICE_PARAMETERS.screenWidthDp)
+            .isEqualTo(ceil(bottom * DEVICE_PARAMETERS.screenWidthDp))
     }
 
     companion object {
@@ -72,7 +73,7 @@ class PrimaryLayoutMarginsTest {
                 defaultBackgroundImageStyle = BackgroundImageStyle(),
                 defaultAvatarImageStyle = AvatarImageStyle(),
                 layoutSlotsPresence = LayoutSlotsPresence(),
-                defaultProgressIndicatorStyle = ProgressIndicatorStyle()
+                defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
             )
     }
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.integration.layout.movableandresizablepanelapp
 
 import android.content.Intent
@@ -37,9 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -52,6 +54,7 @@ import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.resizable
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import kotlin.concurrent.fixedRateTimer
 
@@ -68,27 +71,29 @@ class MovableAndResizablePanelApp : ComponentActivity() {
         // DynamicValue goes from 1 to 101, then back to 1, then it repeats.
         var dynamicValue by remember { mutableIntStateOf(1) }
         // TODO(b/352419050): Update test app to use built in animation.
-
-        fixedRateTimer(period = 3000, daemon = true) {
-            counter += 1
-            dynamicValue =
-                if (counter / 100 % 2 == 0) {
-                    1 + (counter % 100)
-                } else {
-                    101 - (counter % 100)
-                }
+        remember {
+            fixedRateTimer(period = 3000, daemon = true) {
+                counter += 1
+                dynamicValue =
+                    if (counter / 100 % 2 == 0) {
+                        1 + (counter % 100)
+                    } else {
+                        101 - (counter % 100)
+                    }
+            }
         }
-
         val panelWidth = (dynamicValue * 40).dp
-        SpatialColumn(name = "PanelGridColumn") {
+        SpatialColumn(SubspaceModifier.testTag("PanelGridColumn")) {
             SpatialRow(
                 modifier = SubspaceModifier.fillMaxWidth(),
                 alignment = SpatialAlignment.BottomCenter,
             ) {
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "LeftColumn",
+                        SubspaceModifier.width(400.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("LeftColumn")
                 ) {
                     if (counter >= 5) {
                         SpatialPanel(
@@ -140,8 +145,10 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(600.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "MiddleColumn",
+                        SubspaceModifier.width(600.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("MiddleColumn")
                 ) {
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
@@ -149,7 +156,7 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                         PanelContent("[STANDARD] Middle Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
@@ -160,8 +167,10 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp).fillMaxHeight().padding(horizontal = 20.dp),
-                    name = "RightColumn",
+                        SubspaceModifier.width(400.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = 20.dp)
+                            .testTag("RightColumn")
                 ) {
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
@@ -169,7 +178,7 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                         PanelContent("[STANDARD] Right Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent =
                             Intent(this@MovableAndResizablePanelApp, AnotherActivity::class.java),
                         modifier =
@@ -177,8 +186,8 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                                 .width(panelWidth)
                                 .height(200.dp)
                                 .resizable()
-                                .movable(),
-                        name = "ActivityPanel",
+                                .movable()
+                                .testTag("ActivityPanel"),
                     )
                 }
             }

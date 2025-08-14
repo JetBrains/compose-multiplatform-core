@@ -111,7 +111,7 @@ internal constructor(
         val result =
             fetchSemanticsNodes(
                 atLeastOneRootRequired = true,
-                errorMessageOnFail = finalErrorMessage
+                errorMessageOnFail = finalErrorMessage,
             )
         if (result.selectedNodes.count() != 1) {
             if (result.customErrorOnNoMatch != null) {
@@ -168,7 +168,7 @@ private constructor(
             return selector
                 .map(
                     testContext.getAllSemanticsNodes(atLeastOneRootRequired),
-                    errorMessageOnFail.orEmpty()
+                    errorMessageOnFail.orEmpty(),
                 )
                 .apply { nodeIds = selectedNodes.map { it.semanticsId }.toList() }
                 .selectedNodes

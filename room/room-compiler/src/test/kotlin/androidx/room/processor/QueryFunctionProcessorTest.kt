@@ -108,7 +108,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 name = name,
                 type = type,
                 columnName = columnName ?: name,
-                affinity = null
+                affinity = null,
             )
         }
     }
@@ -313,7 +313,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 MUTABLE_LIST.parametrizedBy(
                         XTypeName.getTypeVariableName(
                                 name = "T",
-                                bounds = listOf(XTypeName.ANY_OBJECT.copy(nullable = true))
+                                bounds = listOf(XTypeName.ANY_OBJECT.copy(nullable = true)),
                             )
                             .copy(nullable = true)
                     )
@@ -559,7 +559,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 hasErrorContaining(
                     ProcessorErrors.cannotFindPreparedQueryResultAdapter(
                         "androidx.lifecycle.LiveData<java.lang.Integer>",
-                        QueryType.DELETE
+                        QueryType.DELETE,
                     )
                 )
             }
@@ -578,7 +578,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 hasErrorContaining(
                     ProcessorErrors.cannotFindPreparedQueryResultAdapter(
                         "androidx.lifecycle.LiveData<java.lang.Integer>",
-                        QueryType.UPDATE
+                        QueryType.UPDATE,
                     )
                 )
             }
@@ -628,7 +628,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                             XTypeName.BOXED_INT.copy(nullable = true),
                             STRING.copy(nullable = true),
                         )
-                        .copy(nullable = true),
+                        .copy(nullable = true)
                 )
             assertThat(parsedQuery.queryResultBinder)
                 .isInstanceOf<DataSourceFactoryQueryResultBinder>()
@@ -647,7 +647,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("select * from user")
                 abstract ${KotlinTypeNames.CHANNEL.canonicalName}<User> getUsersChannel();
                 """,
-            additionalSources = listOf(COMMON.CHANNEL)
+            additionalSources = listOf(COMMON.CHANNEL),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
@@ -664,7 +664,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("select * from user")
                 abstract ${KotlinTypeNames.SEND_CHANNEL.canonicalName}<User> getUsersChannel();
                 """,
-            additionalSources = listOf(COMMON.SEND_CHANNEL)
+            additionalSources = listOf(COMMON.SEND_CHANNEL),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
@@ -681,7 +681,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("select * from user")
                 abstract ${KotlinTypeNames.RECEIVE_CHANNEL.canonicalName}<User> getUsersChannel();
                 """,
-            additionalSources = listOf(COMMON.RECEIVE_CHANNEL)
+            additionalSources = listOf(COMMON.RECEIVE_CHANNEL),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
@@ -770,7 +770,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                             baseContext = invocation.context,
                             containing = Mockito.mock(XType::class.java),
                             executableElement = method.element,
-                            dbVerifier = null
+                            dbVerifier = null,
                         )
                         .context
                         .logger
@@ -819,7 +819,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 String name;
                 String lName;
                 """,
-            listOf("name", "lastName as lName")
+            listOf("name", "lastName as lName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields).isEmpty()
@@ -834,7 +834,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 String name;
                 String lastName;
                 """,
-            listOf("name", "lastName")
+            listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields).isEmpty()
@@ -852,7 +852,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             @ColumnInfo(name = "ageColumn")
             int age;
         """,
-            listOf("*")
+            listOf("*"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields).isEmpty()
@@ -921,7 +921,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
               long userId;
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         singleQueryMethod<ReadQueryFunction>(
             """
@@ -944,7 +944,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("SELECT * FROM User JOIN Relation ON (User.uid = Relation.userId)")
                 abstract Map<Username, List<Relation>> loadUserRelations();
                 """,
-            additionalSources = listOf(relatingEntity)
+            additionalSources = listOf(relatingEntity),
         ) { method, invocation ->
             assertThat(method.query.original)
                 .isEqualTo(
@@ -988,7 +988,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             int maxAge;
             String name;
             """,
-            listOf("MAX(ageColumn)", "name")
+            listOf("MAX(ageColumn)", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields).isEmpty()
@@ -1003,7 +1003,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 String nameX;
                 String lastNameX;
                 """,
-            listOf("name", "lastName")
+            listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("name", "lastName")
             assertThat(adapter?.mapping?.unusedFields)
@@ -1039,7 +1039,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             int maxAge;
             String name;
             """,
-            listOf("MAX(age)", "name")
+            listOf("MAX(age)", "name"),
         ) { _, _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining("no such column: age")
@@ -1061,7 +1061,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             String name;
             String lastName;
             """,
-            listOf("uid", "name", "lastName")
+            listOf("uid", "name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
             assertThat(adapter?.mapping?.unusedFields).isEmpty()
@@ -1085,7 +1085,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             String name;
             String lastName;
             """,
-            listOf("lastName")
+            listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields)
@@ -1115,7 +1115,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             String name;
             String lastName;
             """,
-            listOf("lastName")
+            listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
             assertThat(adapter?.mapping?.unusedFields)
@@ -1137,7 +1137,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     ProcessorErrors.dataClassMissingNonNull(
                         dataClassTypeName = DATA_CLASS.canonicalName,
                         missingDataClassProperties = listOf("name"),
-                        allQueryColumns = listOf("lastName")
+                        allQueryColumns = listOf("lastName"),
                     )
                 )
             }
@@ -1151,7 +1151,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             String name;
             String lastName;
             """,
-            listOf("uid", "name")
+            listOf("uid", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
             assertThat(adapter?.mapping?.unusedFields)
@@ -1165,7 +1165,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                         unusedColumns = listOf("uid"),
                         allColumns = listOf("uid", "name"),
                         dataClassUnusedProperties =
-                            mapOf(DATA_CLASS.canonicalName to listOf(createField("lastName")))
+                            mapOf(DATA_CLASS.canonicalName to listOf(createField("lastName"))),
                     )
                 )
             }
@@ -1181,7 +1181,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 String name;
             """,
             listOf("*"),
-            options = mapOf("room.expandProjection" to "true")
+            options = mapOf("room.expandProjection" to "true"),
         ) { adapter, _, invocation ->
             adapter!!
             assertThat(adapter.mapping.unusedColumns).isEmpty()
@@ -1194,7 +1194,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         dataClassFields: String,
         queryColumns: List<String>,
         options: Map<String, String> = emptyMap(),
-        handler: (DataClassRowAdapter?, QueryFunction, XTestInvocation) -> Unit
+        handler: (DataClassRowAdapter?, QueryFunction, XTestInvocation) -> Unit,
     ) {
         singleQueryMethod<ReadQueryFunction>(
             """
@@ -1204,7 +1204,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("SELECT ${queryColumns.joinToString(", ")} from User LIMIT 1")
                 abstract MyClass.DataClass getNameAndLastNames();
             """,
-            options = options
+            options = options,
         ) { parsedQuery, invocation ->
             val adapter = parsedQuery.queryResultBinder.adapter
             if (enableVerification) {
@@ -1212,7 +1212,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     handler(
                         adapter.rowAdapters.single() as? DataClassRowAdapter,
                         parsedQuery,
-                        invocation
+                        invocation,
                     )
                 } else {
                     handler(null, parsedQuery, invocation)
@@ -1227,7 +1227,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         vararg input: String,
         additionalSources: Iterable<Source> = emptyList(),
         options: Map<String, String> = emptyMap(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.java("foo.bar.MyClass", DAO_PREFIX + input.joinToString("\n") + DAO_SUFFIX)
@@ -1243,13 +1243,13 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 COMMON.SONG,
                 COMMON.IMAGE,
                 COMMON.IMAGE_FORMAT,
-                COMMON.CONVERTER
+                COMMON.CONVERTER,
             )
         val allOptions =
             mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false") + options
         runProcessorTest(
             sources = additionalSources + commonSources + inputSource,
-            options = allOptions
+            options = allOptions,
         ) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
@@ -1261,7 +1261,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                             typeElement
                                 .getAllMethods()
                                 .filter { method -> method.hasAnnotation(Query::class) }
-                                .toList()
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -1277,7 +1277,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     containing = owner.type,
                     executableElement = methods.first(),
-                    dbVerifier = verifier
+                    dbVerifier = verifier,
                 )
             val parsedQuery = parser.process()
             @Suppress("UNCHECKED_CAST") handler(parsedQuery as T, invocation)
@@ -1288,7 +1288,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         vararg input: String,
         additionalSources: Iterable<Source> = emptyList(),
         options: Map<String, String> = emptyMap(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.kotlin("MyClass.kt", DAO_PREFIX_KT + input.joinToString("\n") + DAO_SUFFIX)
@@ -1314,12 +1314,12 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 COMMON.FLOW,
                 COMMON.GUAVA_ROOM,
                 COMMON.RX2_ROOM,
-                COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION
+                COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
             )
 
         runProcessorTest(
             sources = additionalSources + commonSources + inputSource,
-            options = options
+            options = options,
         ) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
@@ -1331,7 +1331,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                             typeElement
                                 .getAllMethods()
                                 .filter { method -> method.hasAnnotation(Query::class) }
-                                .toList()
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -1347,7 +1347,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     containing = owner.type,
                     executableElement = methods.first(),
-                    dbVerifier = verifier
+                    dbVerifier = verifier,
                 )
             val parsedQuery = parser.process()
             @Suppress("UNCHECKED_CAST") handler(parsedQuery as T, invocation)
@@ -1776,7 +1776,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     ProcessorErrors.ambiguousColumn(
                         "uid",
                         ProcessorErrors.AmbiguousColumnLocation.MAP_INFO,
-                        null
+                        null,
                     )
                 )
             }
@@ -1808,7 +1808,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         singleQueryMethod<ReadQueryFunction>(
             """
@@ -1816,14 +1816,14 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @Query("SELECT * FROM User u JOIN Book b ON u.uid == b.uid")
                 abstract Map<Id, Book> getMultimap();
             """,
-            additionalSources = listOf(extraDataClass)
+            additionalSources = listOf(extraDataClass),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasWarning(
                     ProcessorErrors.ambiguousColumn(
                         "uid",
                         ProcessorErrors.AmbiguousColumnLocation.DATA_CLASS,
-                        "foo.bar.Id"
+                        "foo.bar.Id",
                     )
                 )
             }
@@ -1847,7 +1847,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${ReactiveStreamsTypeNames.PUBLISHER.canonicalName}<Int>",
-                "${KotlinTypeNames.FLOW.canonicalName}<Int>"
+                "${KotlinTypeNames.FLOW.canonicalName}<Int>",
             )
             .forEach { type ->
                 singleQueryFunction<WriteQueryFunction>(

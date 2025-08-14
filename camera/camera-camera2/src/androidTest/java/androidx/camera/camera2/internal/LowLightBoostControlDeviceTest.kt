@@ -25,6 +25,7 @@ import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -69,7 +70,11 @@ class LowLightBoostControlDeviceTest {
             CameraUtil.createCameraAndAttachUseCase(
                 context,
                 DEFAULT_CAMERA_SELECTOR,
-                Preview.Builder().build()
+                Preview.Builder().build().apply {
+                    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                        surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+                    }
+                },
             )
     }
 

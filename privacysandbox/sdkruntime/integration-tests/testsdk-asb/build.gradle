@@ -23,20 +23,14 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.sdkruntime.integration.testsdk-asb"
-    compileSdk = 35
-    compileSdkExtension = 14
-    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
+    compileSdk = 36
     bundle {
         packageName = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
-
         // This is the entry point class to our SDK in the SDK Runtime. It enables backward
         // compatibility support.
         sdkProviderClassName = "androidx.privacysandbox.sdkruntime.provider.SandboxedSdkProviderAdapter"
-
         // This is the class path of our implementation of the SandboxedSdkProviderCompat class.
         compatSdkProviderClassName = "androidx.privacysandbox.sdkruntime.integration.testsdk.SdkProviderImpl"
-
-        setVersion(1, 0, 0)
     }
 }
 

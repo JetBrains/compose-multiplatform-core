@@ -41,7 +41,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class Camera2EncoderProfilesProviderTest(private val quality: Int) {
 
     companion object {
@@ -61,7 +60,7 @@ class Camera2EncoderProfilesProviderTest(private val quality: Int) {
                 arrayOf(CamcorderProfile.QUALITY_VGA),
                 arrayOf(CamcorderProfile.QUALITY_4KDCI),
                 arrayOf(CamcorderProfile.QUALITY_QHD),
-                arrayOf(CamcorderProfile.QUALITY_2K)
+                arrayOf(CamcorderProfile.QUALITY_2K),
             )
     }
 
@@ -87,7 +86,7 @@ class Camera2EncoderProfilesProviderTest(private val quality: Int) {
         val characteristics =
             CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
                 CameraUtil.getCameraCharacteristics(cameraId)!!,
-                cameraId
+                cameraId,
             )
         cameraQuirks = CameraQuirks.get(cameraId, characteristics)
         encoderProfilesProvider = Camera2EncoderProfilesProvider(cameraId, cameraQuirks)
@@ -220,7 +219,7 @@ class Camera2EncoderProfilesProviderTest(private val quality: Int) {
         assumeTrue(
             "The profile size $profileSize is not in camera supported " +
                 "resolutions $cameraResolutions, which is an invalid profile.",
-            cameraResolutions.contains(profileSize)
+            cameraResolutions.contains(profileSize),
         )
     }
 }

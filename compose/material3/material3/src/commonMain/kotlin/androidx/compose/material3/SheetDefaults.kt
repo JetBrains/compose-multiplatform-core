@@ -24,6 +24,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
@@ -44,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -188,7 +190,7 @@ class SheetState(
             "Attempted to animate to partial expanded when skipPartiallyExpanded was enabled. Set" +
                 " skipPartiallyExpanded to false to use this function."
         }
-        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, showMotionSpec)
+        if (confirmValueChange(PartiallyExpanded)) animateTo(PartiallyExpanded, hideMotionSpec)
     }
 
     /**
@@ -234,7 +236,7 @@ class SheetState(
     internal suspend fun animateTo(
         targetValue: SheetValue,
         animationSpec: FiniteAnimationSpec<Float>,
-        velocity: Float = anchoredDraggableState.lastVelocity
+        velocity: Float = anchoredDraggableState.lastVelocity,
     ) {
         anchoredDraggableState.anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
             val targetOffset = anchors.positionOf(latestTarget)
@@ -309,12 +311,12 @@ class SheetState(
                         confirmValueChange,
                         skipHiddenState,
                     )
-                }
+                },
             )
 
         @Deprecated(
             level = DeprecationLevel.HIDDEN,
-            message = "Maintained for binary compatibility."
+            message = "Maintained for binary compatibility.",
         )
         fun Saver(
             skipPartiallyExpanded: Boolean,
@@ -331,7 +333,7 @@ class SheetState(
                 },
                 velocityThreshold = {
                     with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
-                }
+                },
             )
     }
 
@@ -396,7 +398,8 @@ object BottomSheetDefaults {
 
     /** Default insets to be used and consumed by the [ModalBottomSheet]'s content. */
     val windowInsets: WindowInsets
-        @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+        @Composable
+        get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Top)
 
     internal val PositionalThreshold = 56.dp
 
@@ -418,7 +421,7 @@ object BottomSheetDefaults {
                     contentDescription = dragHandleDescription
                 },
             color = color,
-            shape = shape
+            shape = shape,
         ) {
             Box(Modifier.size(width = width, height = height))
         }
@@ -426,10 +429,26 @@ object BottomSheetDefaults {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ColumnScope.DragHandleWithTooltip(content: @Composable (() -> Unit)) {
+    val dragHandleDescription = getString(Strings.BottomSheetDragHandleDescription)
+    // We need outer box for alignment because TooltipBox's modifier is only applied to its anchor.
+    Box(Modifier.align(CenterHorizontally)) {
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(dragHandleDescription) } },
+            state = rememberTooltipState(),
+            content = content,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
     sheetState: SheetState,
     orientation: Orientation,
-    onFling: (velocity: Float) -> Unit
+    onFling: (velocity: Float) -> Unit,
 ): NestedScrollConnection =
     object : NestedScrollConnection {
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -444,7 +463,7 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
         override fun onPostScroll(
             consumed: Offset,
             available: Offset,
-            source: NestedScrollSource
+            source: NestedScrollSource,
         ): Offset {
             return if (source == NestedScrollSource.UserInput) {
                 sheetState.anchoredDraggableState.dispatchRawDelta(available.toFloat()).toOffset()
@@ -474,7 +493,7 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
         private fun Float.toOffset(): Offset =
             Offset(
                 x = if (orientation == Orientation.Horizontal) this else 0f,
-                y = if (orientation == Orientation.Vertical) this else 0f
+                y = if (orientation == Orientation.Vertical) this else 0f,
             )
 
         @JvmName("velocityToFloat")
@@ -508,7 +527,7 @@ internal fun rememberSheetState(
                 velocityThreshold = velocityThresholdToPx,
                 confirmValueChange = confirmValueChange,
                 skipHiddenState = skipHiddenState,
-            )
+            ),
     ) {
         SheetState(
             skipPartiallyExpanded,

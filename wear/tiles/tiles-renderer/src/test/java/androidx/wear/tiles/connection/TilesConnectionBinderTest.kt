@@ -82,7 +82,7 @@ public class TilesConnectionBinderTest {
                 appContext,
                 TILE_PROVIDER,
                 fakeCoroutineScope,
-                fakeCoroutineDispatcher
+                fakeCoroutineDispatcher,
             )
     }
 
@@ -296,7 +296,7 @@ public class TilesConnectionBinderTest {
         override fun onTileRequest(
             id: Int,
             requestData: TileRequestData?,
-            callback: TileCallback?
+            callback: TileCallback?,
         ) {
             TODO("Not yet implemented")
         }
@@ -304,7 +304,7 @@ public class TilesConnectionBinderTest {
         override fun onResourcesRequest(
             id: Int,
             requestData: ResourcesRequestData?,
-            callback: ResourcesCallback?
+            callback: ResourcesCallback?,
         ) {
             TODO("Not yet implemented")
         }
@@ -325,15 +325,9 @@ public class TilesConnectionBinderTest {
             TODO("Not yet implemented")
         }
 
-        override fun processRecentInteractionEvents(
-            events: MutableList<TileInteractionEventData>?
-        ) {
-            TODO("Not yet implemented")
-        }
-
         override fun onRecentInteractionEvents(
             events: List<TileInteractionEventData?>?,
-            callback: InteractionEventsCallback?
+            callback: InteractionEventsCallback?,
         ) {
             TODO("Not yet implemented")
         }

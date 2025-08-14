@@ -89,7 +89,7 @@ private fun MigrationContainer.findUpMigrationPath(
     result: MutableList<Migration>,
     upgrade: Boolean,
     start: Int,
-    end: Int
+    end: Int,
 ): List<Migration>? {
     var migrationStart = start
     while (if (upgrade) migrationStart < end else migrationStart > end) {

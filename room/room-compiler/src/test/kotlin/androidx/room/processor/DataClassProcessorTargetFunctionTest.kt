@@ -69,14 +69,14 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 void someRandomFunction() { }
             }
-            """
+            """,
             )
         singleRun(source) { invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.invalidAnnotationTarget(
                         "PrimaryKey",
-                        invocation.functionKindName
+                        invocation.functionKindName,
                     )
                 )
             }
@@ -97,14 +97,14 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 static void someRandomFunction() { }
             }
-            """
+            """,
             )
         singleRun(source) { invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.invalidAnnotationTarget(
                         "PrimaryKey",
-                        invocation.functionKindName
+                        invocation.functionKindName,
                     )
                 )
             }
@@ -125,14 +125,14 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 abstract void someRandomFunction();
             }
-            """
+            """,
             )
         singleRun(source) { invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.invalidAnnotationTarget(
                         "PrimaryKey",
-                        invocation.functionKindName
+                        invocation.functionKindName,
                     )
                 )
             }
@@ -156,13 +156,13 @@ class DataClassProcessorTargetFunctionTest {
                 AutoValue_MyDataClass(long id) { this.id = id; }
                 @PrimaryKey
                 long getId() { return this.id; }
-                """
+                """,
         ) { invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.invalidAnnotationTarget(
                         "ColumnInfo",
-                        invocation.functionKindName
+                        invocation.functionKindName,
                     )
                 )
             }
@@ -212,13 +212,13 @@ class DataClassProcessorTargetFunctionTest {
                     String getValue() { return this.value; };
                 $FOOTER
                 """,
-            Source.java("foo.bar.ParentDataClass", parent)
+            Source.java("foo.bar.ParentDataClass", parent),
         ) { invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.invalidAnnotationTarget(
                         "ColumnInfo",
-                        invocation.functionKindName
+                        invocation.functionKindName,
                     )
                 )
             }
@@ -239,7 +239,7 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 int someRandomField;
             }
-            """
+            """,
             )
         singleRun(source)
     }
@@ -258,7 +258,7 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 static final int SOME_RANDOM_CONSTANT = 42;
             }
-            """
+            """,
             )
         singleRun(source)
     }
@@ -278,7 +278,7 @@ class DataClassProcessorTargetFunctionTest {
                 AutoValue_MyDataClass(long id) { this.id = id; }
                 @PrimaryKey
                 long getId() { return this.id; }
-                """
+                """,
         )
     }
 
@@ -323,7 +323,7 @@ class DataClassProcessorTargetFunctionTest {
                     String getValue() { return this.value; };
                 $FOOTER
                 """,
-            Source.java("foo.bar.ParentDataClass", parent)
+            Source.java("foo.bar.ParentDataClass", parent),
         )
     }
 
@@ -368,7 +368,7 @@ class DataClassProcessorTargetFunctionTest {
                     public String getValue() { return this.value; };
                 $FOOTER
                 """,
-            Source.java("foo.bar.InterfaceDataClass", parent)
+            Source.java("foo.bar.InterfaceDataClass", parent),
         )
     }
 
@@ -410,7 +410,7 @@ class DataClassProcessorTargetFunctionTest {
                 @Embedded
                 EmbeddedDataClass getEmbedded() { return this.embedded; }
                 """,
-            Source.java("foo.bar.EmbeddedDataClass", embeddedDataClass)
+            Source.java("foo.bar.EmbeddedDataClass", embeddedDataClass),
         )
     }
 
@@ -456,7 +456,7 @@ class DataClassProcessorTargetFunctionTest {
                 @Relation(parentColumn = "id", entityColumn = "parentId")
                 List<RelationDataClass> getRelations() { return this.relations; }
                 """,
-            Source.java("foo.bar.RelationDataClass", embeddedDataClass)
+            Source.java("foo.bar.RelationDataClass", embeddedDataClass),
         )
     }
 
@@ -466,7 +466,7 @@ class DataClassProcessorTargetFunctionTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             handler?.invoke(invocation)
@@ -477,7 +477,7 @@ class DataClassProcessorTargetFunctionTest {
         dataClassCode: String,
         autoValueDataClassCode: String,
         vararg sources: Source,
-        handler: ((XTestInvocation) -> Unit)? = null
+        handler: ((XTestInvocation) -> Unit)? = null,
     ) {
         singleRunFullClass(
             dataClassCode =
@@ -501,7 +501,7 @@ class DataClassProcessorTargetFunctionTest {
         dataClassCode: String,
         autoValueDataClassCode: String,
         vararg sources: Source,
-        handler: ((XTestInvocation) -> Unit)? = null
+        handler: ((XTestInvocation) -> Unit)? = null,
     ) {
         val dataClassSource = Source.java(MY_DATA_CLASS.canonicalName, dataClassCode)
         val autoValueDataClassSource =
@@ -512,7 +512,7 @@ class DataClassProcessorTargetFunctionTest {
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
                     bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
-                    parent = null
+                    parent = null,
                 )
                 .process()
             handler?.invoke(invocation)

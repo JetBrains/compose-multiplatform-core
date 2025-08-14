@@ -36,7 +36,7 @@ dependencies {
 }
 
 tasks.withType(Jar) {
-    destinationDirectory.set(BuildServerConfigurationKt.getDistributionDirectory(rootProject))
+    destinationDirectory.set(BuildServerConfigurationKt.getDistributionDirectory(project))
 }
 
 androidx {

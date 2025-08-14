@@ -20,8 +20,10 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.webkit.internal.StartupFeatures;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 import androidx.webkit.test.common.WebViewOnUiThread;
 import androidx.webkit.test.common.WebkitUtils;
@@ -34,11 +36,12 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 /**
  * Tests for behaviours related to
- * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+ * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
  *
  * NOTE: Unfortunately, the test infra does not allow spinning up a new process for each test.
  * Therefore, WebView started up in one test causes assumption failures in others
@@ -50,7 +53,7 @@ import java.util.concurrent.Executors;
 public class AsyncStartUpTest {
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * has loaded WebView when `onSuccess` is triggered.
      */
     @Test
@@ -63,7 +66,7 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
 
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -73,7 +76,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns timing info as part of the startup result.
      */
     @Test
@@ -86,7 +89,7 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
 
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -98,7 +101,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns NO blocking startup location if WebView is started up by calling `startUpWebView()`.
      */
     @Test
@@ -112,7 +115,7 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
 
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -124,7 +127,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns a blocking startup location if provider init is triggered on the main looper.
      */
     @Test
@@ -140,7 +143,7 @@ public class AsyncStartUpTest {
 
         // Triggers provider init.
         new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -153,7 +156,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns a blocking startup location if Chromium init blocks the UI thread.
      */
     @Test
@@ -169,7 +172,7 @@ public class AsyncStartUpTest {
 
         WebViewGlueCommunicator.getWebViewClassLoader();
         try (WebViewOnUiThread webViewOnUiThread = new WebViewOnUiThread()) {
-            WebViewCompat.startUpWebView(config,
+            WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                     startUpFinishedFuture::set);
             // Wait until the callback has triggered.
             WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -184,7 +187,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns two blocking startup locations if provider init happens on the main looper and
      * Chromium init blocks the UI thread.
      */
@@ -199,7 +202,7 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
         try (WebViewOnUiThread webViewOnUiThread = new WebViewOnUiThread()) {
-            WebViewCompat.startUpWebView(config,
+            WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                     startUpFinishedFuture::set);
             // Wait until the callback has triggered.
             WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -216,7 +219,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns the same information when triggered multiple times.
      */
     @Test
@@ -235,11 +238,11 @@ public class AsyncStartUpTest {
 
         // Invoke provider init on main looper.
         new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture1::set);
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture2::set);
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture3::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result1 = WebkitUtils.waitForFuture(startUpFinishedFuture1);
@@ -262,7 +265,7 @@ public class AsyncStartUpTest {
 
     /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * with {@link WebViewStartUpConfig.Builder#setShouldRunUiThreadStartUpTasks()} as
      * {@code false} has loaded WebView when `onSuccess` is triggered and the resulting diagnostic
      * information are null which implies that Chromium init hasn't taken place.
@@ -280,7 +283,7 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
 
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
@@ -291,8 +294,39 @@ public class AsyncStartUpTest {
     }
 
     /**
+     * Verifies that when {@link WebViewCompat#startUpWebView} is called with a configuration
+     * specifying a custom profile, only that profile is created and the default profile is not.
+     * TODO(b/300281790): Write tests for the other scenarios when we get the ability to unload
+     * profiles from memory.
+     */
+    @Test
+    @MediumTest
+    @Ignore("b/376656739")
+    public void testAsyncStartUp_withCreatingCustomProfile_createsRequestedProfiles() {
+        Assume.assumeFalse(webViewCurrentlyLoaded());
+        WebkitUtils.checkStartupFeature(ApplicationProvider.getApplicationContext(),
+                StartupFeatures.STARTUP_FEATURE_SET_PROFILES_TO_LOAD);
+        WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
+                Executors.newSingleThreadExecutor())
+                .setShouldRunUiThreadStartUpTasks(true).setProfilesToLoadDuringStartup(
+                        Set.of("TestX", "TestY")).build();
+        final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
+                ResolvableFuture.create();
+
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
+                startUpFinishedFuture::set);
+        // Wait until the callback has triggered.
+        WebkitUtils.waitForFuture(startUpFinishedFuture);
+        WebkitUtils.onMainThreadSync(() -> {
+            Assert.assertTrue(webViewCurrentlyLoaded());
+            Assert.assertTrue(ProfileStore.getInstance().getAllProfileNames().contains("TestX"));
+            Assert.assertTrue(ProfileStore.getInstance().getAllProfileNames().contains("TestY"));
+        });
+    }
+
+    /**
      * Tests that
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * with {@link WebViewStartUpConfig.Builder#setShouldRunUiThreadStartUpTasks()} as
      * {@code false} returns a blocking startup location if provider init is triggered on the main
      * looper.
@@ -312,7 +346,7 @@ public class AsyncStartUpTest {
 
         // Triggers provider init.
         new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
-        WebViewCompat.startUpWebView(config,
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);

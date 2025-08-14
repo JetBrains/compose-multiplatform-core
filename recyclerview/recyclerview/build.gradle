@@ -10,13 +10,13 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.16.0")
     implementation("androidx.collection:collection:1.4.2")
     api("androidx.customview:customview:1.0.0")
     implementation("androidx.customview:customview-poolingcontainer:1.0.0")
@@ -55,6 +55,7 @@ android {
         compileSdk = 35
         testInstrumentationRunner "androidx.recyclerview.test.TestRunner"
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.recyclerview"
 }
 

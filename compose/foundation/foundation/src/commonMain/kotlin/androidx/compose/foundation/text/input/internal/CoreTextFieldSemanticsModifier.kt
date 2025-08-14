@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.cutText
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.getTextLayoutResult
+import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.insertTextAtCursor
 import androidx.compose.ui.semantics.isEditable
 import androidx.compose.ui.semantics.onAutofillText
@@ -65,7 +66,7 @@ internal data class CoreTextFieldSemanticsModifier(
     val offsetMapping: OffsetMapping,
     val manager: TextFieldSelectionManager,
     val imeOptions: ImeOptions,
-    val focusRequester: FocusRequester
+    val focusRequester: FocusRequester,
 ) : ModifierNodeElement<CoreTextFieldSemanticsModifierNode>() {
     override fun create(): CoreTextFieldSemanticsModifierNode =
         CoreTextFieldSemanticsModifierNode(
@@ -78,7 +79,7 @@ internal data class CoreTextFieldSemanticsModifier(
             offsetMapping = offsetMapping,
             manager = manager,
             imeOptions = imeOptions,
-            focusRequester = focusRequester
+            focusRequester = focusRequester,
         )
 
     override fun update(node: CoreTextFieldSemanticsModifierNode) {
@@ -92,7 +93,7 @@ internal data class CoreTextFieldSemanticsModifier(
             offsetMapping = offsetMapping,
             manager = manager,
             imeOptions = imeOptions,
-            focusRequester = focusRequester
+            focusRequester = focusRequester,
         )
     }
 
@@ -111,7 +112,7 @@ internal class CoreTextFieldSemanticsModifierNode(
     var offsetMapping: OffsetMapping,
     var manager: TextFieldSelectionManager,
     var imeOptions: ImeOptions,
-    var focusRequester: FocusRequester
+    var focusRequester: FocusRequester,
 ) : DelegatingNode(), SemanticsModifierNode {
     init {
         manager.requestAutofillAction = { requestAutofill() }
@@ -121,6 +122,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         get() = true
 
     override fun SemanticsPropertyReceiver.applySemantics() {
+        this.inputText = value.annotatedString
         this.editableText = transformedText.text
         this.textSelectionRange = value.selection
 
@@ -168,7 +170,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                         ops = listOf(FinishComposingTextCommand(), CommitTextCommand(text, 1)),
                         editProcessor = state.processor,
                         state.onValueChange,
-                        session
+                        session,
                     )
                 }
                     ?: run {
@@ -176,7 +178,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                             value.text.replaceRange(
                                 value.selection.start,
                                 value.selection.end,
-                                text
+                                text,
                             )
                         val newCursor = TextRange(value.selection.start + text.length)
                         state.onValueChange(TextFieldValue(newText, newCursor))
@@ -272,7 +274,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         offsetMapping: OffsetMapping,
         manager: TextFieldSelectionManager,
         imeOptions: ImeOptions,
-        focusRequester: FocusRequester
+        focusRequester: FocusRequester,
     ) {
         // Find the diff: current previous and new values before updating current.
         val previousEditable = this.enabled && !this.readOnly
@@ -316,7 +318,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         state: LegacyTextFieldState,
         text: String,
         readOnly: Boolean,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         if (readOnly || !enabled) return
 
@@ -327,7 +329,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                 ops = listOf(DeleteAllCommand(), CommitTextCommand(text, 1)),
                 editProcessor = state.processor,
                 state.onValueChange,
-                session
+                session,
             )
         } ?: run { state.onValueChange(TextFieldValue(text, TextRange(text.length))) }
     }

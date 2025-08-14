@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
 import androidx.compose.ui.focus.FocusTargetNode
+import androidx.compose.ui.focus.calculateFocusRectRelativeTo
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.performRequestFocus
 import androidx.compose.ui.focus.requestInteropFocus
@@ -46,16 +47,38 @@ import androidx.compose.ui.platform.InspectorInfo
 
 internal fun Modifier.focusInteropModifier(): Modifier =
     this
-        // Focus Group to intercept focus enter/exit.
+        // Focus Group to intercept focus enter/exit. The immediately below focusTarget actually
+        // represents a focus group which manages the focus enter/exit events from the ViewGroup.
+        // It is also responsible for observing the focus state inside the ViewGroup.
         .then(FocusGroupPropertiesElement)
         .focusTarget()
-        // Focus Target to make the embedded view focusable.
+        // Focus Target to make the embedded view focusable. The below focusTarget is the one that
+        // becomes focused when the associated ViewGroup gains focus. It represents the focusability
+        // of the interop view.
         .then(FocusTargetPropertiesElement)
-        .focusTarget()
+        .then(FocusTargetInteropElement)
+
+private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetNode>() {
+    override fun create() = FocusTargetNode(isInteropViewHost = true)
+
+    override fun update(node: FocusTargetNode) {}
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "focusTargetInterop"
+    }
+
+    override fun hashCode() = "focusTargetInterop".hashCode()
+
+    override fun equals(other: Any?) = other === this
+}
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
     override fun applyFocusProperties(focusProperties: FocusProperties) {
-        focusProperties.canFocus = node.isAttached && getEmbeddedView().hasFocusable()
+        val embeddedView = getEmbeddedView()
+        focusProperties.canFocus = (node.isAttached && getEmbeddedView().hasFocusable())
+        embeddedView.findFocus()?.calculateFocusRectRelativeTo(embeddedView)?.let {
+            focusProperties.focusRect = it
+        }
     }
 }
 
@@ -78,7 +101,7 @@ private class FocusGroupPropertiesNode :
             val targetViewFocused =
                 embeddedView.requestInteropFocus(
                     direction = requestedFocusDirection.toAndroidFocusDirection(),
-                    rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
+                    rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView),
                 )
             if (!targetViewFocused) {
                 cancelFocusChange()
@@ -93,6 +116,8 @@ private class FocusGroupPropertiesNode :
             if (embeddedView.hasFocus() || embeddedView.isFocused) {
                 embeddedView.clearFocus()
             }
+        } else if (ComposeUiFlags.isBypassUnfocusableComposeViewEnabled) {
+            // Do nothing.
         } else if (embeddedView.hasFocus()) {
             val focusOwner = requireOwner().focusOwner
             val hostView = requireView()
@@ -111,13 +136,13 @@ private class FocusGroupPropertiesNode :
                             findNextFocus(
                                 hostView as ViewGroup,
                                 focusedChild,
-                                androidFocusDirection
+                                androidFocusDirection,
                             )
                         } else {
                             findNextFocusFromRect(
                                 hostView as ViewGroup,
                                 focusedRect,
-                                androidFocusDirection
+                                androidFocusDirection,
                             )
                         }
                     }
@@ -164,16 +189,9 @@ private class FocusGroupPropertiesNode :
                 // Focus moved to the embedded view.
                 focusedChild = newFocus
                 val focusTargetNode = getFocusTargetOfEmbeddedViewWrapper()
-                if (!focusTargetNode.focusState.hasFocus)
-                    if (
-                        @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled
-                    ) {
-                        focusTargetNode.performRequestFocus()
-                    } else {
-                        focusOwner.focusTransactionManager.withNewTransaction {
-                            focusTargetNode.performRequestFocus()
-                        }
-                    }
+                if (!focusTargetNode.focusState.hasFocus) {
+                    focusTargetNode.performRequestFocus()
+                }
             }
             subViewLostFocus -> {
                 focusedChild = null
@@ -183,7 +201,7 @@ private class FocusGroupPropertiesNode :
                         force = false,
                         refreshFocusEvents = true,
                         clearOwnerFocus = false,
-                        focusDirection = Exit
+                        focusDirection = Exit,
                     )
                 }
             }
@@ -260,7 +278,7 @@ private fun View.containsDescendant(other: View): Boolean {
 private fun getCurrentlyFocusedRect(
     focusOwner: FocusOwner,
     hostView: View,
-    embeddedView: View
+    embeddedView: View,
 ): Rect? {
     val hostViewOffset = IntArray(2).also { hostView.getLocationOnScreen(it) }
     val embeddedViewOffset = IntArray(2).also { embeddedView.getLocationOnScreen(it) }
@@ -269,6 +287,6 @@ private fun getCurrentlyFocusedRect(
         focusedRect.left.toInt() + hostViewOffset[0] - embeddedViewOffset[0],
         focusedRect.top.toInt() + hostViewOffset[1] - embeddedViewOffset[1],
         focusedRect.right.toInt() + hostViewOffset[0] - embeddedViewOffset[0],
-        focusedRect.bottom.toInt() + hostViewOffset[1] - embeddedViewOffset[1]
+        focusedRect.bottom.toInt() + hostViewOffset[1] - embeddedViewOffset[1],
     )
 }

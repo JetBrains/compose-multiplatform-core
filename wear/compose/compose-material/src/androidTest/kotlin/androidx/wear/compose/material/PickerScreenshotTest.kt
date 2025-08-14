@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +53,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PickerScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -65,19 +64,19 @@ class PickerScreenshotTest {
 
     private val screenHeight = 150.dp
 
-    @Test fun picker() = verifyScreenshot { samplePicker() }
+    @Test fun picker() = verifyScreenshot { SamplePicker() }
 
-    @Test fun picker_without_gradient() = verifyScreenshot { samplePicker(gradientRatio = 0f) }
+    @Test fun picker_without_gradient() = verifyScreenshot { SamplePicker(gradientRatio = 0f) }
 
-    @Test fun picker_negative_separation() = verifyScreenshot { samplePicker(separation = -8.dp) }
+    @Test fun picker_negative_separation() = verifyScreenshot { SamplePicker(separation = -8.dp) }
 
-    @Test fun dual_picker() = verifyScreenshot { dualPicker() }
+    @Test fun dual_picker() = verifyScreenshot { DualPicker() }
 
     @Test
-    fun dual_picker_with_readonlylabel() = verifyScreenshot { dualPicker(readOnlyLabel = "Min") }
+    fun dual_picker_with_readonlylabel() = verifyScreenshot { DualPicker(readOnlyLabel = "Min") }
 
     @Composable
-    private fun samplePicker(
+    private fun SamplePicker(
         gradientRatio: Float = PickerDefaults.DefaultGradientRatio,
         separation: Dp = 0.dp,
     ) {
@@ -86,7 +85,7 @@ class PickerScreenshotTest {
                 Modifier.height(screenHeight)
                     .fillMaxWidth()
                     .background(MaterialTheme.colors.background),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             val items = listOf("One", "Two", "Three", "Four", "Five")
             val state = rememberPickerState(items.size)
@@ -103,7 +102,7 @@ class PickerScreenshotTest {
     }
 
     @Composable
-    private fun dualPicker(readOnlyLabel: String? = null) {
+    private fun DualPicker(readOnlyLabel: String? = null) {
         // This test verifies read-only mode alongside an 'editable' Picker.
         val textStyle = MaterialTheme.typography.display1
 
@@ -114,7 +113,7 @@ class PickerScreenshotTest {
                     text = text,
                     style = textStyle,
                     color = color,
-                    modifier = Modifier.align(Alignment.Center).wrapContentSize()
+                    modifier = Modifier.align(Alignment.Center).wrapContentSize(),
                 )
             }
 
@@ -133,7 +132,7 @@ class PickerScreenshotTest {
                 contentDescription = "",
                 readOnly = false,
                 modifier = Modifier.size(64.dp, 100.dp),
-                option = { Option(MaterialTheme.colors.secondary, "%2d".format(it)) }
+                option = { Option(MaterialTheme.colors.secondary, "%2d".format(it)) },
             )
             Spacer(Modifier.width(8.dp))
             Text(text = ":", style = textStyle, color = MaterialTheme.colors.onBackground)
@@ -142,13 +141,13 @@ class PickerScreenshotTest {
                 state =
                     rememberPickerState(
                         initialNumberOfOptions = 100,
-                        initiallySelectedOption = 100
+                        initiallySelectedOption = 100,
                     ),
                 contentDescription = "",
                 readOnly = true,
                 readOnlyLabel = { if (readOnlyLabel != null) LabelText(readOnlyLabel) },
                 modifier = Modifier.size(64.dp, 100.dp),
-                option = { Option(MaterialTheme.colors.onBackground, "%02d".format(it)) }
+                option = { Option(MaterialTheme.colors.onBackground, "%02d".format(it)) },
             )
         }
     }
@@ -159,13 +158,13 @@ class PickerScreenshotTest {
             text = text,
             style = MaterialTheme.typography.caption1,
             color = MaterialTheme.colors.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.TopCenter).offset(y = 8.dp)
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = 8.dp),
         )
     }
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) { content() }

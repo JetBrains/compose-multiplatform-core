@@ -44,7 +44,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.browser.customtabs.ExperimentalEphemeralBrowsing;
 import androidx.browser.customtabs.ExperimentalPendingSession;
 import androidx.core.content.IntentCompat;
 import androidx.core.os.BundleCompat;
@@ -104,7 +103,6 @@ import java.lang.annotation.RetentionPolicy;
  * <p> Note: The constants below are public for the browser implementation's benefit. You are
  * strongly encouraged to use {@link AuthTabIntent.Builder}.
  */
-@ExperimentalAuthTab
 public class AuthTabIntent {
     /** Boolean extra that triggers an Auth Tab launch. */
     public static final String EXTRA_LAUNCH_AUTH_TAB =
@@ -196,7 +194,6 @@ public class AuthTabIntent {
     /**
      * Returns whether ephemeral browsing is enabled.
      */
-    @ExperimentalEphemeralBrowsing
     public boolean isEphemeralBrowsingEnabled() {
         return intent.getBooleanExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, false);
     }
@@ -230,13 +227,6 @@ public class AuthTabIntent {
         return defaults;
     }
 
-    private AuthTabIntent(@NonNull Intent intent, @Nullable AuthTabSession session,
-            AuthTabSession.@Nullable PendingSession pendingSession) {
-        this.intent = intent;
-        mSession = session;
-        mPendingSession = pendingSession;
-    }
-
     @Nullable
     public AuthTabSession getSession() {
         return mSession;
@@ -247,9 +237,19 @@ public class AuthTabIntent {
         return mPendingSession;
     }
 
+    /**
+     * Returns the close button icon {@link Bitmap}.
+     */
     @Nullable
     public Bitmap getCloseButtonIcon() {
         return IntentCompat.getParcelableExtra(intent, EXTRA_CLOSE_BUTTON_ICON, Bitmap.class);
+    }
+
+    private AuthTabIntent(@NonNull Intent intent, @Nullable AuthTabSession session,
+            AuthTabSession.@Nullable PendingSession pendingSession) {
+        this.intent = intent;
+        mSession = session;
+        mPendingSession = pendingSession;
     }
 
     /**
@@ -314,7 +314,6 @@ public class AuthTabIntent {
          * @param enabled Whether ephemeral browsing is enabled.
          * @see CustomTabsIntent#EXTRA_ENABLE_EPHEMERAL_BROWSING
          */
-        @ExperimentalEphemeralBrowsing
         public AuthTabIntent.@NonNull Builder setEphemeralBrowsingEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, enabled);
             return this;

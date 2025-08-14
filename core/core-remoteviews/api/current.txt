@@ -145,7 +145,7 @@ package androidx.core.widget {
     method @RequiresApi(31) public static void setTextViewError(android.widget.RemoteViews, @IdRes int viewId, @StringRes int resId);
     method public static void setTextViewError(android.widget.RemoteViews, @IdRes int viewId, CharSequence? error);
     method @RequiresApi(31) public static void setTextViewErrorAttr(android.widget.RemoteViews, @IdRes int viewId, @AttrRes int resId);
-    method @RequiresApi(21) public static void setTextViewFontFeatureSettings(android.widget.RemoteViews, @IdRes int viewId, String fontFeatureSettings);
+    method public static void setTextViewFontFeatureSettings(android.widget.RemoteViews, @IdRes int viewId, String fontFeatureSettings);
     method @RequiresApi(31) public static void setTextViewGravity(android.widget.RemoteViews, @IdRes int viewId, int gravity);
     method @RequiresApi(31) public static void setTextViewHeight(android.widget.RemoteViews, @IdRes int viewId, float value, int unit);
     method public static void setTextViewHeight(android.widget.RemoteViews, @IdRes int viewId, @Px int pixels);
@@ -163,7 +163,7 @@ package androidx.core.widget {
     method @RequiresApi(31) public static void setTextViewHintTextColorAttr(android.widget.RemoteViews, @IdRes int viewId, @AttrRes int resId);
     method @RequiresApi(31) public static void setTextViewHintTextColorResource(android.widget.RemoteViews, @IdRes int viewId, @ColorRes int resId);
     method @RequiresApi(31) public static void setTextViewJustificationMode(android.widget.RemoteViews, @IdRes int viewId, int justificationMode);
-    method @RequiresApi(21) public static void setTextViewLetterSpacing(android.widget.RemoteViews, @IdRes int viewId, float letterSpacing);
+    method public static void setTextViewLetterSpacing(android.widget.RemoteViews, @IdRes int viewId, float letterSpacing);
     method @RequiresApi(31) public static void setTextViewLineHeight(android.widget.RemoteViews, @IdRes int viewId, float value, int unit);
     method @RequiresApi(31) public static void setTextViewLineHeightDimen(android.widget.RemoteViews, @IdRes int viewId, @DimenRes int resId);
     method @RequiresApi(31) public static void setTextViewLineHeightDimenAttr(android.widget.RemoteViews, @IdRes int viewId, @AttrRes int resId);

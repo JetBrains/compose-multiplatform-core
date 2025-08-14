@@ -150,7 +150,7 @@ class SdkSandboxManagerCompatTest {
             Runnable::run,
             object : SdkSandboxProcessDeathCallbackCompat {
                 override fun onSdkSandboxDied() {}
-            }
+            },
         )
     }
 
@@ -198,7 +198,9 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.SDK_ACTIVITY_HANDLER)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
         val handler = CatchingSdkActivityHandler()
 
@@ -218,18 +220,17 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.LOAD_SDK)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
-        val anotherLocalSdkName = TestSdkConfigs.forSdkName("v5").packageName
+        val anotherLocalSdkName = TestSdkConfigs.forSdkName("v7").packageName
         val anotherLocalSdk = localSdk.asTestSdk().loadSdk(anotherLocalSdkName, Bundle())
         assertThat(anotherLocalSdk.getSdkName()).isEqualTo(anotherLocalSdkName)
 
         val interfaces = managerCompat.getSandboxedSdks().map { it.getInterface() }
         assertThat(interfaces)
-            .containsExactly(
-                localSdk.getInterface(),
-                anotherLocalSdk.getInterface(),
-            )
+            .containsExactly(localSdk.getInterface(), anotherLocalSdk.getInterface())
     }
 
     @Test
@@ -237,7 +238,9 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.LOAD_SDK)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
         val params = Bundle()
         params.putBoolean("needFail", true)
@@ -247,7 +250,7 @@ class SdkSandboxManagerCompatTest {
                 runBlocking {
                     localSdk
                         .asTestSdk()
-                        .loadSdk(TestSdkConfigs.forSdkName("v5").packageName, params)
+                        .loadSdk(TestSdkConfigs.CURRENT_WITH_RESOURCES.packageName, params)
                 }
             }
 
@@ -255,10 +258,7 @@ class SdkSandboxManagerCompatTest {
         assertThat(result.extraInformation).isEqualTo(params)
 
         val interfaces = managerCompat.getSandboxedSdks().map { it.getInterface() }
-        assertThat(interfaces)
-            .containsExactly(
-                localSdk.getInterface(),
-            )
+        assertThat(interfaces).containsExactly(localSdk.getInterface())
     }
 
     @Test
@@ -279,10 +279,7 @@ class SdkSandboxManagerCompatTest {
         val interfaces = testSdk.getSandboxedSdks().map { it.getInterface() }
 
         assertThat(interfaces)
-            .containsExactly(
-                localSdk.getInterface(),
-                anotherLocalSdk.getInterface(),
-            )
+            .containsExactly(localSdk.getInterface(), anotherLocalSdk.getInterface())
     }
 
     @Test
@@ -290,7 +287,9 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.GET_CLIENT_PACKAGE_NAME)
+        val localSdk = runBlocking {
+            managerCompat.loadSdkWithFeature(ClientFeature.GET_CLIENT_PACKAGE_NAME)
+        }
 
         val result = localSdk.asTestSdk().getClientPackageName()
         assertThat(result).isEqualTo(context.getPackageName())
@@ -300,7 +299,9 @@ class SdkSandboxManagerCompatTest {
     fun sdkController_registerSdkSandboxClientImportanceListener() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+        val localSdk = runBlocking {
+            managerCompat.loadSdkWithFeature(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+        }
         val testSdk = localSdk.asTestSdk()
 
         val listener = CatchingClientImportanceListener()
@@ -323,16 +324,16 @@ class SdkSandboxManagerCompatTest {
         }
     }
 
-    private fun SdkSandboxManagerCompat.loadSdkWithFeature(
+    private suspend fun SdkSandboxManagerCompat.loadSdkWithFeature(
         clientFeature: ClientFeature
     ): SandboxedSdkCompat {
         return if (clientFeature.availableFrom <= ClientApiVersion.CURRENT_VERSION) {
-            runBlocking { loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle()) }
+            loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
         } else {
             loadLocalSdkWithVersionOverride(
                 TestSdkConfigs.CURRENT.packageName,
                 Bundle(),
-                ClientApiVersion.FUTURE_VERSION.apiLevel
+                ClientApiVersion.FUTURE_VERSION.apiLevel,
             )
         }
     }

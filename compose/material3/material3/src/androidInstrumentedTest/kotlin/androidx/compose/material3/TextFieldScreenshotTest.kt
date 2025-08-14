@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredHeight
@@ -59,7 +58,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TextFieldScreenshotTest {
     private val TextFieldTag = "TextField"
     private val longText =
@@ -82,7 +81,7 @@ class TextFieldScreenshotTest {
                 TextField(
                     state = rememberTextFieldState("Text"),
                     label = { Text("Label") },
-                    modifier = Modifier.requiredWidth(280.dp)
+                    modifier = Modifier.requiredWidth(280.dp),
                 )
             }
         }
@@ -97,7 +96,7 @@ class TextFieldScreenshotTest {
                 TextField(
                     state = rememberTextFieldState(),
                     label = { Text("Label") },
-                    modifier = Modifier.requiredWidth(280.dp)
+                    modifier = Modifier.requiredWidth(280.dp),
                 )
             }
         }
@@ -112,7 +111,7 @@ class TextFieldScreenshotTest {
                 TextField(
                     state = rememberTextFieldState(),
                     label = { Text("Label") },
-                    modifier = Modifier.requiredWidth(280.dp)
+                    modifier = Modifier.requiredWidth(280.dp),
                 )
             }
         }
@@ -130,7 +129,7 @@ class TextFieldScreenshotTest {
                     TextField(
                         state = rememberTextFieldState(),
                         label = { Text("Label") },
-                        modifier = Modifier.requiredWidth(280.dp)
+                        modifier = Modifier.requiredWidth(280.dp),
                     )
                 }
             }
@@ -148,7 +147,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Input"),
                 label = { Text("Label") },
                 isError = true,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -164,7 +163,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(),
                 label = { Text("Label") },
                 isError = true,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -178,7 +177,7 @@ class TextFieldScreenshotTest {
             TextField(
                 state = rememberTextFieldState(text),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
-                colors = TextFieldDefaults.colors(unfocusedTextColor = Color.Green)
+                colors = TextFieldDefaults.colors(unfocusedTextColor = Color.Green),
             )
         }
 
@@ -205,7 +204,7 @@ class TextFieldScreenshotTest {
                                 handleColor = Color.Black,
                                 backgroundColor = Color.Green,
                             )
-                    )
+                    ),
             )
         }
 
@@ -220,7 +219,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(text),
                 label = { Text("Label") },
                 modifier =
-                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -234,7 +233,7 @@ class TextFieldScreenshotTest {
             TextField(
                 state = rememberTextFieldState(text),
                 modifier =
-                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -249,7 +248,7 @@ class TextFieldScreenshotTest {
                 label = { Text("Label") },
                 placeholder = { Text("placeholder") },
                 modifier =
-                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -265,7 +264,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(),
                 placeholder = { Text("placeholder") },
                 modifier =
-                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -281,7 +280,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(),
                 label = { Text("Label") },
                 modifier =
-                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -296,7 +295,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(text),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 label = { Text("Label") },
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -310,7 +309,7 @@ class TextFieldScreenshotTest {
             TextField(
                 state = rememberTextFieldState(text),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -325,7 +324,7 @@ class TextFieldScreenshotTest {
                 placeholder = { Text("placeholder") },
                 label = { Text("Label") },
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -341,7 +340,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(),
                 placeholder = { Text("placeholder") },
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -358,7 +357,7 @@ class TextFieldScreenshotTest {
             TextField(
                 state = rememberTextFieldState(),
                 label = { Text("Label") },
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -387,7 +386,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -401,7 +400,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Text"),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -417,7 +416,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(longText),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -439,7 +438,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
-                readOnly = true
+                readOnly = true,
             )
         }
 
@@ -453,7 +452,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
-                readOnly = true
+                readOnly = true,
             )
         }
 
@@ -470,7 +469,7 @@ class TextFieldScreenshotTest {
                 modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 enabled = true,
-                readOnly = true
+                readOnly = true,
             )
         }
         rule.mainClock.autoAdvance = false
@@ -493,7 +492,7 @@ class TextFieldScreenshotTest {
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 textStyle =
                     TextStyle(textAlign = TextAlign.Center, platformStyle = platformTextStyle),
-                lineLimits = TextFieldLineLimits.SingleLine
+                lineLimits = TextFieldLineLimits.SingleLine,
             )
         }
 
@@ -508,7 +507,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(text),
                 modifier = Modifier.fillMaxWidth().testTag(TextFieldTag),
                 textStyle = TextStyle(textAlign = TextAlign.End, platformStyle = platformTextStyle),
-                lineLimits = TextFieldLineLimits.SingleLine
+                lineLimits = TextFieldLineLimits.SingleLine,
             )
         }
 
@@ -522,7 +521,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(),
                 modifier = Modifier.testTag(TextFieldTag).fillMaxWidth(),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                supportingText = { Text("Supporting text") }
+                supportingText = { Text("Supporting text") },
             )
         }
 
@@ -537,7 +536,7 @@ class TextFieldScreenshotTest {
                 isError = true,
                 modifier = Modifier.testTag(TextFieldTag).fillMaxWidth(),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                supportingText = { Text("Error supporting text") }
+                supportingText = { Text("Error supporting text") },
             )
         }
 
@@ -552,7 +551,7 @@ class TextFieldScreenshotTest {
                 label = { Text("Label") },
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 leadingIcon = { Icon(Icons.Default.Call, null) },
-                trailingIcon = { Icon(Icons.Default.Clear, null) }
+                trailingIcon = { Icon(Icons.Default.Clear, null) },
             )
         }
 
@@ -568,7 +567,7 @@ class TextFieldScreenshotTest {
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 leadingIcon = { Icon(Icons.Default.Call, null) },
                 trailingIcon = { Icon(Icons.Default.Clear, null) },
-                isError = true
+                isError = true,
             )
         }
 
@@ -726,7 +725,7 @@ class TextFieldScreenshotTest {
                 TextField(
                     state = rememberTextFieldState(text),
                     label = { Text("Label") },
-                    modifier = Modifier.requiredWidth(280.dp)
+                    modifier = Modifier.requiredWidth(280.dp),
                 )
             }
         }
@@ -741,7 +740,7 @@ class TextFieldScreenshotTest {
                 TextField(
                     state = rememberTextFieldState(),
                     label = { Text("Label") },
-                    modifier = Modifier.requiredWidth(280.dp)
+                    modifier = Modifier.requiredWidth(280.dp),
                 )
             }
         }
@@ -759,7 +758,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState(text),
                 label = { Text("Label") },
                 isError = true,
-                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
             )
         }
 
@@ -775,7 +774,7 @@ class TextFieldScreenshotTest {
                 state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -790,7 +789,7 @@ class TextFieldScreenshotTest {
                 label = { Text("Label") },
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 leadingIcon = { Icon(Icons.Default.Call, null) },
-                trailingIcon = { Icon(Icons.Default.Clear, null) }
+                trailingIcon = { Icon(Icons.Default.Clear, null) },
             )
         }
 

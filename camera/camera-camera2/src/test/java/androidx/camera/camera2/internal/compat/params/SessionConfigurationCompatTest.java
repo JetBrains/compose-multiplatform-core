@@ -24,7 +24,6 @@ import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
-import android.os.Build;
 import android.view.Surface;
 
 import org.junit.Before;
@@ -40,7 +39,6 @@ import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class SessionConfigurationCompatTest {
 
     private static final int WIDTH = 1024;

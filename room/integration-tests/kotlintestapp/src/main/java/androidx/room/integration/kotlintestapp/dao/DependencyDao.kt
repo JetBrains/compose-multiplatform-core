@@ -15,8 +15,6 @@
  */
 package androidx.room.integration.kotlintestapp.dao
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -40,7 +38,6 @@ interface DependencyDao {
     @Query("select * from DataClassFromDependency where id = :id LIMIT 1")
     fun findById(id: Int): DataClassFromDependency?
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @Transaction
     @Query("WITH nameTable( sharedName ) AS ( SELECT :name ) SELECT * from nameTable")
     fun relation(name: String): RelationFromDependency?

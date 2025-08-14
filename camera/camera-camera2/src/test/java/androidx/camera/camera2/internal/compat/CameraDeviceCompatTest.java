@@ -27,7 +27,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
-import android.os.Build;
 import android.os.Handler;
 
 import androidx.camera.camera2.internal.compat.params.InputConfigurationCompat;
@@ -49,8 +48,7 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.camera2.internal.compat.params" })
+@Config(instrumentedPackages = { "androidx.camera.camera2.internal.compat.params" })
 public final class CameraDeviceCompatTest {
 
     private static final int NUM_OUTPUTS = 3;
@@ -126,38 +124,8 @@ public final class CameraDeviceCompatTest {
                 any(SessionConfiguration.class));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    @Config(maxSdk = 22)
-    public void createCaptureSession_throwsForReprocessableSession()
-            throws CameraAccessExceptionCompat {
-        SessionConfigurationCompat sessionConfig = new SessionConfigurationCompat(
-                SessionConfigurationCompat.SESSION_REGULAR,
-                mOutputs,
-                mock(Executor.class),
-                mock(CameraCaptureSession.StateCallback.class));
-
-        // Setting an InputConfiguration will mark the session as reprocessable
-        sessionConfig.setInputConfiguration(mock(InputConfigurationCompat.class));
-
-        CameraDeviceCompat deviceCompat = CameraDeviceCompat.toCameraDeviceCompat(mCameraDevice);
-        deviceCompat.createCaptureSession(sessionConfig);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @Config(maxSdk = 22)
-    public void createCaptureSession_throwsForHighSpeedSession()
-            throws CameraAccessExceptionCompat {
-        SessionConfigurationCompat sessionConfig = new SessionConfigurationCompat(
-                SessionConfigurationCompat.SESSION_HIGH_SPEED,
-                mOutputs,
-                mock(Executor.class),
-                mock(CameraCaptureSession.StateCallback.class));
-        CameraDeviceCompat deviceCompat = CameraDeviceCompat.toCameraDeviceCompat(mCameraDevice);
-        deviceCompat.createCaptureSession(sessionConfig);
-    }
-
     @Test
-    @Config(minSdk = 23, maxSdk = 23)
+    @Config(maxSdk = 23)
     @SuppressWarnings("unchecked")
     public void createCaptureSession_createsReprocessableSession()
             throws CameraAccessException, CameraAccessExceptionCompat {
@@ -207,7 +175,7 @@ public final class CameraDeviceCompatTest {
     }
 
     @Test
-    @Config(minSdk = 23, maxSdk = 27)
+    @Config(maxSdk = 27)
     @SuppressWarnings("unchecked")
     public void createCaptureSession_createsHighSpeedSession()
             throws CameraAccessException, CameraAccessExceptionCompat {

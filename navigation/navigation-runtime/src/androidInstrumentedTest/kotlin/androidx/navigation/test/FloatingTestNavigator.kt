@@ -45,7 +45,7 @@ inline fun NavGraphBuilder.dialog(route: String) = dialog(route) {}
 /** Construct a new [TestNavigator.Destination] from a [FloatingTestNavigator] with id. */
 inline fun NavGraphBuilder.dialog(
     @IdRes id: Int,
-    builder: FloatingTestNavigatorDestinationBuilder.() -> Unit
+    builder: FloatingTestNavigatorDestinationBuilder.() -> Unit,
 ) =
     destination(
         FloatingTestNavigatorDestinationBuilder(provider[FloatingTestNavigator::class], id)
@@ -55,7 +55,7 @@ inline fun NavGraphBuilder.dialog(
 /** Construct a new [TestNavigator.Destination] from a [FloatingTestNavigator] with route. */
 inline fun NavGraphBuilder.dialog(
     route: String,
-    builder: FloatingTestNavigatorDestinationBuilder.() -> Unit
+    builder: FloatingTestNavigatorDestinationBuilder.() -> Unit,
 ) =
     destination(
         FloatingTestNavigatorDestinationBuilder(provider[FloatingTestNavigator::class], route)

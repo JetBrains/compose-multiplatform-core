@@ -64,7 +64,7 @@ import kotlin.reflect.KClass
 public class FakeHealthConnectClient(
     private var packageName: String = DEFAULT_PACKAGE_NAME,
     private val clock: Clock = Clock.systemDefaultZone(),
-    override val permissionController: PermissionController = FakePermissionController()
+    override val permissionController: PermissionController = FakePermissionController(),
 ) : HealthConnectClient {
 
     override val features: HealthConnectFeatures = HealthConnectFeaturesUnavailableImpl
@@ -164,7 +164,7 @@ public class FakeHealthConnectClient(
             val updatedRecord =
                 toRecord(record.toProto().toBuilder().setUpdateTimeMillis(clock.millis()).build())
             idsToRecords[recordId] = updatedRecord
-            removeUpsertion(recordId)
+            removeUpsertionChange(recordId)
             addUpsertionChange(updatedRecord)
         }
     }
@@ -172,7 +172,7 @@ public class FakeHealthConnectClient(
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
-        clientRecordIdsList: List<String>
+        clientRecordIdsList: List<String>,
     ) {
         // Stubs
         overrides.deleteRecords?.next(Unit)
@@ -181,47 +181,50 @@ public class FakeHealthConnectClient(
         recordIdsList
             .filter { idsToRecords[it]?.packageName == packageName }
             .forEach { recordId ->
-                idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
+                idsToRecords[recordId]?.let {
+                    deletedIdsToRecords[recordId] = it
+                    removeUpsertionChange(recordId)
+                    addDeletionChange(recordId)
+                }
                 idsToRecords.remove(recordId)
-                removeUpsertion(recordId)
-                addDeletionChange(recordId)
             }
         clientRecordIdsList
             .filter { idsToRecords[it.toRecordId(packageName)]?.packageName == packageName }
             .forEach {
                 val recordId = it.toRecordId(packageName)
-                idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
+                idsToRecords[recordId]?.let {
+                    deletedIdsToRecords[recordId] = it
+                    removeUpsertionChange(recordId)
+                    addDeletionChange(recordId)
+                }
                 idsToRecords.remove(recordId)
-                addDeletionChange(recordId)
             }
     }
 
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        timeRangeFilter: TimeRangeFilter
+        timeRangeFilter: TimeRangeFilter,
     ) {
         // Stubs
         overrides.deleteRecords?.next(Unit)
 
         // Fake implementation
-        val recordIdsToRemove =
-            idsToRecords
-                .filterValues { record ->
-                    record::class == recordType && record.isWithin(timeRangeFilter, clock)
-                }
-                .keys
-        for (recordId in recordIdsToRemove) {
-            idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
-            idsToRecords.remove(recordId)
-            removeUpsertion(recordId)
-            addDeletionChange(recordId)
-        }
+        idsToRecords
+            .filterValues { record ->
+                record::class == recordType && record.isWithin(timeRangeFilter, clock)
+            }
+            .forEach { recordId, record ->
+                deletedIdsToRecords[recordId] = record
+                idsToRecords.remove(recordId)
+                removeUpsertionChange(recordId)
+                addDeletionChange(recordId)
+            }
     }
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T> {
         // Stubs
         overrides.readRecord?.next(recordId)?.let {
@@ -278,7 +281,7 @@ public class FakeHealthConnectClient(
         // Fake implementation
         return ReadRecordsResponse(
             records = recordsPending.take(request.pageSize),
-            pageToken = nextPageToken?.toString()
+            pageToken = nextPageToken?.toString(),
         )
     }
 
@@ -411,7 +414,7 @@ public class FakeHealthConnectClient(
             changes.take(pageSizeGetChanges).toList(),
             hasMore = hasMoreChanges,
             changesTokenExpired = tokenInfo.expired,
-            nextChangesToken = nextChangesToken
+            nextChangesToken = nextChangesToken,
         )
     }
 
@@ -427,7 +430,7 @@ public class FakeHealthConnectClient(
         timeToChanges[++timeToChangesLastKey] = UpsertionChange(updatedRecord)
     }
 
-    private fun removeUpsertion(recordId: String) {
+    private fun removeUpsertionChange(recordId: String) {
         timeToChanges
             .filterValues { it is UpsertionChange && it.record.metadata.id == recordId }
             .keys
@@ -463,5 +466,5 @@ public class FakeHealthConnectClient(
 private data class TokenInfo(
     val time: Long,
     val recordTypes: Set<KClass<out Record>>,
-    val expired: Boolean = false
+    val expired: Boolean = false,
 )

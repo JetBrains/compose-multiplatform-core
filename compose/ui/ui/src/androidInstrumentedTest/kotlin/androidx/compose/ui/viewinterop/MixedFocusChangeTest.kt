@@ -16,7 +16,10 @@
 package androidx.compose.ui.viewinterop
 
 import android.content.Context
+import android.os.Build.VERSION.SDK_INT
 import android.view.KeyEvent
+import android.view.KeyEvent.ACTION_DOWN
+import android.view.KeyEvent.META_SHIFT_ON
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -30,6 +33,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
@@ -50,34 +55,54 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class MixedFocusChangeTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity2>()
 
+    @Before
+    fun isPre26FocusFinderFixEnabled() {
+        @OptIn(ExperimentalComposeUiApi::class)
+        assumeTrue(
+            SDK_INT >= 26 ||
+                ComposeUiFlags.isPre26FocusFinderFixEnabled ||
+                ComposeUiFlags.isViewFocusFixEnabled
+        )
+    }
+
     @Test
     fun siblingWithWorseBeam() {
+        // Arrange.
         val view = rule.runOnUiThread { MyComposeView(rule.activity, false) }
         rule.runOnIdle { rule.activity.setContentView(view) }
         rule.waitUntil {
             view.findViewWithTag<View>("item 0") != null &&
-                view.findViewWithTag<View>("item 1") != null
+                view.findViewWithTag<View>("item 1") != null &&
+                view.findViewWithTag<View>("item 2") != null
         }
         val first = view.findViewWithTag<View>("item 0")
         val second = view.findViewWithTag<View>("item 1")
+
         rule.runOnIdle {
             view.inputModeManager.requestInputMode(InputMode.Keyboard)
             first.requestFocus()
         }
         rule.runOnIdle { assertThat(first.isFocused).isTrue() }
+
+        // Act.
         InstrumentationRegistry.getInstrumentation()
             .sendKeySync(KeyEvent(KeyEvent.ACTION_DOWN, Key.DirectionDown.nativeKeyCode))
+
+        // Assert.
         rule.runOnIdle { assertThat(second.isFocused).isTrue() }
     }
 
     @Test
     fun previousEscapesRecyclerView() {
+        // Arrange.
         val view = rule.runOnUiThread { MyComposeView(rule.activity, false) }
         rule.runOnIdle { rule.activity.setContentView(view) }
         rule.waitUntil { view.findViewWithTag<View>("item 0") != null }
@@ -87,13 +112,18 @@ class MixedFocusChangeTest {
             first.requestFocus()
         }
         rule.runOnIdle { assertThat(first.isFocused).isTrue() }
+
+        // Act.
         InstrumentationRegistry.getInstrumentation()
-            .sendKeySync(KeyEvent(KeyEvent.ACTION_DOWN, Key.NavigatePrevious.nativeKeyCode))
+            .sendKeySync(KeyEvent(0L, 0L, ACTION_DOWN, Key.Tab.nativeKeyCode, 0, META_SHIFT_ON))
+
+        // Assert.
         rule.onNodeWithTag(clickableBoxTag).assertIsFocused()
     }
 
     @Test
     fun nextEscapesReverseRecyclerView() {
+        // Arrange.
         val view = rule.runOnUiThread { MyComposeView(rule.activity, true) }
         rule.runOnIdle { rule.activity.setContentView(view) }
         rule.waitUntil { view.findViewWithTag<View>("item 0") != null }
@@ -103,8 +133,12 @@ class MixedFocusChangeTest {
             first.requestFocus()
         }
         rule.runOnIdle { assertThat(first.isFocused).isTrue() }
+
+        // Act.
         InstrumentationRegistry.getInstrumentation()
-            .sendKeySync(KeyEvent(KeyEvent.ACTION_DOWN, Key.NavigateNext.nativeKeyCode))
+            .sendKeySync(KeyEvent(ACTION_DOWN, Key.Tab.nativeKeyCode))
+
+        // Assert.
         rule.onNodeWithTag(clickableBoxTag).assertIsFocused()
     }
 
@@ -127,7 +161,7 @@ class MixedFocusChangeTest {
                                 LinearLayoutManager(context, RecyclerView.VERTICAL, reverse)
                             adapter = MyAdapter()
                         }
-                    }
+                    },
                 )
                 Box(
                     modifier =
@@ -143,7 +177,7 @@ class MixedFocusChangeTest {
                     Text(
                         text = "Click Me",
                         color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
             }
@@ -159,7 +193,7 @@ class MixedFocusChangeTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
                         )
                     setPadding(16, 16, 16, 16)
                     isFocusable = true // Makes the item focusable

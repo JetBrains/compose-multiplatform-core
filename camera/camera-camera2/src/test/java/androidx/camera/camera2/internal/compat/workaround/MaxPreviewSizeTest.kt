@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.internal.compat.workaround
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk
 import androidx.camera.core.impl.SurfaceConfig
@@ -25,7 +24,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private val SELECT_RESOLUTION_PRIV = Size(1001, 1000)
@@ -35,7 +33,6 @@ private val SELECT_RESOLUTION_JPEG = Size(1003, 1000)
 /** Unit tests for [MaxPreviewSize]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class MaxPreviewSizeTest {
 
     private val mMaxPreviewSize =

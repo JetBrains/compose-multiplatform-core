@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -44,7 +43,7 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalTvMaterial3Api::class)
 class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @get:Rule val rule = createComposeRule()
@@ -67,10 +66,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    colors = NavigationDrawerItemDefaults.colors(containerColor = Color.Red)
+                    colors = NavigationDrawerItemDefaults.colors(containerColor = Color.Red),
                 ) {
                     Text("Favourite")
                 }
@@ -91,9 +90,9 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
-                    }
+                    },
                 ) {
                     Text("Favourite")
                 }
@@ -114,10 +113,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -138,10 +137,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -166,10 +165,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -191,10 +190,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -218,10 +217,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -242,10 +241,10 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
-                    supportingContent = { Text("You like this") }
+                    supportingContent = { Text("You like this") },
                 ) {
                     Text("Favourite")
                 }
@@ -269,7 +268,7 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
                 ) {
@@ -292,7 +291,7 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
                 ) {
@@ -315,11 +314,11 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize)
+                            modifier = Modifier.size(NavigationDrawerItemDefaults.IconSize),
                         )
                     },
                     supportingContent = { Text("You like this") },
-                    trailingContent = { NavigationDrawerItemDefaults.TrailingBadge("NEW") }
+                    trailingContent = { NavigationDrawerItemDefaults.TrailingBadge("NEW") },
                 ) {
                     Text("Favourite")
                 }
@@ -358,7 +357,7 @@ class NavigationDrawerItemScreenshotTest(private val scheme: ColorSchemeWrapper)
     @Composable
     private fun DrawerScope(
         doesNavigationDrawerHaveFocus: Boolean = true,
-        content: @Composable NavigationDrawerScope.() -> Unit
+        content: @Composable NavigationDrawerScope.() -> Unit,
     ) {
         Box(wrapperModifier) {
             NavigationDrawerScopeImpl(doesNavigationDrawerHaveFocus).apply { content() }

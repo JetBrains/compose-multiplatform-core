@@ -46,7 +46,6 @@ import android.media.MediaRecorder.VideoEncoder.HEVC
 import android.media.MediaRecorder.VideoEncoder.MPEG_4_SP
 import android.media.MediaRecorder.VideoEncoder.VP8
 import android.media.MediaRecorder.VideoEncoder.VP9
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -76,7 +75,6 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CountDownLatch
@@ -94,7 +92,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
 class HighSpeedCaptureSessionTest {
 
     @get:Rule
@@ -148,7 +145,7 @@ class HighSpeedCaptureSessionTest {
                 handler,
                 captureSessionRepository,
                 CameraQuirks.get(cameraId, mCameraCharacteristics),
-                DeviceQuirks.getAll()
+                DeviceQuirks.getAll(),
             )
 
         mCameraDeviceHolder =
@@ -207,7 +204,7 @@ class HighSpeedCaptureSessionTest {
                         object : CameraCaptureCallback() {
                             override fun onCaptureCompleted(
                                 captureConfigId: Int,
-                                cameraCaptureResult: CameraCaptureResult
+                                cameraCaptureResult: CameraCaptureResult,
                             ) {
                                 val fps =
                                     cameraCaptureResult.captureResult?.get(
@@ -231,7 +228,7 @@ class HighSpeedCaptureSessionTest {
                 open(
                     sessionConfig,
                     mCameraDeviceHolder.get()!!,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 this.sessionConfig = sessionConfig
             }
@@ -255,7 +252,7 @@ class HighSpeedCaptureSessionTest {
                         object : CameraCaptureCallback() {
                             override fun onCaptureCompleted(
                                 captureConfigId: Int,
-                                cameraCaptureResult: CameraCaptureResult
+                                cameraCaptureResult: CameraCaptureResult,
                             ) {
                                 // Count down when the request is proceeded and fps is applied.
                                 val fps =
@@ -265,7 +262,7 @@ class HighSpeedCaptureSessionTest {
                                 Log.d(
                                     TAG,
                                     "Single capture onCaptureCompleted: " +
-                                        "captureConfigId = $captureConfigId, fps = $fps"
+                                        "captureConfigId = $captureConfigId, fps = $fps",
                                 )
                                 if (captureId == captureConfigId && fps == fpsRange) {
                                     captureLatch.countDown()
@@ -293,7 +290,7 @@ class HighSpeedCaptureSessionTest {
                 QUALITY_HIGH_SPEED_480P,
                 QUALITY_HIGH_SPEED_720P,
                 QUALITY_HIGH_SPEED_1080P,
-                QUALITY_HIGH_SPEED_2160P
+                QUALITY_HIGH_SPEED_2160P,
             )
             .filter { CamcorderProfile.hasProfile(it) }
             .firstNotNullOfOrNull { quality ->
@@ -314,7 +311,7 @@ class HighSpeedCaptureSessionTest {
                     surface.release()
                     surfaceTexture.release()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
             mDeferrableSurfaces.add(this)
         }
@@ -329,7 +326,7 @@ class HighSpeedCaptureSessionTest {
             MediaFormat.createVideoFormat(
                     mimeType,
                     profile.videoFrameWidth,
-                    profile.videoFrameHeight
+                    profile.videoFrameHeight,
                 )
                 .apply {
                     setInteger(KEY_COLOR_FORMAT, COLOR_FormatSurface)
@@ -348,7 +345,7 @@ class HighSpeedCaptureSessionTest {
                     codec.release()
                     surface.release()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
             mDeferrableSurfaces.add(this)
         }
@@ -376,7 +373,7 @@ class HighSpeedCaptureSessionTest {
             override fun onOutputBufferAvailable(
                 codec: MediaCodec,
                 index: Int,
-                info: MediaCodec.BufferInfo
+                info: MediaCodec.BufferInfo,
             ) {
                 codec.getOutputBuffer(index)
                 codec.releaseOutputBuffer(index, false)

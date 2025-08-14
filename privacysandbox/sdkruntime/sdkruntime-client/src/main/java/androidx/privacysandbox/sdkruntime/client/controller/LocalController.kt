@@ -22,12 +22,11 @@ import android.os.IBinder
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
 import androidx.privacysandbox.sdkruntime.client.controller.impl.LocalClientImportanceListenerRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
-import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import java.util.concurrent.Executor
 
 /** Local implementation that will be injected to locally loaded SDKs. */
@@ -35,21 +34,16 @@ internal class LocalController(
     private val sdkPackageName: String,
     private val applicationContext: Context,
     private val localSdkRegistry: SdkRegistry,
-    private val appOwnedSdkRegistry: AppOwnedSdkRegistry
-) : SdkSandboxControllerCompat.SandboxControllerImpl {
+    private val appOwnedSdkRegistry: AppOwnedSdkRegistry,
+) : SdkSandboxControllerBackend {
 
     override fun loadSdk(
         sdkName: String,
         params: Bundle,
         executor: Executor,
-        callback: LoadSdkCallback
+        callback: LoadSdkCallback,
     ) {
-        try {
-            val result = localSdkRegistry.loadSdk(sdkName, params)
-            executor.execute { callback.onResult(result) }
-        } catch (ex: LoadSdkCompatException) {
-            executor.execute { callback.onError(ex) }
-        }
+        localSdkRegistry.loadSdk(sdkName, params, executor, callback)
     }
 
     override fun getSandboxedSdks(): List<SandboxedSdkCompat> {
@@ -75,7 +69,7 @@ internal class LocalController(
 
     override fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat
+        listenerCompat: SdkSandboxClientImportanceListenerCompat,
     ) {
         LocalClientImportanceListenerRegistry.register(sdkPackageName, executor, listenerCompat)
     }

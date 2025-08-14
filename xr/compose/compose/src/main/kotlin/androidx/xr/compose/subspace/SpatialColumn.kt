@@ -17,15 +17,17 @@
 package androidx.xr.compose.subspace
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.GroupEntity
 
 /**
  * A layout composable that arranges its children in a vertical sequence.
@@ -34,26 +36,25 @@ import androidx.xr.scenecore.ContentlessEntity
  *
  * @param modifier Modifiers to apply to the layout.
  * @param alignment The default alignment for child elements within the column.
- * @param name The name of the layout.
  * @param content The composable content to be laid out vertically.
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialColumn(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
-    name: String = defaultSpatialColumnName(),
     content: @Composable @SubspaceComposable SpatialColumnScope.() -> Unit,
 ) {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val coreGroupEntity = remember {
+        CoreGroupEntity(
+            GroupEntity.create(session, name = entityName("SpatialColumn"), pose = Pose.Identity)
+        )
+    }
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialColumnScopeInstance.content() },
-        coreEntity =
-            rememberCoreContentlessEntity {
-                ContentlessEntity.create(this, name = name, pose = Pose.Identity)
-            },
-        name = name,
+        coreEntity = coreGroupEntity,
         measurePolicy =
             RowColumnMeasurePolicy(
                 orientation = LayoutOrientation.Vertical,
@@ -65,7 +66,6 @@ public fun SpatialColumn(
 
 /** Scope for customizing the layout of children within a [SpatialColumn]. */
 @LayoutScopeMarker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialColumnScope {
     /**
      * Sizes the element's height proportionally to its [weight] relative to other weighted sibling
@@ -124,10 +124,4 @@ internal object SpatialColumnScopeInstance : SpatialColumnScope {
     override fun SubspaceModifier.align(alignment: SpatialAlignment.Depth): SubspaceModifier {
         return this then RowColumnAlignElement(depthSpatialAlignment = alignment)
     }
-}
-
-private var spatialColumnNamePart: Int = 0
-
-private fun defaultSpatialColumnName(): String {
-    return "SpatialColumn-${spatialColumnNamePart++}"
 }

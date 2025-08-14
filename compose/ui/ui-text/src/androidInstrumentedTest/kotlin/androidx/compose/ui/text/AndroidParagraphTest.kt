@@ -18,7 +18,6 @@ package androidx.compose.ui.text
 
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.os.Build
 import android.text.TextPaint
 import android.text.style.AbsoluteSizeSpan
 import android.text.style.BackgroundColorSpan
@@ -107,7 +106,7 @@ class AndroidParagraphTest {
                         text = text,
                         style = TextStyle(fontSize = fontSize, fontFamily = basicFontFamily),
                         // 2 chars width
-                        width = 2 * fontSize.toPx()
+                        width = 2 * fontSize.toPx(),
                     )
 
                 val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
@@ -121,7 +120,7 @@ class AndroidParagraphTest {
                     TextLayout(
                         charSequence = text,
                         width = ceil(paragraphAndroid.width),
-                        textPaint = textPaint
+                        textPaint = textPaint,
                     )
 
                 assertThat(paragraphAndroid.bitmap()).isEqualToBitmap(layout.bitmap())
@@ -138,7 +137,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ForegroundColorSpan::class, 0, text.length)
@@ -153,7 +152,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ForegroundColorSpan::class, 0, "abc".length)
@@ -171,9 +170,9 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, 0, text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                     ),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ForegroundColorSpan::class, 0, text.length)
@@ -191,7 +190,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ShaderBrushSpan::class, 0, text.length) {
@@ -209,7 +208,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ForegroundColorSpan::class, 0, text.length)
@@ -225,7 +224,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(ShaderBrushSpan::class, 0, "abc".length) {
@@ -246,7 +245,7 @@ class AndroidParagraphTest {
                     text = text,
                     spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
                     width = 100.0f,
-                    style = TextStyle(fontSize = fontSize, fontFamily = basicFontFamily)
+                    style = TextStyle(fontSize = fontSize, fontFamily = basicFontFamily),
                 )
 
             assertThat(paragraph.charSequence).hasSpan(ShaderBrushSpan::class, 0, "abc".length) {
@@ -264,14 +263,14 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = TextDecorationSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             !it.isUnderlineText && it.isStrikethroughText
         }
@@ -286,14 +285,14 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = TextDecorationSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             it.isUnderlineText && !it.isStrikethroughText
         }
@@ -308,14 +307,14 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = TextDecorationSpan::class,
             start = 0,
-            end = "abc".length
+            end = "abc".length,
         ) {
             !it.isUnderlineText && it.isStrikethroughText
         }
@@ -330,14 +329,14 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = TextDecorationSpan::class,
             start = 0,
-            end = "abc".length
+            end = "abc".length,
         ) {
             it.isUnderlineText && !it.isStrikethroughText
         }
@@ -353,14 +352,14 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = TextDecorationSpan::class,
             start = 0,
-            end = "abc".length
+            end = "abc".length,
         ) {
             it.isUnderlineText && it.isStrikethroughText
         }
@@ -378,7 +377,7 @@ class AndroidParagraphTest {
                 simpleParagraph(
                     text = text,
                     spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.charSequence).hasSpan(AbsoluteSizeSpan::class, 0, text.length) {
@@ -399,7 +398,7 @@ class AndroidParagraphTest {
                 simpleParagraph(
                     text = text,
                     spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.charSequence).hasSpan(AbsoluteSizeSpan::class, 0, "abc".length)
@@ -422,9 +421,9 @@ class AndroidParagraphTest {
                     spanStyles =
                         listOf(
                             AnnotatedString.Range(spanStyle, 0, text.length),
-                            AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                            AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                         ),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.charSequence).hasSpan(AbsoluteSizeSpan::class, 0, text.length)
@@ -444,7 +443,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(RelativeSizeSpan::class, 0, text.length) {
@@ -462,7 +461,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(RelativeSizeSpan::class, 0, "abc".length) {
@@ -480,7 +479,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -496,7 +495,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -515,9 +514,9 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, 0, text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                     ),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -536,7 +535,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -556,7 +555,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -580,9 +579,9 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, 0, text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                     ),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence.toString()).isEqualTo(text)
@@ -597,7 +596,7 @@ class AndroidParagraphTest {
         assertThat(paragraph.charSequence).hasSpanOnTop(
             BackgroundColorSpan::class,
             0,
-            "abc".length
+            "abc".length,
         ) { span ->
             span.backgroundColor == colorOverwrite.toArgb()
         }
@@ -613,7 +612,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(LocaleSpan::class, 0, text.length)
@@ -629,7 +628,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(LocaleSpan::class, 0, "abc".length)
@@ -647,9 +646,9 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, 0, text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                     ),
-                width = 100.0f
+                width = 100.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(LocaleSpan::class, 0, text.length)
@@ -666,7 +665,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(BaselineShiftSpan::class, 0, text.length)
@@ -681,7 +680,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(BaselineShiftSpan::class, 0, "abc".length)
@@ -699,9 +698,9 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, 0, text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, 0, "abc".length),
                     ),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(BaselineShiftSpan::class, 0, text.length)
@@ -718,7 +717,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(ScaleXSpan::class, 0, text.length) {
@@ -727,7 +726,7 @@ class AndroidParagraphTest {
         assertThat(paragraph.charSequence).hasSpan(
             spanClazz = SkewXSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             it.skewX == 0.0f
         }
@@ -743,7 +742,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(ScaleXSpan::class, 0, text.length) {
@@ -764,7 +763,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(SkewXSpan::class, 0, text.length) {
@@ -785,13 +784,13 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 textIndent = TextIndent(firstLine.sp, restLine.sp),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             LeadingMarginSpan.Standard::class,
             0,
-            text.length
+            text.length,
         ) {
             it.getLeadingMargin(true) == firstLine && it.getLeadingMargin(false) == restLine
         }
@@ -809,13 +808,13 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, start = 0, end = text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             ShadowSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             return@hasSpan it.color == color.toArgb() &&
                 it.offsetX == offset.x &&
@@ -835,13 +834,13 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, start = 0, end = text.length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             ShadowSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             return@hasSpan it.radius == Float.MIN_VALUE
         }
@@ -868,10 +867,10 @@ class AndroidParagraphTest {
                         AnnotatedString.Range(
                             SpanStyle(shadow = shadow),
                             start = 0,
-                            end = text.length
+                            end = text.length,
                         )
                     ),
-                width = width
+                width = width,
             )
 
         val paragraphFloatMinBlur =
@@ -883,10 +882,10 @@ class AndroidParagraphTest {
                         AnnotatedString.Range(
                             SpanStyle(shadow = shadow.copy(blurRadius = Float.MIN_VALUE)),
                             start = 0,
-                            end = text.length
+                            end = text.length,
                         )
                     ),
-                width = width
+                width = width,
             )
 
         val paragraphOneBlur =
@@ -898,10 +897,10 @@ class AndroidParagraphTest {
                         AnnotatedString.Range(
                             SpanStyle(shadow = shadow.copy(blurRadius = 1f)),
                             start = 0,
-                            end = text.length
+                            end = text.length,
                         )
                     ),
-                width = width
+                width = width,
             )
 
         assertThat(paragraphZeroBlur.bitmap()).isNotEqualToBitmap(paragraphNoShadow.bitmap())
@@ -929,15 +928,15 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(spanStyle, start = 0, end = text.length),
-                        AnnotatedString.Range(spanStyleOverwrite, start = 0, end = "abc".length)
+                        AnnotatedString.Range(spanStyleOverwrite, start = 0, end = "abc".length),
                     ),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             ShadowSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             return@hasSpan it.color == color.toArgb() &&
                 it.offsetX == offset.x &&
@@ -947,7 +946,7 @@ class AndroidParagraphTest {
         assertThat(paragraph.charSequence).hasSpanOnTop(
             ShadowSpan::class,
             start = 0,
-            end = "abc".length
+            end = "abc".length,
         ) {
             return@hasSpanOnTop it.color == colorOverwrite.toArgb() &&
                 it.offsetX == offsetOverwrite.x &&
@@ -970,13 +969,13 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, start = 0, end = text.length)),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             DrawStyleSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             return@hasSpan it.drawStyle == Stroke(strokeWidth, strokeMiter, strokeCap, strokeJoin)
         }
@@ -999,15 +998,15 @@ class AndroidParagraphTest {
                 spanStyles =
                     listOf(
                         AnnotatedString.Range(strokeSpanStyle, start = 0, end = text.length),
-                        AnnotatedString.Range(fillSpanStyle, start = 1, end = 3)
+                        AnnotatedString.Range(fillSpanStyle, start = 1, end = 3),
                     ),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             DrawStyleSpan::class,
             start = 0,
-            end = text.length
+            end = text.length,
         ) {
             return@hasSpan it.drawStyle == Stroke(strokeWidth, strokeMiter, strokeCap, strokeJoin)
         }
@@ -1026,7 +1025,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, "abc".length)),
-                width = 100.0f // width is not important
+                width = 100.0f, // width is not important
             )
 
         assertThat(paragraph.charSequence).hasSpan(FontFeatureSpan::class, 0, "abc".length) {
@@ -1049,7 +1048,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "abc",
                 style = TextStyle(fontFamily = null, fontWeight = FontWeight.Bold),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
         val typeface = paragraph.textPaint.typeface
         assertThat(typeface).isNotNull()
@@ -1064,7 +1063,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "abc",
                 style = TextStyle(fontFamily = null, fontStyle = FontStyle.Italic),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         val typeface = paragraph.textPaint.typeface
@@ -1082,7 +1081,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "abc",
                 style = TextStyle(fontFamily = fontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         val typeface = paragraph.textPaint.typeface
@@ -1103,7 +1102,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "abc",
                 style = TextStyle(fontFamily = font.toFontFamily()),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         val typeface: Typeface = paragraph.textPaint.typeface
@@ -1122,7 +1121,7 @@ class AndroidParagraphTest {
                     text = text,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
                     overflow = TextOverflow.Ellipsis,
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             for (i in 0 until paragraph.lineCount) {
@@ -1144,7 +1143,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.isLineEllipsized(0)).isTrue()
@@ -1164,7 +1163,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.Ellipsis,
                     maxLines = maxLines,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             for (i in 0 until paragraph.lineCount) {
@@ -1244,7 +1243,7 @@ class AndroidParagraphTest {
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
                     width = 4 * fontSize.toPx(),
                     height = 2.2f * fontSize.toPx(), // fits 2 lines
-                    maxLines = 5
+                    maxLines = 5,
                 )
 
             assertThat(paragraph.lineCount).isEqualTo(2)
@@ -1264,7 +1263,7 @@ class AndroidParagraphTest {
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
                     width = 4 * fontSize.toPx(),
                     height = 4 * fontSize.toPx(),
-                    maxLines = 2
+                    maxLines = 2,
                 )
 
             assertThat(paragraph.lineCount).isEqualTo(2)
@@ -1283,7 +1282,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
                     width = 4 * fontSize.toPx(),
-                    height = fontSize.toPx() / 4
+                    height = fontSize.toPx() / 4,
                 )
 
             assertThat(paragraph.didExceedMaxLines).isTrue()
@@ -1305,7 +1304,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
                     width = 4 * fontSize.toPx(),
-                    height = 2.2f * fontSize.toPx() // fits 2 lines
+                    height = 2.2f * fontSize.toPx(), // fits 2 lines
                 )
 
             assertThat(paragraph.lineCount).isEqualTo(1)
@@ -1314,7 +1313,6 @@ class AndroidParagraphTest {
     }
 
     // Experimentally verified that start ellipsis doesn't work same way on API 22
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun testEllipsis_withMaxLinesOne_doesStartEllipsis() {
         with(defaultDensity) {
@@ -1327,7 +1325,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.StartEllipsis,
                     maxLines = 1,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.isLineEllipsized(0)).isTrue()
@@ -1336,8 +1334,6 @@ class AndroidParagraphTest {
         }
     }
 
-    // Experimentally verified that middle ellipsis doesn't work same way on API 21
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP_MR1)
     @Test
     fun testEllipsis_withMaxLinesOne_doesMiddleEllipsis() {
         with(defaultDensity) {
@@ -1350,7 +1346,7 @@ class AndroidParagraphTest {
                     overflow = TextOverflow.MiddleEllipsis,
                     maxLines = 1,
                     style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
-                    width = paragraphWidth
+                    width = paragraphWidth,
                 )
 
             assertThat(paragraph.isLineEllipsized(0)).isTrue()
@@ -1405,7 +1401,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(letterSpacing = letterSpacing.em),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.letterSpacing).isEqualTo((letterSpacing))
@@ -1424,13 +1420,13 @@ class AndroidParagraphTest {
                 text = annotatedText.text,
                 spanStyles = annotatedText.spanStyles,
                 style = TextStyle(letterSpacing = letterSpacing.sp),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(
             LetterSpacingSpanPx::class,
             0,
-            annotatedText.length
+            annotatedText.length,
         ) {
             it.letterSpacing == letterSpacing
         }
@@ -1444,7 +1440,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = annotatedText,
                 style = TextStyle(letterSpacing = letterSpacing.sp),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).doesNotHaveSpan(LetterSpacingSpanPx::class)
@@ -1457,7 +1453,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(fontFeatureSettings = fontFeatureSettings),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.fontFeatureSettings).isEqualTo(fontFeatureSettings)
@@ -1470,7 +1466,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textGeometricTransform = TextGeometricTransform(scaleX = scaleX)),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.textScaleX).isEqualTo(scaleX)
@@ -1483,7 +1479,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textGeometricTransform = TextGeometricTransform(skewX = skewX)),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.textSkewX).isEqualTo(skewX)
@@ -1495,7 +1491,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textDecoration = TextDecoration.Underline),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.isUnderlineText).isTrue()
@@ -1508,7 +1504,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(textDecoration = TextDecoration.Underline),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(CharacterStyle::class, 0, text.length)
@@ -1520,7 +1516,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textDecoration = TextDecoration.LineThrough),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.isStrikeThruText).isTrue()
@@ -1538,10 +1534,10 @@ class AndroidParagraphTest {
                                 width = 8f,
                                 miter = 6f,
                                 cap = StrokeCap.Round,
-                                join = StrokeJoin.Bevel
+                                join = StrokeJoin.Bevel,
                             )
                     ),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.style).isEqualTo(Paint.Style.STROKE)
@@ -1591,7 +1587,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textDecoration = TextDecoration.Underline),
-                width = 0.0f
+                width = 0.0f,
             )
         assertThat(paragraph.textPaint.isUnderlineText).isTrue()
 
@@ -1606,7 +1602,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(textDecoration = TextDecoration.Underline),
-                width = 0.0f
+                width = 0.0f,
             )
         assertThat(paragraph.textPaint.isUnderlineText).isTrue()
 
@@ -1685,7 +1681,7 @@ class AndroidParagraphTest {
 
         paragraph.paint(
             canvas,
-            shadow = Shadow(color = color, offset = Offset(dx, dy), blurRadius = radius)
+            shadow = Shadow(color = color, offset = Offset(dx, dy), blurRadius = radius),
         )
         assertThat(paragraph.textPaint.shadowLayerColor).isEqualTo(color.toArgb())
         assertThat(paragraph.textPaint.shadowLayerDx).isEqualTo(dx)
@@ -1705,7 +1701,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(shadow = Shadow(color, Offset(dx, dy), radius)),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.shadowLayerDx).isEqualTo(dx)
@@ -1733,7 +1729,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = "",
                 style = TextStyle(shadow = Shadow(color, Offset(dx, dy), radius)),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.textPaint.shadowLayerDx).isEqualTo(dx)
@@ -1764,7 +1760,7 @@ class AndroidParagraphTest {
 
         paragraph.paint(
             canvas,
-            shadow = Shadow(color = color, offset = Offset(dx, dy), blurRadius = radius)
+            shadow = Shadow(color = color, offset = Offset(dx, dy), blurRadius = radius),
         )
 
         assertThat(paragraph.textPaint.shadowLayerRadius).isEqualTo(Float.MIN_VALUE)
@@ -1785,7 +1781,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize, shadow = shadow),
-                width = width
+                width = width,
             )
 
         val paragraphFloatMinBlur =
@@ -1794,16 +1790,16 @@ class AndroidParagraphTest {
                 style =
                     TextStyle(
                         fontSize = fontSize,
-                        shadow = shadow.copy(blurRadius = Float.MIN_VALUE)
+                        shadow = shadow.copy(blurRadius = Float.MIN_VALUE),
                     ),
-                width = width
+                width = width,
             )
 
         val paragraphOneBlur =
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize, shadow = shadow.copy(blurRadius = 1f)),
-                width = width
+                width = width,
             )
 
         assertThat(paragraphZeroBlur.bitmap()).isNotEqualToBitmap(paragraphNoShadow.bitmap())
@@ -1863,7 +1859,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(baselineShift = baselineShift),
-                width = 0.0f
+                width = 0.0f,
             )
 
         assertThat(paragraph.charSequence).hasSpan(BaselineShiftSpan::class, 0, text.length) { span
@@ -1889,7 +1885,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(localeList = localeList),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraph.textLocale.toLanguageTag()).isEqualTo("en-US")
@@ -1903,7 +1899,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(localeList = localeList),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraph.textLocale.toLanguageTag()).isEqualTo("ja-JP")
@@ -1917,7 +1913,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(localeList = localeList),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraph.textLocale.toLanguageTag()).isEqualTo("ja")
@@ -1931,7 +1927,7 @@ class AndroidParagraphTest {
         val style =
             TextStyle(
                 fontSize = 20.sp,
-                platformStyle = PlatformTextStyle(includeFontPadding = true)
+                platformStyle = PlatformTextStyle(includeFontPadding = true),
             )
 
         val paragraphPaddingTrue =
@@ -1942,7 +1938,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = style.copy(platformStyle = PlatformTextStyle(includeFontPadding = false)),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraphPaddingTrue.height).isNotEqualTo(paragraphPaddingFalse.height)
@@ -2001,7 +1997,7 @@ class AndroidParagraphTest {
                 text = "abcdef",
                 width = 2f * fontSize * text.length,
                 style = TextStyle(fontSize = fontSize.sp),
-                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, 2))
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, 2)),
             )
 
         // Call paint on paragraph multiple times
@@ -2021,7 +2017,7 @@ class AndroidParagraphTest {
                     text = text,
                     style = TextStyle(fontSize = fontSize),
                     spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
-                    width = fontSizeInPx * 20
+                    width = fontSizeInPx * 20,
                 )
 
             val paragraph2 =
@@ -2029,7 +2025,7 @@ class AndroidParagraphTest {
                     text = text,
                     style =
                         TextStyle(fontSize = fontSize, textDecoration = TextDecoration.Underline),
-                    width = fontSizeInPx * 20
+                    width = fontSizeInPx * 20,
                 )
 
             val bitmapWithSpan = paragraph.bitmap()
@@ -2052,7 +2048,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(textMotion = textMotion),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraph.textPaint.flags and TextPaint.LINEAR_TEXT_FLAG).isEqualTo(0)
@@ -2068,7 +2064,7 @@ class AndroidParagraphTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(textMotion = textMotion),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         assertThat(paragraph.textPaint.flags and TextPaint.LINEAR_TEXT_FLAG)
@@ -2088,7 +2084,7 @@ class AndroidParagraphTest {
         width: Float,
         height: Float = Float.POSITIVE_INFINITY,
         style: TextStyle? = null,
-        fontFamilyResolver: FontFamily.Resolver = UncachedFontFamilyResolver(context)
+        fontFamilyResolver: FontFamily.Resolver = UncachedFontFamilyResolver(context),
     ): AndroidParagraph {
         return AndroidParagraph(
             text = text,
@@ -2099,7 +2095,7 @@ class AndroidParagraphTest {
             overflow = overflow,
             constraints = Constraints(maxWidth = width.ceilToInt(), maxHeight = height.ceilToInt()),
             density = Density(density = 1f),
-            fontFamilyResolver = fontFamilyResolver
+            fontFamilyResolver = fontFamilyResolver,
         )
     }
 }

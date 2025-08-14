@@ -20,7 +20,6 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
@@ -53,13 +52,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [SurfaceEdge]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SurfaceEdgeTest {
 
     companion object {
@@ -87,7 +84,7 @@ class SurfaceEdgeTest {
                 Rect(),
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         fakeSurfaceTexture = SurfaceTexture(0)
         fakeSurface = Surface(fakeSurfaceTexture)
@@ -172,7 +169,7 @@ class SurfaceEdgeTest {
                 Rect(),
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         assertThat(edge.streamSpec).isEqualTo(FRAME_SPEC)
     }
@@ -273,7 +270,7 @@ class SurfaceEdgeTest {
                     failed = true
                 }
             },
-            mainThreadExecutor()
+            mainThreadExecutor(),
         )
         surfaceEdge.setProvider(provider)
 
@@ -328,7 +325,7 @@ class SurfaceEdgeTest {
                 Rect(),
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         val childDeferrableSurface = surfaceEdge.deferrableSurface
         parentEdge.setProvider(childDeferrableSurface)
@@ -363,7 +360,7 @@ class SurfaceEdgeTest {
                     throw IllegalStateException("Should not succeed.")
                 }
             },
-            mainThreadExecutor()
+            mainThreadExecutor(),
         )
 
         // Act: set it as "will not provide".
@@ -461,7 +458,7 @@ class SurfaceEdgeTest {
                 Rect(),
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         var transformationInfo: TransformationInfo? = null
 
@@ -655,7 +652,7 @@ class SurfaceEdgeTest {
 
                 override fun onFailure(t: Throwable) {}
             },
-            mainThreadExecutor()
+            mainThreadExecutor(),
         )
         shadowOf(getMainLooper()).idle()
         return surfaceOutput
@@ -669,8 +666,8 @@ class SurfaceEdgeTest {
                 sizeToRect(INPUT_SIZE),
                 FakeCamera(),
                 /*rotationDegrees=*/ 0,
-                /*mirroring=*/ false
+                /*mirroring=*/ false,
             ),
-            null
+            null,
         )
 }

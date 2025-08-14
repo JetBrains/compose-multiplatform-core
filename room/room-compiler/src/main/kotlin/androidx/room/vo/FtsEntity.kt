@@ -33,7 +33,7 @@ class FtsEntity(
     constructor: Constructor?,
     shadowTableName: String?,
     val ftsVersion: FtsVersion,
-    val ftsOptions: FtsOptions
+    val ftsOptions: FtsOptions,
 ) :
     Entity(
         element,
@@ -45,7 +45,7 @@ class FtsEntity(
         emptyList(),
         emptyList(),
         constructor,
-        shadowTableName
+        shadowTableName,
     ) {
 
     override val createTableQuery by lazy { createTableQuery(tableName) }
@@ -113,7 +113,7 @@ class FtsEntity(
     private fun createBeforeTrigger(
         triggerOp: String,
         tableName: String,
-        contentTableName: String
+        contentTableName: String,
     ) =
         "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "BEFORE_$triggerOp")} " +
             "BEFORE $triggerOp ON `$contentTableName` BEGIN " +
@@ -124,7 +124,7 @@ class FtsEntity(
         triggerOp: String,
         tableName: String,
         contentTableName: String,
-        columnNames: List<String>
+        columnNames: List<String>,
     ) =
         "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "AFTER_$triggerOp")} " +
             "AFTER $triggerOp ON `$contentTableName` BEGIN " +
@@ -150,6 +150,6 @@ class FtsEntity(
             emptyList(),
             ftsVersion.name,
             ftsOptions.toBundle(),
-            contentSyncTriggerCreateQueries
+            contentSyncTriggerCreateQueries,
         )
 }

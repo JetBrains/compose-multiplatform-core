@@ -82,7 +82,7 @@ public interface CallExtensionScope {
      */
     public fun addParticipantExtension(
         onActiveParticipantChanged: suspend (Participant?) -> Unit,
-        onParticipantsUpdated: suspend (Set<Participant>) -> Unit
+        onParticipantsUpdated: suspend (Set<Participant>) -> Unit,
     ): ParticipantExtensionRemote
 
     /**
@@ -93,11 +93,11 @@ public interface CallExtensionScope {
      * provide updates via the provided callbacks:
      *
      * @param onCurrentSpeakerChanged A suspend function that is called whenever the current speaker
-     *   in the meeting changes. The function receives a [String] representing the new speaker's
-     *   identifier (e.g., name or ID) or null if there is no current speaker.
+     *   in the meeting changes. The function receives a [CharSequence] representing the new
+     *   speaker's identifier (e.g., name or ID) or null if there is no current speaker.
      * @param onParticipantCountChanged A suspend function that is called whenever the number of
-     *   participants in the meeting changes. The function receives an [Int] representing the new
-     *   participant count.
+     *   participants in the meeting changes. It receives the new participant count as an [Int],
+     *   which is always 0 or greater.
      * @return A [MeetingSummaryRemote] object with an `isSupported` property of this object will
      *   indicate whether the meeting summary extension is supported by the calling application.
      *
@@ -125,8 +125,8 @@ public interface CallExtensionScope {
      *  ```
      */
     public fun addMeetingSummaryExtension(
-        onCurrentSpeakerChanged: suspend (String?) -> Unit,
-        onParticipantCountChanged: suspend (Int) -> Unit
+        onCurrentSpeakerChanged: suspend (CharSequence?) -> Unit,
+        onParticipantCountChanged: suspend (Int) -> Unit,
     ): MeetingSummaryRemote
 
     /**

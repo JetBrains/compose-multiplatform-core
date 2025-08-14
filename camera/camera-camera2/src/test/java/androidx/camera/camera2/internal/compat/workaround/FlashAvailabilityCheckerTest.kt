@@ -26,7 +26,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
@@ -34,11 +33,10 @@ private const val FAKE_OEM = "fake_oem"
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FlashAvailabilityCheckerTest(
     private val manufacturer: String,
     private val model: String,
-    private val characteristicsProvider: CameraCharacteristicsProvider
+    private val characteristicsProvider: CameraCharacteristicsProvider,
 ) {
     companion object {
         @JvmStatic
@@ -70,7 +68,7 @@ class FlashAvailabilityCheckerTest(
         assertThrows(BufferUnderflowException::class.java) {
             FlashAvailabilityChecker.isFlashAvailable(
                 /*rethrowOnError=*/ true,
-                characteristicsProvider
+                characteristicsProvider,
             )
         }
     }

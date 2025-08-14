@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.SimpleRow
 import androidx.compose.ui.Wrap
 import androidx.compose.ui.background
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -58,6 +59,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.Popup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -98,7 +100,7 @@ class OnGloballyPositionedTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coordinates ->
                                     wrap1Position = coordinates.positionInWindow().x
-                                }
+                                },
                         )
                     } else {
                         Wrap(
@@ -107,7 +109,7 @@ class OnGloballyPositionedTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coordinates ->
                                     wrap2Position = coordinates.positionInWindow().x
-                                }
+                                },
                         )
                     }
                 }
@@ -135,7 +137,7 @@ class OnGloballyPositionedTest {
                 Wrap(
                     minWidth = size,
                     minHeight = size,
-                    modifier = Modifier.onGloballyPositioned { realChildSize = it.size.width }
+                    modifier = Modifier.onGloballyPositioned { realChildSize = it.size.width },
                 )
             }
         }
@@ -167,10 +169,10 @@ class OnGloballyPositionedTest {
                                 Modifier.onGloballyPositioned { coordinates ->
                                     childGlobalPosition = coordinates.positionInRoot()
                                     latch.countDown()
-                                }
+                                },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -197,20 +199,20 @@ class OnGloballyPositionedTest {
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
-                        modifier = Modifier.onGloballyPositioned { wrap1OnPositionedCalled = true }
+                        modifier = Modifier.onGloballyPositioned { wrap1OnPositionedCalled = true },
                     )
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
-                        modifier = Modifier.onGloballyPositioned { wrap2OnPositionedCalled = true }
+                        modifier = Modifier.onGloballyPositioned { wrap2OnPositionedCalled = true },
                     ) {
                         Wrap(
                             minWidth = 10,
                             minHeight = 10,
-                            modifier = Modifier.onGloballyPositioned { latch.countDown() }
+                            modifier = Modifier.onGloballyPositioned { latch.countDown() },
                         )
                     }
-                }
+                },
             )
         }
 
@@ -440,7 +442,7 @@ class OnGloballyPositionedTest {
                             coordinates = it
                             positionedLatch.countDown()
                         }
-                    )
+                    ),
             ) {}
         }
         assertTrue(positionedLatch.await(1, TimeUnit.SECONDS))
@@ -471,7 +473,7 @@ class OnGloballyPositionedTest {
                             coordinates = it
                             positionedLatch.countDown()
                         }
-                    )
+                    ),
             ) {}
         }
         assertTrue(positionedLatch.await(1, TimeUnit.SECONDS))
@@ -485,6 +487,33 @@ class OnGloballyPositionedTest {
             }
 
             assertEquals(Rect(0f, 0f, 20f, 20f), root.boundsInParent())
+        }
+    }
+
+    @Test
+    fun testBoundsInWindow() {
+        val positionedLatch = CountDownLatch(1)
+        lateinit var coordinates: LayoutCoordinates
+
+        rule.setContent {
+            Box(Modifier.clipToBounds()) {
+                FixedSize(
+                    10,
+                    Modifier.offset { IntOffset(-5, -5) }
+                        .then(
+                            Modifier.onGloballyPositioned {
+                                coordinates = it
+                                positionedLatch.countDown()
+                            }
+                        ),
+                ) {}
+            }
+        }
+        assertTrue(positionedLatch.await(1, TimeUnit.SECONDS))
+
+        rule.runOnUiThread {
+            assertEquals(Rect(0f, 0f, 5f, 5f), coordinates.boundsInWindow(clipBounds = true))
+            assertEquals(Rect(-5f, -5f, 5f, 5f), coordinates.boundsInWindow(clipBounds = false))
         }
     }
 
@@ -507,7 +536,7 @@ class OnGloballyPositionedTest {
                         Modifier.onGloballyPositioned {
                             coordinates = it
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, _ ->
                     layout(100, 200) {}
                 }
@@ -526,7 +555,7 @@ class OnGloballyPositionedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(view.getYInWindow(), coordinates!!.positionInWindow().y) }
@@ -546,7 +575,7 @@ class OnGloballyPositionedTest {
                         .onGloballyPositioned {
                             coordinates = it
                             positionedLatch.countDown()
-                        }
+                        },
             ) { _, _ ->
                 layout(100, 200) {}
             }
@@ -564,7 +593,7 @@ class OnGloballyPositionedTest {
 
         assertTrue(
             "OnPositioned is not called when the container scrolled",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(5f, coordinates!!.positionInRoot().x) }
@@ -602,7 +631,7 @@ class OnGloballyPositionedTest {
                         Modifier.onGloballyPositioned {
                             coordinates = it
                             positionedLatch.countDown()
-                        }
+                        },
                 ) { _, constraints ->
                     layout(constraints.maxWidth, constraints.maxHeight) {}
                 }
@@ -619,7 +648,7 @@ class OnGloballyPositionedTest {
 
         assertTrue(
             "OnPositioned is not called when the container moved",
-            positionedLatch.await(1, TimeUnit.SECONDS)
+            positionedLatch.await(1, TimeUnit.SECONDS),
         )
 
         rule.runOnIdle { assertEquals(startY - 100f, coordinates!!.positionInWindow().y) }
@@ -1014,7 +1043,7 @@ class OnGloballyPositionedTest {
                         30,
                         Modifier.padding(10).background(Color.Red).onGloballyPositioned {
                             coords = it
-                        }
+                        },
                     ) { /* no-op */
                     }
                 }
@@ -1074,7 +1103,7 @@ class OnGloballyPositionedTest {
         val lambda2: (LayoutCoordinates) -> Unit = { !it.isAttached }
         Assert.assertNotEquals(
             Modifier.onGloballyPositioned(lambda1),
-            Modifier.onGloballyPositioned(lambda2)
+            Modifier.onGloballyPositioned(lambda2),
         )
     }
 
@@ -1250,6 +1279,36 @@ class OnGloballyPositionedTest {
             assertThat(positionCalled1Count).isEqualTo(1)
             assertThat(positionCalled2Count).isEqualTo(1)
         }
+    }
+
+    @Test
+    fun globalLayoutRecalculatesPosition() {
+        var contentPos = IntOffset.Zero
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.fillMaxSize().onGloballyPositioned {
+                    contentPos = it.positionInWindow().round()
+                }
+            )
+        }
+
+        val latch = CountDownLatch(1)
+        rule.runOnIdle {
+            view.viewTreeObserver.addOnDrawListener {
+                val root = view.rootView
+                root.left = 100
+                root.top = 200
+                view.viewTreeObserver.dispatchOnGlobalLayout()
+                latch.countDown()
+            }
+            view.requestLayout()
+            view.invalidate()
+        }
+
+        assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue()
+        assertThat(contentPos).isEqualTo(IntOffset(100, 200))
     }
 }
 

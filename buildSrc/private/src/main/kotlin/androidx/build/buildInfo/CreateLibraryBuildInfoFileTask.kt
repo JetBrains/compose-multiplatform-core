@@ -29,7 +29,6 @@ import androidx.build.getProjectZipPath
 import androidx.build.getSupportRootFolder
 import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.jetpad.LibraryBuildInfoFile
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.GsonBuilder
 import java.io.File
@@ -59,6 +58,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
+import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
@@ -126,6 +126,10 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
     @get:[Input Optional]
     abstract val kmpChildren: SetProperty<String>
 
+    /** The list Gradle plugin IDs */
+    @get:[Input Optional]
+    abstract val gradlePluginIds: SetProperty<String>
+
     private fun writeJsonToFile(info: LibraryBuildInfoFile) {
         val resolvedOutputFile: File = outputFile.get().asFile
         val outputDir = resolvedOutputFile.parentFile
@@ -171,6 +175,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             if (kmpChildren.isPresent) kmpChildren.get() else emptySet()
         libraryBuildInfoFile.testModuleNames =
             if (testModuleNames.isPresent) testModuleNames.get() else emptySet()
+        libraryBuildInfoFile.gradlePluginIds =
+            if (gradlePluginIds.isPresent) gradlePluginIds.get() else emptySet()
         return libraryBuildInfoFile
     }
 
@@ -199,10 +205,11 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             target: String,
             kmpChildren: Set<String>,
             testModuleNames: Provider<Set<String>>,
+            gradlePluginIds: Set<String>,
         ): TaskProvider<CreateLibraryBuildInfoFileTask> {
             return project.tasks.register(
                 TASK_NAME + variant.taskSuffix,
-                CreateLibraryBuildInfoFileTask::class.java
+                CreateLibraryBuildInfoFileTask::class.java,
             ) { task ->
                 val group = project.group.toString()
                 val artifactId = variant.artifactId
@@ -241,6 +248,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 task.kmp.set(isKmp)
                 task.target.set(target)
                 task.kmpChildren.set(kmpChildren)
+                task.gradlePluginIds.set(gradlePluginIds)
 
                 // We only want test module names for the parent build info file for Gradle projects
                 // that have multiple build info files, like KMP.
@@ -255,8 +263,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group.toString()
-                        this.version = it.version.toString()
+                        this.groupId = it.group!!
+                        this.version = it.version!!
                         this.isTipOfTree =
                             it is ProjectDependency || it is BuildInfoVariantDependency
                     }
@@ -270,8 +278,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group.toString()
-                        this.version = it.version.toString()
+                        this.groupId = it.group
+                        this.version = it.version!!
                         this.isTipOfTree = it is DefaultProjectDependencyConstraint
                     }
                 }
@@ -358,7 +366,7 @@ private fun Project.createTaskForComponent(
             kmpChildren = kmpChildren,
             testModuleNames = testModuleNames,
         )
-    anchorTask.dependsOn(task)
+    anchorTask.configure { it.dependsOn(task) }
     if (!isolatedProjectEnabled) {
         addTaskToAggregateBuildInfoFileTask(task)
     }
@@ -392,7 +400,7 @@ private fun Project.createBuildInfoTask(
                 dependencyConstraints =
                     pub.component.map { component ->
                         component.usages.orEmpty().flatMap { it.dependencyConstraints }
-                    }
+                    },
             ),
         shaProvider = shaProvider,
         // There's a build_info file for each KMP platform, but only the artifact without a platform
@@ -400,9 +408,23 @@ private fun Project.createBuildInfoTask(
         shouldPublishDocs = shouldPublishDocs && kmpTaskSuffix == "",
         isKmp = isKmp,
         target = buildTarget,
-        kmpChildren = kmpChildren,
+        kmpChildren = kmpChildren.map { modifyKmpChildrenForBuildInfo(it) }.toSet(),
         testModuleNames = testModuleNames,
+        gradlePluginIds =
+            project.extensions
+                .findByType(GradlePluginDevelopmentExtension::class.java)
+                ?.plugins
+                ?.map { it.id }
+                ?.toSet() ?: emptySet(),
     )
+}
+
+private fun modifyKmpChildrenForBuildInfo(kmpChild: String): String {
+    // Jetbrains converts the "wasmJs" target to "wasm-js", which does not match the convention
+    // for other KMP targets. This is tracked in https://youtrack.jetbrains.com/issue/KT-70072
+    // For now, handle this case separately.
+    val specialMapping = mapOf("wasmJs" to "wasm-js")
+    return specialMapping[kmpChild] ?: kmpChild.lowercase()
 }
 
 private fun dependenciesOnKmpVariants(component: SoftwareComponentInternal) =

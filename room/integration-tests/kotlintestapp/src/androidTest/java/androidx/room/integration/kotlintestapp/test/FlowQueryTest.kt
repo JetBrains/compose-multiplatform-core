@@ -27,8 +27,9 @@ import androidx.room.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room.integration.kotlintestapp.vo.PlaylistWithSongs
 import androidx.room.integration.kotlintestapp.vo.Song
 import androidx.room.withTransaction
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -52,13 +53,22 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.fail
+import org.junit.AssumptionViolatedException
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @MediumTest
-@RunWith(AndroidJUnit4::class)
-class FlowQueryTest : TestDatabaseTest() {
+@RunWith(Parameterized::class)
+class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = UseDriver.entries.toTypedArray()
+    }
 
     @After
     fun teardown() {
@@ -90,6 +100,12 @@ class FlowQueryTest : TestDatabaseTest() {
 
     @Test
     fun collectBooks_first_inTransaction() = runBlocking {
+        if (useDriver != UseDriver.NONE) {
+            throw AssumptionViolatedException(
+                "Tests uses SupportSQLite APIs, not supported with drivers installed."
+            )
+        }
+
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
@@ -193,6 +209,12 @@ class FlowQueryTest : TestDatabaseTest() {
 
     @Test
     fun receiveBooks_update_viaSupportDatabase() = runBlocking {
+        if (useDriver != UseDriver.NONE) {
+            throw AssumptionViolatedException(
+                "Tests uses SupportSQLite APIs, not supported with drivers installed."
+            )
+        }
+
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
@@ -439,4 +461,46 @@ class FlowQueryTest : TestDatabaseTest() {
 
         database.close()
     }
+
+    /**
+     * A repeated test that validates async readers with an async writing racing but at the end of
+     * it all, both readers should always get the latest value. b/432365736
+     */
+    @Test
+    fun collectBooks_async_update_async() =
+        repeat(1000) {
+            val context = ApplicationProvider.getApplicationContext() as Context
+            context.deleteDatabase("test_db")
+            val db =
+                Room.databaseBuilder<TestDatabase>(context, "test_db")
+                    .setQueryCoroutineContext(Dispatchers.IO)
+                    .apply {
+                        if (useDriver == UseDriver.ANDROID) {
+                            setDriver(AndroidSQLiteDriver())
+                        } else if (useDriver == UseDriver.BUNDLED) {
+                            setDriver(BundledSQLiteDriver())
+                        }
+                    }
+                    .build()
+            val dao = db.booksDao()
+            dao.addAuthors(TestUtil.AUTHOR_1)
+            dao.addPublishers(TestUtil.PUBLISHER)
+
+            runBlocking {
+                val readers =
+                    List(2) {
+                        launch(Dispatchers.IO) {
+                            val book =
+                                dao.getOneBooksFlow(TestUtil.BOOK_1.bookId).first { it != null }
+                            assertThat(book).isEqualTo(TestUtil.BOOK_1)
+                        }
+                    }
+                val writer = launch(Dispatchers.IO) { dao.insertBookSuspend(TestUtil.BOOK_1) }
+                withTimeout(10.seconds) {
+                    writer.join()
+                    readers.joinAll()
+                }
+            }
+            db.close()
+        }
 }

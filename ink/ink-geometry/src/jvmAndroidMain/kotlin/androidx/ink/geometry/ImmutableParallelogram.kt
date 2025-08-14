@@ -35,6 +35,9 @@ private constructor(
     override val shearFactor: Float,
 ) : Parallelogram() {
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toImmutable(): ImmutableParallelogram = this
+
     override fun equals(other: Any?): Boolean =
         other === this || (other is Parallelogram && areEquivalent(this, other))
 
@@ -100,7 +103,6 @@ private constructor(
          * bounds are [padding] units away from the segment and whose [shearFactor] is zero. This
          * makes it a rectangle, that is axis-aligned only if [segment] is axis-aligned.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
         @JvmStatic
         public fun fromSegmentAndPadding(segment: Segment, padding: Float): ImmutableParallelogram =
             normalizeAndRun(

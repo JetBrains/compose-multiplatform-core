@@ -26,13 +26,13 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 dependencies {
     androidTestImplementation(project(":benchmark:benchmark-junit4"))
-    androidTestImplementation(project(":tracing:tracing-driver"))
+    androidTestImplementation(project(":tracing:tracing-driver-wire"))
     androidTestImplementation(project(":tracing:tracing-ktx"))
     androidTestImplementation(project(":tracing:tracing-perfetto"))
     androidTestImplementation(project(":tracing:tracing-perfetto-binary"))

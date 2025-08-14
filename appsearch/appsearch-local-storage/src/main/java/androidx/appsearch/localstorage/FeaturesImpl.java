@@ -80,6 +80,8 @@ public class FeaturesImpl implements Features {
                 // fall through
             case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
                 // fall through
+            case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
+                // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
                 // fall through
             case Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG:
@@ -101,6 +103,8 @@ public class FeaturesImpl implements Features {
             case Features.SEARCH_SPEC_RANKING_FUNCTION_MAX_MIN_OR_DEFAULT:
                 // fall through
             case Features.SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE:
+                // fall through
+            case Features.SEARCH_EMBEDDING_MATCH_INFO:
                 return true;
             case Features.INDEXER_MOBILE_APPLICATIONS:
                 // The Apps Indexer is only available on platform storage and some versions of
@@ -110,6 +114,9 @@ public class FeaturesImpl implements Features {
                 return false;
             case Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM:
                 // TODO(b/384947619): enable this feature once it is ready.
+                return false;
+            case Features.ISOLATED_STORAGE:
+                // Isolated storage is only supported for platform storage.
                 return false;
             default:
                 return false;

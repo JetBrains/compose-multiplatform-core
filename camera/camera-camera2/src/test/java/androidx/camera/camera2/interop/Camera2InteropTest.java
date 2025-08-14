@@ -22,7 +22,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 import android.util.Range;
 
 import androidx.annotation.OptIn;
@@ -40,7 +39,6 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
 public final class Camera2InteropTest {
     private static final int INVALID_TEMPLATE_TYPE = -1;

@@ -25,37 +25,30 @@ import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
-import androidx.privacysandbox.ui.integration.testaidl.IMediateeSdkApi
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
 
 @SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi.Stub() {
-    override fun loadAd(
-        @AdFormat adFormat: Int,
-        @AdType adType: Int,
-        withSlowDraw: Boolean,
-        drawViewability: Boolean
-    ): Bundle =
-        when (adFormat) {
-            AdFormat.BANNER_AD ->
-                loadBannerAdUtil(adType, withSlowDraw, drawViewability, sdkContext)
-            AdFormat.NATIVE_AD -> loadNativeAdUtil(adType, sdkContext)
-            else -> Bundle()
-        }
-
+class MediateeSdkApiImpl() {
     companion object {
         fun loadAdUtil(
             @AdFormat adFormat: Int,
             @AdType adType: Int,
             withSlowDraw: Boolean,
             drawViewability: Boolean,
-            sdkContext: Context
+            sdkContext: Context,
+            automatedTestCallbackBundle: Bundle,
         ): Bundle =
             when (adFormat) {
                 AdFormat.BANNER_AD ->
-                    loadBannerAdUtil(adType, withSlowDraw, drawViewability, sdkContext)
+                    loadBannerAdUtil(
+                        adType,
+                        withSlowDraw,
+                        drawViewability,
+                        sdkContext,
+                        AutomatedTestCallback.fromBundle(automatedTestCallbackBundle),
+                    )
                 AdFormat.NATIVE_AD -> loadNativeAdUtil(adType, sdkContext)
                 else -> Bundle()
             }
@@ -64,7 +57,8 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi.Stub
             @AdType adType: Int,
             waitInsideOnDraw: Boolean,
             drawViewability: Boolean,
-            sdkContext: Context
+            sdkContext: Context,
+            automatedTestCallback: AutomatedTestCallback?,
         ): Bundle {
             val testAdapters = TestAdapters(sdkContext)
             val mediationDescription =
@@ -77,8 +71,20 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi.Stub
                     AdType.WEBVIEW_FROM_LOCAL_ASSETS ->
                         loadWebViewBannerAdFromLocalAssets(testAdapters)
                     AdType.NON_WEBVIEW_VIDEO -> loadVideoAd(testAdapters)
+                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallback)
+                    AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
+                        loadScrollView(
+                            testAdapters,
+                            automatedTestCallback, /* appCanScroll */
+                            false,
+                        )
                     else ->
-                        loadNonWebViewBannerAd(testAdapters, mediationDescription, waitInsideOnDraw)
+                        loadNonWebViewBannerAd(
+                            testAdapters,
+                            mediationDescription,
+                            waitInsideOnDraw,
+                            automatedTestCallback,
+                        )
                 }
             ViewabilityHandler.addObserverFactoryToAdapter(adapter, drawViewability)
             return adapter.toCoreLibInfo(sdkContext)
@@ -89,7 +95,7 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi.Stub
                 NativeAdGenerator(
                     sdkContext,
                     if (CompatImpl.isAppOwnedMediatee()) MediationOption.IN_APP_MEDIATEE
-                    else MediationOption.SDK_RUNTIME_MEDIATEE
+                    else MediationOption.SDK_RUNTIME_MEDIATEE,
                 )
             return nativeAdGenerator.generateAdBundleWithAssets(adType)
         }
@@ -114,9 +120,18 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi.Stub
         private fun loadNonWebViewBannerAd(
             testAdapters: TestAdapters,
             text: String,
-            waitInsideOnDraw: Boolean
+            waitInsideOnDraw: Boolean,
+            automatedTestCallback: AutomatedTestCallback?,
         ): AbstractSandboxedUiAdapter {
-            return testAdapters.TestBannerAd(text, waitInsideOnDraw)
+            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallback)
+        }
+
+        private fun loadScrollView(
+            testAdapters: TestAdapters,
+            automatedTestCallback: AutomatedTestCallback?,
+            appCanScroll: Boolean = true,
+        ): AbstractSandboxedUiAdapter {
+            return testAdapters.ScrollViewAd(automatedTestCallback, appCanScroll)
         }
     }
 

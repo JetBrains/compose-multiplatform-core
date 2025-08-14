@@ -16,10 +16,12 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
@@ -32,6 +34,7 @@ import androidx.xr.runtime.testing.FakePerceptionManager
 import androidx.xr.runtime.testing.FakeRuntime
 import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import kotlin.time.TestTimeSource
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -43,7 +46,6 @@ import org.junit.runner.RunWith
 class InteractionTest {
 
     private lateinit var session: Session
-    private lateinit var activity: Activity
     private lateinit var timeSource: TestTimeSource
     private lateinit var perceptionStateExtender: PerceptionStateExtender
     private lateinit var perceptionManager: FakePerceptionManager
@@ -51,7 +53,7 @@ class InteractionTest {
     @get:Rule
     val grantPermissionRule =
         GrantPermissionRule.grant(
-            "android.permission.SCENE_UNDERSTANDING",
+            "android.permission.SCENE_UNDERSTANDING_COARSE",
             "android.permission.HAND_TRACKING",
         )
 
@@ -87,8 +89,17 @@ class InteractionTest {
         }
     }
 
+    @Test
+    fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = createTestSessionAndRunTest {
+        runTest {
+            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
+
+            assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
+        }
+    }
+
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
-        ActivityScenario.launch(Activity::class.java).use {
+        ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)

@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 import androidx.build.AndroidXComposePlugin
 
@@ -32,12 +33,12 @@ plugins {
 }
 
 dependencies {
-    api("androidx.compose.foundation:foundation:1.8.0-beta01")
-    api("androidx.compose.ui:ui:1.8.0-beta01")
-    api("androidx.compose.runtime:runtime:1.8.0-beta01")
+    api("androidx.compose.foundation:foundation:1.8.0")
+    api("androidx.compose.ui:ui:1.8.2")
+    api("androidx.compose.runtime:runtime:1.8.0")
 
-    implementation("androidx.compose.foundation:foundation-layout:1.8.0-beta01")
-    implementation("androidx.compose.ui:ui-util:1.8.0-beta01")
+    implementation("androidx.compose.foundation:foundation-layout:1.8.0")
+    implementation("androidx.compose.ui:ui-util:1.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.profileinstaller:profileinstaller:1.4.0")
@@ -49,7 +50,6 @@ dependencies {
     testImplementation(libs.testCoreKtx)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":compose:ui:ui-test"))
@@ -64,6 +64,7 @@ dependencies {
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.mockitoAndroid5)
+    androidTestImplementation(libs.testParameterInjector)
 
     // Includes the wear-sdk jar
     compileOnly files("../../wear_sdk/wear-sdk.jar")
@@ -75,8 +76,6 @@ android {
     defaultConfig {
         minSdk = 25
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
@@ -92,6 +91,6 @@ androidx {
             "functionality to support wearable specific devices sizes, shapes and navigation " +
             "gestures. It builds upon the Jetpack Compose libraries."
     samples(project(":wear:compose:compose-foundation-samples"))
-    metalavaK2UastEnabled = false
     addGoldenImageAssets()
+    enableRobolectric()
 }

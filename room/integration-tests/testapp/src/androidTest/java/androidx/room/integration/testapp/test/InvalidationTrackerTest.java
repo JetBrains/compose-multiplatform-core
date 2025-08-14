@@ -53,6 +53,7 @@ import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 
 import org.jspecify.annotations.NonNull;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -83,6 +84,13 @@ public class InvalidationTrackerTest {
                 .build();
     }
 
+    @After
+    public void teardown() throws InterruptedException, TimeoutException {
+        mExecutorRule.drainTasks(5, TimeUnit.SECONDS);
+        mDb.close();
+    }
+
+
     @Test
     public void testInit_differentTempStore() {
         InvalidationTestDatabase db = Room.inMemoryDatabaseBuilder(
@@ -98,6 +106,7 @@ public class InvalidationTrackerTest {
                 .build();
         // Open DB to init InvalidationTracker, should not crash.
         db.getOpenHelper().getWritableDatabase();
+        db.close();
     }
 
     @Test

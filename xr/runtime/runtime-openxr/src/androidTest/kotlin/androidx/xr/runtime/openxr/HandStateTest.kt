@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.xr.runtime.TrackingState
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +29,8 @@ class HandStateTest {
 
     @Test
     fun constructor_ActiveButNoHandJoints_throwsIllegalArgumentException() {
-        assertFailsWith<IllegalArgumentException> { HandState(isActive = true, emptyList()) }
+        assertFailsWith<IllegalArgumentException> {
+            HandState(trackingState = TrackingState.TRACKING, emptyList())
+        }
     }
 }

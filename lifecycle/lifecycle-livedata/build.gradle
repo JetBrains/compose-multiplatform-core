@@ -44,6 +44,7 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.testRunner)
     testImplementation(libs.truth)
 
     androidTestImplementation(libs.testExtJunit)

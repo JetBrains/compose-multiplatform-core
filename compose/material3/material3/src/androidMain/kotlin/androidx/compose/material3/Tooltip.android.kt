@@ -22,16 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-
-@Composable
-internal actual fun windowContainerWidthInPx(): Int {
-    return with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp.dp.roundToPx() }
-}
 
 /**
  * Plain tooltip that provides a descriptive message.
@@ -51,7 +44,7 @@ internal actual fun windowContainerWidthInPx(): Int {
  */
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter."
+    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter.",
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -64,18 +57,18 @@ fun TooltipScope.PlainTooltipAndroid(
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) =
     PlainTooltip(
+        caretShape = TooltipDefaults.caretShape(caretSize),
         modifier = modifier,
-        caretSize = caretSize,
         maxWidth = TooltipDefaults.plainTooltipMaxWidth,
         shape = shape,
         contentColor = contentColor,
         containerColor = containerColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        content = content
+        content = content,
     )
 
 /**
@@ -108,11 +101,11 @@ fun TooltipScope.PlainTooltipAndroid(
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     PlainTooltip(
+        caretShape = TooltipDefaults.caretShape(caretSize),
         modifier = modifier,
-        caretSize = caretSize,
         maxWidth = maxWidth,
         shape = shape,
         contentColor = contentColor,
@@ -143,7 +136,7 @@ fun TooltipScope.PlainTooltipAndroid(
  */
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter."
+    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter.",
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -157,19 +150,19 @@ fun TooltipScope.RichTooltipAndroid(
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     tonalElevation: Dp = ElevationTokens.Level0,
     shadowElevation: Dp = RichTooltipTokens.ContainerElevation,
-    text: @Composable () -> Unit
+    text: @Composable () -> Unit,
 ) =
     RichTooltip(
+        caretShape = TooltipDefaults.caretShape(caretSize),
         modifier = modifier,
         title = title,
         action = action,
-        caretSize = caretSize,
         maxWidth = TooltipDefaults.richTooltipMaxWidth,
         shape = shape,
         colors = colors,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        text = text
+        text = text,
     )
 
 /**
@@ -205,13 +198,13 @@ fun TooltipScope.RichTooltipAndroid(
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     tonalElevation: Dp = ElevationTokens.Level0,
     shadowElevation: Dp = RichTooltipTokens.ContainerElevation,
-    text: @Composable () -> Unit
+    text: @Composable () -> Unit,
 ) {
     RichTooltip(
+        caretShape = TooltipDefaults.caretShape(caretSize),
         modifier = modifier,
         title = title,
         action = action,
-        caretSize = caretSize,
         maxWidth = maxWidth,
         shape = shape,
         colors = colors,

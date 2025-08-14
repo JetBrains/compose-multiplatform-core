@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.integration.layout.activitypanelapp
 
 import android.content.Intent
@@ -23,15 +24,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
-import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.resizable
+import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.DpVolumeSize
 
@@ -61,24 +63,24 @@ class ActivityPanelApp : ComponentActivity() {
         val minimumSize = DpVolumeSize(25.dp, 25.dp, 25.dp)
 
         SpatialColumn(SubspaceModifier.width(200.dp).height(1400.dp)) {
-            SpatialPanel(
+            SpatialActivityPanel(
                 modifier =
                     SubspaceModifier.width(panelWidth)
                         .height(panelHeight)
                         .movable()
-                        .resizable(minimumSize = minimumSize),
-                name = "AnotherActivityPanel",
+                        .resizable(minimumSize = minimumSize)
+                        .testTag("AnotherActivityPanel"),
                 intent = Intent(this@ActivityPanelApp, AnotherActivity::class.java),
             )
             SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             for (i in 1..5) {
-                SpatialPanel(
+                SpatialActivityPanel(
                     modifier =
                         SubspaceModifier.width(panelWidth)
                             .height(panelHeight)
                             .movable()
-                            .resizable(minimumSize = minimumSize),
-                    name = "BaseActivityPanel",
+                            .resizable(minimumSize = minimumSize)
+                            .testTag("BaseActivityPanel"),
                     intent =
                         Intent(this@ActivityPanelApp, BaseActivity::class.java)
                             .putExtra("activityName", "Activity $i"),
@@ -89,7 +91,7 @@ class ActivityPanelApp : ComponentActivity() {
 
         SpatialColumn(modifier = SubspaceModifier.offset(x = 200.dp)) {
             for (i in 6..10) {
-                SpatialPanel(
+                SpatialActivityPanel(
                     intent =
                         Intent(this@ActivityPanelApp, BaseActivity::class.java)
                             .putExtra("activityName", "Activity $i"),
@@ -97,8 +99,8 @@ class ActivityPanelApp : ComponentActivity() {
                         SubspaceModifier.width(panelWidth)
                             .height(panelHeight)
                             .movable()
-                            .resizable(minimumSize = minimumSize),
-                    name = "BaseActivityPanel",
+                            .resizable(minimumSize = minimumSize)
+                            .testTag("BaseActivityPanel"),
                 )
                 SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             }

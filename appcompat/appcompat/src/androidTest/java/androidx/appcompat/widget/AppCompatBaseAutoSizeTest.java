@@ -575,37 +575,31 @@ public abstract class AppCompatBaseAutoSizeTest<A extends BaseTestActivity,
     @Test
     @MediumTest
     public void testAutoSizeCallers_setLetterSpacing() throws Throwable {
-        if (Build.VERSION.SDK_INT >= 21) {
-            final T autoSizeView = prepareAndRetrieveAutoSizeTestData(
-                    R.id.view_autosize_uniform, false);
-            final float initialTextSize = autoSizeView.getTextSize();
+        final T autoSizeView = prepareAndRetrieveAutoSizeTestData(
+                R.id.view_autosize_uniform, false);
+        final float initialTextSize = autoSizeView.getTextSize();
 
-            mActivityTestRule.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (Build.VERSION.SDK_INT >= 21) {
-                        autoSizeView.setLetterSpacing(
-                                autoSizeView.getLetterSpacing() * 1.5f + 4.5f);
-                    }
-                }
-            });
-            mInstrumentation.waitForIdleSync();
-            final float changedTextSize = autoSizeView.getTextSize();
+        mActivityTestRule.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                autoSizeView.setLetterSpacing(
+                        autoSizeView.getLetterSpacing() * 1.5f + 4.5f);
+            }
+        });
+        mInstrumentation.waitForIdleSync();
+        final float changedTextSize = autoSizeView.getTextSize();
 
-            assertTrue(changedTextSize < initialTextSize);
+        assertTrue(changedTextSize < initialTextSize);
 
-            mActivityTestRule.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (Build.VERSION.SDK_INT >= 21) {
-                        autoSizeView.setLetterSpacing(autoSizeView.getLetterSpacing());
-                    }
-                }
-            });
-            mInstrumentation.waitForIdleSync();
+        mActivityTestRule.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                autoSizeView.setLetterSpacing(autoSizeView.getLetterSpacing());
+            }
+        });
+        mInstrumentation.waitForIdleSync();
 
-            assertEquals(changedTextSize, autoSizeView.getTextSize(), 0f);
-        }
+        assertEquals(changedTextSize, autoSizeView.getTextSize(), 0f);
     }
 
     @Test

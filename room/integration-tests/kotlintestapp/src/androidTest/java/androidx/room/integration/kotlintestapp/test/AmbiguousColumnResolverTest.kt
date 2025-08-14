@@ -37,11 +37,13 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
 import java.nio.ByteBuffer
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
 class AmbiguousColumnResolverTest {
 
+    private lateinit var db: TestDatabase
     private lateinit var dao: TestDao
 
     private val user1 = User(1, "Juan")
@@ -54,7 +56,7 @@ class AmbiguousColumnResolverTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
+        db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
         dao = db.getDao()
         dao.insertUser(user1)
         dao.insertUser(user2)
@@ -62,6 +64,11 @@ class AmbiguousColumnResolverTest {
         dao.insertComment(comment2)
         dao.insertComment(comment3)
         dao.insertAvatar(avatar1)
+    }
+
+    @After
+    fun teardown() {
+        db.close()
     }
 
     @Test
@@ -152,7 +159,7 @@ class AmbiguousColumnResolverTest {
     @Database(
         entities = [User::class, Comment::class, Avatar::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     internal abstract class TestDatabase : RoomDatabase() {
         abstract fun getDao(): TestDao
@@ -247,25 +254,11 @@ class AmbiguousColumnResolverTest {
         fun getUserCommentEmbeddedAliased(): List<UserAndCommentAliased>
     }
 
-    @Entity
-    data class User(
-        @PrimaryKey val id: Int,
-        val name: String,
-    )
+    @Entity data class User(@PrimaryKey val id: Int, val name: String)
 
-    @Entity
-    data class Comment(
-        @PrimaryKey val id: Int,
-        val userId: Int,
-        val text: String,
-    )
+    @Entity data class Comment(@PrimaryKey val id: Int, val userId: Int, val text: String)
 
-    @Entity
-    data class Avatar(
-        @PrimaryKey val userId: Int,
-        val url: String,
-        val data: ByteBuffer,
-    )
+    @Entity data class Avatar(@PrimaryKey val userId: Int, val url: String, val data: ByteBuffer)
 
     data class UserAndAvatar(
         @Embedded val user: User,

@@ -71,7 +71,7 @@ class GraphicsLayerModifierTest {
                 ValueElement("spotShadowColor", DefaultShadowColor),
                 ValueElement("compositingStrategy", CompositingStrategy.Auto),
                 ValueElement("blendMode", BlendMode.SrcOver),
-                ValueElement("colorFilter", null)
+                ValueElement("colorFilter", null),
             )
     }
 
@@ -92,7 +92,7 @@ class GraphicsLayerModifierTest {
                     rotationZ = 8.0f,
                     transformOrigin = TransformOrigin.Center,
                     shape = RectangleShape,
-                    clip = true
+                    clip = true,
                 )
             )
             .isEqualTo(
@@ -110,7 +110,7 @@ class GraphicsLayerModifierTest {
                     rotationZ = 8.0f,
                     transformOrigin = TransformOrigin.Center,
                     shape = RectangleShape,
-                    clip = true
+                    clip = true,
                 )
             )
     }
@@ -135,7 +135,7 @@ class GraphicsLayerModifierTest {
                 rotationZ = floatValues[8],
                 transformOrigin = transformOrigin,
                 shape = shape,
-                clip = clip
+                clip = clip,
             )
 
         val regularValue = createGraphicsLayer()

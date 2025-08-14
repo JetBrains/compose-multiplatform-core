@@ -30,6 +30,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +38,7 @@ import org.junit.runner.RunWith;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class DaoConflictStrategyTest {
-
+    private TestDatabase mDb;
     private ToyDao mToyDao;
     private Toy mOriginalToy;
     private PetDao mPetDao;
@@ -46,9 +47,9 @@ public class DaoConflictStrategyTest {
     @Before
     public void createDbAndSetUpToys() {
         Context context = ApplicationProvider.getApplicationContext();
-        TestDatabase db = Room.inMemoryDatabaseBuilder(context, TestDatabase.class).build();
-        mToyDao = db.getToyDao();
-        mPetDao = db.getPetDao();
+        mDb = Room.inMemoryDatabaseBuilder(context, TestDatabase.class).build();
+        mToyDao = mDb.getToyDao();
+        mPetDao = mDb.getPetDao();
 
         mPet = TestUtil.createPet(1);
         mOriginalToy = new Toy();
@@ -58,6 +59,11 @@ public class DaoConflictStrategyTest {
 
         mPetDao.insertOrReplace(mPet);
         mToyDao.insert(mOriginalToy);
+    }
+
+    @After
+    public void closeDb() {
+        mDb.close();
     }
 
     @Test

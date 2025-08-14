@@ -34,6 +34,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +45,7 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class ManyToManyRelationTest {
 
+    private MusicTestDatabase mDatabase;
     private MusicDao mMusicDao;
 
     private final Song mSong1 = new Song(
@@ -67,9 +69,14 @@ public class ManyToManyRelationTest {
     @Before
     public void createDb() {
         Context context = ApplicationProvider.getApplicationContext();
-        MusicTestDatabase db = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
+        mDatabase = Room.inMemoryDatabaseBuilder(context, MusicTestDatabase.class)
                 .build();
-        mMusicDao = db.getDao();
+        mMusicDao = mDatabase.getDao();
+    }
+
+    @After
+    public void closeDb() {
+        mDatabase.close();
     }
 
     @Test

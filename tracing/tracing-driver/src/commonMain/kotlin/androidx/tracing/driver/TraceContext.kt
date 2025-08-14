@@ -17,7 +17,6 @@
 package androidx.tracing.driver
 
 import androidx.collection.mutableIntObjectMapOf
-import okio.Closeable
 
 /**
  * This is something that is only typically created once per process. All the traces emitted are
@@ -25,8 +24,6 @@ import okio.Closeable
  */
 public open class TraceContext
 internal constructor(
-    @JvmField // optimize away accessors used for event critical path
-    internal val sequenceId: Int,
     /** The sink all the trace events are written to. */
     public val sink: TraceSink,
     /** Is tracing enabled ? */
@@ -35,13 +32,9 @@ internal constructor(
     // When debugging is on, we keep track of outstanding allocations in the pool,
     // and provide useful logging to help with debugging & testing.
     internal val isDebug: Boolean,
-) : Closeable {
+) : AutoCloseable {
 
-    public constructor(
-        sequenceId: Int,
-        sink: TraceSink,
-        isEnabled: Boolean
-    ) : this(sequenceId, sink, isEnabled, isDebug = false)
+    public constructor(sink: TraceSink, isEnabled: Boolean) : this(sink, isEnabled, isDebug = false)
 
     internal val processTrackLock = Any()
     internal val processes = mutableIntObjectMapOf<ProcessTrack>()
@@ -114,14 +107,7 @@ internal constructor(
 
 // An empty trace context when tracing is disabled.
 
-private const val EMPTY_TRACE_CONTEXT_SEQUENCE_ID = -1
-
-internal object EmptyTraceContext :
-    TraceContext(
-        sequenceId = EMPTY_TRACE_CONTEXT_SEQUENCE_ID,
-        sink = EmptyTraceSink(),
-        isEnabled = false
-    ) {
+internal object EmptyTraceContext : TraceContext(sink = EmptyTraceSink(), isEnabled = false) {
     internal val process = EmptyProcessTrack(this)
     internal val thread = EmptyThreadTrack(process)
     internal val counter = EmptyCounterTrack(process)

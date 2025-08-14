@@ -34,7 +34,7 @@ internal expect class RoomConnectionManager
  * connections, including performing migrations if necessary and validating schema.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-abstract class BaseRoomConnectionManager {
+public abstract class BaseRoomConnectionManager {
 
     protected abstract val configuration: DatabaseConfiguration
     protected abstract val openDelegate: RoomOpenDelegate
@@ -46,13 +46,16 @@ abstract class BaseRoomConnectionManager {
     // Flag set during initialization to prevent recursive initialization.
     private var isInitializing = false
 
-    abstract suspend fun <R> useConnection(isReadOnly: Boolean, block: suspend (Transactor) -> R): R
+    public abstract suspend fun <R> useConnection(
+        isReadOnly: Boolean,
+        block: suspend (Transactor) -> R,
+    ): R
 
     // Lets impl class resolve driver file name if necessary.
     internal open fun resolveFileName(fileName: String): String = fileName
 
     /* A driver wrapper that configures opened connections per the manager. */
-    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver {
+    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver by actual {
         override fun open(fileName: String): SQLiteConnection {
             return openLocked(resolveFileName(fileName))
         }
@@ -60,7 +63,7 @@ abstract class BaseRoomConnectionManager {
         private fun openLocked(filename: String) =
             ExclusiveLock(
                     filename = filename,
-                    useFileLock = !isConfigured && !isInitializing && filename != ":memory:"
+                    useFileLock = !isConfigured && !isInitializing && filename != ":memory:",
                 )
                 .withLock(
                     onLocked = {
@@ -88,9 +91,9 @@ abstract class BaseRoomConnectionManager {
                         throw IllegalStateException(
                             "Unable to open database '$filename'. Was a proper path / " +
                                 "name used in Room's database builder?",
-                            error
+                            error,
                         )
-                    }
+                    },
                 )
     }
 
@@ -252,9 +255,9 @@ abstract class BaseRoomConnectionManager {
                 }
                 .forEach { (name, isView) ->
                     if (isView) {
-                        connection.execSQL("DROP VIEW IF EXISTS $name")
+                        connection.execSQL("DROP VIEW IF EXISTS `$name`")
                     } else {
-                        connection.execSQL("DROP TABLE IF EXISTS $name")
+                        connection.execSQL("DROP TABLE IF EXISTS `$name`")
                     }
                 }
         } else {
@@ -323,7 +326,7 @@ abstract class BaseRoomConnectionManager {
             .use { it.step() && it.getLong(0) != 0L }
 
     @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfReaders() =
+    protected fun RoomDatabase.JournalMode.getMaxNumberOfReaders(): Int =
         when (this) {
             TRUNCATE -> 1
             WRITE_AHEAD_LOGGING -> 4
@@ -331,7 +334,7 @@ abstract class BaseRoomConnectionManager {
         }
 
     @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfWriters() =
+    protected fun RoomDatabase.JournalMode.getMaxNumberOfWriters(): Int =
         when (this) {
             TRUNCATE -> 1
             WRITE_AHEAD_LOGGING -> 1
@@ -350,12 +353,12 @@ abstract class BaseRoomConnectionManager {
         callbacks.forEach { it.onOpen(connection) }
     }
 
-    companion object {
+    public companion object {
         /*
          * Busy timeout amount. This wait time is relevant to same-process connections, if a
          * database is used across multiple processes, it is recommended that the developer sets a
          * higher timeout.
          */
-        const val BUSY_TIMEOUT_MS = 3000
+        public const val BUSY_TIMEOUT_MS: Int = 3000
     }
 }

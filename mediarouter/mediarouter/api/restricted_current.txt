@@ -246,6 +246,7 @@ package androidx.mediarouter.media {
     method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String);
     method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String, androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions);
     method public androidx.mediarouter.media.MediaRouteProvider.RouteController? onCreateRouteController(String);
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteController? onCreateRouteController(String, androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions);
     method public void onDiscoveryRequestChanged(androidx.mediarouter.media.MediaRouteDiscoveryRequest?);
     method public final void setCallback(androidx.mediarouter.media.MediaRouteProvider.Callback?);
     method public final void setDescriptor(androidx.mediarouter.media.MediaRouteProviderDescriptor?);
@@ -308,12 +309,15 @@ package androidx.mediarouter.media {
   }
 
   public static final class MediaRouteProvider.RouteControllerOptions {
+    method public String getClientPackageName();
     method public android.os.Bundle getControlHints();
   }
 
   public static final class MediaRouteProvider.RouteControllerOptions.Builder {
     ctor public MediaRouteProvider.RouteControllerOptions.Builder();
+    ctor public MediaRouteProvider.RouteControllerOptions.Builder(androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions);
     method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions build();
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions.Builder setClientPackageName(String);
     method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions.Builder setControlHints(android.os.Bundle?);
   }
 

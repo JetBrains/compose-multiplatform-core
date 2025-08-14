@@ -51,6 +51,7 @@ import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.percentageWidth
 import androidx.wear.protolayout.material3.Versions.hasExpandWithWeightSupport
 import androidx.wear.protolayout.materialcore.fontscaling.FontScaleConverterFactory
 import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.background
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.modifiers.padding
 import androidx.wear.protolayout.modifiers.semanticsRole
@@ -103,9 +104,23 @@ internal fun Float.dpToSp(fontScale: Float): Float {
 
 internal fun Int.toDp() = this.toFloat().dp
 
-/** Builds a horizontal Spacer, with width set to expand and height set to the given value. */
-internal fun horizontalSpacer(@Dimension(unit = DP) heightDp: Int): Spacer =
-    Spacer.Builder().setWidth(expand()).setHeight(heightDp.toDp()).build()
+/**
+ * Builds a horizontal Spacer, with width set to expand and height set to the given value and
+ * optional background color.
+ */
+internal fun horizontalSpacer(
+    @Dimension(unit = DP) heightDp: Int,
+    overrideColor: LayoutColor? = null,
+): Spacer =
+    Spacer.Builder()
+        .setWidth(expand())
+        .setHeight(heightDp.toDp())
+        .apply {
+            overrideColor?.let {
+                setModifiers(LayoutModifier.background(it).toProtoLayoutModifiers())
+            }
+        }
+        .build()
 
 /** Builds a vertical Spacer, with height set to expand and width set to the given value. */
 internal fun verticalSpacer(@Dimension(unit = DP) widthDp: Int): Spacer =
@@ -165,10 +180,11 @@ internal fun MaterialScope.componentContainer(
     width: ContainerDimension,
     height: ContainerDimension,
     backgroundContent: (MaterialScope.() -> LayoutElement)?,
+    useOverlayOnBackground: Boolean = true,
     contentPadding: Padding,
     metadataTag: String?,
     content: (MaterialScope.() -> LayoutElement)?,
-    useOverlayOnBackground: Boolean = true
+    horizontalAlignment: Int = HORIZONTAL_ALIGN_CENTER,
 ): LayoutElement {
     val mod =
         LayoutModifier.semanticsRole(SEMANTICS_ROLE_BUTTON) then
@@ -179,9 +195,11 @@ internal fun MaterialScope.componentContainer(
             }
 
     val container =
-        Box.Builder().setHeight(height).setWidth(width).apply {
-            content?.let { addContent(content()) }
-        }
+        Box.Builder()
+            .setHeight(height)
+            .setHorizontalAlignment(horizontalAlignment)
+            .setWidth(width)
+            .apply { content?.let { addContent(content()) } }
 
     if (backgroundContent == null) {
         container.setModifiers(mod.padding(contentPadding).toProtoLayoutModifiers())
@@ -193,21 +211,27 @@ internal fun MaterialScope.componentContainer(
         .setModifiers(protoLayoutModifiers)
         .addContent(
             withStyle(
-                    defaultBackgroundImageStyle =
-                        BackgroundImageStyle(
-                            width = expand(),
-                            height = expand(),
-                            overlayColor =
-                                if (useOverlayOnBackground) {
-                                    colorScheme.background.withOpacity(0.6f)
-                                } else {
-                                    null
-                                },
-                            shape = protoLayoutModifiers.background?.corner ?: shapes.large,
-                            contentScaleMode = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS,
-                        )
-                )
-                .backgroundContent()
+                defaultBackgroundImageStyle =
+                    BackgroundImageStyle(
+                        width = expand(),
+                        height = expand(),
+                        overlayColor =
+                            if (useOverlayOnBackground) {
+                                colorScheme.background.withOpacity(0.6f)
+                            } else {
+                                null
+                            },
+                        shape = protoLayoutModifiers.background?.corner ?: shapes.large,
+                        contentScaleMode =
+                            if (useOverlayOnBackground) {
+                                LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+                            } else {
+                                LayoutElementBuilders.CONTENT_SCALE_MODE_CROP
+                            },
+                    )
+            ) {
+                backgroundContent()
+            }
         )
         .setWidth(width)
         .setHeight(height)

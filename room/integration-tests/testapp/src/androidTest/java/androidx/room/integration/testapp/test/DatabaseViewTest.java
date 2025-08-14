@@ -307,6 +307,7 @@ public class DatabaseViewTest {
         final TeamDetail team2 = db.team().detailById(2L);
         assertThat(team2.name, is(equalTo("Backend")));
         assertThat(team2.departmentName, is(equalTo("IT")));
+        db.close();
     }
 
     @Test
@@ -321,6 +322,7 @@ public class DatabaseViewTest {
         assertThat(db.employee().withManagerById(1L).manager, is(nullValue()));
         assertThat(db.employee().withManagerById(2L).manager.name, is(equalTo("CEO")));
         assertThat(db.employee().withManagerById(3L).manager.name, is(equalTo("John")));
+        db.close();
     }
 
     @Test
@@ -348,6 +350,7 @@ public class DatabaseViewTest {
                         && list.get(0).name.equals("Books")));
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
                 teams.removeObserver(observer));
+        db.close();
     }
 
     @Test
@@ -364,6 +367,7 @@ public class DatabaseViewTest {
         assertThat(employee.manager.name, is(equalTo("CEO")));
         assertThat(employee.team.name, is(equalTo("Books")));
         assertThat(employee.team.departmentName, is(equalTo("Shop")));
+        db.close();
     }
 
     @Test
@@ -406,6 +410,7 @@ public class DatabaseViewTest {
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
                 employee.removeObserver(observer));
+        db.close();
     }
 
     @Test
@@ -424,6 +429,7 @@ public class DatabaseViewTest {
         assertThat(teamWithMembers.members.get(0).name, is(equalTo("CEO")));
         assertThat(teamWithMembers.members.get(1).name, is(equalTo("John")));
         assertThat(teamWithMembers.members.get(1).manager.name, is(equalTo("CEO")));
+        db.close();
     }
 
     @SuppressWarnings("unchecked")
@@ -443,6 +449,7 @@ public class DatabaseViewTest {
         assertThat(detail.team.departmentId, is(equalTo(3L)));
         assertThat(detail.department.id, is(equalTo(3L)));
         assertThat(detail.department.name, is(equalTo("Sales")));
+        db.close();
     }
 
     @Test
@@ -458,5 +465,6 @@ public class DatabaseViewTest {
         assertThat(pairs.get(0).first.departmentName, is(equalTo("Sales")));
         assertThat(pairs.get(0).second.name, is(equalTo("Toys")));
         assertThat(pairs.get(0).second.departmentName, is(equalTo("Sales")));
+        db.close();
     }
 }

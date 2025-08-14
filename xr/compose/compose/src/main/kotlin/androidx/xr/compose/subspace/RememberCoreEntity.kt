@@ -16,46 +16,16 @@
 
 package androidx.xr.compose.subspace
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisallowComposableCalls
-import androidx.compose.runtime.remember
-import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.platform.disposableValueOf
-import androidx.xr.compose.platform.getValue
-import androidx.xr.compose.subspace.layout.CoreContentlessEntity
-import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.Session
+
+private var entityNamePart: Int = 0
 
 /**
- * Creates a [CoreContentlessEntity] that is automatically disposed of when it leaves the
- * composition.
+ * Creates a unique debugging name for an [Entity].
+ *
+ * @param name A context-specific name for the [Entity].
  */
-@Composable
-internal inline fun rememberCoreContentlessEntity(
-    crossinline entityFactory: @DisallowComposableCalls Session.() -> Entity
-): CoreContentlessEntity {
-    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val coreEntity by remember {
-        disposableValueOf(CoreContentlessEntity(session.entityFactory())) { it.dispose() }
-    }
-    return coreEntity
-}
-
-/** Creates a [CorePanelEntity] that is automatically disposed of when it leaves the composition. */
-@Composable
-internal inline fun rememberCorePanelEntity(
-    crossinline onCoreEntityCreated: @DisallowComposableCalls (CorePanelEntity) -> Unit = {},
-    crossinline entityFactory: @DisallowComposableCalls Session.() -> PanelEntity,
-): CorePanelEntity {
-    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val coreEntity by remember {
-        disposableValueOf(
-            CorePanelEntity(session, session.entityFactory()).also(onCoreEntityCreated)
-        ) {
-            it.dispose()
-        }
-    }
-    return coreEntity
+@PublishedApi
+internal fun entityName(name: String): String {
+    return "$name-${entityNamePart++}"
 }

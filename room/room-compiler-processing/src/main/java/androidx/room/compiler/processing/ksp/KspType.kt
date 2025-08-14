@@ -78,7 +78,7 @@ internal abstract class KspType(
                             ksType = ksType.replace(it.arguments),
                             originalKSAnnotations = originalKSAnnotations,
                             scope = scope,
-                            typeAlias = typeAlias
+                            typeAlias = typeAlias,
                         )
                     } else {
                         this
@@ -122,7 +122,7 @@ internal abstract class KspType(
                             // bound type as the type argument (e.g. 'Bar' in 'T extends Bar & Baz')
                             env.resolver.getTypeArgument(
                                 parameter.bounds.first(),
-                                Variance.INVARIANT
+                                Variance.INVARIANT,
                             )
                         }
                     parameter.name.asString() to argument
@@ -132,7 +132,7 @@ internal abstract class KspType(
             (ksType.declaration as? KSClassDeclaration)?.superTypes?.toList()?.map {
                 env.wrap(
                         ksType = resolveTypeArguments(it.resolve(), resolvedTypeArguments),
-                        allowPrimitives = false
+                        allowPrimitives = false,
                     )
                     .makeNonNullable()
             } ?: emptyList()
@@ -156,7 +156,7 @@ internal abstract class KspType(
     private fun resolveTypeArguments(
         type: KSType,
         resolvedTypeArguments: Map<String, KSTypeArgument>,
-        stack: List<KSType> = emptyList()
+        stack: List<KSType> = emptyList(),
     ): KSType {
         return type.replace(
             type.arguments
@@ -176,10 +176,10 @@ internal abstract class KspType(
                                 resolveTypeArguments(
                                         type = argType,
                                         resolvedTypeArguments = resolvedTypeArguments,
-                                        stack = stack + argType
+                                        stack = stack + argType,
                                     )
                                     .createTypeReference(),
-                            variance = Variance.INVARIANT
+                            variance = Variance.INVARIANT,
                         )
                     } else {
                         argument

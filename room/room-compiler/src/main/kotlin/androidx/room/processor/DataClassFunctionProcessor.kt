@@ -24,7 +24,7 @@ import androidx.room.vo.DataClassFunction
 class DataClassFunctionProcessor(
     private val context: Context,
     private val element: XMethodElement,
-    private val owner: XType
+    private val owner: XType,
 ) {
     fun process(): DataClassFunction {
         val asMember = element.asMemberOf(owner)

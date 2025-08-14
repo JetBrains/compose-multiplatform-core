@@ -101,8 +101,7 @@ public class AppCompatImageHelper {
 
     boolean hasOverlappingRendering() {
         final Drawable background = mView.getBackground();
-        if (Build.VERSION.SDK_INT >= 21
-                && background instanceof android.graphics.drawable.RippleDrawable) {
+        if (background instanceof android.graphics.drawable.RippleDrawable) {
             // RippleDrawable has an issue on L+ when used with an alpha animation.
             // This workaround should be disabled when the platform bug is fixed. See b/27715789
             return false;

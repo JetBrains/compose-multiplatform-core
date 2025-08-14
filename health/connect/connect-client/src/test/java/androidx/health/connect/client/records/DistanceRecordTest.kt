@@ -75,7 +75,7 @@ class DistanceRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
-                        distance = 10.meters
+                        distance = 10.meters,
                     )
                     .toString()
             )

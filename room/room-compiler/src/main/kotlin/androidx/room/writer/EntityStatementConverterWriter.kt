@@ -62,7 +62,7 @@ class EntityStatementConverterWriter(private val entity: Entity) :
                         name = indexVar,
                         typeName = XTypeName.PRIMITIVE_INT,
                         assignExpr =
-                            XCodeBlock.of("%M(%N, %S)", packageMember, stmtParamName, it.columnName)
+                            XCodeBlock.of("%M(%N, %S)", packageMember, stmtParamName, it.columnName),
                     )
                     PropertyWithIndex(property = it, indexVar = indexVar, alwaysExists = false)
                 }
@@ -72,7 +72,7 @@ class EntityStatementConverterWriter(private val entity: Entity) :
                 stmtVar = stmtParamName,
                 propertiesWithIndices = fieldsWithIndices,
                 relationCollectors = emptyList(), // no relationship for entities
-                scope = scope
+                scope = scope,
             )
             addStatement("return %L", entityVar)
         }

@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -37,24 +37,26 @@ dependencies {
     // Classes and types that are only needed at runtime
     implementation(libs.atomicFu)
     implementation(libs.kotlinStdlib)
-    implementation(libs.kotlinCoroutinesGuava)
     implementation(libs.kotlinCoroutinesTest)
     implementation(project(":camera:camera-camera2-pipe"))
+    implementation(project(":camera:featurecombinationquery:featurecombinationquery"))
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:sandbox:4.14")
+    testImplementation(libs.kotlinCoroutinesCore)
 }
 
 android {
+    compileSdk = 35
+
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.camera2.pipe.testing"
 }
 
@@ -74,4 +76,5 @@ androidx {
             "consistent and reliable camera foundation that enables great camera driven " +
             "experiences across all of Android."
     doNotDocumentReason = "Not shipped externally"
+    enableRobolectric()
 }

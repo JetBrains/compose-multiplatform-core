@@ -16,7 +16,6 @@
 
 package androidx.camera.core.streamsharing
 
-import android.os.Build
 import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.UseCase
@@ -27,13 +26,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [VirtualCamera]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class VirtualCameraTest {
 
     private val cameraInfo = FakeCameraInfoInternal(90, CameraSelector.LENS_FACING_BACK)

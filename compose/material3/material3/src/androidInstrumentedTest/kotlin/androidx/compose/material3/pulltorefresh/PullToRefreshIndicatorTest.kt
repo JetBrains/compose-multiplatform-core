@@ -21,7 +21,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -44,7 +43,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class PullToRefreshIndicatorTest {
 
     @get:Rule val rule = createComposeRule()
@@ -88,7 +86,7 @@ class PullToRefreshIndicatorTest {
                     modifier = Modifier.size(containerSize).testTag(INDICATOR_TAG),
                     state = state,
                     isRefreshing = true,
-                    threshold = verticalOffsetDp
+                    maxDistance = verticalOffsetDp,
                 )
             }
             LaunchedEffect(true) { state.animateToThreshold() }
@@ -126,7 +124,7 @@ class PullToRefreshIndicatorTest {
                 PullToRefreshDefaults.Indicator(
                     modifier = Modifier.testTag(INDICATOR_TAG),
                     state = rememberPullToRefreshState(),
-                    isRefreshing = true
+                    isRefreshing = true,
                 )
             }
         }

@@ -16,7 +16,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING"/>
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
 
   <application
       android:label="Compose XR Animation Exploration App">
@@ -26,11 +26,19 @@
     <activity
         android:name=".AnimationExplorationApp"
         android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
         android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+    </activity>
+
+    <activity
+        android:name=".SampleAnimationsActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
     </activity>
   </application>
 

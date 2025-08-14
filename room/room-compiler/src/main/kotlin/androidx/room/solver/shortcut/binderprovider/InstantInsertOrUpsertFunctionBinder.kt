@@ -31,7 +31,7 @@ class InstantInsertOrUpsertFunctionBinderProvider(private val context: Context) 
     override fun provide(
         declared: XType,
         params: List<ShortcutQueryParameter>,
-        forUpsert: Boolean
+        forUpsert: Boolean,
     ): InsertOrUpsertFunctionBinder {
         return InstantInsertOrUpsertFunctionBinder(
             if (forUpsert) {

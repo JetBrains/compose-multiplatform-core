@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -34,7 +33,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(project(":activity:activity-ktx"))
+    implementation("androidx.activity:activity:1.10.1")
     implementation(project(":savedstate:savedstate"))
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(libs.kotlinSerializationCore)
@@ -50,5 +49,4 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2024"
     description = "Sample code for SavedState"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

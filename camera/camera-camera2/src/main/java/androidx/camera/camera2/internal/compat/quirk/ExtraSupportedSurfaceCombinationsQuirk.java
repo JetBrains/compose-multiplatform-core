@@ -59,7 +59,11 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
                     "PIXEL 7",
                     "PIXEL 7 PRO",
                     "PIXEL 8",
-                    "PIXEL 8 PRO"));
+                    "PIXEL 8 PRO",
+                    "PIXEL 9",
+                    "PIXEL 9 PRO",
+                    "PIXEL 9 PRO XL",
+                    "PIXEL 9 PRO FOLD"));
 
     private static final Set<String> SUPPORT_EXTRA_LEVEL_3_CONFIGURATIONS_SAMSUNG_MODELS =
             new HashSet<>(Arrays.asList(
@@ -69,8 +73,16 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
                     "SM-S926", // Galaxy S24+
                     "SM-S928", // Galaxy S24 Ultra
                     "SC-52E",  // Galaxy S24 Ultra
-                    "SCG26"   // Galaxy S24 Ultra
-              ));
+                    "SCG26",   // Galaxy S24 Ultra
+                    "SM-S931", // Galaxy S25
+                    "SM-S936", // Galaxy S25+
+                    "SM-S937", // Galaxy S25 Edge
+                    "SM-S938", // Galaxy S25 Ultra
+                    "SCG31",   // Galaxy S25
+                    "SCG32",   // Galaxy S25 Ultra
+                    "SC-51F",  // Galaxy S25
+                    "SC-52F"  // Galaxy S25 Ultra
+                  ));
 
     static boolean load() {
         return isSamsungS7() || supportExtraLevel3ConfigurationsGoogleDevice()

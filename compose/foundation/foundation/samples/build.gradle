@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -55,12 +54,9 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Compose UI Foundational Components"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
     compileSdk = 35
     namespace = "androidx.compose.foundation.samples"
-    // TODO(b/328001575)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }

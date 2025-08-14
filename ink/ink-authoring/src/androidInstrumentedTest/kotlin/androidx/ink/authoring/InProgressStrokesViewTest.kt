@@ -16,20 +16,31 @@
 
 package androidx.ink.authoring
 
+import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Path
 import android.view.MotionEvent
 import android.view.MotionEvent.PointerCoords
 import android.view.MotionEvent.PointerProperties
 import androidx.ink.authoring.testing.InputStreamBuilder
 import androidx.ink.authoring.testing.MultiTouchInputBuilder
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
+import androidx.ink.geometry.AffineTransform
+import androidx.ink.geometry.BoxAccumulator
+import androidx.ink.geometry.toMatrix
+import androidx.ink.geometry.toRectF
+import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
@@ -37,6 +48,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based test of [InProgressStrokesView]. */
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
@@ -268,7 +281,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 0L,
                 arrayOf(
                     PointerProperties().apply { id = 9 },
-                    PointerProperties().apply { id = 10 }
+                    PointerProperties().apply { id = 10 },
                 ),
                 arrayOf(
                     PointerCoords().apply {
@@ -287,7 +300,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 downEvent,
                 9,
-                basicBrush(TestColors.AVOCADO_GREEN)
+                basicBrush(TestColors.AVOCADO_GREEN),
             )
             @Suppress("CheckReturnValue")
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
@@ -333,7 +346,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 MotionEvent.ACTION_DOWN,
                 arrayOf(
                     PointerProperties().apply { id = 9 },
-                    PointerProperties().apply { id = 10 }
+                    PointerProperties().apply { id = 10 },
                 ),
                 arrayOf(
                     PointerCoords().apply {
@@ -352,7 +365,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 downEvent,
                 9,
-                basicBrush(TestColors.AVOCADO_GREEN)
+                basicBrush(TestColors.AVOCADO_GREEN),
             )
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
@@ -406,13 +419,37 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 moveEvent,
                 moveEvent.getPointerId(0),
                 strokeId,
-                prediction = null,
             )
             val upEvent = stylusInputStream.getUpEvent()
             activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
         }
 
         assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
+    }
+
+    @Test
+    fun startAndAddToAndFinishStroke_withNoStrokeId_showsStrokeAndSendsCallback() {
+        val stylusInputStream =
+            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+        activityScenarioRule.scenario.onActivity { activity ->
+            val downEvent = stylusInputStream.getDownEvent()
+            // Don't keep the resulting InProgressStrokeId. Instead, rely on the pointer ID to
+            // identify
+            // the stroke for addToStroke and finishStroke.
+            activity.inProgressStrokesView.startStroke(
+                downEvent,
+                downEvent.getPointerId(0),
+                basicBrush(TestColors.AVOCADO_GREEN),
+            )
+            val moveEvent = stylusInputStream.getNextMoveEvent()
+            activity.inProgressStrokesView.addToStroke(moveEvent, moveEvent.getPointerId(0))
+            val upEvent = stylusInputStream.getUpEvent()
+            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0))
+        }
+
+        assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish_no_stroke_id")
         assertThat(finishedStrokeCohorts).hasSize(1)
         assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
@@ -432,7 +469,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 )
             activity.inProgressStrokesView.addToStroke(
                 MutableStrokeInputBatch().apply {
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 45f,
                             y = 70f,
@@ -440,7 +477,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                             toolType = InputToolType.STYLUS,
                         )
                     )
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 65f,
                             y = 115f,
@@ -488,7 +525,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 )
             activity.inProgressStrokesView.addToStroke(
                 MutableStrokeInputBatch().apply {
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 45f,
                             y = 70f,
@@ -496,7 +533,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                             toolType = InputToolType.STYLUS,
                         )
                     )
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 65f,
                             y = 115f,
@@ -611,7 +648,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     activity.inProgressStrokesView.addToStroke(
                         moveEvent,
                         pointerId = 0,
-                        prediction = null
+                        prediction = null,
                     )
                 )
                 .isFalse()
@@ -622,7 +659,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     activity.inProgressStrokesView.addToStroke(
                         moveEvent,
                         pointerId = 9,
-                        prediction = null
+                        prediction = null,
                     )
                 )
                 .isTrue()
@@ -754,7 +791,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.finishStroke(
                     upEvent,
                     upEvent.getPointerId(0),
-                    strokeId
+                    strokeId,
                 )
             }
             assertThatTakingScreenshotMatchesGolden(screenshotKey(strokeCount, "step3finish"))
@@ -871,7 +908,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.finishStroke(
                     upEvent,
                     upEvent.getPointerId(0),
-                    strokeId
+                    strokeId,
                 )
             }
         }
@@ -890,5 +927,98 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.removeFinishedStrokes(strokeIds)
         }
         assertThatTakingScreenshotMatchesGolden("remove_finished")
+    }
+
+    @Test
+    fun setRendererFactory_usesCustomRenderer() {
+        /** Draws in-progress strokes as ovals, and finished strokes as rectangles. */
+        class CustomRenderer : CanvasStrokeRenderer {
+            @ExperimentalInkCustomBrushApi
+            override fun draw(
+                canvas: Canvas,
+                stroke: Stroke,
+                strokeToScreenTransform: AffineTransform,
+                textureAnimationProgress: Float,
+            ) = draw(canvas, stroke, strokeToScreenTransform.toMatrix(), textureAnimationProgress)
+
+            @ExperimentalInkCustomBrushApi
+            override fun draw(
+                canvas: Canvas,
+                stroke: Stroke,
+                strokeToScreenTransform: Matrix,
+                textureAnimationProgress: Float,
+            ) {
+                val androidRect = stroke.shape.computeBoundingBox()?.toRectF() ?: return
+                canvas.drawRect(androidRect, Paint().apply { color = stroke.brush.colorIntArgb })
+            }
+
+            @ExperimentalInkCustomBrushApi
+            override fun draw(
+                canvas: Canvas,
+                inProgressStroke: InProgressStroke,
+                strokeToScreenTransform: AffineTransform,
+                textureAnimationProgress: Float,
+            ) =
+                draw(
+                    canvas,
+                    inProgressStroke,
+                    strokeToScreenTransform.toMatrix(),
+                    textureAnimationProgress,
+                )
+
+            @ExperimentalInkCustomBrushApi
+            override fun draw(
+                canvas: Canvas,
+                inProgressStroke: InProgressStroke,
+                strokeToScreenTransform: Matrix,
+                textureAnimationProgress: Float,
+            ) {
+                val bounds =
+                    BoxAccumulator().apply {
+                        for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
+                            val coatBounds = BoxAccumulator()
+                            inProgressStroke.populateMeshBounds(coatIndex, coatBounds)
+                            add(coatBounds)
+                        }
+                    }
+                val androidRect = bounds.box?.toRectF() ?: return
+                val brushColor = inProgressStroke.brush?.colorIntArgb ?: return
+                canvas.drawPath(
+                    Path().apply { addOval(androidRect, Path.Direction.CCW) },
+                    Paint().apply { color = brushColor },
+                )
+            }
+        }
+
+        val stylusInputStream =
+            InputStreamBuilder.stylusLine(startX = 15F, startY = 45F, endX = 400F, endY = 600F)
+        lateinit var strokeId: InProgressStrokeId
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.rendererFactory = { CustomRenderer() }
+
+            val downEvent = stylusInputStream.getDownEvent()
+            strokeId =
+                activity.inProgressStrokesView.startStroke(
+                    downEvent,
+                    downEvent.getPointerId(0),
+                    basicBrush(TestColors.LIGHT_ORANGE),
+                )
+            val moveEvent = stylusInputStream.getNextMoveEvent()
+            activity.inProgressStrokesView.addToStroke(
+                moveEvent,
+                moveEvent.getPointerId(0),
+                strokeId,
+                prediction = null,
+            )
+        }
+        assertThatTakingScreenshotMatchesGolden("custom_renderer_start_and_add")
+
+        activityScenarioRule.scenario.onActivity { activity ->
+            val upEvent = stylusInputStream.getUpEvent()
+            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
+        }
+        assertThatTakingScreenshotMatchesGolden("custom_renderer_finished")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
 }

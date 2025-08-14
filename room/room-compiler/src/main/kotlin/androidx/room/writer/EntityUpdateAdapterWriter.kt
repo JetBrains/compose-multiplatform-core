@@ -34,7 +34,7 @@ private constructor(
     val tableName: String,
     val dataClass: DataClass,
     val primaryKeyFields: Properties,
-    val onConflict: String
+    val onConflict: String,
 ) {
     companion object {
         fun create(entity: ShortcutEntity, onConflict: String) =
@@ -42,7 +42,7 @@ private constructor(
                 tableName = entity.tableName,
                 dataClass = entity.dataClass,
                 primaryKeyFields = entity.primaryKey.properties,
-                onConflict = onConflict
+                onConflict = onConflict,
             )
     }
 
@@ -56,7 +56,7 @@ private constructor(
                     XFunSpec.builder(
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(CommonTypeNames.STRING)
@@ -82,7 +82,7 @@ private constructor(
                     XFunSpec.builder(
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             val stmtParam = "statement"
@@ -95,7 +95,7 @@ private constructor(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
                                 propertiesWithIndices = mappedField,
-                                scope = bindScope
+                                scope = bindScope,
                             )
                             val pkeyStart = dataClass.properties.size
                             val mappedPrimaryKeys =
@@ -103,14 +103,14 @@ private constructor(
                                     PropertyWithIndex(
                                         property = field,
                                         indexVar = "${pkeyStart + index + 1}",
-                                        alwaysExists = true
+                                        alwaysExists = true,
                                     )
                                 }
                             PropertyReadWriteWriter.bindToStatement(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
                                 propertiesWithIndices = mappedPrimaryKeys,
-                                scope = bindScope
+                                scope = bindScope,
                             )
                             addCode(bindScope.generate())
                         }

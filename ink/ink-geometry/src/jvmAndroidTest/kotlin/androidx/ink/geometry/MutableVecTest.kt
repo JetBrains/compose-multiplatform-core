@@ -213,11 +213,11 @@ class MutableVecTest {
     }
 
     @Test
-    fun asImmutable_returnsNewEquivalentImmutableVec() {
+    fun toImmutable_returnsNewEquivalentImmutableVec() {
         val vec = MutableVec(1f, 2f)
 
-        assertThat(vec.asImmutable()).isNotSameInstanceAs(vec)
-        assertThat(vec.asImmutable()).isEqualTo(vec)
+        assertThat(vec.toImmutable()).isNotSameInstanceAs(vec)
+        assertThat(vec.toImmutable()).isEqualTo(vec)
     }
 
     @Test

@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -51,8 +50,7 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.camera2.internal" })
+@Config(instrumentedPackages = { "androidx.camera.camera2.internal" })
 public class CameraSelectionOptimizerTest {
     private Camera2CameraFactory mCamera2CameraFactory;
 

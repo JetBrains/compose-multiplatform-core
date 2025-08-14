@@ -16,9 +16,7 @@
 
 package androidx.compose.ui.viewinterop
 
-import android.os.Build
 import androidx.activity.ComponentActivity
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,7 +40,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.M)
 @RunWith(AndroidJUnit4::class)
 class NestedScrollInteropThreeFoldTest {
 
@@ -83,7 +80,7 @@ class NestedScrollInteropThreeFoldTest {
         // arrange
         createViewComposeActivity(
             outerModifier = Modifier.nestedScroll(connection),
-            enableInterop = false
+            enableInterop = false,
         ) {
             RecyclerViewAndroidView(interopEnabled = false)
         }
@@ -114,7 +111,7 @@ class NestedScrollInteropThreeFoldTest {
         // arrange
         createViewComposeActivity(
             outerModifier = Modifier.nestedScroll(connection),
-            enableInterop = true
+            enableInterop = true,
         ) {
             RecyclerViewAndroidView(interopEnabled = true)
         }
@@ -133,7 +130,7 @@ class NestedScrollInteropThreeFoldTest {
             NestedScrollDeepNested(
                 modifier = Modifier.nestedScroll(allConsumingConnection),
                 enabled = true,
-                connection = connection
+                connection = connection,
             )
         }
 
@@ -152,7 +149,7 @@ class NestedScrollInteropThreeFoldTest {
         // arrange
         createViewComposeActivity(
             outerModifier = Modifier.nestedScroll(allConsumingConnection),
-            enableInterop = true
+            enableInterop = true,
         ) {
             RecyclerViewAndroidView(interopEnabled = true)
         }
@@ -174,7 +171,7 @@ class NestedScrollInteropThreeFoldTest {
             NestedScrollDeepNested(
                 modifier = Modifier.nestedScroll(secondaryInspectableConnection),
                 enabled = true,
-                connection = connection
+                connection = connection,
             )
         }
 
@@ -196,7 +193,7 @@ class NestedScrollInteropThreeFoldTest {
             NestedScrollDeepNested(
                 modifier = Modifier.nestedScroll(secondaryInspectableConnection),
                 enabled = true,
-                connection = connection
+                connection = connection,
             )
         }
 
@@ -217,7 +214,7 @@ class NestedScrollInteropThreeFoldTest {
         // arrange
         createViewComposeActivity(
             outerModifier = Modifier.nestedScroll(connection),
-            enableInterop = true
+            enableInterop = true,
         ) {
             RecyclerViewAndroidView(interopEnabled = true)
         }
@@ -227,7 +224,7 @@ class NestedScrollInteropThreeFoldTest {
 
         // assert
         rule.runOnIdle {
-            assertThat(abs(nestedScrollParentView.velocityOfferedToParentOffset))
+            assertThat(abs(nestedScrollParentView.velocityDuringPreFlingPassOffset))
                 .isEqualTo(abs(connection.velocityConsumedDownChain))
         }
     }
@@ -235,13 +232,13 @@ class NestedScrollInteropThreeFoldTest {
     private fun createViewComposeActivity(
         enableInterop: Boolean = true,
         outerModifier: Modifier = Modifier,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.activityRule.scenario.createActivityWithComposeContent(
             layout = R.layout.test_nested_scroll_coordinator_layout,
             enableInterop = enableInterop,
             content = content,
-            modifier = outerModifier
+            modifier = outerModifier,
         )
     }
 }

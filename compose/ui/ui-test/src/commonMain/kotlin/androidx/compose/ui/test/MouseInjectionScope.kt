@@ -236,6 +236,26 @@ interface MouseInjectionScope : InjectionScope {
      *   default) or [ScrollWheel.Horizontal].
      */
     fun scroll(delta: Float, scrollWheel: ScrollWheel = ScrollWheel.Vertical)
+
+    /**
+     * Sends a scroll event with the given [offset]. The event will be sent at the current event
+     * time.
+     *
+     * Positive [offset] values correspond to scrolling forward (new content appears at the bottom
+     * of a column, or at the end of a row), negative values correspond to scrolling backward (new
+     * content appears at the top of a column, or at the start of a row).
+     *
+     * Note that the correlation between scroll [offset] and pixels scrolled is platform specific.
+     * For example, on Android a scroll delta of `1f` corresponds to a scroll of `64.dp`. However,
+     * on any platform, this conversion factor could change in the future to improve the mouse
+     * scroll experience.
+     *
+     * Example of how scroll could be used:
+     *
+     * @sample androidx.compose.ui.test.samples.mouseInputScrollWhileDown
+     * @param offset The amount of scroll
+     */
+    fun scroll(offset: Offset) = scroll(offset.y, ScrollWheel.Vertical)
 }
 
 internal class MouseInjectionScopeImpl(private val baseScope: MultiModalInjectionScopeImpl) :
@@ -287,6 +307,10 @@ internal class MouseInjectionScopeImpl(private val baseScope: MultiModalInjectio
     override fun scroll(delta: Float, scrollWheel: ScrollWheel) {
         inputDispatcher.enqueueMouseScroll(delta, scrollWheel)
     }
+
+    override fun scroll(offset: Offset) {
+        inputDispatcher.enqueueMouseScroll(offset)
+    }
 }
 
 /**
@@ -303,7 +327,7 @@ internal class MouseInjectionScopeImpl(private val baseScope: MultiModalInjectio
  */
 fun MouseInjectionScope.click(
     position: Offset = center,
-    button: MouseButton = MouseButton.Primary
+    button: MouseButton = MouseButton.Primary,
 ) {
     if (position.isSpecified) {
         updatePointerTo(position)
@@ -344,7 +368,7 @@ private val ViewConfiguration.defaultDoubleTapDelayMillis: Long
  */
 fun MouseInjectionScope.doubleClick(
     position: Offset = center,
-    button: MouseButton = MouseButton.Primary
+    button: MouseButton = MouseButton.Primary,
 ) {
     click(position, button)
     advanceEventTime(viewConfiguration.defaultDoubleTapDelayMillis)
@@ -364,7 +388,7 @@ fun MouseInjectionScope.doubleClick(
  */
 fun MouseInjectionScope.tripleClick(
     position: Offset = center,
-    button: MouseButton = MouseButton.Primary
+    button: MouseButton = MouseButton.Primary,
 ) {
     click(position, button)
     advanceEventTime(viewConfiguration.defaultDoubleTapDelayMillis)
@@ -386,7 +410,7 @@ fun MouseInjectionScope.tripleClick(
  */
 fun MouseInjectionScope.longClick(
     position: Offset = center,
-    button: MouseButton = MouseButton.Primary
+    button: MouseButton = MouseButton.Primary,
 ) {
     if (position.isSpecified) {
         updatePointerTo(position)
@@ -411,13 +435,13 @@ fun MouseInjectionScope.longClick(
  */
 fun MouseInjectionScope.animateMoveTo(
     position: Offset,
-    durationMillis: Long = DefaultMouseGestureDurationMillis
+    durationMillis: Long = DefaultMouseGestureDurationMillis,
 ) {
     val durationFloat = durationMillis.toFloat()
     val start = currentPosition
     animateMoveAlong(
         curve = { lerp(start, position, it / durationFloat) },
-        durationMillis = durationMillis
+        durationMillis = durationMillis,
     )
 }
 
@@ -433,7 +457,7 @@ fun MouseInjectionScope.animateMoveTo(
  */
 fun MouseInjectionScope.animateMoveBy(
     delta: Offset,
-    durationMillis: Long = DefaultMouseGestureDurationMillis
+    durationMillis: Long = DefaultMouseGestureDurationMillis,
 ) {
     animateMoveTo(currentPosition + delta, durationMillis)
 }
@@ -455,7 +479,7 @@ fun MouseInjectionScope.animateMoveBy(
  */
 fun MouseInjectionScope.animateMoveAlong(
     curve: (timeMillis: Long) -> Offset,
-    durationMillis: Long = DefaultMouseGestureDurationMillis
+    durationMillis: Long = DefaultMouseGestureDurationMillis,
 ) {
     require(durationMillis > 0) { "Duration is 0" }
     val start = curve(0)
@@ -495,7 +519,7 @@ fun MouseInjectionScope.dragAndDrop(
     start: Offset,
     end: Offset,
     button: MouseButton = MouseButton.Primary,
-    durationMillis: Long = DefaultMouseGestureDurationMillis
+    durationMillis: Long = DefaultMouseGestureDurationMillis,
 ) {
     updatePointerTo(start)
     press(button)
@@ -522,7 +546,7 @@ fun MouseInjectionScope.dragAndDrop(
 fun MouseInjectionScope.smoothScroll(
     scrollAmount: Float,
     durationMillis: Long = DefaultMouseGestureDurationMillis,
-    scrollWheel: ScrollWheel = ScrollWheel.Vertical
+    scrollWheel: ScrollWheel = ScrollWheel.Vertical,
 ) {
     var step = 0
     // How many steps will we take in durationMillis?

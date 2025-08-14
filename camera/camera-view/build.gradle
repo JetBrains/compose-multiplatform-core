@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -35,6 +35,7 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:camera-core"))
     api(project(":camera:camera-video"))
+    api("androidx.lifecycle:lifecycle-livedata-core:2.3.1")
 
     implementation(project(":camera:camera-lifecycle"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
@@ -43,20 +44,25 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation(libs.autoValueAnnotations)
     implementation("androidx.appcompat:appcompat:1.1.0")
-
-    annotationProcessor(libs.autoValue)
+    implementation("androidx.arch.core:core-common:2.2.0")
+    implementation("androidx.fragment:fragment:1.1.0")
+    implementation("androidx.lifecycle:lifecycle-livedata:2.3.1")
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)
     testImplementation(project(":camera:camera-camera2"))
     testImplementation(project(":camera:camera-testing"))
+    testImplementation(libs.guavaAndroid)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesCore)
+    testImplementation(libs.testMonitor)
+    testImplementation(libs.mockitoCore)
 
     androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -71,9 +77,10 @@ dependencies {
     }
     androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":internal-testutils-truth"))
-    androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.guavaAndroid)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testMonitor)
 }
 android {
     compileSdk = 35
@@ -81,8 +88,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.camera.view"
 }
 androidx {
@@ -92,4 +97,5 @@ androidx {
     description = "UI tools for the Jetpack Camera Library, a library providing a consistent and " +
             "reliable camera foundation that enables great camera driven experiences across all " +
             "of Android."
+    enableRobolectric()
 }

@@ -38,16 +38,13 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
-    instrumentedPackages = arrayOf("androidx.camera.extensions.internal")
-)
+@Config(instrumentedPackages = arrayOf("androidx.camera.extensions.internal"))
 class AvailableKeysRetrieverTest {
     private val context: Context = RuntimeEnvironment.getApplication()
     private val availableKeys =
         listOf<CaptureRequest.Key<out Any>>(
             CaptureRequest.CONTROL_AE_REGIONS,
-            CaptureRequest.CONTROL_AF_MODE
+            CaptureRequest.CONTROL_AF_MODE,
         )
     private val fakeImageCaptureExtenderImpl = FakeImageCaptureExtenderImpl(availableKeys)
     private val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
@@ -64,7 +61,7 @@ class AvailableKeysRetrieverTest {
                 fakeImageCaptureExtenderImpl,
                 "0",
                 characteristics,
-                context
+                context,
             )
 
         // 3. Assert
@@ -85,7 +82,7 @@ class AvailableKeysRetrieverTest {
                 fakeImageCaptureExtenderImpl,
                 "0",
                 characteristics,
-                context
+                context,
             )
 
         // 3. Assert
@@ -101,7 +98,7 @@ class AvailableKeysRetrieverTest {
 
         override fun isExtensionAvailable(
             cameraId: String,
-            cameraCharacteristics: CameraCharacteristics
+            cameraCharacteristics: CameraCharacteristics,
         ): Boolean = true
 
         override fun init(cameraId: String, cameraCharacteristics: CameraCharacteristics) {
@@ -141,7 +138,7 @@ class AvailableKeysRetrieverTest {
         override fun onInit(
             cameraId: String,
             cameraCharacteristics: CameraCharacteristics,
-            context: Context
+            context: Context,
         ) {
             invokeList.add("onInit")
         }

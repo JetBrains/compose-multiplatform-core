@@ -66,11 +66,12 @@ final class OpenXrActivityPoseHelper {
                 activitySpaceToOpenXr.copy(
                         activitySpaceToOpenXr
                                 .getTranslation()
-                                .div(mActivitySpace.getWorldSpaceScale()));
+                                .scale(mActivitySpace.getWorldSpaceScale().inverse()));
         // Apply the inverse of the ActivitySpace scale to the OpenXR pose.
         final Pose scaledOpenXrToPose =
                 new Pose(
-                        openXrToPose.getTranslation().div(mActivitySpace.getWorldSpaceScale()),
+                        openXrToPose.getTranslation()
+                        .scale(mActivitySpace.getWorldSpaceScale().inverse()),
                         openXrToPose.getRotation());
         return scaledActivitySpacetoOpenXr.compose(scaledOpenXrToPose);
     }
@@ -97,6 +98,6 @@ final class OpenXrActivityPoseHelper {
             Log.e(TAG, "Cannot get scale in Activity Space with a null Activity Space Entity.");
             return new Vector3(1f, 1f, 1f);
         }
-        return openXrScale.div(mActivitySpace.getWorldSpaceScale());
+        return openXrScale.scale(mActivitySpace.getWorldSpaceScale().inverse());
     }
 }

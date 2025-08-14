@@ -82,7 +82,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             contentPadding =
                 PaddingValues(mainAxis = largePaddingSize, crossAxis = smallPaddingSize),
             pageCount = { 1 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.fillMaxCrossAxis().mainAxisSize(pageTotalSize).testTag(PageTag))
         }
@@ -108,7 +108,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             modifier = Modifier.requiredSize(pageTotalSize * 2).testTag(PagerTag),
             contentPadding = PaddingValues(mainAxis = pageTotalSize),
             pageCount = { 1 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.fillMaxCrossAxis().mainAxisSize(pageTotalSize).testTag(PageTag))
         }
@@ -127,7 +127,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             modifier = Modifier.requiredSize(padding * 2 + pageTotalSize).testTag(PagerTag),
             contentPadding = PaddingValues(mainAxis = padding),
             pageCount = { 4 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.requiredSize(pageTotalSize).testTag(it.toString()))
         }
@@ -153,7 +153,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             modifier = Modifier.requiredSize(padding * 2 + pageTotalSize).testTag(PagerTag),
             contentPadding = PaddingValues(mainAxis = padding),
             pageCount = { 4 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.requiredSize(pageTotalSize).testTag(it.toString()))
         }
@@ -176,7 +176,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             modifier = Modifier.requiredSize(padding * 2 + pageTotalSize).testTag(PagerTag),
             contentPadding = PaddingValues(mainAxis = padding),
             pageCount = { 4 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.requiredSize(pageTotalSize).testTag(it.toString()))
         }
@@ -206,7 +206,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             modifier = Modifier.requiredSize(padding * 2 + pageTotalSize).testTag(PagerTag),
             contentPadding = PaddingValues(mainAxis = padding),
             pageCount = { 4 },
-            pageSize = { PageSize.Fixed(pageTotalSize) }
+            pageSize = { PageSize.Fixed(pageTotalSize) },
         ) {
             Spacer(Modifier.requiredSize(pageTotalSize).testTag(it.toString()))
         }
@@ -233,9 +233,9 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                             beforeContentCrossAxis = 2.dp,
                             beforeContent = 4.dp,
                             afterContentCrossAxis = 6.dp,
-                            afterContent = 8.dp
+                            afterContent = 8.dp,
                         ),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Spacer(Modifier.requiredSize(pageTotalSize).testTag(PageTag))
                 }
@@ -269,9 +269,9 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                             beforeContentCrossAxis = 2.dp,
                             beforeContent = 4.dp,
                             afterContentCrossAxis = 6.dp,
-                            afterContent = 8.dp
+                            afterContent = 8.dp,
                         ),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {}
             }
         }
@@ -296,9 +296,9 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                             beforeContentCrossAxis = 2.dp,
                             beforeContent = 4.dp,
                             afterContentCrossAxis = 6.dp,
-                            afterContent = 8.dp
+                            afterContent = 8.dp,
                         ),
-                    pageSize = PageSize.Fixed(0.dp)
+                    pageSize = PageSize.Fixed(0.dp),
                 ) {
                     Box {}
                 }
@@ -324,7 +324,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             contentPadding =
                 PaddingValues(beforeContent = topPadding, afterContent = bottomPadding),
             pageSize = { PageSize.Fixed(pageTotalSize) },
-            pageCount = { 3 }
+            pageCount = { 3 },
         ) { page ->
             Box(Modifier.requiredSize(pageTotalSize).testTag("$page"))
         }
@@ -358,7 +358,8 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
             contentPadding =
                 PaddingValues(beforeContent = topPadding, afterContent = bottomPadding),
             pageSize = { PageSize.Fixed(pageTotalSize) },
-            pageCount = { 3 }
+            pageCount = { 3 },
+            prefetchEnabled = false,
         ) { page ->
             Box(Modifier.requiredSize(pageTotalSize).testTag("$page"))
         }
@@ -387,7 +388,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = smallPaddingSize),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").fillMaxSize())
                 }
@@ -428,12 +429,12 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
     fun totalPaddingLargerParentSize_initialState() {
         lateinit var state: PagerState
         rule.setContent {
-            state = rememberPagerState { 4 }
+            state = rememberPagerState { 4 }.also { it.prefetchingEnabled = false }
             Box(modifier = Modifier.testTag(ContainerTag).size(pageTotalSize * 1.5f)) {
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -460,7 +461,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -490,7 +491,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -551,7 +552,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -579,7 +580,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize * 2),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -604,7 +605,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize * 2),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -634,7 +635,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize * 2),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -666,7 +667,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize * 2),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -699,7 +700,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                 HorizontalOrVerticalPager(
                     state = state,
                     contentPadding = PaddingValues(mainAxis = pageTotalSize * 2),
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").size(pageTotalSize))
                 }
@@ -731,7 +732,7 @@ internal class PagerContentPaddingTest(paramConfig: ParamConfig) : BasePagerTest
                     modifier = Modifier.testTag("list").mainAxisSize(pageTotalSize * 2),
                     state = state,
                     contentPadding = padding,
-                    pageSize = PageSize.Fixed(pageTotalSize)
+                    pageSize = PageSize.Fixed(pageTotalSize),
                 ) {
                     Box(Modifier.testTag("$it").background(Color.Red).size(pageTotalSize)) {
                         BasicText("$it")

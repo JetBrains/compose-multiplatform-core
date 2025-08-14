@@ -146,12 +146,13 @@ public class ProvidedAutoMigrationSpecTest {
     @Test
     public void testOnPostMigrate() throws IOException {
         createFirstVersion();
-        helperWithSpec.runMigrationsAndValidate(
+        SupportSQLiteDatabase db = helperWithSpec.runMigrationsAndValidate(
                 TEST_DB,
                 2,
                 true
         );
         assertThat(mProvidedSpec.mOnPostMigrateCalled, is(true));
+        db.close();
     }
 
     /**

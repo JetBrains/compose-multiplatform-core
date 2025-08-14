@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.createParameterizedComposeTestRule
 import androidx.compose.ui.Alignment
@@ -80,10 +81,10 @@ open class SingleParamBasePagerTest {
 
     @Composable
     internal fun ParameterizedPager(
+        modifier: Modifier = Modifier,
         initialPage: Int = 0,
         initialPageOffsetFraction: Float = 0f,
         pageCount: () -> Int = { DefaultPageCount },
-        modifier: Modifier = Modifier,
         orientation: Orientation = Orientation.Horizontal,
         beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
         pageSize: PageSize = PageSize.Fill,
@@ -102,7 +103,7 @@ open class SingleParamBasePagerTest {
         useLookahead: Boolean = false,
         pageContent: @Composable PagerScope.(page: Int) -> Unit = { page ->
             Page(index = page, orientation = orientation)
-        }
+        },
     ) {
         ConfigurableLookaheadScope(useLookahead) {
             val state =
@@ -114,27 +115,27 @@ open class SingleParamBasePagerTest {
 
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection,
-                LocalOverscrollFactory provides null
+                LocalOverscrollFactory provides null,
             ) {
                 val resolvedFlingBehavior =
                     flingBehavior
                         ?: PagerDefaults.flingBehavior(
                             state = state,
                             pagerSnapDistance = snappingPage,
-                            snapPositionalThreshold = snapPositionalThreshold
+                            snapPositionalThreshold = snapPositionalThreshold,
                         )
 
                 scope = rememberCoroutineScope()
                 Box(modifier = Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
                     HorizontalOrVerticalPager(
-                        state = state,
-                        beyondViewportPageCount = beyondViewportPageCount,
-                        orientation = orientation,
                         modifier =
                             modifier.testTag(PagerTestTag).onSizeChanged {
                                 pagerSize =
                                     if (orientation == Orientation.Vertical) it.height else it.width
                             },
+                        state = state,
+                        beyondViewportPageCount = beyondViewportPageCount,
+                        orientation = orientation,
                         pageSize = pageSize,
                         userScrollEnabled = userScrollEnabled,
                         reverseLayout = reverseLayout,
@@ -143,7 +144,7 @@ open class SingleParamBasePagerTest {
                         contentPadding = contentPadding,
                         pageContent = pageContent,
                         snapPosition = snapPosition,
-                        key = key
+                        key = key,
                     )
                 }
             }
@@ -154,7 +155,11 @@ open class SingleParamBasePagerTest {
     @Composable
     internal fun Page(index: Int, orientation: Orientation, initialFocusedItemIndex: Int = 0) {
         val focusRequester =
-            FocusRequester().also { if (index == initialFocusedItemIndex) initialFocusedItem = it }
+            remember(index) {
+                FocusRequester().also {
+                    if (index == initialFocusedItemIndex) initialFocusedItem = it
+                }
+            }
         Box(
             modifier =
                 Modifier.focusRequester(focusRequester)
@@ -175,7 +180,7 @@ open class SingleParamBasePagerTest {
                         }
                     }
                     .focusable(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             BasicText(text = index.toString())
         }
@@ -187,8 +192,8 @@ open class SingleParamBasePagerTest {
 
     @Composable
     internal fun HorizontalOrVerticalPager(
-        state: PagerState = rememberPagerState(pageCount = { DefaultPageCount }),
         modifier: Modifier = Modifier,
+        state: PagerState = rememberPagerState(pageCount = { DefaultPageCount }),
         userScrollEnabled: Boolean = true,
         reverseLayout: Boolean = false,
         contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -199,7 +204,7 @@ open class SingleParamBasePagerTest {
         orientation: Orientation = Orientation.Horizontal,
         key: ((index: Int) -> Any)? = null,
         snapPosition: SnapPosition = SnapPosition.Start,
-        pageContent: @Composable PagerScope.(pager: Int) -> Unit
+        pageContent: @Composable PagerScope.(pager: Int) -> Unit,
     ) {
         if (orientation == Orientation.Vertical) {
             VerticalPager(
@@ -214,7 +219,7 @@ open class SingleParamBasePagerTest {
                 pageSpacing = pageSpacing,
                 key = key,
                 snapPosition = snapPosition,
-                pageContent = pageContent
+                pageContent = pageContent,
             )
         } else {
             HorizontalPager(
@@ -229,7 +234,7 @@ open class SingleParamBasePagerTest {
                 pageSpacing = pageSpacing,
                 key = key,
                 snapPosition = snapPosition,
-                pageContent = pageContent
+                pageContent = pageContent,
             )
         }
     }
@@ -284,7 +289,7 @@ data class SingleParamConfig(
     val mainAxisContentPadding: PaddingValues = PaddingValues(0.dp),
     val beyondViewportPageCount: Int = 0,
     val snapPosition: Pair<SnapPosition, String> = SnapPosition.Start to "Start",
-    var useLookahead: Boolean = false
+    var useLookahead: Boolean = false,
 ) {
     fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(velocity: Float, delta: Float? = null) {
         val end =

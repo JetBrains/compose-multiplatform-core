@@ -177,7 +177,7 @@ public final class DynamicBuilders {
 
     /**
      * Equality check (result = LHS == RHS). For floats, for equality check, small epsilon is used,
-     * i.e.: (result = abs(LHS - RHS) < epsilon).
+     * i.e.: (result = abs(LHS - RHS) &lt; epsilon).
      */
     @RequiresSchemaVersion(major = 1, minor = 200)
     static final int COMPARISON_OP_TYPE_EQUALS = 1;
@@ -186,11 +186,11 @@ public final class DynamicBuilders {
     @RequiresSchemaVersion(major = 1, minor = 200)
     static final int COMPARISON_OP_TYPE_NOT_EQUALS = 2;
 
-    /** Strictly less than (result = LHS < RHS). */
+    /** Strictly less than (result = LHS &lt; RHS). */
     @RequiresSchemaVersion(major = 1, minor = 200)
     static final int COMPARISON_OP_TYPE_LESS_THAN = 3;
 
-    /** Less than or equal to (result = LHS <= RHS). */
+    /** Less than or equal to (result = LHS &lt;= RHS). */
     @RequiresSchemaVersion(major = 1, minor = 200)
     static final int COMPARISON_OP_TYPE_LESS_THAN_OR_EQUAL_TO = 4;
 
@@ -457,7 +457,7 @@ public final class DynamicBuilders {
 
     /**
      * An arithmetic operation, operating on two Int32 instances. This implements simple binary
-     * operations of the form "result = LHS <op> RHS", where the available operation types are
+     * operations of the form "result = LHS &lt;op> RHS", where the available operation types are
      * described in {@code ArithmeticOpType}.
      */
     @RequiresSchemaVersion(major = 1, minor = 200)
@@ -2288,8 +2288,8 @@ public final class DynamicBuilders {
 
                 /**
                  * Sets minimum number of integer digits for the formatter. Defaults to one if not
-                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer part
-                 * will not appear.
+                 * specified. If minIntegerDigits is zero and the -1 &lt; input &lt; 1, the Integer
+                 * part will not appear.
                  */
                 @RequiresSchemaVersion(major = 1, minor = 200)
                 public @NonNull Builder setMinIntegerDigits(
@@ -4749,8 +4749,8 @@ public final class DynamicBuilders {
 
                 /**
                  * Sets minimum number of integer digits for the formatter. Defaults to one if not
-                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer part
-                 * will not appear.
+                 * specified. If minIntegerDigits is zero and the -1 &lt; input &lt; 1, the Integer
+                 * part will not appear.
                  */
                 @RequiresSchemaVersion(major = 1, minor = 200)
                 public @NonNull Builder setMinIntegerDigits(

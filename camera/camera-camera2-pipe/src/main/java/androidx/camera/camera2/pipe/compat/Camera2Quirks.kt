@@ -29,9 +29,7 @@ import kotlin.math.max
 @Singleton
 internal class Camera2Quirks
 @Inject
-constructor(
-    private val metadataProvider: Camera2MetadataProvider,
-) {
+constructor(private val metadataProvider: Camera2MetadataProvider) {
     /**
      * A quirk that waits for the last repeating capture request to start before stopping the
      * current capture session. This is an issue in the Android camera framework where recreating a
@@ -108,9 +106,7 @@ constructor(
 
     companion object {
         private val SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP =
-            mapOf(
-                "Google" to setOf("oriole", "raven", "bluejay", "panther", "cheetah", "lynx"),
-            )
+            mapOf("Google" to setOf("oriole", "raven", "bluejay", "panther", "cheetah", "lynx"))
 
         /**
          * Returns the number of repeating requests frames before capture for quirks.

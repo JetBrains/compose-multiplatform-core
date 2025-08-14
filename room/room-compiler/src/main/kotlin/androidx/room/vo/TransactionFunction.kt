@@ -25,7 +25,7 @@ class TransactionFunction(
     val returnType: XType,
     val parameterNames: List<String>,
     val callType: CallType,
-    val functionBinder: TransactionFunctionBinder
+    val functionBinder: TransactionFunctionBinder,
 ) {
     enum class CallType {
         /** Directly call the function, it has a super implementation */

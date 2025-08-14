@@ -52,29 +52,47 @@ public inline fun <reified T> MutableStateFlowSerializer(): MutableStateFlowSeri
  * deserialization of [MutableStateFlow] instances. The inner value serialization is delegated to
  * the provided [valueSerializer].
  *
+ * Note that the SavedState format uses this serializer automatically for a [MutableStateFlow] at
+ * root and there is no need to explicitly specify it. For example:
+ * ```
+ * val msf = MutableStateFlow(123)
+ * // No need to do `encodeToSavedState(MutableStateFlowSerializer(Int.serializer), msf)`
+ * encodeToSavedState(msf)
+ * ```
+ *
+ * However, when the [MutableStateFlow] is a property of a serializable class there is no automatic
+ * fallback and a `Serializable` annotation is still needed if the property is intended to be
+ * serialized with this serializer. For example:
+ * ```
+ * @Serializable
+ * data class MyData(
+ *     @Serializable(with = MutableStateFlowSerializer::class)
+ *     val flow: MutableStateFlow<Int>
+ * )
+ * ```
+ *
  * @param T The type of the value stored in the [MutableStateFlow].
  * @param valueSerializer The [KSerializer] used to serialize and deserialize the inner value.
  */
-public class MutableStateFlowSerializer<T>(
-    private val valueSerializer: KSerializer<T>,
-) : KSerializer<MutableStateFlow<T>> {
+public class MutableStateFlowSerializer<T>(private val valueSerializer: KSerializer<T>) :
+    KSerializer<MutableStateFlow<T>> {
+
     @OptIn(ExperimentalSerializationApi::class)
-    override val descriptor: SerialDescriptor by lazy {
-        val structureKind = valueSerializer.descriptor.kind
-        if (structureKind is PrimitiveKind) {
-            PrimitiveSerialDescriptor(SERIAL_NAME, structureKind)
+    override val descriptor: SerialDescriptor = run {
+        val serialName = "kotlinx.coroutines.flow.MutableStateFlow"
+        val kind = valueSerializer.descriptor.kind
+        if (kind is PrimitiveKind) {
+            PrimitiveSerialDescriptor(serialName, kind)
         } else {
-            SerialDescriptor(SERIAL_NAME, valueSerializer.descriptor)
+            SerialDescriptor(serialName, valueSerializer.descriptor)
         }
     }
 
     override fun serialize(encoder: Encoder, value: MutableStateFlow<T>) {
-        valueSerializer.serialize(encoder, value.value)
+        encoder.encodeSerializableValue(valueSerializer, value.value)
     }
 
     override fun deserialize(decoder: Decoder): MutableStateFlow<T> {
-        return MutableStateFlow(valueSerializer.deserialize(decoder))
+        return MutableStateFlow(decoder.decodeSerializableValue(valueSerializer))
     }
 }
-
-private const val SERIAL_NAME = "kotlinx.coroutines.flow.MutableStateFlow"

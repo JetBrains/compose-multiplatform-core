@@ -475,7 +475,7 @@ public class TableInfoTest {
 
         assertThat(defaultValueEquals(
                 "(((0) + (1 + 2)))",
-                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue));
+                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue)).isTrue();
     }
 
     @Test
@@ -489,7 +489,7 @@ public class TableInfoTest {
 
         assertThat(defaultValueEquals(
                 "(((3 + 5) + (2 + 1)) + (1 + 2))",
-                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue));
+                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue)).isTrue();
     }
 
     @Test
@@ -503,7 +503,7 @@ public class TableInfoTest {
 
         assertThat(defaultValueEquals(
                 "(    (0) + (1 + 2))",
-                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue));
+                Objects.requireNonNull(dbInfo.columns.get("name")).defaultValue)).isTrue();
     }
 
     @Test

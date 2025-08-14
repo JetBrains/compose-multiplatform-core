@@ -19,7 +19,6 @@ package androidx.camera.camera2.internal
 import android.content.Context
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import androidx.camera.camera2.AsyncCameraDevice
@@ -39,7 +38,6 @@ import androidx.core.os.HandlerCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutorService
@@ -67,7 +65,6 @@ import org.junit.runner.RunWith
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class Camera2CameraImplForceOpenCameraTest {
 
     @get:Rule
@@ -97,7 +94,6 @@ class Camera2CameraImplForceOpenCameraTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun openCameraImmediately_ifCameraCanBeStolen() {
         // Open the camera with Camera2
@@ -106,22 +102,6 @@ class Camera2CameraImplForceOpenCameraTest {
 
         // Open the camera with CameraX, this steals it away from Camera2
         val cameraXCameraOpen = openCamera_cameraX(cameraId)
-        cameraXCameraOpen.await()
-    }
-
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = Build.VERSION_CODES.LOLLIPOP_MR1)
-    @Test
-    fun openCameraWhenAvailable_ifCameraCannotBeStolen() {
-        // Open the camera with Camera2
-        val camera2CameraOpen = openCamera_camera2(cameraId)
-        camera2CameraOpen.get()
-
-        // Attempt to open the camera with CameraX, this will fail
-        val cameraXCameraOpen = openCamera_cameraX(cameraId)
-        assertThat(cameraXCameraOpen.timesOutWhileWaiting()).isTrue()
-
-        // Close the camera with Camera2, and wait for it to be opened with CameraX
-        camera2Camera.closeAsync()
         cameraXCameraOpen.await()
     }
 
@@ -169,7 +149,8 @@ class Camera2CameraImplForceOpenCameraTest {
                 cameraExecutor,
                 cameraHandler,
                 DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
-                -1L
+                -1L,
+                null,
             )
 
         // Open the camera

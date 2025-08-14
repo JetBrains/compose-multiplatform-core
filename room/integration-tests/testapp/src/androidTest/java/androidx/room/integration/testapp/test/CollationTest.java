@@ -28,7 +28,6 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import org.hamcrest.CoreMatchers;
@@ -84,7 +83,6 @@ public class CollationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void localized_asUnicode() {
         initDao(Locale.getDefault());
         List<CollateEntity> result = mDao.sortedByLocalizedAsUnicode();
@@ -103,7 +101,6 @@ public class CollationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void unicode() {
         initDao(Locale.getDefault());
         List<CollateEntity> result = mDao.sortedByUnicode();

@@ -167,6 +167,12 @@ public final class SearchSpec extends AbstractSafeParcelable {
     private final @NonNull List<String> mFilterDocumentIds;
 
     /**
+     * Whether to retrieve embedding match info for the query.
+     */
+    @Field(id = 25, getter = "shouldRetrieveEmbeddingMatchInfos")
+    private final boolean mRetrieveEmbeddingMatchInfos;
+
+    /**
      * Default number of documents per page.
      *
      * @exportToFramework:hide
@@ -386,7 +392,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
             @Param(id = 21) int defaultEmbeddingSearchMetricType,
             @Param(id = 22) @Nullable List<String> informationalRankingExpressions,
             @Param(id = 23) @Nullable List<String> searchStringParameters,
-            @Param(id = 24) @Nullable List<String> filterDocumentIds) {
+            @Param(id = 24) @Nullable List<String> filterDocumentIds,
+            @Param(id = 25) boolean retrieveEmbeddingMatchInfos) {
         mTermMatchType = termMatchType;
         mSchemas = Collections.unmodifiableList(Preconditions.checkNotNull(schemas));
         mNamespaces = Collections.unmodifiableList(Preconditions.checkNotNull(namespaces));
@@ -427,6 +434,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
                 (filterDocumentIds != null)
                         ? Collections.unmodifiableList(filterDocumentIds)
                         : Collections.emptyList();
+        mRetrieveEmbeddingMatchInfos = retrieveEmbeddingMatchInfos;
     }
 
 
@@ -536,6 +544,16 @@ public final class SearchSpec extends AbstractSafeParcelable {
     /** Returns the maximum size of a snippet in characters. */
     public int getMaxSnippetSize() {
         return mMaxSnippetSize;
+    }
+
+    /**
+     * Returns whether to retrieve embedding match infos as a part of
+     * {@link SearchResult#getMatchInfos()}
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
+    @ExperimentalAppSearchApi
+    public boolean shouldRetrieveEmbeddingMatchInfos() {
+        return mRetrieveEmbeddingMatchInfos;
     }
 
     /**
@@ -836,6 +854,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         private String mAdvancedRankingExpression = "";
         private List<String> mInformationalRankingExpressions = new ArrayList<>();
         private @Nullable String mSearchSourceLogTag;
+        private boolean mRetrieveEmbeddingMatchInfos = false;
         private boolean mBuilt = false;
 
         /** Constructs a new {@link Builder} for {@link SearchSpec} objects. */
@@ -881,6 +900,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
                     searchSpec.getInformationalRankingExpressions());
             mSearchSourceLogTag = searchSpec.getSearchSourceLogTag();
             mFilterDocumentIds = new ArrayList<>(searchSpec.getFilterDocumentIds());
+            mRetrieveEmbeddingMatchInfos = searchSpec.shouldRetrieveEmbeddingMatchInfos();
         }
 
         /**
@@ -1660,6 +1680,29 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /**
+         * Sets whether to retrieve embedding match infos as a part of
+         * {@link SearchResult#getMatchInfos()}.
+         *
+         * <p>Note that this does not modify the snippet count fields, and any retrieved
+         * embedding match infos also count toward the limit set in
+         * {@link SearchSpec#getSnippetCount()} and
+         * {@link SearchSpec#getSnippetCountPerProperty()}.
+         */
+        @CanIgnoreReturnValue
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SEARCH_EMBEDDING_MATCH_INFO)
+        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
+        @ExperimentalAppSearchApi
+        @SuppressLint("MissingGetterMatchingBuilder")
+        public @NonNull Builder setRetrieveEmbeddingMatchInfos(
+                boolean retrieveEmbeddingMatchInfos) {
+            resetIfBuilt();
+            mRetrieveEmbeddingMatchInfos = retrieveEmbeddingMatchInfos;
+            return this;
+        }
+
+        /**
          * Adds property paths for the specified type to be used for projection. If property
          * paths are added for a type, then only the properties referred to will be retrieved for
          * results of that type. If a property path that is specified isn't present in a result,
@@ -2399,7 +2442,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
                     mGroupingLimit, mTypePropertyWeights, mJoinSpec, mAdvancedRankingExpression,
                     new ArrayList<>(mEnabledFeatures), mSearchSourceLogTag, mEmbeddingParameters,
                     mDefaultEmbeddingSearchMetricType, mInformationalRankingExpressions,
-                    mSearchStringParameters, mFilterDocumentIds);
+                    mSearchStringParameters, mFilterDocumentIds, mRetrieveEmbeddingMatchInfos);
         }
 
         private void resetIfBuilt() {

@@ -101,7 +101,7 @@ package androidx.wear.watchface.complications {
     property public static int DATA_SOURCE_DAY_AND_DATE;
     property public static int DATA_SOURCE_DAY_OF_WEEK;
     property public static int DATA_SOURCE_FAVORITE_CONTACT;
-    property @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static int DATA_SOURCE_HEART_RATE;
+    property public static int DATA_SOURCE_HEART_RATE;
     property public static int DATA_SOURCE_NEXT_EVENT;
     property public static int DATA_SOURCE_STEP_COUNT;
     property public static int DATA_SOURCE_SUNRISE_SUNSET;

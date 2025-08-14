@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text
 
-import android.os.Build
 import androidx.compose.foundation.GOLDEN_FOUNDATION
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -54,7 +53,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class BasicTextScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -69,7 +68,7 @@ class BasicTextScreenshotTest {
             Box(
                 modifier =
                     Modifier.padding(top = padding.value).fillMaxSize().border(1.dp, Color.Blue),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     BasicText(
@@ -84,12 +83,12 @@ class BasicTextScreenshotTest {
                                     LineHeightStyle(
                                         alignment = LineHeightStyle.Alignment.Center,
                                         trim = LineHeightStyle.Trim.None,
-                                        mode = LineHeightStyle.Mode.Fixed
+                                        mode = LineHeightStyle.Mode.Fixed,
                                     ),
                             ),
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
-                        color = { Color.Black }
+                        color = { Color.Black },
                     )
                 }
             }
@@ -122,8 +121,8 @@ class BasicTextScreenshotTest {
                     TextStyle(
                         fontSize = 24.sp,
                         fontStyle = FontStyle.Italic,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule
@@ -149,8 +148,8 @@ class BasicTextScreenshotTest {
                         fontSize = 24.sp,
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule
@@ -175,8 +174,8 @@ class BasicTextScreenshotTest {
                     TextStyle(
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule

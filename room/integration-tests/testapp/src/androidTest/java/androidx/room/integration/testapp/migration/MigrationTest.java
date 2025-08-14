@@ -43,7 +43,6 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.common.truth.Truth;
@@ -735,7 +734,6 @@ public class MigrationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void missingAddedIndex() throws IOException {
         SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, 11);
         database.close();
@@ -756,7 +754,6 @@ public class MigrationTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void missingAddedIndex_viaMigrationTesting() throws IOException {
         SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, 11);
         database.close();
@@ -861,6 +858,28 @@ public class MigrationTest {
         assertThat(tableNames.contains("ExtraView"), is(false));
 
         assertThat(onDestructiveMigrationInvoked[0], is(true));
+    }
+
+    @Test
+    public void dropAllTablesDuringDestructiveMigrations_escapeNames() throws IOException {
+        SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, MigrationDb.MAX_VERSION);
+        database.execSQL("CREATE TABLE `order` (id INTEGER PRIMARY KEY)");
+        database.close();
+
+        Context targetContext = ApplicationProvider.getApplicationContext();
+        MigrationDb db = Room.databaseBuilder(targetContext, MigrationDb.class, TEST_DB)
+                .fallbackToDestructiveMigration(true)
+                .build();
+        Set<String> tableNames = new HashSet<>();
+        Cursor c = db.query("SELECT name FROM sqlite_master", new Object[0]);
+        while (c.moveToNext()) {
+            tableNames.add(c.getString(0));
+        }
+        c.close();
+        db.close();
+
+        // Extra table is no longer present
+        assertThat(tableNames.contains("order"), is(false));
     }
 
     private void testFailure(int startVersion, int endVersion, String errorMsg) throws IOException {

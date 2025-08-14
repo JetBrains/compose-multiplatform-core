@@ -22,6 +22,7 @@ import androidx.annotation.OptIn;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -59,9 +60,12 @@ final class FeaturesImpl implements Features {
             case Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
 
-            // Android U Features
+            // SDK extension U Base features
             case Features.JOIN_SPEC_AND_QUALIFIED_ID:
-                // fall through
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.U_BASE;
+
+            // Android U Features
             case Features.LIST_FILTER_QUERY_LANGUAGE:
                 // fall through
             case Features.NUMERIC_SEARCH:
@@ -79,12 +83,19 @@ final class FeaturesImpl implements Features {
             case Features.SET_SCHEMA_CIRCULAR_REFERENCES:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
-            // Android V Features
+            // SDK extension M-2023-11 features
+            case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.M2023_11;
+
+            // SDK extension V Base features
+            case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.V_BASE;
+
             case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
                 // fall through
             case Features.SCHEMA_ADD_PARENT_TYPE:
-                // fall through
-            case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
                 // fall through
@@ -117,18 +128,19 @@ final class FeaturesImpl implements Features {
                         || AppSearchVersionUtil.getAppSearchVersionCode(mContext)
                         >= AppSearchVersionUtil.APPSEARCH_M2024_11_VERSION_CODE;
 
-            // Pending Android B Features
+            // Android B Features
             case Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG:
-                // TODO(b/326656531) : Update when feature is ready in service-appsearch.
-                // fall through
-            case Features.SCHEMA_EMBEDDING_QUANTIZATION:
-                // TODO(b/359959345) : Update when feature is ready in service-appsearch.
-                // fall through
-            case Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS:
-                // TODO(b/332620561) : Update when feature is ready in service-appsearch.
                 // fall through
             case Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS:
-                // TODO(b/332642571) : Update when feature is ready in service-appsearch.
+                // fall through
+            case Features.SEARCH_RESULT_PARENT_TYPES:
+                // fall through
+            case Features.SCHEMA_EMBEDDING_QUANTIZATION:
+                return AppSearchVersionUtil.isAtLeastB();
+
+            // Pending Android B Features
+            case Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS:
+                // TODO(b/332620561) : Update when feature is ready in service-appsearch.
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 // TODO(b/367464836) : Update when feature is ready in service-appsearch.
@@ -139,9 +151,6 @@ final class FeaturesImpl implements Features {
             case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
                 // TODO(b/357105837) : Update when feature is ready in service-appsearch.
                 // fall through
-            case Features.SEARCH_RESULT_PARENT_TYPES:
-                // TODO(b/371610934) : Update when feature is ready in service-appsearch.
-                return false;
 
             // Beyond Android B Features
             case Features.SCHEMA_SET_DESCRIPTION:
@@ -149,6 +158,8 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM:
                 // TODO(b/384947619) : Update when feature is ready in service-appsearch.
+            case Features.SEARCH_EMBEDDING_MATCH_INFO:
+                // TODO(395128139) : Update when feature is ready in service-appsearch.
                 return false;
 
             default:

@@ -16,13 +16,19 @@
 
 package androidx.camera.testing.impl.fakes;
 
+import static androidx.camera.core.CameraUnavailableException.CAMERA_ERROR;
+
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.Logger;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
+import androidx.camera.core.impl.ConstantObservable;
+import androidx.camera.core.impl.Observable;
 import androidx.core.util.Pair;
 import androidx.core.util.Preconditions;
 
@@ -56,6 +62,9 @@ public final class FakeCameraFactory implements CameraFactory {
 
     private @NonNull CameraCoordinator mCameraCoordinator = new FakeCameraCoordinator();
 
+    private @NonNull Observable<List<CameraIdentifier>> mCameraSourceObservable =
+            ConstantObservable.withValue(new ArrayList<>());
+
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Map<String, Pair<Integer, Callable<CameraInternal>>> mCameraMap = new HashMap<>();
 
@@ -68,15 +77,16 @@ public final class FakeCameraFactory implements CameraFactory {
     }
 
     @Override
-    public @NonNull CameraInternal getCamera(@NonNull String cameraId) {
+    public @NonNull CameraInternal getCamera(@NonNull String cameraId)
+            throws CameraUnavailableException {
         Pair<Integer, Callable<CameraInternal>> cameraPair = mCameraMap.get(cameraId);
         if (cameraPair != null) {
             try {
                 Callable<CameraInternal> cameraCallable = Preconditions.checkNotNull(
                         cameraPair.second);
                 return cameraCallable.call();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to create camera.", e);
+            } catch (Throwable t) {
+                throw new CameraUnavailableException(CAMERA_ERROR, t);
             }
         }
         throw new IllegalArgumentException("Unknown camera: " + cameraId);
@@ -124,6 +134,28 @@ public final class FakeCameraFactory implements CameraFactory {
     public void insertDefaultBackCamera(@NonNull String cameraId,
             @NonNull Callable<CameraInternal> cameraInternal) {
         insertCamera(CameraSelector.LENS_FACING_BACK, cameraId, cameraInternal);
+    }
+
+    /**
+     * Removes a camera with the given camera ID.
+     *
+     * <p>Subsequent calls to {@link #getAvailableCameraIds()} will no longer include this camera,
+     * and {@link #getCamera(String)} will throw an {@link IllegalArgumentException} for it.
+     *
+     * @param cameraId Identifier of the camera to remove.
+     * @return The {@link Callable} that was associated with the removed camera, or {@code null}
+     * if the camera was not found.
+     */
+    public @Nullable Callable<CameraInternal> removeCamera(@NonNull String cameraId) {
+        // Invalidate caches
+        mCachedCameraIds = null;
+
+        // Remove from the map and return the old value.
+        Pair<Integer, Callable<CameraInternal>> removed = mCameraMap.remove(cameraId);
+        if (removed != null) {
+            return removed.second;
+        }
+        return null; // Not found
     }
 
     @Override
@@ -181,5 +213,20 @@ public final class FakeCameraFactory implements CameraFactory {
     @Override
     public @Nullable Object getCameraManager() {
         return mCameraManager;
+    }
+
+    @Override
+    public @NonNull Observable<List<CameraIdentifier>> getCameraPresenceSource() {
+        return mCameraSourceObservable;
+    }
+
+    public void setCameraPresenceSource(
+            @NonNull Observable<List<CameraIdentifier>> cameraSourceObservable) {
+        mCameraSourceObservable = cameraSourceObservable;
+    }
+
+    @Override
+    public void onCameraIdsUpdated(@NonNull List<String> cameraIds) {
+
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.platform
 
+import android.annotation.SuppressLint
 import android.util.CloseGuard
 import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
@@ -23,8 +24,11 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
 /**
  * Manager for all [SpatialComposeScene]s that are created when the [SceneManager] is running.
  *
- * Enables finding all semantic roots in a spatial scene graph.
+ * Enables finding all semantic roots in a spatial scene graph. This is useful for testing libraries
+ * as well as developer tooling to help semantically identify parts of the compose tree. It is not
+ * intended to be used in individual apps.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SceneManager : AutoCloseable {
@@ -57,7 +61,7 @@ public object SceneManager : AutoCloseable {
     }
 
     internal fun onSceneCreated(scene: SpatialComposeScene) {
-        if (isRunning) {
+        if (isRunning && scene !in registeredScenes) {
             registeredScenes.add(scene)
         }
     }

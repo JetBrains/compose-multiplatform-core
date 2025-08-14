@@ -31,6 +31,14 @@ public expect abstract class NavUri {
     abstract override fun toString(): String
 }
 
+/**
+ * Creates a NavUri which parses the given encoded URI string.
+ *
+ * @param uriString an RFC 2396-compliant, encoded URI
+ * @return NavUri for this given uri string
+ */
+public fun NavUri(uriString: String): NavUri = NavUriUtils.parse(uriString)
+
 internal expect object NavUriUtils {
 
     /**

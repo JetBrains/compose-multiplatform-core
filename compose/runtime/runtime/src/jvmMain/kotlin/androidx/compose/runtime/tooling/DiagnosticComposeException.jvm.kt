@@ -22,7 +22,7 @@ actual constructor(private val trace: List<ComposeStackTraceFrame>) : RuntimeExc
         return this
     }
 
-    override val message: String
+    override val message: String?
         get() = buildString {
             appendLine("Composition stack when thrown:")
             appendStackTrace(trace)

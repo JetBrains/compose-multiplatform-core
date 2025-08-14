@@ -51,7 +51,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -68,11 +67,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_performsImeAction_viaSemantics() {
         var called = false
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                onKeyboardAction = { called = true }
+                onKeyboardAction = { called = true },
             )
         }
 
@@ -84,11 +84,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_performsImeAction_viaInputConnection() {
         var called = false
+        val state = TextFieldState()
         inputMethodInterceptor.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                onKeyboardAction = { called = true }
+                onKeyboardAction = { called = true },
             )
         }
 
@@ -103,11 +104,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_performsUnexpectedImeAction_fromInputConnection() {
         var called = false
+        val state = TextFieldState()
         inputMethodInterceptor.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                onKeyboardAction = { called = true }
+                onKeyboardAction = { called = true },
             )
         }
 
@@ -121,12 +123,13 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
 
     @Test
     fun textField_performsDefaultBehavior_forFocusNext() {
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             Column {
                 Box(Modifier.size(1.dp).focusable().testTag("box1"))
                 BasicTextField(
-                    state = TextFieldState(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                    state = state,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 )
                 Box(Modifier.size(1.dp).focusable().testTag("box2"))
             }
@@ -139,12 +142,13 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
 
     @Test
     fun textField_performsDefaultBehavior_forFocusPrevious() {
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             Column {
                 Box(Modifier.size(1.dp).focusable().testTag("box1"))
                 BasicTextField(
-                    state = TextFieldState(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Previous)
+                    state = state,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Previous),
                 )
                 Box(Modifier.size(1.dp).focusable().testTag("box2"))
             }
@@ -155,17 +159,17 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
         rule.onNodeWithTag("box1").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun textField_performsDefaultBehavior_forDone() {
         val testKeyboardController = TestSoftwareKeyboardController(rule)
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             CompositionLocalProvider(
                 LocalSoftwareKeyboardController provides testKeyboardController
             ) {
                 BasicTextField(
-                    state = TextFieldState(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    state = state,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 )
             }
         }
@@ -178,15 +182,16 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
 
     @Test
     fun textField_canOverrideDefaultBehavior() {
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             Column {
                 Box(Modifier.size(1.dp).focusable().testTag("box1"))
                 BasicTextField(
-                    state = TextFieldState(),
+                    state = state,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     onKeyboardAction = {
                         // don't call default action
-                    }
+                    },
                 )
                 Box(Modifier.size(1.dp).focusable().testTag("box2"))
             }
@@ -200,13 +205,14 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
 
     @Test
     fun textField_canRequestDefaultBehavior() {
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             Column {
                 Box(Modifier.size(1.dp).focusable().testTag("box1"))
                 BasicTextField(
-                    state = TextFieldState(),
+                    state = state,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    onKeyboardAction = { it() }
+                    onKeyboardAction = { it() },
                 )
                 Box(Modifier.size(1.dp).focusable().testTag("box2"))
             }
@@ -223,11 +229,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
         val actions1 = KeyboardActionHandler { lastCaller = 1 }
         val actions2 = KeyboardActionHandler { lastCaller = 2 }
         var onKeyboardAction by mutableStateOf(actions1)
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                onKeyboardAction = onKeyboardAction
+                onKeyboardAction = onKeyboardAction,
             )
         }
 
@@ -245,12 +252,13 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_singleLinePressEnter_triggersKeyboardAction() {
         var called = false
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                 onKeyboardAction = { called = true },
-                lineLimits = SingleLine
+                lineLimits = SingleLine,
             )
         }
 
@@ -265,12 +273,13 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_multiLinePressEnter_doesNotTriggerKeyboardAction() {
         var called = false
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                 onKeyboardAction = { called = true },
-                lineLimits = MultiLine(maxHeightInLines = 1)
+                lineLimits = MultiLine(maxHeightInLines = 1),
             )
         }
 
@@ -284,13 +293,14 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun textField_singleLinePressEnter_triggersDefaultBehavior() {
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             Column {
                 Box(Modifier.size(1.dp).focusable().testTag("box1"))
                 BasicTextField(
-                    state = TextFieldState(),
+                    state = state,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    lineLimits = SingleLine
+                    lineLimits = SingleLine,
                 )
                 Box(Modifier.size(1.dp).focusable().testTag("box2"))
             }
@@ -307,11 +317,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_ImeActionNone_isNotPassedToKeyboardActionHandler() {
         var called = false
+        val state = TextFieldState()
         rule.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.None),
-                onKeyboardAction = { called = true }
+                onKeyboardAction = { called = true },
             )
         }
 
@@ -323,11 +334,12 @@ class TextFieldKeyboardActionsTest : FocusedWindowTest {
     @Test
     fun textField_ImeActionDefault_isNotPassedToKeyboardActionHandler() {
         var called = false
+        val state = TextFieldState()
         inputMethodInterceptor.setTextFieldTestContent {
             BasicTextField(
-                state = TextFieldState(),
+                state = state,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                onKeyboardAction = { called = true }
+                onKeyboardAction = { called = true },
             )
         }
 

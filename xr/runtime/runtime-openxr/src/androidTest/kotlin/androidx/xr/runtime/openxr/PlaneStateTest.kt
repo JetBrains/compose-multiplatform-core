@@ -18,7 +18,7 @@ package androidx.xr.runtime.openxr
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.xr.runtime.internal.TrackingState
+import androidx.xr.runtime.TrackingState
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -39,8 +39,8 @@ class PlaneStateTest {
         assertThat(underTest.centerPose.rotation.y).isEqualTo(0)
         assertThat(underTest.centerPose.rotation.z).isEqualTo(0)
         assertThat(underTest.centerPose.rotation.w).isEqualTo(1)
-        assertThat(underTest.extents.x).isEqualTo(0)
-        assertThat(underTest.extents.y).isEqualTo(0)
+        assertThat(underTest.extents.width).isEqualTo(0)
+        assertThat(underTest.extents.height).isEqualTo(0)
         assertThat(underTest.vertices.size).isEqualTo(0)
     }
 
@@ -48,7 +48,7 @@ class PlaneStateTest {
     fun fromOpenXrTrackingState_withValidValue_convertsTrackingState() {
         val trackingState: TrackingState = TrackingState.fromOpenXrTrackingState(0)
 
-        assertThat(trackingState).isEqualTo(TrackingState.Paused)
+        assertThat(trackingState).isEqualTo(TrackingState.PAUSED)
     }
 
     @Test

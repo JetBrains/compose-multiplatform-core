@@ -37,7 +37,7 @@ abstract class BaseDaoKotlinCodeGenTest {
         compiledFiles: List<File> = emptyList(),
         jvmDefaultMode: String = "disable",
         withKsp2: Boolean = true,
-        handler: (XTestInvocation) -> Unit = {}
+        handler: (XTestInvocation) -> Unit = {},
     ) {
         val options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true")
         val kotlincArguments = listOf("-jvm-target=11", "-Xjvm-default=${jvmDefaultMode}")
@@ -47,7 +47,7 @@ abstract class BaseDaoKotlinCodeGenTest {
                 .process(
                     it.processingEnv,
                     mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
-                    it.roundEnv.isProcessingOver
+                    it.roundEnv.isProcessingOver,
                 )
             it.assertCompilationResult {
                 val expectedSrc = loadTestSource(expectedFilePath, "MyDao_Impl")
@@ -58,7 +58,7 @@ abstract class BaseDaoKotlinCodeGenTest {
                         checkNotNull(this.findGeneratedSource(expectedSrc.relativePath)) {
                             "Couldn't find gen src: $expectedSrc"
                         },
-                        expectedFilePath
+                        expectedFilePath,
                     )
                 }
                 this.generatedSource(expectedSrc)
@@ -76,7 +76,7 @@ abstract class BaseDaoKotlinCodeGenTest {
                 } else {
                     emptyList<String>()
                 } + kotlincArguments,
-            handler = invocationHandler
+            handler = invocationHandler,
         )
     }
 }
