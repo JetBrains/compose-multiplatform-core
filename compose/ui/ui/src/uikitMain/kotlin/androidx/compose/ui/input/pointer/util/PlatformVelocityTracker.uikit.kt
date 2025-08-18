@@ -23,7 +23,7 @@ import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastForEach
 
-internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = DefaultVelocityTracker()
+internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = UIKitVelocityTracker()
 
 private const val AssumePointerMoveStoppedMilliseconds: Int = 40
 private const val MinimumGestureDurationMilliseconds: Int = 50
