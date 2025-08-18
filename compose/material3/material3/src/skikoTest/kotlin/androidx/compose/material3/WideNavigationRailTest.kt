@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalTestApi::class)
 class WideNavigationRailTest {
     @Test
-    fun changingOnValueChangeFinishedDoesNotTriggerFinish() = runComposeUiTest {
+    fun `check CMP-7505 compiles`() = runComposeUiTest {
         setContent {
             var selectedItem by remember { mutableIntStateOf(0) }
             val items = listOf("Home", "Search", "Settings")
