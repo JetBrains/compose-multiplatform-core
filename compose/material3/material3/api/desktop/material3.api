@@ -95,14 +95,6 @@ public final class androidx/compose/material3/BadgeKt {
 	public static final fun BadgedBox (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class androidx/compose/material3/BasicAlertDialogOverrideScope {
-	public static final field $stable I
-	public final fun getContent ()Lkotlin/jvm/functions/Function2;
-	public final fun getModifier ()Landroidx/compose/ui/Modifier;
-	public final fun getOnDismissRequest ()Lkotlin/jvm/functions/Function0;
-	public final fun getProperties ()Landroidx/compose/ui/window/DialogProperties;
-}
-
 public final class androidx/compose/material3/BottomAppBarDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/material3/BottomAppBarDefaults;
@@ -2568,6 +2560,9 @@ public final class androidx/compose/material3/pulltorefresh/PullToRefreshDefault
 	public final fun getContainerColor (Landroidx/compose/runtime/Composer;I)J
 	public final fun getElevation-D9Ej5fM ()F
 	public final fun getIndicatorColor (Landroidx/compose/runtime/Composer;I)J
+	public final fun getIndicatorContainerColor (Landroidx/compose/runtime/Composer;I)J
+	public final fun getIndicatorMaxDistance-D9Ej5fM ()F
+	public final fun getIndicatorShape ()Landroidx/compose/ui/graphics/Shape;
 	public final fun getLoadingIndicatorElevation-D9Ej5fM ()F
 	public final fun getPositionalThreshold-D9Ej5fM ()F
 	public final fun getShape ()Landroidx/compose/ui/graphics/Shape;
