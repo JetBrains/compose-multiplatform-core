@@ -487,11 +487,11 @@ internal abstract class DragGestureNode(
                     Offset.Zero
                 }
             val onDragStart:
-                    (
-                down: PointerInputChange,
-                slopTriggerChange: PointerInputChange,
-                postSlopOffset: Offset,
-            ) -> Unit =
+                (
+                    down: PointerInputChange,
+                    slopTriggerChange: PointerInputChange,
+                    postSlopOffset: Offset,
+                ) -> Unit =
                 { down, slopTriggerChange, postSlopOffset ->
                     nodeOffset = Offset.Zero // restart node offset
                     if (canDrag.invoke(down)) {
