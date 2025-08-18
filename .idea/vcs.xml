@@ -16,5 +16,10 @@
   </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jbdeps/android-sdk/darwin/build-tools/30.0.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jbdeps/android-sdk/darwin/platform-tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jbdeps/android-sdk/darwin/platforms/android-32" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jbdeps/android-sdk/darwin/sources/android-32" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jbdeps/android-sdk/darwin/tools" vcs="Git" />
   </component>
 </project>
