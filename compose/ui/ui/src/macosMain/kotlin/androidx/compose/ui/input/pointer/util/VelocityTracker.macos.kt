@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3
+package androidx.compose.ui.input.pointer.util
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalWindowInfo
+internal actual const val HistorySize: Int = 20
 
-@Composable
-internal actual fun windowContainerWidthInPx(): Int =
-    LocalWindowInfo.current.containerSize.width
+/**
+ * Some platforms (e.g. iOS) filter certain gestures during velocity calculation.
+ */
+internal actual fun VelocityTracker1D.shouldUseDataPoints(
+    points: FloatArray,
+    times: FloatArray,
+    count: Int,
+    afterPointerStop: Boolean
+): Boolean = true
