@@ -479,7 +479,7 @@ internal abstract class DragGestureNode(
         return SuspendingPointerInputModifierNode {
             // re-create tracker when pointer input block restarts. This lazily creates the tracker
             // only when it is need.
-            val velocityTracker = createDraggableVelocityTracker()
+            val velocityTracker = VelocityTracker()
             var previousPositionOnScreen =
                 if (isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled) {
                     requireLayoutCoordinates().positionOnScreen()
@@ -487,11 +487,11 @@ internal abstract class DragGestureNode(
                     Offset.Zero
                 }
             val onDragStart:
-                (
-                    down: PointerInputChange,
-                    slopTriggerChange: PointerInputChange,
-                    postSlopOffset: Offset,
-                ) -> Unit =
+                    (
+                down: PointerInputChange,
+                slopTriggerChange: PointerInputChange,
+                postSlopOffset: Offset,
+            ) -> Unit =
                 { down, slopTriggerChange, postSlopOffset ->
                     nodeOffset = Offset.Zero // restart node offset
                     if (canDrag.invoke(down)) {
@@ -501,7 +501,7 @@ internal abstract class DragGestureNode(
                             }
                             startListeningForEvents()
                         }
-                        velocityTracker.addPointerInputChange(event = down, offset = Offset.Zero)
+                        velocityTracker.addPointerInputChange(down)
                         val dragStartedOffset = slopTriggerChange.position - postSlopOffset
                         // the drag start event offset is the down event + touch slop value
                         // or in this case the event that triggered the touch slop minus
@@ -511,7 +511,7 @@ internal abstract class DragGestureNode(
                 }
 
             val onDragEnd: (change: PointerInputChange) -> Unit = { upEvent ->
-                velocityTracker.addPointerInputChange(event = upEvent, offset = Offset.Zero)
+                velocityTracker.addPointerInputChange(upEvent)
                 val maximumVelocity = viewConfiguration.maximumFlingVelocity
                 val velocity =
                     velocityTracker.calculateVelocity(Velocity(maximumVelocity, maximumVelocity))
@@ -668,37 +668,3 @@ private fun Velocity.toValidVelocity() =
 
 private val NoOpOnDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit = {}
 private val NoOpOnDragStopped: suspend CoroutineScope.(velocity: Float) -> Unit = {}
-
-/**
- * Interface for calculating the velocity of a pointer based on tracked positions and timestamps.
- */
-internal interface DraggableVelocityTracker {
-    /**
-     * Track the positions and timestamps inside this event change.
-     */
-    fun addPointerInputChange(event: PointerInputChange, offset: Offset)
-
-    /**
-     * Computes the estimated velocity of the pointer at the time of the last provided data point.
-     *
-     * @param maximumVelocity the absolute values of the X and Y maximum velocities to be returned
-     *   in units/second. `units` is the units of the positions provided to this VelocityTracker.
-     */
-    fun calculateVelocity(maximumVelocity: Velocity): Velocity
-
-    /** Clears the tracked positions added by [addPointerInputChange]. */
-    fun resetTracking()
-}
-
-internal class DefaultDraggableVelocityTracker: DraggableVelocityTracker {
-    private val tracker = VelocityTracker()
-    override fun addPointerInputChange(event: PointerInputChange, offset: Offset) =
-        tracker.addPointerInputChange(event, offset)
-
-    override fun calculateVelocity(maximumVelocity: Velocity): Velocity =
-        tracker.calculateVelocity()
-
-    override fun resetTracking() = tracker.resetTracking()
-}
-
-internal expect fun createDraggableVelocityTracker(): DraggableVelocityTracker

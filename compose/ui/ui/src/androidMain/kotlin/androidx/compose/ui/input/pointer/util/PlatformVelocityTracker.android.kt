@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.gestures
+package androidx.compose.ui.input.pointer.util
 
-internal actual fun createDraggableVelocityTracker(): DraggableVelocityTracker =
-    DefaultDraggableVelocityTracker()
+/** Create an instance of the platform-specific velocity tracker. */
+internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = DefaultVelocityTracker()
