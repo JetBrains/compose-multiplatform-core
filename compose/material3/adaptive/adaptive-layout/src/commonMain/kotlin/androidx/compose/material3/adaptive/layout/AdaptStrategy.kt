@@ -91,7 +91,9 @@ sealed interface AdaptStrategy {
      * @param scrim the scrim to show when the pane is levitated to block user interaction with the
      *   underlying layout and emphasize the levitated pane; by default it will be `null` and no
      *   scrim will show.
-     * @sample androidx.compose.material3.adaptive.samples.levitateAdaptStrategySample
+     * @sample androidx.compose.material3.adaptive.samples.levitateAsBottomSheetSample
+     * @sample androidx.compose.material3.adaptive.samples.levitateAsDialogSample
+     * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog
      * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
      * @see [onlyIf] and [onlyIfSinglePane] for finer control over when the pane should be
      *   levitated.

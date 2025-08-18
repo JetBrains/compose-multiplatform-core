@@ -427,6 +427,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
+                        // Replace with compilation.compileJavaTaskProvider?.configure {}
+                        // when b/438995010 is fixed
+                        @Suppress("DEPRECATION")
+                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }

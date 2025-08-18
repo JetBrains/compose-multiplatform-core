@@ -190,7 +190,7 @@ package androidx.xr.runtime.testing {
     method public androidx.xr.runtime.testing.FakeResizableComponent createResizableComponent(androidx.xr.runtime.internal.Dimensions minimumSize, androidx.xr.runtime.internal.Dimensions maximumSize);
     method public androidx.xr.runtime.internal.SpatialPointerComponent createSpatialPointerComponent();
     method public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> subspaceNodeHolder, androidx.xr.runtime.internal.Dimensions size);
-    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape, int contentSecurityLevel, int superSampling, androidx.xr.runtime.internal.Entity parentEntity);
+    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.runtime.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
     method public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void destroyTexture(androidx.xr.runtime.internal.TextureResource texture);
@@ -584,6 +584,11 @@ package androidx.xr.runtime.testing {
     method public void dispose();
     method public java.util.List<androidx.xr.runtime.testing.FakeRenderingRuntime.FakeKhronosPbrMaterial> getCreatedKhronosPbrMaterials();
     method public java.util.List<androidx.xr.runtime.testing.FakeRenderingRuntime.FakeWaterMaterial> getCreatedWaterMaterials();
+    method public androidx.xr.runtime.internal.TextureResource? getReflectionTextureFromIbl(androidx.xr.runtime.internal.ExrImageResource iblToken);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource> loadExrImageByAssetName(String assetName);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource> loadExrImageByByteArray(byte[] assetData, String assetKey);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource> loadGltfByAssetName(String assetName);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource> loadGltfByByteArray(byte[] assetData, String assetKey);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.TextureResource> loadTexture(String assetName, androidx.xr.runtime.internal.TextureSampler sampler);
     method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaCutoff);
     method public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource alphaMap);
@@ -942,6 +947,7 @@ package androidx.xr.runtime.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeFactory implements androidx.xr.runtime.internal.RuntimeFactory {
     ctor public FakeRuntimeFactory();
     method public androidx.xr.runtime.testing.FakeRuntime createRuntime(android.app.Activity activity);
+    method public androidx.xr.runtime.testing.FakeRuntime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
     method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     method public static boolean hasCreatePermission();
     method public static void setHasCreatePermission(boolean);
@@ -1103,7 +1109,6 @@ package androidx.xr.runtime.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceEntity extends androidx.xr.runtime.testing.FakeEntity implements androidx.xr.runtime.internal.SurfaceEntity {
     ctor public FakeSurfaceEntity();
     method public androidx.xr.runtime.internal.TextureResource? getAuxiliaryAlphaMask();
-    method public androidx.xr.runtime.internal.SurfaceEntity.CanvasShape getCanvasShape();
     method public int getColorRange();
     method public int getColorSpace();
     method public int getColorTransfer();
@@ -1111,24 +1116,24 @@ package androidx.xr.runtime.testing {
     method public androidx.xr.runtime.internal.Dimensions getDimensions();
     method public androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather getEdgeFeather();
     method public boolean getMContentColorMetadataSet();
-    method public int getMaxCLL();
+    method public int getMaxContentLightLevel();
     method public androidx.xr.runtime.internal.PerceivedResolutionResult getPerceivedResolution();
     method public androidx.xr.runtime.internal.PerceivedResolutionResult getPerceivedResolutionResult();
     method public androidx.xr.runtime.internal.TextureResource? getPrimaryAlphaMask();
+    method public androidx.xr.runtime.internal.SurfaceEntity.Shape getShape();
     method public int getStereoMode();
     method public android.view.Surface getSurface();
     method public void resetContentColorMetadata();
     method public void setAuxiliaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
-    method public void setCanvasShape(androidx.xr.runtime.internal.SurfaceEntity.CanvasShape);
-    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
+    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
     method public void setEdgeFeather(androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather);
     method public void setMContentColorMetadataSet(boolean);
     method public void setPerceivedResolutionResult(androidx.xr.runtime.internal.PerceivedResolutionResult);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
+    method public void setShape(androidx.xr.runtime.internal.SurfaceEntity.Shape);
     method public void setStereoMode(int);
     method public void setSurface(android.view.Surface surface);
     property public androidx.xr.runtime.internal.TextureResource? auxiliaryAlphaMask;
-    property public androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape;
     property public int colorRange;
     property public int colorSpace;
     property public int colorTransfer;
@@ -1136,9 +1141,10 @@ package androidx.xr.runtime.testing {
     property public androidx.xr.runtime.internal.Dimensions dimensions;
     property public androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather edgeFeather;
     property public boolean mContentColorMetadataSet;
-    property public int maxCLL;
+    property public int maxContentLightLevel;
     property public androidx.xr.runtime.internal.PerceivedResolutionResult perceivedResolutionResult;
     property public androidx.xr.runtime.internal.TextureResource? primaryAlphaMask;
+    property public androidx.xr.runtime.internal.SurfaceEntity.Shape shape;
     property public int stereoMode;
     property public android.view.Surface surface;
   }

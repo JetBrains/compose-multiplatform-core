@@ -57,8 +57,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
                 implementation(project(":kruth:kruth"))
             }
         }
@@ -112,38 +111,13 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        jsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
             }
         }
     }

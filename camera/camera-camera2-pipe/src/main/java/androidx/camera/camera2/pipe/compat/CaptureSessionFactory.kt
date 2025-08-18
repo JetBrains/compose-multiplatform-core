@@ -53,7 +53,6 @@ internal object Camera2CaptureSessionsModule {
     @Camera2ControllerScope
     @Provides
     fun provideSessionFactory(
-        androidLProvider: Provider<AndroidLSessionFactory>,
         androidMProvider: Provider<AndroidMSessionFactory>,
         androidMHighSpeedProvider: Provider<AndroidMHighSpeedSessionFactory>,
         androidNProvider: Provider<AndroidNSessionFactory>,
@@ -73,9 +72,6 @@ internal object Camera2CaptureSessionsModule {
         }
 
         if (graphConfig.sessionMode == CameraGraph.OperatingMode.HIGH_SPEED) {
-            check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                "Cannot use HighSpeed sessions below Android M"
-            }
             return androidMHighSpeedProvider.get()
         }
 
@@ -83,34 +79,11 @@ internal object Camera2CaptureSessionsModule {
             return androidNProvider.get()
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return androidMProvider.get()
-        }
-
-        check(graphConfig.input == null) { "Reprocessing is not supported on Android L" }
-
-        return androidLProvider.get()
+        check(graphConfig.input == null) { "Reprocessing is not supported on Android M" }
+        return androidMProvider.get()
     }
 }
 
-internal class AndroidLSessionFactory @Inject constructor(private val threads: Threads) :
-    CaptureSessionFactory {
-    override fun create(
-        cameraDevice: CameraDeviceWrapper,
-        surfaces: Map<StreamId, Surface>,
-        captureSessionState: CaptureSessionState,
-    ): Map<StreamId, OutputConfigurationWrapper> {
-        if (!cameraDevice.createCaptureSession(surfaces.map { it.value }, captureSessionState)) {
-            Log.warn {
-                "Failed to create capture session from $cameraDevice for $captureSessionState!"
-            }
-            captureSessionState.onSessionFinalized()
-        }
-        return emptyMap()
-    }
-}
-
-@RequiresApi(23)
 internal class AndroidMSessionFactory
 @Inject
 constructor(private val threads: Threads, private val graphConfig: CameraGraph.Config) :
@@ -153,7 +126,6 @@ constructor(private val threads: Threads, private val graphConfig: CameraGraph.C
     }
 }
 
-@RequiresApi(23)
 internal class AndroidMHighSpeedSessionFactory @Inject constructor(private val threads: Threads) :
     CaptureSessionFactory {
     override fun create(

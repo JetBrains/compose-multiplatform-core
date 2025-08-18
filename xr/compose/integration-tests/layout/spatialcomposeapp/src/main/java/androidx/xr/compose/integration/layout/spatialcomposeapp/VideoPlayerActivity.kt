@@ -101,6 +101,7 @@ import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -688,15 +689,16 @@ class VideoPlayerActivity : ComponentActivity() {
                 surfaceEntity =
                     SurfaceEntity.create(
                         session = session,
-                        stereoMode = SurfaceEntity.StereoMode.MONO,
+                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
                         pose =
                             Pose(
                                 Vector3(0f, -0.45f, 0f),
                                 rotation = Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                             ),
-                        contentSecurityLevel =
-                            if (useDrmState.value) SurfaceEntity.ContentSecurityLevel.PROTECTED
-                            else SurfaceEntity.ContentSecurityLevel.NONE,
+                        surfaceProtection =
+                            if (useDrmState.value)
+                                SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
+                            else SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE,
                     )
                 // Make the video player movable (to make it easier to look at it from different
                 // angles and distances)
@@ -720,10 +722,9 @@ class VideoPlayerActivity : ComponentActivity() {
                             if (height > 0 && width > 0) {
                                 var dimensions =
                                     getCanvasAspectRatio(surfaceEntity!!.stereoMode, width, height)
-                                surfaceEntity!!.canvasShape =
-                                    SurfaceEntity.CanvasShape.Quad(
-                                        dimensions.width,
-                                        dimensions.height,
+                                surfaceEntity!!.shape =
+                                    SurfaceEntity.Shape.Quad(
+                                        FloatSize2d(dimensions.width, dimensions.height)
                                     )
 
                                 // Resize the MovableComponent to match the canvas dimensions.
@@ -865,39 +866,39 @@ class VideoPlayerActivity : ComponentActivity() {
                                 1.0f
                             }
 
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Quad(1.0f, canvasHeight)
+                        surfaceEntity!!.shape =
+                            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, canvasHeight))
                     }
                 ) {
                     Text(text = "Set Quad", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Sphere(1.0f) }) {
                     Text(text = "Set Vr360", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Hemisphere(1.0f) }) {
                     Text(text = "Set Vr180", fontSize = 10.sp)
                 }
             } // end row
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO }) {
+                Button(
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO
+                    }
+                ) {
                     Text(text = "Mono", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM }
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+                    }
                 ) {
                     Text(text = "Top-Bottom", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE }
+                    onClick = {
+                        surfaceEntity!!.stereoMode =
+                            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE
+                    }
                 ) {
                     Text(text = "Side-by-Side", fontSize = 10.sp)
                 }
@@ -918,11 +919,11 @@ class VideoPlayerActivity : ComponentActivity() {
 
     fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
         when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO ->
+            SurfaceEntity.StereoMode.STEREO_MODE_MONO ->
                 return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
                 return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
                 return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }

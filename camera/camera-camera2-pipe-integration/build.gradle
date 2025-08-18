@@ -75,7 +75,7 @@ dependencies {
     testImplementation("org.robolectric:shadowapi:4.14")
     testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
-    testImplementation(libs.kotlinTestForWasmTests)
+    testImplementation(libs.kotlinTest)
     testImplementation(libs.testMonitor)
 
     androidTestImplementation(libs.testExtJunit)

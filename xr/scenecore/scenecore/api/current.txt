@@ -4,9 +4,8 @@ package androidx.xr.scenecore {
   public final class ActivityPanelEntity extends androidx.xr.scenecore.PanelEntity {
     method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
     method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
-    method public void launchActivity(android.content.Intent intent);
-    method public void launchActivity(android.content.Intent intent, optional android.os.Bundle? bundle);
     method public void moveActivity(android.app.Activity activity);
+    method public void startActivity(android.content.Intent intent);
     field public static final androidx.xr.scenecore.ActivityPanelEntity.Companion Companion;
   }
 
@@ -587,12 +586,32 @@ package androidx.xr.scenecore {
     property public static androidx.xr.scenecore.Scene androidx.xr.runtime.Session.scene;
   }
 
+  public final class SoundFieldAttributes {
+    ctor public SoundFieldAttributes(int order);
+    method public int getOrder();
+    property public int order;
+  }
+
   public final class Space {
     property public static int ACTIVITY;
     property public static int PARENT;
     field public static final int ACTIVITY = 1; // 0x1
     field public static final androidx.xr.scenecore.Space INSTANCE;
     field public static final int PARENT = 0; // 0x0
+  }
+
+  public final class SpatialAudioTrack {
+    method public static androidx.xr.scenecore.PointSourceParams? getPointSourceParams(androidx.xr.runtime.Session session, android.media.AudioTrack track);
+    method public static androidx.xr.scenecore.SoundFieldAttributes? getSoundFieldAttributes(androidx.xr.runtime.Session session, android.media.AudioTrack track);
+    method public static int getSpatialSourceType(androidx.xr.runtime.Session session, android.media.AudioTrack track);
+    method public static void setPointSourceParams(androidx.xr.runtime.Session session, android.media.AudioTrack track, androidx.xr.scenecore.PointSourceParams params);
+    field public static final androidx.xr.scenecore.SpatialAudioTrack INSTANCE;
+  }
+
+  public final class SpatialAudioTrackBuilder {
+    method public static void setPointSourceParams(androidx.xr.runtime.Session session, android.media.AudioTrack.Builder builder, androidx.xr.scenecore.PointSourceParams params);
+    method public static void setSoundFieldAttributes(androidx.xr.runtime.Session session, android.media.AudioTrack.Builder builder, androidx.xr.scenecore.SoundFieldAttributes attributes);
+    field public static final androidx.xr.scenecore.SpatialAudioTrackBuilder INSTANCE;
   }
 
   public final class SpatialCapabilities {
@@ -648,6 +667,12 @@ package androidx.xr.scenecore {
     property public androidx.xr.scenecore.ExrImage? skybox;
   }
 
+  public final class SpatialMediaPlayer {
+    method public static void setPointSourceParams(androidx.xr.runtime.Session session, android.media.MediaPlayer mediaPlayer, androidx.xr.scenecore.PointSourceParams params);
+    method public static void setSoundFieldAttributes(androidx.xr.runtime.Session session, android.media.MediaPlayer mediaPlayer, androidx.xr.scenecore.SoundFieldAttributes attributes);
+    field public static final androidx.xr.scenecore.SpatialMediaPlayer INSTANCE;
+  }
+
   public fun interface SpatialModeChangeListener {
     method public void onSpatialModeChanged(androidx.xr.runtime.math.Pose recommendedPose, float recommendedScale);
   }
@@ -679,6 +704,23 @@ package androidx.xr.scenecore {
     property public androidx.xr.scenecore.SpatialPointerIcon NONE;
   }
 
+  public final class SpatialSoundPool {
+    method public static int getSpatialSourceType(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int streamId);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params, optional @FloatRange(from=0.0, to=1.0) float volume);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority, optional @IntRange(from=-1L) int loop);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority, optional @IntRange(from=-1L) int loop, optional @FloatRange(from=0.5, to=2.0) float rate);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes, optional @FloatRange(from=0.0, to=1.0) float volume);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority, optional @IntRange(from=-1L) int loop);
+    method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes, optional @FloatRange(from=0.0, to=1.0) float volume, optional @IntRange(from=0L) int priority, optional @IntRange(from=-1L) int loop, optional @FloatRange(from=0.5, to=2.0) float rate);
+    property public static int PLAY_FAILED;
+    field public static final androidx.xr.scenecore.SpatialSoundPool INSTANCE;
+    field public static final int PLAY_FAILED = 0; // 0x0
+  }
+
   public final class SpatialUser {
     ctor public SpatialUser(androidx.xr.runtime.internal.LifecycleManager lifecycleManager, androidx.xr.runtime.internal.JxrPlatformAdapter runtime);
     method public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> getCameraViews();
@@ -704,6 +746,130 @@ package androidx.xr.scenecore {
     property public static float NO_PREFERRED_ASPECT_RATIO;
     field public static final androidx.xr.scenecore.SpatialWindow INSTANCE;
     field public static final float NO_PREFERRED_ASPECT_RATIO = -1.0f;
+  }
+
+  public interface SpatializerConstants {
+    field public static final int AMBISONICS_ORDER_FIRST_ORDER = 0; // 0x0
+    field public static final int AMBISONICS_ORDER_SECOND_ORDER = 1; // 0x1
+    field public static final int AMBISONICS_ORDER_THIRD_ORDER = 2; // 0x2
+    field public static final androidx.xr.scenecore.SpatializerConstants.Companion Companion;
+    field public static final int SOURCE_TYPE_DEFAULT = 0; // 0x0
+    field public static final int SOURCE_TYPE_POINT_SOURCE = 1; // 0x1
+    field public static final int SOURCE_TYPE_SOUND_FIELD = 2; // 0x2
+  }
+
+  public static final class SpatializerConstants.Companion {
+    property public static int AMBISONICS_ORDER_FIRST_ORDER;
+    property public static int AMBISONICS_ORDER_SECOND_ORDER;
+    property public static int AMBISONICS_ORDER_THIRD_ORDER;
+    property public static int SOURCE_TYPE_DEFAULT;
+    property public static int SOURCE_TYPE_POINT_SOURCE;
+    property public static int SOURCE_TYPE_SOUND_FIELD;
+    field public static final int AMBISONICS_ORDER_FIRST_ORDER = 0; // 0x0
+    field public static final int AMBISONICS_ORDER_SECOND_ORDER = 1; // 0x1
+    field public static final int AMBISONICS_ORDER_THIRD_ORDER = 2; // 0x2
+    field public static final int SOURCE_TYPE_DEFAULT = 0; // 0x0
+    field public static final int SOURCE_TYPE_POINT_SOURCE = 1; // 0x1
+    field public static final int SOURCE_TYPE_SOUND_FIELD = 2; // 0x2
+  }
+
+  public final class SurfaceEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.SurfaceEntity> {
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session);
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose);
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape);
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode);
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode, optional int superSampling);
+    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode, optional int superSampling, optional int surfaceProtection);
+    method public androidx.xr.runtime.math.FloatSize3d getDimensions();
+    method public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams getEdgeFeatheringParams();
+    method public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.scenecore.SurfaceEntity.Shape getShape();
+    method public int getStereoMode();
+    method @MainThread public android.view.Surface getSurface();
+    method @MainThread public void setEdgeFeatheringParams(androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams);
+    method @MainThread public void setShape(androidx.xr.scenecore.SurfaceEntity.Shape);
+    method @MainThread public void setStereoMode(int);
+    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    property public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams edgeFeatheringParams;
+    property public androidx.xr.scenecore.SurfaceEntity.Shape shape;
+    property public int stereoMode;
+    field public static final androidx.xr.scenecore.SurfaceEntity.Companion Companion;
+  }
+
+  public static final class SurfaceEntity.Companion {
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session);
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose);
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape);
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode);
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode, optional int superSampling);
+    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional int stereoMode, optional int superSampling, optional int surfaceProtection);
+  }
+
+  public abstract static class SurfaceEntity.EdgeFeatheringParams {
+  }
+
+  public static final class SurfaceEntity.EdgeFeatheringParams.NoFeathering extends androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams {
+    ctor public SurfaceEntity.EdgeFeatheringParams.NoFeathering();
+  }
+
+  public static final class SurfaceEntity.EdgeFeatheringParams.RectangleFeather extends androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams {
+    ctor public SurfaceEntity.EdgeFeatheringParams.RectangleFeather();
+    ctor public SurfaceEntity.EdgeFeatheringParams.RectangleFeather(optional @FloatRange(from=0.0, to=0.5) float leftRight, optional @FloatRange(from=0.0, to=0.5) float topBottom);
+    method public float getLeftRight();
+    method public float getTopBottom();
+    property public float leftRight;
+    property public float topBottom;
+  }
+
+  public static interface SurfaceEntity.Shape {
+  }
+
+  public static final class SurfaceEntity.Shape.Hemisphere implements androidx.xr.scenecore.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Hemisphere(float radius);
+    method public float getRadius();
+    property public float radius;
+  }
+
+  public static final class SurfaceEntity.Shape.Quad implements androidx.xr.scenecore.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Quad(androidx.xr.runtime.math.FloatSize2d extents);
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
+    property public androidx.xr.runtime.math.FloatSize2d extents;
+  }
+
+  public static final class SurfaceEntity.Shape.Sphere implements androidx.xr.scenecore.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Sphere(float radius);
+    method public float getRadius();
+    property public float radius;
+  }
+
+  public static final class SurfaceEntity.StereoMode {
+    property public static int STEREO_MODE_MONO;
+    property public static int STEREO_MODE_MULTIVIEW_LEFT_PRIMARY;
+    property public static int STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY;
+    property public static int STEREO_MODE_SIDE_BY_SIDE;
+    property public static int STEREO_MODE_TOP_BOTTOM;
+    field public static final androidx.xr.scenecore.SurfaceEntity.StereoMode INSTANCE;
+    field public static final int STEREO_MODE_MONO = 0; // 0x0
+    field public static final int STEREO_MODE_MULTIVIEW_LEFT_PRIMARY = 4; // 0x4
+    field public static final int STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY = 5; // 0x5
+    field public static final int STEREO_MODE_SIDE_BY_SIDE = 2; // 0x2
+    field public static final int STEREO_MODE_TOP_BOTTOM = 1; // 0x1
+  }
+
+  public static final class SurfaceEntity.SuperSampling {
+    property public static int SUPER_SAMPLING_NONE;
+    property public static int SUPER_SAMPLING_PENTAGON;
+    field public static final androidx.xr.scenecore.SurfaceEntity.SuperSampling INSTANCE;
+    field public static final int SUPER_SAMPLING_NONE = 0; // 0x0
+    field public static final int SUPER_SAMPLING_PENTAGON = 1; // 0x1
+  }
+
+  public static final class SurfaceEntity.SurfaceProtection {
+    property public static int SURFACE_PROTECTION_NONE;
+    property public static int SURFACE_PROTECTION_PROTECTED;
+    field public static final androidx.xr.scenecore.SurfaceEntity.SurfaceProtection INSTANCE;
+    field public static final int SURFACE_PROTECTION_NONE = 0; // 0x0
+    field public static final int SURFACE_PROTECTION_PROTECTED = 1; // 0x1
   }
 
 }

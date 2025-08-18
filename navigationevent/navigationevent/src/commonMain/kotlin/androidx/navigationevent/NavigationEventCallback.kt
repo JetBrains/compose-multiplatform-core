@@ -27,7 +27,7 @@ import androidx.annotation.EmptySuper
  *
  * @param isEnabled The initial enabled state for this callback. Defaults to `true`.
  * @see NavigationEventDispatcher
- * @see NavigationEventInputHandler
+ * @see NavigationEventInput
  */
 public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled: Boolean = true) {
 

@@ -215,16 +215,10 @@ kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serializ
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
-# The Kotlin/JS and Kotlin/Wasm standard library must match the compiler
-kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js", version.ref = "kotlin" }
-kotlinStdlibWasm = { module = "org.jetbrains.kotlin:kotlin-stdlib-wasm-js", version.ref = "kotlin" }
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test" }
-kotlinTestForWasmTests = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
 kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
-kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js" }
-kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }

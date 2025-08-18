@@ -17,6 +17,7 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.os.Build
 import android.util.Range
@@ -303,5 +304,18 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         val streamConfigurationMap = cameraCharacteristics.get(SCALER_STREAM_CONFIGURATION_MAP)!!
 
         assertThat(formats).containsExactlyElementsIn(streamConfigurationMap.outputFormats.toSet())
+    }
+
+    @Test
+    fun returnLowLightBoostSupportedCorrectly() {
+        val availableAeModes: IntArray =
+            CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)!![
+                CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES]!!
+        assertThat(cameraInfo.isLowLightBoostSupported)
+            .isEqualTo(
+                availableAeModes.contains(
+                    CameraCharacteristics.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+            )
     }
 }

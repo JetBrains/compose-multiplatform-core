@@ -485,6 +485,15 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             findFocus()?.calculateFocusRectRelativeTo(this)
         }
 
+    // Lets the owner know that a new focus target is available.
+    override fun focusTargetAvailable() {
+        // This signal is used to assign default focus, we don't need to report anything if some
+        // component already has focus.
+        if (focusOwner.rootState.hasFocus) return
+
+        focusableViewAvailable(this@AndroidComposeView)
+    }
+
     // TODO(b/177931787) : Consider creating a KeyInputManager like we have for FocusManager so
     //  that this common logic can be used by all owners.
     private val keyInputModifier =

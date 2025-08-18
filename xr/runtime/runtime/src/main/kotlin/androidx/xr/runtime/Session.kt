@@ -190,6 +190,10 @@ public constructor(
         ): SessionCreateResult {
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
 
+            check(activity.isDestroyed == false) {
+                "Cannot create a new session on a destroyed activity."
+            }
+
             if (activitySessionMap.containsKey(activity)) {
                 return SessionCreateSuccess(activitySessionMap[activity]!!)
             }
@@ -202,7 +206,7 @@ public constructor(
                     loadProviders(RuntimeFactory::class.java, RUNTIME_FACTORY_PROVIDERS),
                     features,
                 )
-            val runtime = runtimeFactory?.createRuntime(activity)
+            val runtime = runtimeFactory?.createRuntime(activity, coroutineContext)
             try {
                 runtime?.lifecycleManager?.create()
             } catch (e: ApkNotInstalledException) {

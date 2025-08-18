@@ -73,35 +73,28 @@ internal class CommonLimitOffsetImpl<Value : Any>(
 
     internal val itemCount = AtomicInt(INITIAL_ITEM_COUNT)
 
-    private val flow = db.invalidationTracker.createFlow(*tables, emitInitialState = false)
-
-    private val invalidationFlowStarted = AtomicBoolean(false)
-
     private val refreshComplete = AtomicBoolean(false)
 
     private var invalidationFlowJob: Job? = null
 
     init {
         // register db listeners right away
-        db.getCoroutineScope().launch { flow.collect() }
+        invalidationFlowJob =
+            db.getCoroutineScope().launch {
+                db.invalidationTracker.createFlow(*tables, emitInitialState = false).collect {
+                    if (pagingSource.invalid) {
+                        throw CancellationException("PagingSource is invalid")
+                    }
+                    if (refreshComplete.get()) {
+                        pagingSource.invalidate()
+                    }
+                }
+            }
 
         pagingSource.registerInvalidatedCallback { invalidationFlowJob?.cancel() }
     }
 
     suspend fun load(params: LoadParams<Int>): LoadResult<Int, Value> {
-        if (invalidationFlowStarted.compareAndSet(false, true)) {
-            invalidationFlowJob =
-                db.getCoroutineScope().launch {
-                    db.invalidationTracker.createFlow(*tables, emitInitialState = false).collect {
-                        if (pagingSource.invalid) {
-                            throw CancellationException("PagingSource is invalid")
-                        }
-                        if (refreshComplete.get()) {
-                            pagingSource.invalidate()
-                        }
-                    }
-                }
-        }
         val tempCount = itemCount.get()
         // if itemCount is < 0, then it is initial load
         return try {

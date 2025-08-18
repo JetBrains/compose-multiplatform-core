@@ -296,7 +296,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramRotation = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramShearFactor = parallelogram.skew,
         )
     }
 
@@ -321,7 +321,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramRotation = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramShearFactor = parallelogram.skew,
             out = outParallelogram,
         )
         return outParallelogram

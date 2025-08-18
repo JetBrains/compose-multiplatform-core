@@ -387,7 +387,7 @@ class SpatialAudioActivity : AppCompatActivity() {
             audioTrack.play()
 
             when (SpatialAudioTrack.getSpatialSourceType(session, audioTrack)) {
-                SpatializerConstants.SOURCE_TYPE_BYPASS -> {
+                SpatializerConstants.SOURCE_TYPE_DEFAULT -> {
                     Log.d(TAG, "Source type is bypass")
                 }
                 SpatializerConstants.SOURCE_TYPE_POINT_SOURCE -> {

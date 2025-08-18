@@ -206,12 +206,12 @@ class PartitionedMeshTest {
                 height = 9f,
             )
         val externalParallelogram =
-            ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+            ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                 center = ImmutableVec(100f, 200f),
                 width = 3f,
                 height = 4f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
-                shearFactor = 2f,
+                skew = 2f,
             )
 
         assertThat(partitionedMesh.computeCoverage(intersectingParallelogram)).isGreaterThan(0f)
@@ -311,12 +311,12 @@ class PartitionedMeshTest {
                 height = 9f,
             )
         val externalParallelogram =
-            ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+            ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                 center = ImmutableVec(100f, 200f),
                 width = 3f,
                 height = 4f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
-                shearFactor = 2f,
+                skew = 2f,
             )
 
         assertThat(partitionedMesh.computeCoverageIsGreaterThan(intersectingParallelogram, 0f))

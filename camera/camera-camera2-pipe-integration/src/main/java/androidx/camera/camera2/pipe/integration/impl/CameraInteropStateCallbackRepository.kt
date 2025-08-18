@@ -162,24 +162,8 @@ public class CameraInteropStateCallbackRepository {
             captureSessionId: CameraInterop.CameraCaptureSessionId,
             surface: Surface,
         ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Api23CompatImpl.onSurfacePrepared(placeholderSession, surface, callbacks)
-            } else {
-                Log.error { "onSurfacePrepared called for unsupported OS version." }
-            }
-        }
-
-        @RequiresApi(Build.VERSION_CODES.M)
-        private object Api23CompatImpl {
-            @JvmStatic
-            fun onSurfacePrepared(
-                session: CameraCaptureSession,
-                surface: Surface,
-                callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>>,
-            ) {
-                for (callback in callbacks.value) {
-                    callback.onSurfacePrepared(session, surface)
-                }
+            for (callback in callbacks.value) {
+                callback.onSurfacePrepared(placeholderSession, surface)
             }
         }
 

@@ -145,6 +145,7 @@ package androidx.compose.ui {
     property public boolean isGraphicsLayerShapeSemanticsEnabled;
     property public boolean isIgnoreInvalidPrevFocusRectEnabled;
     property public boolean isIndirectTouchNavigationGestureDetectorEnabled;
+    property public boolean isInitialFocusOnFocusableAvailable;
     property public boolean isNestedScrollDispatcherNodeFixEnabled;
     property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
@@ -165,6 +166,7 @@ package androidx.compose.ui {
     field public static boolean isGraphicsLayerShapeSemanticsEnabled;
     field public static boolean isIgnoreInvalidPrevFocusRectEnabled;
     field public static boolean isIndirectTouchNavigationGestureDetectorEnabled;
+    field public static boolean isInitialFocusOnFocusableAvailable;
     field public static boolean isNestedScrollDispatcherNodeFixEnabled;
     field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;

@@ -55,8 +55,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesCore)
             }
@@ -65,32 +64,6 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependencies {
                 implementation(libs.testRunner)
-            }
-        }
-
-        jsMain {
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        wasmJsMain {
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
             }
         }
     }

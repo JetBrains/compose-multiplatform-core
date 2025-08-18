@@ -33,6 +33,7 @@ import androidx.camera.camera2.pipe.integration.internal.CameraCompatibilityFilt
 import androidx.camera.camera2.pipe.integration.internal.CameraSelectionOptimizer
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
@@ -55,6 +56,7 @@ internal class CameraFactoryAdapter(
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
     private val availableCamerasSelector: CameraSelector?,
     private val streamSpecsCalculator: StreamSpecsCalculator,
+    private val cameraXConfig: CameraXConfig,
 ) : CameraFactory, CameraFactory.Interrogator {
     private val cameraCoordinator: CameraCoordinatorAdapter =
         CameraCoordinatorAdapter(lazyCameraPipe.value, lazyCameraPipe.value.cameras())
@@ -72,6 +74,7 @@ internal class CameraFactoryAdapter(
                         lazyCameraPipe.value,
                         camera2InteropCallbacks,
                         cameraCoordinator,
+                        cameraXConfig,
                     )
                 )
                 .build()

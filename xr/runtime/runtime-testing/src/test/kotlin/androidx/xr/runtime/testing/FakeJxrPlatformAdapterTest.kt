@@ -281,7 +281,7 @@ class FakeJxrPlatformAdapterTest {
     fun createSurfaceEntity_returnsInitialValue() {
         val stereoMode = 0
         val pose = Pose.Identity
-        val canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f)
+        val canvasShape = SurfaceEntity.Shape.Sphere(1.0f)
         val contentSecurityLevel = 0
         val superSampling = 0
         val parentEntity = FakeEntity()
@@ -298,7 +298,7 @@ class FakeJxrPlatformAdapterTest {
         assertThat(surfaceEntity).isInstanceOf(FakeSurfaceEntity::class.java)
         assertThat(surfaceEntity.stereoMode).isEqualTo(stereoMode)
         assertThat(surfaceEntity.getPose()).isEqualTo(pose)
-        assertThat(surfaceEntity.canvasShape).isEqualTo(canvasShape)
+        assertThat(surfaceEntity.shape).isEqualTo(canvasShape)
         assertThat(surfaceEntity.parent).isEqualTo(parentEntity)
     }
 

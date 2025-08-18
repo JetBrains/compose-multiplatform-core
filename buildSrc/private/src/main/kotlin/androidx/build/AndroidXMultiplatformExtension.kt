@@ -748,6 +748,10 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                 configureDefaultIncrementalSyncTask()
                 configureKotlinJsTests()
                 configureNode()
+
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same:
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                configurePinnedKotlinLibraries(platform)
             }
         } else null
     }
@@ -836,6 +840,9 @@ private fun Project.configureNode() {
 
 @OptIn(ExperimentalWasmDsl::class)
 private fun Project.configureBinaryen() {
+    if (ProjectLayoutType.isPlayground(project)) {
+        return
+    }
     plugins.withType<BinaryenPlugin>().configureEach {
         the<BinaryenEnvSpec>()
             .downloadBaseUrl
@@ -844,6 +851,25 @@ private fun Project.configureBinaryen() {
                     .toURI()
                     .toString()
             )
+    }
+}
+
+private fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
+    multiplatformExtension?.let {
+        val kotlinLibSuffix =
+            when (platform) {
+                PlatformIdentifier.JS -> "js"
+                PlatformIdentifier.WASM_JS -> "wasm-js"
+                else -> throw IllegalStateException("Unsupported platform: $platform")
+            }
+        val kotlinVersion = project.getVersionByName("kotlin")
+        it.sourceSets.getByName("${platform.id}Main").dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-stdlib-$kotlinLibSuffix:$kotlinVersion")
+        }
+        it.sourceSets.getByName("${platform.id}Test").dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-stdlib-$kotlinLibSuffix:$kotlinVersion")
+            implementation("org.jetbrains.kotlin:kotlin-test-$kotlinLibSuffix:$kotlinVersion")
+        }
     }
 }
 

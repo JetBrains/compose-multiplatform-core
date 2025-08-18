@@ -46,7 +46,7 @@ CORE_PERFORMANCE = "1.0.0"
 CORE_REMOTEVIEWS = "1.1.0-rc01"
 CORE_ROLE = "1.2.0-alpha01"
 CORE_SPLASHSCREEN = "1.2.0-rc01"
-CORE_TELECOM = "1.0.0-beta01"
+CORE_TELECOM = "1.1.0-alpha01"
 CORE_UWB = "1.0.0-alpha10"
 CORE_VIEWTREE = "1.1.0-alpha01"
 CREDENTIALS = "1.6.0-alpha05"
@@ -170,10 +170,10 @@ VIEWPAGER = "1.1.0-rc01"
 VIEWPAGER2 = "1.2.0-alpha01"
 WEAR = "1.4.0-alpha02"
 WEAR_COMPOSE = "1.6.0-alpha01"
-WEAR_CORE = "1.0.0-beta01"
-WEAR_INPUT = "1.2.0-beta01"
-WEAR_INPUT_TESTING = "1.2.0-beta01"
-WEAR_ONGOING = "1.1.0-beta01"
+WEAR_CORE = "1.0.0-rc01"
+WEAR_INPUT = "1.2.0-rc01"
+WEAR_INPUT_TESTING = "1.2.0-rc01"
+WEAR_ONGOING = "1.1.0-rc01"
 WEAR_PHONE_INTERACTIONS = "1.1.0-rc01"
 WEAR_PROTOLAYOUT = "1.4.0-alpha01"
 WEAR_REMOTE_INTERACTIONS = "1.2.0-alpha01"
@@ -188,13 +188,12 @@ WINDOW_EXTENSIONS = "1.5.0"
 WINDOW_EXTENSIONS_CORE = "1.1.0-alpha01"
 WINDOW_SIDECAR = "1.0.0-rc01"
 WORK = "2.11.0-alpha01"
-XR = "1.0.0-alpha05"
-XR_ARCORE = "1.0.0-alpha05"
-XR_COMPOSE = "1.0.0-alpha06"
+XR_ARCORE = "1.0.0-alpha06"
+XR_COMPOSE = "1.0.0-alpha07"
 XR_GLIMMER = "1.0.0-alpha01"
 XR_PROJECTED = "1.0.0-alpha01"
-XR_RUNTIME = "1.0.0-alpha05"
-XR_SCENECORE = "1.0.0-alpha06"
+XR_RUNTIME = "1.0.0-alpha06"
+XR_SCENECORE = "1.0.0-alpha07"
 
 [groups]
 ACTIVITY = { group = "androidx.activity", atomicGroupVersion = "versions.ACTIVITY" }
@@ -336,7 +335,6 @@ WINDOW_EXTENSIONS = { group = "androidx.window.extensions", atomicGroupVersion =
 WINDOW_EXTENSIONS_CORE = { group = "androidx.window.extensions.core", atomicGroupVersion = "versions.WINDOW_EXTENSIONS_CORE" }
 WINDOW_SIDECAR = { group = "androidx.window.sidecar", atomicGroupVersion = "versions.WINDOW_SIDECAR" }
 WORK = { group = "androidx.work", atomicGroupVersion = "versions.WORK" }
-XR = { group = "androidx.xr", atomicGroupVersion = "versions.XR" }
 XR_ARCORE = { group = "androidx.xr.arcore", atomicGroupVersion = "versions.XR_ARCORE" }
 XR_COMPOSE = { group = "androidx.xr.compose", atomicGroupVersion = "versions.XR_COMPOSE" }
 XR_GLIMMER = { group = "androidx.xr.glimmer", atomicGroupVersion = "versions.XR_GLIMMER" }

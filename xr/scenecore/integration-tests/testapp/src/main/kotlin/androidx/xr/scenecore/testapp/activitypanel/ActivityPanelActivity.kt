@@ -96,7 +96,7 @@ class ActivityPanelActivity : AppCompatActivity() {
                     val intent = Intent(this, ActivityPanel::class.java)
                     intent.putExtra("NAV_ICON", false)
                     // Launch an activity in the panel
-                    activityPanelEntity.launchActivity(intent, savedInstanceState)
+                    activityPanelEntity.startActivity(intent)
                     // Add movable component
                     val movableComponent = MovableComponent.createSystemMovable(session!!)
                     activityPanelEntity.addComponent(movableComponent)

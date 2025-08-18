@@ -60,8 +60,8 @@ internal fun <T : Any> serializableListSaver(
     serializer: KSerializer<T> = UnsafePolymorphicSerializer()
 ) =
     listSaver<List<T>, SavedState>(
-        save = { list -> list.map { encodeToSavedState(serializer, it) } },
-        restore = { list -> list.map { decodeFromSavedState(serializer, it) } },
+        save = { list -> list.fastMapOrMap { encodeToSavedState(serializer, it) } },
+        restore = { list -> list.fastMapOrMap { decodeFromSavedState(serializer, it) } },
     )
 
 @Suppress("UNCHECKED_CAST")

@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+
 package androidx.compose.remote.foundation.icons
 
 import android.graphics.Path
+import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Paint

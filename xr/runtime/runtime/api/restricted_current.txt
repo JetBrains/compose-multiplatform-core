@@ -1025,7 +1025,7 @@ package androidx.xr.runtime.internal {
     method public androidx.xr.runtime.internal.ResizableComponent createResizableComponent(androidx.xr.runtime.internal.Dimensions minimumSize, androidx.xr.runtime.internal.Dimensions maximumSize);
     method public androidx.xr.runtime.internal.SpatialPointerComponent createSpatialPointerComponent();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> subspaceNodeHolder, androidx.xr.runtime.internal.Dimensions size);
-    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape, @androidx.xr.runtime.internal.SurfaceEntity.ContentSecurityLevel int contentSecurityLevel, int superSampling, androidx.xr.runtime.internal.Entity parentEntity);
+    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.SurfaceEntity.Shape shape, @androidx.xr.runtime.internal.SurfaceEntity.SurfaceProtection int surfaceProtection, int superSampling, androidx.xr.runtime.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
     method public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void destroyTexture(androidx.xr.runtime.internal.TextureResource texture);
@@ -1428,6 +1428,11 @@ package androidx.xr.runtime.internal {
     method public void destroyTexture(androidx.xr.runtime.internal.TextureResource texture);
     method public void destroyWaterMaterial(androidx.xr.runtime.internal.MaterialResource material);
     method public void dispose();
+    method public androidx.xr.runtime.internal.TextureResource? getReflectionTextureFromIbl(androidx.xr.runtime.internal.ExrImageResource iblToken);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource> loadExrImageByAssetName(String assetName);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource> loadExrImageByByteArray(byte[] assetData, String assetKey);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource> loadGltfByAssetName(String assetName);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource> loadGltfByByteArray(byte[] assetData, String assetKey);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.TextureResource> loadTexture(String assetName, androidx.xr.runtime.internal.TextureSampler sampler);
     method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource material, float alphaCutoff);
     method public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource material, androidx.xr.runtime.internal.TextureResource alphaMap);
@@ -1535,7 +1540,7 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RuntimeFactory extends androidx.xr.runtime.internal.Service {
-    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity);
+    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntime {
@@ -1747,65 +1752,34 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SurfaceEntity extends androidx.xr.runtime.internal.Entity {
-    method public androidx.xr.runtime.internal.SurfaceEntity.CanvasShape getCanvasShape();
     method public int getColorRange();
     method public int getColorSpace();
     method public int getColorTransfer();
     method public boolean getContentColorMetadataSet();
     method public androidx.xr.runtime.internal.Dimensions getDimensions();
     method public androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather getEdgeFeather();
-    method public int getMaxCLL();
+    method public int getMaxContentLightLevel();
     method public androidx.xr.runtime.internal.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.runtime.internal.SurfaceEntity.Shape getShape();
     method public int getStereoMode();
     method public android.view.Surface getSurface();
     method public void resetContentColorMetadata();
     method public void setAuxiliaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
-    method public void setCanvasShape(androidx.xr.runtime.internal.SurfaceEntity.CanvasShape);
-    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
+    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
     method public void setEdgeFeather(androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.runtime.internal.TextureResource? alphaMask);
+    method public void setShape(androidx.xr.runtime.internal.SurfaceEntity.Shape);
     method public void setStereoMode(int);
-    property public abstract androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape;
     property public abstract int colorRange;
     property public abstract int colorSpace;
     property public abstract int colorTransfer;
     property public abstract boolean contentColorMetadataSet;
     property public abstract androidx.xr.runtime.internal.Dimensions dimensions;
     property public abstract androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather edgeFeather;
-    property public abstract int maxCLL;
+    property public abstract int maxContentLightLevel;
+    property public abstract androidx.xr.runtime.internal.SurfaceEntity.Shape shape;
     property public abstract int stereoMode;
     property public abstract android.view.Surface surface;
-  }
-
-  public static interface SurfaceEntity.CanvasShape {
-    method public androidx.xr.runtime.internal.Dimensions getDimensions();
-    property public abstract androidx.xr.runtime.internal.Dimensions dimensions;
-  }
-
-  public static final class SurfaceEntity.CanvasShape.Quad implements androidx.xr.runtime.internal.SurfaceEntity.CanvasShape {
-    ctor public SurfaceEntity.CanvasShape.Quad(float width, float height);
-    method public androidx.xr.runtime.internal.Dimensions getDimensions();
-    method public float getHeight();
-    method public float getWidth();
-    property public androidx.xr.runtime.internal.Dimensions dimensions;
-    property public float height;
-    property public float width;
-  }
-
-  public static final class SurfaceEntity.CanvasShape.Vr180Hemisphere implements androidx.xr.runtime.internal.SurfaceEntity.CanvasShape {
-    ctor public SurfaceEntity.CanvasShape.Vr180Hemisphere(float radius);
-    method public androidx.xr.runtime.internal.Dimensions getDimensions();
-    method public float getRadius();
-    property public androidx.xr.runtime.internal.Dimensions dimensions;
-    property public float radius;
-  }
-
-  public static final class SurfaceEntity.CanvasShape.Vr360Sphere implements androidx.xr.runtime.internal.SurfaceEntity.CanvasShape {
-    ctor public SurfaceEntity.CanvasShape.Vr360Sphere(float radius);
-    method public androidx.xr.runtime.internal.Dimensions getDimensions();
-    method public float getRadius();
-    property public androidx.xr.runtime.internal.Dimensions dimensions;
-    property public float radius;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.ColorRange {
@@ -1874,32 +1848,48 @@ package androidx.xr.runtime.internal {
     field public static final int ST2084 = 6; // 0x6
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.ContentSecurityLevel {
-    field public static final androidx.xr.runtime.internal.SurfaceEntity.ContentSecurityLevel.Companion Companion;
-    field public static final int NONE = 0; // 0x0
-    field public static final int PROTECTED = 1; // 0x1
-  }
-
-  public static final class SurfaceEntity.ContentSecurityLevel.Companion {
-    property public static int NONE;
-    property public static int PROTECTED;
-    field public static final int NONE = 0; // 0x0
-    field public static final int PROTECTED = 1; // 0x1
-  }
-
   public static interface SurfaceEntity.EdgeFeather {
   }
 
-  public static final class SurfaceEntity.EdgeFeather.SmoothFeather implements androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather {
-    ctor public SurfaceEntity.EdgeFeather.SmoothFeather(float leftRight, float topBottom);
+  public static final class SurfaceEntity.EdgeFeather.NoFeathering implements androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather {
+    ctor public SurfaceEntity.EdgeFeather.NoFeathering();
+  }
+
+  public static final class SurfaceEntity.EdgeFeather.RectangleFeather implements androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather {
+    ctor public SurfaceEntity.EdgeFeather.RectangleFeather(float leftRight, float topBottom);
     method public float getLeftRight();
     method public float getTopBottom();
     property public float leftRight;
     property public float topBottom;
   }
 
-  public static final class SurfaceEntity.EdgeFeather.SolidEdge implements androidx.xr.runtime.internal.SurfaceEntity.EdgeFeather {
-    ctor public SurfaceEntity.EdgeFeather.SolidEdge();
+  public static interface SurfaceEntity.Shape {
+    method public androidx.xr.runtime.internal.Dimensions getDimensions();
+    property public abstract androidx.xr.runtime.internal.Dimensions dimensions;
+  }
+
+  public static final class SurfaceEntity.Shape.Hemisphere implements androidx.xr.runtime.internal.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Hemisphere(float radius);
+    method public androidx.xr.runtime.internal.Dimensions getDimensions();
+    method public float getRadius();
+    property public androidx.xr.runtime.internal.Dimensions dimensions;
+    property public float radius;
+  }
+
+  public static final class SurfaceEntity.Shape.Quad implements androidx.xr.runtime.internal.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Quad(androidx.xr.runtime.math.FloatSize2d extents);
+    method public androidx.xr.runtime.internal.Dimensions getDimensions();
+    method public androidx.xr.runtime.math.FloatSize2d getExtents();
+    property public androidx.xr.runtime.internal.Dimensions dimensions;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
+  }
+
+  public static final class SurfaceEntity.Shape.Sphere implements androidx.xr.runtime.internal.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.Sphere(float radius);
+    method public androidx.xr.runtime.internal.Dimensions getDimensions();
+    method public float getRadius();
+    property public androidx.xr.runtime.internal.Dimensions dimensions;
+    property public float radius;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.StereoMode {
@@ -1935,6 +1925,19 @@ package androidx.xr.runtime.internal {
     property public static int NONE;
     field public static final int DEFAULT = 1; // 0x1
     field public static final int NONE = 0; // 0x0
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.SurfaceProtection {
+    field public static final androidx.xr.runtime.internal.SurfaceEntity.SurfaceProtection.Companion Companion;
+    field public static final int NONE = 0; // 0x0
+    field public static final int PROTECTED = 1; // 0x1
+  }
+
+  public static final class SurfaceEntity.SurfaceProtection.Companion {
+    property public static int NONE;
+    property public static int PROTECTED;
+    field public static final int NONE = 0; // 0x0
+    field public static final int PROTECTED = 1; // 0x1
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SystemSpaceEntity extends androidx.xr.runtime.internal.Entity {

@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.isSpecified
  * The class is used to create a scrim when a levitated pane is shown, to block the user interaction
  * from the underlying layout. See [AdaptStrategy.Levitate] for more detailed info.
  *
- * @sample androidx.compose.material3.adaptive.samples.levitateAdaptStrategySample
+ * @sample androidx.compose.material3.adaptive.samples.levitateAsDialogSample
  * @param color the color of scrim, by default if [Color.Unspecified] is provided, the pane scaffold
  *   implementation will use a translucent black color.
  * @param onClick the on-click listener of the scrim; usually used to dismiss the levitated pane;

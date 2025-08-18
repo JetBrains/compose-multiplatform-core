@@ -23,14 +23,19 @@ import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 
 /** Main [Activity] containing all Glimmer related demos. */
 class DemoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // TODO(b/438995221): Remove this line when this flag is turned on by default for all apps.
+        @OptIn(ExperimentalComposeUiApi::class)
+        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
+
         enableEdgeToEdge(
             SystemBarStyle.dark(Color.TRANSPARENT),
             SystemBarStyle.dark(Color.TRANSPARENT),

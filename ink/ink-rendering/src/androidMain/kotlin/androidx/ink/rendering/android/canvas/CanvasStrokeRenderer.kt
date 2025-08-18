@@ -18,7 +18,6 @@ package androidx.ink.rendering.android.canvas
 
 import android.graphics.Canvas
 import android.graphics.Matrix
-import androidx.annotation.Px
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
@@ -77,10 +76,6 @@ import androidx.ink.strokes.Stroke
  * than the standard implementation, for example surrounding a stroke with additional content, then
  * that additional content will not be taken into account in geometry operations like
  * [androidx.ink.geometry.Intersection] or [androidx.ink.geometry.PartitionedMesh.computeCoverage].
- *
- * If custom rendering is needed during live authoring of in-progress strokes and that custom
- * rendering involves drawing content outside the stroke boundaries, then be sure to override
- * [strokeModifiedRegionOutsetPx].
  */
 public interface CanvasStrokeRenderer {
 
@@ -246,18 +241,6 @@ public interface CanvasStrokeRenderer {
         strokeToScreenTransform: Matrix,
         textureAnimationProgress: Float,
     )
-
-    /**
-     * The distance beyond a stroke geometry's bounds that rendering might affect. This is currently
-     * only applicable to in-progress stroke rendering, where the smallest possible region of the
-     * screen is redrawn to optimize performance. But with a custom [CanvasStrokeRenderer], certain
-     * effects like drop shadows or blurs may render beyond the stroke's geometry, and setting a
-     * higher value here can ensure that artifacts are not left on screen after an in-progress
-     * stroke has moved on from a particular region of the screen. This value should be set to the
-     * lowest value that avoids the artifacts, as larger values will be less performant, and effects
-     * that rely on larger values will be less compatible with stroke geometry operations.
-     */
-    @Px public fun strokeModifiedRegionOutsetPx(): Int = 3
 
     public companion object {
 

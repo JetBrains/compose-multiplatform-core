@@ -24,11 +24,11 @@ import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.navigationevent.DirectNavigationEventInputHandler
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventCallback
 import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventInputHandler
-import androidx.navigationevent.OnBackInvokedInputHandler
+import androidx.navigationevent.NavigationEventInput
+import androidx.navigationevent.OnBackInvokedInput
 
 /**
  * Dispatcher that can be used to register [OnBackPressedCallback] instances for handling the
@@ -79,8 +79,8 @@ class OnBackPressedDispatcher(
         // This is to implement `OnBackPressedDispatcher.onHasEnabledCallbacksChanged`, which
         // can be set through OnBackPressedDispatcher's public constructor.
         onHasEnabledCallbacksChanged?.let { callback ->
-            dispatcher.addInputHandler(
-                object : NavigationEventInputHandler() {
+            dispatcher.addInput(
+                object : NavigationEventInput() {
                     override fun onHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {
                         callback.accept(hasEnabledCallbacks)
                     }
@@ -90,10 +90,10 @@ class OnBackPressedDispatcher(
         dispatcher
     }
 
-    private val manualDispatchInputHandler by lazy {
-        val inputHandler = DirectNavigationEventInputHandler()
-        eventDispatcher.addInputHandler(inputHandler)
-        inputHandler
+    private val directInput by lazy {
+        val input = DirectNavigationEventInput()
+        eventDispatcher.addInput(input)
+        input
     }
 
     @JvmOverloads
@@ -106,8 +106,8 @@ class OnBackPressedDispatcher(
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun setOnBackInvokedDispatcher(invoker: OnBackInvokedDispatcher) {
-        val inputHandler = OnBackInvokedInputHandler(invoker)
-        eventDispatcher.addInputHandler(inputHandler)
+        val input = OnBackInvokedInput(invoker)
+        eventDispatcher.addInput(input)
     }
 
     /**
@@ -214,13 +214,13 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackStarted(backEvent: BackEventCompat) {
-        manualDispatchInputHandler.handleOnStarted(backEvent.toNavigationEvent())
+        directInput.start(backEvent.toNavigationEvent())
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackProgressed(backEvent: BackEventCompat) {
-        manualDispatchInputHandler.handleOnProgressed(backEvent.toNavigationEvent())
+        directInput.progress(backEvent.toNavigationEvent())
     }
 
     /**
@@ -233,13 +233,13 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun onBackPressed() {
-        manualDispatchInputHandler.handleOnCompleted()
+        directInput.complete()
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackCancelled() {
-        manualDispatchInputHandler.handleOnCancelled()
+        directInput.cancel()
     }
 }
 

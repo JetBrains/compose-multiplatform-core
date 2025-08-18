@@ -68,9 +68,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.kotlinReflect)
                 implementation(project(":compose:runtime:runtime-test-utils"))
@@ -178,36 +176,9 @@ androidXMultiplatform {
             dependsOn(nonEmulatorCommonTest)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         wasmJsMain {
-            dependsOn(webMain)
             dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibWasm)
                 implementation(libs.kotlinXw3c)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinTestWasm)
             }
         }
 
@@ -247,6 +218,9 @@ androidXMultiplatform {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

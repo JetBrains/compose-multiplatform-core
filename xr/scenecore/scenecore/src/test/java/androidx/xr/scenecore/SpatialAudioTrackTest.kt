@@ -126,15 +126,13 @@ class SpatialAudioTrackTest {
             )
             .thenReturn(builder)
 
-        val actualBuilder =
-            SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
+        SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
 
         verify(mockRtAudioTrackExtensions)
             .setPointSourceParams(
                 eq(builder),
                 argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
             )
-        assertThat(actualBuilder).isEqualTo(builder)
     }
 
     @Test
@@ -151,8 +149,7 @@ class SpatialAudioTrackTest {
             )
             .thenReturn(builder)
 
-        val actualBuilder =
-            SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
+        SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
 
         verify(mockRtAudioTrackExtensions)
             .setSoundFieldAttributes(
@@ -161,7 +158,6 @@ class SpatialAudioTrackTest {
                     it.ambisonicsOrder == SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER
                 },
             )
-        assertThat(actualBuilder).isEqualTo(builder)
     }
 
     @Test

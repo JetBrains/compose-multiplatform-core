@@ -18,39 +18,56 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AE
+import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AF
+import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AWB
 import android.os.Handler
 import android.os.HandlerThread
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraUnavailableException
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.InitializationException
 import androidx.camera.core.Preview
 import androidx.camera.core.RetryPolicy
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.impl.CameraDeviceSurfaceManager
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.Observable
+import androidx.camera.core.impl.QuirkSettings
+import androidx.camera.core.impl.QuirkSettingsHolder
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.internal.StreamSpecsCalculator
+import androidx.camera.core.internal.compat.quirk.ImageCaptureRotationOptionQuirk
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -103,6 +120,239 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
     @After
     fun tearDown() {
         ProcessCameraProvider.shutdown().get(10, TimeUnit.SECONDS)
+        QuirkSettingsHolder.instance().reset()
+    }
+
+    @Test
+    fun init_fails_withInvalidCameraFactoryProvider() {
+        // Arrange: Create a config with a provider that will fail during initialization.
+        val invalidConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(InvalidCameraFactoryProvider())
+                .build()
+        ProcessCameraProvider.configureInstance(invalidConfig)
+
+        // Act & Assert
+        val exception =
+            assertThrows<ExecutionException> {
+                ProcessCameraProvider.getInstance(context).get(10, TimeUnit.SECONDS)
+            }
+        exception.hasCauseThat().isInstanceOf(InitializationException::class.java)
+    }
+
+    @Test
+    fun init_fails_whenCameraIsUnavailableDuringInit() {
+        // Arrange: Get a real camera ID to make "unavailable".
+        val allCameraIds = CameraUtil.getBackwardCompatibleCameraIdListOrThrow()
+        assumeTrue("Device must have at least one camera", allCameraIds.isNotEmpty())
+        val faultyCameraId = allCameraIds[0]
+
+        // Arrange: Create a factory provider that will throw an exception for that ID.
+        val faultyProvider =
+            FaultyCameraFactoryProvider(baseConfig.getCameraFactoryProvider(null)!!, faultyCameraId)
+        val customConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(faultyProvider)
+                .build()
+        ProcessCameraProvider.configureInstance(customConfig)
+
+        // Act & Assert: Initialization should fail with a wrapped CameraUnavailableException.
+        val exception =
+            assertThrows<ExecutionException> {
+                ProcessCameraProvider.getInstance(context).get(10, TimeUnit.SECONDS)
+            }
+        exception.hasCauseThat().isInstanceOf(InitializationException::class.java)
+    }
+
+    @Test
+    fun reconfigure_succeeds_afterInitWithInvalidConfigFails() {
+        // --- Round 1: Configure with an invalid provider and fail ---
+        val invalidConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(InvalidCameraFactoryProvider())
+                .build()
+        ProcessCameraProvider.configureInstance(invalidConfig)
+        assertThrows<ExecutionException> {
+            ProcessCameraProvider.getInstance(context).get(10, TimeUnit.SECONDS)
+        }
+
+        // --- Round 2: Reconfigure with a valid provider and succeed ---
+        ProcessCameraProvider.shutdown().get(10, TimeUnit.SECONDS)
+        ProcessCameraProvider.configureInstance(baseConfig)
+        val provider = ProcessCameraProvider.getInstance(context).get(10, TimeUnit.SECONDS)
+
+        // Assert: The second attempt succeeded.
+        assertThat(provider).isNotNull()
+        assertThat(provider.availableCameraInfos.isNotEmpty()).isTrue()
+    }
+
+    @Test
+    fun quirkSettings_areAppliedToQuirkSettingsHolder() {
+        // Arrange: Create a custom quirk setting.
+        val customQuirk = ImageCaptureRotationOptionQuirk()
+        val customQuirkSettings =
+            QuirkSettings.Builder().forceEnableQuirks(setOf(customQuirk::class.java)).build()
+
+        val customConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setQuirkSettings(customQuirkSettings)
+                .build()
+
+        // Act: Initialize CameraX with the custom config.
+        initializeProviderWithConfig(customConfig)
+
+        // Assert: The global QuirkSettingsHolder now contains our custom quirk.
+        val appliedSettings = QuirkSettingsHolder.instance().get()
+        assertThat(appliedSettings.shouldEnableQuirk(customQuirk::class.java, true)).isTrue()
+    }
+
+    @Test
+    fun repeatingStreamIsForcedByDefault_allowingFocusAndMetering() {
+        val selector = CameraUtil.assumeFirstAvailableCameraSelector()
+        assumeTrue(
+            "No AF/AE/AWB region available on this device!",
+            isFocusMeteringSupported(selector),
+        )
+        // Arrange: Use the default baseConfig where the repeating stream is forced.
+        initializeProviderWithConfig(baseConfig)
+        val imageCapture = ImageCapture.Builder().build()
+
+        // Act: Bind a non-repeating use case and attempt to trigger focus/metering.
+        lateinit var camera: Camera
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            camera = cameraProvider!!.bindToLifecycle(fakeLifecycleOwner, selector, imageCapture)
+        }
+        val factory = SurfaceOrientedMeteringPointFactory(1.0f, 1.0f)
+        val point = factory.createPoint(0.5f, 0.5f)
+        val action = FocusMeteringAction.Builder(point).build()
+        assertThat(camera.cameraInfo.isFocusMeteringSupported(action)).isTrue()
+        val future = camera.cameraControl.startFocusAndMetering(action)
+
+        // Assert: The operation is not immediately canceled. We expect it to complete
+        // (successfully or not, depending on the device) without an OperationCanceledException.
+        try {
+            future.get(10, TimeUnit.SECONDS)
+        } catch (e: ExecutionException) {
+            // Fails if the cause is an OperationCanceledException. Other causes are fine.
+            assertThat(e.cause)
+                .isNotInstanceOf(CameraControl.OperationCanceledException::class.java)
+        }
+    }
+
+    @Test
+    fun repeatingStreamIsNotForced_whenConfigIsSet() {
+        // Arrange: Create a config that disables the forced repeating stream.
+        val selector = CameraUtil.assumeFirstAvailableCameraSelector()
+        assumeTrue(
+            "No AF/AE/AWB region available on this device!",
+            isFocusMeteringSupported(selector),
+        )
+        val customConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig).setRepeatingStreamForced(false).build()
+        initializeProviderWithConfig(customConfig)
+        val imageCapture = ImageCapture.Builder().build()
+
+        // Act: Bind a non-repeating use case and attempt to trigger focus/metering.
+        lateinit var camera: Camera
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            camera = cameraProvider!!.bindToLifecycle(fakeLifecycleOwner, selector, imageCapture)
+        }
+
+        val factory = SurfaceOrientedMeteringPointFactory(1.0f, 1.0f)
+        val point = factory.createPoint(0.5f, 0.5f)
+        val action = FocusMeteringAction.Builder(point).build()
+        val future = camera.cameraControl.startFocusAndMetering(action)
+
+        // Assert: The future should fail with an OperationCanceledException because there is
+        // no repeating stream available to handle the request.
+        val exception = assertThrows<ExecutionException> { future.get(5, TimeUnit.SECONDS) }
+        exception.hasCauseThat().isInstanceOf(CameraControl.OperationCanceledException::class.java)
+    }
+
+    @Test
+    fun init_failsAndRetainsConfig_whenNoCamerasAvailable() = runTest {
+        // Arrange: A factory that reports no cameras, which will cause validation to fail.
+        val factoryWrapper =
+            FakeCameraFactoryWrapper(
+                baseConfig.getCameraFactoryProvider(null)!!,
+                initialVisibleIds = emptySet(),
+            )
+        val customConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(factoryWrapper)
+                .build()
+        ProcessCameraProvider.configureInstance(customConfig)
+
+        // Act & Assert: The first getInstance call should fail.
+        assertThrows<InitializationException> { ProcessCameraProvider.getInstance(context).await() }
+
+        // Assert: The second getInstance call should also fail, proving the configuration
+        // was retained without needing to call configureInstance() again.
+        assertThrows<InitializationException> { ProcessCameraProvider.getInstance(context).await() }
+    }
+
+    @Test
+    fun reinitialization_succeeds_withoutWaitingForShutdown() {
+        // Arrange: Initialize a first instance of the provider.
+        ProcessCameraProvider.configureInstance(baseConfig)
+        val provider1 = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
+        assertThat(provider1).isNotNull()
+
+        // Act: Call shutdown but DO NOT wait for it to complete.
+        val shutdownFuture = provider1.shutdownAsync()
+
+        // Act: Immediately reconfigure with a verifiable provider and re-initialize.
+        val originalFactoryProvider = baseConfig.getCameraFactoryProvider(null)!!
+        val verifiableProvider = VerifiableCameraFactoryProvider(originalFactoryProvider)
+        val newConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(verifiableProvider)
+                .build()
+
+        ProcessCameraProvider.configureInstance(newConfig)
+        val provider2 = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
+
+        // Assert: The new provider instance is successfully initialized and is a different object.
+        assertThat(provider2).isNotNull()
+
+        // Assert: The new configuration was used because our verifiable provider was called.
+        assertThat(verifiableProvider.isNewInstanceCalled).isTrue()
+
+        // Assert: The original shutdown future should also complete successfully without errors.
+        shutdownFuture.get(10, TimeUnit.SECONDS)
+    }
+
+    @Test
+    fun reconfigure_canBeDoneAfterShutdown() {
+        // --- Round 1: Configure with a verifiable provider and get instance ---
+        val originalProvider = baseConfig.getCameraFactoryProvider(null)!!
+        val verifiableProvider1 = VerifiableCameraFactoryProvider(originalProvider)
+        val config1 =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(verifiableProvider1)
+                .build()
+
+        ProcessCameraProvider.configureInstance(config1)
+        val provider1 = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
+
+        // Assert that the first configuration was used.
+        assertThat(verifiableProvider1.isNewInstanceCalled).isTrue()
+
+        // --- Shutdown ---
+        provider1.shutdownAsync()[10, TimeUnit.SECONDS]
+
+        // --- Round 2: Reconfigure with a new verifiable provider and get instance ---
+        val verifiableProvider2 = VerifiableCameraFactoryProvider(originalProvider)
+        val config2 =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraFactoryProvider(verifiableProvider2)
+                .build()
+
+        ProcessCameraProvider.configureInstance(config2)
+        ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
+
+        // Assert that the second configuration was used.
+        assertThat(verifiableProvider2.isNewInstanceCalled).isTrue()
     }
 
     @Test
@@ -214,8 +464,13 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
         assertThat(verifiableProvider.isNewInstanceCalled).isTrue()
 
         // Assert: CameraX still initialized correctly.
-        assumeTrue(deviceHasBackCamera())
-        assertThat(cameraProvider!!.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)).isTrue()
+        assertThat(cameraProvider!!.availableCameraInfos.size).isGreaterThan(0)
+        if (deviceHasBackCamera()) {
+            assertThat(cameraProvider!!.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)).isTrue()
+        }
+        if (deviceHasFrontCamera()) {
+            assertThat(cameraProvider!!.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)).isTrue()
+        }
     }
 
     @Test
@@ -268,18 +523,14 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
     }
 
     private fun bindPreviewAndVerify() {
-        assumeTrue(deviceHasBackCamera())
+        val selector = CameraUtil.assumeFirstAvailableCameraSelector()
         val preview = Preview.Builder().build()
         val previewMonitor = PreviewMonitor()
 
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {
             preview.surfaceProvider = previewMonitor.getSurfaceProvider()
-            cameraProvider!!.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                preview,
-            )
+            cameraProvider!!.bindToLifecycle(fakeLifecycleOwner, selector, preview)
         }
         previewMonitor.waitForStream()
     }
@@ -294,6 +545,20 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
 
     private fun deviceHasFrontAndBackCameras(): Boolean {
         return deviceHasFrontCamera() && deviceHasBackCamera()
+    }
+
+    private fun isFocusMeteringSupported(selector: CameraSelector): Boolean {
+        return try {
+            val cameraCharacteristics = CameraUtil.getCameraCharacteristics(selector.lensFacing!!)
+            cameraCharacteristics?.run {
+                // Return true if any of the metering regions are supported
+                ((get(CONTROL_MAX_REGIONS_AF) ?: 0) > 0) ||
+                    ((get(CONTROL_MAX_REGIONS_AE) ?: 0) > 0) ||
+                    ((get(CONTROL_MAX_REGIONS_AWB) ?: 0) > 0)
+            } ?: false // If characteristics are null, return false
+        } catch (_: Exception) {
+            false // If any exception occurs, assume not supported
+        }
     }
 
     /**
@@ -345,6 +610,69 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
                 cachedControllableFactory = newFactory
                 return newFactory
             }
+        }
+    }
+
+    /** A CameraFactory.Provider that always fails to create a factory. */
+    private class InvalidCameraFactoryProvider : CameraFactory.Provider {
+        override fun newInstance(
+            context: Context,
+            threadConfig: CameraThreadConfig,
+            availableCamerasLimiter: CameraSelector?,
+            cameraOpenRetryMaxTimeoutInMs: Long,
+            cameraXConfig: CameraXConfig?,
+            streamSpecsCalculator: StreamSpecsCalculator,
+        ): CameraFactory {
+            // Simulate a failure during factory creation.
+            throw InitializationException(RuntimeException("Test: Invalid provider"))
+        }
+    }
+
+    /** A wrapper to create a [FaultyCameraFactory] that throws on getCamera(). */
+    private class FaultyCameraFactoryProvider(
+        private val delegate: CameraFactory.Provider,
+        private val faultyCameraId: String,
+    ) : CameraFactory.Provider {
+        override fun newInstance(
+            context: Context,
+            threadConfig: CameraThreadConfig,
+            availableCamerasLimiter: CameraSelector?,
+            cameraOpenRetryMaxTimeoutInMs: Long,
+            cameraXConfig: CameraXConfig?,
+            streamSpecsCalculator: StreamSpecsCalculator,
+        ): CameraFactory {
+            val realFactory =
+                delegate.newInstance(
+                    context,
+                    threadConfig,
+                    availableCamerasLimiter,
+                    cameraOpenRetryMaxTimeoutInMs,
+                    cameraXConfig,
+                    streamSpecsCalculator,
+                )
+            // Return the wrapper that injects the failure.
+            return FaultyCameraFactory(realFactory, faultyCameraId)
+        }
+    }
+
+    /** A CameraFactory wrapper that throws an exception for a specific camera ID. */
+    private class FaultyCameraFactory(
+        private val delegate: CameraFactory,
+        private val faultyCameraId: String,
+    ) : CameraFactory by delegate {
+        override fun getCamera(cameraId: String): CameraInternal {
+            if (cameraId == faultyCameraId) {
+                // Simulate a failure to access this specific camera's characteristics/info.
+                throw CameraUnavailableException(
+                    CameraUnavailableException.CAMERA_ERROR,
+                    "Test Exception: Camera $cameraId is faulty.",
+                )
+            }
+            return delegate.getCamera(cameraId)
+        }
+
+        override fun shutdown() {
+            delegate.shutdown()
         }
     }
 

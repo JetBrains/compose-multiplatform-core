@@ -125,6 +125,12 @@ package androidx.compose.ui.test {
     property public abstract androidx.compose.ui.test.MainTestClock mainClock;
   }
 
+  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public final class ComposeUiTestFlags {
+    property public boolean isStandardTestDispatcherSupportEnabled;
+    field public static final androidx.compose.ui.test.ComposeUiTestFlags INSTANCE;
+    field public static boolean isStandardTestDispatcherSupportEnabled;
+  }
+
   public final class ComposeUiTestKt {
     method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilAtLeastOneExists(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis);
     method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilDoesNotExist(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis);

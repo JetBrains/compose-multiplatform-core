@@ -107,7 +107,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
                         qualifiedName = annotatedSerializable.jvmQualifiedName,
                         docString =
                             if (annotatedSerializable.isDescribedByKdoc) {
-                                annotatedSerializable.description
+                                annotatedSerializable.getDescription()
                             } else {
                                 ""
                             },
@@ -116,8 +116,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
                 for (property in annotatedSerializable.getProperties()) {
                     add(
                         AppFunctionComponent(
-                            qualifiedName =
-                                "${annotatedSerializable.jvmQualifiedName}#${property.name}",
+                            qualifiedName = property.qualifiedName,
                             docString = property.description,
                         )
                     )

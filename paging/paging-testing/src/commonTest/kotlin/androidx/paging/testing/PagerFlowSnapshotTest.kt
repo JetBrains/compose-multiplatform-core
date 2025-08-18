@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("VisibleForTests")
+
 package androidx.paging.testing
 
 import androidx.kruth.assertThat
@@ -25,7 +27,6 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingSource.LoadParams
-import androidx.paging.PagingSourceFactory
 import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import androidx.paging.insertSeparators
@@ -42,18 +43,26 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 
+@IgnoreWebTarget // b/395933428
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class PagerFlowSnapshotTest {
     private val testScope = TestScope(UnconfinedTestDispatcher())
 
-    private fun createFactory(dataFlow: Flow<List<Int>>, loadDelay: Long) =
-        WrappedPagingSourceFactory(
-            dataFlow.asPagingSourceFactory(testScope.backgroundScope),
-            loadDelay,
-        )
+    private fun createFactory(
+        dataFlow: Flow<List<Int>>,
+        loadDelay: Long,
+    ): () -> PagingSource<Int, Int> {
+        val factory = dataFlow.asPagingSourceFactory(testScope.backgroundScope)
+        return { TestPagingSource(factory(), loadDelay) }
+    }
 
-    private fun createSingleGenFactory(data: List<Int>, loadDelay: Long) =
-        WrappedPagingSourceFactory(data.asPagingSourceFactory(), loadDelay)
+    private fun createSingleGenFactory(
+        data: List<Int>,
+        loadDelay: Long,
+    ): () -> PagingSource<Int, Int> {
+        val factory = data.asPagingSourceFactory()
+        return { TestPagingSource(factory(), loadDelay) }
+    }
 
     @Test fun initialRefresh_loadDelay0() = initialRefresh(0)
 
@@ -1622,7 +1631,7 @@ class PagerFlowSnapshotTest {
     private fun prependScroll_withoutPlaceholders_noPrefetchTriggered(loadDelay: Long) {
         val dataFlow = flowOf(List(100) { it })
         val pager =
-            Pager(
+            Pager<Int, Int>(
                     config =
                         PagingConfig(
                             pageSize = 4,
@@ -2672,7 +2681,7 @@ class PagerFlowSnapshotTest {
         val dataFlow = flowOf(List(100) { it })
         // load sizes and prefetch set to 1 to test precision of flingTo indexing
         val pager =
-            Pager(
+            Pager<Int, Int>(
                 config =
                     PagingConfig(
                         pageSize = 1,
@@ -3172,7 +3181,7 @@ class PagerFlowSnapshotTest {
         val dataFlow = flowOf(List(100) { it })
         // load sizes and prefetch set to 1 to test precision of flingTo indexing
         val pager =
-            Pager(
+            Pager<Int, Int>(
                 config =
                     PagingConfig(
                         pageSize = 1,
@@ -3385,7 +3394,7 @@ class PagerFlowSnapshotTest {
         )
 
     private fun createPager(data: List<Int>, loadDelay: Long, initialKey: Int = 0) =
-        Pager(
+        Pager<Int, Int>(
                 PagingConfig(pageSize = 3, initialLoadSize = 5),
                 initialKey,
                 createSingleGenFactory(data, loadDelay),
@@ -3451,7 +3460,7 @@ class PagerFlowSnapshotTest {
         loadDelay: Long,
         initialKey: Int = 0,
     ) =
-        Pager(
+        Pager<Int, Int>(
                 config = config,
                 initialKey = initialKey,
                 pagingSourceFactory = createFactory(dataFlow, loadDelay),
@@ -3459,17 +3468,10 @@ class PagerFlowSnapshotTest {
             .flow
 }
 
-private class WrappedPagingSourceFactory(
-    private val factory: PagingSourceFactory<Int, Int>,
-    private val loadDelay: Long,
-) : PagingSourceFactory<Int, Int> {
-    override fun invoke(): PagingSource<Int, Int> = TestPagingSource(factory(), loadDelay)
-}
-
 private class TestPagingSource(
     private val originalSource: PagingSource<Int, Int>,
     private val loadDelay: Long,
-) : PagingSource<Int, Int>() {
+) : PagingSource<Int, Int>() { // }
 
     var errorOnNextLoad = false
     var errorOnLoads = false

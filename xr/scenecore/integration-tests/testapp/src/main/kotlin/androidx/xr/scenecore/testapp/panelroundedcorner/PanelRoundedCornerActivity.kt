@@ -170,7 +170,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
                 ActivityPanelEntity.create(session!!, IntSize2d(640, 480), "activity_panel")
             val intent = Intent(this, ActivityPanel::class.java)
             intent.putExtra("NAV_ICON", false)
-            activityPanelEntity!!.launchActivity(intent)
+            activityPanelEntity!!.startActivity(intent)
             activityPanelEntity!!.setPose(Pose(Vector3(0.75f, 0.0f, 0.0f)))
             activityPanelCreated = true
         }

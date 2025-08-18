@@ -12,6 +12,7 @@ package androidx.ink.strokes {
 
   public final class InProgressStroke {
     ctor public InProgressStroke();
+    method public boolean changesWithTime();
     method public void enqueueInputs(androidx.ink.strokes.StrokeInputBatch realInputs, androidx.ink.strokes.StrokeInputBatch predictedInputs);
     method protected void finalize();
     method public void finishInput();
