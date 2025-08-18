@@ -142,15 +142,12 @@ internal class ComposeHostingViewController(
      */
     private val currentInterfaceOrientation: InterfaceOrientation?
         get() {
-            // Modern: https://developer.apple.com/documentation/uikit/uiwindowscene/3198088-interfaceorientation?language=objc
-            // Deprecated: https://developer.apple.com/documentation/uikit/uiapplication/1623026-statusbarorientation?language=objc
             return InterfaceOrientation.getByRawValue(
-                if (available(OS.Ios to OSVersion(13))) {
-                    view.window?.windowScene?.interfaceOrientation
-                        ?: UIApplication.sharedApplication.statusBarOrientation
+                if (available(OS.Ios to OSVersion(16))) {
+                    view.window?.windowScene?.effectiveGeometry?.interfaceOrientation
                 } else {
-                    UIApplication.sharedApplication.statusBarOrientation
-                }
+                    view.window?.windowScene?.interfaceOrientation
+                } ?: UIApplication.sharedApplication.statusBarOrientation
             )
         }
 
