@@ -80,7 +80,7 @@ constructor(
             try {
                 DeferrableSurfaces.incrementAll(deferrableSurfaces)
             } catch (e: SurfaceClosedException) {
-                Log.error { "Failed to increment DeferrableSurfaces: Surfaces closed" }
+                Log.warn { "Failed to increment DeferrableSurfaces: Surfaces closed" }
                 // Report Surface invalid by launching a coroutine to avoid cyclic Dagger injection.
                 threads.scope.launch {
                     sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
@@ -97,15 +97,15 @@ constructor(
                             try {
                                 getSurfaces(deferrableSurfaces, timeoutMillis)
                             } catch (e: SurfaceClosedException) {
-                                Log.error(e) { "Failed to get Surfaces: Surfaces closed" }
+                                Log.warn(e) { "Failed to get Surfaces: Surfaces closed" }
                                 sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
                                 return@async false
                             } catch (e: TimeoutCancellationException) {
-                                Log.error(e) { "Failed to get Surfaces within $timeoutMillis ms" }
+                                Log.warn(e) { "Failed to get Surfaces within $timeoutMillis ms" }
                                 return@async false
                             }
                         if (!isActive || surfaces.isEmpty()) {
-                            Log.error {
+                            Log.info {
                                 "Failed to get Surfaces: isActive=$isActive, surfaces=$surfaces"
                             }
                             return@async false
@@ -131,7 +131,7 @@ constructor(
                             Log.info { "Surface setup complete" }
                             return@async true
                         } else {
-                            Log.error { "Surface setup failed: Some Surfaces are invalid" }
+                            Log.warn { "Surface setup failed: Some Surfaces are invalid" }
                             // Only handle the first failed Surface since subsequent calls to
                             // CameraInternal#onUseCaseReset() will handle the other failed Surfaces
                             // if there are any.
@@ -205,7 +205,7 @@ constructor(
                     try {
                         it.incrementUseCount()
                     } catch (e: SurfaceClosedException) {
-                        Log.error(e) { "Error when $surface going to increase the use count." }
+                        Log.warn(e) { "Error when $surface going to increase the use count." }
                         sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
                     }
                 }
@@ -221,7 +221,7 @@ constructor(
                 try {
                     it.decrementUseCount()
                 } catch (e: IllegalStateException) {
-                    Log.error(e) { "Error when $surface going to decrease the use count." }
+                    Log.warn(e) { "Error when $surface going to decrease the use count." }
                 }
                 tryClearSurfaceListener()
             }

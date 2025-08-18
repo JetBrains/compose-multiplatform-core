@@ -64,6 +64,7 @@ import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
@@ -241,27 +242,25 @@ class AccessibilityActivity : ComponentActivity() {
         var surfaceEntity by remember { mutableStateOf<SurfaceEntity?>(null) }
         val radius = 0.65f
         var shape by remember {
-            mutableStateOf<SurfaceEntity.CanvasShape>(
-                SurfaceEntity.CanvasShape.Vr180Hemisphere(radius)
-            )
+            mutableStateOf<SurfaceEntity.Shape>(SurfaceEntity.Shape.Hemisphere(radius))
         }
 
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Column {
                 LabeledRadioButton(
                     "Quad",
-                    shape is SurfaceEntity.CanvasShape.Quad,
-                    { shape = SurfaceEntity.CanvasShape.Quad(radius * 2f, radius * 2f) },
+                    shape is SurfaceEntity.Shape.Quad,
+                    { shape = SurfaceEntity.Shape.Quad(FloatSize2d(radius * 2f, radius * 2f)) },
                 )
                 LabeledRadioButton(
-                    "Vr180Hemisphere",
-                    shape is SurfaceEntity.CanvasShape.Vr180Hemisphere,
-                    { shape = SurfaceEntity.CanvasShape.Vr180Hemisphere(radius) },
+                    "Hemisphere",
+                    shape is SurfaceEntity.Shape.Hemisphere,
+                    { shape = SurfaceEntity.Shape.Hemisphere(radius) },
                 )
                 LabeledRadioButton(
-                    "Vr360Sphere",
-                    shape is SurfaceEntity.CanvasShape.Vr360Sphere,
-                    { shape = SurfaceEntity.CanvasShape.Vr360Sphere(radius) },
+                    "Sphere",
+                    shape is SurfaceEntity.Shape.Sphere,
+                    { shape = SurfaceEntity.Shape.Sphere(radius) },
                 )
             }
             Button({
@@ -270,7 +269,7 @@ class AccessibilityActivity : ComponentActivity() {
                         SurfaceEntity.create(
                             session,
                             pose = Pose(Vector3(-1f, 0f, -0.5f)),
-                            canvasShape = shape,
+                            shape = shape,
                         )
                     surfaceEntity?.contentDescription = "${shape.javaClass.simpleName} Surface"
                 }

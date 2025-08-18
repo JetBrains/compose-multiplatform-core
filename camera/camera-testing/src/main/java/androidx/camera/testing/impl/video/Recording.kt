@@ -152,6 +152,7 @@ internal constructor(
     public fun verifyFinalize(
         timeoutMs: Long = defaultVerifyTimeoutMs,
         error: Int? = ERROR_NONE,
+        shouldSkipOutputFileVerification: Boolean = false,
     ): RecordingResult {
         try {
             val finalize =
@@ -161,7 +162,9 @@ internal constructor(
                     .that(finalize.error)
                     .isEqualTo(error)
             }
-            if (finalize.outputResults.outputUri != Uri.EMPTY) {
+            if (
+                !shouldSkipOutputFileVerification && finalize.outputResults.outputUri != Uri.EMPTY
+            ) {
                 when (outputOptions) {
                     is FileOutputOptions,
                     is MediaStoreOutputOptions ->

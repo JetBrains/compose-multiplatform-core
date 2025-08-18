@@ -88,7 +88,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
-import androidx.navigationevent.DirectNavigationEventInputHandler
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
@@ -241,12 +241,12 @@ open class ComponentActivity() :
     private var dispatchingOnMultiWindowModeChanged = false
     private var dispatchingOnPictureInPictureModeChanged = false
 
-    // Input from `ComponentActivity.onBackPressed()`, which can get called when API < 33 or
+    // Inputs from `ComponentActivity.onBackPressed()`, which can get called when API < 33 or
     // when `android:enableOnBackInvokedCallback` is `false`.
-    private val onBackPressedInputHandler: DirectNavigationEventInputHandler by lazy {
-        val inputHandler = DirectNavigationEventInputHandler()
-        navigationEventDispatcher.addInputHandler(inputHandler)
-        inputHandler
+    private val onBackPressedInput: DirectNavigationEventInput by lazy {
+        val input = DirectNavigationEventInput()
+        navigationEventDispatcher.addInput(input)
+        input
     }
 
     /**
@@ -595,7 +595,7 @@ open class ComponentActivity() :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        onBackPressedInputHandler.handleOnCompleted()
+        onBackPressedInput.complete()
     }
 
     /**

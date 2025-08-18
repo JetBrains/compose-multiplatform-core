@@ -13,62 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// TODO: b/438801100 - Move this to a spatial-only library prior to the beta release.
 
 package androidx.xr.scenecore
 
 import android.media.MediaPlayer
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 
-@Suppress("ClassShouldBeObject")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SpatialMediaPlayer {
+/** Provides spatial audio extensions on the framework [MediaPlayer] class. */
+public object SpatialMediaPlayer {
 
-    public companion object {
-        /**
-         * Sets a [PointSourceParams] on a [MediaPlayer] instance.
-         *
-         * Must be called before prepare(), not compatible with instances created by
-         * MediaPlayer#create(). Only the params or attributes from the most recent call to
-         * setPointSourceParams or [setSoundFieldAttributes] will apply.
-         *
-         * @param session The current SceneCore [Session] instance.
-         * @param mediaPlayer The [MediaPlayer] instance on which to set the params
-         * @param params The source params to be set.
-         */
-        @JvmStatic
-        public fun setPointSourceParams(
-            session: Session,
-            mediaPlayer: MediaPlayer,
-            params: PointSourceParams,
-        ) {
-            session.platformAdapter.mediaPlayerExtensionsWrapper.setPointSourceParams(
-                mediaPlayer,
-                params.rtPointSourceParams,
-            )
-        }
+    /**
+     * Sets a [PointSourceParams] on a [MediaPlayer] instance.
+     *
+     * Must be called before [MediaPlayer.prepare]. Not compatible with instances created by
+     * [MediaPlayer.create]. Only the params or attributes from the most recent call to this method
+     * or [setSoundFieldAttributes] will apply since they are mutually exclusive.
+     *
+     * @param session The current [Session] instance.
+     * @param mediaPlayer The [MediaPlayer] instance on which to set the params
+     * @param params The source params to be set.
+     */
+    @JvmStatic
+    public fun setPointSourceParams(
+        session: Session,
+        mediaPlayer: MediaPlayer,
+        params: PointSourceParams,
+    ) {
+        session.platformAdapter.mediaPlayerExtensionsWrapper.setPointSourceParams(
+            mediaPlayer,
+            params.rtPointSourceParams,
+        )
+    }
 
-        /**
-         * Sets a [SoundFieldAttributes] on a [MediaPlayer] instance.
-         *
-         * Must be called before prepare(), not compatible with instances created by
-         * MediaPlayer#create(). Only the attributes or params from the most recent call to
-         * setSoundFieldAttributes or [setPointSourceAttributes] will apply.
-         *
-         * @param session The current SceneCore [Session] instance.
-         * @param mediaPlayer The [MediaPlayer] instance on which to set the attributes
-         * @param attributes The source attributes to be set.
-         */
-        @JvmStatic
-        public fun setSoundFieldAttributes(
-            session: Session,
-            mediaPlayer: MediaPlayer,
-            attributes: SoundFieldAttributes,
-        ) {
-            session.platformAdapter.mediaPlayerExtensionsWrapper.setSoundFieldAttributes(
-                mediaPlayer,
-                attributes.rtSoundFieldAttributes,
-            )
-        }
+    /**
+     * Sets a [SoundFieldAttributes] on a [MediaPlayer] instance.
+     *
+     * Must be called before [MediaPlayer.prepare]. Not compatible with instances created by
+     * [MediaPlayer.create]. Only the attributes or params from the most recent call to this method
+     * or [setPointSourceParams] will apply since they are mutually exclusive.
+     *
+     * @param session The current [Session] instance.
+     * @param mediaPlayer The [MediaPlayer] instance on which to set the attributes
+     * @param attributes The source attributes to be set.
+     */
+    @JvmStatic
+    public fun setSoundFieldAttributes(
+        session: Session,
+        mediaPlayer: MediaPlayer,
+        attributes: SoundFieldAttributes,
+    ) {
+        session.platformAdapter.mediaPlayerExtensionsWrapper.setSoundFieldAttributes(
+            mediaPlayer,
+            attributes.rtSoundFieldAttributes,
+        )
     }
 }

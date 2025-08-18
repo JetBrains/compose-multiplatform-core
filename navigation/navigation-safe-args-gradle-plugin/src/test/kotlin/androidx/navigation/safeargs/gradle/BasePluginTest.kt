@@ -75,8 +75,6 @@ abstract class BasePluginTest {
                 .withPluginClasspath()
                 // b/175897186 set explicit metaspace size in hopes of fewer crashes
                 .withArguments("-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m", *args)
-        // Run tests using Gradle 8.14 to support AGP version used for the tests, b/431847270
-        projectSetup.setUpGradleVersion(runner, "8.14")
         return runner
     }
 

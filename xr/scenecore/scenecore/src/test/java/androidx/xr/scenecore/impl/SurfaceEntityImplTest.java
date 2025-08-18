@@ -31,7 +31,8 @@ import androidx.xr.runtime.internal.PerceivedResolutionResult;
 import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SurfaceEntity;
-import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape;
+import androidx.xr.runtime.internal.SurfaceEntity.Shape;
+import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
@@ -77,7 +78,7 @@ public final class SurfaceEntityImplTest {
     @Before
     public void setUp() {
         mImpressApi = new FakeImpressApiImpl();
-        createDefaultSurfaceEntity(new SurfaceEntity.CanvasShape.Quad(1f, 1f));
+        createDefaultSurfaceEntity(new SurfaceEntity.Shape.Quad(new FloatSize2d(1f, 1f)));
     }
 
     @After
@@ -88,7 +89,7 @@ public final class SurfaceEntityImplTest {
         }
     }
 
-    private SurfaceEntityImpl createDefaultSurfaceEntity(CanvasShape canvasShape) {
+    private SurfaceEntityImpl createDefaultSurfaceEntity(Shape shape) {
         XrExtensions xrExtensions = XrExtensionsProvider.getXrExtensions();
 
         SplitEngineSubspaceManager splitEngineSubspaceManager =
@@ -121,7 +122,7 @@ public final class SurfaceEntityImplTest {
 
         int stereoMode = SurfaceEntity.StereoMode.MONO;
         Pose pose = Pose.Identity;
-        int contentSecurityLevel = 0;
+        int surfaceProtection = 0;
         int useSuperSampling = 0;
 
         mSurfaceEntity =
@@ -134,8 +135,8 @@ public final class SurfaceEntityImplTest {
                         mEntityManager,
                         executor,
                         stereoMode,
-                        canvasShape,
-                        contentSecurityLevel,
+                        shape,
+                        surfaceProtection,
                         useSuperSampling);
         mSurfaceEntity.setPose(pose, Space.PARENT);
 
@@ -162,28 +163,28 @@ public final class SurfaceEntityImplTest {
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
-    public void setCanvasShape_setsCanvasShape() {
-        SurfaceEntity.CanvasShape expectedCanvasShape =
-                new SurfaceEntity.CanvasShape.Quad(12f, 12f);
-        mSurfaceEntity.setCanvasShape(expectedCanvasShape);
-        SurfaceEntity.CanvasShape canvasShape = mSurfaceEntity.getCanvasShape();
+    public void setShape_setsShape() {
+        SurfaceEntity.Shape expectedShape =
+                new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
+        mSurfaceEntity.setShape(expectedShape);
+        SurfaceEntity.Shape shape = mSurfaceEntity.getShape();
 
-        assertThat(canvasShape.getClass()).isEqualTo(expectedCanvasShape.getClass());
-        assertThat(canvasShape.getDimensions()).isEqualTo(expectedCanvasShape.getDimensions());
+        assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
+        assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
 
-        expectedCanvasShape = new SurfaceEntity.CanvasShape.Vr360Sphere(11f);
-        mSurfaceEntity.setCanvasShape(expectedCanvasShape);
-        canvasShape = mSurfaceEntity.getCanvasShape();
+        expectedShape = new SurfaceEntity.Shape.Sphere(11f);
+        mSurfaceEntity.setShape(expectedShape);
+        shape = mSurfaceEntity.getShape();
 
-        assertThat(canvasShape.getClass()).isEqualTo(expectedCanvasShape.getClass());
-        assertThat(canvasShape.getDimensions()).isEqualTo(expectedCanvasShape.getDimensions());
+        assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
+        assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
 
-        expectedCanvasShape = new SurfaceEntity.CanvasShape.Vr180Hemisphere(10f);
-        mSurfaceEntity.setCanvasShape(expectedCanvasShape);
-        canvasShape = mSurfaceEntity.getCanvasShape();
+        expectedShape = new SurfaceEntity.Shape.Hemisphere(10f);
+        mSurfaceEntity.setShape(expectedShape);
+        shape = mSurfaceEntity.getShape();
 
-        assertThat(canvasShape.getClass()).isEqualTo(expectedCanvasShape.getClass());
-        assertThat(canvasShape.getDimensions()).isEqualTo(expectedCanvasShape.getDimensions());
+        assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
+        assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
@@ -205,7 +206,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void dispose_supports_reentry() {
-        CanvasShape.Quad quadShape = new CanvasShape.Quad(1.0f, 1.0f); // 1m x 1m local
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
 
         // Note that we don't test that dispose prevents manipulating other properties because that
@@ -220,19 +221,20 @@ public final class SurfaceEntityImplTest {
         float kFeatherRadiusX = 0.14f;
         float kFeatherRadiusY = 0.28f;
         SurfaceEntity.EdgeFeather expectedFeather =
-                new SurfaceEntity.EdgeFeather.SmoothFeather(kFeatherRadiusX, kFeatherRadiusY);
+            new SurfaceEntity.EdgeFeather.RectangleFeather(kFeatherRadiusX, kFeatherRadiusY);
         mSurfaceEntity.setEdgeFeather(expectedFeather);
         SurfaceEntity.EdgeFeather returnedFeather = mSurfaceEntity.getEdgeFeather();
         assertThat(returnedFeather).isEqualTo(expectedFeather);
 
         // Apply Fake Impress checks
         FakeImpressApiImpl.StereoSurfaceEntityData surfaceEntityData =
-                mImpressApi.getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
+            mImpressApi
+                .getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
         assertThat(surfaceEntityData.getFeatherRadiusX()).isEqualTo(kFeatherRadiusX);
         assertThat(surfaceEntityData.getFeatherRadiusY()).isEqualTo(kFeatherRadiusY);
 
-        // Set back to SolidEdge to simulate turning feathering off
-        expectedFeather = new SurfaceEntity.EdgeFeather.SolidEdge();
+        // Set back to NoFeathering to simulate turning feathering off
+        expectedFeather = new SurfaceEntity.EdgeFeather.NoFeathering();
         mSurfaceEntity.setEdgeFeather(expectedFeather);
         returnedFeather = mSurfaceEntity.getEdgeFeather();
         assertThat(surfaceEntityData.getFeatherRadiusX()).isEqualTo(0.0f);
@@ -250,7 +252,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void getPerceivedResolution_quadInFront_returnsSuccess() {
-        CanvasShape.Quad quadShape = new CanvasShape.Quad(2.0f, 1.0f); // 2m wide, 1m high
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(2.0f, 1.0f)); // 2m wide, 1m high
         // Recreate mSurfaceEntity with the specific shape for this test
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
         setupDefaultMockCameraView();
@@ -270,7 +272,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void getPerceivedResolution_sphereInFront_returnsSuccess() {
-        CanvasShape.Vr360Sphere sphereShape = new CanvasShape.Vr360Sphere(1.0f); // radius 1m
+        Shape.Sphere sphereShape = new Shape.Sphere(1.0f); // radius 1m
         mSurfaceEntity = createDefaultSurfaceEntity(sphereShape);
         setupDefaultMockCameraView();
 
@@ -290,7 +292,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void getPerceivedResolution_quadTooClose_returnsEntityTooClose() {
-        CanvasShape.Quad quadShape = new CanvasShape.Quad(2.0f, 1.0f);
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(2.0f, 1.0f));
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
         setupDefaultMockCameraView();
 
@@ -306,7 +308,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void getPerceivedResolution_quadWithScale_calculatesCorrectly() {
-        CanvasShape.Quad quadShape = new CanvasShape.Quad(1.0f, 1.0f); // 1m x 1m local
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
         setupDefaultMockCameraView();
 
@@ -318,7 +320,7 @@ public final class SurfaceEntityImplTest {
         PerceivedResolutionResult.Success successResult =
                 (PerceivedResolutionResult.Success) result;
 
-        // The width and height are flipped because perceievedResolution calculations will
+        // The width and height are flipped because perceivedResolution calculations will
         // always place the largest dimension as the width, and the second as height.
         Truth.assertThat(successResult.getPerceivedResolution().width).isEqualTo(750);
         Truth.assertThat(successResult.getPerceivedResolution().height).isEqualTo(500);

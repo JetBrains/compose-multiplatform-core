@@ -28,6 +28,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
+import android.media.MediaCodec
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
@@ -62,6 +63,7 @@ import androidx.camera.testing.impl.asFlow
 import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
+import androidx.camera.testing.impl.fakes.NoOpMuxer
 import androidx.camera.testing.impl.getDurationMs
 import androidx.camera.testing.impl.getLocation
 import androidx.camera.testing.impl.getMimeType
@@ -92,6 +94,9 @@ import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
 import androidx.camera.video.internal.compat.quirk.MediaStoreVideoCannotWrite
 import androidx.camera.video.internal.encoder.EncoderFactory
 import androidx.camera.video.internal.encoder.InvalidConfigException
+import androidx.camera.video.internal.muxer.MuxerException
+import androidx.camera.video.internal.muxer.MuxerFactory
+import androidx.camera.video.internal.utils.StorageUtil.NO_SPACE_LEFT_MESSAGE
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -102,6 +107,8 @@ import androidx.testutils.fail
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
+import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
@@ -176,6 +183,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
                 arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
+
+        private val storageFullException = lazy { IOException(NO_SPACE_LEFT_MESSAGE) }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -377,6 +386,22 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
 
         // Assert.
         recording.stopAndVerify()
+    }
+
+    @Test
+    fun muxer_failedToSetOutput_receiveError() {
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun setOutput(path: String, format: Int) {
+                    throw IOException("Failure on purpose")
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+        val recording = recordingSession.createRecording(recorder = recorder)
+
+        // Act & Assert.
+        recording.start().verifyFinalize(error = ERROR_INVALID_OUTPUT_OPTIONS)
     }
 
     @Test
@@ -1107,6 +1132,80 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
+    fun throwStorageFullExceptionOnMuxerStart_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun start() {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
+    fun throwStorageFullExceptionOnMuxerWriteSampleData_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun writeSampleData(
+                    trackIndex: Int,
+                    byteBuffer: ByteBuffer,
+                    bufferInfo: MediaCodec.BufferInfo,
+                ) {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
+    fun throwStorageFullExceptionOnMuxerStop_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun writeSampleData(
+                    trackIndex: Int,
+                    byteBuffer: ByteBuffer,
+                    bufferInfo: MediaCodec.BufferInfo,
+                ) {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1333,6 +1432,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         executor: Executor? = null,
         videoEncoderFactory: EncoderFactory? = null,
         audioEncoderFactory: EncoderFactory? = null,
+        muxerFactory: MuxerFactory? = null,
         outputStorageFactory: OutputStorage.Factory? = null,
         targetBitrate: Int? = null,
         retrySetupVideoMaxCount: Int? = null,
@@ -1349,6 +1449,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     executor?.let { setExecutor(it) }
                     videoEncoderFactory?.let { setVideoEncoderFactory(it) }
                     audioEncoderFactory?.let { setAudioEncoderFactory(it) }
+                    muxerFactory?.let { setMuxerFactory(it) }
                     outputStorageFactory?.let { setOutputStorageFactory(it) }
                     targetBitrate?.let { setTargetVideoEncodingBitRate(it) }
                     audioSource?.let { setAudioSource(it) }

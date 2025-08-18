@@ -32,6 +32,7 @@ else
   IS_POSTSUBMIT=false
 fi
 export IS_POSTSUBMIT
+export IS_ANDROIDX_CI=true
 
 # parse arguments
 if [ "$1" == "--diagnose" ]; then

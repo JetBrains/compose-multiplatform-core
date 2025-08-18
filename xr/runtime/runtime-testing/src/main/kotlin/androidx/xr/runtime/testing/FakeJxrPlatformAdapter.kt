@@ -549,15 +549,15 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     override fun createSurfaceEntity(
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
-        contentSecurityLevel: Int,
+        shape: SurfaceEntity.Shape,
+        surfaceProtection: Int,
         superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity {
         val surfaceEntity = FakeSurfaceEntity()
         surfaceEntity.stereoMode = stereoMode
         surfaceEntity.setPose(pose)
-        surfaceEntity.canvasShape = canvasShape
+        surfaceEntity.shape = shape
         surfaceEntity.parent = parentEntity
 
         return surfaceEntity

@@ -480,6 +480,9 @@ public object StockBrushes {
      * later version number.
      *
      * @param clientTextureId The client texture ID of the emoji to appear at the end of the stroke.
+     *   This ID should map to a square bitmap with a transparent background in the implementation
+     *   of [androidx.ink.brush.TextureBitmapStore] passed to
+     *   [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer.create].
      * @param showMiniEmojiTrail Whether to show a trail of miniature emojis disappearing from the
      *   stroke as it is drawn. Note that this will only render properly starting with Android U,
      *   and before Android U it is recommended to set this to false.
@@ -748,6 +751,9 @@ public object StockBrushes {
      * latest version of the emoji highlighter.
      *
      * @param clientTextureId The client texture ID of the emoji to appear at the end of the stroke.
+     *   This ID should map to a square bitmap with a transparent background in the implementation
+     *   of [androidx.ink.brush.TextureBitmapStore] passed to
+     *   [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer.create].
      * @param showMiniEmojiTrail Whether to show a trail of miniature emojis disappearing from the
      *   stroke as it is drawn. Note that this will only render properly starting with Android U,
      *   and before Android U it is recommended to set this to false.

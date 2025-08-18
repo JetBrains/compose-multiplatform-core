@@ -29,14 +29,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@Ignore
 @OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
@@ -66,7 +64,7 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     @Test
-    fun noPrefetchingForwardInitially() {
+    fun prefetchingForwardInitially() {
         createPager(
             modifier = Modifier.size(pagesSizeDp * 1.5f),
             pageSize = { PageSize.Fixed(pagesSizeDp) },
@@ -75,10 +73,10 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
         waitForPrefetch()
         if (config.beyondViewportPageCount == 0) {
             // window will fill automatically 1 extra item
-            rule.onNodeWithTag("2").assertDoesNotExist()
+            rule.onNodeWithTag("2").assertExists()
         } else {
             // window will fill automatically 1 extra item
-            rule.onNodeWithTag("3").assertDoesNotExist()
+            rule.onNodeWithTag("3").assertExists()
         }
     }
 

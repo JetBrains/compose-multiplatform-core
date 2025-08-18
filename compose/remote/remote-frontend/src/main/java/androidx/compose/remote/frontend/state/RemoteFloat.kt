@@ -328,8 +328,8 @@ abstract class RemoteFloat internal constructor(override val hasConstantValue: B
     operator fun get(v: RemoteFloat): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue) { creationState ->
             floatArrayOf(
-                *v.arrayForCreationState(creationState),
                 *arrayForCreationState(creationState),
+                *v.arrayForCreationState(creationState),
                 AnimatedFloatExpression.A_DEREF,
             )
         }
@@ -342,8 +342,8 @@ abstract class RemoteFloat internal constructor(override val hasConstantValue: B
     operator fun get(v: Int): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue) { creationState ->
             floatArrayOf(
-                v.toFloat(),
                 *arrayForCreationState(creationState),
+                v.toFloat(),
                 AnimatedFloatExpression.A_DEREF,
             )
         }
@@ -356,8 +356,8 @@ abstract class RemoteFloat internal constructor(override val hasConstantValue: B
     operator fun get(v: RemoteInt): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue && v.hasConstantValue) { creationState ->
             floatArrayOf(
-                v.getFloatIdForCreationState(creationState),
                 *arrayForCreationState(creationState),
+                v.getFloatIdForCreationState(creationState),
                 AnimatedFloatExpression.A_DEREF,
             )
         }

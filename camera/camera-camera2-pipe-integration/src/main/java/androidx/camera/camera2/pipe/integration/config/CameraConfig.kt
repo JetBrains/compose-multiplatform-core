@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.config
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import androidx.annotation.Nullable
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraId
@@ -32,7 +31,6 @@ import androidx.camera.camera2.pipe.integration.adapter.CameraInternalAdapter
 import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.camera2.pipe.integration.adapter.ZslControl
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlImpl
-import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.pipe.integration.compat.Camera2CameraControlCompat
 import androidx.camera.camera2.pipe.integration.compat.CameraCompatModule
 import androidx.camera.camera2.pipe.integration.compat.EvCompCompat
@@ -163,11 +161,7 @@ public abstract class CameraModule {
         @CameraScope
         @Provides
         public fun provideZslControl(cameraProperties: CameraProperties): ZslControl {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return ZslControlImpl(cameraProperties)
-            } else {
-                return ZslControlNoOpImpl()
-            }
+            return ZslControlImpl(cameraProperties)
         }
 
         @CameraScope

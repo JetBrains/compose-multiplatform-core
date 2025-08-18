@@ -13,15 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.runtime.internal
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
+import kotlin.coroutines.CoroutineContext
 
 /** Factory for creating instances of Runtime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface RuntimeFactory : Service {
-    /** Creates a [Runtime] instance */
-    public fun createRuntime(activity: Activity): Runtime
+    /**
+     * Creates a [Runtime] instance with a specified [CoroutineContext].
+     *
+     * The provided [coroutineContext] will be used for any asynchronous operations initiated by the
+     * runtime.
+     *
+     * @param activity The host [Activity].
+     * @param coroutineContext The [CoroutineContext] for the runtime to use.
+     */
+    public fun createRuntime(activity: Activity, coroutineContext: CoroutineContext): Runtime
 }

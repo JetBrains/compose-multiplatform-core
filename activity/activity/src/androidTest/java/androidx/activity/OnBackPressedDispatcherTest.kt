@@ -18,7 +18,7 @@ package androidx.activity
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
-import androidx.navigationevent.DirectNavigationEventInputHandler
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.testing.TestNavigationEventCallback
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
@@ -573,9 +573,9 @@ class OnBackPressedHandlerTest {
         val callback = CountingOnBackPressedCallback()
         dispatcher.addCallback(callback)
 
-        val inputHandler = DirectNavigationEventInputHandler()
-        dispatcher.eventDispatcher.addInputHandler(inputHandler)
-        inputHandler.handleOnCompleted()
+        val input = DirectNavigationEventInput()
+        dispatcher.eventDispatcher.addInput(input)
+        input.complete()
 
         assertWithMessage("Count should be incremented after dispatchOnCompleted")
             .that(callback.count)

@@ -39,10 +39,11 @@ import androidx.compose.ui.unit.takeOrElse
 
 private val RemoteComposeWriter.painter: Painter
     get() {
-        if (this is RemoteComposeWriterAndroid) {
-            this.painter
+        if (this !is RemoteComposeWriterAndroid) {
+            throw Exception("Invalid Writer $this, painter inaccessible")
         }
-        throw (Exception("Invalid Writer, painter inaccessible"))
+
+        return this.painter
     }
 
 @Composable

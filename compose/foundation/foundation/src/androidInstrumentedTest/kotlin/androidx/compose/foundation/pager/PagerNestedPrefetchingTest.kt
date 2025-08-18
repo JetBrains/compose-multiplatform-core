@@ -83,13 +83,16 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
                 Action.Measure(prefetchIndex, 0),
                 Action.Compose(prefetchIndex, 1),
                 Action.Measure(prefetchIndex, 1),
+                Action.Compose(prefetchIndex, 2),
+                Action.Measure(prefetchIndex, 2),
             )
             .inOrder()
 
         rule.onNodeWithTag(tagFor(prefetchIndex)).assertExists()
         rule.onNodeWithTag(tagFor(2, 0)).assertExists()
         rule.onNodeWithTag(tagFor(2, 1)).assertExists()
-        rule.onNodeWithTag(tagFor(2, 2)).assertDoesNotExist()
+        rule.onNodeWithTag(tagFor(2, 2)).assertExists()
+        rule.onNodeWithTag(tagFor(2, 3)).assertDoesNotExist()
     }
 
     @Test
@@ -158,6 +161,8 @@ class PagerNestedPrefetchingTest(val config: ParamConfig) : BasePagerTest(config
                 Action.Measure(prefetchIndex, 4),
                 Action.Compose(prefetchIndex, 5),
                 Action.Measure(prefetchIndex, 5),
+                Action.Compose(prefetchIndex, 6),
+                Action.Measure(prefetchIndex, 6),
             )
             .inOrder()
     }

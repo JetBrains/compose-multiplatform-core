@@ -1540,8 +1540,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public @NonNull SurfaceEntity createSurfaceEntity(
             @SurfaceEntity.StereoMode int stereoMode,
             @NonNull Pose pose,
-            SurfaceEntity.@NonNull CanvasShape canvasShape,
-            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
+            SurfaceEntity.@NonNull Shape shape,
+            @SurfaceEntity.SurfaceProtection int surfaceProtection,
             @SurfaceEntity.SuperSampling int superSampling,
             @NonNull Entity parentEntity) {
         if (!mUseSplitEngine) {
@@ -1550,8 +1550,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         } else {
             return createSurfaceEntitySplitEngine(
                     stereoMode,
-                    canvasShape,
-                    contentSecurityLevel,
+                    shape,
+                    surfaceProtection,
                     superSampling,
                     pose,
                     parentEntity);
@@ -1909,8 +1909,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     private SurfaceEntity createSurfaceEntitySplitEngine(
             @SurfaceEntity.StereoMode int stereoMode,
-            SurfaceEntity.CanvasShape canvasShape,
-            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
+            SurfaceEntity.Shape shape,
+            @SurfaceEntity.SurfaceProtection int surfaceProtection,
             @SurfaceEntity.SuperSampling int superSampling,
             Pose pose,
             @NonNull Entity parentEntity) {
@@ -1929,8 +1929,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         mEntityManager,
                         mExecutor,
                         stereoMode,
-                        canvasShape,
-                        contentSecurityLevel,
+                        shape,
+                        surfaceProtection,
                         superSampling);
         entity.setPose(pose, Space.PARENT);
         return entity;

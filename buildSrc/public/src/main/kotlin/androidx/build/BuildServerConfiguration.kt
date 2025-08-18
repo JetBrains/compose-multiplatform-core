@@ -22,6 +22,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 
 /**
  * @return build id string for current build
@@ -29,13 +30,7 @@ import org.gradle.api.provider.Provider
  * The build server does not pass the build id so we infer it from the last folder of the
  * distribution directory name.
  */
-fun getBuildId(): String {
-    return if (System.getenv("BUILD_NUMBER") != null) {
-        System.getenv("BUILD_NUMBER")
-    } else {
-        "0"
-    }
-}
+fun ProviderFactory.getBuildId(): Provider<String> = environmentVariable("BUILD_NUMBER")
 
 /**
  * Gets set to true when the build id is prefixed with P.
@@ -43,12 +38,8 @@ fun getBuildId(): String {
  * In AffectedModuleDetector, we return a different ProjectSubset in presubmit vs. postsubmit, to
  * get the desired test behaviors.
  */
-fun isPresubmitBuild(): Boolean {
-    return if (System.getenv("BUILD_NUMBER") != null) {
-        System.getenv("BUILD_NUMBER").startsWith("P")
-    } else {
-        false
-    }
+fun ProviderFactory.isPresubmitBuild(): Provider<Boolean> {
+    return environmentVariable("BUILD_NUMBER").map { it.startsWith("P") }.orElse(false)
 }
 
 /**

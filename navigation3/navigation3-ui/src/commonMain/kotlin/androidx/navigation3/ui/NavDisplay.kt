@@ -42,6 +42,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleOwner
 import androidx.navigation3.runtime.DecoratedNavEntryProvider
@@ -210,15 +211,22 @@ public fun <T : Any> NavDisplay(
                 .state
                 .collectAsState()
 
+        // Only treat as predictive back if the gesture came from NavDisplay itself.
+        // Without this check, all NavigationEventHandler instances would match.
+        val inPredictiveBack =
+            gestureState is InProgress && gestureState.currentInfo is NavDisplayInfo
         val progress = gestureState.progress
-        val inPredictiveBack = gestureState is InProgress
         val swipeEdge =
             when (val currentGestureState = gestureState) {
                 is InProgress -> currentGestureState.latestEvent.swipeEdge
                 else -> EDGE_NONE
             }
 
-        NavigationEventHandler(enabled = scene.previousEntries.isNotEmpty()) { progress ->
+        NavigationEventHandler(
+            currentInfo = NavDisplayInfo(scene.entries.fastMap { it.contentKey }),
+            previousInfo = NavDisplayInfo(scene.previousEntries.fastMap { it.contentKey }),
+            enabled = scene.previousEntries.isNotEmpty(),
+        ) { progress ->
             progress.collect()
 
             // If `enabled` becomes stale (e.g., it was set to false but a gesture was

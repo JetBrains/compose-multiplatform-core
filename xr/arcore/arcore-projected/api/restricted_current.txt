@@ -58,7 +58,7 @@ package androidx.xr.arcore.projected {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedRuntimeFactory implements androidx.xr.runtime.internal.RuntimeFactory {
     ctor public ProjectedRuntimeFactory();
-    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity);
+    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
     method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
   }

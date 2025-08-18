@@ -28,10 +28,10 @@ import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalFoundationApi::class)
 internal class PagerCacheWindowLogic(
-    viewportFraction: Float,
+    val cacheWindow: LazyLayoutCacheWindow,
     val state: LazyLayoutPrefetchState,
     val itemCount: () -> Int,
-) : CacheWindowLogic(LazyLayoutCacheWindow(viewportFraction, viewportFraction)) {
+) : CacheWindowLogic(cacheWindow) {
     private val cacheWindowScope = PagerCacheWindowScope(itemCount)
 
     fun onScroll(delta: Float, layoutInfo: PagerMeasureResult) {
@@ -104,9 +104,6 @@ private class PagerCacheWindowScope(val itemCount: () -> Int) : CacheWindowScope
 
     override val density: Density?
         get() = layoutInfo.density
-
-    override val enableInitialPrefetch: Boolean
-        get() = false
 
     override fun schedulePrefetch(
         lineIndex: Int,

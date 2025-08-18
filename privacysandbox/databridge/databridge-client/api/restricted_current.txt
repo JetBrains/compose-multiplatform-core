@@ -33,15 +33,18 @@ package androidx.privacysandbox.databridge.client {
   }
 
   public interface SyncCallback {
-    method public default void onSyncFailure(androidx.privacysandbox.databridge.core.Key key, Object? value, int errorCode, String errorMessage);
+    method public default void onSyncFailure(java.util.Map<androidx.privacysandbox.databridge.core.Key,? extends java.lang.Object?> keyValueMap, int errorCode, String errorMessage);
     field public static final androidx.privacysandbox.databridge.client.SyncCallback.Companion Companion;
+    field public static final int ERROR_ADDING_KEYS = 3; // 0x3
     field public static final int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE = 1; // 0x1
     field public static final int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES = 2; // 0x2
   }
 
   public static final class SyncCallback.Companion {
+    property public static int ERROR_ADDING_KEYS;
     property public static int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE;
     property public static int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES;
+    field public static final int ERROR_ADDING_KEYS = 3; // 0x3
     field public static final int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE = 1; // 0x1
     field public static final int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES = 2; // 0x2
   }

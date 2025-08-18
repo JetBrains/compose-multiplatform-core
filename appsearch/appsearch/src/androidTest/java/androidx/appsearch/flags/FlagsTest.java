@@ -323,4 +323,16 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_EARLY_SET_SCHEMA_EXIT)
                 .isEqualTo("com.android.appsearch.flags.enable_early_set_schema_exit");
     }
+
+    @Test
+    public void testFlagValue_enableEmbeddingIteratorV2() {
+        assertThat(Flags.FLAG_ENABLE_EMBEDDING_ITERATOR_V2)
+                .isEqualTo("com.android.appsearch.flags.enable_embedding_iterator_v2");
+    }
+
+    @Test
+    public void testFlagValue_enableReusableDecompressionBuffer() {
+        assertThat(Flags.FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER)
+                .isEqualTo("com.android.appsearch.flags.enable_reusable_decompression_buffer");
+    }
 }

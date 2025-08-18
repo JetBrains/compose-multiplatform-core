@@ -130,23 +130,25 @@ private class SpatialExternalSphereSurfaceScopeInstance(
 public value class StereoMode private constructor(public val value: Int) {
     public companion object {
         /** Each eye will see the entire surface (no separation). */
-        public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.MONO)
+        public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MONO)
         /** The [top, bottom] halves of the surface will map to [left, right] eyes. */
-        public val TopBottom: StereoMode = StereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM)
+        public val TopBottom: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM)
         /** The [left, right] halves of the surface will map to [left, right] eyes. */
-        public val SideBySide: StereoMode = StereoMode(SurfaceEntity.StereoMode.SIDE_BY_SIDE)
+        public val SideBySide: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE)
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [left, right] eyes.
          */
         public val MultiviewLeftPrimary: StereoMode =
-            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY)
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY)
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [right, left] eyes.
          */
         public val MultiviewRightPrimary: StereoMode =
-            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY)
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY)
     }
 }
 
@@ -157,14 +159,14 @@ public value class SurfaceProtection private constructor(public val value: Int) 
     public companion object {
         /** No security is applied. */
         public val None: SurfaceProtection =
-            SurfaceProtection(SurfaceEntity.ContentSecurityLevel.NONE)
+            SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE)
         /**
          * Sets the underlying Surface to set the
          * [android.hardware.HardwareBuffer.USAGE_PROTECTED_CONTENT] flag. This is mainly used to
          * protect DRM video content.
          */
         public val Protected: SurfaceProtection =
-            SurfaceProtection(SurfaceEntity.ContentSecurityLevel.PROTECTED)
+            SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED)
     }
 }
 
@@ -226,7 +228,7 @@ public fun SpatialExternalSurface(
                 SurfaceEntity.create(
                     session = checkNotNull(session) { "Session is required" },
                     stereoMode = stereoMode.value,
-                    contentSecurityLevel = surfaceProtection.value,
+                    surfaceProtection = surfaceProtection.value,
                 ),
                 localDensity = density,
             )
@@ -391,12 +393,12 @@ private fun SpatialExternalSurfaceSphere(
                 SurfaceEntity.create(
                     session = checkNotNull(session) { "Session is required" },
                     stereoMode = stereoMode.value,
-                    contentSecurityLevel = surfaceProtection.value,
-                    canvasShape =
+                    surfaceProtection = surfaceProtection.value,
+                    shape =
                         if (isHemisphere) {
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(meterRadius)
+                            SurfaceEntity.Shape.Hemisphere(meterRadius)
                         } else {
-                            SurfaceEntity.CanvasShape.Vr360Sphere(meterRadius)
+                            SurfaceEntity.Shape.Sphere(meterRadius)
                         },
                 ),
                 headPose,

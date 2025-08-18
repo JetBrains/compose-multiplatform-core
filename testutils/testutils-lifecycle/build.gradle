@@ -21,8 +21,10 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -73,23 +75,11 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
         targets.all { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
+            if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
             }
         }
     }

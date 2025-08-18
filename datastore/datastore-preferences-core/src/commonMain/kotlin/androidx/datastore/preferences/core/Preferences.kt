@@ -27,11 +27,12 @@ public abstract class Preferences internal constructor() {
      * Key for values stored in Preferences. Type T is the type of the value associated with the
      * Key.
      *
-     * T must be one of the following: Boolean, Int, Long, Float, String, Set<String>.
+     * T must be one of the following: Boolean, Int, Long, Float, String, Set<String>, Double,
+     * ByteArray.
      *
      * Construct Keys for your data type using: [booleanPreferencesKey], [intPreferencesKey],
      * [longPreferencesKey], [floatPreferencesKey], [stringPreferencesKey],
-     * [stringSetPreferencesKey]
+     * [stringSetPreferencesKey], [doublePreferencesKey], [byteArrayPreferencesKey].
      */
     public class Key<T> internal constructor(public val name: String) {
         /**

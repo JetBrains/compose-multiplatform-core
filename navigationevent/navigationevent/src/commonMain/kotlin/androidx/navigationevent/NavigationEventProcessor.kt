@@ -83,7 +83,7 @@ internal class NavigationEventProcessor {
     private var inProgressCallback: NavigationEventCallback<*>? = null
 
     /**
-     * A central registry of all active [NavigationEventInputHandler] instances associated with this
+     * A central registry of all active [NavigationEventInput] instances associated with this
      * processor.
      *
      * This set is managed by the [NavigationEventDispatcher] and allows the processor to
@@ -92,7 +92,7 @@ internal class NavigationEventProcessor {
      *
      * It is not intended for direct public use and is exposed internally for the dispatcher.
      */
-    val inputs = mutableSetOf<NavigationEventInputHandler>()
+    val inputs = mutableSetOf<NavigationEventInput>()
 
     /**
      * Represents whether there is at least one enabled callback registered across all dispatchers.
@@ -102,8 +102,7 @@ internal class NavigationEventProcessor {
      * `OnBackPressedDispatcher.setEnabled()`.
      *
      * It is updated automatically when callbacks are added, removed, or their enabled state
-     * changes. When its value changes, it notifies all registered [NavigationEventInputHandler]
-     * instances.
+     * changes. When its value changes, it notifies all registered [NavigationEventInput] instances.
      */
     private var hasEnabledCallbacks: Boolean = false
         set(value) {
@@ -112,7 +111,7 @@ internal class NavigationEventProcessor {
 
             field = value
             for (input in inputs) {
-                input.doHasEnabledCallbacksChanged(hasEnabledCallbacks = value)
+                input.doOnHasEnabledCallbacksChanged(hasEnabledCallbacks = value)
             }
         }
 
@@ -255,23 +254,23 @@ internal class NavigationEventProcessor {
      * the new event. Only the single, highest-priority enabled callback is notified and becomes the
      * `inProgressCallback`.
      *
-     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param input The [NavigationEventInput] that sourced this event.
      * @param direction The direction of the navigation event being started.
      * @param event [NavigationEvent] to dispatch to the callback.
      */
     @MainThread
     fun dispatchOnStarted(
-        inputHandler: NavigationEventInputHandler,
+        input: NavigationEventInput,
         direction: NavigationEventDirection,
         event: NavigationEvent,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
         // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         if (inProgressCallback != null) {
             // It's important to ensure that any ongoing operations from previous events are
             // properly cancelled before starting new ones to maintain a consistent state.
-            dispatchOnCancelled(inputHandler, direction)
+            dispatchOnCancelled(input, direction)
         }
 
         // Find the highest-priority enabled callback to handle this event.
@@ -295,17 +294,17 @@ internal class NavigationEventProcessor {
      * will be notified. Otherwise, the highest-priority enabled callback will receive the progress
      * event. This is not a terminal event, so `inProgressCallback` is not cleared.
      *
-     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param input The [NavigationEventInput] that sourced this event.
      * @param direction The direction of the navigation event being started.
      * @param event [NavigationEvent] to dispatch to the callback.
      */
     @MainThread
     fun dispatchOnProgressed(
-        inputHandler: NavigationEventInputHandler,
+        input: NavigationEventInput,
         direction: NavigationEventDirection,
         event: NavigationEvent,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
         // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.
@@ -329,17 +328,17 @@ internal class NavigationEventProcessor {
      * `inProgressCallback`. If no callback handles the event, the `fallbackOnBackPressed` action is
      * invoked.
      *
-     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param input The [NavigationEventInput] that sourced this event.
      * @param direction The direction of the navigation event being started.
      * @param fallbackOnBackPressed The action to invoke if no callback handles the completion.
      */
     @MainThread
     fun dispatchOnCompleted(
-        inputHandler: NavigationEventInputHandler,
+        input: NavigationEventInput,
         direction: NavigationEventDirection,
         fallbackOnBackPressed: (() -> Unit)?,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
         // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.
@@ -363,15 +362,12 @@ internal class NavigationEventProcessor {
      * highest-priority enabled callback will be notified. This is a terminal event, clearing the
      * `inProgressCallback`.
      *
-     * @param inputHandler The [NavigationEventInputHandler] that sourced this event.
+     * @param input The [NavigationEventInput] that sourced this event.
      * @param direction The direction of the navigation event being started.
      */
     @MainThread
-    fun dispatchOnCancelled(
-        inputHandler: NavigationEventInputHandler,
-        direction: NavigationEventDirection,
-    ) {
-        // TODO(mgalhardo): Update sharedProcessor to use the inputHandler to distinguish events.
+    fun dispatchOnCancelled(input: NavigationEventInput, direction: NavigationEventDirection) {
+        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
         // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.

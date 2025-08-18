@@ -25,6 +25,7 @@
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -165,45 +166,15 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
                     target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+                } else if (target.konanTarget.family == Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.MINGW) {
+                } else if (target.konanTarget.family == Family.MINGW) {
                     target.compilations["main"].defaultSourceSet.dependsOn(mingwMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(mingwTest)
                 } else {

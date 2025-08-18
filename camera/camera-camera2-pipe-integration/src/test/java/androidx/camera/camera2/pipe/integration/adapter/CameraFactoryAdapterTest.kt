@@ -30,6 +30,7 @@ import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
@@ -258,6 +259,7 @@ class CameraFactoryAdapterTest {
             CameraInteropStateCallbackRepository(),
             availableCameraSelector,
             NO_OP_STREAM_SPECS_CALCULATOR,
+            CameraXConfig.Builder().build(),
         )
 
     /**

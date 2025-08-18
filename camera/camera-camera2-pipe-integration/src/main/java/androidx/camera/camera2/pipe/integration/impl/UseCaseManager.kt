@@ -74,6 +74,7 @@ import androidx.camera.camera2.pipe.integration.internal.DynamicRangeConversions
 import androidx.camera.camera2.pipe.integration.internal.DynamicRangeResolver
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
@@ -156,6 +157,7 @@ constructor(
     private val templateParamsOverride: TemplateParamsOverride,
     private val encoderProfilesProvider: EncoderProfilesProvider,
     private val cameraProperties: CameraProperties,
+    private val cameraXConfig: CameraXConfig,
     context: Context,
     displayInfoManager: DisplayInfoManager,
 ) {
@@ -646,8 +648,9 @@ constructor(
 
     @GuardedBy("lock")
     private fun shouldAddRepeatingUseCase(runningUseCases: Set<UseCase>): Boolean {
+        val isRepeatingStreamForced = cameraXConfig.isRepeatingStreamForced
         val meteringRepeatingEnabled = attachedUseCases.contains(meteringRepeating)
-        if (!meteringRepeatingEnabled) {
+        if (!meteringRepeatingEnabled && isRepeatingStreamForced) {
             val activeSurfaces = runningUseCases.withoutMetering().surfaceCount()
             return activeSurfaces > 0 &&
                 with(attachedUseCases.withoutMetering()) {

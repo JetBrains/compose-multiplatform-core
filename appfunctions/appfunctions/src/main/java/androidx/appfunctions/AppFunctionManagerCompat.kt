@@ -172,18 +172,23 @@ public constructor(
     }
 
     /**
-     * Observes for available app functions metadata based on the provided filters.
+     * Observes available app functions metadata based on the provided filters.
      *
      * Allows discovering app functions that match the given [searchSpec] criteria and continuously
-     * emits updates when relevant metadata changes. The calling app can only observe metadata for
-     * functions in packages that it is allowed to query via
-     * [android.content.pm.PackageManager.canPackageQuery]. If a package is not queryable by the
-     * calling app, its functions' metadata will not be visible.
+     * emits updates when relevant metadata changes.
      *
      * Updates to [AppFunctionPackageMetadata] can occur when the app defining the function is
-     * updated or when a function's enabled state changes.
+     * updated or when a function's enabled state changes, and if multiple updates happen within a
+     * short duration, only the latest update might be emitted.
      *
-     * If multiple updates happen within a short duration, only the latest update might be emitted.
+     * The calling app can observe metadata for:
+     * - Functions in its own package (no permission required).
+     * - Functions in other packages that it is allowed to query via
+     *   [android.content.pm.PackageManager.canPackageQuery] and when holding the
+     *   `android.permission.EXECUTE_APP_FUNCTIONS` permission.
+     *
+     * If a package is not queryable by the calling app, its functions' metadata will not be
+     * visible, even when holding the `android.permission.EXECUTE_APP_FUNCTIONS` permission.
      *
      * @param searchSpec an [AppFunctionSearchSpec] instance specifying the filters for searching
      *   the app function metadata.

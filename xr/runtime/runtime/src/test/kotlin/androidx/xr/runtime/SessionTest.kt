@@ -177,6 +177,16 @@ class SessionTest {
     }
 
     @Test
+    fun create_onDestroyedActivity_throwsIllegalStateException() {
+        activityController.create().destroy()
+
+        val exception = assertFailsWith<IllegalStateException> { Session.create(activity) }
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("Cannot create a new session on a destroyed activity.")
+    }
+
+    @Test
     fun configure_destroyed_throwsIllegalStateException() {
         activityController.create().start().resume()
         underTest = createSession()

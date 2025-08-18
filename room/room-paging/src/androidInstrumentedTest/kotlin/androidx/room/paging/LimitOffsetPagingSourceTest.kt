@@ -38,7 +38,6 @@ import androidx.testutils.FilteringExecutor
 import androidx.testutils.TestExecutor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.test.Ignore
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
@@ -735,9 +734,9 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
         db.close()
     }
 
-    @Ignore("Due to b/373727432.")
     @Test
     fun invalid_append() = runTest {
+        dao.addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetPagingSourceImpl(db)
         val pager = TestPager(CONFIG, pagingSource)
 
@@ -763,9 +762,9 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
         assertThat(pagingSource.invalid).isTrue()
     }
 
-    @Ignore("Due to b/365167269.")
     @Test
     fun invalid_prepend() = runTest {
+        dao.addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetPagingSourceImpl(db)
         val pager = TestPager(CONFIG, pagingSource)
 

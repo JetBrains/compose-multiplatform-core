@@ -21,6 +21,7 @@ import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
@@ -48,6 +49,7 @@ public class CameraAppConfig(
     private val cameraPipe: CameraPipe,
     private val camera2InteropCallbacks: CameraInteropStateCallbackRepository,
     private val cameraCoordinator: CameraCoordinator,
+    private val cameraXConfig: CameraXConfig,
 ) {
     @Provides public fun provideContext(): Context = context
 
@@ -60,6 +62,8 @@ public class CameraAppConfig(
         camera2InteropCallbacks
 
     @Provides public fun provideCameraCoordinator(): CameraCoordinator = cameraCoordinator
+
+    @Provides public fun provideCameraXConfig(): CameraXConfig = cameraXConfig
 
     @Provides
     public fun provideDisplayInfoManager(context: Context): DisplayInfoManager {
