@@ -179,7 +179,7 @@ internal class ImpulseVelocityPathFinder(
                     else ->
                         xHorizon +
                             (end - xHorizon) / (HorizonMilliseconds) *
-                            (time - (T - HorizonMilliseconds))
+                                (time - (T - HorizonMilliseconds))
                 }
             }
             // Move the 'start' coordinate to a time of 'T-HorizonMilliseconds'. Therefore, we will
