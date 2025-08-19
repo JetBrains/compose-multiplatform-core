@@ -39,6 +39,9 @@ kotlin {
     wasmJs() {
         moduleName = "mpp-demo"
         browser {
+            // https://youtrack.jetbrains.com/issue/KT-68614
+            val rootDirPath = project.projectDir.path
+            val projectDirPath = project.projectDir.path
             commonWebpackConfig {
                 outputFileName = "demo.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -49,8 +52,8 @@ kotlin {
                     )
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
-                        add(project.rootDir.path)
-                        add(project.projectDir.path)
+                        add(rootDirPath)
+                        add(projectDirPath)
                     }
                 }
             }
