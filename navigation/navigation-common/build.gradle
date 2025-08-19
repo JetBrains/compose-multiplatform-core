@@ -63,7 +63,7 @@ androidXMultiplatform {
                 api project(":lifecycle:lifecycle-runtime")
                 api project(":lifecycle:lifecycle-viewmodel")
                 api project(":lifecycle:lifecycle-viewmodel-savedstate")
-                api project(":savedstate:savedstate")
+                api "org.jetbrains.androidx.savedstate:savedstate:1.3.2"
 
                 api(libs.kotlinStdlib)
                 implementation(libs.kotlinSerializationCore)
