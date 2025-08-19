@@ -20,6 +20,8 @@ import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.contextmenu.contextMenuGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWithComposableLeadingIcon
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
@@ -49,8 +51,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
+import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.Density
+import kotlin.collections.emptyList
 import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -63,7 +68,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGRectMake
+import platform.UIKit.UIView
 
 /**
  * Context menu area for [BasicTextField] (with [TextFieldValue] argument).
@@ -129,6 +138,7 @@ internal actual fun ContextMenuArea(
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
         ProvideNewContextMenuDefaultProviders(
+            menuDelay = 100.milliseconds,
             modifier = manager.contextMenuAreaModifier,
             content = content
         )
@@ -155,6 +165,7 @@ private fun ProvideNewContextMenuDefaultProviders(
         }
 
         val density = LocalDensity.current
+        val localView = LocalUIView.current
         val provider = remember {
             val editMenuView = CMPEditMenuView().also {
                 it.userInteractionEnabled = false
@@ -163,6 +174,7 @@ private fun ProvideNewContextMenuDefaultProviders(
             ContextMenuToolbarProvider(
                 menuDelay = menuDelay,
                 editMenuView = editMenuView,
+                localView = localView,
                 density = density,
                 coordinates = { layoutCoordinates.value }
             )
@@ -193,12 +205,14 @@ private class ContextMenuItemsState(
     val paste: (() -> Unit)?,
     val cut: (() -> Unit)?,
     val selectAll: (() -> Unit)?,
+    val customActions: List<CMPEditMenuCustomAction>,
     val rect: Rect
 )
 
 private class ContextMenuToolbarProvider(
     private val menuDelay: Duration,
     val editMenuView: CMPEditMenuView,
+    private val localView: UIView,
     private val density: Density,
     private val coordinates: () -> LayoutCoordinates?
 ): TextContextMenuProvider {
@@ -217,11 +231,15 @@ private class ContextMenuToolbarProvider(
                     val rect = dataProvider.contentBounds(layoutCoordinates)
                         .translate(layoutPosition - layoutBounds.topLeft)
 
-                    val components = dataProvider.data().components
+                    var copy: (() -> Unit)? = null
+                    var paste: (() -> Unit)? = null
+                    var cut: (() -> Unit)? = null
+                    var selectAll: (() -> Unit)? = null
+                    val customActions = mutableListOf<CMPEditMenuCustomAction>()
 
-                    fun actionItem(key: Any): (() -> Unit)? {
-                        val item = components.firstOrNull { it.key == key } ?: return null
-                        if (item !is TextContextMenuItem) return null
+                    fun actionItem(component: TextContextMenuComponent): (() -> Unit)? {
+                        val item = component as? TextContextMenuItemWithComposableLeadingIcon
+                            ?: return null
                         if (!item.enabled) return null
 
                         return {
@@ -231,20 +249,39 @@ private class ContextMenuToolbarProvider(
                         }
                     }
 
+                    dataProvider.data().components.forEach { component ->
+                        if (component.key == TextContextMenuKeys.CopyKey) {
+                            copy = actionItem(component)
+                        } else if (component.key == TextContextMenuKeys.PasteKey) {
+                            paste = actionItem(component)
+                        } else if (component.key == TextContextMenuKeys.SelectAllKey) {
+                            selectAll = actionItem(component)
+                        } else if (component.key == TextContextMenuKeys.CutKey) {
+                            cut = actionItem(component)
+                        } else if (component is TextContextMenuItemWithComposableLeadingIcon) {
+                            val actionItem = actionItem(component)
+                            if (actionItem != null) {
+                                customActions.add(CMPEditMenuCustomAction(title = component.label, action = actionItem))
+                            }
+                        }
+                    }
+
                     ContextMenuItemsState(
-                        copy = actionItem(TextContextMenuKeys.CopyKey),
-                        paste = actionItem(TextContextMenuKeys.PasteKey),
-                        cut = actionItem(TextContextMenuKeys.CutKey),
-                        selectAll = actionItem(TextContextMenuKeys.SelectAllKey),
+                        copy = copy,
+                        paste = paste,
+                        cut = cut,
+                        selectAll = selectAll,
+                        customActions = customActions,
                         rect = rect
                     )
                 }.filterNotNull().collect {
-                    editMenuView.showEditMenuAtRect(
+                    getEditMenuView().showEditMenuAtRect(
                         targetRect = it.rect.toCGRect(density),
                         copy = it.copy,
                         cut = it.cut,
                         paste = it.paste,
-                        selectAll = it.selectAll
+                        selectAll = it.selectAll,
+                        customActions = it.customActions
                     )
                 }
             }
@@ -256,6 +293,33 @@ private class ContextMenuToolbarProvider(
                 }
             }
             job.cancel()
+        }
+    }
+
+    private fun getEditMenuView(): CMPEditMenuView {
+        if (available(OS.Ios to OSVersion(16))) {
+            return editMenuView
+        } else {
+            // HACK: On iOS < 16 it's required for UIMenuController to make target view a first
+            // responder. If the keyboard is shown with IntermediateTextInputUIView, this will cause
+            // the keyboard to hide.
+            // To fix the problem, we're looking for the active IntermediateTextInputUIView in
+            // UIVIew hierarchy and use it to show the menu.
+            fun findEditMenuViewRecursively(view: UIView): CMPEditMenuView? {
+                if (view is CMPEditMenuView) {
+                    return view
+                }
+                view.subviews.forEach {
+                    if (it is UIView) {
+                        val editMenuView = findEditMenuViewRecursively(it)
+                        if (editMenuView != null && editMenuView.isFirstResponder()) {
+                            return editMenuView
+                        }
+                    }
+                }
+                return null
+            }
+            return findEditMenuViewRecursively(localView) ?: editMenuView
         }
     }
 }
@@ -336,6 +400,7 @@ private fun TextFieldSelectionState.contextMenuItemsState(scope: CoroutineScope)
         } else {
             null
         },
+        customActions = emptyList(),
         rect = Rect.Zero
     )
 }
@@ -354,6 +419,7 @@ private fun SelectionManager.contextMenuItemsState(): ContextMenuItemsState {
         } else {
             null
         },
+        customActions = emptyList(),
         rect = Rect.Zero
     )
 }
