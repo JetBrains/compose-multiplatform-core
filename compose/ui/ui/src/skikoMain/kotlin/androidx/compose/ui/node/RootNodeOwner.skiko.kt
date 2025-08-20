@@ -178,7 +178,7 @@ internal class RootNodeOwner(
         updatePositionCacheAndDispatch()
         coroutineScope.launch {
             snapshotFlow { platformContext.windowInfo.containerSize }
-                .collect { updatePositionCacheAndDispatch() }
+                .collect { updatePositionCacheAndDispatch(hasContainerSizeChanged = true) }
         }
     }
 
@@ -226,7 +226,7 @@ internal class RootNodeOwner(
         updatePositionCacheAndDispatch()
     }
 
-    private fun updatePositionCacheAndDispatch() {
+    private fun updatePositionCacheAndDispatch(hasContainerSizeChanged: Boolean = false) {
         val globalPosition = platformContext.convertLocalToScreenPosition(Offset.Zero)
         val hasGlobalPositionChanged = if (platformContext.hasNonTranslationComponents) {
             this.globalPosition = null
@@ -262,7 +262,7 @@ internal class RootNodeOwner(
         if (ComposeUiFlags.isRectTrackingEnabled) {
             owner.rectManager.dispatchCallbacks()
         }
-        if (hasWindowPositionChanged) {
+        if (hasWindowPositionChanged || hasContainerSizeChanged) {
             graphicsContext.setLightingInfo(
                 canvasOffset = windowPosition,
                 density = density,
