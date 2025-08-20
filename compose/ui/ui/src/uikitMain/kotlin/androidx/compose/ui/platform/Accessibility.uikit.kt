@@ -133,7 +133,6 @@ import platform.UIKit.accessibilityElementCount
 import platform.UIKit.accessibilityElements
 import platform.UIKit.accessibilityFrame
 import platform.UIKit.isAccessibilityElement
-import platform.UIKit.setAccessibilityElements
 import platform.darwin.NSObject
 import platform.objc.objc_getProtocol
 import platform.objc.protocol_isEqual
@@ -513,7 +512,7 @@ private class AccessibilityElement(
         children.forEach { it.setAccessibilityContainer(this) }
     }
 
-    override fun focusEffect(): UIFocusEffect? = UIFocusHaloEffect.effectWithRect(
+    override fun focusEffect(): UIFocusEffect = UIFocusHaloEffect.effectWithRect(
         rect = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
     )
 
