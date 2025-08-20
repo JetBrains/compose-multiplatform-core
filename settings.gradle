@@ -140,6 +140,7 @@ includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desk
 includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
+includeProject(":compose:mpp:compilation-tests")
 
 // workaround for issue that on linux and windows CommonizeCInterop task fails
 // It seems that this workaround can be removed after Kotlin 1.8.20

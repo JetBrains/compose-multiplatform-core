@@ -192,6 +192,7 @@ tasks.register("checkDesktop") {
 tasks.register("testDesktop") {
     dependsOn(allTasksWith(name = "desktopTest"))
     dependsOn(":collection:collection:jvmTest")
+    dependsOn(":compose:mpp:compilation-tests:jvmJar")
 }
 
 tasks.register("testWeb") {
@@ -208,6 +209,7 @@ val testWebJs = tasks.register("testWebJs") {
     dependsOn(":compose:ui:ui:jsTest")
     dependsOn(":compose:ui:ui-test:jsTest")
     dependsOn(":navigation:navigation-runtime:jsTest")
+    dependsOn(":compose:mpp:compilation-tests:compileDevelopmentExecutableKotlinJs")
 }
 
 val testWebWasm = tasks.register("testWebWasm") {
@@ -220,6 +222,7 @@ val testWebWasm = tasks.register("testWebWasm") {
     dependsOn(":compose:ui:ui:wasmJsTest")
     dependsOn(":compose:ui:ui-test:wasmJsTest")
     dependsOn(":navigation:navigation-runtime:wasmJsTest")
+    dependsOn(":compose:mpp:compilation-tests:compileDevelopmentExecutableKotlinWasmJs")
 }
 
 tasks.register("testUIKit") {
