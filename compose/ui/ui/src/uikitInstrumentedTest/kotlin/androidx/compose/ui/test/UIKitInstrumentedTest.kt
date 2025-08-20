@@ -335,7 +335,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
-        window.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        window.windowScene = scene
         dispatch_async(dispatch_get_main_queue()) {
             window.windowScene = null
             window.resignKeyWindow()
