@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinNativeCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 /** Plugin to apply common configuration for Compose projects. */
 class AndroidXComposeImplPlugin : Plugin<Project> {
@@ -56,6 +57,15 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                     configureComposeCompilerPlugin(project)
                 }
             }
+        }
+
+        // JetBrains fork: allow native experimental features globally
+        // TODO: Move to module config before upstreaming
+        project.tasks.withType(KotlinNativeCompile::class.java).configureEach {
+            it.compilerOptions.freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.cinterop.ExperimentalForeignApi",
+                "-opt-in=kotlin.experimental.ExperimentalNativeApi"
+            )
         }
     }
 
