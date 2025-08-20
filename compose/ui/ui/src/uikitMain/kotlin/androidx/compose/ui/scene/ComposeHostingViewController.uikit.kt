@@ -217,7 +217,6 @@ internal class ComposeHostingViewController(
         interfaceOrientationState.value = orientation
     }
 
-
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
         withTransitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
@@ -400,6 +399,7 @@ internal class ComposeHostingViewController(
             completion = {
                 sizeTransitionScope.cancel()
                 displayLinkListener.invalidate()
+                updateInterfaceOrientationState()
             }
         )
     }
@@ -416,6 +416,7 @@ internal class ComposeHostingViewController(
             },
             completion = {
                 transitionScope.cancel()
+                updateInterfaceOrientationState()
             }
         )
     }
