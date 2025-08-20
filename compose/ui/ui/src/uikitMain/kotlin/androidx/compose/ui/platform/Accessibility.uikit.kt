@@ -1142,18 +1142,6 @@ internal class AccessibilityMediator(
                 invalidationChannel.receive()
                 hasPendingInvalidations = true
 
-                if (keyboardFocusedElementKey != null) {
-                    // Do nothing.
-                    // When full keyboard access is enabled, the selection rectangle can be updated
-                    // on every frame. To improve the user experience, we should update the
-                    // accessibility tree as quickly as possible.
-                } else {
-                    // Estimated delay between the iOS Accessibility Engine sync intervals.
-                    // There is no reason to post change notifications more frequently because the iOS
-                    // Accessibility Engine will ignore them.
-                    delay(100)
-                }
-
                 while (invalidationChannel.tryReceive().isSuccess) {
                     // Do nothing, just consume the channel
                     // Workaround for the channel buffering two invalidations despite the capacity of 1
@@ -1171,6 +1159,18 @@ internal class AccessibilityMediator(
                     refocusKeyboardElementIfNeeded()
                     root.element = null
                     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, null)
+                }
+
+                if (keyboardFocusedElementKey != null) {
+                    // Do nothing.
+                    // When full keyboard access is enabled, the selection rectangle can be updated
+                    // on every frame. To improve the user experience, we should update the
+                    // accessibility tree as quickly as possible.
+                } else {
+                    // Estimated delay between the iOS Accessibility Engine sync intervals.
+                    // There is no reason to post change notifications more frequently because the
+                    // iOS Accessibility Engine will ignore them.
+                    delay(100)
                 }
             }
         }
