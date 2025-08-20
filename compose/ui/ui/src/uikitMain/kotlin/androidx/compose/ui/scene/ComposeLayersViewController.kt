@@ -111,7 +111,7 @@ internal class ComposeLayersViewController(
 
     private fun hide() {
         window.rootViewController = null
-        window.resignKeyWindow()
+        window.setHidden(true)
     }
 
     fun dispose() {
