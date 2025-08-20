@@ -1137,6 +1137,7 @@ internal class AccessibilityMediator(
             // Will exit on CancellationException from within await on `invalidationChannel.receive()`
             // when [job] is cancelled
             while (true) {
+                hasPendingInvalidations = false
                 invalidationChannel.receive()
                 hasPendingInvalidations = true
 
@@ -1170,7 +1171,6 @@ internal class AccessibilityMediator(
                     // iOS Accessibility Engine will ignore them.
                     delay(100)
                 }
-                hasPendingInvalidations = false
             }
         }
     }
