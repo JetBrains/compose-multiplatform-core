@@ -1,0 +1,7 @@
+{
+  "name": "mppcompilation-tests",
+  "short_name": "mpp:compilation-tests",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
