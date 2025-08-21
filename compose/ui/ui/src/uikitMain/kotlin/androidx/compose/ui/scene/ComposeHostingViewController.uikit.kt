@@ -319,6 +319,7 @@ internal class ComposeHostingViewController(
             windowContext = windowContext,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
+            isLayer = false,
             composeSceneFactory = { invalidate, context ->
                 createComposeScene(invalidate, context, holder)
             },

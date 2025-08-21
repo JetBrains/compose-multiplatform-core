@@ -75,7 +75,8 @@ internal class UIKitTextInputService(
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
     private var onKeyboardPresses: (Set<*>) -> Unit,
-    private var focusManager: () -> ComposeSceneFocusManager?
+    private var focusManager: () -> ComposeSceneFocusManager?,
+    private var hasFocusedView: () -> Boolean
 ) : PlatformTextInputService, TextToolbar {
 
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
@@ -314,17 +315,17 @@ internal class UIKitTextInputService(
         return true
     }
 
-    private var textMenuInvalidationsCount = 0
+    private var textInputServiceInvalidationsCount = 0
     private fun textMenuAppearanceChanged() {
-        textMenuInvalidationsCount++
+        textInputServiceInvalidationsCount++
         mainScope.launch {
             // Time to show, hide or update state of context menu
             delay(500)
-            textMenuInvalidationsCount--
+            textInputServiceInvalidationsCount--
         }
     }
 
-    val hasInvalidations: Boolean get() = textMenuInvalidationsCount > 0
+    val hasInvalidations: Boolean get() = textInputServiceInvalidationsCount > 0
 
     private fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
 
@@ -421,11 +422,22 @@ internal class UIKitTextInputService(
         onInputStarted = { }
         onKeyboardPresses = { }
         focusManager = { null }
+        hasFocusedView = { false }
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {
 
         private var floatingCursorTranslation : Offset? = null
+
+        override fun onResignFocus() {
+            textInputServiceInvalidationsCount++
+            mainScope.launch {
+                if (hasFocusedView()) {
+                    focusManager()?.releaseFocus()
+                }
+                textInputServiceInvalidationsCount--
+            }
+        }
 
         override fun beginFloatingCursor(offset: DpOffset) {
             val cursorPos = getCursorPos() ?: getState()?.selection?.start ?: return

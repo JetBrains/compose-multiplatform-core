@@ -103,6 +103,7 @@ internal class IntermediateTextInputUIView(
     override fun canBecomeFirstResponder() = true
 
     override fun resignFirstResponder(): Boolean {
+        input?.onResignFocus()
         hideTextMenu()
         return super.resignFirstResponder()
     }

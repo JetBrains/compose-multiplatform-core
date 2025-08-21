@@ -189,6 +189,7 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
+    private val isLayer: Boolean,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
@@ -360,7 +361,8 @@ internal class ComposeSceneMediator(
                 animateKeyboardOffsetChanges = true
             },
             onKeyboardPresses = ::onKeyboardPresses,
-            focusManager = { scene.focusManager }
+            focusManager = { scene.focusManager },
+            hasFocusedView = ::hasFocusedView
         ).also {
             KeyboardVisibilityListener.initialize()
         }
@@ -372,6 +374,17 @@ internal class ComposeSceneMediator(
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations
+
+    private fun hasFocusedView(): Boolean {
+        fun hasFocusedView(view: UIView): Boolean {
+            return if (view.isFirstResponder) {
+                true
+            } else {
+                view.subviews.any { it is UIView && hasFocusedView(it) }
+            }
+        }
+        return userInputView.window?.let { hasFocusedView(it) } ?: false
+    }
 
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
@@ -526,7 +539,9 @@ internal class ComposeSceneMediator(
 
     fun setContent(content: @Composable () -> Unit) {
         _overlayView.runOnceOnAppeared {
-            focusedViewsList?.addAndFocus(userInputView)
+            if (isLayer) {
+                focusedViewsList?.addAndFocus(userInputView)
+            }
 
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
@@ -620,7 +635,9 @@ internal class ComposeSceneMediator(
         _overlayView.dispose()
         textInputService.stopInput()
         applicationForegroundStateListener.dispose()
-        focusedViewsList?.remove(userInputView)
+        if (isLayer) {
+            focusedViewsList?.remove(userInputView)
+        }
         keyboardManager.dispose()
         userInputView.dispose()
 

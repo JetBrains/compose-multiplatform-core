@@ -35,6 +35,7 @@ internal class FocusedViewsList {
         activeViews += view
         resignedViews -= view
         view.becomeFirstResponder()
+        view.window?.makeKeyWindow()
     }
 
     /**

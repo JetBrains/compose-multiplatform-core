@@ -22,7 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
@@ -161,23 +161,5 @@ class TextFieldFocusOrderTest {
     private val UITextInputProtocol.text: String? get() {
         val range = textRangeFromPosition(beginningOfDocument, endOfDocument) ?: return null
         return textInRange(range)
-    }
-
-    private fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol? {
-        val windowScene = hostingViewController.view.window?.windowScene ?: return null
-
-        fun findFirstResponder(view: UIView): UIView? {
-            if (view.isFirstResponder) {
-                return view
-            }
-            view.subviews.forEach {
-                findFirstResponder(it as UIView)?.let { return it }
-            }
-            return null
-        }
-
-        return windowScene.windows.reversed().firstNotNullOfOrNull {
-            findFirstResponder(view = it as UIView)
-        } as? UITextInputProtocol
     }
 }

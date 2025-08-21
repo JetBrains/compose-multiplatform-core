@@ -104,6 +104,7 @@ class ComposeSceneMediatorTest {
                 getTopLeftOffsetInWindow = { IntOffset.Zero }
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+            isLayer = false,
             composeSceneFactory = { _, _ ->
                 PlatformLayersComposeScene(
                     density = Density(1f)

@@ -96,6 +96,7 @@ internal class UIKitComposeSceneLayer(
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher,
+        isLayer = true,
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
