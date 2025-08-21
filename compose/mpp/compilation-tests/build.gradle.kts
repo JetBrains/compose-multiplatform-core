@@ -1,4 +1,3 @@
-//import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -6,19 +5,12 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 import androidx.build.AndroidXComposePlugin
 import androidx.build.JetbrainsAndroidXPlugin
-//plugins {
-//    alias(libs.plugins.kotlinMultiplatform)
-//    alias(libs.plugins.androidApplication)
-//    alias(libs.plugins.composeMultiplatform)
-//    alias(libs.plugins.composeCompiler)
-//}
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
 //  [1.4 Update]  id("application")
-//    kotlin("plugin.serialization") version "1.9.21"
     id("JetbrainsAndroidXPlugin")
 }
 
