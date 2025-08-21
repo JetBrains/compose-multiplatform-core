@@ -75,8 +75,7 @@ internal class UIKitTextInputService(
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
     private var onKeyboardPresses: (Set<*>) -> Unit,
-    private var focusManager: () -> ComposeSceneFocusManager?,
-    private var hasFocusedView: () -> Boolean
+    private var focusManager: () -> ComposeSceneFocusManager?
 ) : PlatformTextInputService, TextToolbar {
 
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
@@ -422,7 +421,17 @@ internal class UIKitTextInputService(
         onInputStarted = { }
         onKeyboardPresses = { }
         focusManager = { null }
-        hasFocusedView = { false }
+    }
+
+    private fun hasFocusedViewInWindowHierarchy(): Boolean {
+        fun hasFocusedView(view: UIView): Boolean {
+            return if (view.isFirstResponder && view !is IntermediateTextInputUIView) {
+                true
+            } else {
+                view.subviews.any { it is UIView && hasFocusedView(it) }
+            }
+        }
+        return view.window?.let { hasFocusedView(it) } ?: false
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {
@@ -432,7 +441,7 @@ internal class UIKitTextInputService(
         override fun onResignFocus() {
             textInputServiceInvalidationsCount++
             mainScope.launch {
-                if (hasFocusedView()) {
+                if (hasFocusedViewInWindowHierarchy()) {
                     focusManager()?.releaseFocus()
                 }
                 textInputServiceInvalidationsCount--

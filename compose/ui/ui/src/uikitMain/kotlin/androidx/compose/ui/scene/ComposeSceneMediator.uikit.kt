@@ -361,8 +361,7 @@ internal class ComposeSceneMediator(
                 animateKeyboardOffsetChanges = true
             },
             onKeyboardPresses = ::onKeyboardPresses,
-            focusManager = { scene.focusManager },
-            hasFocusedView = ::hasFocusedView
+            focusManager = { scene.focusManager }
         ).also {
             KeyboardVisibilityListener.initialize()
         }
@@ -374,17 +373,6 @@ internal class ComposeSceneMediator(
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations
-
-    private fun hasFocusedView(): Boolean {
-        fun hasFocusedView(view: UIView): Boolean {
-            return if (view.isFirstResponder) {
-                true
-            } else {
-                view.subviews.any { it is UIView && hasFocusedView(it) }
-            }
-        }
-        return userInputView.window?.let { hasFocusedView(it) } ?: false
-    }
 
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
