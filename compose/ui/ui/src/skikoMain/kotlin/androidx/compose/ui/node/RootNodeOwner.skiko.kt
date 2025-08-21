@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -74,6 +75,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
+import androidx.compose.ui.platform.LegacyRenderNodeLayer
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.setLightingInfo
 import androidx.compose.ui.scene.ComposeScene
@@ -96,6 +98,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
+import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
@@ -839,13 +842,29 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?
-        ) = GraphicsLayerOwnerLayer(
-            graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
-            context = if (explicitLayer != null) null else graphicsContext,
-            layerManager = this,
-            drawBlock = drawBlock,
-            invalidateParentLayer = invalidateParentLayer,
-        )
+        ) = if (explicitLayer != null || !ComposeUiFlags.useLegacyRenderNodeLayers) {
+            GraphicsLayerOwnerLayer(
+                graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
+                context = if (explicitLayer != null) null else graphicsContext,
+                layerManager = this,
+                drawBlock = drawBlock,
+                invalidateParentLayer = invalidateParentLayer,
+            )
+        } else {
+            LegacyRenderNodeLayer(
+                density = Snapshot.withoutReadObservation {
+                    // density is a mutable state that is observed whenever layer is created. the layer
+                    // is updated manually on draw, so not observing the density changes here helps with
+                    // performance in layout.
+                    density
+                },
+                measureDrawBounds = platformContext.measureDrawLayerBounds,
+                layerManager = this,
+                requiresStateWorkaround = { graphicsContext.activeGraphicsLayersCount > 0 },
+                invalidateParentLayer = invalidateParentLayer,
+                drawBlock = drawBlock,
+            )
+        }
 
         override fun recycle(layer: OwnedLayer): Boolean {
             needClearObservations = true
