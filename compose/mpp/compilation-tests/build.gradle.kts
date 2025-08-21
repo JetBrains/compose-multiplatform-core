@@ -92,9 +92,6 @@ kotlin {
                     exclude("org.jetbrains.compose.runtime")
                     exclude("org.jetbrains.compose.ui")
                 }
-
-                implementation("org.jetbrains.compose.material3:material3:1.9.0-beta03")
-                implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
             }
         }
 
