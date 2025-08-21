@@ -32,6 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
+/**
+ * https://youtrack.jetbrains.com/issue/CMP-7505
+ */
 @Composable
 fun ModalNavigationRail() {
     var selectedItem by remember { mutableIntStateOf(0) }
