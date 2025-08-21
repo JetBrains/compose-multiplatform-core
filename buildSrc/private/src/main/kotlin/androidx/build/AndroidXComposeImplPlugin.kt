@@ -359,7 +359,7 @@ private fun configureComposeCompilerPlugin(
         // Add Compose compiler plugin to kotlinPlugin configuration, making sure it works
         // for Playground builds as well
 
-        val compilerPluginVersion = project.getVersionByName("kotlinComposeCompiler")
+        val compilerPluginVersion = project.getVersionByName("kotlin")
         project.dependencies.add(
             COMPILER_PLUGIN_CONFIGURATION,
             "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion"
