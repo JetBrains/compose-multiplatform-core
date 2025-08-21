@@ -21,5 +21,8 @@ import androidx.compose.mpp.demo.Screen
 val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
     Screen.Example("Text Fields in Scrollable") {
         TextFieldsInTallScrollableContainer()
+    },
+    Screen.Example("Lazy Column") {
+        LazyColumnDemo()
     }
 ))
