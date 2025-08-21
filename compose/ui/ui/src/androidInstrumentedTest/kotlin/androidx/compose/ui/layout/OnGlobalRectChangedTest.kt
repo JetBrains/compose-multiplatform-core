@@ -1418,4 +1418,88 @@ class OnGlobalRectChangedTest {
             rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
         }
     }
+
+    @Test
+    fun correctPositionIsReportedForANodeParticipatingInAlignmentCalculation() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            rule.setContent {
+                Layout(
+                    content = {
+                        Layout(
+                            content = {
+                                Box {
+                                    Layout(
+                                        modifier =
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                    ) { measurables, constraints ->
+                                        layout(50, 50, mapOf(FirstBaseline to 0)) {}
+                                    }
+                                }
+                            }
+                        ) { measurables, constraints ->
+                            val placeable = measurables.first().measure(constraints)
+                            placeable[FirstBaseline]
+                            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(10, 10) }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(10, 10)) }
+        }
+    }
+
+    @Test
+    fun correctPositionIsReportedForANodeParticipatingInAlignmentCalculation_afterMove() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var extraOffset by mutableStateOf(IntOffset(0))
+            rule.setContent {
+                Layout(
+                    content = {
+                        Layout(
+                            content = {
+                                Box {
+                                    Layout(
+                                        content = {
+                                            Box(
+                                                modifier =
+                                                    Modifier.offset { extraOffset }
+                                                        .size(10.dp)
+                                                        .onLayoutRectChanged(0, 0) {
+                                                            actualPosition = it.positionInRoot
+                                                        }
+                                            )
+                                        }
+                                    ) { measurables, constraints ->
+                                        val child = measurables.first().measure(constraints)
+                                        layout(50, 50, mapOf(FirstBaseline to 0)) {
+                                            child.place(0, 0)
+                                        }
+                                    }
+                                }
+                            }
+                        ) { measurables, constraints ->
+                            val placeable = measurables.first().measure(constraints)
+                            placeable[FirstBaseline]
+                            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(10, 10) }
+                }
+            }
+
+            rule.runOnIdle { extraOffset = IntOffset(20, 20) }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(30, 30)) }
+        }
+    }
 }
