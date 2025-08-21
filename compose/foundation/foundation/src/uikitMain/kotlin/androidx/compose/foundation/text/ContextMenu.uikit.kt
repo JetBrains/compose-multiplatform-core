@@ -250,18 +250,25 @@ private class ContextMenuToolbarProvider(
                     }
 
                     dataProvider.data().components.forEach { component ->
-                        if (component.key == TextContextMenuKeys.CopyKey) {
-                            copy = actionItem(component)
-                        } else if (component.key == TextContextMenuKeys.PasteKey) {
-                            paste = actionItem(component)
-                        } else if (component.key == TextContextMenuKeys.SelectAllKey) {
-                            selectAll = actionItem(component)
-                        } else if (component.key == TextContextMenuKeys.CutKey) {
-                            cut = actionItem(component)
-                        } else if (component is TextContextMenuItemWithComposableLeadingIcon) {
-                            val actionItem = actionItem(component)
-                            if (actionItem != null) {
-                                customActions.add(CMPEditMenuCustomAction(title = component.label, action = actionItem))
+                        when (component.key) {
+                            TextContextMenuKeys.CopyKey -> copy = actionItem(component)
+                            TextContextMenuKeys.PasteKey -> paste = actionItem(component)
+                            TextContextMenuKeys.SelectAllKey -> selectAll = actionItem(component)
+                            TextContextMenuKeys.CutKey -> cut = actionItem(component)
+                            else -> {
+                                if (component is TextContextMenuItemWithComposableLeadingIcon &&
+                                    component.enabled
+                                ) {
+                                    val actionItem = actionItem(component)
+                                    if (actionItem != null) {
+                                        customActions.add(
+                                            CMPEditMenuCustomAction(
+                                                title = component.label,
+                                                action = actionItem
+                                            )
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
