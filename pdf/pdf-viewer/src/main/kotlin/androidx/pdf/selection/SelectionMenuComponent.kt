@@ -17,7 +17,6 @@
 package androidx.pdf.selection
 
 import android.graphics.drawable.Drawable
-import androidx.annotation.RestrictTo
 import androidx.pdf.view.PdfView
 
 /**
@@ -26,33 +25,33 @@ import androidx.pdf.view.PdfView
  * These keys are used to identify standard actions like Copy and Select All within the selection
  * context menu.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object PdfSelectionMenuKeys {
-    public object CopyKey
+    /** Key for the context menu "Copy" item. */
+    @JvmField public val CopyKey: Any = Any()
 
-    public object SelectAllKey
+    /** Key for the context menu "Select all" item. */
+    @JvmField public val SelectAllKey: Any = Any()
 
-    public object SmartActionKey
+    /** Key for all "smart actions" added by classifier in context menu. */
+    @JvmField public val SmartActionKey: Any = Any()
 }
 
 /**
  * An abstract base class for any component that can be displayed within a context menu.
  *
- * @property key A unique identifier for this component within its context menu.
+ * @param key A unique identifier for this component within its context menu.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class ContextMenuComponent internal constructor(public val key: Any)
 
 /**
  * Represents a clickable item with a label in a selection menu.
  *
  * @param key A unique identifier for this component.
- * @property label The text to display for this menu item.
- * @property contentDescription An optional accessibility description for screen readers.
- * @property onClick A lambda function invoked when the item is clicked, providing access to the
+ * @param label The text to display for this menu item.
+ * @param contentDescription An optional accessibility description for screen readers.
+ * @param onClick A lambda function invoked when the item is clicked, providing access to the
  *   [SelectionMenuSession].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SelectionMenuComponent(
     key: Any,
     public val label: String,
@@ -97,7 +96,7 @@ internal class SmartSelectionMenuComponent(
 ) : ContextMenuComponent(key)
 
 /** Represents an active session of an open selection menu. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Suppress("NotCloseable")
 public interface SelectionMenuSession {
     /** Closes the currently open text context menu. */
     public fun close()

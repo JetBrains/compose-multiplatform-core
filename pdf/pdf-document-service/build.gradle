@@ -36,6 +36,17 @@ dependencies {
     api("androidx.core:core:1.13.1")
     implementation(libs.gson)
 
+    testImplementation(project(":pdf:pdf-viewer"))
+    testImplementation(libs.junit)
+    testImplementation(libs.testCore)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.truth)
+    testImplementation(libs.testExtTruth)
+    testImplementation(libs.testExtJunitKtx)
+    testImplementation(libs.kotlinCoroutinesTest)
+
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
@@ -72,4 +83,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Parse and process PDF documents providing the implementations of PdfDocument and PdfLoader sandboxing the underlying android PdfRenderer class."
+    enableRobolectric()
 }

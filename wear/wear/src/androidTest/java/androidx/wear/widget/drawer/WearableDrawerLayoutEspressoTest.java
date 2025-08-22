@@ -156,7 +156,7 @@ public class WearableDrawerLayoutEspressoTest {
                                 MAX_WAIT_MS));
 
         // THEN the text should display "0".
-        onView(withId(R.id.ws_nav_drawer_text)).check(matches(withText("0")));
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text)).check(matches(withText("0")));
     }
 
     @SdkSuppress(maxSdkVersion = 33) // b/322538394
@@ -172,13 +172,13 @@ public class WearableDrawerLayoutEspressoTest {
                                 MAX_WAIT_MS));
 
         // WHEN the second item is selected
-        onView(withId(R.id.ws_nav_drawer_icon_1)).perform(click());
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_icon_1)).perform(click());
 
         // THEN the text should display "1" and it should close.
-        onView(withId(R.id.ws_nav_drawer_text))
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text))
                 .perform(
                         waitForMatchingView(
-                                allOf(withId(R.id.ws_nav_drawer_text), withText("1")),
+                                allOf(withId(androidx.wear.R.id.ws_nav_drawer_text), withText("1")),
                                 MAX_WAIT_MS));
         onView(withId(R.id.navigation_drawer))
                 .perform(
@@ -202,7 +202,7 @@ public class WearableDrawerLayoutEspressoTest {
         selectNavItem(navDrawer, 1);
 
         // THEN the text should display "1" and the listener should be notified.
-        onView(withId(R.id.ws_nav_drawer_text))
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text))
                 .check(matches(withText("1")));
         verify(mNavDrawerItemSelectedListener).onItemSelected(1);
     }
@@ -222,7 +222,7 @@ public class WearableDrawerLayoutEspressoTest {
         selectNavItem(navDrawer, 1);
 
         // THEN the text should display "1" and the listener should be notified.
-        onView(allOf(withId(R.id.ws_navigation_drawer_item_text), isDisplayed()))
+        onView(allOf(withId(androidx.wear.R.id.ws_navigation_drawer_item_text), isDisplayed()))
                 .check(matches(withText("1")));
         verify(mNavDrawerItemSelectedListener).onItemSelected(1);
     }
@@ -266,7 +266,7 @@ public class WearableDrawerLayoutEspressoTest {
                         .build());
 
         final RecyclerView actionList =
-                activityRule.getActivity().findViewById(R.id.action_list);
+                activityRule.getActivity().findViewById(androidx.wear.R.id.action_list);
 
         // WHEN it is opened
         WearableDrawerView actionDrawer = activityRule.getActivity().findViewById(
@@ -292,11 +292,11 @@ public class WearableDrawerLayoutEspressoTest {
                         .build());
 
         final RecyclerView actionList =
-                activityRule.getActivity().findViewById(R.id.action_list);
+                activityRule.getActivity().findViewById(androidx.wear.R.id.action_list);
 
         // THEN the drawer should not be visible and the draw action list should not have an
         // adapter set
-        onView(allOf(withId(R.id.action_list), not(isDisplayed())));
+        onView(allOf(withId(androidx.wear.R.id.action_list), not(isDisplayed())));
         assertNull(actionList.getAdapter());
     }
 
@@ -389,7 +389,7 @@ public class WearableDrawerLayoutEspressoTest {
         DrawerTestActivity activity = activityRule.getActivity();
         ImageView peekIconView =
                 (ImageView) activity
-                        .findViewById(R.id.ws_action_drawer_peek_action_icon);
+                        .findViewById(androidx.wear.R.id.ws_action_drawer_peek_action_icon);
         // THEN its peek icon should not be null
         assertNotNull(peekIconView.getDrawable());
     }
@@ -408,10 +408,10 @@ public class WearableDrawerLayoutEspressoTest {
         OnMenuItemClickListener mockClickListener = mock(OnMenuItemClickListener.class);
         actionDrawer.setOnMenuItemClickListener(mockClickListener);
         // WHEN the action drawer peek view is tapped
-        onView(withId(R.id.ws_drawer_view_peek_container))
+        onView(withId(androidx.wear.R.id.ws_drawer_view_peek_container))
                 .perform(waitForMatchingView(
                         allOf(
-                                withId(R.id.ws_drawer_view_peek_container),
+                                withId(androidx.wear.R.id.ws_drawer_view_peek_container),
                                 isCompletelyDisplayed()),
                         MAX_WAIT_MS))
                 .perform(click());

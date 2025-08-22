@@ -32,7 +32,7 @@ import androidx.xr.runtime.testing.FakeRuntimeEarth
 import androidx.xr.runtime.testing.FakeRuntimeFace
 import androidx.xr.runtime.testing.FakeRuntimeHand
 import androidx.xr.runtime.testing.FakeRuntimePlane
-import androidx.xr.runtime.testing.FakeRuntimeViewCamera
+import androidx.xr.runtime.testing.FakeRuntimeRenderViewpoint
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -83,15 +83,25 @@ class XrResourcesManagerTest {
     }
 
     @Test
-    fun initiateArDevice_setsArDeviceAndViewCameras() {
+    fun initiateArDevice_setsArDeviceAndRenderViewpoints() {
         val runtimeArDevice = FakeRuntimeArDevice()
-        val runtimeViewCameras = listOf(FakeRuntimeViewCamera(), FakeRuntimeViewCamera())
-        underTest.initiateArDeviceAndViewCameras(runtimeArDevice, runtimeViewCameras)
+        val runtimeLeftRenderViewpoint = FakeRuntimeRenderViewpoint()
+        val runtimeRightRenderViewpoint = FakeRuntimeRenderViewpoint()
+        val runtimeMonoRenderViewpoint = FakeRuntimeRenderViewpoint()
+        underTest.initiateArDeviceAndRenderViewpoints(
+            runtimeArDevice,
+            runtimeLeftRenderViewpoint,
+            runtimeRightRenderViewpoint,
+            runtimeMonoRenderViewpoint,
+        )
 
         assertThat(underTest.arDevice.runtimeArDevice).isEqualTo(runtimeArDevice)
-        assertThat(underTest.viewCameras.size).isEqualTo(2)
-        assertThat(underTest.viewCameras[0].state.value.pose).isEqualTo(runtimeViewCameras[0].pose)
-        assertThat(underTest.viewCameras[1].state.value.pose).isEqualTo(runtimeViewCameras[1].pose)
+        assertThat(underTest.leftRenderViewpoint!!.state.value.pose)
+            .isEqualTo(runtimeLeftRenderViewpoint.pose)
+        assertThat(underTest.rightRenderViewpoint!!.state.value.pose)
+            .isEqualTo(runtimeRightRenderViewpoint.pose)
+        assertThat(underTest.monoRenderViewpoint!!.state.value.pose)
+            .isEqualTo(runtimeMonoRenderViewpoint.pose)
     }
 
     @Test

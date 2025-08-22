@@ -22,7 +22,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -33,14 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 
 class SampleAnimationsActivity : ComponentActivity() {
 
@@ -60,7 +59,9 @@ class SampleAnimationsActivity : ComponentActivity() {
             Subspace {
                 SpatialCurvedRow(modifier = SubspaceModifier.fillMaxSize(), curveRadius = 1025.dp) {
                     SpatialPanel(
-                        modifier = SubspaceModifier.resizable(true).movable(true).padding(50.dp)
+                        modifier = SubspaceModifier.padding(50.dp),
+                        resizePolicy = ResizePolicy(true),
+                        dragPolicy = MovePolicy(true),
                     ) {
                         Column(
                             modifier = Modifier.background(Color.LightGray).padding(20.dp),

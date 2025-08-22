@@ -23,6 +23,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.CardSample
 import androidx.xr.glimmer.samples.CardWithLongText
+import androidx.xr.glimmer.samples.CardWithTitleAndActionSample
 import androidx.xr.glimmer.samples.CardWithTitleAndHeaderSample
 import androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongText
 import androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconLongText
@@ -69,6 +70,12 @@ class CardScreenshotTest {
     fun card_withTitleAndHeader() {
         rule.setGlimmerThemeContent { CardWithTitleAndHeaderSample() }
         rule.assertRootAgainstGolden("card_titleHeader", screenshotRule)
+    }
+
+    @Test
+    fun card_withTitleAndAction() {
+        rule.setGlimmerThemeContent { CardWithTitleAndActionSample() }
+        rule.assertRootAgainstGolden("card_titleAction", screenshotRule)
     }
 
     @Test

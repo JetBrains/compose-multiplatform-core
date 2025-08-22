@@ -1,15 +1,17 @@
 // Signature format: 4.0
 package androidx.tracing.driver.wire {
 
-  public final class WireTraceSink extends androidx.tracing.driver.TraceSink {
-    ctor public WireTraceSink(int sequenceId, okio.BufferedSink bufferedSink, optional kotlin.coroutines.CoroutineContext coroutineContext);
+  public final class TraceSink extends androidx.tracing.driver.TraceSink {
+    ctor public TraceSink(int sequenceId, okio.BufferedSink bufferedSink, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method public void close();
     method public void enqueue(androidx.tracing.driver.PooledTracePacketArray pooledPacketArray);
     method public void flush();
   }
 
-  public final class WireTraceSink_androidKt {
-    method public static androidx.tracing.driver.wire.WireTraceSink WireTraceSink(android.content.Context context, int sequenceId, optional kotlin.coroutines.CoroutineContext coroutineContext);
+  public final class TraceSink_androidKt {
+    method public static androidx.tracing.driver.TraceSink TraceSink(android.content.Context context, int sequenceId, kotlin.coroutines.CoroutineContext coroutineContext);
+    method public static androidx.tracing.driver.TraceSink TraceSink(android.content.Context context, int sequenceId, kotlin.coroutines.CoroutineContext coroutineContext, optional java.io.File traceFile);
+    method public static androidx.tracing.driver.TraceSink TraceSink(android.content.Context context, int sequenceId, kotlin.coroutines.CoroutineContext coroutineContext, java.io.OutputStream outputStream);
   }
 
 }

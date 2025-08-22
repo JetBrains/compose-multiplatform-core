@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeArgument
 import org.jetbrains.kotlin.library.abi.AbiTypeNullability
 import org.jetbrains.kotlin.library.abi.AbiTypeParameter
 import org.jetbrains.kotlin.library.abi.AbiValueParameter
+import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
 import org.jetbrains.kotlin.library.abi.AbiVariance
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 import org.jetbrains.kotlin.library.abi.impl.AbiTypeParameterImpl
@@ -295,18 +296,23 @@ internal fun Cursor.parseTypeParam(peek: Boolean = false): AbiTypeParameter? {
     )
 }
 
-internal fun Cursor.parseValueParameters(): List<AbiValueParameter>? {
+internal fun Cursor.parseValueParameters(
+    kind: AbiValueParameterKind = AbiValueParameterKind.REGULAR
+): List<AbiValueParameter>? {
     val valueParams = mutableListOf<AbiValueParameter>()
     parseSymbol(openParenRegex)
-    while (null != parseValueParameter(peek = true)) {
-        valueParams.add(parseValueParameter()!!)
+    while (null != parseValueParameter(kind, peek = true)) {
+        valueParams.add(parseValueParameter(kind)!!)
         parseSymbol(commaRegex)
     }
     parseSymbol(closeParenRegex)
     return valueParams
 }
 
-internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParameter? {
+internal fun Cursor.parseValueParameter(
+    kind: AbiValueParameterKind = AbiValueParameterKind.REGULAR,
+    peek: Boolean = false,
+): AbiValueParameter? {
     val cursor = subCursor(peek)
     val modifiers = cursor.parseValueParameterModifiers()
     val isNoInline = modifiers.contains("noinline")
@@ -315,6 +321,7 @@ internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParamete
     val isVararg = cursor.parseVarargSymbol() != null
     val hasDefaultArg = cursor.parseDefaultArg() != null
     return AbiValueParameterImpl(
+        kind = kind,
         type = type,
         isVararg = isVararg,
         hasDefaultArg = hasDefaultArg,
@@ -348,7 +355,7 @@ internal fun Cursor.parseFunctionReceiver(): AbiType? {
 
 internal fun Cursor.parseContextParams(): List<AbiValueParameter>? {
     parseSymbol(contextRegex) ?: return null
-    return parseValueParameters()
+    return parseValueParameters(AbiValueParameterKind.CONTEXT)
 }
 
 internal fun Cursor.parseReturnType(): AbiType? {

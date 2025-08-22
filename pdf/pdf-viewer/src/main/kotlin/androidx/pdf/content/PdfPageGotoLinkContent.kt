@@ -23,13 +23,11 @@ import android.graphics.RectF
  * internal navigation link which directs the user to a different location within the same pdf
  * document
  *
- * @param bounds: Bounds which envelop the goto link
- * @param destination: Destination where the goto link is directing
+ * @param bounds: A list of rectangles defining the clickable area of the link.
+ * @param destination: [Destination] where the goto link is directing.
  */
-public class PdfPageGotoLinkContent(
-    public val bounds: List<RectF>,
-    public val destination: Destination,
-) {
+public class PdfPageGotoLinkContent(bounds: List<RectF>, public val destination: Destination) :
+    PdfPageContent(bounds) {
     /**
      * Creates a new instance of PdfPageGotoLinkContent.Destination using the page number, x
      * coordinate, and y coordinate of the destination where goto link is directing, and the zoom

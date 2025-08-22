@@ -33,4 +33,7 @@
     <item
         android:id="@+id/itemClientImportanceListenerCuj"
         android:title="@string/client_importance_listener_cuj" />
+    <item
+        android:id="@+id/itemSdkActivityCuj"
+        android:title="@string/sdk_activity_cuj" />
 </menu>

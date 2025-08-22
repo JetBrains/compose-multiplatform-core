@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.impl.impress;
 
 import androidx.annotation.RestrictTo;
+import androidx.xr.runtime.internal.TextureSampler;
 
 import org.jspecify.annotations.NonNull;
 
@@ -39,9 +40,11 @@ public class KhronosPbrMaterial extends Material {
      * diffuse color of the material.
      *
      * @param baseColorTexture The native handle of the base color texture
+     * @param sampler The sampler used for the base color texture
      */
-    public void setBaseColorTexture(long baseColorTexture) {
-        impressApi.setBaseColorTextureOnKhronosPbrMaterial(getNativeHandle(), baseColorTexture);
+    public void setBaseColorTexture(long baseColorTexture, @NonNull TextureSampler sampler) {
+        impressApi.setBaseColorTextureOnKhronosPbrMaterial(
+                getNativeHandle(), baseColorTexture, sampler);
     }
 
     /**
@@ -90,10 +93,12 @@ public class KhronosPbrMaterial extends Material {
      * metallic and roughness properties of the material.
      *
      * @param metallicRoughnessTexture The native handle of the metallic-roughness texture
+     * @param sampler The sampler used for the metallic-roughness texture
      */
-    public void setMetallicRoughnessTexture(long metallicRoughnessTexture) {
+    public void setMetallicRoughnessTexture(
+            long metallicRoughnessTexture, @NonNull TextureSampler sampler) {
         impressApi.setMetallicRoughnessTextureOnKhronosPbrMaterial(
-                getNativeHandle(), metallicRoughnessTexture);
+                getNativeHandle(), metallicRoughnessTexture, sampler);
     }
 
     /**
@@ -149,9 +154,10 @@ public class KhronosPbrMaterial extends Material {
      * normals, creating detailed surface features.
      *
      * @param normalTexture The native handle of the normal map texture
+     * @param sampler The sampler used for the normal map texture
      */
-    public void setNormalTexture(long normalTexture) {
-        impressApi.setNormalTextureOnKhronosPbrMaterial(getNativeHandle(), normalTexture);
+    public void setNormalTexture(long normalTexture, @NonNull TextureSampler sampler) {
+        impressApi.setNormalTextureOnKhronosPbrMaterial(getNativeHandle(), normalTexture, sampler);
     }
 
     /**
@@ -197,10 +203,12 @@ public class KhronosPbrMaterial extends Material {
      * ambient light by surface details.
      *
      * @param ambientOcclusionTexture The native handle of the ambient occlusion texture
+     * @param sampler The sampler used for the ambient occlusion texture
      */
-    public void setAmbientOcclusionTexture(long ambientOcclusionTexture) {
+    public void setAmbientOcclusionTexture(
+            long ambientOcclusionTexture, @NonNull TextureSampler sampler) {
         impressApi.setAmbientOcclusionTextureOnKhronosPbrMaterial(
-                getNativeHandle(), ambientOcclusionTexture);
+                getNativeHandle(), ambientOcclusionTexture, sampler);
     }
 
     /**
@@ -245,9 +253,11 @@ public class KhronosPbrMaterial extends Material {
      * material.
      *
      * @param emissiveTexture The native handle of the emissive texture
+     * @param sampler The sampler used for the emissive texture
      */
-    public void setEmissiveTexture(long emissiveTexture) {
-        impressApi.setEmissiveTextureOnKhronosPbrMaterial(getNativeHandle(), emissiveTexture);
+    public void setEmissiveTexture(long emissiveTexture, @NonNull TextureSampler sampler) {
+        impressApi.setEmissiveTextureOnKhronosPbrMaterial(
+                getNativeHandle(), emissiveTexture, sampler);
     }
 
     /**
@@ -294,9 +304,11 @@ public class KhronosPbrMaterial extends Material {
      * material, affecting reflections.
      *
      * @param clearcoatTexture The native handle of the clearcoat texture
+     * @param sampler The sampler used for the clearcoat texture
      */
-    public void setClearcoatTexture(long clearcoatTexture) {
-        impressApi.setClearcoatTextureOnKhronosPbrMaterial(getNativeHandle(), clearcoatTexture);
+    public void setClearcoatTexture(long clearcoatTexture, @NonNull TextureSampler sampler) {
+        impressApi.setClearcoatTextureOnKhronosPbrMaterial(
+                getNativeHandle(), clearcoatTexture, sampler);
     }
 
     /**
@@ -304,10 +316,12 @@ public class KhronosPbrMaterial extends Material {
      * clearcoat layer.
      *
      * @param clearcoatNormalTexture The native handle of the clearcoat normal texture
+     * @param sampler The sampler used for the clearcoat normal texture
      */
-    public void setClearcoatNormalTexture(long clearcoatNormalTexture) {
+    public void setClearcoatNormalTexture(
+            long clearcoatNormalTexture, @NonNull TextureSampler sampler) {
         impressApi.setClearcoatNormalTextureOnKhronosPbrMaterial(
-                getNativeHandle(), clearcoatNormalTexture);
+                getNativeHandle(), clearcoatNormalTexture, sampler);
     }
 
     /**
@@ -315,10 +329,12 @@ public class KhronosPbrMaterial extends Material {
      * the clearcoat layer.
      *
      * @param clearcoatRoughnessTexture The native handle of the clearcoat roughness texture
+     * @param sampler The sampler used for the clearcoat rougness texture
      */
-    public void setClearcoatRoughnessTexture(long clearcoatRoughnessTexture) {
+    public void setClearcoatRoughnessTexture(
+            long clearcoatRoughnessTexture, @NonNull TextureSampler sampler) {
         impressApi.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-                getNativeHandle(), clearcoatRoughnessTexture);
+                getNativeHandle(), clearcoatRoughnessTexture, sampler);
     }
 
     /**
@@ -339,9 +355,11 @@ public class KhronosPbrMaterial extends Material {
      * effect, visible at grazing angles.
      *
      * @param sheenColorTexture The native handle of the sheen color texture
+     * @param sampler The sampler used for the sheen color texture
      */
-    public void setSheenColorTexture(long sheenColorTexture) {
-        impressApi.setSheenColorTextureOnKhronosPbrMaterial(getNativeHandle(), sheenColorTexture);
+    public void setSheenColorTexture(long sheenColorTexture, @NonNull TextureSampler sampler) {
+        impressApi.setSheenColorTextureOnKhronosPbrMaterial(
+                getNativeHandle(), sheenColorTexture, sampler);
     }
 
     /**
@@ -361,10 +379,12 @@ public class KhronosPbrMaterial extends Material {
      * sheen effect.
      *
      * @param sheenRoughnessTexture The native handle of the sheen roughness texture
+     * @param sampler The sampler used for the sheen roughness texture
      */
-    public void setSheenRoughnessTexture(long sheenRoughnessTexture) {
+    public void setSheenRoughnessTexture(
+            long sheenRoughnessTexture, @NonNull TextureSampler sampler) {
         impressApi.setSheenRoughnessTextureOnKhronosPbrMaterial(
-                getNativeHandle(), sheenRoughnessTexture);
+                getNativeHandle(), sheenRoughnessTexture, sampler);
     }
 
     /**
@@ -382,10 +402,11 @@ public class KhronosPbrMaterial extends Material {
      * through the material.
      *
      * @param transmissionTexture The native handle of the transmission texture
+     * @param sampler The sampler used for the transmission texture
      */
-    public void setTransmissionTexture(long transmissionTexture) {
+    public void setTransmissionTexture(long transmissionTexture, @NonNull TextureSampler sampler) {
         impressApi.setTransmissionTextureOnKhronosPbrMaterial(
-                getNativeHandle(), transmissionTexture);
+                getNativeHandle(), transmissionTexture, sampler);
     }
 
     /**

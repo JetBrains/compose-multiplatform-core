@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.runtime.testing
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.RuntimeFactory
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Factory for creating test-only instances of [Runtime]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -39,6 +40,12 @@ public class FakeRuntimeFactory() : RuntimeFactory {
 
     override val requirements: Set<Feature> = emptySet()
 
-    override fun createRuntime(activity: Activity): FakeRuntime =
-        FakeRuntime(FakeLifecycleManager(hasCreatePermission), FakePerceptionManager())
+    // TODO b/438853896 - migrate all tests to use the coroutine context
+    public fun createRuntime(activity: Activity): FakeRuntime =
+        createRuntime(activity, EmptyCoroutineContext)
+
+    override fun createRuntime(
+        activity: Activity,
+        coroutineContext: CoroutineContext,
+    ): FakeRuntime = FakeRuntime(FakeLifecycleManager(hasCreatePermission), FakePerceptionManager())
 }

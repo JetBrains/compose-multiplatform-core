@@ -39,8 +39,6 @@ import org.jspecify.annotations.Nullable;
 public class AccessibilityWindowInfoCompat {
     private final AccessibilityWindowInfo mInfo;
 
-    private static final int UNDEFINED = -1;
-
     /**
      * Window type: This is an application window. Such a window shows UI for
      * interacting with an application.

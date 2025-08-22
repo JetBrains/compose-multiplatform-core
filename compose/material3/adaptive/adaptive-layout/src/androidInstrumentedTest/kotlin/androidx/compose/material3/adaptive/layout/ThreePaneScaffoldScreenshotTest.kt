@@ -233,7 +233,7 @@ class ThreePaneScaffoldScreenshotTest {
                         secondary =
                             PaneAdaptedValue.Levitated(
                                 alignment = Alignment.Center,
-                                scrim = Scrim(),
+                                scrim = { Scrim() },
                             ),
                         tertiary = PaneAdaptedValue.Hidden,
                     )

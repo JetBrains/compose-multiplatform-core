@@ -37,12 +37,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.width
@@ -62,12 +62,11 @@ class MovableScalableApp : ComponentActivity() {
         SpatialRow {
             val density = LocalDensity.current
             SpatialPanel(
-                SubspaceModifier.height(200.dp)
-                    .width(200.dp)
-                    .scale(scaleForPanel)
-                    .movable(
-                        enabled = true,
-                        scaleWithDistance = true,
+                SubspaceModifier.height(200.dp).width(200.dp).scale(scaleForPanel),
+                dragPolicy =
+                    MovePolicy(
+                        isEnabled = true,
+                        shouldScaleWithDistance = true,
                         onMove = { moveEvent ->
                             with(density) {
                                 zOffset = moveEvent.pose.translation.z.toDp()
@@ -75,7 +74,7 @@ class MovableScalableApp : ComponentActivity() {
                             }
                             false
                         },
-                    )
+                    ),
             ) {
                 Box(
                     modifier = Modifier.background(Color.LightGray).fillMaxSize(),
@@ -97,7 +96,8 @@ class MovableScalableApp : ComponentActivity() {
                 }
             }
             SpatialPanel(
-                SubspaceModifier.offset(z = zOffset).height(200.dp).width(200.dp).movable()
+                SubspaceModifier.offset(z = zOffset).height(200.dp).width(200.dp),
+                dragPolicy = MovePolicy(),
             ) {
                 Box(
                     modifier = Modifier.background(Color.LightGray).fillMaxSize(),

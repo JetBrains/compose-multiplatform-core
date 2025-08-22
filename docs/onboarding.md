@@ -219,13 +219,21 @@ query to search for, e.g. `AppCompatButton file:appcompat`, and press the
 Library development uses a curated version of Android Studio to ensure
 compatibility between various components of the development workflow.
 
-From the `frameworks/support` directory, you can use `./studiow m` (short for
-`ANDROIDX_PROJECTS=main ./gradlew studio`) to automatically download and run the
-correct version of Studio to work on the `main` set of androidx projects
-(non-Compose Jetpack libraries).
-[studiow](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:studiow)
-also supports several other arguments like `all` for other subsets of the
-projects (run `./studiow` for help).
+From the `frameworks/support` directory, you can use
+
+```shell
+PROJECT_PREFIX=:core:,:work: ./gradlew :studio
+```
+
+where `PROJECT_PREFIX` is comma separated list of project prefixes for projects
+you want to work on. This will automatically download and run the correct
+version of Studio to work on the selected libraries.
+
+If you want to open all projects, you can run
+
+```shell
+./studiow all
+```
 
 Next, open the `framework/support` project root from your checkout. If Studio
 asks you which SDK you would like to use, select `Use project SDK`. Importing
@@ -371,6 +379,14 @@ at any time to see an updated list of the remaining errors.
 
 ## Building {#building}
 
+Gradle `:tasks` command allows you to find all the useful tasks for a given
+project. For example, the following command will let you find tasks available
+for `:core:core` project:
+
+```bash
+./gradlew :core:core:tasks
+```
+
 ### Modules and Maven artifacts {#modules-and-maven-artifacts}
 
 To build a specific module, use the module's `assemble` Gradle task. For
@@ -486,9 +502,6 @@ which is typically used for plugin and IDE development.
 Our reference docs (Javadocs and KotlinDocs) are published to
 https://developer.android.com/reference/androidx/packages and may be built
 locally.
-
-NOTE `./gradlew tasks` always has the canonical task information! When in doubt,
-run `./gradlew tasks`
 
 #### Generate docs
 

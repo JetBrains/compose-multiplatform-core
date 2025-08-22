@@ -19,7 +19,10 @@ package androidx.xr.compose.subspace
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -42,13 +45,16 @@ public fun SpatialColumn(
     alignment: SpatialAlignment = SpatialAlignment.Center,
     content: @Composable @SubspaceComposable SpatialColumnScope.() -> Unit,
 ) {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val coreGroupEntity = remember {
+        CoreGroupEntity(
+            GroupEntity.create(session, name = entityName("SpatialColumn"), pose = Pose.Identity)
+        )
+    }
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialColumnScopeInstance.content() },
-        coreEntity =
-            rememberCoreGroupEntity {
-                GroupEntity.create(this, name = entityName("SpatialColumn"), pose = Pose.Identity)
-            },
+        coreEntity = coreGroupEntity,
         measurePolicy =
             RowColumnMeasurePolicy(
                 orientation = LayoutOrientation.Vertical,

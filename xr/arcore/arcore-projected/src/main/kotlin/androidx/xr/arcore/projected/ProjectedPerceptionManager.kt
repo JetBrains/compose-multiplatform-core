@@ -26,8 +26,8 @@ import androidx.xr.runtime.internal.Face
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
+import androidx.xr.runtime.internal.RenderViewpoint
 import androidx.xr.runtime.internal.Trackable
-import androidx.xr.runtime.internal.ViewCamera
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.UUID
@@ -141,8 +141,16 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
     override val arDevice: ArDevice
         get() = throw NotImplementedError("Not implemented on projected runtime.")
 
-    /** Returns a list of [ViewCamera] objects. */
-    override val viewCameras: List<ViewCamera>
+    /** Returns the left [RenderViewpoint] object. */
+    override val leftRenderViewpoint: RenderViewpoint
+        get() = throw NotImplementedError("Not implemented on projected runtime.")
+
+    /** Returns the right [RenderViewpoint] object. */
+    override val rightRenderViewpoint: RenderViewpoint
+        get() = throw NotImplementedError("Not implemented on projected runtime.")
+
+    /** Returns the mono [RenderViewpoint] object. */
+    override val monoRenderViewpoint: RenderViewpoint
         get() = throw NotImplementedError("Not implemented on projected runtime.")
 
     /** Returns a list of [DepthMap] objects. */

@@ -38,6 +38,14 @@ internal actual value class Strings(val value: Int) {
             implementedInJetBrainsFork()
         actual val defaultPaneExpansionEndOffsetAnchorDescription: Strings =
             implementedInJetBrainsFork()
+        actual val dragToResizeClickToExpandDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeClickToCollapseDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeClickToPartiallyExpandDescription: Strings =
+            implementedInJetBrainsFork()
+        actual val dragToResizeExpandedStateDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeCollapsedStateDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizePartiallyExpandedStateDescription: Strings =
+            implementedInJetBrainsFork()
     }
 }
 

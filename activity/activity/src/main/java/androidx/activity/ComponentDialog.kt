@@ -28,7 +28,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.navigationevent.DirectNavigationEventInputHandler
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
@@ -61,8 +61,10 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
 
     // Input from for `ComponentDialog.onBackPressed()`, which can get called when API < 33 or
     // when `android:enableOnBackInvokedCallback` is `false`.
-    private val onBackPressedInputHandler: DirectNavigationEventInputHandler by lazy {
-        DirectNavigationEventInputHandler(navigationEventDispatcher)
+    private val onBackPressedInput: DirectNavigationEventInput by lazy {
+        val input = DirectNavigationEventInput()
+        navigationEventDispatcher.addInput(input)
+        input
     }
 
     override fun onSaveInstanceState(): Bundle {
@@ -123,7 +125,7 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        onBackPressedInputHandler.handleOnCompleted()
+        onBackPressedInput.complete()
     }
 
     override fun setContentView(layoutResID: Int) {

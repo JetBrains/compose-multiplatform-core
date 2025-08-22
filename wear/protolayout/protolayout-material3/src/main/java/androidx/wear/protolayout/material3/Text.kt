@@ -197,7 +197,7 @@ public fun MaterialScope.text(
     @TextAlignment alignment: Int = defaultTextElementStyle.alignment,
     @TextOverflow overflow: Int = defaultTextElementStyle.overflow,
     @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = emptyList(),
-) =
+): LayoutElement =
     text(
         text = text,
         modifier = modifier,

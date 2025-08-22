@@ -19,6 +19,7 @@ package androidx.xr.runtime.testing
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.internal.RenderingEntityFactory
 import androidx.xr.runtime.internal.RenderingRuntime
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
 import androidx.xr.runtime.internal.SceneRuntime
@@ -29,5 +30,5 @@ public class FakeRenderingRuntimeFactory() : RenderingRuntimeFactory {
     override val requirements: Set<Feature> = emptySet()
 
     override fun create(sceneRuntime: SceneRuntime, activity: Activity): RenderingRuntime =
-        FakeRenderingRuntime(sceneRuntime, activity)
+        FakeRenderingRuntime(sceneRuntime as RenderingEntityFactory)
 }

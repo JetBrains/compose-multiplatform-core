@@ -23,6 +23,7 @@ import androidx.paging.PagingSource.LoadResult
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 
+@IgnoreWebTarget // b/439963925
 class StaticListPagingSourceTest {
 
     private val DATA = List(100) { it }

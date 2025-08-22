@@ -99,8 +99,8 @@ package androidx.xr.compose.spatial {
   }
 
   public final class OrbiterKt {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter(androidx.xr.compose.spatial.ContentEdge.Horizontal position, optional float offset, optional int offsetType, optional androidx.compose.ui.Alignment.Horizontal alignment, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional float elevation, optional boolean shouldRenderInNonSpatial, kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter(androidx.xr.compose.spatial.ContentEdge.Vertical position, optional float offset, optional int offsetType, optional androidx.compose.ui.Alignment.Vertical alignment, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional float elevation, optional boolean shouldRenderInNonSpatial, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter(androidx.xr.compose.spatial.ContentEdge.Horizontal position, optional androidx.compose.ui.unit.Dp offset, optional androidx.xr.compose.spatial.OrbiterOffsetType offsetType, optional androidx.compose.ui.Alignment.Horizontal alignment, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional androidx.compose.ui.unit.Dp elevation, optional boolean shouldRenderInNonSpatial, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter(androidx.xr.compose.spatial.ContentEdge.Vertical position, optional androidx.compose.ui.unit.Dp offset, optional androidx.xr.compose.spatial.OrbiterOffsetType offsetType, optional androidx.compose.ui.Alignment.Vertical alignment, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional androidx.compose.ui.unit.Dp elevation, optional boolean shouldRenderInNonSpatial, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter-K8oyVJY(androidx.xr.compose.spatial.ContentEdge.Horizontal, float, int, androidx.compose.ui.Alignment.Horizontal?, androidx.xr.compose.subspace.layout.SpatialShape?, float, boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Orbiter-K8oyVJY(androidx.xr.compose.spatial.ContentEdge.Vertical, float, int, androidx.compose.ui.Alignment.Vertical?, androidx.xr.compose.subspace.layout.SpatialShape?, float, boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
@@ -129,7 +129,7 @@ package androidx.xr.compose.spatial {
     ctor public SpatialDialogProperties();
     ctor @BytecodeOnly public SpatialDialogProperties(boolean, boolean, boolean, androidx.compose.animation.core.FiniteAnimationSpec!, float, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @KotlinOnly public SpatialDialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> backgroundContentAnimationSpec, optional androidx.compose.ui.unit.Dp elevation);
-    method public androidx.xr.compose.spatial.SpatialDialogProperties copy(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> restingLevelAnimationSpec, optional float elevation);
+    method @KotlinOnly public androidx.xr.compose.spatial.SpatialDialogProperties copy(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> restingLevelAnimationSpec, optional androidx.compose.ui.unit.Dp elevation);
     method @BytecodeOnly public androidx.xr.compose.spatial.SpatialDialogProperties copy-M2VBTUQ(boolean, boolean, boolean, androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float!>, float);
     method public androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> getBackgroundContentAnimationSpec();
     method public boolean getDismissOnBackPress();
@@ -144,7 +144,7 @@ package androidx.xr.compose.spatial {
   }
 
   public final class SpatialElevationKt {
-    method @androidx.compose.runtime.Composable public static void SpatialElevation(optional float elevation, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void SpatialElevation(optional androidx.compose.ui.unit.Dp elevation, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void SpatialElevation--orJrPs(float, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -169,13 +169,13 @@ package androidx.xr.compose.spatial {
   }
 
   public final class SpatialPopupKt {
-    method @androidx.compose.runtime.Composable public static void SpatialPopup(optional androidx.compose.ui.Alignment alignment, optional long offset, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional float elevation, optional androidx.compose.ui.window.PopupProperties properties, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void SpatialPopup(optional androidx.compose.ui.Alignment alignment, optional androidx.compose.ui.unit.IntOffset offset, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional androidx.compose.ui.unit.Dp elevation, optional androidx.compose.ui.window.PopupProperties properties, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void SpatialPopup-nw0TIBo(androidx.compose.ui.Alignment?, long, kotlin.jvm.functions.Function0<kotlin.Unit!>?, float, androidx.compose.ui.window.PopupProperties?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class SubspaceKt {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(optional androidx.xr.compose.unit.VolumeConstraints? constraints, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(androidx.xr.compose.unit.VolumeConstraints?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
   }
@@ -184,7 +184,53 @@ package androidx.xr.compose.spatial {
 
 package androidx.xr.compose.subspace {
 
+  public final class AnchorPolicy extends androidx.xr.compose.subspace.DragPolicy {
+    ctor public AnchorPolicy();
+    ctor public AnchorPolicy(optional boolean isEnabled, optional java.util.Set<androidx.xr.compose.subspace.layout.PlaneOrientation> anchorPlaneOrientations, optional java.util.Set<androidx.xr.compose.subspace.layout.PlaneSemantic> anchorPlaneSemantics);
+    method public java.util.Set<androidx.xr.compose.subspace.layout.PlaneOrientation> getAnchorPlaneOrientations();
+    method public java.util.Set<androidx.xr.compose.subspace.layout.PlaneSemantic> getAnchorPlaneSemantics();
+    method public boolean isEnabled();
+    property public java.util.Set<androidx.xr.compose.subspace.layout.PlaneOrientation> anchorPlaneOrientations;
+    property public java.util.Set<androidx.xr.compose.subspace.layout.PlaneSemantic> anchorPlaneSemantics;
+    property public boolean isEnabled;
+  }
+
+  public abstract class DragPolicy {
+  }
+
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalSubspaceVolumeApi {
+  }
+
+  public final class MovePolicy extends androidx.xr.compose.subspace.DragPolicy {
+    ctor public MovePolicy();
+    ctor public MovePolicy(optional boolean isEnabled, optional boolean isStickyPose, optional boolean shouldScaleWithDistance, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? onMoveStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? onMoveEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? onMove);
+    method public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? getOnMove();
+    method public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? getOnMoveEnd();
+    method public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? getOnMoveStart();
+    method public boolean isEnabled();
+    method public boolean isStickyPose();
+    method public boolean shouldScaleWithDistance();
+    property public boolean isEnabled;
+    property public boolean isStickyPose;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? onMove;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? onMoveEnd;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? onMoveStart;
+    property public boolean shouldScaleWithDistance;
+  }
+
+  public final class ResizePolicy {
+    ctor public ResizePolicy();
+    ctor public ResizePolicy(optional boolean isEnabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean shouldMaintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
+    method public androidx.xr.compose.unit.DpVolumeSize getMaximumSize();
+    method public androidx.xr.compose.unit.DpVolumeSize getMinimumSize();
+    method public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? getOnSizeChange();
+    method public boolean isEnabled();
+    method public boolean shouldMaintainAspectRatio();
+    property public boolean isEnabled;
+    property public androidx.xr.compose.unit.DpVolumeSize maximumSize;
+    property public androidx.xr.compose.unit.DpVolumeSize minimumSize;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange;
+    property public boolean shouldMaintainAspectRatio;
   }
 
   public final class SceneCoreEntityKt {
@@ -238,16 +284,16 @@ package androidx.xr.compose.subspace {
   }
 
   public final class SpatialPanelKt {
-    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialActivityPanel(android.content.Intent intent, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialShape shape);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialActivityPanel(android.content.Intent, androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialShape?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static <T extends android.view.View> void SpatialAndroidViewPanel(kotlin.jvm.functions.Function1<? super android.content.Context,? extends T> factory, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> update, optional androidx.xr.compose.subspace.layout.SpatialShape shape);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static <T extends android.view.View> void SpatialAndroidViewPanel(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T!>, androidx.xr.compose.subspace.layout.SubspaceModifier?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, androidx.xr.compose.subspace.layout.SpatialShape?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialPanel(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialShape shape, kotlin.jvm.functions.Function0<kotlin.Unit> content);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialPanel(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialShape?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialActivityPanel(android.content.Intent intent, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional androidx.xr.compose.subspace.DragPolicy? dragPolicy, optional androidx.xr.compose.subspace.ResizePolicy? resizePolicy);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialActivityPanel(android.content.Intent, androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialShape?, androidx.xr.compose.subspace.DragPolicy?, androidx.xr.compose.subspace.ResizePolicy?, androidx.compose.runtime.Composer?, int, int);
+    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static <T extends android.view.View> void SpatialAndroidViewPanel(kotlin.jvm.functions.Function1<? super android.content.Context,? extends T> factory, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional kotlin.jvm.functions.Function1<? super T,kotlin.Unit> update, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional androidx.xr.compose.subspace.DragPolicy? dragPolicy, optional androidx.xr.compose.subspace.ResizePolicy? resizePolicy);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static <T extends android.view.View> void SpatialAndroidViewPanel(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T!>, androidx.xr.compose.subspace.layout.SubspaceModifier?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, androidx.xr.compose.subspace.layout.SpatialShape?, androidx.xr.compose.subspace.DragPolicy?, androidx.xr.compose.subspace.ResizePolicy?, androidx.compose.runtime.Composer?, int, int);
+    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialPanel(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialShape shape, optional androidx.xr.compose.subspace.DragPolicy? dragPolicy, optional androidx.xr.compose.subspace.ResizePolicy? resizePolicy, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialPanel(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialShape?, androidx.xr.compose.subspace.DragPolicy?, androidx.xr.compose.subspace.ResizePolicy?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class SpatialRowKt {
-    method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialCurvedRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional float curveRadius, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialCurvedRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.compose.ui.unit.Dp curveRadius, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialCurvedRow-942rkJo(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialAlignment?, float, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialRowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialRow(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialAlignment?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialRowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
@@ -280,11 +326,11 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class MovableKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier movable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional boolean stickyPose, optional boolean scaleWithDistance, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? onMoveStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? onMoveEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? onMove);
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SubspaceModifier movable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional boolean stickyPose, optional boolean scaleWithDistance, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveStartEvent,kotlin.Unit>? onMoveStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEndEvent,kotlin.Unit>? onMoveEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialMoveEvent,java.lang.Boolean>? onMove);
   }
 
   public final class OffsetKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier offset(androidx.xr.compose.subspace.layout.SubspaceModifier, optional float x, optional float y, optional float z);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier offset(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp x, optional androidx.compose.ui.unit.Dp y, optional androidx.compose.ui.unit.Dp z);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier offset-qQh39rQ(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float, float);
   }
 
@@ -297,9 +343,9 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class PaddingKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, float all);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, optional float horizontal, optional float vertical, optional float depth);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, optional float left, optional float top, optional float right, optional float bottom, optional float front, optional float back);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp all);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp horizontal, optional androidx.compose.ui.unit.Dp vertical, optional androidx.compose.ui.unit.Dp depth);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp left, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp right, optional androidx.compose.ui.unit.Dp bottom, optional androidx.compose.ui.unit.Dp front, optional androidx.compose.ui.unit.Dp back);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding-0tawpAo(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float, float, float, float, float);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier padding-qQh39rQ(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float, float);
@@ -312,12 +358,46 @@ package androidx.xr.compose.subspace.layout {
     method public void adjustParams(androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable params);
   }
 
+  @kotlin.jvm.JvmInline public final value class PlaneOrientation {
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.PlaneOrientation! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.xr.compose.subspace.layout.PlaneOrientation.Companion Companion;
+  }
+
+  public static final class PlaneOrientation.Companion {
+    method @BytecodeOnly public int getAny-rnqRDCc();
+    method @BytecodeOnly public int getHorizontal-rnqRDCc();
+    method @BytecodeOnly public int getVertical-rnqRDCc();
+    property public androidx.xr.compose.subspace.layout.PlaneOrientation Any;
+    property public androidx.xr.compose.subspace.layout.PlaneOrientation Horizontal;
+    property public androidx.xr.compose.subspace.layout.PlaneOrientation Vertical;
+  }
+
+  @kotlin.jvm.JvmInline public final value class PlaneSemantic {
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.PlaneSemantic! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.xr.compose.subspace.layout.PlaneSemantic.Companion Companion;
+  }
+
+  public static final class PlaneSemantic.Companion {
+    method @BytecodeOnly public int getAny-FWya8ks();
+    method @BytecodeOnly public int getCeiling-FWya8ks();
+    method @BytecodeOnly public int getFloor-FWya8ks();
+    method @BytecodeOnly public int getTable-FWya8ks();
+    method @BytecodeOnly public int getWall-FWya8ks();
+    property public androidx.xr.compose.subspace.layout.PlaneSemantic Any;
+    property public androidx.xr.compose.subspace.layout.PlaneSemantic Ceiling;
+    property public androidx.xr.compose.subspace.layout.PlaneSemantic Floor;
+    property public androidx.xr.compose.subspace.layout.PlaneSemantic Table;
+    property public androidx.xr.compose.subspace.layout.PlaneSemantic Wall;
+  }
+
   public final class PointerHoverIconKt {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier pointerHoverIcon(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.scenecore.SpatialPointerIcon icon);
   }
 
   public final class ResizableKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier resizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SubspaceModifier resizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
   }
 
   public final class RotateKt {
@@ -335,28 +415,56 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class SizeKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier depth(androidx.xr.compose.subspace.layout.SubspaceModifier, float depth);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier depth(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp depth);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier depth-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier depthIn(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp min, optional androidx.compose.ui.unit.Dp max);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier depthIn-VpY3zN4(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier fillMaxDepth(androidx.xr.compose.subspace.layout.SubspaceModifier, optional @FloatRange(from=0.0, to=1.0) float fraction);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier fillMaxHeight(androidx.xr.compose.subspace.layout.SubspaceModifier, optional @FloatRange(from=0.0, to=1.0) float fraction);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier fillMaxSize(androidx.xr.compose.subspace.layout.SubspaceModifier, optional @FloatRange(from=0.0, to=1.0) float fraction);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier fillMaxWidth(androidx.xr.compose.subspace.layout.SubspaceModifier, optional @FloatRange(from=0.0, to=1.0) float fraction);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier height(androidx.xr.compose.subspace.layout.SubspaceModifier, float height);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier height(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp height);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier height-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredDepth(androidx.xr.compose.subspace.layout.SubspaceModifier, float depth);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier heightIn(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp min, optional androidx.compose.ui.unit.Dp max);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier heightIn-VpY3zN4(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredDepth(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp depth);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredDepth-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredHeight(androidx.xr.compose.subspace.layout.SubspaceModifier, float height);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredHeight(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp height);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredHeight-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredSize(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp size);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredSize(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.unit.DpVolumeSize size);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredSize(androidx.xr.compose.subspace.layout.SubspaceModifier, float size);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredSize-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredWidth(androidx.xr.compose.subspace.layout.SubspaceModifier, float width);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredWidth(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp width);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier requiredWidth-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier size(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp size);
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier size(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.unit.DpVolumeSize size);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier size(androidx.xr.compose.subspace.layout.SubspaceModifier, float size);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier size-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier width(androidx.xr.compose.subspace.layout.SubspaceModifier, float width);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier sizeIn(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp minWidth, optional androidx.compose.ui.unit.Dp maxWidth, optional androidx.compose.ui.unit.Dp minHeight, optional androidx.compose.ui.unit.Dp maxHeight, optional androidx.compose.ui.unit.Dp minDepth, optional androidx.compose.ui.unit.Dp maxDepth);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier sizeIn-0tawpAo(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float, float, float, float, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier width(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.compose.ui.unit.Dp width);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier width-3ABfNKs(androidx.xr.compose.subspace.layout.SubspaceModifier, float);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier widthIn(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.compose.ui.unit.Dp min, optional androidx.compose.ui.unit.Dp max);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier widthIn-VpY3zN4(androidx.xr.compose.subspace.layout.SubspaceModifier, float, float);
+  }
+
+  public final class SpatialAbsoluteAlignment {
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomLeft();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterLeft();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getLeft();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopLeft();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopRight();
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomLeft;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterLeft;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Left;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Right;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopLeft;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopRight;
+    field public static final androidx.xr.compose.subspace.layout.SpatialAbsoluteAlignment INSTANCE;
   }
 
   public interface SpatialAlignment {
@@ -364,23 +472,31 @@ package androidx.xr.compose.subspace.layout {
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getBack();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getBottom();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomCenter();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomLeft();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomEnd();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomLeft();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomStart();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenter();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getCenterDepthwise();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterEnd();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getCenterHorizontally();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterLeft();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterRight();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterLeft();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getCenterStart();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getCenterVertically();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getEnd();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getFront();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getLeft();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getRight();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getLeft();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getStart();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getTop();
     method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopCenter();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopLeft();
-    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopRight();
-    method public int horizontalOffset(int width, int space);
-    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space);
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopEnd();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopLeft();
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopRight();
+    method public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopStart();
+    method public int horizontalOffset(int width, int space, optional androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, optional androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public int verticalOffset(int height, int space);
     field public static final androidx.xr.compose.subspace.layout.SpatialAlignment.Companion Companion;
   }
@@ -389,39 +505,55 @@ package androidx.xr.compose.subspace.layout {
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getBack();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getBottom();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomCenter();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomLeft();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomEnd();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomLeft();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getBottomStart();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment getCenter();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getCenterDepthwise();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterEnd();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getCenterHorizontally();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterLeft();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterRight();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterLeft();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getCenterStart();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getCenterVertically();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getEnd();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getFront();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getLeft();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getRight();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getLeft();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal getStart();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getTop();
     method public androidx.xr.compose.subspace.layout.SpatialAlignment getTopCenter();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getTopLeft();
-    method public androidx.xr.compose.subspace.layout.SpatialAlignment getTopRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getTopEnd();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getTopLeft();
+    method @Deprecated public androidx.xr.compose.subspace.layout.SpatialAlignment getTopRight();
+    method public androidx.xr.compose.subspace.layout.SpatialAlignment getTopStart();
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth Back;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical Bottom;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomCenter;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomLeft;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomEnd;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomLeft;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment BottomStart;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment Center;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth CenterDepthwise;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterEnd;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal CenterHorizontally;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterLeft;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterRight;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterLeft;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment CenterStart;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical CenterVertically;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal End;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth Front;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Left;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Right;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Left;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Right;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal Start;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical Top;
     property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopCenter;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopLeft;
-    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopEnd;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment TopLeft;
+    property @Deprecated public static androidx.xr.compose.subspace.layout.SpatialAlignment TopRight;
+    property public static androidx.xr.compose.subspace.layout.SpatialAlignment TopStart;
   }
 
   public static interface SpatialAlignment.Depth {
@@ -429,11 +561,38 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public static interface SpatialAlignment.Horizontal {
-    method public int offset(int width, int space);
+    method public int offset(int width, int space, optional androidx.compose.ui.unit.LayoutDirection layoutDirection);
   }
 
   public static interface SpatialAlignment.Vertical {
     method public int offset(int height, int space);
+  }
+
+  public final class SpatialBiasAbsoluteAlignment implements androidx.xr.compose.subspace.layout.SpatialAlignment {
+    ctor public SpatialBiasAbsoluteAlignment(float horizontalBias, float verticalBias, float depthBias);
+    method public androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment copy(optional float horizontalBias, optional float verticalBias, optional float depthBias);
+    method public int depthOffset(int depth, int space);
+    method public float getDepthBias();
+    method public float getHorizontalBias();
+    method public float getVerticalBias();
+    method public int horizontalOffset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    method public int verticalOffset(int height, int space);
+    property public float depthBias;
+    property public float horizontalBias;
+    property public float verticalBias;
+    field public static final androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment.Companion Companion;
+  }
+
+  public static final class SpatialBiasAbsoluteAlignment.Companion {
+  }
+
+  public static final class SpatialBiasAbsoluteAlignment.Horizontal implements androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal {
+    ctor public SpatialBiasAbsoluteAlignment.Horizontal(float bias);
+    method public androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment.Horizontal copy(optional float bias);
+    method public float getBias();
+    method public int offset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    property public float bias;
   }
 
   public final class SpatialBiasAlignment implements androidx.xr.compose.subspace.layout.SpatialAlignment {
@@ -443,8 +602,8 @@ package androidx.xr.compose.subspace.layout {
     method public float getDepthBias();
     method public float getHorizontalBias();
     method public float getVerticalBias();
-    method public int horizontalOffset(int width, int space);
-    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space);
+    method public int horizontalOffset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public int verticalOffset(int height, int space);
     property public float depthBias;
     property public float horizontalBias;
@@ -467,7 +626,7 @@ package androidx.xr.compose.subspace.layout {
     ctor public SpatialBiasAlignment.Horizontal(float bias);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Horizontal copy(optional float bias);
     method public float getBias();
-    method public int offset(int width, int space);
+    method public int offset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     property public float bias;
   }
 
@@ -483,7 +642,7 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class SpatialFeatheringEffectKt {
-    method public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect(float horizontal, float vertical);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect(androidx.compose.ui.unit.Dp horizontal, androidx.compose.ui.unit.Dp vertical);
     method public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect(float horizontal, float vertical);
     method public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect(@IntRange(from=0L, to=50L) int percentHorizontal, @IntRange(from=0L, to=50L) int percentVertical);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialFeatheringEffect SpatialSmoothFeatheringEffect-YgX7TsA(float, float);
@@ -570,7 +729,9 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public interface SubspaceMeasureScope extends androidx.compose.ui.unit.Density {
+    method public androidx.compose.ui.unit.LayoutDirection getLayoutDirection();
     method public default androidx.xr.compose.subspace.layout.SubspaceMeasureResult layout(int width, int height, int depth, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SubspacePlaceable.SubspacePlacementScope,kotlin.Unit> placementBlock);
+    property public abstract androidx.compose.ui.unit.LayoutDirection layoutDirection;
   }
 
   public interface SubspaceModifier {
@@ -719,40 +880,40 @@ package androidx.xr.compose.unit {
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Meter implements java.lang.Comparable<androidx.xr.compose.unit.Meter> {
     ctor @KotlinOnly public Meter(float value);
     method @BytecodeOnly public static androidx.xr.compose.unit.Meter! box-impl(float);
-    method public int compareTo(float other);
+    method @KotlinOnly public operator int compareTo(androidx.xr.compose.unit.Meter other);
     method @BytecodeOnly public int compareTo-355lp2w(float);
     method @BytecodeOnly public static int compareTo-355lp2w(float, float);
     method @BytecodeOnly public static float constructor-impl(float);
-    method public inline operator float div(double other);
-    method public inline operator float div(float other);
-    method public inline operator float div(int other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter div(double other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter div(float other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter div(int other);
     method @BytecodeOnly public static float div-zRPQRcA(float, double);
     method @BytecodeOnly public static float div-zRPQRcA(float, float);
     method @BytecodeOnly public static float div-zRPQRcA(float, int);
     method public float getValue();
     method @BytecodeOnly public static boolean isFinite-impl(float);
     method @BytecodeOnly public static boolean isSpecified-impl(float);
-    method public inline operator float minus(float other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter minus(androidx.xr.compose.unit.Meter other);
     method @BytecodeOnly public static float minus-kO1jj0k(float, float);
-    method public inline operator float plus(float other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter plus(androidx.xr.compose.unit.Meter other);
     method @BytecodeOnly public static float plus-kO1jj0k(float, float);
-    method public inline int roundToPx(androidx.compose.ui.unit.Density density);
+    method @KotlinOnly public inline int roundToPx(androidx.compose.ui.unit.Density density);
     method @BytecodeOnly public static int roundToPx-impl(float, androidx.compose.ui.unit.Density);
-    method public inline operator float times(double other);
-    method public inline operator float times(float other);
-    method public inline operator float times(int other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter times(double other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter times(float other);
+    method @KotlinOnly public inline operator androidx.xr.compose.unit.Meter times(int other);
     method @BytecodeOnly public static float times-zRPQRcA(float, double);
     method @BytecodeOnly public static float times-zRPQRcA(float, float);
     method @BytecodeOnly public static float times-zRPQRcA(float, int);
-    method public inline float toCm();
+    method @KotlinOnly public inline float toCm();
     method @BytecodeOnly public static float toCm-impl(float);
-    method public inline float toDp();
+    method @KotlinOnly public inline androidx.compose.ui.unit.Dp toDp();
     method @BytecodeOnly public static float toDp-D9Ej5fM(float);
-    method public inline float toM();
+    method @KotlinOnly public inline float toM();
     method @BytecodeOnly public static float toM-impl(float);
-    method public inline float toMm();
+    method @KotlinOnly public inline float toMm();
     method @BytecodeOnly public static float toMm-impl(float);
-    method public inline float toPx(androidx.compose.ui.unit.Density density);
+    method @KotlinOnly public inline float toPx(androidx.compose.ui.unit.Density density);
     method @BytecodeOnly public static float toPx-impl(float, androidx.compose.ui.unit.Density);
     method @BytecodeOnly public float unbox-impl();
     property public inline boolean isFinite;
@@ -762,7 +923,7 @@ package androidx.xr.compose.unit {
   }
 
   public static final class Meter.Companion {
-    method public inline float fromPixel(float px, androidx.compose.ui.unit.Density density);
+    method @KotlinOnly public inline androidx.xr.compose.unit.Meter fromPixel(float px, androidx.compose.ui.unit.Density density);
     method @BytecodeOnly public float fromPixel-e1Hw3dI(float, androidx.compose.ui.unit.Density);
     method @BytecodeOnly public float getCentimeters-zRPQRcA(double);
     method @BytecodeOnly public float getCentimeters-zRPQRcA(float);
@@ -789,19 +950,19 @@ package androidx.xr.compose.unit {
   }
 
   public final class MeterKt {
-    method public static inline operator float div(double, float other);
-    method public static inline operator float div(float, float other);
-    method public static inline operator float div(int, float other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter div(double, androidx.xr.compose.unit.Meter other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter div(float, androidx.xr.compose.unit.Meter other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter div(int, androidx.xr.compose.unit.Meter other);
     method @BytecodeOnly public static float div-1IImi1c(double, float);
     method @BytecodeOnly public static float div-1IImi1c(float, float);
     method @BytecodeOnly public static float div-1IImi1c(int, float);
-    method public static inline operator float times(double, float other);
-    method public static inline operator float times(float, float other);
-    method public static inline operator float times(int, float other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter times(double, androidx.xr.compose.unit.Meter other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter times(float, androidx.xr.compose.unit.Meter other);
+    method @KotlinOnly public static inline operator androidx.xr.compose.unit.Meter times(int, androidx.xr.compose.unit.Meter other);
     method @BytecodeOnly public static float times-1IImi1c(double, float);
     method @BytecodeOnly public static float times-1IImi1c(float, float);
     method @BytecodeOnly public static float times-1IImi1c(int, float);
-    method public static inline float toMeter(float);
+    method @KotlinOnly public static inline androidx.xr.compose.unit.Meter toMeter(androidx.compose.ui.unit.Dp);
     method @BytecodeOnly public static float toMeter-0680j_4(float);
   }
 

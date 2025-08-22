@@ -492,7 +492,7 @@ internal class SelectionStateManager(
      */
     private val PageSelection.hasBounds: Boolean
         get() {
-            return this.selectedTextContents.any { it.bounds.isNotEmpty() } &&
+            return this.selectedContents.any { it.bounds.isNotEmpty() } &&
                 this.start.point != null &&
                 this.stop.point != null
         }

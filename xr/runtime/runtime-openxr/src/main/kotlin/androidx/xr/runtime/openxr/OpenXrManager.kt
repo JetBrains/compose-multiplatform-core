@@ -47,6 +47,20 @@ internal constructor(
     internal var nativePointer: Long = 0L
         private set
 
+    /**
+     * A pointer to the native XrSession. Only valid after [create] and before [stop] have been
+     * called.
+     */
+    internal var sessionPointer: Long = 0L
+        private set
+
+    /**
+     * A pointer to the native XrInstance. Only valid after [create] and before [stop] have been
+     * called.
+     */
+    internal var instancePointer: Long = 0L
+        private set
+
     override fun create() {
         nativePointer = nativeGetPointer()
         // Only initialize the OpenXrManager and bring up resources.

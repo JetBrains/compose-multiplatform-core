@@ -128,6 +128,7 @@ public class WebViewFeature {
             PAYMENT_REQUEST,
             WEBVIEW_BUILDER,
             WARM_UP_RENDERER_PROCESS,
+            PRECONNECT,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -780,6 +781,12 @@ public class WebViewFeature {
      */
     public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
             "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers {@link Profile#preconnect(String)}
+     */
+    public static final String PRECONNECT = "PRECONNECT";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

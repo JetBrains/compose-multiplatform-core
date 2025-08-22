@@ -29,6 +29,7 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFu
 import androidx.appfunctions.compiler.core.isOfType
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -36,6 +37,7 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -287,11 +289,21 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)
         unindent()
-        add(")\n")
+        if (annotatedAppFunctions.containsPublicNoArgConstructor()) {
+            addNamed(") { %enclosing_class:T() }\n", formatStringMap)
+        } else {
+            add(")\n")
+        }
         addNamed(".%create_method:L(%enclosing_class:T::class.java)\n", formatStringMap)
         addNamed(".%function_name:L(%parameters:L)\n", formatStringMap)
         unindent()
         add("}\n")
+    }
+
+    private fun AnnotatedAppFunctions.containsPublicNoArgConstructor(): Boolean {
+        return classDeclaration.getConstructors().firstOrNull { constructor ->
+            constructor.modifiers.contains(Modifier.PUBLIC) && constructor.parameters.isEmpty()
+        } != null
     }
 
     private fun KSFunctionDeclaration.getAppFunctionParametersStatement(

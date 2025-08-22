@@ -192,8 +192,11 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             int imageFormat,
             @NonNull Size size,
             @NonNull StreamUseCase streamUseCase) {
-        SupportedSurfaceCombination supportedSurfaceCombination =
-                mCameraSupportedSurfaceCombinationMap.get(cameraId);
+        SupportedSurfaceCombination supportedSurfaceCombination;
+        synchronized (mLock) {
+            supportedSurfaceCombination =
+                    mCameraSupportedSurfaceCombinationMap.get(cameraId);
+        }
 
         Preconditions.checkArgument(supportedSurfaceCombination != null,
                 "No such camera id in supported combination list: " + cameraId);
@@ -218,8 +221,11 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
 
-        SupportedSurfaceCombination supportedSurfaceCombination =
-                mCameraSupportedSurfaceCombinationMap.get(cameraId);
+        SupportedSurfaceCombination supportedSurfaceCombination;
+
+        synchronized (mLock) {
+            supportedSurfaceCombination = mCameraSupportedSurfaceCombinationMap.get(cameraId);
+        }
 
         Preconditions.checkArgument(supportedSurfaceCombination != null,
                 "No such camera id in supported combination list: " + cameraId);

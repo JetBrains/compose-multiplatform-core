@@ -18,9 +18,11 @@ package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.CompositionLocalMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
@@ -99,9 +101,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         set(value) {
             field = value
             density = value[LocalDensity]
+            layoutDirection = value[LocalLayoutDirection]
         }
 
     internal var density: Density = DefaultDensity
+        private set
+
+    internal var layoutDirection: LayoutDirection = LayoutDirection.Ltr
         private set
 
     private var ignoreRelayoutRequests = false
@@ -285,9 +291,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         val depthString = "  ".repeat(depth)
         var nextDepth = depth
         if (entity != null) {
-            tree.append(
-                "$depthString|-${coreEntity?.entity} -> ${findCoreEntityParent(this)?.entity}\n"
-            )
+            tree.append("$depthString|-$coreEntity -> ${findCoreEntityParent(this)}\n")
             nextDepth++
         }
 
@@ -356,7 +360,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             layoutPose = pose
 
             coreEntity?.applyCoreEntityNodes(nodes.getAll<CoreEntityNode>())
-            coreEntity?.updateEntityPose()
+            coreEntity?.updatePoseFromLayout()
             coreEntity?.size = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 
             subspaceMeasureResult?.placeChildren(
@@ -422,7 +426,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             get() = nodes.getLast<SubspaceSemanticsModifierNode>() != null
 
         override val semanticsEntity: Entity?
-            get() = coreEntity?.entity
+            get() = coreEntity?.semanticsEntity
 
         /**
          * The layout coordinates of the parent [SubspaceLayoutNode] up to the root of the hierarchy

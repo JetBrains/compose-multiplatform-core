@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.devtools.ksp.gradle.KspAATask
+
 plugins {
     id("AndroidXPlugin")
     id("androidx.privacysandboxplugin")
@@ -49,4 +52,12 @@ dependencies {
     implementation(project(":privacysandbox:ui:ui-core"))
     implementation(project(':privacysandbox:activity:activity-core'))
     implementation(project(':privacysandbox:activity:activity-provider'))
+}
+
+// TODO(b/430983364): Fix when incremental doesn't break compileReleaseKotlin
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

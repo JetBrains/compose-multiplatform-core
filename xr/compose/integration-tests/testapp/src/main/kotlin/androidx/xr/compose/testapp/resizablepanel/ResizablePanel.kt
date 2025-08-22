@@ -49,6 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -60,10 +62,8 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
@@ -120,12 +120,13 @@ class ResizablePanel : ComponentActivity() {
                         modifier =
                             SubspaceModifier.height(250.dp)
                                 .padding(20.dp)
-                                .width((transition.value).dp)
-                                .resizable(
-                                    maintainAspectRatio = true,
-                                    minimumSize = DpVolumeSize(100.dp, 100.dp, 100.dp),
-                                    maximumSize = DpVolumeSize(500.dp, 500.dp, 500.dp),
-                                )
+                                .width((transition.value).dp),
+                        resizePolicy =
+                            ResizePolicy(
+                                shouldMaintainAspectRatio = true,
+                                minimumSize = DpVolumeSize(100.dp, 100.dp, 100.dp),
+                                maximumSize = DpVolumeSize(500.dp, 500.dp, 500.dp),
+                            ),
                     ) {
                         PanelContent("RESIZABLE", "Max: 500dp x 500dp", "Min: 100dp x 100dp")
                     }
@@ -139,8 +140,10 @@ class ResizablePanel : ComponentActivity() {
                             SubspaceModifier.padding(20.dp)
                                 .width(onSizeChangeWidth)
                                 .height(onSizeChangeHeight)
-                                .fillMaxWidth()
-                                .resizable { newSize ->
+                                .fillMaxWidth(),
+                        resizePolicy =
+                            ResizePolicy(
+                                onSizeChange = { newSize ->
                                     with(density) {
                                         onSizeChangeHeight = newSize.height.toDp()
                                         onSizeChangeWidth = newSize.width.toDp()
@@ -148,6 +151,7 @@ class ResizablePanel : ComponentActivity() {
                                     true // Return true to indicate that the resize event was
                                     // handled by the app.
                                 }
+                            ),
                     ) {
                         PanelContent("RESIZABLE", "with", "onResizeChange listener")
                     }
@@ -168,9 +172,9 @@ class ResizablePanel : ComponentActivity() {
                                 .offset(x = 120.dp)
                                 .width(300.dp)
                                 .height(300.dp)
-                                .movable()
-                                .resizable(true)
                                 .testTag("ActivityPanel"),
+                        dragPolicy = MovePolicy(),
+                        resizePolicy = ResizePolicy(true),
                     )
                 }
             }
@@ -180,7 +184,8 @@ class ResizablePanel : ComponentActivity() {
             // MainPanel
             SpatialRow(modifier = SubspaceModifier.fillMaxWidth()) {
                 SpatialMainPanel(
-                    modifier = SubspaceModifier.width(640.dp).height(480.dp).resizable(true)
+                    modifier = SubspaceModifier.width(640.dp).height(480.dp),
+                    resizePolicy = ResizePolicy(true),
                 )
             }
         }

@@ -2,11 +2,11 @@
 package androidx.glance {
 
   public final class BackgroundKt {
-    method public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.glance.ImageProvider imageProvider, @FloatRange(from=0.0, to=1.0) float alpha, optional int contentScale, optional androidx.glance.ColorFilter? colorFilter);
-    method public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.glance.ImageProvider imageProvider, optional int contentScale, optional androidx.glance.ColorFilter? colorFilter);
+    method @KotlinOnly public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.compose.ui.graphics.Color color);
+    method @KotlinOnly public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.glance.ImageProvider imageProvider, optional androidx.glance.layout.ContentScale contentScale, optional androidx.glance.ColorFilter? colorFilter);
+    method @KotlinOnly public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.glance.ImageProvider imageProvider, @FloatRange(from=0.0, to=1.0) float alpha, optional androidx.glance.layout.ContentScale contentScale, optional androidx.glance.ColorFilter? colorFilter);
     method public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, androidx.glance.unit.ColorProvider colorProvider);
     method public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, @ColorRes int color);
-    method public static androidx.glance.GlanceModifier background(androidx.glance.GlanceModifier, long color);
     method @BytecodeOnly public static androidx.glance.GlanceModifier background-4WTKRHQ(androidx.glance.GlanceModifier, long);
     method @BytecodeOnly public static androidx.glance.GlanceModifier background-PLcKuY0(androidx.glance.GlanceModifier, androidx.glance.ImageProvider, int, androidx.glance.ColorFilter?);
     method @BytecodeOnly @Deprecated public static androidx.glance.GlanceModifier! background-l7F5y5Q(androidx.glance.GlanceModifier!, androidx.glance.ImageProvider!, int);
@@ -109,8 +109,8 @@ package androidx.glance {
   }
 
   public final class ImageKt {
-    method @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, optional androidx.glance.GlanceModifier modifier, optional int contentScale, optional androidx.glance.ColorFilter? colorFilter);
-    method @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, @FloatRange(from=0.0, to=1.0) float alpha, optional androidx.glance.GlanceModifier modifier, optional int contentScale, optional androidx.glance.ColorFilter? colorFilter);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.layout.ContentScale contentScale, optional androidx.glance.ColorFilter? colorFilter);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, @FloatRange(from=0.0, to=1.0) float alpha, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.layout.ContentScale contentScale, optional androidx.glance.ColorFilter? colorFilter);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Image-GCr5PR4(androidx.glance.ImageProvider, String?, androidx.glance.GlanceModifier?, int, androidx.glance.ColorFilter?, androidx.compose.runtime.Composer?, int, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Image-f4jE5DE(androidx.glance.ImageProvider, String?, @FloatRange(from=0.0, to=1.0) float, androidx.glance.GlanceModifier?, int, androidx.glance.ColorFilter?, androidx.compose.runtime.Composer?, int, int);
     method public static androidx.glance.ImageProvider ImageProvider(android.graphics.Bitmap bitmap);
@@ -269,7 +269,7 @@ package androidx.glance.color {
   }
 
   public final class DayNightColorProvidersKt {
-    method public static androidx.glance.unit.ColorProvider ColorProvider(long day, long night);
+    method @KotlinOnly public static androidx.glance.unit.ColorProvider ColorProvider(androidx.compose.ui.graphics.Color day, androidx.compose.ui.graphics.Color night);
     method @BytecodeOnly public static androidx.glance.unit.ColorProvider ColorProvider--OWjLjI(long, long);
   }
 
@@ -356,7 +356,7 @@ package androidx.glance.layout {
   }
 
   public final class ColumnKt {
-    method @androidx.compose.runtime.Composable public static void Column(optional androidx.glance.GlanceModifier modifier, optional int verticalAlignment, optional int horizontalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.layout.ColumnScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Column(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.layout.Alignment.Vertical verticalAlignment, optional androidx.glance.layout.Alignment.Horizontal horizontalAlignment, kotlin.jvm.functions.Function1<androidx.glance.layout.ColumnScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Column-K4GKKTE(androidx.glance.GlanceModifier?, int, int, kotlin.jvm.functions.Function3<? super androidx.glance.layout.ColumnScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -382,12 +382,12 @@ package androidx.glance.layout {
   }
 
   public final class PaddingKt {
-    method public static androidx.glance.GlanceModifier absolutePadding(androidx.glance.GlanceModifier, optional float left, optional float top, optional float right, optional float bottom);
+    method @KotlinOnly public static androidx.glance.GlanceModifier absolutePadding(androidx.glance.GlanceModifier, optional androidx.compose.ui.unit.Dp left, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp right, optional androidx.compose.ui.unit.Dp bottom);
     method public static androidx.glance.GlanceModifier absolutePadding(androidx.glance.GlanceModifier, optional @DimenRes int left, optional @DimenRes int top, optional @DimenRes int right, optional @DimenRes int bottom);
     method @BytecodeOnly public static androidx.glance.GlanceModifier absolutePadding-qDBjuR0(androidx.glance.GlanceModifier, float, float, float, float);
-    method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, float all);
-    method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional float horizontal, optional float vertical);
-    method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional float start, optional float top, optional float end, optional float bottom);
+    method @KotlinOnly public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, androidx.compose.ui.unit.Dp all);
+    method @KotlinOnly public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional androidx.compose.ui.unit.Dp horizontal, optional androidx.compose.ui.unit.Dp vertical);
+    method @KotlinOnly public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional androidx.compose.ui.unit.Dp start, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp end, optional androidx.compose.ui.unit.Dp bottom);
     method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, @DimenRes int all);
     method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional @DimenRes int horizontal, optional @DimenRes int vertical);
     method public static androidx.glance.GlanceModifier padding(androidx.glance.GlanceModifier, optional @DimenRes int start, optional @DimenRes int top, optional @DimenRes int end, optional @DimenRes int bottom);
@@ -397,7 +397,7 @@ package androidx.glance.layout {
   }
 
   public final class RowKt {
-    method @androidx.compose.runtime.Composable public static void Row(optional androidx.glance.GlanceModifier modifier, optional int horizontalAlignment, optional int verticalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.layout.RowScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Row(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.layout.Alignment.Horizontal horizontalAlignment, optional androidx.glance.layout.Alignment.Vertical verticalAlignment, kotlin.jvm.functions.Function1<androidx.glance.layout.RowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Row-lMAjyxE(androidx.glance.GlanceModifier?, int, int, kotlin.jvm.functions.Function3<? super androidx.glance.layout.RowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -409,16 +409,16 @@ package androidx.glance.layout {
     method public static androidx.glance.GlanceModifier fillMaxHeight(androidx.glance.GlanceModifier);
     method public static androidx.glance.GlanceModifier fillMaxSize(androidx.glance.GlanceModifier);
     method public static androidx.glance.GlanceModifier fillMaxWidth(androidx.glance.GlanceModifier);
-    method public static androidx.glance.GlanceModifier height(androidx.glance.GlanceModifier, float height);
+    method @KotlinOnly public static androidx.glance.GlanceModifier height(androidx.glance.GlanceModifier, androidx.compose.ui.unit.Dp height);
     method public static androidx.glance.GlanceModifier height(androidx.glance.GlanceModifier, @DimenRes int height);
     method @BytecodeOnly public static androidx.glance.GlanceModifier height-3ABfNKs(androidx.glance.GlanceModifier, float);
-    method public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, float size);
-    method public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, float width, float height);
+    method @KotlinOnly public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, androidx.compose.ui.unit.Dp size);
+    method @KotlinOnly public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, androidx.compose.ui.unit.Dp width, androidx.compose.ui.unit.Dp height);
     method public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, @DimenRes int size);
     method public static androidx.glance.GlanceModifier size(androidx.glance.GlanceModifier, @DimenRes int width, @DimenRes int height);
     method @BytecodeOnly public static androidx.glance.GlanceModifier size-3ABfNKs(androidx.glance.GlanceModifier, float);
     method @BytecodeOnly public static androidx.glance.GlanceModifier size-VpY3zN4(androidx.glance.GlanceModifier, float, float);
-    method public static androidx.glance.GlanceModifier width(androidx.glance.GlanceModifier, float width);
+    method @KotlinOnly public static androidx.glance.GlanceModifier width(androidx.glance.GlanceModifier, androidx.compose.ui.unit.Dp width);
     method public static androidx.glance.GlanceModifier width(androidx.glance.GlanceModifier, @DimenRes int width);
     method @BytecodeOnly public static androidx.glance.GlanceModifier width-3ABfNKs(androidx.glance.GlanceModifier, float);
     method public static androidx.glance.GlanceModifier wrapContentHeight(androidx.glance.GlanceModifier);
@@ -474,6 +474,12 @@ package androidx.glance.semantics {
   public interface SemanticsPropertyReceiver {
     method public operator <T> void set(androidx.glance.semantics.SemanticsPropertyKey<T> key, T value);
   }
+
+}
+
+package androidx.glance.session {
+
+  public typealias InputDataFactory = kotlin.jvm.functions.Function2<androidx.glance.session.SessionManagerImpl,androidx.glance.session.Session,androidx.work.Data>;
 
 }
 
@@ -565,16 +571,16 @@ package androidx.glance.text {
 
   @kotlin.jvm.JvmInline public final value class TextDecoration {
     method @BytecodeOnly public static androidx.glance.text.TextDecoration! box-impl(int);
-    method @androidx.compose.runtime.Stable public operator boolean contains(int other);
+    method @KotlinOnly @androidx.compose.runtime.Stable public operator boolean contains(androidx.glance.text.TextDecoration other);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static boolean contains-hcOHJN8(int, int);
-    method @androidx.compose.runtime.Stable public operator int plus(int decoration);
+    method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.glance.text.TextDecoration plus(androidx.glance.text.TextDecoration decoration);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static int plus-YG9ZKLw(int, int);
     method @BytecodeOnly public int unbox-impl();
     field public static final androidx.glance.text.TextDecoration.Companion Companion;
   }
 
   public static final class TextDecoration.Companion {
-    method public int combine(java.util.List<androidx.glance.text.TextDecoration> decorations);
+    method @KotlinOnly public androidx.glance.text.TextDecoration combine(java.util.List<androidx.glance.text.TextDecoration> decorations);
     method @BytecodeOnly public int combine-6pcTslc(java.util.List<androidx.glance.text.TextDecoration!>);
     method @BytecodeOnly public int getLineThrough-ObZ5V_A();
     method @BytecodeOnly public int getNone-ObZ5V_A();
@@ -600,7 +606,7 @@ package androidx.glance.text {
   @androidx.compose.runtime.Immutable public final class TextStyle {
     ctor public TextStyle();
     ctor @InaccessibleFromJava public TextStyle(optional androidx.glance.unit.ColorProvider color, optional androidx.compose.ui.unit.TextUnit? fontSize, optional androidx.glance.text.FontWeight? fontWeight, optional androidx.glance.text.FontStyle? fontStyle, optional androidx.glance.text.TextAlign? textAlign, optional androidx.glance.text.TextDecoration? textDecoration, optional androidx.glance.text.FontFamily? fontFamily);
-    method public androidx.glance.text.TextStyle copy(optional androidx.glance.unit.ColorProvider color, optional androidx.compose.ui.unit.TextUnit? fontSize, optional androidx.glance.text.FontWeight? fontWeight, optional androidx.glance.text.FontStyle? fontStyle, optional androidx.glance.text.TextAlign? textAlign, optional androidx.glance.text.TextDecoration? textDecoration, optional androidx.glance.text.FontFamily? fontFamily);
+    method @KotlinOnly public androidx.glance.text.TextStyle copy(optional androidx.glance.unit.ColorProvider color, optional androidx.compose.ui.unit.TextUnit? fontSize, optional androidx.glance.text.FontWeight? fontWeight, optional androidx.glance.text.FontStyle? fontStyle, optional androidx.glance.text.TextAlign? textAlign, optional androidx.glance.text.TextDecoration? textDecoration, optional androidx.glance.text.FontFamily? fontFamily);
     method @BytecodeOnly public androidx.glance.text.TextStyle copy-KmPxOYk(androidx.glance.unit.ColorProvider, androidx.compose.ui.unit.TextUnit?, androidx.glance.text.FontWeight?, androidx.glance.text.FontStyle?, androidx.glance.text.TextAlign?, androidx.glance.text.TextDecoration?, androidx.glance.text.FontFamily?);
     method public androidx.glance.unit.ColorProvider getColor();
     method public androidx.glance.text.FontFamily? getFontFamily();
@@ -623,12 +629,12 @@ package androidx.glance.text {
 package androidx.glance.unit {
 
   public interface ColorProvider {
-    method public long getColor(android.content.Context context);
+    method @KotlinOnly public androidx.compose.ui.graphics.Color getColor(android.content.Context context);
     method @BytecodeOnly public long getColor-vNxB06k(android.content.Context);
   }
 
   public final class ColorProviderKt {
-    method public static androidx.glance.unit.ColorProvider ColorProvider(long color);
+    method @KotlinOnly public static androidx.glance.unit.ColorProvider ColorProvider(androidx.compose.ui.graphics.Color color);
     method @BytecodeOnly public static androidx.glance.unit.ColorProvider ColorProvider-8_81llA(long);
   }
 

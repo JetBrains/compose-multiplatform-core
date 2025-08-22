@@ -40,6 +40,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -152,6 +154,7 @@ class AppFunctionSerializableProcessor(
                 )
                 .addType(
                     TypeSpec.classBuilder(generatedFactoryClassName)
+                        .addAnnotation(RESTRICT_API_TO_33_ANNOTATION)
                         .addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
                         .addSuperinterface(superInterfaceClass)
                         .apply {
@@ -239,6 +242,7 @@ class AppFunctionSerializableProcessor(
                 annotatedProxyClass,
                 resolvedAnnotatedSerializableProxies,
             )
+        serializableProxyClassBuilder.addAnnotation(RESTRICT_API_TO_33_ANNOTATION)
         serializableProxyClassBuilder.addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
         serializableProxyClassBuilder.addSuperinterface(proxySuperInterfaceClass)
         serializableProxyClassBuilder.addFunction(
@@ -343,5 +347,12 @@ class AppFunctionSerializableProcessor(
         override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
             return AppFunctionSerializableProcessor(environment.codeGenerator, environment.logger)
         }
+    }
+
+    private companion object {
+        val RESTRICT_API_TO_33_ANNOTATION =
+            AnnotationSpec.builder(ClassName("androidx.annotation", "RequiresApi"))
+                .addMember("%L", 33)
+                .build()
     }
 }

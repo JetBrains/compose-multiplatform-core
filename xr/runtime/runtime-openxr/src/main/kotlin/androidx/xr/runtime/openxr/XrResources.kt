@@ -39,7 +39,8 @@ internal class XrResources {
     val arDevice: OpenXrDevice
 
     /** The view camera data */
-    val viewCameras: List<OpenXrViewCamera>
+    val leftRenderViewpoint: OpenXrRenderViewpoint
+    val rightRenderViewpoint: OpenXrRenderViewpoint
 
     /** The data of face */
     val userFace: OpenXrFace
@@ -54,7 +55,8 @@ internal class XrResources {
         this.leftHand = OpenXrHand(isLeftHand = true)
         this.rightHand = OpenXrHand(isLeftHand = false)
         this.arDevice = OpenXrDevice()
-        this.viewCameras = listOf(OpenXrViewCamera(), OpenXrViewCamera())
+        this.leftRenderViewpoint = OpenXrRenderViewpoint()
+        this.rightRenderViewpoint = OpenXrRenderViewpoint()
         this.leftDepthMap = OpenXrDepthMap(/* viewIndex= */ 0)
         this.rightDepthMap = OpenXrDepthMap(/* viewIndex= */ 1)
         this.userFace = OpenXrFace()

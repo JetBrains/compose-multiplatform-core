@@ -41,22 +41,36 @@ import androidx.xr.compose.platform.SceneManager
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
+import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.fillMaxWidth
+import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.TestActivitySpace
 import androidx.xr.compose.testing.TestJxrPlatformAdapter
 import androidx.xr.compose.testing.TestSetup
+import androidx.xr.compose.testing.assertDepthIsAtLeast
+import androidx.xr.compose.testing.assertDepthIsEqualTo
+import androidx.xr.compose.testing.assertDepthIsNotEqualTo
+import androidx.xr.compose.testing.assertHeightIsAtLeast
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsNotEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
+import androidx.xr.compose.testing.assertWidthIsAtLeast
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsNotEqualTo
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.toDp
+import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.scene
@@ -74,6 +88,38 @@ class SubspaceTest {
 
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
+    private object DefaultTestRecommendedBoxSize {
+        const val WIDTH_METERS: Float = 1.73f
+        const val HEIGHT_METERS: Float = 1.61f
+        const val DEPTH_METERS: Float = 0.5f
+    }
+
+    /**
+     * Creates a TestJxrPlatformAdapter with a recommended content box of the given size.
+     *
+     * Don't call this inside composeTestRule in a test. If it recomposes, a new Session will be
+     * created when a previous one already exists for the activity.
+     */
+    private fun createAdapterWithRecommendedBox(
+        widthMeters: Float = DefaultTestRecommendedBoxSize.WIDTH_METERS,
+        heightMeters: Float = DefaultTestRecommendedBoxSize.HEIGHT_METERS,
+        depthMeters: Float = DefaultTestRecommendedBoxSize.DEPTH_METERS,
+    ): TestJxrPlatformAdapter {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+
+        return TestJxrPlatformAdapter.create(fakeRuntime).apply {
+            activitySpace =
+                TestActivitySpace(
+                    fakeRuntime.activitySpace,
+                    recommendedContentBoxInFullSpace =
+                        BoundingBox(
+                            min = Vector3(-widthMeters / 2, -heightMeters / 2, -depthMeters / 2),
+                            max = Vector3(widthMeters / 2, heightMeters / 2, depthMeters / 2),
+                        ),
+                )
+        }
+    }
+
     @Test
     fun subspace_alreadyInSubspace_justRendersContentDirectly() {
         composeTestRule.setContent {
@@ -81,7 +127,7 @@ class SubspaceTest {
                 Subspace {
                     Subspace {
                         SpatialPanel(
-                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("innerPanel")
+                            SubspaceModifier.width(100.dp).height(100.dp).testTag("innerPanel")
                         ) {}
                     }
                 }
@@ -89,13 +135,11 @@ class SubspaceTest {
         }
         composeTestRule.waitForIdle()
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
     }
 
     @Test
@@ -105,7 +149,7 @@ class SubspaceTest {
                 ApplicationSubspace {
                     ApplicationSubspace {
                         SpatialPanel(
-                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("innerPanel")
+                            SubspaceModifier.width(100.dp).height(100.dp).testTag("innerPanel")
                         ) {}
                     }
                 }
@@ -113,13 +157,11 @@ class SubspaceTest {
         }
         composeTestRule.waitForIdle()
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
     }
 
     @Test
@@ -381,7 +423,7 @@ class SubspaceTest {
             composeTestRule.setContent {
                 TestSetup {
                     Subspace {
-                        SpatialPanel { ApplicationSubspace(constraints = VolumeConstraints()) {} }
+                        SpatialPanel { ApplicationSubspace(allowUnboundedSubspace = true) {} }
                     }
                 }
             }
@@ -398,13 +440,8 @@ class SubspaceTest {
                     Subspace {
                         SpatialPanel {
                             ApplicationSubspace(
-                                constraints =
-                                    VolumeConstraints(
-                                        minWidth = 0,
-                                        maxWidth = 100,
-                                        minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                modifier =
+                                    SubspaceModifier.sizeIn(minWidth = 0.dp, maxWidth = 100.dp)
                             ) {}
                         }
                     }
@@ -420,7 +457,7 @@ class SubspaceTest {
         ) {
             composeTestRule.setContent {
                 TestSetup {
-                    ApplicationSubspace(constraints = VolumeConstraints()) {
+                    ApplicationSubspace(allowUnboundedSubspace = true) {
                         SpatialPanel() { ApplicationSubspace {} }
                     }
                 }
@@ -435,8 +472,8 @@ class SubspaceTest {
         ) {
             composeTestRule.setContent {
                 TestSetup {
-                    ApplicationSubspace(constraints = VolumeConstraints()) {
-                        SpatialPanel() { ApplicationSubspace(constraints = VolumeConstraints()) {} }
+                    ApplicationSubspace(allowUnboundedSubspace = true) {
+                        SpatialPanel() { ApplicationSubspace(allowUnboundedSubspace = true) {} }
                     }
                 }
             }
@@ -451,23 +488,11 @@ class SubspaceTest {
             composeTestRule.setContent {
                 TestSetup {
                     ApplicationSubspace(
-                        constraints =
-                            VolumeConstraints(
-                                minWidth = 0,
-                                maxWidth = 50,
-                                minHeight = 0,
-                                maxHeight = 50,
-                            )
+                        modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
                     ) {
                         SpatialPanel {
                             ApplicationSubspace(
-                                constraints =
-                                    VolumeConstraints(
-                                        minWidth = 0,
-                                        maxWidth = 100,
-                                        minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
                             ) {}
                         }
                     }
@@ -477,77 +502,92 @@ class SubspaceTest {
     }
 
     @Test
-    fun subspace_fillMaxSize_returnsCorrectWidthAndHeight() {
+    fun subspace_fillMaxSize_returnsRecommendedContentBoxSizeConstraints() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(
-                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                    ) {}
-                }
+            density = LocalDensity.current
+            TestSetup(runtime = runtime) {
+                Subspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
             }
         }
 
-        // Width  = 1151.856 dp / meter * 1.73 meter
-        // Width  = 1992.7108799999999 * 1 (density)
+        assertNotNull(density)
+        val expectedWidthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+        val expectedHeightPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
+        val expectedDepthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
         composeTestRule
             .onSubspaceNodeWithTag("box")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(expectedWidthPx.toDp())
+            .assertHeightIsEqualTo(expectedHeightPx.toDp())
+            .assertDepthIsEqualTo(expectedDepthPx.toDp())
     }
 
     @Test
     fun subspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                TestSetup {
-                    Subspace {
-                        SpatialBox(
-                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                        ) {}
-                    }
+                density = LocalDensity.current
+                TestSetup(runtime = runtime) {
+                    Subspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
                 }
             }
         }
 
-        // Width dp = 1151.856 dp / meter ∗ 1.73=1992.7108799999999 meter
-        // Width px = 1992.7108799999999 dp ∗ 2 (density) = 3985.4217599999997
+        assertNotNull(density)
+        assertThat(density.density).isEqualTo(2f)
+        val expectedWidthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+        val expectedHeightPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
+        val expectedDepthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
         composeTestRule
             .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(3985.toDp())
-            .assertHeightIsEqualTo(3709.toDp())
+            .assertWidthIsEqualTo(expectedWidthPx.toDp())
+            .assertHeightIsEqualTo(expectedHeightPx.toDp())
+            .assertDepthIsEqualTo(expectedDepthPx.toDp())
     }
 
     @Test
-    fun subspace_fillMaxSize_higherScale_returnsCorrectConstraints() {
+    fun applicationSubspace_fillMaxSize_returnsRecommendedContentBoxSizeConstraints() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                TestSetup {
-                    Subspace {
-                        SpatialBox(
-                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                        ) {}
-                    }
+            density = LocalDensity.current
+            TestSetup(runtime = runtime) {
+                ApplicationSubspace {
+                    SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {}
                 }
             }
         }
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
+        assertNotNull(density)
+        val expectedWidthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+        val expectedHeightPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
+        val expectedDepthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
         composeTestRule
             .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(expectedWidthPx.toDp())
+            .assertHeightIsEqualTo(expectedHeightPx.toDp())
+            .assertDepthIsEqualTo(expectedDepthPx.toDp())
     }
-
-    @Test fun applicationSubspace_recommendedBoxed_fillMaxSize_returnsCorrectWidthAndHeight() {}
 
     @Test
     fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
         composeTestRule.setContent {
             TestSetup {
-                ApplicationSubspace(constraints = VolumeConstraints()) {
+                ApplicationSubspace(allowUnboundedSubspace = true) {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                     ) {}
@@ -560,18 +600,17 @@ class SubspaceTest {
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
             .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
+            .assertDepthIsNotEqualTo(VolumeConstraints().maxDepth.toDp())
     }
 
     @Test
     fun applicationSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
-        val customConstraints = VolumeConstraints(0, 100, 0, 100)
-
         composeTestRule.setContent {
             TestSetup {
-                ApplicationSubspace(constraints = customConstraints) {
-                    SpatialBox(
-                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                    ) {}
+                ApplicationSubspace(
+                    modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
+                ) {
+                    SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {}
                 }
             }
         }
@@ -579,35 +618,123 @@ class SubspaceTest {
         composeTestRule
             .onSubspaceNodeWithTag("box")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
-            .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_allowUnboundedSubspaceIsTrue_isUnbounded() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            density = LocalDensity.current
+            TestSetup(runtime = runtime) {
+                // This large width is explicitly bigger than the recommended box width.
+                val widthLargerThanRecommendedBox =
+                    with(LocalDensity.current) {
+                        Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS + 1000000.0f)
+                            .roundToPx(this)
+                            .toDp()
+                    }
+                val heightLargerThanRecommendedBox =
+                    with(LocalDensity.current) {
+                        Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS + 100000.0f)
+                            .roundToPx(this)
+                            .toDp()
+                    }
+                val depthLargerThanRecommendedBox =
+                    with(LocalDensity.current) {
+                        Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS + 100000.0f)
+                            .roundToPx(this)
+                            .toDp()
+                    }
+
+                ApplicationSubspace(allowUnboundedSubspace = true) {
+                    SpatialPanel(
+                        SubspaceModifier.width(widthLargerThanRecommendedBox)
+                            .height(heightLargerThanRecommendedBox)
+                            .depth(depthLargerThanRecommendedBox)
+                            .testTag("panel")
+                    ) {}
+                }
+            }
+        }
+
+        val recommendedWidthPx =
+            with(density!!) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+        val recommendedHeightPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
+        val recommendedDepthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsAtLeast(recommendedWidthPx.toDp())
+            .assertHeightIsAtLeast(recommendedHeightPx.toDp())
+            .assertDepthIsAtLeast(recommendedDepthPx.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_userProvidedModifierBiggerThanDefault_isRespected() {
+        val largeSize = 500000000.dp
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            TestSetup(runtime = runtime) {
+                // The user provides a modifier bigger than the recommended box.
+                ApplicationSubspace(modifier = SubspaceModifier.size(largeSize)) {
+                    SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(largeSize)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(largeSize)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(largeSize)
+    }
+
+    @Test
+    fun applicationSubspace_userProvidedModifierSmallerThanDefault_isRespected() {
+        val smallSize = 2.dp
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            TestSetup(runtime = runtime) {
+                // The user provides a modifier smaller than the recommended box.
+                ApplicationSubspace(modifier = SubspaceModifier.size(smallSize)) {
+                    SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(smallSize)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(smallSize)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(smallSize)
     }
 
     @Test
     fun applicationSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
         val initialConstraints =
-            VolumeConstraints(
-                minWidth = 0,
-                maxWidth = 100,
-                minHeight = 0,
-                maxHeight = 100,
-                minDepth = 0,
-                maxDepth = VolumeConstraints.INFINITY,
+            SubspaceModifier.sizeIn(
+                minWidth = 0.dp,
+                maxWidth = 100.dp,
+                minHeight = 0.dp,
+                maxHeight = 100.dp,
+                minDepth = 0.dp,
+                maxDepth = VolumeConstraints.INFINITY.dp,
             )
         val updatedConstraints =
-            VolumeConstraints(
-                minWidth = 50,
-                maxWidth = 150,
-                minHeight = 50,
-                maxHeight = 150,
-                minDepth = 0,
-                maxDepth = VolumeConstraints.INFINITY,
+            SubspaceModifier.sizeIn(
+                minWidth = 50.dp,
+                maxWidth = 150.dp,
+                minHeight = 50.dp,
+                maxHeight = 150.dp,
+                minDepth = 0.dp,
+                maxDepth = VolumeConstraints.INFINITY.dp,
             )
-        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+        val constraintsState = mutableStateOf(initialConstraints)
 
         composeTestRule.setContent {
             TestSetup {
-                ApplicationSubspace(constraints = constraintsState.value) {
+                ApplicationSubspace(modifier = constraintsState.value) {
                     SpatialBox(
                         modifier =
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
@@ -778,11 +905,15 @@ class SubspaceTest {
 
     @Test
     fun gravityAlignedSubspace_alreadyInGravityAlignedSubspace_throwsError() {
+        val runtime = createAdapterWithRecommendedBox()
+
         assertFailsWith<IllegalStateException>(
             message = "Gravity Aligned Subspace cannot be nested within another Subspace."
         ) {
+            var density: Density? = null
             composeTestRule.setContent {
-                TestSetup {
+                density = LocalDensity.current
+                TestSetup(runtime = runtime) {
                     GravityAlignedSubspace {
                         GravityAlignedSubspace {
                             SpatialPanel(
@@ -796,13 +927,16 @@ class SubspaceTest {
             }
             composeTestRule.waitForIdle()
 
-            // Width dp = 1151.856 dp / meter * 1.73 meter
-            // Width px = 1992.7108799999999 * 1 (density)
+            assertNotNull(density)
+            val expectedWidthPx =
+                with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+            val expectedHeightPx =
+                with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
             composeTestRule
                 .onSubspaceNodeWithTag("innerPanel")
                 .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-                .assertWidthIsEqualTo(1993.toDp())
-                .assertHeightIsEqualTo(1854.toDp())
+                .assertWidthIsEqualTo(expectedWidthPx.toDp())
+                .assertHeightIsEqualTo(expectedHeightPx.toDp())
         }
     }
 
@@ -927,9 +1061,7 @@ class SubspaceTest {
             composeTestRule.setContent {
                 TestSetup {
                     Subspace {
-                        SpatialPanel {
-                            GravityAlignedSubspace(constraints = VolumeConstraints()) {}
-                        }
+                        SpatialPanel { GravityAlignedSubspace(allowUnboundedSubspace = true) {} }
                     }
                 }
             }
@@ -946,13 +1078,7 @@ class SubspaceTest {
                     Subspace {
                         SpatialPanel {
                             GravityAlignedSubspace(
-                                constraints =
-                                    VolumeConstraints(
-                                        minWidth = 0,
-                                        maxWidth = 100,
-                                        minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
                             ) {}
                         }
                     }
@@ -968,10 +1094,8 @@ class SubspaceTest {
         ) {
             composeTestRule.setContent {
                 TestSetup {
-                    GravityAlignedSubspace(constraints = VolumeConstraints()) {
-                        SpatialPanel() {
-                            GravityAlignedSubspace(constraints = VolumeConstraints()) {}
-                        }
+                    GravityAlignedSubspace(allowUnboundedSubspace = true) {
+                        SpatialPanel() { GravityAlignedSubspace(allowUnboundedSubspace = true) {} }
                     }
                 }
             }
@@ -986,23 +1110,11 @@ class SubspaceTest {
             composeTestRule.setContent {
                 TestSetup {
                     GravityAlignedSubspace(
-                        constraints =
-                            VolumeConstraints(
-                                minWidth = 0,
-                                maxWidth = 50,
-                                minHeight = 0,
-                                maxHeight = 50,
-                            )
+                        modifier = SubspaceModifier.sizeIn(0.dp, 50.dp, 0.dp, 50.dp)
                     ) {
                         SpatialPanel {
                             GravityAlignedSubspace(
-                                constraints =
-                                    VolumeConstraints(
-                                        minWidth = 0,
-                                        maxWidth = 100,
-                                        minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
                             ) {}
                         }
                     }
@@ -1012,10 +1124,39 @@ class SubspaceTest {
     }
 
     @Test
+    fun gravityAlignedSubspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                density = LocalDensity.current
+                TestSetup(runtime = runtime) {
+                    GravityAlignedSubspace {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        assertNotNull(density)
+        assertThat(density.density).isEqualTo(2f)
+        val expectedWidthPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+        val expectedHeightPx =
+            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(expectedWidthPx.toDp())
+            .assertHeightIsEqualTo(expectedHeightPx.toDp())
+    }
+
+    @Test
     fun gravityAlignedSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
         composeTestRule.setContent {
             TestSetup {
-                GravityAlignedSubspace(constraints = VolumeConstraints()) {
+                GravityAlignedSubspace(allowUnboundedSubspace = true) {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                     ) {}
@@ -1032,11 +1173,13 @@ class SubspaceTest {
 
     @Test
     fun gravityAlignedSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
-        val customConstraints = VolumeConstraints(0, 100, 0, 100)
+        SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
 
         composeTestRule.setContent {
             TestSetup {
-                GravityAlignedSubspace(constraints = customConstraints) {
+                GravityAlignedSubspace(
+                    modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
+                ) {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                     ) {}
@@ -1047,35 +1190,98 @@ class SubspaceTest {
         composeTestRule
             .onSubspaceNodeWithTag("box")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
-            .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun gravityAlignedSubspace_allowUnboundedSubspaceIsTrue_isUnbounded() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            density = LocalDensity.current
+            TestSetup(runtime = runtime) {
+                // This large width is explicitly bigger than the recommended box width.
+                val widthLargerThanRecommendedBox =
+                    with(LocalDensity.current) {
+                        Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS + 1000000.0f)
+                            .roundToPx(this)
+                            .toDp()
+                    }
+
+                GravityAlignedSubspace(allowUnboundedSubspace = true) {
+                    SpatialPanel(
+                        SubspaceModifier.size(widthLargerThanRecommendedBox).testTag("panel")
+                    ) {}
+                }
+            }
+        }
+
+        val recommendedWidthDp =
+            with(density!!) {
+                Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this).toDp()
+            }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsAtLeast(recommendedWidthDp)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_userProvidedModifierBiggerThanDefault_isRespected() {
+        val largeWidth = 500000000.dp
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            TestSetup(runtime = runtime) {
+                // The user provides a modifier bigger than the recommended box.
+                GravityAlignedSubspace(modifier = SubspaceModifier.size(largeWidth)) {
+                    SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(largeWidth)
+    }
+
+    @Test
+    fun gravityAlignedSubspace_userProvidedModifierSmallerThanDefault_isRespected() {
+        val smallWidth = 2.dp
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.setContent {
+            TestSetup(runtime = runtime) {
+                // The user provides a modifier smaller than the recommended box.
+                GravityAlignedSubspace(modifier = SubspaceModifier.size(smallWidth)) {
+                    SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(smallWidth)
     }
 
     @Test
     fun gravityAlignedSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
         val initialConstraints =
-            VolumeConstraints(
-                minWidth = 0,
-                maxWidth = 100,
-                minHeight = 0,
-                maxHeight = 100,
-                minDepth = 0,
-                maxDepth = VolumeConstraints.INFINITY,
+            SubspaceModifier.sizeIn(
+                minWidth = 0.dp,
+                maxWidth = 100.dp,
+                minHeight = 0.dp,
+                maxHeight = 100.dp,
+                minDepth = 0.dp,
+                maxDepth = VolumeConstraints.INFINITY.dp,
             )
         val updatedConstraints =
-            VolumeConstraints(
-                minWidth = 50,
-                maxWidth = 150,
-                minHeight = 50,
-                maxHeight = 150,
-                minDepth = 0,
-                maxDepth = VolumeConstraints.INFINITY,
+            SubspaceModifier.sizeIn(
+                minWidth = 50.dp,
+                maxWidth = 150.dp,
+                minHeight = 50.dp,
+                maxHeight = 150.dp,
+                minDepth = 0.dp,
+                maxDepth = VolumeConstraints.INFINITY.dp,
             )
-        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+        val constraintsState = mutableStateOf<SubspaceModifier>(initialConstraints)
 
         composeTestRule.setContent {
             TestSetup {
-                GravityAlignedSubspace(constraints = constraintsState.value) {
+                GravityAlignedSubspace(modifier = constraintsState.value) {
                     SpatialBox(
                         modifier =
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")

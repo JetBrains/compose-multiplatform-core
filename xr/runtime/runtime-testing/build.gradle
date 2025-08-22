@@ -39,7 +39,7 @@ dependencies {
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(libs.truth)
-    implementation("com.google.ar:impress:0.0.5")
+    implementation("com.google.ar:impress:0.0.6")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)

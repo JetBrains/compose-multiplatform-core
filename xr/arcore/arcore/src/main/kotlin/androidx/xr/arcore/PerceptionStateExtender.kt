@@ -42,9 +42,11 @@ internal class PerceptionStateExtender : StateExtender {
         perceptionManager = runtime.perceptionManager
         xrResourcesManager.lifecycleManager = runtime.lifecycleManager
         xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
-        xrResourcesManager.initiateArDeviceAndViewCameras(
+        xrResourcesManager.initiateArDeviceAndRenderViewpoints(
             perceptionManager.arDevice,
-            perceptionManager.viewCameras,
+            perceptionManager.leftRenderViewpoint,
+            perceptionManager.rightRenderViewpoint,
+            perceptionManager.monoRenderViewpoint,
         )
         xrResourcesManager.initiateEarth(perceptionManager.earth)
         xrResourcesManager.initiateDepthMaps(perceptionManager.depthMaps)
@@ -62,7 +64,9 @@ internal class PerceptionStateExtender : StateExtender {
         xrResourcesManager.leftHand?.update()
         xrResourcesManager.rightHand?.update()
         xrResourcesManager.arDevice.update()
-        xrResourcesManager.viewCameras.forEach { it.update() }
+        xrResourcesManager.leftRenderViewpoint?.update()
+        xrResourcesManager.rightRenderViewpoint?.update()
+        xrResourcesManager.monoRenderViewpoint?.update()
 
         xrResourcesManager.userFace?.update()
 
@@ -84,7 +88,9 @@ internal class PerceptionStateExtender : StateExtender {
                 xrResourcesManager.leftHand,
                 xrResourcesManager.rightHand,
                 xrResourcesManager.arDevice,
-                xrResourcesManager.viewCameras,
+                xrResourcesManager.leftRenderViewpoint,
+                xrResourcesManager.rightRenderViewpoint,
+                xrResourcesManager.monoRenderViewpoint,
                 xrResourcesManager.depthMaps,
                 xrResourcesManager.userFace,
             ),

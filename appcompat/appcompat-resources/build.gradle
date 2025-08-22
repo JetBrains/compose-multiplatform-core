@@ -46,9 +46,7 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.appcompat", module: "appcompat-resources"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {

@@ -135,6 +135,8 @@ val ALLOW_RERUNNING_TASKS =
 
         // https://youtrack.jetbrains.com/issue/KT-70008
         "kotlinNpmCachesSetup",
+        "kotlinKotlinNpmCachesSetup",
+        "kotlinWasmKotlinNpmCachesSetup",
     )
 
 // Additional tasks that are expected to be temporarily out-of-date after running once

@@ -18,6 +18,9 @@
 
 package androidx.xr.scenecore
 
+import android.app.Activity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.xr.runtime.Session
 import java.util.Collections
 import java.util.WeakHashMap
@@ -29,7 +32,12 @@ import java.util.WeakHashMap
  * entries when the [Session] key is no longer in use elsewhere. This is wrapped in a
  * [Collections.synchronizedMap] to ensure thread safety.
  */
+// TODO: b/437204809 - Change sceneCache to be an AtomicReference.
 private val sceneCache = Collections.synchronizedMap(WeakHashMap<Session, Scene>())
+
+/** Get the Lifecycle associated with the [Activity] attached to the [Session]. */
+private val Activity.lifecycle: Lifecycle
+    get() = (this as LifecycleOwner).lifecycle
 
 /**
  * Gets the [Scene] associated with this Session.
@@ -40,11 +48,18 @@ private val sceneCache = Collections.synchronizedMap(WeakHashMap<Session, Scene>
  * @see Scene
  */
 public val Session.scene: Scene
-    get() =
-        sceneCache.getOrPut(this) {
-            // This lambda is executed only once per session instance.
-            this.sessionConnectors.filterIsInstance<Scene>().single()
-        }
+    get() = checkAndGetScene(this)
+
+/** Checks whether the Session has been destroyed. */
+private fun checkAndGetScene(session: Session): Scene {
+    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+        "Session has been destroyed."
+    }
+    return sceneCache.getOrPut(session) {
+        // This lambda is executed only once per session instance.
+        session.sessionConnectors.filterIsInstance<Scene>().single()
+    }
+}
 
 internal fun removeSceneFromCache(scene: Scene) {
     synchronized(sceneCache) {

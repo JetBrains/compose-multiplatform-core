@@ -21,6 +21,7 @@ import androidx.kruth.assertWithMessage
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.javac.JavacBasicAnnotationProcessor
+import androidx.room.compiler.processing.javac.JavacProcessingEnv
 import androidx.room.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room.compiler.processing.testcode.OtherAnnotation
 import androidx.room.compiler.processing.util.Source
@@ -425,11 +426,20 @@ class XRoundEnvTest {
                 annotatedElements.filterIsInstance<XExecutableParameterElement>().map {
                     listOf(it.name, it.jvmName, it.enclosingElement)
                 }
+            val expectedValueParamName =
+                when (testInvocation.processingEnv) {
+                    is JavacProcessingEnv -> "value"
+                    else -> "p0"
+                }
             assertThat(results)
                 .containsExactly(
                     listOf("ctorProperty", "ctorProperty", typeElement.findPrimaryConstructor()),
                     listOf("ctorParam", "ctorParam", typeElement.findPrimaryConstructor()),
-                    listOf("p0", "p0", typeElement.getDeclaredMethodByJvmName("setProperty")),
+                    listOf(
+                        expectedValueParamName,
+                        expectedValueParamName,
+                        typeElement.getDeclaredMethodByJvmName("setProperty"),
+                    ),
                     listOf(
                         "methodParam",
                         "methodParam",

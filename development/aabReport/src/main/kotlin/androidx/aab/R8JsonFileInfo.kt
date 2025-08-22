@@ -20,6 +20,37 @@ import androidx.aab.cli.VERBOSE
 import com.android.tools.r8.metadata.R8BuildMetadata
 import java.io.InputStream
 
+enum class Compiler {
+    Unknown,
+    D8,
+    R8,
+    Both;
+
+    companion object {
+        fun fromPresence(d8: Boolean, r8: Boolean): Compiler {
+            return when {
+                d8 && r8 -> Both
+                d8 -> D8
+                r8 -> R8
+                else -> Unknown
+            }
+        }
+
+        fun fromMarkers(dexInfo: List<DexInfo>): Compiler {
+            return Compiler.fromPresence(
+                d8 =
+                    dexInfo.any { dex ->
+                        dex.r8Markers.any { it.compiler == "D8" && it.map["backend"] == "dex" }
+                    },
+                r8 =
+                    dexInfo.any { dex ->
+                        dex.r8Markers.any { it.compiler == "R8" && it.map["backend"] == "dex" }
+                    },
+            )
+        }
+    }
+}
+
 /**
  * Information captured from the `r8.json` or `d8.json` file.
  *
@@ -41,16 +72,16 @@ private constructor(
     val optimizedResourceShrinkingEnabled: Boolean?,
     val isProGuardCompatibilityModeEnabled: Boolean,
 ) {
-    enum class Compiler {
-        R8,
-        D8,
-    }
-
     companion object {
         const val BUNDLE_LOCATION_R8 = "BUNDLE-METADATA/com.android.tools/r8.json"
         const val BUNDLE_LOCATION_D8 = "BUNDLE-METADATA/com.android.tools/d8.json"
 
-        fun fromD8Json(src: InputStream): R8JsonFileInfo {
+        /**
+         * All values are default, based on presence of d8.json
+         *
+         * Eventually could actually parse d8.json
+         */
+        fun fromD8(): R8JsonFileInfo {
             return R8JsonFileInfo(
                 compiler = Compiler.D8,
                 dexShas = emptySet(),
@@ -66,6 +97,7 @@ private constructor(
             )
         }
 
+        /** Read R8Json info from r8.json file content */
         @Suppress("UNCHECKED_CAST")
         fun fromR8Json(src: InputStream): R8JsonFileInfo? {
             val text = src.bufferedReader().readText()
@@ -97,7 +129,6 @@ private constructor(
 
         val CSV_TITLES =
             listOf(
-                "r8json_metadata",
                 "r8json_optimizationEnabled",
                 "r8json_obfuscationEnabled",
                 "r8json_shrinkingEnabled",
@@ -116,7 +147,6 @@ private constructor(
 
         fun R8JsonFileInfo?.csvEntries(): List<String> {
             return listOf(
-                (this != null).toString(),
                 this?.optimizationEnabled.toString(),
                 this?.obfuscationEnabled.toString(),
                 this?.shrinkingEnabled.toString(),

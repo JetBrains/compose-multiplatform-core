@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
  * @param errorUiLayout If not null and an error occurs within this glance wear tile, the tile is
  *   updated with an error UI using the provided layout.
  */
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 @Suppress("deprecation") // For backwards compatibility.
 public abstract class GlanceTileService(
     private val errorUiLayout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement? =

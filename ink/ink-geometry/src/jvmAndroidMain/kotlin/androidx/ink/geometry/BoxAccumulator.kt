@@ -244,7 +244,7 @@ public class BoxAccumulator {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramSkew = parallelogram.skew,
             output = this,
         )
         return this
@@ -373,7 +373,7 @@ private object BoxAccumulatorNative {
         parallelogramWidth: Float,
         parallelogramHeight: Float,
         parallelogramAngleInRadian: Float,
-        parallelogramShearFactor: Float,
+        parallelogramSkew: Float,
         output: BoxAccumulator,
     )
 

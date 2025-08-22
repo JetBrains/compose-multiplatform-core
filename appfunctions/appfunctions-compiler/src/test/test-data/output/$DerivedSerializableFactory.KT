@@ -1,9 +1,11 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$DerivedSerializableFactory` : AppFunctionSerializableFactory<DerivedSerializable> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): DerivedSerializable {

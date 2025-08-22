@@ -83,6 +83,22 @@ class TimePickerScreenshotTest {
         )
 
     @Test
+    fun timePicker_minutesSeconds(@TestParameter screenSize: ScreenSize) =
+        rule.verifyTimePickerScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            screenSize = screenSize,
+            content = {
+                TimePicker(
+                    onTimePicked = {},
+                    modifier = Modifier.testTag(TEST_TAG),
+                    timePickerType = TimePickerType.MinutesSeconds,
+                    initialTime = LocalTime.of(/* hour= */ 0, /* minute= */ 23, /* second= */ 37),
+                )
+            },
+        )
+
+    @Test
     fun timePicker12h_displays12(@TestParameter screenSize: ScreenSize) =
         rule.verifyTimePickerScreenshot(
             testName = testName,

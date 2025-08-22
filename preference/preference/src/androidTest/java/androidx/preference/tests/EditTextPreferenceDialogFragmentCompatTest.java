@@ -99,7 +99,7 @@ public class EditTextPreferenceDialogFragmentCompatTest {
                         PreferenceScreen screen = mTargetPreference.getPreferenceScreen();
                         mEditTextPreference = screen.findPreference(PREFERENCE);
                         mEditTextPreference.setDialogLayoutResource(
-                                androidx.preference.test.R.layout.preference_dialog_edittext);
+                                androidx.preference.R.layout.preference_dialog_edittext);
                         mFragment = EditTextPreferenceDialogFragmentCompat.newInstance(
                                 mEditTextPreference.getKey());
                         mFragment.setTargetFragment(mTargetPreference, 0);

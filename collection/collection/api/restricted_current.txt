@@ -233,9 +233,9 @@ package androidx.collection {
   @kotlin.jvm.JvmInline public final value class FloatFloatPair {
     ctor @KotlinOnly public FloatFloatPair(float first, float second);
     method @BytecodeOnly public static androidx.collection.FloatFloatPair! box-impl(long);
-    method public inline operator float component1();
+    method @KotlinOnly public inline operator float component1();
     method @BytecodeOnly public static float component1-impl(long);
-    method public inline operator float component2();
+    method @KotlinOnly public inline operator float component2();
     method @BytecodeOnly public static float component2-impl(long);
     method @BytecodeOnly public static long constructor-impl(float, float);
     method @BytecodeOnly public static float getFirst-impl(long);
@@ -684,9 +684,9 @@ package androidx.collection {
   @kotlin.jvm.JvmInline public final value class IntIntPair {
     ctor @KotlinOnly public IntIntPair(int first, int second);
     method @BytecodeOnly public static androidx.collection.IntIntPair! box-impl(long);
-    method public inline operator int component1();
+    method @KotlinOnly public inline operator int component1();
     method @BytecodeOnly public static int component1-impl(long);
-    method public inline operator int component2();
+    method @KotlinOnly public inline operator int component2();
     method @BytecodeOnly public static int component2-impl(long);
     method @BytecodeOnly public static long constructor-impl(int, int);
     method @BytecodeOnly public static int getFirst-impl(long);

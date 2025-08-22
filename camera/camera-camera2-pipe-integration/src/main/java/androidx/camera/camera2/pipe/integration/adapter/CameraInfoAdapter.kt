@@ -58,6 +58,8 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.ExperimentalLensFacing
+import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ExposureState
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.UseCase
@@ -77,9 +79,6 @@ import javax.inject.Inject
 import kotlin.reflect.KClass
 
 /** Adapt the [CameraInfoInternal] interface to [CameraPipe]. */
-@SuppressLint(
-    "UnsafeOptInUsageError" // Suppressed due to experimental ExposureState
-)
 @CameraScope
 public class CameraInfoAdapter
 @Inject
@@ -127,8 +126,15 @@ constructor(
 
     override fun getCameraId(): String = cameraConfig.cameraId.value
 
-    override fun getLensFacing(): Int =
+    override fun getLensFacing(): @CameraSelector.LensFacing Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
+
+    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    override fun isExternalCamera(): Boolean {
+        return lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
+            cameraProperties.metadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] ==
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL
+    }
 
     override fun getCameraCharacteristics(): CameraCharacteristics =
         cameraProperties.metadata.unwrapAs(CameraCharacteristics::class)!!
@@ -143,6 +149,7 @@ constructor(
             .unwrapAs(CameraCharacteristics::class)
     }
 
+    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
     private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
@@ -264,10 +271,9 @@ constructor(
         cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
             ?.toSet() ?: emptySet()
 
+    @androidx.annotation.OptIn(ExperimentalZeroShutterLag::class)
     override fun isZslSupported(): Boolean {
-        return Build.VERSION.SDK_INT >= 23 &&
-            isPrivateReprocessingSupported &&
-            DeviceQuirks[ZslDisablerQuirk::class.java] == null
+        return isPrivateReprocessingSupported && DeviceQuirks[ZslDisablerQuirk::class.java] == null
     }
 
     override fun isPrivateReprocessingSupported(): Boolean {
@@ -279,8 +285,7 @@ constructor(
             .supportedDynamicRanges
     }
 
-    override fun isHighSpeedSupported(): Boolean =
-        Build.VERSION.SDK_INT >= 23 && cameraProperties.metadata.supportsHighSpeedVideo
+    override fun isHighSpeedSupported(): Boolean = cameraProperties.metadata.supportsHighSpeedVideo
 
     override fun getSupportedHighSpeedFrameRateRanges(): Set<Range<Int>> {
         return streamConfigurationMapCompat.getHighSpeedVideoFpsRanges()?.toSet() ?: emptySet()

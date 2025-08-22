@@ -20,10 +20,6 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
@@ -63,27 +59,16 @@ class PdfViewFormFillingTest {
         enableFormFilling: Boolean = false,
     ) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-
-            // With targetSdk of AndroidX = 35, UI is drawn beneath the top system bars,
-            // which causes click interactions to be blocked and not being propagated
-            // properly to PdfView. Hence we add padding to offset the PdfView so that it lies
-            // below the system bars.
-            ViewCompat.setOnApplyWindowInsetsListener(container) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.updatePadding(top = systemBars.top)
-                insets
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        isFormFillingEnabled = enableFormFilling
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(width, height),
+                )
             }
-
-            container.addView(
-                PdfView(activity).apply {
-                    isFormFillingEnabled = enableFormFilling
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(width, height),
-            )
-            activity.setContentView(container)
         }
     }
 

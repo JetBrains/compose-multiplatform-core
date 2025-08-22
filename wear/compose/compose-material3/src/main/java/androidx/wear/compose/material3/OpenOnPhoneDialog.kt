@@ -488,4 +488,4 @@ private const val WidthPaddingFraction = 0.176f
 private const val SizeFraction = (1 - WidthPaddingFraction * 2)
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
-private const val OpenOnPhoneMaxSweepAngle = 130f
+private const val OpenOnPhoneMaxSweepAngle = 200f

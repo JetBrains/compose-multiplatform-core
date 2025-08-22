@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -49,9 +51,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 
@@ -64,7 +64,11 @@ class NestedSubspaceSetSubspaceContentActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()) {
+                SpatialPanel(
+                    SubspaceModifier.height(400.dp).width(800.dp),
+                    dragPolicy = MovePolicy(),
+                    resizePolicy = ResizePolicy(),
+                ) {
                     Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                         Spacer(Modifier.fillMaxWidth(0.25f).fillMaxHeight().background(Color.Cyan))
                         Spacer(Modifier.background(Color.Magenta))

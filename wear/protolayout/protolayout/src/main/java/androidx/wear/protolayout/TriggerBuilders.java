@@ -340,7 +340,7 @@ public final class TriggerBuilders {
         @Override
         public int hashCode() {
             DynamicBool condition = getCondition();
-            return condition == null ? 4 : Arrays.hashCode(getCondition().toDynamicBoolByteArray());
+            return condition == null ? 4 : Arrays.hashCode(condition.toDynamicBoolByteArray());
         }
 
         @Override
@@ -450,12 +450,15 @@ public final class TriggerBuilders {
          * Checks whether the given {@link Trigger} is equal to the object taking into account inner
          * position.
          */
+        @SuppressWarnings("NullAway") // that.toTriggerProto()
         @RestrictTo(Scope.LIBRARY)
         static boolean equal(@Nullable Trigger trigger, @Nullable Trigger that) {
             if (trigger == that) {
                 return true;
             }
-            return that.toTriggerProto().getInnerCase().getNumber()
+            return that != null
+                    && trigger != null
+                    && that.toTriggerProto().getInnerCase().getNumber()
                             == trigger.toTriggerProto().getInnerCase().getNumber()
                     && Objects.equals(that, trigger);
         }

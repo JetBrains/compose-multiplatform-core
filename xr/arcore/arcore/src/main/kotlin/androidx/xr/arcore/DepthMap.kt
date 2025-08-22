@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Contains the depth map information corresponding to a specific [ViewCamera] */
+/** Contains the depth map information corresponding to a specific [RenderViewpoint] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class DepthMap internal constructor(internal val runtimeDepthMap: RuntimeDepthMap) :
     Updatable {

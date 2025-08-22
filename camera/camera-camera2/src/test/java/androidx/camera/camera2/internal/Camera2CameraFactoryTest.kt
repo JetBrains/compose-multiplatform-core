@@ -124,6 +124,25 @@ class Camera2CameraFactoryTest {
         assertThat(camera2CameraFactory.availableCameraIds).containsExactly("0", "2", "4")
     }
 
+    @Test
+    fun getAvailableCameraIds_previewsResult_withoutChangingState() {
+        // Arrange
+        setFingerprint("fake-fingerprint")
+        setupCameras()
+        val camera2CameraFactory = createCameraFactory(null)
+
+        // Assert initial state
+        assertThat(camera2CameraFactory.availableCameraIds).containsExactly("0", "1", "2")
+
+        // Act: Preview a new list where camera "1" is removed.
+        val previewedIds = camera2CameraFactory.getAvailableCameraIds(listOf("0", "2", "3"))
+
+        // Assert: The previewed list is correct.
+        assertThat(previewedIds).containsExactly("0", "2")
+        // Assert: The factory's internal state has NOT changed.
+        assertThat(camera2CameraFactory.availableCameraIds).containsExactly("0", "1", "2")
+    }
+
     private fun setFingerprint(fingerprint: String) {
         ReflectionHelpers.setStaticField(Build::class.java, "FINGERPRINT", fingerprint)
     }

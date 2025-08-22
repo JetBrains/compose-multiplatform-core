@@ -25,7 +25,7 @@ public class `$SimpleFunction_AppFunctionInvoker` : AppFunctionInvoker {
       "com.testdata.SimpleFunction#simpleFunction" -> {
         ConfigurableAppFunctionFactory<SimpleFunction>(
           appFunctionContext.context
-        )
+        ) { SimpleFunction() }
         .createEnclosingClass(SimpleFunction::class.java)
         .simpleFunction(appFunctionContext)
       }

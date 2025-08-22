@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.impl.impress;
 
 import androidx.annotation.RestrictTo;
+import androidx.xr.runtime.internal.TextureSampler;
 
 import org.jspecify.annotations.NonNull;
 
@@ -35,18 +36,20 @@ public class WaterMaterial extends Material {
      * Sets the reflection map for the water material.
      *
      * @param reflectionMap The native handle of the texture to be used as the reflection map.
+     * @param sampler The sampler used for the reflection map texture.
      */
-    public void setReflectionMap(long reflectionMap) {
-        impressApi.setReflectionMapOnWaterMaterial(getNativeHandle(), reflectionMap);
+    public void setReflectionMap(long reflectionMap, @NonNull TextureSampler sampler) {
+        impressApi.setReflectionMapOnWaterMaterial(getNativeHandle(), reflectionMap, sampler);
     }
 
     /**
      * Sets the normal map for the water material.
      *
      * @param normalMap The native handle of the texture to be used as the normal map.
+     * @param sampler The sampler used for the normal map texture.
      */
-    public void setNormalMap(long normalMap) {
-        impressApi.setNormalMapOnWaterMaterial(getNativeHandle(), normalMap);
+    public void setNormalMap(long normalMap, @NonNull TextureSampler sampler) {
+        impressApi.setNormalMapOnWaterMaterial(getNativeHandle(), normalMap, sampler);
     }
 
     /**
@@ -80,9 +83,10 @@ public class WaterMaterial extends Material {
      * Sets the alpha map for the water material.
      *
      * @param alphaMap The native handle of the texture to be used as the alpha map.
+     * @param sampler The sampler used for the alpha map texture.
      */
-    public void setAlphaMap(long alphaMap) {
-        impressApi.setAlphaMapOnWaterMaterial(getNativeHandle(), alphaMap);
+    public void setAlphaMap(long alphaMap, @NonNull TextureSampler sampler) {
+        impressApi.setAlphaMapOnWaterMaterial(getNativeHandle(), alphaMap, sampler);
     }
 
     /**

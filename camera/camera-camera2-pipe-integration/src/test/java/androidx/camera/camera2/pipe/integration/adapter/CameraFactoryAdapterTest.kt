@@ -30,6 +30,7 @@ import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
@@ -181,6 +182,24 @@ class CameraFactoryAdapterTest {
             assertThat(factory.availableCameraIds).containsExactly("0", "2", "4")
         }
 
+    fun getAvailableCameraIds_previewsResult_withoutChangingState() =
+        testScope.runTest {
+            // Arrange
+            setFingerprint("fake-fingerprint")
+            val factory = createCameraFactoryAdapter(null)
+
+            // Assert initial state
+            assertThat(factory.availableCameraIds).containsExactly("0", "1", "2")
+
+            // Act: Preview a new list where camera "1" is removed.
+            val previewedIds = factory.getAvailableCameraIds(listOf("0", "2", "3"))
+
+            // Assert: The previewed list is correct.
+            assertThat(previewedIds).containsExactly("0", "2")
+            // Assert: The factory's internal state has NOT changed.
+            assertThat(factory.availableCameraIds).containsExactly("0", "1", "2")
+        }
+
     @Test
     fun shutdown_callsShutdownOnDependencies() =
         testScope.runTest {
@@ -240,6 +259,7 @@ class CameraFactoryAdapterTest {
             CameraInteropStateCallbackRepository(),
             availableCameraSelector,
             NO_OP_STREAM_SPECS_CALCULATOR,
+            CameraXConfig.Builder().build(),
         )
 
     /**

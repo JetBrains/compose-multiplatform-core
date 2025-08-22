@@ -18,7 +18,6 @@ package androidx.camera.lifecycle;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.OptIn;
-import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
@@ -26,6 +25,7 @@ import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraInternal;
+import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.Lifecycle;
@@ -52,15 +52,15 @@ import java.util.Set;
 /**
  * A repository of {@link LifecycleCamera} instances.
  *
- * <p> This repository maps each unique pair of {@link LifecycleOwner} and set of
+ * <p>This repository maps each unique pair of {@link LifecycleOwner} and set of
  * {@link CameraInternal} to a single LifecycleCamera.
  *
- * <p> The repository ensures that a LifecycleCamera can be active only when there is any use
+ * <p>The repository ensures that a LifecycleCamera can be active only when there is any use
  * case bound on it. And, only a single LifecycleCamera is active at a time. A Lifecycle can
  * control multiple LifecycleCameras. For the LifecycleCameras controlled by a single Lifecycle,
  * only one LifecycleCamera among them can have use cases bound on it.
  *
- * <p> LifecycleCameras managed by the repository can be controlled by multiple Lifecycles. The
+ * <p>LifecycleCameras managed by the repository can be controlled by multiple Lifecycles. The
  * repository ensures that a Lifecycle can be active only when any LifecycleCamera controlled by
  * the Lifecycle has any use case bound on it. More than one Lifecycle can become ON_START at
  * the same time. Only a single Lifecycle can be active at a time so if a Lifecycle becomes ON_START
@@ -69,18 +69,17 @@ import java.util.Set;
  * recently active camera stops then it will make sure that the next most recently started Lifecycle
  * becomes the active Lifecycle.
  *
- * <p> A LifecycleCamera associated with the repository can also be released from the repository.
+ * <p>A LifecycleCamera associated with the repository can also be released from the repository.
  * When it is released, all UseCases bound to the LifecycleCamera will be unbound and the
  * LifecycleCamera will be released.
  */
 @OptIn(markerClass = ExperimentalSessionConfig.class)
 final class LifecycleCameraRepository {
     private static final String TAG = "LifecycleCameraRepository";
-    private static final Object INSTANCE_LOCK = new Object();
-    @GuardedBy("INSTANCE_LOCK")
-    private static LifecycleCameraRepository sInstance = null;
 
     private final Object mLock = new Object();
+
+    private final int mDeviceId;
 
     @GuardedBy("mLock")
     private final Map<Key, LifecycleCamera> mCameraMap = new HashMap<>();
@@ -102,19 +101,19 @@ final class LifecycleCameraRepository {
     @Retention(RetentionPolicy.SOURCE)
     @interface FromUseCaseAdapter {}
 
-    @VisibleForTesting
     LifecycleCameraRepository() {
-        // LifecycleCameraRepository is designed to be used as a singleton and the constructor
-        // should only be called for testing purpose.
+        this(ContextUtil.getDefaultDeviceId());
     }
 
-    static @NonNull LifecycleCameraRepository getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new LifecycleCameraRepository();
-            }
-            return sInstance;
-        }
+    LifecycleCameraRepository(int deviceId) {
+        mDeviceId = deviceId;
+    }
+
+    /**
+     * Returns the device ID of this repository.
+     */
+    int getDeviceId() {
+        return mDeviceId;
     }
 
     /**

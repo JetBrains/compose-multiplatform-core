@@ -41,18 +41,20 @@ class TracingDemoTest {
     // Tracks the number of batches completed
     internal var count = 0L
     internal val driver =
-        TraceDriver(
-            sink = WireTraceSink(sequenceId = 1, directory = File("/tmp")),
-            isEnabled = true,
-        )
+        TraceDriver(sink = TraceSink(sequenceId = 1, directory = File("/tmp")), isEnabled = true)
 
     @Test
-    internal fun testTracingEndToEnd() = runBlocking {
+    internal fun testTracingEndToEnd(): Unit = runBlocking {
         driver.context.use {
             withContext(context = Dispatchers.Default) {
                 // Create a process track
                 val track = driver.ProcessTrack(id = 1, name = "TracingTest")
-                track.traceFlow("begin") { delay(20L) }
+                track.traceFlow(
+                    "begin",
+                    metadataBlock = { addMetadataEntry("context", "end to end tracing test") },
+                ) {
+                    delay(20L)
+                }
                 track.traceFlow("histograms-end-to-end") { track.computeHistograms() }
                 track.traceFlow("end") { delay(20L) }
             }
@@ -60,7 +62,7 @@ class TracingDemoTest {
     }
 
     internal suspend fun ProcessTrack.computeHistograms(): Map<Int, Int> {
-        val input = List<Int>(inputSize) { random.nextInt(0, 100_000) }
+        val input = List(inputSize) { random.nextInt(0, 100_000) }
         val batches = input.chunked(multiplier)
         return coroutineScope {
             val jobs = mutableListOf<Deferred<Map<Int, Int>>>()

@@ -246,8 +246,7 @@ class EnvironmentActivity : AppCompatActivity() {
         this.rockGeometry = GltfModel.create(session!!, Paths.get("models", "RocksGeometry.glb"))
         this.dragonGeometry =
             GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
-        this.patternTexture =
-            Texture.create(session!!, Paths.get("textures", "pattern.png"), TextureSampler.create())
+        this.patternTexture = Texture.create(session!!, Paths.get("textures", "pattern.png"))
         val spec =
             KhronosPbrMaterialSpec.create(
                 lightingModel = KhronosPbrMaterialSpec.LightingModel.LIT,
@@ -255,7 +254,7 @@ class EnvironmentActivity : AppCompatActivity() {
                 doubleSidedMode = KhronosPbrMaterialSpec.DoubleSidedMode.SINGLE_SIDED,
             )
         this.khronosPbrMaterial = KhronosPbrMaterial.create(session!!, spec)
-        this.khronosPbrMaterial.setBaseColorTexture(patternTexture)
+        this.khronosPbrMaterial.setBaseColorTexture(patternTexture, TextureSampler())
     }
 
     private fun setGeoAndSkybox(

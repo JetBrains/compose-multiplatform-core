@@ -38,9 +38,7 @@ dependencies {
     implementation(libs.guavaAndroid)
     implementation("com.google.android.gms:play-services-base:18.0.1")
     implementation(libs.kotlinCoroutinesPlayServices)
-    implementation('com.google.android.gms:play-services-nearby:19.2.0', {
-        exclude group: "androidx.core"
-    })
+    implementation('com.google.android.gms:play-services-nearby:19.2.0')
 
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)

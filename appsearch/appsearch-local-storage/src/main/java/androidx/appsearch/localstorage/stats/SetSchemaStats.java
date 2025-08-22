@@ -48,12 +48,24 @@ public final class SetSchemaStats extends BaseStats {
     private final int mDeletedTypeCount;
     private final int mCompatibleTypeChangeCount;
     private final int mIndexIncompatibleTypeChangeCount;
+    private final int mJoinIndexIncompatibleTypeChangeCount;
+    private final int mScorablePropertyIncompatibleTypeChangeCount;
     private final int mBackwardsIncompatibleTypeChangeCount;
+    private final int mDeletedDocumentCount;
+    private final boolean mIsTermIndexRestored;
+    private final boolean mIsIntegerIndexRestored;
+    private final boolean mIsEmbeddingIndexRestored;
+    private final boolean mIsQualifiedIdJoinIndexRestored;
     private final int mVerifyIncomingCallLatencyMillis;
     private final int mExecutorAcquisitionLatencyMillis;
     private final int mRebuildFromBundleLatencyMillis;
     private final int mRewriteSchemaLatencyMillis;
     private final int mTotalNativeLatencyMillis;
+    private final int mNativeSchemaStoreSetSchemaLatencyMillis;
+    private final int mNativeDocumentStoreUpdateSchemaLatencyMillis;
+    private final int mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis;
+    private final int mNativeIndexRestorationLatencyMillis;
+    private final int mNativeScorablePropertyCacheRegenerationLatencyMillis;
     private final int mVisibilitySettingLatencyMillis;
     private final int mConvertToResponseLatencyMillis;
     private final int mDispatchChangeNotificationsLatencyMillis;
@@ -64,6 +76,7 @@ public final class SetSchemaStats extends BaseStats {
     private final int mPreparingChangeNotificationLatencyMillis;
     @SchemaMigrationStats.SchemaMigrationCallType
     private final int mSchemaMigrationCallType;
+    private final boolean mSkippedIcingInteraction;
 
     SetSchemaStats(@NonNull Builder builder) {
         super(builder);
@@ -75,12 +88,28 @@ public final class SetSchemaStats extends BaseStats {
         mDeletedTypeCount = builder.mDeletedTypeCount;
         mCompatibleTypeChangeCount = builder.mCompatibleTypeChangeCount;
         mIndexIncompatibleTypeChangeCount = builder.mIndexIncompatibleTypeChangeCount;
+        mJoinIndexIncompatibleTypeChangeCount = builder.mJoinIndexIncompatibleTypeChangeCount;
+        mScorablePropertyIncompatibleTypeChangeCount =
+                builder.mScorablePropertyIncompatibleTypeChangeCount;
         mBackwardsIncompatibleTypeChangeCount = builder.mBackwardsIncompatibleTypeChangeCount;
+        mDeletedDocumentCount = builder.mDeletedDocumentCount;
+        mIsTermIndexRestored = builder.mIsTermIndexRestored;
+        mIsIntegerIndexRestored = builder.mIsIntegerIndexRestored;
+        mIsEmbeddingIndexRestored = builder.mIsEmbeddingIndexRestored;
+        mIsQualifiedIdJoinIndexRestored = builder.mIsQualifiedIdJoinIndexRestored;
         mVerifyIncomingCallLatencyMillis = builder.mVerifyIncomingCallLatencyMillis;
         mExecutorAcquisitionLatencyMillis = builder.mExecutorAcquisitionLatencyMillis;
         mRebuildFromBundleLatencyMillis = builder.mRebuildFromBundleLatencyMillis;
         mRewriteSchemaLatencyMillis = builder.mRewriteSchemaLatencyMillis;
         mTotalNativeLatencyMillis = builder.mTotalNativeLatencyMillis;
+        mNativeSchemaStoreSetSchemaLatencyMillis = builder.mNativeSchemaStoreSetSchemaLatencyMillis;
+        mNativeDocumentStoreUpdateSchemaLatencyMillis =
+                builder.mNativeDocumentStoreUpdateSchemaLatencyMillis;
+        mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis =
+                builder.mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis;
+        mNativeIndexRestorationLatencyMillis = builder.mNativeIndexRestorationLatencyMillis;
+        mNativeScorablePropertyCacheRegenerationLatencyMillis =
+                builder.mNativeScorablePropertyCacheRegenerationLatencyMillis;
         mVisibilitySettingLatencyMillis = builder.mVisibilitySettingLatencyMillis;
         mConvertToResponseLatencyMillis = builder.mConvertToResponseLatencyMillis;
         mDispatchChangeNotificationsLatencyMillis =
@@ -92,6 +121,7 @@ public final class SetSchemaStats extends BaseStats {
         mPreparingChangeNotificationLatencyMillis =
                 builder.mPreparingChangeNotificationLatencyMillis;
         mSchemaMigrationCallType = builder.mSchemaMigrationCallType;
+        mSkippedIcingInteraction = builder.mSkippedIcingInteraction;
     }
 
     /** Returns calling package name. */
@@ -131,13 +161,35 @@ public final class SetSchemaStats extends BaseStats {
     }
 
     /**
-     * Returns number of index-incompatible type change.
+     * Returns number of index-incompatible type changes.
      *
      * <p>An index-incompatible type change is one that affects how pre-existing data should be
      * searched over, such as modifying the {@code IndexingType} of an existing property.
      */
     public int getIndexIncompatibleTypeChangeCount() {
         return mIndexIncompatibleTypeChangeCount;
+    }
+
+    /**
+     * Returns number of join index-incompatible type changes.
+     *
+     * <p>A join index-incompatible type change is one that affects how pre-existing document
+     * join data should be searched over, such as modifying the {@code AppSearchSchema
+     * #JoinableValueType} of an existing property.
+     */
+    public int getJoinIndexIncompatibleTypeChangeCount() {
+        return mJoinIndexIncompatibleTypeChangeCount;
+    }
+
+    /**
+     * Returns number of scorable property-incompatible type changes.
+     *
+     * <p>A scorable property-incompatible type change is one that affects how pre-existing document
+     * properties have their values cached for scoring, such as modifying the {@code
+     * AppSearchSchema#setScoringEnabled} field of an existing property.
+     */
+    public int getScorablePropertyIncompatibleTypeChangeCount() {
+        return mScorablePropertyIncompatibleTypeChangeCount;
     }
 
     /**
@@ -148,6 +200,34 @@ public final class SetSchemaStats extends BaseStats {
      */
     public int getBackwardsIncompatibleTypeChangeCount() {
         return mBackwardsIncompatibleTypeChangeCount;
+    }
+
+    /**
+     * Returns number of documents deleted due to an incompatible schema change made using
+     * force-override.
+     */
+    public int getDeletedDocumentCount() {
+        return mDeletedDocumentCount;
+    }
+
+    /** Whether the term index was restored. */
+    public boolean isTermIndexRestored() {
+        return mIsTermIndexRestored;
+    }
+
+    /** Whether the integer index was restored. */
+    public boolean isIntegerIndexRestored() {
+        return mIsIntegerIndexRestored;
+    }
+
+    /** Whether the embedding index was restored. */
+    public boolean isEmbeddingIndexRestored() {
+        return mIsEmbeddingIndexRestored;
+    }
+
+    /** Whether the qualified-id join index was restored. */
+    public boolean isQualifiedIdJoinIndexRestored() {
+        return mIsQualifiedIdJoinIndexRestored;
     }
 
     /** Gets time used for verifying the incoming call. */
@@ -173,6 +253,31 @@ public final class SetSchemaStats extends BaseStats {
     /** Gets total latency for the SetSchema in native action in milliseconds. */
     public int getTotalNativeLatencyMillis() {
         return mTotalNativeLatencyMillis;
+    }
+
+    /** Gets latency for the native schema store set schema action. */
+    public int getNativeSchemaStoreSetSchemaLatencyMillis() {
+        return mNativeSchemaStoreSetSchemaLatencyMillis;
+    }
+
+    /** Gets latency for the native document store update schema action. */
+    public int getNativeDocumentStoreUpdateSchemaLatencyMillis() {
+        return mNativeDocumentStoreUpdateSchemaLatencyMillis;
+    }
+
+    /** Gets latency for the native document store optimized update schema action. */
+    public int getNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis() {
+        return mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis;
+    }
+
+    /** Gets latency for the native index restoration action. */
+    public int getNativeIndexRestorationLatencyMillis() {
+        return mNativeIndexRestorationLatencyMillis;
+    }
+
+    /** Gets latency for the native document store's update schema action. */
+    public int getNativeScorablePropertyCacheRegenerationLatencyMillis() {
+        return mNativeScorablePropertyCacheRegenerationLatencyMillis;
     }
 
     /** Gets latency for the dispatch change notification action in milliseconds. */
@@ -221,6 +326,11 @@ public final class SetSchemaStats extends BaseStats {
         return mSchemaMigrationCallType;
     }
 
+    /** Whether or not AppSearch skipped sending the schema to Icing because it didn't change. */
+    public boolean getSkippedIcingInteraction() {
+        return mSkippedIcingInteraction;
+    }
+
     /** Builder for {@link SetSchemaStats}. */
     public static class Builder extends BaseStats.Builder<SetSchemaStats.Builder> {
         final @NonNull String mPackageName;
@@ -232,12 +342,24 @@ public final class SetSchemaStats extends BaseStats {
         int mDeletedTypeCount;
         int mCompatibleTypeChangeCount;
         int mIndexIncompatibleTypeChangeCount;
+        int mJoinIndexIncompatibleTypeChangeCount;
+        int mScorablePropertyIncompatibleTypeChangeCount;
         int mBackwardsIncompatibleTypeChangeCount;
+        int mDeletedDocumentCount;
+        boolean mIsTermIndexRestored;
+        boolean mIsIntegerIndexRestored;
+        boolean mIsEmbeddingIndexRestored;
+        boolean mIsQualifiedIdJoinIndexRestored;
         int mVerifyIncomingCallLatencyMillis;
         int mExecutorAcquisitionLatencyMillis;
         int mRebuildFromBundleLatencyMillis;
         int mRewriteSchemaLatencyMillis;
         int mTotalNativeLatencyMillis;
+        int mNativeSchemaStoreSetSchemaLatencyMillis;
+        int mNativeDocumentStoreUpdateSchemaLatencyMillis;
+        int mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis;
+        int mNativeIndexRestorationLatencyMillis;
+        int mNativeScorablePropertyCacheRegenerationLatencyMillis;
         int mVisibilitySettingLatencyMillis;
         int mConvertToResponseLatencyMillis;
         int mDispatchChangeNotificationsLatencyMillis;
@@ -248,6 +370,7 @@ public final class SetSchemaStats extends BaseStats {
         int mPreparingChangeNotificationLatencyMillis;
         @SchemaMigrationStats.SchemaMigrationCallType
         int mSchemaMigrationCallType;
+        boolean mSkippedIcingInteraction;
 
         /** Constructor for the {@link Builder}. */
         public Builder(@NonNull String packageName, @NonNull String database) {
@@ -298,11 +421,64 @@ public final class SetSchemaStats extends BaseStats {
             return this;
         }
 
+        /** Sets number of join-index-incompatible type changes. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setJoinIndexIncompatibleTypeChangeCount(
+                int joinIndexIncompatibleTypeChangeCount) {
+            mJoinIndexIncompatibleTypeChangeCount = joinIndexIncompatibleTypeChangeCount;
+            return this;
+        }
+
+        /** Sets number of scorable property-incompatible type changes. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setScorablePropertyIncompatibleTypeChangeCount(
+                int scorablePropertyIncompatibleTypeChangeCount) {
+            mScorablePropertyIncompatibleTypeChangeCount =
+                    scorablePropertyIncompatibleTypeChangeCount;
+            return this;
+        }
+
         /** Sets number of backwards-incompatible type changes. */
         @CanIgnoreReturnValue
         public @NonNull Builder setBackwardsIncompatibleTypeChangeCount(
                 int backwardsIncompatibleTypeChangeCount) {
             mBackwardsIncompatibleTypeChangeCount = backwardsIncompatibleTypeChangeCount;
+            return this;
+        }
+
+        /** Sets number of deleted documents due to force-setting an incompatible schema. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setDeletedDocumentCount(int deletedDocumentCount) {
+            mDeletedDocumentCount = deletedDocumentCount;
+            return this;
+        }
+
+        /** Sets whether the term index was restored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setIsTermIndexRestored(boolean isTermIndexRestored) {
+            mIsTermIndexRestored = isTermIndexRestored;
+            return this;
+        }
+
+        /** Sets whether the integer index was restored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setIsIntegerIndexRestored(boolean isIntegerIndexRestored) {
+            mIsIntegerIndexRestored = isIntegerIndexRestored;
+            return this;
+        }
+
+        /** Sets whether the embedding index was restored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setIsEmbeddingIndexRestored(boolean isEmbeddingIndexRestored) {
+            mIsEmbeddingIndexRestored = isEmbeddingIndexRestored;
+            return this;
+        }
+
+        /** Sets whether the qualified ID join index was restored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setIsQualifiedIdJoinIndexRestored(
+                boolean isQualifiedIdJoinIndexRestored) {
+            mIsQualifiedIdJoinIndexRestored = isQualifiedIdJoinIndexRestored;
             return this;
         }
 
@@ -341,6 +517,52 @@ public final class SetSchemaStats extends BaseStats {
         @CanIgnoreReturnValue
         public @NonNull Builder setTotalNativeLatencyMillis(int totalNativeLatencyMillis) {
             mTotalNativeLatencyMillis = totalNativeLatencyMillis;
+            return this;
+        }
+
+        /** Sets latency for setting schema in native SchemaStore in milliseconds. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeSchemaStoreSetSchemaLatencyMillis(
+                int nativeSchemaStoreSetSchemaLatencyMillis) {
+            mNativeSchemaStoreSetSchemaLatencyMillis = nativeSchemaStoreSetSchemaLatencyMillis;
+            return this;
+        }
+
+        /** Sets latency for updating schema in native DocumentStore in milliseconds. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeDocumentStoreUpdateSchemaLatencyMillis(
+                int nativeDocumentStoreUpdateSchemaLatencyMillis) {
+            mNativeDocumentStoreUpdateSchemaLatencyMillis =
+                    nativeDocumentStoreUpdateSchemaLatencyMillis;
+            return this;
+        }
+
+        /** Sets latency for optimized schema update in native DocumentStore in milliseconds. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis(
+                int nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis) {
+            mNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis =
+                    nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis;
+            return this;
+        }
+
+        /** Sets latency for native index restoration in milliseconds. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeIndexRestorationLatencyMillis(
+                int nativeIndexRestorationLatencyMillis) {
+            mNativeIndexRestorationLatencyMillis = nativeIndexRestorationLatencyMillis;
+            return this;
+        }
+
+        /**
+         * Sets latency for scorable property cache regeneration in native layer in milliseconds
+         * .
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeScorablePropertyCacheRegenerationLatencyMillis(
+                int nativeScorablePropertyCacheRegenerationLatencyMillis) {
+            mNativeScorablePropertyCacheRegenerationLatencyMillis =
+                    nativeScorablePropertyCacheRegenerationLatencyMillis;
             return this;
         }
 
@@ -411,6 +633,12 @@ public final class SetSchemaStats extends BaseStats {
             Preconditions.checkArgumentInRange(schemaMigrationCallType, NO_MIGRATION,
                     SECOND_CALL_APPLY_NEW_SCHEMA, "schemaMigrationCallType");
             mSchemaMigrationCallType = schemaMigrationCallType;
+            return this;
+        }
+
+        @CanIgnoreReturnValue
+        public @NonNull Builder setSkippedIcingInteraction(boolean skippedIcingInteraction) {
+            mSkippedIcingInteraction = skippedIcingInteraction;
             return this;
         }
 

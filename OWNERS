@@ -47,6 +47,8 @@ per-file *libraryversions.toml = rafiahmad@google.com
 per-file *libraryversions.toml = aquilescanta@google.com, asapperstein@google.com, shenqiuz@google.com
 # PDF *
 per-file *libraryversions.toml = anuragadarsh@google.com, bhavyajain@google.com, rahulkanojia@google.com
+# Camera *
+per-file *libraryversions.toml = wujulie@google.com, scottnien@google.com, trevormcguire@google.com
 
 # Copybara can self-approve CLs within synced docs.
 per-file docs/** = copybara-worker-blackhole@google.com

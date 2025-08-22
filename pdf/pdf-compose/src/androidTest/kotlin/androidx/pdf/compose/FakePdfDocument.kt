@@ -127,7 +127,7 @@ internal open class FakePdfDocument(
                 page = 0,
                 start = SelectionBoundary(0),
                 stop = SelectionBoundary(0),
-                selectedTextContents = listOf(),
+                selectedContents = listOf(),
             )
     }
 

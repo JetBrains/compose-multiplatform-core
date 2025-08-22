@@ -20,10 +20,8 @@ import android.util.Log;
 
 import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.internal.TextureResource;
-import androidx.xr.runtime.internal.TextureSampler;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Texture class for the native Impress texture wrapper struct which is an implementation a
@@ -32,13 +30,13 @@ import org.jspecify.annotations.Nullable;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public final class Texture extends BindingsResource implements TextureResource {
     private final String TAG = getClass().getSimpleName();
+
+    @SuppressWarnings("UnusedVariable")
     private final ImpressApi impressApi;
-    private final TextureSampler sampler;
 
     private Texture(Builder builder) {
         super(builder.impressApi.getBindingsResourceManager(), builder.nativeTexture);
         this.impressApi = builder.impressApi;
-        this.sampler = builder.sampler;
     }
 
     @Override
@@ -47,18 +45,10 @@ public final class Texture extends BindingsResource implements TextureResource {
         Log.d(TAG, "Texture is getting destroyed manually");
     }
 
-    /** Returns the sampler used to load the texture. */
-    @Nullable
-    public TextureSampler getTextureSampler() {
-        throwIfDestroyed();
-        return sampler;
-    }
-
     /** Use Builder to construct a Texture object instance. */
     public static class Builder {
         private ImpressApi impressApi;
         private long nativeTexture = -1;
-        private TextureSampler sampler;
 
         @NonNull
         public Builder setImpressApi(@NonNull ImpressApi impressApi) {
@@ -69,12 +59,6 @@ public final class Texture extends BindingsResource implements TextureResource {
         @NonNull
         public Builder setNativeTexture(long nativeTexture) {
             this.nativeTexture = nativeTexture;
-            return this;
-        }
-
-        @NonNull
-        public Builder setTextureSampler(@NonNull TextureSampler sampler) {
-            this.sampler = sampler;
             return this;
         }
 

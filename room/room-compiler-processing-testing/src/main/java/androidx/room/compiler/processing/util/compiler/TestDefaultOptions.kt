@@ -26,6 +26,7 @@ internal object TestDefaultOptions {
     internal val kotlinLanguageVersion = LanguageVersion.KOTLIN_2_0
     internal val kotlinApiVersion = ApiVersion.createByLanguageVersion(kotlinLanguageVersion)
     internal val jvmTarget = JvmTarget.JVM_1_8
-    internal val jvmDefaultMode = JvmDefaultMode.ALL_COMPATIBILITY
+    internal val legacyJvmDefaultMode = LegacyJvmDefaultMode.ALL
+    internal val jvmDefaultMode = JvmDefaultMode.ENABLE
     internal val jvmModuleName = "main"
 }

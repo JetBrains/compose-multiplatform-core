@@ -108,7 +108,7 @@ public final class SearchResult extends AbstractSafeParcelable {
     private @Nullable GenericDocument mDocumentCached;
 
     /** Cache of the inflated {@link MatchInfo}. Comes from inflating mMatchInfos at first use. */
-    private @Nullable List<MatchInfo> mMatchInfosCached;
+    private @NonNull List<MatchInfo> mMatchInfosCached;
 
     /** @exportToFramework:hide */
     @Constructor

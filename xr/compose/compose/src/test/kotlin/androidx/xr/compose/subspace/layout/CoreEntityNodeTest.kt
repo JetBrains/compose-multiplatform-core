@@ -23,8 +23,8 @@ import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.PanelEntity
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
@@ -77,15 +77,12 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_alpha_shouldBeApplied() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
-                            .testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }.testTag("panel"),
+                )
             }
         }
 
@@ -97,16 +94,14 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_alpha_shouldAppendExisting() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
-                            .modifyCoreEntity { setOrAppendAlpha(4f) }
-                            .testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                        .modifyCoreEntity { setOrAppendAlpha(4f) }
+                        .testTag("panel"),
+                )
             }
         }
 
@@ -118,17 +113,15 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_alpha_shouldAppendExistingWithGap() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
-                            .testTag("panel")
-                            .modifyCoreEntity { setOrAppendScale(4f) }
-                            .modifyCoreEntity { setOrAppendAlpha(4f) },
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                        .testTag("panel")
+                        .modifyCoreEntity { setOrAppendScale(4f) }
+                        .modifyCoreEntity { setOrAppendAlpha(4f) },
+                )
             }
         }
 
@@ -140,14 +133,12 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_scale_shouldBeApplied() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }.testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }.testTag("panel"),
+                )
             }
         }
 
@@ -159,16 +150,14 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_scale_shouldAppendExisting() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
-                            .modifyCoreEntity { setOrAppendScale(0.5f) }
-                            .testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
+                        .modifyCoreEntity { setOrAppendScale(0.5f) }
+                        .testTag("panel"),
+                )
             }
         }
 
@@ -180,17 +169,15 @@ class CoreEntityNodeTest {
 
     @Test
     fun coreEntityNode_scale_shouldAppendExistingWithGap() {
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
-                            .testTag("panel")
-                            .modifyCoreEntity { setOrAppendAlpha(0.5f) }
-                            .modifyCoreEntity { setOrAppendScale(0.5f) },
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
+                        .testTag("panel")
+                        .modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                        .modifyCoreEntity { setOrAppendScale(0.5f) },
+                )
             }
         }
 

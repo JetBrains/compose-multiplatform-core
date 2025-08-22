@@ -454,7 +454,7 @@ public class RowsSupportFragmentTest extends SingleSupportFragmentTestBase {
                 .getRowsSupportFragment().getVerticalGridView();
         for (int i = 0; i < verticalGridView.getChildCount(); i++) {
             HorizontalGridView horizontalGridView = verticalGridView.getChildAt(i)
-                    .findViewById(R.id.row_content);
+                    .findViewById(androidx.leanback.R.id.row_content);
             for (int j = 0; j < horizontalGridView.getChildCount(); j++) {
                 assertEquals(horizontalGridView.getPaddingTop(),
                         horizontalGridView.getChildAt(j).getTop());
@@ -509,7 +509,7 @@ public class RowsSupportFragmentTest extends SingleSupportFragmentTestBase {
                 .getRowsSupportFragment().getVerticalGridView();
         for (int i = 0; i < verticalGridView.getChildCount(); i++) {
             HorizontalGridView horizontalGridView = verticalGridView.getChildAt(i)
-                    .findViewById(R.id.row_content);
+                    .findViewById(androidx.leanback.R.id.row_content);
             for (int j = 0; j < horizontalGridView.getChildCount(); j++) {
                 assertEquals(horizontalGridView.getPaddingTop(),
                         horizontalGridView.getChildAt(j).getTop());

@@ -28,11 +28,16 @@ import androidx.credentials.registry.provider.digitalcredentials.DigitalCredenti
  *   display value of an ISO mDL age-over-twenty-one property may be "Yes" localized; a null value
  *   means only the display name will be rendered to the user
  * @constructor
+ *     @throws IllegalArgumentException if `displayName` is empty or blank
  */
 public class VerificationFieldDisplayProperties(
     public val displayName: CharSequence,
     public val displayValue: CharSequence? = null,
 ) : FieldDisplayProperties(DISPLAY_TYPE_VERIFICATION) {
+    init {
+        require(displayName.isNotBlank()) { "`displayName` must not be blank" }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is VerificationFieldDisplayProperties) return false

@@ -20,7 +20,6 @@ import android.graphics.Point
 import android.graphics.RectF
 import android.os.Build
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.FakePdfDocument
@@ -59,20 +58,20 @@ class SelectionContextualMenuTest {
             FakePdfDocument(pages = List(3) { Point(2000, 4000) }, textContents = textContents)
 
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfView(activity).apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                    isFocusable = true
-                    isFocusableInTouchMode = true
-                },
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                        isFocusable = true
+                        isFocusableInTouchMode = true
+                    },
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+            }
         }
     }
 

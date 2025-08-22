@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -50,10 +52,8 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import kotlin.concurrent.fixedRateTimer
@@ -114,31 +114,25 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier =
-                            SubspaceModifier.offset(x = 120.dp)
-                                .width(panelWidth)
-                                .height(200.dp)
-                                .resizable(maintainAspectRatio = true)
+                            SubspaceModifier.offset(x = 120.dp).width(panelWidth).height(200.dp),
+                        resizePolicy = ResizePolicy(shouldMaintainAspectRatio = true),
                     ) {
                         PanelContent("[RESIZABLE] Left Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier =
-                            SubspaceModifier.offset(x = 120.dp)
-                                .width(panelWidth)
-                                .height(200.dp)
-                                .movable()
+                            SubspaceModifier.offset(x = 120.dp).width(panelWidth).height(200.dp),
+                        dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE] Left Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier =
-                            SubspaceModifier.offset(x = 120.dp)
-                                .width(panelWidth)
-                                .height(200.dp)
-                                .resizable(maintainAspectRatio = true)
-                                .movable()
+                            SubspaceModifier.offset(x = 120.dp).width(panelWidth).height(200.dp),
+                        resizePolicy = ResizePolicy(shouldMaintainAspectRatio = true),
+                        dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE & RESIZABLE] Left Column Panel: $dynamicValue")
                     }
@@ -158,11 +152,9 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialMainPanel(
                         modifier =
-                            SubspaceModifier.offset(x = 120.dp)
-                                .width(panelWidth)
-                                .height(200.dp)
-                                .resizable()
-                                .movable()
+                            SubspaceModifier.offset(x = 120.dp).width(panelWidth).height(200.dp),
+                        resizePolicy = ResizePolicy(),
+                        dragPolicy = MovePolicy(),
                     )
                 }
                 SpatialColumn(
@@ -185,9 +177,9 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
                                 .height(200.dp)
-                                .resizable()
-                                .movable()
                                 .testTag("ActivityPanel"),
+                        resizePolicy = ResizePolicy(),
+                        dragPolicy = MovePolicy(),
                     )
                 }
             }

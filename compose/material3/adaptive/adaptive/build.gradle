@@ -75,7 +75,7 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
-                api("androidx.window:window:1.4.0-rc01")
+                api("androidx.window:window:1.4.0")
             }
         }
 

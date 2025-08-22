@@ -35,9 +35,16 @@ import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.annotation.EditablePdfDocument
+import androidx.pdf.annotation.manager.InMemoryAnnotationsManager
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.EditsResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.models.PdfEdit
+import androidx.pdf.annotation.models.PdfEditEntry
+import androidx.pdf.annotation.models.PdfEdits
+import androidx.pdf.annotation.processor.PdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
@@ -89,7 +96,11 @@ public class SandboxedPdfDocument(
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int,
+    private val annotationsProcessor: PdfAnnotationsProcessor,
 ) : EditablePdfDocument() {
+
+    // TODO: b/437827008 - Implement management of PdfEdits in EditablePdfDocument
+    private val annotationsManager = InMemoryAnnotationsManager(::getAnnotationsForPage)
 
     public override val formEditRecords: List<FormEditRecord>
         get() = _formEditRecords.toList()
@@ -383,13 +394,14 @@ public class SandboxedPdfDocument(
         }
     }
 
-    override suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
-        return withDocument { pdfDocumentRemote -> pdfDocumentRemote.getPageAnnotations(pageNum) }
-    }
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(pageNum: Int): List<T> =
+        annotationsManager.getAnnotationsForPage(pageNum) as List<T>
 
     override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
-        // TODO: b/434620410 - Return success list after getting success IDs from service
-        return AnnotationResult(listOf(), listOf())
+        // Wrapping the process method inside withDocument is important because if the service
+        // disconnected/crashed, withDocument is responsible for retrying the request.
+        return withDocument { annotationsProcessor.process(annotations) }
     }
 
     override suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult {
@@ -402,6 +414,41 @@ public class SandboxedPdfDocument(
 
         return AnnotationResult(listOf(), listOf())
     }
+
+    override fun addEdit(edit: PdfEdit): EditId {
+        return when (edit) {
+            is PdfAnnotation -> annotationsManager.addAnnotation(edit)
+            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
+        }
+    }
+
+    override fun removeEdit(editId: EditId) {
+        annotationsManager.removeAnnotation(editId)
+    }
+
+    override fun updateEdit(editId: EditId, edit: PdfEdit) {
+        when (edit) {
+            is PdfAnnotation -> annotationsManager.updateAnnotation(editId, edit)
+            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
+        }
+    }
+
+    // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument
+    internal suspend fun getAnnotationsFromDraftState(pageNum: Int): List<PdfAnnotationData> {
+        return annotationsManager.getAnnotationsForPage(pageNum)
+    }
+
+    override fun commitEdits(): EditsResult {
+        // TODO: b/437827008 - Implementation of managing PdfEdits in EditablePdfDocument
+        return EditsResult(listOf(), listOf())
+    }
+
+    override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
+
+    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> =
+        withDocument { pdfDocumentRemote ->
+            pdfDocumentRemote.getPageAnnotations(pageNum)
+        }
 
     private companion object {
         private const val DEFAULT_PAGE = 400

@@ -350,6 +350,12 @@ public interface IcingOptionsConfig {
                 .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
                 .setEnablePassingFilterToChildren(
                         Flags.enablePassingFilterToChildren() || isVMEnabled)
+                .setEnableProtoLogNewHeaderFormat(
+                        Flags.enableProtoLogNewHeaderFormat() || isVMEnabled)
+                .setEnableEmbeddingIteratorV2(
+                        Flags.enableEmbeddingIteratorV2() || isVMEnabled)
+                .setEnableReusableDecompressionBuffer(
+                        Flags.enableReusableDecompressionBuffer() || isVMEnabled)
                 .build();
     }
 }

@@ -26,11 +26,11 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,18 +42,16 @@ class SpatialExternalSurfaceTest {
 
     @Test
     fun sphereMeasurePolicyTest() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SubspaceLayout(
-                        content = {
-                            SpatialPanel(SubspaceModifier.testTag("panel1").fillMaxSize()) {
-                                Text(text = "Panel 1")
-                            }
-                        },
-                        measurePolicy = SphereMeasurePolicy(radius = 50),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SubspaceLayout(
+                    content = {
+                        SpatialPanel(SubspaceModifier.testTag("panel1").fillMaxSize()) {
+                            Text(text = "Panel 1")
+                        }
+                    },
+                    measurePolicy = SphereMeasurePolicy(radius = 50),
+                )
             }
         }
 

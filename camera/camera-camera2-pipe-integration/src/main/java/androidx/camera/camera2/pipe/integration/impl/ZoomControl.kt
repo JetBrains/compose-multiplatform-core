@@ -56,6 +56,8 @@ public class ZoomControl @Inject constructor(private val zoomCompat: ZoomCompat)
     public val zoomStateLiveData: LiveData<ZoomState>
         get() = _zoomState
 
+    private var isInitialized = false
+
     /** Linear zoom is between 0.0f and 1.0f */
     public fun toLinearZoom(zoomRatio: Float): Float =
         getLinearZoomFromZoomRatio(
@@ -77,7 +79,10 @@ public class ZoomControl @Inject constructor(private val zoomCompat: ZoomCompat)
         get() = _requestControl
         set(value) {
             _requestControl = value
-            applyZoomState(_zoomState.value ?: defaultZoomState, false)
+            val zoomState = _zoomState.value ?: defaultZoomState
+            val shouldUpdateParameters = isInitialized || zoomState.zoomRatio != DEFAULT_ZOOM_RATIO
+            applyZoomState(zoomState, false, shouldUpdateParameters)
+            isInitialized = true
         }
 
     private var updateSignal: CompletableDeferred<Unit>? = null
@@ -120,6 +125,7 @@ public class ZoomControl @Inject constructor(private val zoomCompat: ZoomCompat)
     public fun applyZoomState(
         zoomState: ZoomState,
         cancelPreviousTask: Boolean = true,
+        shouldUpdateParameters: Boolean = true,
     ): ListenableFuture<Void> {
         val signal = CompletableDeferred<Unit>()
 
@@ -140,7 +146,16 @@ public class ZoomControl @Inject constructor(private val zoomCompat: ZoomCompat)
 
         setZoomState(zoomState)
 
-        requestControl?.let { zoomCompat.applyAsync(zoomState.zoomRatio, it).propagateTo(signal) }
+        requestControl?.let {
+            val zoomRatio = zoomState.zoomRatio
+            val deferred =
+                if (shouldUpdateParameters) {
+                    zoomCompat.applyAsync(zoomRatio, it)
+                } else {
+                    zoomCompat.resetAsync(it)
+                }
+            deferred.propagateTo(signal)
+        }
             ?: signal.completeExceptionally(
                 CameraControl.OperationCanceledException("Camera is not active.")
             )

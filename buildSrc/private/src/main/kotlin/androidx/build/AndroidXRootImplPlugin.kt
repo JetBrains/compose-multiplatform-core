@@ -97,7 +97,9 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
 
         tasks.register(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java) { task ->
             task.cacheEvenIfNoOutputs()
-            task.distributionDirectory = getDistributionDirectory()
+            task.aggregateBuildInfoFile.set(
+                getDistributionDirectoryProperty().file(AGGREGATE_BUILD_INFO_FILE_NAME)
+            )
             verifyPlayground?.let { task.dependsOn(it) }
             aggregateBuildInfo?.let { task.dependsOn(it) }
         }
@@ -121,7 +123,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         project.tasks.register(ZIP_TEST_CONFIGS_WITH_APKS_TASK, Zip::class.java) {
             // Flatten PrivacySandbox APKs in separate task to preserve file order in resulting ZIP.
             it.dependsOn(finalizeConfigsTask)
-            it.destinationDirectory.set(project.getDistributionDirectory())
+            it.destinationDirectory.set(project.getDistributionDirectoryProperty())
             it.archiveFileName.set("androidTest.zip")
             it.from(project.getTestConfigDirectory())
             // We're mostly zipping a bunch of .apk files that are already compressed
@@ -139,7 +141,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         registerStudioTask()
 
         project.tasks.register("listTaskOutputs", ListTaskOutputsTask::class.java) { task ->
-            task.setOutput(File(project.getDistributionDirectory(), "task_outputs.txt"))
+            task.outputFile.set(project.getDistributionDirectoryProperty().file("task_outputs.txt"))
             task.removePrefix(project.getCheckoutRoot().path)
         }
 
@@ -183,26 +185,35 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             } else {
                 File(getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
             }
+
         val createYarnRcFileTask =
             tasks.register("createYarnRcFile", CreateYarnRcFileTask::class.java) {
                 it.offlineMirrorStorage.set(offlineMirrorStorage)
                 it.cacheStorage.set(layout.buildDirectory.dir("yarnCache"))
                 it.yarnrcFile.set(layout.buildDirectory.file(".yarnrc"))
             }
-
+        val createWasmYarnRcFileTask =
+            tasks.register("createWasmYarnRcFile", CreateYarnRcFileTask::class.java) {
+                it.offlineMirrorStorage.set(offlineMirrorStorage)
+                it.cacheStorage.set(layout.buildDirectory.dir("wasmYarnCache"))
+                it.yarnrcFile.set(layout.buildDirectory.file("wasm/.yarnrc"))
+            }
         tasks.withType<KotlinNpmInstallTask>().configureEach {
-            it.dependsOn(createYarnRcFileTask)
+            when (it.name) {
+                "kotlinNpmInstall" -> it.dependsOn(createYarnRcFileTask)
+                "kotlinWasmNpmInstall" -> it.dependsOn(createWasmYarnRcFileTask)
+            }
             it.args.addAll(listOf("--ignore-engines", "--verbose"))
             if (project.useYarnOffline()) {
                 it.args.add("--offline")
+                it.additionalFiles.plus(offlineMirrorStorage)
                 it.doFirst {
                     println(
                         """
                     Fetching yarn packages from the offline mirror: ${offlineMirrorStorage.path}.
                     Your build will fail if a package is not in the offline mirror. To fix, run:
 
-                    $TERMINAL_RED./gradlew kotlinNpmInstall -Pandroidx.yarnOfflineMode=false &&
-                    ./gradlew kotlinUpgradeYarnLock$TERMINAL_RESET
+                    $TERMINAL_RED./gradlew kotlinNpmInstall kotlinWasmNpmInstall -Pandroidx.yarnOfflineMode=false && ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock$TERMINAL_RESET
 
                     this will download the dependencies from the internet and update the lockfile.
                     Don't forget to upload the changes to Gerrit!
@@ -215,3 +226,5 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         }
     }
 }
+
+internal const val AGGREGATE_BUILD_INFO_FILE_NAME = "androidx_aggregate_build_info.txt"

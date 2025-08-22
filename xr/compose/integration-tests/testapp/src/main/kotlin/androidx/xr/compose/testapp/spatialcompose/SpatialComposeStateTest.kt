@@ -45,12 +45,12 @@ import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
@@ -73,13 +73,18 @@ class SpatialComposeStateTest : ComponentActivity() {
             if (useMainPanel) {
                 MainPanelContent("Main Panel", isInitialLaunch = isInitialLaunch)
             }
-
             ApplicationSubspace {
                 SpatialRow {
                     if (useMainPanel) {
-                        SpatialMainPanel(modifier = SubspaceModifier.size(600.dp).movable())
+                        SpatialMainPanel(
+                            modifier = SubspaceModifier.size(600.dp),
+                            dragPolicy = MovePolicy(),
+                        )
                     } else {
-                        SpatialPanel(modifier = SubspaceModifier.size(600.dp).movable()) {
+                        SpatialPanel(
+                            modifier = SubspaceModifier.size(600.dp),
+                            dragPolicy = MovePolicy(),
+                        ) {
                             MainPanelContent("Spatial Panel")
                         }
                     }
@@ -101,10 +106,10 @@ class SpatialComposeStateTest : ComponentActivity() {
                     }
                 }
             }
-
             ApplicationSubspace {
                 SpatialPanel(
-                    modifier = SubspaceModifier.size(200.dp).offset(x = 500.dp).movable()
+                    modifier = SubspaceModifier.size(200.dp).offset(x = 500.dp),
+                    dragPolicy = MovePolicy(),
                 ) {
                     Surface {
                         CommonTestScaffold(title = "Second\nSubspace", showBottomBar = false) {

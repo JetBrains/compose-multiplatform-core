@@ -17,6 +17,7 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
@@ -65,14 +66,15 @@ sealed interface PaneAdaptedValue {
      *   and no scrim will show.
      */
     @Immutable
-    class Levitated(val alignment: Alignment, val scrim: Scrim? = null) : PaneAdaptedValue {
+    class Levitated(val alignment: Alignment, val scrim: (@Composable () -> Unit)? = null) :
+        PaneAdaptedValue {
         override fun toString() = "PaneAdaptedValue[Levitated with $alignment and scrim=$scrim]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Levitated) return false
             if (alignment != other.alignment) return false
-            if (scrim != other.scrim) return false
+            if (scrim !== other.scrim) return false
             return true
         }
 

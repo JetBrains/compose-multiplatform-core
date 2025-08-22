@@ -17,7 +17,6 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -26,25 +25,28 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.nio.file.Path
 
-/** [Texture] represents a texture that can be used with materials. */
+/**
+ * Represents a [Texture] in SceneCore.
+ *
+ * A texture is an image that can be applied to a 3D model to give it color, detail, and realism. It
+ * can also be used as an alpha mask for a [StereoSurfaceEntity].
+ *
+ * It's important to dispose of the [Texture] when it's no longer needed to free up resources. This
+ * can be done by calling the [dispose] method.
+ */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class Texture
-internal constructor(
-    internal val texture: RtTextureResource,
-    internal val sampler: TextureSampler = TextureSampler.create(),
-    internal val session: Session,
-) {
+internal constructor(internal val texture: RtTextureResource, internal val session: Session) {
 
     /**
      * Disposes the given [Texture].
      *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
      * Currently, a glTF model (which this texture will be used with) can't be disposed. This means
      * that calling dispose on the texture will lead to a crash if the call is made out of order,
      * that is, if the texture is disposed before the glTF model that uses it.
+     *
+     * When using a texture as an alpha mask for stereoscopic content, the [StereoSurfaceEntity]
+     * should be disposed before the texture is disposed.
      */
     // TODO(b/376277201): Provide Session.GltfModel.dispose().
     @MainThread
@@ -57,17 +59,15 @@ internal constructor(
         internal fun createAsync(
             platformAdapter: JxrPlatformAdapter,
             name: String,
-            sampler: TextureSampler,
             session: Session,
         ): ListenableFuture<Texture> {
-            val textureResourceFuture =
-                platformAdapter.loadTexture(name, sampler.toRtTextureSampler())
+            val textureResourceFuture = platformAdapter.loadTexture(name)
             val textureFuture = ResolvableFuture.create<Texture>()
             textureResourceFuture!!.addListener(
                 {
                     try {
                         val texture = textureResourceFuture.get()
-                        textureFuture.set(Texture(texture, sampler, session))
+                        textureFuture.set(Texture(texture, session))
                     } catch (e: Exception) {
                         if (e is InterruptedException) {
                             Thread.currentThread().interrupt()
@@ -84,29 +84,22 @@ internal constructor(
          * Public factory for a Texture, asynchronously loading a preprocessed texture from a [Path]
          * relative to the application's `assets/` folder.
          *
-         * This method must be called from the main thread.
-         * https://developer.android.com/guide/components/processes-and-threads
-         *
-         * Currently, only URLs and relative paths from the android_assets/ directory are supported.
+         * Currently, only URLs and relative paths from the `assets/` directory are supported.
          *
          * @param session The [Session] to use for loading the [Texture].
          * @param path The Path of the `.png` texture file to be loaded, relative to the
          *   application's `assets/` folder.
-         * @param sampler A [TextureSampler] descriptor which describes how the texture will be
-         *   filtered
          * @return a [Texture] upon completion.
          * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
-         *   relative path, or if the path does not specify a `.zip` file.
+         *   relative path.
          */
         @MainThread
         @JvmStatic
-        @Suppress("AsyncSuffixFuture")
-        public suspend fun create(session: Session, path: Path, sampler: TextureSampler): Texture {
+        public suspend fun create(session: Session, path: Path): Texture {
             require(!File(path.toString()).isAbsolute) {
                 "Texture.create() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createAsync(session.platformAdapter, path.toString(), sampler, session)
-                .awaitSuspending()
+            return createAsync(session.platformAdapter, path.toString(), session).awaitSuspending()
         }
     }
 }

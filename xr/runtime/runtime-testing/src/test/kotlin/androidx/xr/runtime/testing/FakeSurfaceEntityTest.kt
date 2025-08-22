@@ -22,6 +22,7 @@ import androidx.xr.runtime.internal.PerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions
 import androidx.xr.runtime.internal.SurfaceEntity
 import androidx.xr.runtime.internal.TextureResource
+import androidx.xr.runtime.math.FloatSize2d
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -31,7 +32,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class FakeSurfaceEntityTest {
-    val testCanvasShape = SurfaceEntity.CanvasShape.Quad(1f, 1f)
+    val testCanvasShape = SurfaceEntity.Shape.Quad(FloatSize2d(1f, 1f))
 
     lateinit var underTest: FakeSurfaceEntity
 
@@ -57,7 +58,7 @@ class FakeSurfaceEntityTest {
 
     @Test
     fun getDimensions_setCanvasShape_returnsCanvasShapeDimensions() {
-        underTest.canvasShape = testCanvasShape
+        underTest.shape = testCanvasShape
 
         assertThat(underTest.dimensions).isEqualTo(testCanvasShape.dimensions)
     }
@@ -123,7 +124,7 @@ class FakeSurfaceEntityTest {
         check(underTest.colorSpace == SurfaceEntity.ColorSpace.BT709)
         check(underTest.colorTransfer == SurfaceEntity.ColorTransfer.LINEAR)
         check(underTest.colorRange == SurfaceEntity.ColorRange.FULL)
-        check(underTest.maxCLL == 0)
+        check(underTest.maxContentLightLevel == 0)
 
         underTest.setContentColorMetadata(
             SurfaceEntity.ColorSpace.BT2020,
@@ -135,7 +136,7 @@ class FakeSurfaceEntityTest {
         assertThat(underTest.colorSpace).isEqualTo(SurfaceEntity.ColorSpace.BT2020)
         assertThat(underTest.colorTransfer).isEqualTo(SurfaceEntity.ColorTransfer.SRGB)
         assertThat(underTest.colorRange).isEqualTo(SurfaceEntity.ColorRange.LIMITED)
-        assertThat(underTest.maxCLL).isEqualTo(100)
+        assertThat(underTest.maxContentLightLevel).isEqualTo(100)
     }
 
     @Test
@@ -150,13 +151,13 @@ class FakeSurfaceEntityTest {
         assertThat(underTest.colorSpace).isEqualTo(SurfaceEntity.ColorSpace.BT2020)
         assertThat(underTest.colorTransfer).isEqualTo(SurfaceEntity.ColorTransfer.SRGB)
         assertThat(underTest.colorRange).isEqualTo(SurfaceEntity.ColorRange.LIMITED)
-        assertThat(underTest.maxCLL).isEqualTo(100)
+        assertThat(underTest.maxContentLightLevel).isEqualTo(100)
 
         underTest.resetContentColorMetadata()
 
         assertThat(underTest.colorSpace).isEqualTo(SurfaceEntity.ColorSpace.BT709)
         assertThat(underTest.colorTransfer).isEqualTo(SurfaceEntity.ColorTransfer.LINEAR)
         assertThat(underTest.colorRange).isEqualTo(SurfaceEntity.ColorRange.FULL)
-        assertThat(underTest.maxCLL).isEqualTo(0)
+        assertThat(underTest.maxContentLightLevel).isEqualTo(0)
     }
 }

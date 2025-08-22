@@ -32,6 +32,7 @@ import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Remeasurement
@@ -197,6 +198,8 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
         visibleItemsStayedTheSame: Boolean = false,
     ) {
 
+        canScrollBackward = result.canScrollBackward
+        canScrollForward = result.canScrollForward
         scrollToBeConsumed -= result.consumedScroll
         layoutInfoState.value = result
 
@@ -208,9 +211,6 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
     }
 
     internal fun onScroll(distance: Float): Float {
-        if (distance < 0 && !canScrollForward || distance > 0 && !canScrollBackward) {
-            return 0f
-        }
         checkPrecondition(abs(scrollToBeConsumed) <= 0.5f) {
             "entered drag with non-zero pending scroll"
         }
@@ -248,6 +248,14 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
     override fun dispatchRawDelta(delta: Float): Float = backingState.dispatchRawDelta(delta)
 
     override val isScrollInProgress: Boolean = backingState.isScrollInProgress
+
+    @get:Suppress("GetterSetterNames")
+    override var canScrollForward: Boolean by mutableStateOf(false)
+        private set
+
+    @get:Suppress("GetterSetterNames")
+    override var canScrollBackward: Boolean by mutableStateOf(false)
+        private set
 
     /**
      * Instantly brings the item at [index] to the top of the viewport, offset by [scrollOffset]

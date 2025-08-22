@@ -18,7 +18,6 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEvent
 import kotlinx.coroutines.CoroutineScope
 
 internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManager): Modifier =
@@ -33,5 +32,6 @@ internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
     isStartHandle: Boolean
 ): Boolean = implementedInJetBrainsFork()
 
-internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean =
+internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean {
     implementedInJetBrainsFork()
+}

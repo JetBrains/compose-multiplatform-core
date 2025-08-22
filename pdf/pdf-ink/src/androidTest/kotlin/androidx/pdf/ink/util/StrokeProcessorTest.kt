@@ -32,6 +32,7 @@ import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.abs
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -122,13 +123,25 @@ class StrokeProcessorTest {
             with(pathObject) {
                 assertThat(brushColor).isEqualTo(DEFAULT_BRUSH_COLOR)
                 assertThat(brushWidth).isEqualTo(expectedBrushSize)
-                assertThat(inputs).hasSize(2)
-                assertThat(inputs[0].x).isEqualTo(expectedPdfPoint1.x)
-                assertThat(inputs[0].y).isEqualTo(expectedPdfPoint1.y)
-                assertThat(inputs[1].x).isEqualTo(expectedPdfPoint2.x)
-                assertThat(inputs[1].y).isEqualTo(expectedPdfPoint2.y)
+                assertThat(inputs).isNotEmpty()
+                assertPointsCloseToExpected(inputs, listOf(expectedPdfPoint1, expectedPdfPoint2))
             }
         }
+    }
+
+    private fun assertPointsCloseToExpected(
+        actualPoints: List<PathPdfObject.PathInput>,
+        expectedPoints: List<PointF>,
+    ) {
+        // Verify points in the path outline are close to expected transformed PDF coordinates
+        // (within tolerance).
+        expectedPoints.forEach { expectedPoint ->
+            assertThat(actualPoints.any { it.isCloseTo(expectedPoint, TOLERANCE) }).isTrue()
+        }
+    }
+
+    private fun PathPdfObject.PathInput.isCloseTo(point: PointF, tolerance: Float): Boolean {
+        return abs(x - point.x) < tolerance && abs(y - point.y) < tolerance
     }
 
     private fun createStrokeInput(x: Float, y: Float): StrokeInput {
@@ -152,7 +165,8 @@ class StrokeProcessorTest {
     }
 
     private companion object {
-        private const val DEFAULT_BRUSH_SIZE = 10f
+        private const val DEFAULT_BRUSH_SIZE = 1f
         private val DEFAULT_BRUSH_COLOR = Color.Black.toArgb()
+        private const val TOLERANCE = 1f
     }
 }

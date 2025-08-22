@@ -6,6 +6,8 @@ package androidx.navigation {
     method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> kotlin.Lazy<VM> navGraphViewModels(androidx.fragment.app.Fragment, String navGraphRoute, optional kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>? extrasProducer, optional kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>? factoryProducer);
   }
 
+  public typealias NavUri = android.net.Uri;
+
 }
 
 package androidx.navigation.fragment {

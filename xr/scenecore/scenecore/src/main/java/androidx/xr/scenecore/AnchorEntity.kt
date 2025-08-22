@@ -321,7 +321,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * @param relativeTo The space in which the pose is defined.
      * @throws UnsupportedOperationException if called.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
         throw UnsupportedOperationException("Cannot set 'pose' on an AnchorEntity.")
     }
@@ -357,7 +357,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * @param relativeTo The space in which the scale is defined.
      * @throws UnsupportedOperationException if called.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setScale(scale: Float, @SpaceValue relativeTo: Int) {
         throw UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.")
     }

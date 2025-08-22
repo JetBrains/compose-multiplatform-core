@@ -349,7 +349,7 @@ open class BaseTest {
         private fun getActionList(
             view: View
         ): List<AccessibilityNodeInfoCompat.AccessibilityActionCompat> {
-            return view.getTag(R.id.tag_accessibility_actions)
+            return view.getTag(androidx.core.R.id.tag_accessibility_actions)
                 as? ArrayList<AccessibilityNodeInfoCompat.AccessibilityActionCompat> ?: ArrayList()
         }
     }

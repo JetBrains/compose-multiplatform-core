@@ -55,6 +55,12 @@ import kotlinx.coroutines.asExecutor
  *
  * TODO(b/427974119): Investigate fix for resizing from size Zero.
  */
+@Deprecated(
+    "The Resizable modifier is now deprecated. Use the appropriate SpatialPanel or " +
+        "SpatialExternalSurface composable with a ResizePolicy instead. " +
+        "For example: SpatialPanel(resizePolicy = ResizePolicy(...), content = { /* your content */ })",
+    level = DeprecationLevel.WARNING,
+)
 public fun SubspaceModifier.resizable(
     enabled: Boolean = true,
     minimumSize: DpVolumeSize = DpVolumeSize.Zero,

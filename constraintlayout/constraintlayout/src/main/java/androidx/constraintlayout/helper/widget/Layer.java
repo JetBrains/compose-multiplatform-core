@@ -99,8 +99,7 @@ public class Layer extends ConstraintHelper {
         mContainer = (ConstraintLayout) getParent();
         if (mApplyVisibilityOnAttach || mApplyElevationOnAttach) {
             int visibility = getVisibility();
-            float elevation = 0;
-            elevation = getElevation();
+            float elevation = getElevation();
             for (int i = 0; i < mCount; i++) {
                 int id = mIds[i];
                 View view = mContainer.getViewById(id);

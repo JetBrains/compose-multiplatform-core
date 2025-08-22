@@ -18,8 +18,6 @@ package androidx.core.widget;
 
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.widget.ImageView;
 
 import org.jspecify.annotations.NonNull;
@@ -33,7 +31,7 @@ public class ImageViewCompat {
      * Return the tint applied to the image drawable, if specified.
      */
     public static @Nullable ColorStateList getImageTintList(@NonNull ImageView view) {
-        return Api21Impl.getImageTintList(view);
+        return view.getImageTintList();
     }
 
     /**
@@ -41,26 +39,14 @@ public class ImageViewCompat {
      */
     public static void setImageTintList(@NonNull ImageView view,
             @Nullable ColorStateList tintList) {
-        Api21Impl.setImageTintList(view, tintList);
-
-        if (Build.VERSION.SDK_INT == 21) {
-            // Work around a bug in L that did not update the state of the image source
-            // after applying the tint
-            Drawable imageViewDrawable = view.getDrawable();
-            if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
-                if (imageViewDrawable.isStateful()) {
-                    imageViewDrawable.setState(view.getDrawableState());
-                }
-                view.setImageDrawable(imageViewDrawable);
-            }
-        }
+        view.setImageTintList(tintList);
     }
 
     /**
      * Return the blending mode used to apply the tint to the image drawable, if specified.
      */
     public static PorterDuff.@Nullable Mode getImageTintMode(@NonNull ImageView view) {
-        return Api21Impl.getImageTintMode(view);
+        return view.getImageTintMode();
     }
 
     /**
@@ -69,43 +55,9 @@ public class ImageViewCompat {
      * to the image drawable. The default mode is {@link PorterDuff.Mode#SRC_IN}.
      */
     public static void setImageTintMode(@NonNull ImageView view, PorterDuff.@Nullable Mode mode) {
-        Api21Impl.setImageTintMode(view, mode);
-
-        if (Build.VERSION.SDK_INT == 21) {
-            // Work around a bug in L that did not update the state of the image source
-            // after applying the tint
-            Drawable imageViewDrawable = view.getDrawable();
-            if ((imageViewDrawable != null) && (Api21Impl.getImageTintList(view) != null)) {
-                if (imageViewDrawable.isStateful()) {
-                    imageViewDrawable.setState(view.getDrawableState());
-                }
-                view.setImageDrawable(imageViewDrawable);
-            }
-        }
+        view.setImageTintMode(mode);
     }
 
     private ImageViewCompat() {
-    }
-
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static ColorStateList getImageTintList(ImageView imageView) {
-            return imageView.getImageTintList();
-        }
-
-        static void setImageTintList(ImageView imageView, ColorStateList tint) {
-            imageView.setImageTintList(tint);
-        }
-
-        static PorterDuff.Mode getImageTintMode(ImageView imageView) {
-            return imageView.getImageTintMode();
-        }
-
-        static void setImageTintMode(ImageView imageView, PorterDuff.Mode tintMode) {
-            imageView.setImageTintMode(tintMode);
-        }
     }
 }

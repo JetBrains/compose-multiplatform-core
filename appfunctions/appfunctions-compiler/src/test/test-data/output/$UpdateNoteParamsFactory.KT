@@ -1,11 +1,13 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$UpdateNoteParamsFactory` : AppFunctionSerializableFactory<UpdateNoteParams> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): UpdateNoteParams {

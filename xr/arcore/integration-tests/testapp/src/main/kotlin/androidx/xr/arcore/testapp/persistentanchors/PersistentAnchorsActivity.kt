@@ -61,7 +61,7 @@ import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AnchorLoadInvalidUuid
-import androidx.xr.arcore.ViewCamera
+import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
@@ -96,7 +96,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
     private val movableEntityOffset = Pose(Vector3(0f, 0.75f, -1.3f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
     private var anchorOffset = MutableStateFlow<Float>(0f)
-    private lateinit var viewCameras: List<ViewCamera>
+    private lateinit var renderViewpoints: List<RenderViewpoint>
     private val panelInViewStatus = MutableStateFlow<List<Pair<String, Boolean>>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,7 +111,14 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
-                    this.viewCameras = ViewCamera.getAll(session)
+                    this.renderViewpoints = buildList {
+                        RenderViewpoint.left(session)?.let { add(it) }
+                        RenderViewpoint.right(session)?.let { add(it) }
+
+                        if (isEmpty()) {
+                            RenderViewpoint.mono(session)?.let { add(it) }
+                        }
+                    }
 
                     createTargetPanel()
                     setContent { MainPanel() }
@@ -132,7 +139,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
     }
 
     private fun startPanelInViewStatusUpdates() {
-        val cameraStateFlows = viewCameras.map { it.state }
+        val cameraStateFlows = renderViewpoints.map { it.state }
 
         lifecycleScope.launch {
             combine(cameraStateFlows) { cameraStates ->
@@ -155,10 +162,10 @@ class PersistentAnchorsActivity : ComponentActivity() {
                                 )
                             val cameraName =
                                 when {
-                                    viewCameras.size == 1 -> "ViewCamera"
-                                    index == 0 -> "Left Eye ViewCamera"
-                                    index == 1 -> "Right Eye ViewCamera"
-                                    else -> "ViewCamera ${index + 1}"
+                                    renderViewpoints.size == 1 -> "CameraView"
+                                    index == 0 -> "Left Eye CameraView"
+                                    index == 1 -> "Right Eye CameraView"
+                                    else -> "CameraView ${index + 1}"
                                 }
                             cameraName to isInView
                         }

@@ -39,7 +39,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":savedstate:savedstate"))
-                api("androidx.compose.runtime:runtime:1.9.0-beta03")
+                api("androidx.compose.runtime:runtime:1.9.0")
             }
         }
 
@@ -101,36 +101,6 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(nonAndroidTest)
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
-            }
         }
 
         targets.configureEach { target ->

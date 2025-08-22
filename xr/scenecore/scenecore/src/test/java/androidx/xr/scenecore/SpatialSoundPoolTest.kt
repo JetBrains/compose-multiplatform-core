@@ -16,8 +16,8 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.media.SoundPool
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.Entity as RtEntity
@@ -52,7 +52,8 @@ class SpatialSoundPoolTest {
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
     private val mockGroupEntity = mock<RtEntity>()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
 
     private lateinit var session: Session

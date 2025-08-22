@@ -20,22 +20,28 @@ import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
 import androidx.pdf.PdfDocument
 import androidx.pdf.annotation.models.AnnotationResult
-import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.EditsResult
 import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.models.PdfEdit
+import androidx.pdf.annotation.models.PdfEditEntry
+import androidx.pdf.annotation.models.PdfEdits
 
 /** Represents a PDF document that allows for editing of annotations. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class EditablePdfDocument : PdfDocument {
 
     /**
-     * Retrieves a list of all annotations present on the specified page.
+     * Retrieves a list of all edits for the specified page.
      *
-     * @param pageNum The page number (0-indexed) from which to retrieve annotations.
-     * @return A list of [PdfAnnotation] objects representing the annotations on the page. Returns
-     *   an empty list if there are no annotation on the page.
+     * @param pageNum The page number (0-indexed) from which to retrieve edits.
+     * @return A list of [PdfEditEntry] objects representing the staged edits on the page. Returns
+     *   an empty list if there are no edits on the page.
      * @throws IllegalArgumentException if the page number is invalid.
      */
-    public abstract suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation>
+    public abstract suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(
+        pageNum: Int
+    ): List<T>
 
     /**
      * Applies a list of annotation edits to the document.
@@ -52,4 +58,37 @@ public abstract class EditablePdfDocument : PdfDocument {
      * @return An [AnnotationResult] indicating the success or failure of the operation.
      */
     public abstract suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult
+
+    /**
+     * Creates a new PdfEdit onto the PdfDocument.
+     *
+     * @param edit The [PdfEdit] to be added.
+     * @return An [EditId] that uniquely identifies this edit operation.
+     */
+    public abstract fun addEdit(edit: PdfEdit): EditId
+
+    /**
+     * Removes an existing PdfEdit from the PdfDocument.
+     *
+     * @param editId The [EditId] of the PdfEdit to be removed.
+     */
+    public abstract fun removeEdit(editId: EditId)
+
+    /**
+     * Updates an existing PdfEdit in the PdfDocument.
+     *
+     * @param editId The [EditId] of the edit to be updated.
+     * @param edit The [PdfEdit] to be updated.
+     */
+    public abstract fun updateEdit(editId: EditId, edit: PdfEdit)
+
+    /** Commits all PdfEdits to the PDF document. */
+    public abstract fun commitEdits(): EditsResult
+
+    /**
+     * Returns an immutable snapshot of all [PdfEdit]s, organized by page number.
+     *
+     * @return [PdfEdits] representing all [PdfEdit]s in the document.
+     */
+    public abstract fun getAllEdits(): PdfEdits
 }

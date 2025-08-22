@@ -33,8 +33,8 @@ import androidx.xr.runtime.internal.Face
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
+import androidx.xr.runtime.internal.RenderViewpoint
 import androidx.xr.runtime.internal.Trackable
-import androidx.xr.runtime.internal.ViewCamera
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import com.google.ar.core.Frame
@@ -223,16 +223,32 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val earth: ArCoreEarth = xrResources.earth
 
     /** Returns the [ArDevice] instance. */
-    override val arDevice: ArDevice
-        get() = throw NotImplementedError("Not implemented on mobile runtime.")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
-     * Returns a list of [ViewCamera] objects.
+     * Returns the left [RenderViewpoint] object.
      *
-     * This is not currently implemented in ARCore, so this property will always be an empty list.
+     * This is not available in ARCore.
      */
-    override val viewCameras: List<ViewCamera>
-        get() = emptyList()
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val leftRenderViewpoint: RenderViewpoint? = null
+
+    /**
+     * Returns the right [RenderViewpoint] object.
+     *
+     * This is not available in ARCore.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val rightRenderViewpoint: RenderViewpoint? = null
+
+    /**
+     * Returns the mono[RenderViewpoint] object.
+     *
+     * This is not currently implemented in ARCore.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
      * Returns a list of [DepthMap] objects.
@@ -269,6 +285,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         val planes = _latestFrame.getUpdatedTrackables(ARCore1xPlane::class.java)
         planes.forEach { xrResources.addTrackable(it, ArCorePlane(it, xrResources)) }
 
+        arDevice.update(_latestFrame)
         earth.update(session)
     }
 

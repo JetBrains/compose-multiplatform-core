@@ -1162,6 +1162,7 @@ public class CameraXActivity extends AppCompatActivity {
                 v -> switchCamera(mCameraSwitcher.getNextSelector()));
     }
 
+    @SuppressWarnings("ObjectToString") // Log.d with switchedCameraSelector
     private void switchCamera(@NonNull CameraSelector switchedCameraSelector) {
         Log.d(TAG,
                 "Current camera selector: " + mCurrentCameraSelector + " Try next camera selector: "
@@ -2338,11 +2339,12 @@ public class CameraXActivity extends AppCompatActivity {
             };
 
     @SuppressLint("NewApi")
+    @SuppressWarnings("FutureReturnValueIgnored") // getCameraControl().setTorchStrengthLevel()
     private void setupTorchStrengthSeeker() {
         if (mCamera.getCameraInfo().isTorchStrengthSupported()) {
             mTorchStrengthText.setVisibility(View.VISIBLE);
             mTorchStrengthText.setText(
-                    "L" + (mCamera.getCameraInfo().getTorchStrengthLevel().getValue()));
+                    "L" + mCamera.getCameraInfo().getTorchStrengthLevel().getValue());
 
             mTorchStrengthSeekBar.setVisibility(View.VISIBLE);
             mTorchStrengthSeekBar.setMin(1);

@@ -59,7 +59,6 @@ import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
-import androidx.xr.compose.unit.VolumeConstraints
 
 /**
  * Test activity for the WindowManager.
@@ -84,7 +83,7 @@ class WindowManagerJxrTestActivity : ComponentActivity() {
             // 2D Content rendered to the MainPanel
             MainPanelContent()
 
-            ApplicationSubspace(constraints = VolumeConstraints()) { SpatialLayout() }
+            ApplicationSubspace(allowUnboundedSubspace = true) { SpatialLayout() }
         }
 
         isDebugInspectorInfoEnabled = true

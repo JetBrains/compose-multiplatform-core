@@ -47,12 +47,12 @@ import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
@@ -74,13 +74,15 @@ class StateTestAppActivity : ComponentActivity() {
             if (useMainPanel) {
                 MainPanelContent("Main Panel", isInitialLaunch = isInitialLaunch)
             }
-
             ApplicationSubspace {
                 SpatialRow {
                     if (useMainPanel) {
-                        SpatialMainPanel(modifier = SubspaceModifier.size(400.dp).movable())
+                        SpatialMainPanel(
+                            modifier = SubspaceModifier.size(400.dp),
+                            dragPolicy = MovePolicy(),
+                        )
                     } else {
-                        SpatialPanel(modifier = SubspaceModifier.movable()) {
+                        SpatialPanel(modifier = SubspaceModifier, dragPolicy = MovePolicy()) {
                             MainPanelContent("Spatial Panel")
                         }
                     }
@@ -94,9 +96,11 @@ class StateTestAppActivity : ComponentActivity() {
                     }
                 }
             }
-
             ApplicationSubspace {
-                SpatialPanel(modifier = SubspaceModifier.offset(x = 500.dp).movable()) {
+                SpatialPanel(
+                    modifier = SubspaceModifier.offset(x = 500.dp),
+                    dragPolicy = MovePolicy(),
+                ) {
                     Surface {
                         Column {
                             Counter("Second Subspace")

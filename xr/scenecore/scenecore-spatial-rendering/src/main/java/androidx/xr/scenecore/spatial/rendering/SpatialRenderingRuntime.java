@@ -21,8 +21,11 @@ import android.os.Looper;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.xr.runtime.internal.ExrImageResource;
+import androidx.xr.runtime.internal.GltfModelResource;
 import androidx.xr.runtime.internal.KhronosPbrMaterialSpec;
 import androidx.xr.runtime.internal.MaterialResource;
+import androidx.xr.runtime.internal.RenderingEntityFactory;
 import androidx.xr.runtime.internal.RenderingRuntime;
 import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.internal.TextureResource;
@@ -47,6 +50,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.function.Supplier;
+
 /**
  * Implementation of [RenderingRuntime] for devices that support the [Feature.SPATIAL] system
  * feature.
@@ -54,9 +59,12 @@ import org.jspecify.annotations.Nullable;
 class SpatialRenderingRuntime implements RenderingRuntime {
     private static final String SPLIT_ENGINE_LIBRARY_NAME = "impress_api_jni";
 
-    private final @NonNull SceneRuntime mSceneRuntime;
+    @SuppressWarnings("UnusedVariable")
+    private final @NonNull RenderingEntityFactory mRenderingEntityFactory;
+
     private @Nullable Activity mActivity;
 
+    @SuppressWarnings("UnusedVariable")
     private final XrExtensions mExtensions;
     private final ImpressApi mImpressApi;
     private SplitEngineSubspaceManager mSplitEngineSubspaceManager;
@@ -71,7 +79,11 @@ class SpatialRenderingRuntime implements RenderingRuntime {
             @NonNull ImpressApi impressApi,
             @NonNull SplitEngineSubspaceManager subspaceManager,
             @NonNull ImpSplitEngineRenderer renderer) {
-        mSceneRuntime = sceneRuntime;
+        if (!(sceneRuntime instanceof RenderingEntityFactory)) {
+            throw new IllegalArgumentException(
+                    "Expected sceneRuntime to be a RenderingEntityFactory");
+        }
+        mRenderingEntityFactory = (RenderingEntityFactory) sceneRuntime;
         mActivity = activity;
         mExtensions = extensions;
         mImpressApi = impressApi;
@@ -134,13 +146,119 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         return new MaterialResourceImpl(token);
     }
 
+    private static GltfModelResourceImpl getModelResourceFromToken(long token) {
+        return new GltfModelResourceImpl(token);
+    }
+
+    private static ExrImageResourceImpl getExrImageResourceFromToken(long token) {
+        return new ExrImageResourceImpl(token);
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private @Nullable ListenableFuture<GltfModelResource> loadGltfAsset(
+            Supplier<ListenableFuture<Long>> modelLoader) {
+        if (!Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalStateException("This method must be called on the main thread.");
+        }
+
+        ResolvableFuture<GltfModelResource> gltfModelResourceFuture = ResolvableFuture.create();
+
+        ListenableFuture<Long> gltfTokenFuture;
+        try {
+            gltfTokenFuture = modelLoader.get();
+        } catch (RuntimeException e) {
+            return null;
+        }
+
+        gltfTokenFuture.addListener(
+                () -> {
+                    try {
+                        long gltfToken = gltfTokenFuture.get();
+                        gltfModelResourceFuture.set(getModelResourceFromToken(gltfToken));
+                    } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                        gltfModelResourceFuture.setException(e);
+                    }
+                },
+                mActivity::runOnUiThread);
+
+        return gltfModelResourceFuture;
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private @Nullable ListenableFuture<ExrImageResource> loadExrImage(
+            Supplier<ListenableFuture<Long>> assetLoader) {
+        if (!Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalStateException("This method must be called on the main thread.");
+        }
+
+        ResolvableFuture<ExrImageResource> exrImageResourceFuture = ResolvableFuture.create();
+
+        ListenableFuture<Long> exrImageTokenFuture;
+        try {
+            exrImageTokenFuture = assetLoader.get();
+        } catch (RuntimeException e) {
+            return null;
+        }
+
+        exrImageTokenFuture.addListener(
+                () -> {
+                    try {
+                        long exrImageToken = exrImageTokenFuture.get();
+                        exrImageResourceFuture.set(getExrImageResourceFromToken(exrImageToken));
+                    } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                        exrImageResourceFuture.setException(e);
+                    }
+                },
+                mActivity::runOnUiThread);
+
+        return exrImageResourceFuture;
+    }
+
     // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
     // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @NonNull ListenableFuture<TextureResource> loadTexture(
-            @NonNull String path, @NonNull TextureSampler sampler) {
+    public @NonNull ListenableFuture<GltfModelResource> loadGltfByAssetName(@NonNull String name) {
+        return loadGltfAsset(() -> mImpressApi.loadGltfAsset(name));
+    }
+
+    @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
+    @Override
+    public @NonNull ListenableFuture<GltfModelResource> loadGltfByByteArray(
+            byte @NonNull [] assetData, @NonNull String assetKey) {
+        return loadGltfAsset(() -> mImpressApi.loadGltfAsset(assetData, assetKey));
+    }
+
+    // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
+    // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
+    // warning, however, we get a build error - go/bugpattern/RestrictTo.
+    @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
+    @Override
+    public @NonNull ListenableFuture<ExrImageResource> loadExrImageByAssetName(
+            @NonNull String assetName) {
+        return loadExrImage(() -> mImpressApi.loadImageBasedLightingAsset(assetName));
+    }
+
+    @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
+    @Override
+    public @NonNull ListenableFuture<ExrImageResource> loadExrImageByByteArray(
+            byte @NonNull [] assetData, @NonNull String assetKey) {
+        return loadExrImage(() -> mImpressApi.loadImageBasedLightingAsset(assetData, assetKey));
+    }
+
+    // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
+    // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
+    // warning, however, we get a build error - go/bugpattern/RestrictTo.
+    @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
+    @Override
+    public @NonNull ListenableFuture<TextureResource> loadTexture(@NonNull String path) {
         ResolvableFuture<TextureResource> textureResourceFuture = ResolvableFuture.create();
         // TODO:b/374216912 - Consider calling setFuture() here to catch if the application calls
         // cancel() on the return value from this function, so we can propagate the cancelation
@@ -151,7 +269,7 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
 
         ListenableFuture<Texture> textureFuture;
-        textureFuture = mImpressApi.loadTexture(path, sampler);
+        textureFuture = mImpressApi.loadTexture(path);
 
         textureFuture.addListener(
                 () -> {
@@ -189,6 +307,18 @@ class SpatialRenderingRuntime implements RenderingRuntime {
     public void destroyTexture(@NonNull TextureResource texture) {
         TextureResourceImpl textureResource = (TextureResourceImpl) texture;
         mImpressApi.destroyNativeObject(textureResource.getTextureToken());
+    }
+
+    @Override
+    public @Nullable TextureResource getReflectionTextureFromIbl(
+            @NonNull ExrImageResource iblToken) {
+        ExrImageResourceImpl exrImageResource = (ExrImageResourceImpl) iblToken;
+        Texture texture =
+                mImpressApi.getReflectionTextureFromIbl(exrImageResource.getExtensionImageToken());
+        if (texture == null) {
+            return null;
+        }
+        return texture;
     }
 
     // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
@@ -243,7 +373,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setReflectionMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource reflectionMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource reflectionMap,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -252,12 +384,15 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setReflectionMapOnWaterMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) reflectionMap).getTextureToken());
+                ((TextureResourceImpl) reflectionMap).getTextureToken(),
+                sampler);
     }
 
     @Override
     public void setNormalMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource normalMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource normalMap,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -266,7 +401,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setNormalMapOnWaterMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) normalMap).getTextureToken());
+                ((TextureResourceImpl) normalMap).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -301,7 +437,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setAlphaMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource alphaMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource alphaMap,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -310,7 +448,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setAlphaMapOnWaterMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) alphaMap).getTextureToken());
+                ((TextureResourceImpl) alphaMap).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -385,7 +524,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setBaseColorTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource baseColor) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource baseColor,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -394,7 +535,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setBaseColorTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) baseColor).getTextureToken());
+                ((TextureResourceImpl) baseColor).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -433,7 +575,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setMetallicRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource metallicRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource metallicRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -442,7 +586,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setMetallicRoughnessTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) metallicRoughness).getTextureToken());
+                ((TextureResourceImpl) metallicRoughness).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -487,7 +632,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setNormalTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource normal) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource normal,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -496,7 +643,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setNormalTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) normal).getTextureToken());
+                ((TextureResourceImpl) normal).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -531,7 +679,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setAmbientOcclusionTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource ambientOcclusion) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource ambientOcclusion,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -540,7 +690,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setAmbientOcclusionTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) ambientOcclusion).getTextureToken());
+                ((TextureResourceImpl) ambientOcclusion).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -575,7 +726,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setEmissiveTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource emissive) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource emissive,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -584,7 +737,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setEmissiveTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) emissive).getTextureToken());
+                ((TextureResourceImpl) emissive).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -622,7 +776,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setClearcoatTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoat) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoat,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -631,12 +787,15 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setClearcoatTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) clearcoat).getTextureToken());
+                ((TextureResourceImpl) clearcoat).getTextureToken(),
+                sampler);
     }
 
     @Override
     public void setClearcoatNormalTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoatNormal) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoatNormal,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -645,12 +804,15 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setClearcoatNormalTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) clearcoatNormal).getTextureToken());
+                ((TextureResourceImpl) clearcoatNormal).getTextureToken(),
+                sampler);
     }
 
     @Override
     public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoatRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoatRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -659,7 +821,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) clearcoatRoughness).getTextureToken());
+                ((TextureResourceImpl) clearcoatRoughness).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -674,7 +837,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setSheenColorTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource sheenColor) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource sheenColor,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -683,7 +848,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setSheenColorTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) sheenColor).getTextureToken());
+                ((TextureResourceImpl) sheenColor).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -698,9 +864,12 @@ class SpatialRenderingRuntime implements RenderingRuntime {
                 factors.getY(),
                 factors.getZ());
     }
+
     @Override
     public void setSheenRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource sheenRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource sheenRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -709,7 +878,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setSheenRoughnessTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) sheenRoughness).getTextureToken());
+                ((TextureResourceImpl) sheenRoughness).getTextureToken(),
+                sampler);
     }
 
     @Override
@@ -724,7 +894,9 @@ class SpatialRenderingRuntime implements RenderingRuntime {
 
     @Override
     public void setTransmissionTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource transmission) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource transmission,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof MaterialResourceImpl)) {
             throw new IllegalArgumentException("MaterialResource is not a MaterialResourceImpl");
         }
@@ -733,7 +905,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         }
         mImpressApi.setTransmissionTextureOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(),
-                ((TextureResourceImpl) transmission).getTextureToken());
+                ((TextureResourceImpl) transmission).getTextureToken(),
+                sampler);
     }
 
     @Override

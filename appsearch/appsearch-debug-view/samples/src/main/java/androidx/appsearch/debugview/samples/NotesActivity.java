@@ -23,10 +23,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,7 +60,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Default Activity for AppSearch Debug View Sample App
@@ -78,12 +74,9 @@ public class NotesActivity extends AppCompatActivity {
     private static final String SAMPLE_NOTES_FILENAME = "sample_notes.json";
     private static final String LONG_TEXT_FILENAME = "book.txt";
     private static final String TAG = "NotesActivity";
-    private static final Random RANDOM = new Random(1);
 
     private final SettableFuture<NotesAppSearchManager> mNotesAppSearchManagerFuture =
             SettableFuture.create();
-    private ArrayAdapter<Note> mNotesAdapter;
-    private ListView mListView;
     private TextView mLoadingView;
     private ListeningExecutorService mBackgroundExecutor;
     private List<Note> mSampleNotes;
@@ -99,7 +92,6 @@ public class NotesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes);
 
-        mListView = findViewById(R.id.list_view);
         mLoadingView = findViewById(R.id.text_view);
 
         mBackgroundExecutor = MoreExecutors.listeningDecorator(AppSearchEnvironmentFactory
@@ -166,6 +158,7 @@ public class NotesActivity extends AppCompatActivity {
                 }, ContextCompat.getMainExecutor(this));
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored") // mBackgroundExecutor.submit
     private void setUpSampleNotesButton() {
         mSampleNotesButton.setBackgroundColor(Color.GREEN);
         mSampleNotesButton.setOnClickListener(
@@ -176,6 +169,7 @@ public class NotesActivity extends AppCompatActivity {
                 }));
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored") // mBackgroundExecutor.submit
     private void setUpPutButton() {
         mPutButton.setBackgroundColor(Color.GREEN);
         mPutButton.setOnClickListener(v -> mBackgroundExecutor.submit(() -> {
@@ -243,6 +237,7 @@ public class NotesActivity extends AppCompatActivity {
         }));
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored") // mBackgroundExecutor.submit
     private void setUpQueryButton() {
         mQueryButton.setBackgroundColor(Color.GREEN);
         SearchSpec searchSpec = new SearchSpec.Builder()
@@ -302,6 +297,7 @@ public class NotesActivity extends AppCompatActivity {
         }));
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored") // mBackgroundExecutor.submit
     private void setUpSetSchemaButton() {
         mSetSchemaButton.setBackgroundColor(Color.GREEN);
         mSetSchemaButton.setOnClickListener(v -> mBackgroundExecutor.submit(() -> {
@@ -349,6 +345,7 @@ public class NotesActivity extends AppCompatActivity {
         }));
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored") // mBackgroundExecutor.submit
     private void setUpClearButton() {
         mClearButton.setBackgroundColor(Color.GREEN);
         mClearButton.setOnClickListener(v -> mBackgroundExecutor.submit(() -> {
@@ -507,15 +504,6 @@ public class NotesActivity extends AppCompatActivity {
             Log.e(TAG, "AppSearch failed to create Book notes ", e);
         }
         return putRequests;
-    }
-
-    private void displayNotes() {
-        mNotesAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, mSampleNotes);
-        mListView.setAdapter(mNotesAdapter);
-
-        mLoadingView.setVisibility(View.GONE);
-        mListView.setVisibility(View.VISIBLE);
     }
 
     private void buildResultMessage(List<SearchResult> results, StringBuilder messageBuilder) {

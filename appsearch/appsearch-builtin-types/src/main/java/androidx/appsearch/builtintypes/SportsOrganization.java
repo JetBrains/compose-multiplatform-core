@@ -16,13 +16,13 @@
 
 package androidx.appsearch.builtintypes;
 
+import android.graphics.Color;
+
 import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.serializers.ColorAsLongSerializer;
 import androidx.core.util.Preconditions;
-
-import android.graphics.Color;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -127,6 +127,7 @@ public class SportsOrganization extends Organization {
             return (T) this;
         }
 
+        @Override
         public @NonNull SportsOrganization build() {
             return new SportsOrganization(
                 mNamespace,

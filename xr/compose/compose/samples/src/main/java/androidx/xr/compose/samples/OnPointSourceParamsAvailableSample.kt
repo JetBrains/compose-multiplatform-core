@@ -27,10 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.scenecore.SpatialMediaPlayer
@@ -47,17 +47,16 @@ public fun OnPointSourceParamsAvailableSample() {
         val paramsSet = remember { mutableStateOf(false) }
 
         SpatialPanel(
-            SubspaceModifier.size(400.dp)
-                .onPointSourceParamsAvailable {
-                    if (!paramsSet.value) {
-                        paramsSet.value = true
-                        mediaPlayer.setDataSource(context, mediaUri)
-                        SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
-                        mediaPlayer.prepare()
-                        mediaPlayer.start()
-                    }
+            SubspaceModifier.size(400.dp).onPointSourceParamsAvailable {
+                if (!paramsSet.value) {
+                    paramsSet.value = true
+                    mediaPlayer.setDataSource(context, mediaUri)
+                    SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
+                    mediaPlayer.prepare()
+                    mediaPlayer.start()
                 }
-                .movable()
+            },
+            dragPolicy = MovePolicy(),
         ) {
             DisposableEffect(Unit) { onDispose { mediaPlayer.release() } }
 

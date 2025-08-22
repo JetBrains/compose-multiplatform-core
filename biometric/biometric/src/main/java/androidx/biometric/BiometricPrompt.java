@@ -1023,12 +1023,30 @@ public class BiometricPrompt {
             this.mLifecycle = lifecycle;
         }
 
-        void addObserver(LifecycleEventObserver observer) {
+        /**
+         * Adds an observer to the managed {@link Lifecycle}.
+         * <p>
+         * The observer will be added to the internal list and automatically registered
+         * with the {@link Lifecycle}.
+         * </p>
+         *
+         * @param observer The {@link LifecycleEventObserver} to be added.
+         */
+        public void addObserver(@NonNull LifecycleEventObserver observer) {
             mLifecycle.addObserver(observer);
             mObservers.add(observer);
         }
 
-        void clearObservers() {
+        /**
+         * Clears all observers from the container and removes them from the managed
+         * {@link Lifecycle}.
+         * <p>
+         * This method iterates through all registered observers, removes them from the
+         * {@link Lifecycle}, and then clears the internal list. This should be called when the
+         * container's purpose is fulfilled to prevent memory leaks.
+         * </p>
+         */
+        public void clearObservers() {
             for (LifecycleEventObserver observer : mObservers) {
                 mLifecycle.removeObserver(observer);
             }

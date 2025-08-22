@@ -46,7 +46,7 @@ class PageTransformCalculatorTest {
                 zoomLevel = zoom,
             )
 
-        assertThat(matrices.size()).isEqualTo(2)
+        assertThat(matrices.size).isEqualTo(2)
 
         // Verify matrix for page 0
         val matrix0 = matrices.get(0)

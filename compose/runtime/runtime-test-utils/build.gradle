@@ -83,24 +83,6 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
@@ -110,6 +92,8 @@ androidXMultiplatform {
                 } else {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
             }
         }
     }

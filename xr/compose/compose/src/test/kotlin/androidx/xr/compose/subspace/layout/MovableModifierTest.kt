@@ -69,6 +69,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_componentIsNotNullAndOnlyContainsSingleMovable() {
         composeTestRule.setContent {
             TestSetup {
@@ -83,6 +84,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierIsDisabledAndComponentDoesNotExist() {
         composeTestRule.setContent {
             TestSetup {
@@ -97,6 +99,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierDoesNotChangeAndOnlyOneComponentExist() {
         composeTestRule.setContent {
             TestSetup {
@@ -122,6 +125,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierEnabledToDisabledAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -147,6 +151,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierOnPoseChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -174,6 +179,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierDisableWithOnPoseChangeUpdateAndComponentRemoved() {
         composeTestRule.setContent {
             TestSetup {
@@ -204,6 +210,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -234,6 +241,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierDisabledThenEnabledAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -262,6 +270,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierOnPoseChangeTwiceUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -293,6 +302,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierDisabledThenEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -328,6 +338,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_modifierEnabledThenDisabledWithOnPoseChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -363,6 +374,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_columnEntity_noComponentByDefault() {
         composeTestRule.setContent {
             TestSetup {
@@ -383,6 +395,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_columnEntity_noComponentWhenMovableIsEnabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -397,6 +410,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_columnEntity_noComponentWhenMovableIsDisabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -411,6 +425,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_rowEntity_noComponentByDefault() {
         composeTestRule.setContent {
             TestSetup {
@@ -431,6 +446,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_rowEntity_noComponentWhenMovableIsEnabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -445,6 +461,7 @@ class MovableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun movable_rowEntity_noComponentWhenMovableIsDisabled() {
         composeTestRule.setContent {
             TestSetup {

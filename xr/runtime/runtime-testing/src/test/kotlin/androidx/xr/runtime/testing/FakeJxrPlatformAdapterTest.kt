@@ -35,6 +35,7 @@ import androidx.xr.runtime.internal.PointerCaptureComponent.StateListener
 import androidx.xr.runtime.internal.SpatialCapabilities
 import androidx.xr.runtime.internal.SpatialVisibility
 import androidx.xr.runtime.internal.SurfaceEntity
+import androidx.xr.runtime.internal.TextureSampler
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -117,13 +118,24 @@ class FakeJxrPlatformAdapterTest {
         val reflectionMap = FakeResource(0)
         val normalMap = FakeResource(1)
         val alphaMap = FakeResource(2)
+        val sampler =
+            TextureSampler(
+                wrapModeS = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                wrapModeT = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                wrapModeR = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                minFilter = TextureSampler.MinFilter.LINEAR_MIPMAP_LINEAR,
+                magFilter = TextureSampler.MagFilter.LINEAR,
+                compareMode = TextureSampler.CompareMode.NONE,
+                compareFunc = TextureSampler.CompareFunc.LE,
+                anisotropyLog2 = 0,
+            )
 
-        adapter.setReflectionMapOnWaterMaterial(material!!.get(), reflectionMap)
-        adapter.setNormalMapOnWaterMaterial(material.get(), normalMap)
+        adapter.setReflectionMapOnWaterMaterial(material!!.get(), reflectionMap, sampler)
+        adapter.setNormalMapOnWaterMaterial(material.get(), normalMap, sampler)
         adapter.setNormalTilingOnWaterMaterial(material.get(), 1.0f)
         adapter.setNormalSpeedOnWaterMaterial(material.get(), 2.0f)
         adapter.setAlphaStepMultiplierOnWaterMaterial(material.get(), 3.0f)
-        adapter.setAlphaMapOnWaterMaterial(material.get(), alphaMap)
+        adapter.setAlphaMapOnWaterMaterial(material.get(), alphaMap, sampler)
         adapter.setNormalZOnWaterMaterial(material.get(), 4.0f)
         adapter.setNormalBoundaryOnWaterMaterial(material.get(), 5.0f)
 
@@ -170,38 +182,69 @@ class FakeJxrPlatformAdapterTest {
         val sheenRoughness = FakeResource(9)
         val transmission = FakeResource(10)
         val transmissionUvTransform = Matrix3(FloatArray(9))
+        val sampler =
+            TextureSampler(
+                wrapModeS = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                wrapModeT = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                wrapModeR = TextureSampler.WrapMode.CLAMP_TO_EDGE,
+                minFilter = TextureSampler.MinFilter.LINEAR_MIPMAP_LINEAR,
+                magFilter = TextureSampler.MagFilter.LINEAR,
+                compareMode = TextureSampler.CompareMode.NONE,
+                compareFunc = TextureSampler.CompareFunc.LE,
+                anisotropyLog2 = 0,
+            )
 
-        adapter.setBaseColorTextureOnKhronosPbrMaterial(material!!.get(), baseColor)
+        adapter.setBaseColorTextureOnKhronosPbrMaterial(material!!.get(), baseColor, sampler)
         adapter.setBaseColorUvTransformOnKhronosPbrMaterial(material.get(), baseColorUvTransform)
         adapter.setBaseColorFactorsOnKhronosPbrMaterial(material.get(), baseColorFactors)
-        adapter.setMetallicRoughnessTextureOnKhronosPbrMaterial(material.get(), metallicRoughness)
+        adapter.setMetallicRoughnessTextureOnKhronosPbrMaterial(
+            material.get(),
+            metallicRoughness,
+            sampler,
+        )
         adapter.setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
             material.get(),
             metallicRoughnessUvTransform,
         )
         adapter.setMetallicFactorOnKhronosPbrMaterial(material.get(), 5.0f)
         adapter.setRoughnessFactorOnKhronosPbrMaterial(material.get(), 6.0f)
-        adapter.setNormalTextureOnKhronosPbrMaterial(material.get(), normal)
+        adapter.setNormalTextureOnKhronosPbrMaterial(material.get(), normal, sampler)
         adapter.setNormalUvTransformOnKhronosPbrMaterial(material.get(), normalUvTransform)
         adapter.setNormalFactorOnKhronosPbrMaterial(material.get(), 7.0f)
-        adapter.setAmbientOcclusionTextureOnKhronosPbrMaterial(material.get(), ambientOcclusion)
+        adapter.setAmbientOcclusionTextureOnKhronosPbrMaterial(
+            material.get(),
+            ambientOcclusion,
+            sampler,
+        )
         adapter.setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
             material.get(),
             ambientOcclusionUvTransform,
         )
         adapter.setAmbientOcclusionFactorOnKhronosPbrMaterial(material.get(), 8.0f)
-        adapter.setEmissiveTextureOnKhronosPbrMaterial(material.get(), emissive)
+        adapter.setEmissiveTextureOnKhronosPbrMaterial(material.get(), emissive, sampler)
         adapter.setEmissiveUvTransformOnKhronosPbrMaterial(material.get(), emissiveUvTransform)
         adapter.setEmissiveFactorsOnKhronosPbrMaterial(material.get(), emissiveFactors)
-        adapter.setClearcoatTextureOnKhronosPbrMaterial(material.get(), clearcoat)
-        adapter.setClearcoatNormalTextureOnKhronosPbrMaterial(material.get(), clearcoatNormal)
-        adapter.setClearcoatRoughnessTextureOnKhronosPbrMaterial(material.get(), clearcoatRoughness)
+        adapter.setClearcoatTextureOnKhronosPbrMaterial(material.get(), clearcoat, sampler)
+        adapter.setClearcoatNormalTextureOnKhronosPbrMaterial(
+            material.get(),
+            clearcoatNormal,
+            sampler,
+        )
+        adapter.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
+            material.get(),
+            clearcoatRoughness,
+            sampler,
+        )
         adapter.setClearcoatFactorsOnKhronosPbrMaterial(material.get(), 8.0f, 9.0f, 10.0f)
-        adapter.setSheenColorTextureOnKhronosPbrMaterial(material.get(), sheenColor)
+        adapter.setSheenColorTextureOnKhronosPbrMaterial(material.get(), sheenColor, sampler)
         adapter.setSheenColorFactorsOnKhronosPbrMaterial(material.get(), sheenColorFactors)
-        adapter.setSheenRoughnessTextureOnKhronosPbrMaterial(material.get(), sheenRoughness)
+        adapter.setSheenRoughnessTextureOnKhronosPbrMaterial(
+            material.get(),
+            sheenRoughness,
+            sampler,
+        )
         adapter.setSheenRoughnessFactorOnKhronosPbrMaterial(material.get(), 14.0f)
-        adapter.setTransmissionTextureOnKhronosPbrMaterial(material.get(), transmission)
+        adapter.setTransmissionTextureOnKhronosPbrMaterial(material.get(), transmission, sampler)
         adapter.setTransmissionUvTransformOnKhronosPbrMaterial(
             material.get(),
             transmissionUvTransform,
@@ -281,7 +324,7 @@ class FakeJxrPlatformAdapterTest {
     fun createSurfaceEntity_returnsInitialValue() {
         val stereoMode = 0
         val pose = Pose.Identity
-        val canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f)
+        val canvasShape = SurfaceEntity.Shape.Sphere(1.0f)
         val contentSecurityLevel = 0
         val superSampling = 0
         val parentEntity = FakeEntity()
@@ -298,7 +341,7 @@ class FakeJxrPlatformAdapterTest {
         assertThat(surfaceEntity).isInstanceOf(FakeSurfaceEntity::class.java)
         assertThat(surfaceEntity.stereoMode).isEqualTo(stereoMode)
         assertThat(surfaceEntity.getPose()).isEqualTo(pose)
-        assertThat(surfaceEntity.canvasShape).isEqualTo(canvasShape)
+        assertThat(surfaceEntity.shape).isEqualTo(canvasShape)
         assertThat(surfaceEntity.parent).isEqualTo(parentEntity)
     }
 
@@ -490,6 +533,19 @@ class FakeJxrPlatformAdapterTest {
                 )
             )
             .isInstanceOf(FakeMovableComponent::class.java)
+    }
+
+    @Test
+    fun createAnchorPlacementForPlanes_returnsInitialValue() {
+        val planeTypeFilter = setOf(PlaneType.HORIZONTAL)
+        val planeSemanticFilter = setOf(PlaneSemantic.TABLE, PlaneSemantic.FLOOR)
+
+        val anchorPlacement =
+            adapter.createAnchorPlacementForPlanes(planeTypeFilter, planeSemanticFilter)
+
+        assertThat(anchorPlacement).isInstanceOf(FakeAnchorPlacement::class.java)
+        assertThat(anchorPlacement.planeTypeFilter).isEqualTo(planeTypeFilter)
+        assertThat(anchorPlacement.planeSemanticFilter).isEqualTo(planeSemanticFilter)
     }
 
     @Test

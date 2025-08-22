@@ -78,6 +78,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private SpatialModeChangeListener mSpatialModeChangeListener;
     private final AtomicReference<BoundingBox> mCachedRecommendedContentBox =
             new AtomicReference<>(null);
+    @SuppressWarnings("HidingField") // super class AndroidXrEntity has mEntityManager
     private final EntityManager mEntityManager;
 
     ActivitySpaceImpl(
@@ -289,8 +290,8 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         }
     }
 
-    public void setSpatialModeChangeListener(SpatialModeChangeListener SpatialModeChangeListener) {
-        mSpatialModeChangeListener = SpatialModeChangeListener;
+    public void setSpatialModeChangeListener(SpatialModeChangeListener spatialModeChangeListener) {
+        mSpatialModeChangeListener = spatialModeChangeListener;
     }
 
     @SuppressWarnings("RestrictTo")

@@ -133,7 +133,7 @@ public class ActionAccumulator {
         // Transform the getSchema Future to a saveDocuments Future
         ListenableFuture<AppSearchBatchResult<String, Void>> priorCacheFuture =
                 Futures.transformAsync(assertSchemasSetAsync(),
-                        unused -> handlePriorCacheAsync(mContext), mExecutor);
+                        unused -> handlePriorCacheAsync(), mExecutor);
 
         // Transform the saveDocuments Future to an ActionAccumulator Future
         ListenableFuture<ActionAccumulator> accumulatorFuture =
@@ -143,8 +143,8 @@ public class ActionAccumulator {
     }
 
     /** Loads prior cache from disk and saves it to AppSearch if necessary. */
-    private ListenableFuture<AppSearchBatchResult<String, Void>> handlePriorCacheAsync(
-            @NonNull Context context) throws AppSearchException {
+    private ListenableFuture<AppSearchBatchResult<String, Void>> handlePriorCacheAsync()
+            throws AppSearchException {
 
         synchronized (mLock) {
             mCacheFile = getCacheFile();
@@ -179,6 +179,7 @@ public class ActionAccumulator {
     /**
      * Reports a {@link TakenAction} and restarts the flush timer.
      */
+    @SuppressWarnings("FutureReturnValueIgnored") // saveDocumentsToAppSearchAsync()
     @NonNull
     public ListenableFuture<AppSearchBatchResult<String, Void>> reportActionAsync(
             @NonNull TakenAction takenAction) {
@@ -415,6 +416,7 @@ public class ActionAccumulator {
 
     /** Reads the cache written on disk and converts it to {@link GenericDocument}s. */
     @GuardedBy("mLock")
+    @SuppressWarnings("MixedMutabilityReturnType")
     @NonNull
     private List<GenericDocument> readActionsFromDiskLocked() {
         if (!mCacheFile.exists()) {
@@ -425,7 +427,6 @@ public class ActionAccumulator {
         // with GenericDocumentParcel, ignore the file and continue.
         List<GenericDocumentParcel> parcelList = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(mCacheFile)) {
-            byte[] data = null;
             // Use a version compatible with older Android versions than Tiramisu
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int nRead;
@@ -434,7 +435,7 @@ public class ActionAccumulator {
                 buffer.write(tempArray, 0, nRead);
             }
 
-            data = buffer.toByteArray();
+            byte[] data = buffer.toByteArray();
 
             if (data.length == 0) {
                 return Collections.emptyList();
@@ -452,6 +453,7 @@ public class ActionAccumulator {
     }
 
     /** Helper method that unmarshalls a typed list of GenericDocumentParcel from raw bytes. */
+    @SuppressWarnings("MixedMutabilityReturnType")
     @NonNull
     private List<GenericDocumentParcel> unmarshallTypedList(byte[] data) {
         Parcel parcel = Parcel.obtain();

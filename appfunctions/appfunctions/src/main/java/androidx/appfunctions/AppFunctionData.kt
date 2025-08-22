@@ -425,7 +425,9 @@ internal constructor(
         val array = unsafeGetProperty(key, Array<String>::class.java)
         val stringValue =
             when {
-                key == LEGACY_ID_FIELD_KEY -> id
+                // For key == "id" we first check GD's id, if that's empty we fallback to checking
+                // GD's properties.
+                key == LEGACY_ID_FIELD_KEY -> id.ifEmpty { array?.ifEmpty { null }?.get(0) }
                 array == null || array.isEmpty() -> null
                 else -> array[0]
             }
@@ -972,6 +974,11 @@ internal constructor(
             // we need to have a compat version of this API to set the ID.
             if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 13) {
                 genericDocumentBuilder.setId(id)
+            } else {
+                Log.wtf(
+                    APP_FUNCTIONS_TAG,
+                    "setId method in GenericDocument isn't supported on the current device.",
+                )
             }
         }
 

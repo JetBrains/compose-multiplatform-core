@@ -300,13 +300,13 @@ internal fun Int.toInputEventAction(): Int {
 /** Extension function that converts a [TextureSampler] to [RtTextureSampler]. */
 internal fun TextureSampler.toRtTextureSampler(): RtTextureSampler {
     return RtTextureSampler(
-        wrapModeS,
-        wrapModeT,
-        wrapModeR,
-        minFilter,
-        magFilter,
+        wrapModeHorizontal,
+        wrapModeVertical,
+        wrapModeDepth,
+        minificationFilter,
+        magnificationFilter,
         compareMode,
-        compareFunc,
+        compareFunction,
         anisotropyLog2,
     )
 }

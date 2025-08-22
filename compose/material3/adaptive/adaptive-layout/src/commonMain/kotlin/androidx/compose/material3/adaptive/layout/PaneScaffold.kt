@@ -23,6 +23,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.node.ModifierNodeElement
@@ -70,7 +71,9 @@ sealed interface ExtendedPaneScaffoldPaneScope<
 sealed interface ExtendedPaneScaffoldScope<
     Role : PaneScaffoldRole,
     ScaffoldValue : PaneScaffoldValue<Role>,
-> : PaneScaffoldScope, PaneScaffoldTransitionScope<Role, ScaffoldValue>, LookaheadScope
+> : PaneScaffoldScope, PaneScaffoldTransitionScope<Role, ScaffoldValue>, LookaheadScope {
+    val focusRequesters: Map<Role, FocusRequester>
+}
 
 /**
  * The base scope of pane scaffolds, which provides scoped functions that supported by pane
@@ -201,6 +204,7 @@ sealed interface PaneScaffoldScope {
     fun Modifier.dragToResize(state: DragToResizeState): Modifier =
         this.draggable(state = state, orientation = state.orientation)
             .then(DragToResizeElement(state))
+            .clickToResize(state)
 
     /**
      * The saveable state holder to save pane states across their visibility life-cycles. The
@@ -246,6 +250,13 @@ sealed interface PaneScaffoldPaneScope<Role : PaneScaffoldRole> {
 
     /** The specified pane motion of the current pane in the scope. */
     val paneMotion: PaneMotion
+
+    /**
+     * Indicates if the pane should be interactable, i.e. focusable, clickable, etc. A pane can be
+     * non-interactable if it's [PaneAdaptedValue.Hidden] or being covered by a scrim casted by a
+     * [PaneAdaptedValue.Levitated] pane.
+     */
+    val isInteractable: Boolean
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

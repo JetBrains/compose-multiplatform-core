@@ -38,25 +38,33 @@ class ConfigurableAppFunctionFactoryTest {
     }
 
     @Test
-    fun testCreateNoArgEnclosingClass_withoutConfig() {
-        val factory = ConfigurableAppFunctionFactory<NoArgEnclosingClass>(noConfigContext)
+    fun testCreateNoArgEnclosingClass_withProvider() {
+        val factory = ConfigurableAppFunctionFactory(noConfigContext) { NoArgEnclosingClass() }
         factory.createEnclosingClass(NoArgEnclosingClass::class.java)
     }
 
     @Test
-    fun testCreateNoArgEnclosingClass_withConfig() {
-        val creator = ConfigurableAppFunctionFactory<NoArgEnclosingClass>(configContext)
-        creator.createEnclosingClass(NoArgEnclosingClass::class.java)
+    fun testCreateNoArgEnclosingClass_withProvider_configContext() {
+        val factory = ConfigurableAppFunctionFactory(configContext) { NoArgEnclosingClass() }
+        factory.createEnclosingClass(NoArgEnclosingClass::class.java)
     }
 
     @Test
-    fun testCreateNoArgEnclosingClass_ifProvideFactory() {
+    fun testCreateNoArgEnclosingClass_withoutProvider() {
+        val factory = ConfigurableAppFunctionFactory<NoArgEnclosingClass>(noConfigContext)
+        assertThrows(AppFunctionInstantiationException::class.java) {
+            factory.createEnclosingClass(NoArgEnclosingClass::class.java)
+        }
+    }
+
+    @Test
+    fun testCreateNoArgEnclosingClass_ifFactoryConfigured() {
         val creator = ConfigurableAppFunctionFactory<NoArgWithFactoryEnclosingClass>(configContext)
         creator.createEnclosingClass(NoArgWithFactoryEnclosingClass::class.java)
     }
 
     @Test
-    fun testCreateEnclosingClassRequiredArgs_withoutFactory() {
+    fun testCreateEnclosingClassRequiredArgs_withoutFactoryConfigured() {
         val creator = ConfigurableAppFunctionFactory<RequiredArgsEnclosingClass>(noConfigContext)
         assertThrows(AppFunctionInstantiationException::class.java) {
             creator.createEnclosingClass(RequiredArgsEnclosingClass::class.java)
@@ -64,34 +72,9 @@ class ConfigurableAppFunctionFactoryTest {
     }
 
     @Test
-    fun testCreateEnclosingClassRequiredArgs_withFactory() {
+    fun testCreateEnclosingClassRequiredArgs_withFactoryConfigured() {
         val creator = ConfigurableAppFunctionFactory<RequiredArgsEnclosingClass>(configContext)
         creator.createEnclosingClass(RequiredArgsEnclosingClass::class.java)
-    }
-
-    @Test
-    fun testCreateEnclosingClassWithPrivateConstructor() {
-        val creator =
-            ConfigurableAppFunctionFactory<PrivateConstructorEnclosingClass>(noConfigContext)
-        assertThrows(AppFunctionInstantiationException::class.java) {
-            creator.createEnclosingClass(PrivateConstructorEnclosingClass::class.java)
-        }
-    }
-
-    @Test
-    fun testCreateEnclosingClass_thatThrowErrorDuringInvocation() {
-        val creator = ConfigurableAppFunctionFactory<InvocationErrorEnclosingClass>(noConfigContext)
-        assertThrows(AppFunctionInstantiationException::class.java) {
-            creator.createEnclosingClass(InvocationErrorEnclosingClass::class.java)
-        }
-    }
-
-    @Test
-    fun testCreateEnclosingClass_thatThrowErrorDuringInitialization() {
-        val creator = ConfigurableAppFunctionFactory<InitializeErrorEnclosingClass>(noConfigContext)
-        assertThrows(AppFunctionInstantiationException::class.java) {
-            creator.createEnclosingClass(InitializeErrorEnclosingClass::class.java)
-        }
     }
 
     // Fake context
@@ -121,18 +104,4 @@ class ConfigurableAppFunctionFactoryTest {
     class NoArgWithFactoryEnclosingClass()
 
     class RequiredArgsEnclosingClass(val x: Int)
-
-    class PrivateConstructorEnclosingClass private constructor()
-
-    class InvocationErrorEnclosingClass private constructor(val x: Int) {
-        constructor() : this(0) {
-            throw RuntimeException()
-        }
-    }
-
-    class InitializeErrorEnclosingClass() {
-        init {
-            throw RuntimeException()
-        }
-    }
 }

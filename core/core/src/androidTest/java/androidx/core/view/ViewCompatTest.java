@@ -288,7 +288,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         View container = mActivityTestRule.getActivity().findViewById(R.id.container);
 
         // action_bar isn't present inside container
-        ViewCompat.requireViewById(container, R.id.action_bar);
+        ViewCompat.requireViewById(container, androidx.appcompat.R.id.action_bar);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -319,7 +319,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
     @Test
     @UiThreadTest
-    @SdkSuppress(minSdkVersion = 20) // dispatchApplyWindowInsets only works on API 20+
     public void dispatchApplyWindowInsets_correctReturnValue() {
         final View view = mActivityTestRule.getActivity().findViewById(R.id.container);
 

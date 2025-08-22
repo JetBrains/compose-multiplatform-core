@@ -255,21 +255,21 @@ class MutableAffineTransformTest {
     }
 
     @Test
-    fun shearX_returnsCorrectTransform() {
+    fun skewX_returnsCorrectTransform() {
         val transform = MutableAffineTransform(A, B, C, D, E, F)
-        transform.populateFromShearX(0.0f)
+        transform.populateFromSkewX(0.0f)
         assertThat(transform.equals(AffineTransform.IDENTITY)).isTrue()
-        transform.populateFromShearX(2.2f)
+        transform.populateFromSkewX(2.2f)
         assertThat(transform.equals(MutableAffineTransform(1.0f, 2.2f, 0.0f, 0.0f, 1.0f, 0.0f)))
             .isTrue()
     }
 
     @Test
-    fun shearY_returnsCorrectTransform() {
+    fun skewY_returnsCorrectTransform() {
         val transform = MutableAffineTransform(A, B, C, D, E, F)
-        transform.populateFromShearY(0.0f)
+        transform.populateFromSkewY(0.0f)
         assertThat(transform.equals(AffineTransform.IDENTITY)).isTrue()
-        transform.populateFromShearY(2.2f)
+        transform.populateFromSkewY(2.2f)
         assertThat(transform.equals(MutableAffineTransform(1.0f, 0.0f, 0.0f, 2.2f, 1.0f, 0.0f)))
             .isTrue()
     }

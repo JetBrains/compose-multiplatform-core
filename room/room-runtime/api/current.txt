@@ -240,6 +240,16 @@ package androidx.room {
 
 }
 
+package androidx.room.concurrent {
+
+  public typealias AtomicBoolean = java.util.concurrent.atomic.AtomicBoolean;
+
+  public typealias AtomicInt = java.util.concurrent.atomic.AtomicInteger;
+
+  public typealias ThreadLocal<T> = ThreadLocal<T>;
+
+}
+
 package androidx.room.migration {
 
   public interface AutoMigrationSpec {

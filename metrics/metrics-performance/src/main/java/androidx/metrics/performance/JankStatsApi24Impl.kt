@@ -106,11 +106,15 @@ internal open class JankStatsApi24Impl(
         window.decorView.post {
             if (enable) {
                 if (listenerAddedTime == 0L) {
-                    DelegatingFrameMetricsListener.addDelegateToWindow(
-                        window,
-                        frameMetricsAvailableListenerDelegate,
-                    )
-                    listenerAddedTime = System.nanoTime()
+                    if (
+                        DelegatingFrameMetricsListener.addDelegateToWindow(
+                            window,
+                            frameMetricsAvailableListenerDelegate,
+                        )
+                    ) {
+                        // added successfully
+                        listenerAddedTime = System.nanoTime()
+                    }
                 }
             } else {
                 DelegatingFrameMetricsListener.removeDelegateFromWindow(
@@ -185,10 +189,21 @@ private class DelegatingFrameMetricsListener(
         /**
          * This function returns the current list of FrameMetricsListener delegates. If no such list
          * exists, it will create it, and add a root listener which delegates to that list.
+         *
+         * @return true if successful
          */
         @RequiresApi(24)
         @MainThread
-        fun addDelegateToWindow(window: Window, delegate: OnFrameMetricsAvailableListener) {
+        fun addDelegateToWindow(
+            window: Window,
+            delegate: OnFrameMetricsAvailableListener,
+        ): Boolean {
+            if (!window.decorView.isHardwareAccelerated) {
+                // Frame metrics aren't supported in software, don't bother adding
+                // delegator or listener
+                return false
+            }
+
             var delegator =
                 window.decorView.getTag(R.id.metricsDelegator) as DelegatingFrameMetricsListener?
             if (delegator == null) {
@@ -207,6 +222,7 @@ private class DelegatingFrameMetricsListener(
             } else {
                 delegator.add(delegate)
             }
+            return true
         }
 
         @RequiresApi(24)
@@ -218,7 +234,13 @@ private class DelegatingFrameMetricsListener(
                 delegator.remove(delegate)
                 if (delegator.delegates.isEmpty()) {
                     // NOTE: always keep metrics listener + tag in sync!
-                    window.removeOnFrameMetricsAvailableListener(delegator)
+                    try {
+                        window.removeOnFrameMetricsAvailableListener(delegator)
+                    } catch (_: IllegalArgumentException) {
+                        // This catch shouldn't be necessary, since it's only expected to happen
+                        // when the view is not hardware accelerated, in which case we avoid
+                        // registering it, but ignoring to be safe. See b/436880904 for more info.
+                    }
                     window.decorView.setTag(R.id.metricsDelegator, null)
                 }
             }

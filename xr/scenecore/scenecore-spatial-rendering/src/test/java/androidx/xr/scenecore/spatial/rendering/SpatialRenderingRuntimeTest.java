@@ -20,6 +20,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
 
+import androidx.xr.runtime.internal.ExrImageResource;
+import androidx.xr.runtime.internal.GltfModelResource;
 import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.internal.SceneRuntimeFactory;
@@ -103,6 +105,66 @@ public class SpatialRenderingRuntimeTest {
     }
 
     @Test
+    public void loadGltfByAssetName_returnsModel() throws Exception {
+        ListenableFuture<GltfModelResource> modelFuture =
+                mRuntime.loadGltfByAssetName("FakeAsset.glb");
+
+        assertThat(modelFuture).isNotNull();
+
+        GltfModelResource model = modelFuture.get();
+        assertThat(model).isNotNull();
+        GltfModelResourceImpl modelImpl = (GltfModelResourceImpl) model;
+        assertThat(modelImpl).isNotNull();
+        long token = modelImpl.getExtensionModelToken();
+        assertThat(token).isEqualTo(1);
+    }
+
+    @Test
+    public void loadGltfByByteArray_returnsModel() throws Exception {
+        ListenableFuture<GltfModelResource> modelFuture =
+                mRuntime.loadGltfByByteArray(new byte[] {1, 2, 3}, "FakeAsset.glb");
+
+        assertThat(modelFuture).isNotNull();
+
+        GltfModelResource model = modelFuture.get();
+        assertThat(model).isNotNull();
+        GltfModelResourceImpl modelImpl = (GltfModelResourceImpl) model;
+        assertThat(modelImpl).isNotNull();
+        long token = modelImpl.getExtensionModelToken();
+        assertThat(token).isEqualTo(1);
+    }
+
+    @Test
+    public void loadExrImageByAssetName_returnsModel() throws Exception {
+        ListenableFuture<ExrImageResource> imageFuture =
+                mRuntime.loadExrImageByAssetName("FakeAsset.zip");
+
+        assertThat(imageFuture).isNotNull();
+
+        ExrImageResource image = imageFuture.get();
+        assertThat(image).isNotNull();
+        ExrImageResourceImpl imageImpl = (ExrImageResourceImpl) image;
+        assertThat(imageImpl).isNotNull();
+        long token = imageImpl.getExtensionImageToken();
+        assertThat(token).isEqualTo(1);
+    }
+
+    @Test
+    public void loadExrImageByByteArray_returnsModel() throws Exception {
+        ListenableFuture<ExrImageResource> imageFuture =
+                mRuntime.loadExrImageByByteArray(new byte[] {1, 2, 3}, "FakeAsset.zip");
+
+        assertThat(imageFuture).isNotNull();
+
+        ExrImageResource image = imageFuture.get();
+        assertThat(image).isNotNull();
+        ExrImageResourceImpl imageImpl = (ExrImageResourceImpl) image;
+        assertThat(imageImpl).isNotNull();
+        long token = imageImpl.getExtensionImageToken();
+        assertThat(token).isEqualTo(1);
+    }
+
+    @Test
     public void createWaterMaterial_returnsWaterMaterial() throws Exception {
         assertThat(createWaterMaterial()).isNotNull();
     }
@@ -127,5 +189,4 @@ public class SpatialRenderingRuntimeTest {
         mRuntime.startRenderer();
         assertThat(mRuntime.isFrameLoopStarted()).isTrue();
     }
-
 }

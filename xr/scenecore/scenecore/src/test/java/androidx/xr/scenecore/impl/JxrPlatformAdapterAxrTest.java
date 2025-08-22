@@ -85,7 +85,7 @@ import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SubspaceNodeEntity;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
-import androidx.xr.runtime.internal.TextureSampler;
+import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -265,18 +265,7 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     TextureResource loadTexture() throws Exception {
-        TextureSampler sampler =
-                new TextureSampler(
-                        TextureSampler.CLAMP_TO_EDGE,
-                        TextureSampler.CLAMP_TO_EDGE,
-                        TextureSampler.CLAMP_TO_EDGE,
-                        TextureSampler.LINEAR,
-                        TextureSampler.MAG_LINEAR,
-                        TextureSampler.NONE,
-                        TextureSampler.N,
-                        0);
-        ListenableFuture<TextureResource> textureFuture =
-                mRuntime.loadTexture("FakeTexture.png", sampler);
+        ListenableFuture<TextureResource> textureFuture = mRuntime.loadTexture("FakeTexture.png");
         assertThat(textureFuture).isNotNull();
         // This resolves the transformation of the Future from a SplitEngine token to the JXR
         // Texture.  This is a hidden detail from the API surface's perspective.
@@ -2301,8 +2290,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mRuntime.createSurfaceEntity(
                                 SurfaceEntity.StereoMode.SIDE_BY_SIDE,
                                 new Pose(),
-                                new SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
-                                SurfaceEntity.ContentSecurityLevel.NONE,
+                                new SurfaceEntity.Shape.Quad(new FloatSize2d(1.0f, 1.0f)),
+                                SurfaceEntity.SurfaceProtection.NONE,
                                 SurfaceEntity.SuperSampling.DEFAULT,
                                 mRuntime.getActivitySpaceRootImpl()));
     }
@@ -2318,8 +2307,8 @@ public final class JxrPlatformAdapterAxrTest {
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.SIDE_BY_SIDE,
                         new Pose(),
-                        new SurfaceEntity.CanvasShape.Quad(kTestWidth, kTestHeight),
-                        SurfaceEntity.ContentSecurityLevel.NONE,
+                        new SurfaceEntity.Shape.Quad(new FloatSize2d(kTestWidth, kTestHeight)),
+                        SurfaceEntity.SurfaceProtection.NONE,
                         SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
@@ -2334,8 +2323,8 @@ public final class JxrPlatformAdapterAxrTest {
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.TOP_BOTTOM,
                         new Pose(),
-                        new SurfaceEntity.CanvasShape.Vr360Sphere(kTestSphereRadius),
-                        SurfaceEntity.ContentSecurityLevel.NONE,
+                        new SurfaceEntity.Shape.Sphere(kTestSphereRadius),
+                        SurfaceEntity.SurfaceProtection.NONE,
                         SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
@@ -2350,8 +2339,8 @@ public final class JxrPlatformAdapterAxrTest {
                 mRuntime.createSurfaceEntity(
                         SurfaceEntity.StereoMode.MONO,
                         new Pose(),
-                        new SurfaceEntity.CanvasShape.Vr180Hemisphere(kTestHemisphereRadius),
-                        SurfaceEntity.ContentSecurityLevel.NONE,
+                        new SurfaceEntity.Shape.Hemisphere(kTestHemisphereRadius),
+                        SurfaceEntity.SurfaceProtection.NONE,
                         SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
@@ -2399,10 +2388,9 @@ public final class JxrPlatformAdapterAxrTest {
         assertThat(sphereData.getSurface()).isEqualTo(surfaceEntitySphere.getSurface());
         assertThat(hemisphereData.getSurface()).isEqualTo(surfaceEntityHemisphere.getSurface());
 
-        // Check that calls to set the CanvasShape and StereoMode after construction call through
+        // Check that calls to set the Shape and StereoMode after construction call through
         // Change the Quad to a Sphere
-        surfaceEntityQuad.setCanvasShape(
-                new SurfaceEntity.CanvasShape.Vr360Sphere(kTestSphereRadius));
+        surfaceEntityQuad.setShape(new SurfaceEntity.Shape.Sphere(kTestSphereRadius));
         // change the StereoMode to Top/Bottom from Side/Side
         surfaceEntityQuad.setStereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM);
         quadData =

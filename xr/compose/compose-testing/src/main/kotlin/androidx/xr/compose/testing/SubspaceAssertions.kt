@@ -83,6 +83,20 @@ public fun SubspaceSemanticsNodeInteraction.assertHeightIsNotEqualTo(
 }
 
 /**
+ * Asserts that the layout of this node has depth that is NOT equal to [expectedDepth].
+ *
+ * @param expectedDepth The depth to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertDepthIsNotEqualTo(
+    expectedDepth: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.depth.assertIsNotEqualTo(expectedDepth, "depth") }
+}
+
+/**
  * Asserts that the layout of this node has depth equal to [expectedDepth].
  *
  * @param expectedDepth The depth to assert.

@@ -333,18 +333,11 @@ public final class NotificationManagerCompat {
      * app's notification delegate via
      * {@link NotificationManager#notifyAsPackage(String, String, int, Notification)}.
      * </p>
-     * <p>
-     *     Returns an empty list on {@link Build.VERSION_CODES#LOLLIPOP_MR1} and earlier.
-     * </p>
      *
      * @return A list of {@link StatusBarNotification}.
      */
     public @NonNull List<StatusBarNotification> getActiveNotifications() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            return Api23Impl.getActiveNotifications(mNotificationManager);
-        } else {
-            return new ArrayList<>();
-        }
+        return Api23Impl.getActiveNotifications(mNotificationManager);
     }
 
     /**
@@ -851,12 +844,7 @@ public final class NotificationManagerCompat {
      * globally.
      */
     public @InterruptionFilter int getCurrentInterruptionFilter() {
-        if (Build.VERSION.SDK_INT < 23) {
-            // Prior to API 23, Interruption Filters were not implemented, so we return
-            // unknown filter level.
-            return INTERRUPTION_FILTER_UNKNOWN;
-        }
-        return Api23Impl.getCurrentInterruptionFilter(mNotificationManager);
+        return mNotificationManager.getCurrentInterruptionFilter();
     }
 
     /**
@@ -1187,53 +1175,11 @@ public final class NotificationManagerCompat {
         }
     }
 
-    private static class CancelTask implements Task {
-        final String packageName;
-        final int id;
-        final String tag;
-        final boolean all;
-
-        CancelTask(String packageName) {
-            this.packageName = packageName;
-            this.id = 0;
-            this.tag = null;
-            this.all = true;
-        }
-
-        CancelTask(String packageName, int id, String tag) {
-            this.packageName = packageName;
-            this.id = id;
-            this.tag = tag;
-            this.all = false;
-        }
-
-        @Override
-        public void send(INotificationSideChannel service) throws RemoteException {
-            if (all) {
-                service.cancelAll(packageName);
-            } else {
-                service.cancel(packageName, id, tag);
-            }
-        }
-
-        @Override
-        public @NonNull String toString() {
-            StringBuilder sb = new StringBuilder("CancelTask[");
-            sb.append("packageName:").append(packageName);
-            sb.append(", id:").append(id);
-            sb.append(", tag:").append(tag);
-            sb.append(", all:").append(all);
-            sb.append("]");
-            return sb.toString();
-        }
-    }
-
     /**
      * A class for wrapping calls to {@link NotificationManager} methods which
      * were added in API 23; these calls must be wrapped to avoid performance issues.
      * See the UnsafeNewApiCall lint rule for more details.
      */
-    @RequiresApi(23)
     static class Api23Impl {
         private Api23Impl() { }
 
@@ -1244,11 +1190,6 @@ public final class NotificationManagerCompat {
                 return new ArrayList<>();
             }
             return Arrays.asList(notifs);
-        }
-
-        static int getCurrentInterruptionFilter(
-                NotificationManager notificationManager) {
-            return notificationManager.getCurrentInterruptionFilter();
         }
     }
 

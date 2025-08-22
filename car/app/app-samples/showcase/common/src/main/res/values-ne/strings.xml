@@ -137,7 +137,7 @@
     <string name="started_for_result_msg" msgid="4225260243713833974">"%s ले यो एपबाट परिणाम माग्नुभयो। कल गर्ने व्यक्तिलाई पठाउने परिणाम चयन गर्नुहोस्"</string>
     <string name="arrived_exclamation_msg" msgid="9132265698563096988">"आइपुग्यो!"</string>
     <string name="travel_est_trip_text" msgid="5134365408383171144">"पिक अप Alice"</string>
-    <string name="send_notification_title" msgid="4731688444696028193">"सूचना पठाउनुहोस्"</string>
+    <string name="send_notification_title" msgid="4731688444696028193">"नोटिफिकेसन पठाउनुहोस्"</string>
     <string name="start_notifications_title" msgid="8699668027543530460">"सूचनाहरू प्राप्त गर्ने सुविधा अन गर्नुहोस्"</string>
     <string name="stop_notifications_title" msgid="3703892710275206239">"सूचनाहरू प्राप्त गर्ने सुविधा अफ गर्नुहोस्"</string>
     <string name="notification_title" msgid="5507590705935298176">"नोटिफिकेसन"</string>

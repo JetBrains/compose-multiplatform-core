@@ -37,7 +37,12 @@ internal constructor(
     public val leftHand: Hand?,
     public val rightHand: Hand?,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val leftRenderViewpoint: RenderViewpoint?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val rightRenderViewpoint: RenderViewpoint?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val monoRenderViewpoint: RenderViewpoint?,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val depthMaps: List<DepthMap>,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?,
 ) {
@@ -49,7 +54,9 @@ internal constructor(
         if (leftHand != other.leftHand) return false
         if (rightHand != other.rightHand) return false
         if (arDevice != other.arDevice) return false
-        if (viewCameras != other.viewCameras) return false
+        if (leftRenderViewpoint != other.leftRenderViewpoint) return false
+        if (rightRenderViewpoint != other.rightRenderViewpoint) return false
+        if (monoRenderViewpoint != other.monoRenderViewpoint) return false
         if (depthMaps != other.depthMaps) return false
         if (userFace != other.userFace) return false
         return true
@@ -61,7 +68,9 @@ internal constructor(
         result = 31 * result + leftHand.hashCode()
         result = 31 * result + rightHand.hashCode()
         result = 31 * result + arDevice.hashCode()
-        result = 31 * result + viewCameras.hashCode()
+        result = 31 * result + leftRenderViewpoint.hashCode()
+        result = 31 * result + rightRenderViewpoint.hashCode()
+        result = 31 * result + monoRenderViewpoint.hashCode()
         result = 31 * result + depthMaps.hashCode()
         result = 31 * result + userFace.hashCode()
         return result

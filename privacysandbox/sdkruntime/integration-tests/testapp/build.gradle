@@ -38,14 +38,17 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.0")
     implementation("com.google.android.material:material:1.6.0")
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-client"))
+    implementation("androidx.lifecycle:lifecycle-common:2.8.7")
 
     // For macrobenchmarks on API 34+
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
+    androidTestImplementation("androidx.core:core:1.15.0")
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.testUiautomator)
 }

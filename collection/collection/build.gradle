@@ -60,10 +60,10 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestAnnotationsCommon)
-                implementation(libs.kotlinCoroutinesCore)
-                implementation(libs.kotlinCoroutinesTest)
+                implementation(libs.kotlinTest)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
             }
         }
 
@@ -128,9 +128,6 @@ androidXMultiplatform {
         wasmJsMain {
             dependsOn(nonJsMain)
             dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
         }
 
         wasmJsTest {
@@ -140,9 +137,6 @@ androidXMultiplatform {
 
         jsMain {
             dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
         }
 
         jsTest {
@@ -152,15 +146,11 @@ androidXMultiplatform {
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (target.konanTarget.family.appleFamily) {
                         dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (target.konanTarget.family == Family.LINUX) {
                         dependsOn(linuxMain)
-                    } else if (konanTargetFamily == Family.MINGW) {
+                    } else if (target.konanTarget.family == Family.MINGW) {
                         dependsOn(mingwMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")

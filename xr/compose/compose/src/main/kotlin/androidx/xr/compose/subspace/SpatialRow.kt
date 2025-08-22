@@ -19,8 +19,11 @@ package androidx.xr.compose.subspace
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -89,13 +92,18 @@ private fun SpatialRow(
     curveRadius: Dp,
     content: @Composable @SubspaceComposable SpatialRowScope.() -> Unit,
 ) {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+
+    val coreGroupEntity = remember {
+        CoreGroupEntity(
+            GroupEntity.create(session, name = entityName("SpatialRow"), pose = Pose.Identity)
+        )
+    }
+
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialRowScopeInstance.content() },
-        coreEntity =
-            rememberCoreGroupEntity {
-                GroupEntity.create(this, name = entityName("SpatialRow"), pose = Pose.Identity)
-            },
+        coreEntity = coreGroupEntity,
         measurePolicy =
             RowColumnMeasurePolicy(
                 orientation = LayoutOrientation.Horizontal,

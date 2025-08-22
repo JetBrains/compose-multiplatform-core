@@ -655,7 +655,7 @@ public class GridWidgetTest {
         final int rightMargin = 7;
         final int bottomMargin = 8;
         final int itemHeight = 100;
-        final int ninePatchDrawableResourceId = R.drawable.lb_card_shadow_focused;
+        final int ninePatchDrawableResourceId = androidx.leanback.R.drawable.lb_card_shadow_focused;
 
         Intent intent = new Intent();
         intent.putExtra(GridActivity.EXTRA_LAYOUT_RESOURCE_ID, R.layout.vertical_linear);

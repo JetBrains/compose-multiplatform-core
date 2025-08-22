@@ -33,10 +33,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.width
 
 class MediaPlayerApp : ComponentActivity() {
@@ -46,7 +46,8 @@ class MediaPlayerApp : ComponentActivity() {
         setContent {
             Subspace {
                 SpatialPanel(
-                    modifier = SubspaceModifier.width(600.dp).height(600.dp).movable(enabled = true)
+                    modifier = SubspaceModifier.width(600.dp).height(600.dp),
+                    dragPolicy = MovePolicy(isEnabled = true),
                 ) {
                     MediaPlayer()
                 }

@@ -1384,7 +1384,10 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
 
         val fragmentContainer = activityRule.activity.findViewById<View>(R.id.fragmentContainer)
 
-        assertThat(fragmentContainer.getTag(R.id.visible_removing_fragment_view_tag)).isNull()
+        assertThat(
+                fragmentContainer.getTag(androidx.fragment.R.id.visible_removing_fragment_view_tag)
+            )
+            .isNull()
 
         // Now we remove fragment1 which is detached
         fragmentManager
@@ -1394,7 +1397,10 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
             .commit()
         activityRule.waitForExecution()
 
-        assertThat(fragmentContainer.getTag(R.id.visible_removing_fragment_view_tag)).isNull()
+        assertThat(
+                fragmentContainer.getTag(androidx.fragment.R.id.visible_removing_fragment_view_tag)
+            )
+            .isNull()
     }
 
     @Test

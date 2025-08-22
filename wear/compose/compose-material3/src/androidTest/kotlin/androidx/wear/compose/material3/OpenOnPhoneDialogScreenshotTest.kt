@@ -17,7 +17,10 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -27,6 +30,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -62,23 +66,55 @@ class OpenOnPhoneDialogScreenshotTest {
         )
     }
 
+    @Test
+    fun openOnPhone_sinhalese(@TestParameter screenSize: ScreenSize) {
+        rule.verifyOpenOnPhoneScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            advanceTimeBy = OpenOnPhoneDialogDefaults.DurationMillis,
+            screenSize = screenSize,
+            language = "si",
+        )
+    }
+
+    @Test
+    fun openOnPhone_french(@TestParameter screenSize: ScreenSize) {
+        rule.verifyOpenOnPhoneScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            advanceTimeBy = OpenOnPhoneDialogDefaults.DurationMillis,
+            screenSize = screenSize,
+            language = "fr",
+        )
+    }
+
     private fun ComposeContentTestRule.verifyOpenOnPhoneScreenshot(
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
         screenSize: ScreenSize,
         advanceTimeBy: Long,
+        language: String? = null,
     ) {
         rule.mainClock.autoAdvance = false
         setContentWithTheme {
             ScreenConfiguration(screenSize.size) {
-                val text = OpenOnPhoneDialogDefaults.text
-                val style = OpenOnPhoneDialogDefaults.curvedTextStyle
-                OpenOnPhoneDialog(
-                    visible = true,
-                    modifier = Modifier.size(screenSize.size.dp).testTag(TEST_TAG),
-                    onDismissRequest = {},
-                    curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) },
-                )
+                val configuration = LocalConfiguration.current
+                language?.let { configuration.setLocale(Locale(language)) }
+                val localizedContext =
+                    LocalContext.current.createConfigurationContext(configuration)
+                CompositionLocalProvider(
+                    LocalContext provides localizedContext,
+                    LocalConfiguration provides configuration,
+                ) {
+                    val text = OpenOnPhoneDialogDefaults.text
+                    val style = OpenOnPhoneDialogDefaults.curvedTextStyle
+                    OpenOnPhoneDialog(
+                        visible = true,
+                        modifier = Modifier.size(screenSize.size.dp).testTag(TEST_TAG),
+                        onDismissRequest = {},
+                        curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) },
+                    )
+                }
             }
         }
 

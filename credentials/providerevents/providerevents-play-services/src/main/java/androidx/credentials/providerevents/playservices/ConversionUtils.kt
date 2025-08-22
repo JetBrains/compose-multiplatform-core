@@ -92,8 +92,11 @@ public class ConversionUtils {
 
         public fun convertToJetpackRequest(
             request: GetCredentialTransferCapabilitiesRequest
-        ): CredentialTransferCapabilitiesRequest {
+        ): CredentialTransferCapabilitiesRequest? {
             val requestJson = request.requestData.getString(BUNDLE_REQUEST_JSON_KEY)
+            if (requestJson == null) {
+                return null
+            }
             return CredentialTransferCapabilitiesRequest(requestJson)
         }
 

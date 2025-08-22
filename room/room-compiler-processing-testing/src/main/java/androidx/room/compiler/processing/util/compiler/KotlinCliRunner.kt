@@ -31,7 +31,6 @@ import org.jetbrains.kotlin.config.LanguageVersion
 
 /** Utility object to run kotlin compiler via its CLI API. */
 internal object KotlinCliRunner {
-    private val compiler = K2JVMCompiler()
 
     /** Runs the Kotlin CLI API with the given arguments. */
     fun runKotlinCli(
@@ -44,9 +43,10 @@ internal object KotlinCliRunner {
         pluginRegistrars: PluginRegistrarArguments =
             PluginRegistrarArguments(emptyList(), emptyList()),
     ): KotlinCliResult {
+        val compiler = K2JVMCompiler()
         destinationDir.mkdirs()
         val cliArguments =
-            compiler.createArguments().apply {
+            createArguments().apply {
                 destination = destinationDir.absolutePath
                 arguments.copyToCliArguments(this)
             }
@@ -60,7 +60,6 @@ internal object KotlinCliRunner {
                 arguments = cliArguments,
                 registrars = pluginRegistrars,
             )
-
         return KotlinCliResult(
             exitCode = exitCode,
             diagnostics = diagnosticsMessageCollector.getDiagnostics(),
@@ -89,6 +88,13 @@ internal object KotlinCliRunner {
     }
 
     /** Get the jvm default mode specified with `-Xjvm-default=xxx`. */
+    fun getLegacyJvmDefaultMode(kotlincArguments: List<String>): LegacyJvmDefaultMode {
+        return parseArguments(kotlincArguments).jvmDefault.let {
+            LegacyJvmDefaultMode.fromStringOrNull(it)
+        } ?: TestDefaultOptions.legacyJvmDefaultMode
+    }
+
+    /** Get the jvm default mode specified with `-jvm-default=xxx`. */
     fun getJvmDefaultMode(kotlincArguments: List<String>): JvmDefaultMode {
         return parseArguments(kotlincArguments).jvmDefault.let {
             JvmDefaultMode.fromStringOrNull(it)
@@ -101,8 +107,8 @@ internal object KotlinCliRunner {
     }
 
     private fun parseArguments(kotlincArguments: List<String>): K2JVMCompilerArguments {
-        return compiler.createArguments().apply {
-            compiler.parseArguments(kotlincArguments.toTypedArray(), this)
+        return K2JVMCompiler().let {
+            it.createArguments().apply { it.parseArguments(kotlincArguments.toTypedArray(), this) }
         }
     }
 
@@ -115,10 +121,15 @@ internal object KotlinCliRunner {
         // We want allow no sources to run test handlers
         cliArguments.allowNoSourceFiles = true
 
-        cliArguments.languageVersion = getLanguageVersion(kotlincArguments).versionString
+        // We are running on deprecated versions (1.9) on purpose for testing
+        cliArguments.suppressVersionWarnings = true
+
+        val languageVersion = getLanguageVersion(kotlincArguments)
+        cliArguments.languageVersion = languageVersion.versionString
         cliArguments.apiVersion = getApiVersion(kotlincArguments).versionString
         cliArguments.jvmTarget = getJvmTarget(kotlincArguments).description
-        cliArguments.jvmDefault = getJvmDefaultMode(kotlincArguments).description
+        cliArguments.jvmDefault = getLegacyJvmDefaultMode(kotlincArguments).description
+        cliArguments.jvmDefaultStable = getJvmDefaultMode(kotlincArguments).description
 
         // useJavac & compileJava are experimental so lets not use it for now.
         cliArguments.useJavac = false
@@ -172,3 +183,5 @@ internal object KotlinCliRunner {
             .associateBy({ it.optionName }, { it.value })
     }
 }
+
+private fun createArguments() = K2JVMCompiler().createArguments()

@@ -16,10 +16,19 @@
 
 package androidx.credentials.providerevents.transfer
 
+import androidx.credentials.providerevents.internal.RequestValidationHelper
+
 /**
  * a request to export a set of credentials into the provider
  *
  * @property credentialsJson the credentials that are delivered to the provider formatted as per
  *   [Fido Credential Exchange Format](https://fidoalliance.org/specs/cx/cxf-v1.0-rd-20250313.html)
+ * @throws IllegalArgumentException If [credentialsJson] is empty, or if it is not a valid JSON
  */
-public class ExportCredentialsRequest(public val credentialsJson: String)
+public class ExportCredentialsRequest(public val credentialsJson: String) {
+    init {
+        require(RequestValidationHelper.isValidJSON(credentialsJson)) {
+            "requestJson must not be empty, and must be a valid JSON"
+        }
+    }
+}

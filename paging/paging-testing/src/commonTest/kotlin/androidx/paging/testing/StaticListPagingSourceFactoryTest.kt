@@ -39,6 +39,7 @@ class StaticListPagingSourceFactoryTest {
     private val testScope = TestScope(UnconfinedTestDispatcher())
     private val CONFIG = PagingConfig(pageSize = 3, initialLoadSize = 5)
 
+    @IgnoreWebTarget // b/439963937
     @Test
     fun emptyFlow() {
         val factory: PagingSourceFactory<Int, Int> =

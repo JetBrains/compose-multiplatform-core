@@ -21,8 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.ShadowScope
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.shadow.lerp
@@ -112,21 +110,17 @@ internal fun Modifier.depth(
     // modifiers, this includes layer2's shadow).
     return this.dropShadow(shape) {
             val shadow = lerp(from?.layer1, to?.layer1, progress())
-            resetProperties()
             if (shadow != null) {
                 updateFrom(shadow)
             }
         }
         .dropShadow(shape) {
             val shadow = lerp(from?.layer2, to?.layer2, progress())
-            resetProperties()
             if (shadow != null) {
                 updateFrom(shadow)
             }
         }
 }
-
-// TODO: b/434990398 - remove the following and use public APIs if / when added
 
 private fun ShadowScope.updateFrom(shadow: Shadow) {
     this.radius = shadow.radius.toPx()
@@ -136,14 +130,4 @@ private fun ShadowScope.updateFrom(shadow: Shadow) {
     this.brush = shadow.brush
     this.alpha = shadow.alpha
     this.blendMode = shadow.blendMode
-}
-
-private fun ShadowScope.resetProperties() {
-    this.radius = 0f
-    this.spread = 0f
-    this.offset = Offset.Zero
-    this.color = Color.Black
-    this.brush = null
-    this.alpha = 1f
-    this.blendMode = BlendMode.SrcOver
 }

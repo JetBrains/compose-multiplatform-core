@@ -24,15 +24,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.DpVolumeSize
@@ -67,10 +67,10 @@ class ActivityPanelApp : ComponentActivity() {
                 modifier =
                     SubspaceModifier.width(panelWidth)
                         .height(panelHeight)
-                        .movable()
-                        .resizable(minimumSize = minimumSize)
                         .testTag("AnotherActivityPanel"),
                 intent = Intent(this@ActivityPanelApp, AnotherActivity::class.java),
+                dragPolicy = MovePolicy(),
+                resizePolicy = ResizePolicy(minimumSize = minimumSize),
             )
             SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             for (i in 1..5) {
@@ -78,12 +78,12 @@ class ActivityPanelApp : ComponentActivity() {
                     modifier =
                         SubspaceModifier.width(panelWidth)
                             .height(panelHeight)
-                            .movable()
-                            .resizable(minimumSize = minimumSize)
                             .testTag("BaseActivityPanel"),
                     intent =
                         Intent(this@ActivityPanelApp, BaseActivity::class.java)
                             .putExtra("activityName", "Activity $i"),
+                    dragPolicy = MovePolicy(),
+                    resizePolicy = ResizePolicy(minimumSize = minimumSize),
                 )
                 SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             }
@@ -98,9 +98,9 @@ class ActivityPanelApp : ComponentActivity() {
                     modifier =
                         SubspaceModifier.width(panelWidth)
                             .height(panelHeight)
-                            .movable()
-                            .resizable(minimumSize = minimumSize)
                             .testTag("BaseActivityPanel"),
+                    dragPolicy = MovePolicy(),
+                    resizePolicy = ResizePolicy(minimumSize = minimumSize),
                 )
                 SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             }

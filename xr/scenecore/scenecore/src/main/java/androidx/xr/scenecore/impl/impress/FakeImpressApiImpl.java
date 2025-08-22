@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -237,7 +237,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     public ListenableFuture<Long> loadImageBasedLightingAsset(
-            @NonNull byte[] data, @NonNull String key) {
+            byte @NonNull [] data, @NonNull String key) {
         long imageBasedLightingAssetToken = mNextImageBasedLightingAssetId++;
         mImageBasedLightingAssets.add(imageBasedLightingAssetToken);
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
@@ -261,7 +261,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
-    public ListenableFuture<Long> loadGltfAsset(@NonNull byte[] data, @NonNull String key) {
+    public ListenableFuture<Long> loadGltfAsset(byte @NonNull [] data, @NonNull String key) {
         long gltfToken = mNextModelId++;
         mGltfModels.put(gltfToken, new ArrayList<>());
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
@@ -531,14 +531,12 @@ public class FakeImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
-    public ListenableFuture<Texture> loadTexture(
-            @NonNull String path, @NonNull TextureSampler sampler) {
+    public ListenableFuture<Texture> loadTexture(@NonNull String path) {
         long textureImageToken = mNextTextureId++;
         Texture texture =
                 new Texture.Builder()
                         .setImpressApi(this)
                         .setNativeTexture(textureImageToken)
-                        .setTextureSampler(sampler)
                         .build();
         mTextureImages.put(textureImageToken, texture);
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
@@ -554,7 +552,6 @@ public class FakeImpressApiImpl implements ImpressApi {
         return new Texture.Builder()
                 .setImpressApi(this)
                 .setNativeTexture(textureImageToken)
-                .setTextureSampler(null)
                 .build();
     }
 
@@ -565,7 +562,6 @@ public class FakeImpressApiImpl implements ImpressApi {
         return new Texture.Builder()
                 .setImpressApi(this)
                 .setNativeTexture(textureImageToken)
-                .setTextureSampler(null)
                 .build();
     }
 
@@ -586,12 +582,14 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setReflectionMapOnWaterMaterial(long nativeMaterial, long reflectionMap) {
+    public void setReflectionMapOnWaterMaterial(
+            long nativeMaterial, long reflectionMap, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
     @Override
-    public void setNormalMapOnWaterMaterial(long nativeMaterial, long normalMap) {
+    public void setNormalMapOnWaterMaterial(
+            long nativeMaterial, long normalMap, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -612,7 +610,8 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setAlphaMapOnWaterMaterial(long nativeWaterMaterial, long alphaMap) {
+    public void setAlphaMapOnWaterMaterial(
+            long nativeWaterMaterial, long alphaMap, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -658,7 +657,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setBaseColorTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long baseColorTexture) {
+            long nativeKhronosPbrMaterial, long baseColorTexture, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -685,7 +684,9 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setMetallicRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long metallicRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long metallicRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -717,7 +718,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setNormalTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long normalTexture) {
+            long nativeKhronosPbrMaterial, long normalTexture, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -743,7 +744,9 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setAmbientOcclusionTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long ambientOcclusionTexture) {
+            long nativeKhronosPbrMaterial,
+            long ambientOcclusionTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -770,7 +773,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setEmissiveTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long emissiveTexture) {
+            long nativeKhronosPbrMaterial, long emissiveTexture, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -797,19 +800,23 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setClearcoatTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatTexture) {
+            long nativeKhronosPbrMaterial, long clearcoatTexture, @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
     @Override
     public void setClearcoatNormalTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatNormalTexture) {
+            long nativeKhronosPbrMaterial,
+            long clearcoatNormalTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
     @Override
     public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long clearcoatRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -821,7 +828,9 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setSheenColorTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long sheenColorTexture) {
+            long nativeKhronosPbrMaterial,
+            long sheenColorTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -833,7 +842,9 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setSheenRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long sheenRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long sheenRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -845,7 +856,9 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setTransmissionTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long transmissionTexture) {
+            long nativeKhronosPbrMaterial,
+            long transmissionTexture,
+            @NonNull TextureSampler sampler) {
         throw new IllegalArgumentException("not implemented");
     }
 

@@ -16,6 +16,7 @@
 
 package androidx.tracing.driver.wire
 
+import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
 import androidx.tracing.driver.TraceContext
@@ -56,6 +57,9 @@ class TestSink : TraceSink() {
                             // this is sometimes not used, but we don't care about extra
                             // allocations during this test
                             scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG),
+                            // We don't reset annotations in tests. Allocations are okay here.
+                            scratchAnnotations = mutableListOf(),
+                            scratchAnnotationIndex = AtomicInteger(-1),
                         )
                     }
             )

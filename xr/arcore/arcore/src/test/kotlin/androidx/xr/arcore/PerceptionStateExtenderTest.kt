@@ -226,37 +226,111 @@ class PerceptionStateExtenderTest {
     }
 
     @Test
-    fun extend_withTwoStates_viewCameraStateUpdated(): Unit = runBlocking {
+    fun extend_withTwoStates_leftRenderViewpointStateUpdated(): Unit = runBlocking {
         // arrange
         underTest.initialize(fakeRuntime)
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
-        check(coreState.perceptionState!!.viewCameras.isNotEmpty())
-        check(coreState.perceptionState!!.viewCameras[0].state.value.pose == Pose())
-        check(coreState.perceptionState!!.viewCameras[0].state.value.localPose == Pose())
+        check(coreState.perceptionState!!.leftRenderViewpoint != null)
+        val renderViewpointStateValue =
+            coreState.perceptionState!!.leftRenderViewpoint!!.state.value
+        check(renderViewpointStateValue.pose.equals(Pose(Vector3(1f, 0f, 0f), Quaternion.Identity)))
         check(
-            coreState.perceptionState!!.viewCameras[0].state.value.fieldOfView ==
-                FieldOfView(0f, 0f, 0f, 0f)
+            renderViewpointStateValue.localPose.equals(
+                Pose(Vector3(1f, 0f, 0f), Quaternion.Identity)
+            )
         )
+        check(renderViewpointStateValue.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
 
         // act
         timeSource += 10.milliseconds
         val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
         val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
 
-        val runtimeViewCamera = fakeRuntime.perceptionManager.viewCameras[0]
-        runtimeViewCamera.pose = expectedPose
-        runtimeViewCamera.fieldOfView = expectedFov
+        val runtimeViewpoint = fakeRuntime.perceptionManager.leftRenderViewpoint!!
+        runtimeViewpoint.pose = expectedPose
+        runtimeViewpoint.fieldOfView = expectedFov
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
 
         // assert
-        assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.pose)
-            .isEqualTo(expectedPose)
-        assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.localPose)
-            .isEqualTo(expectedPose)
-        assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.fieldOfView)
-            .isEqualTo(expectedFov)
+        val renderViewpointStateValue2 =
+            coreState2.perceptionState!!.leftRenderViewpoint!!.state.value
+        assertThat(renderViewpointStateValue2.pose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.localPose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.fieldOfView).isEqualTo(expectedFov)
+    }
+
+    @Test
+    fun extend_withTwoStates_rightRenderViewpointStateUpdated(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(fakeRuntime)
+        val coreState = CoreState(timeSource.markNow())
+        underTest.extend(coreState)
+        check(coreState.perceptionState!!.rightRenderViewpoint != null)
+        val renderViewpointStateValue =
+            coreState.perceptionState!!.rightRenderViewpoint!!.state.value
+        check(renderViewpointStateValue.pose.equals(Pose(Vector3(0f, 1f, 0f), Quaternion.Identity)))
+        check(
+            renderViewpointStateValue.localPose.equals(
+                Pose(Vector3(0f, 1f, 0f), Quaternion.Identity)
+            )
+        )
+        check(renderViewpointStateValue.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
+
+        // act
+        timeSource += 10.milliseconds
+        val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+        val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+
+        val runtimeViewpoint = fakeRuntime.perceptionManager.rightRenderViewpoint!!
+        runtimeViewpoint.pose = expectedPose
+        runtimeViewpoint.fieldOfView = expectedFov
+        val coreState2 = CoreState(timeSource.markNow())
+        underTest.extend(coreState2)
+
+        // assert
+        val renderViewpointStateValue2 =
+            coreState2.perceptionState!!.rightRenderViewpoint!!.state.value
+        assertThat(renderViewpointStateValue2.pose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.localPose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.fieldOfView).isEqualTo(expectedFov)
+    }
+
+    @Test
+    fun extend_withTwoStates_monoRenderViewpointStateUpdated(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(fakeRuntime)
+        val coreState = CoreState(timeSource.markNow())
+        underTest.extend(coreState)
+        check(coreState.perceptionState!!.monoRenderViewpoint != null)
+        val renderViewpointStateValue =
+            coreState.perceptionState!!.monoRenderViewpoint!!.state.value
+        check(renderViewpointStateValue.pose.equals(Pose(Vector3(0f, 0f, 1f), Quaternion.Identity)))
+        check(
+            renderViewpointStateValue.localPose.equals(
+                Pose(Vector3(0f, 0f, 1f), Quaternion.Identity)
+            )
+        )
+        check(renderViewpointStateValue.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
+
+        // act
+        timeSource += 10.milliseconds
+        val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+        val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+
+        val runtimeViewpoint = fakeRuntime.perceptionManager.monoRenderViewpoint!!
+        runtimeViewpoint.pose = expectedPose
+        runtimeViewpoint.fieldOfView = expectedFov
+        val coreState2 = CoreState(timeSource.markNow())
+        underTest.extend(coreState2)
+
+        // assert
+        val renderViewpointStateValue2 =
+            coreState2.perceptionState!!.monoRenderViewpoint!!.state.value
+        assertThat(renderViewpointStateValue2.pose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.localPose).isEqualTo(expectedPose)
+        assertThat(renderViewpointStateValue2.fieldOfView).isEqualTo(expectedFov)
     }
 
     @Test

@@ -145,5 +145,5 @@ tasks.withType(KspTask).configureEach { kspTask ->
 }
 
 androidx {
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

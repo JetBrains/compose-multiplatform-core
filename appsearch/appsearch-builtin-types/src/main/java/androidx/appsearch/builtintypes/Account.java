@@ -101,7 +101,7 @@ public class Account {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Account)) return false;
         Account otherAccount = (Account) o;
         return Objects.equals(mNamespace, otherAccount.mNamespace)
                 && Objects.equals(mId, otherAccount.mId)

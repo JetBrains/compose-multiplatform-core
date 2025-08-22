@@ -524,6 +524,83 @@ object Stubs {
         """,
         )
 
+    val RememberObserver: TestFile =
+        bytecodeStub(
+            filename = "RememberObserver.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0x80eb9cc9,
+            source =
+                """
+        package androidx.compose.runtime
+
+        interface RememberObserver {
+            fun onRemembered()
+
+            fun onForgotten()
+
+            fun onAbandoned()
+        }
+        """,
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgAmJGBijgUuGSSMxLKcrPTKnQS87PLcgvTtUr
+                Ks0rycxNFeIISi1JzMzzLuFS5ZLBpUovLT9fiNUtP9+7RIlBiwEA9+K1PWUA
+                AAA=
+                """,
+            """
+                androidx/compose/runtime/RememberObserver.class:
+                H4sIAAAAAAAA/41PTU/CQBB9swVaC2oBP8AfYCQmFok3owkXIgZDggkXTi1d
+                SYHumu5COPK7PBjO/ijjFtSDJ5PJe28mL/NmPj7f3gHcoE5oBCJKZRyt/LFM
+                XqXifroQOk64P+AJT0Ke9kPF0yVPbRDBmwbLwJ8HYuL3wykfaxsWoSTFj5tH
+                BOuiMSQUpejIdCK15mLbtUOTJUXmKPdmUs9j4T9xHUSBDm4JLFla5iqWAWUA
+                As3MfBVnXdOo6Jpwv1lXXFZjLvM2a9cU84x2mPNS26xbrEmPjsfOWNN6ODcq
+                96vyO5VtaREue//+25xmLqn+HV/NNMF9lot0zDvxnBPqg92GYazicM7bQkgd
+                6FgKVTCpyGUvwcoR8igAhu1vdjI2jtMtnqBm+M5k7hmnO4LVRbGLUhf7ODCM
+                wy48lEcghQqqIxQUjhSOFfJbtBWcL7Fc2M3iAQAA
+                """,
+        )
+
+    val RetainObserver: TestFile =
+        bytecodeStub(
+            filename = "RetainObserver.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0x3d97471d,
+            source =
+                """
+        package androidx.compose.runtime
+
+        interface RetainObserver {
+            fun onRetained()
+
+            fun onEnteredComposition()
+
+            fun onExitedComposition()
+
+            fun onRetired()
+
+            fun onAbandoned()
+        }
+        """,
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgAmJGBijgUuGSSMxLKcrPTKnQS87PLcgvTtUr
+                Ks0rycxNFeIISi1JzMzzLuFS5ZLBpUovLT9fiNUtP9+7RIlBiwEA9+K1PWUA
+                AAA=
+                """,
+            """
+                androidx/compose/runtime/RetainObserver.class:
+                H4sIAAAAAAAA/41QQU8aQRh93yywy9raRayivVe9dJF482SMTTEYE5p44bSw
+                02YEZszOQDjyuzwYzv4o4zcLIamnJpvvvXnZ9+bN9/r2/ALgAt8IJ5nOC6Py
+                RToy0ydjZVrMtFNTmfaly5S+H1pZzGURggjJYzbP0kmm/6b3w0c5ciECQmz0
+                +l+ZE4LTswfCvtE32slC5tdlqnLKaEKT5YVyH9R66VeFt+8YfTXkSqYMa/TG
+                xk2UTu84P89cdkkQ03nA5YUf5AcINGZ9ofypzSw/J/RXy71YtEQsktUy5k8k
+                zKNK9Ke1WnZEm26jRByLdvDrO7PKllW3rLZl4Zr55A7hrPefK+Oy3K3xr/hj
+                7Hhjv82sGMmfaiIJR/21+0FZNZzIK62Ny/xmbI1vRMU/EdUKoYoawBhuMNpg
+                fYOxR3YclbOFY8ZrbrDDzk8DBF187mK3iy9IGNHoYg/NAchiH18HiCwOLA4t
+                quUMrVfqFvE7bWEsxC8CAAA=
+                """,
+        )
+
     val StateFactoryMarker: TestFile =
         bytecodeStub(
             filename = "StateFactoryMarker.kt",

@@ -222,4 +222,15 @@ public class ProfileImpl implements Profile {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
     }
+
+    @Override
+    @ExperimentalPreconnect
+    public void preconnect(@NonNull String url) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PRECONNECT;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.preconnect(url);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
 }

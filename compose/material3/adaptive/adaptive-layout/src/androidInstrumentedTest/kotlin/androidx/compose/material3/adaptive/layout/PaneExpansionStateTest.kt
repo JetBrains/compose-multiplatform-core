@@ -217,54 +217,106 @@ class PaneExpansionStateTest {
     }
 
     @Test
-    fun test_paneExpansionStateSaver() {
-        val mockPaneExpansionStateDataMap =
-            mutableMapOf(
-                Pair(PaneExpansionStateKey.Default, PaneExpansionStateData(1, 0.2F, 3, null)),
-                Pair(
-                    TwoPaneExpansionStateKeyImpl(
-                        ThreePaneScaffoldRole.Primary,
-                        ThreePaneScaffoldRole.Secondary,
-                    ),
-                    PaneExpansionStateData(4, 0.5F, 6, PaneExpansionAnchor.Proportion(0.4F)),
-                ),
-                Pair(
-                    TwoPaneExpansionStateKeyImpl(
-                        ThreePaneScaffoldRole.Secondary,
-                        ThreePaneScaffoldRole.Tertiary,
-                    ),
-                    PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset.fromStart(200.dp)),
-                ),
-                Pair(
-                    TwoPaneExpansionStateKeyImpl(
-                        ThreePaneScaffoldRole.Tertiary,
-                        ThreePaneScaffoldRole.Primary,
-                    ),
-                    PaneExpansionStateData(10, 0.3F, 12, null),
-                ),
-            )
-
-        var savedMap: MutableMap<PaneExpansionStateKey, PaneExpansionStateData>? = null
+    fun test_paneExpansionStateKeySaver_defaultKey() {
+        val mockKey = PaneExpansionStateKey.Default
+        var savedKey: PaneExpansionStateKey? = null
 
         restorationTester.setContent {
-            savedMap =
-                rememberSaveable(saver = PaneExpansionStateSaver()) {
-                    mockPaneExpansionStateDataMap
-                }
+            savedKey = rememberSaveable(saver = PaneExpansionStateKeySaver()) { mockKey }
         }
 
         rule.runOnUiThread {
             // Null it to ensure recomposition happened
-            savedMap = null
+            savedKey = null
         }
 
         restorationTester.emulateSavedInstanceStateRestore()
 
-        rule.runOnUiThread {
-            mockPaneExpansionStateDataMap.entries.forEach {
-                assertThat(savedMap!![it.key]).isEqualTo(it.value)
-            }
+        rule.runOnUiThread { assertThat(savedKey).isEqualTo(mockKey) }
+    }
+
+    @Test
+    fun test_paneExpansionStateKeySaver_twoPaneKey() {
+        val mockKey =
+            TwoPaneExpansionStateKeyImpl(
+                ThreePaneScaffoldRole.Secondary,
+                ThreePaneScaffoldRole.Tertiary,
+            )
+        var savedKey: PaneExpansionStateKey? = null
+
+        restorationTester.setContent {
+            savedKey = rememberSaveable(saver = PaneExpansionStateKeySaver()) { mockKey }
         }
+
+        rule.runOnUiThread {
+            // Null it to ensure recomposition happened
+            savedKey = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(savedKey).isEqualTo(mockKey) }
+    }
+
+    @Test
+    fun test_paneExpansionStateDataSaver_nullAnchor() {
+        val mockData = PaneExpansionStateData(1, 0.2F, 3, null)
+
+        var savedData: PaneExpansionStateData? = null
+
+        restorationTester.setContent {
+            savedData = rememberSaveable(saver = PaneExpansionStateDataSaver()) { mockData }
+        }
+
+        rule.runOnUiThread {
+            // Null it to ensure recomposition happened
+            savedData = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(savedData).isEqualTo(mockData) }
+    }
+
+    @Test
+    fun test_paneExpansionStateDataSaver_proportionalAnchor() {
+        val mockData = PaneExpansionStateData(4, 0.5F, 6, PaneExpansionAnchor.Proportion(0.4F))
+
+        var savedData: PaneExpansionStateData? = null
+
+        restorationTester.setContent {
+            savedData = rememberSaveable(saver = PaneExpansionStateDataSaver()) { mockData }
+        }
+
+        rule.runOnUiThread {
+            // Null it to ensure recomposition happened
+            savedData = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(savedData).isEqualTo(mockData) }
+    }
+
+    @Test
+    fun test_paneExpansionStateDataSaver_offsetAnchor() {
+        val mockData =
+            PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset.fromStart(200.dp))
+
+        var savedData: PaneExpansionStateData? = null
+
+        restorationTester.setContent {
+            savedData = rememberSaveable(saver = PaneExpansionStateDataSaver()) { mockData }
+        }
+
+        rule.runOnUiThread {
+            // Null it to ensure recomposition happened
+            savedData = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(savedData).isEqualTo(mockData) }
     }
 }
 

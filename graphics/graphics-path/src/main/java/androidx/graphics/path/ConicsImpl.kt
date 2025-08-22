@@ -15,6 +15,7 @@
  */
 package androidx.graphics.path
 
+import androidx.collection.FloatFloatPair
 import java.util.ArrayList
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -24,46 +25,46 @@ private const val MAX_CONIC_TO_QUAD_COUNT = 5
 internal fun conicToQuadratics(
     conicPoints: FloatArray,
     offset: Int,
-    quadraticPoints: FloatArray,
     weight: Float,
     tolerance: Float,
-): Int {
-    val conic =
-        Conic(
-            arrayOf(
-                Point(conicPoints[0 + offset], conicPoints[1 + offset]),
-                Point(conicPoints[2 + offset], conicPoints[3 + offset]),
-                Point(conicPoints[4 + offset], conicPoints[5 + offset]),
-            ),
-            weight,
-        )
+): FloatArray {
+    val conic = conicPoints.toConic(offset, weight)
+    val targetQuadraticCount = conic.computeQuadraticCount(tolerance)
 
-    val count = conic.computeQuadraticCount(tolerance)
-    val quadraticCount = 1 shl count
-    if (quadraticCount > quadraticPoints.size) {
-        // Buffer not large enough; return necessary size to resize and try again
-        return quadraticCount
-    }
+    val quadraticPoints = ArrayList<Float>()
+    conic.splitIntoQuadratics(quadraticPoints, targetQuadraticCount)
 
-    val dstPoints = ArrayList<Point>()
-    val finalCount = conic.splitIntoQuadratics(dstPoints, count)
-
-    var index = 0
-    for (p in dstPoints) {
-        quadraticPoints[index++] = p.x
-        quadraticPoints[index++] = p.y
-    }
-
-    return finalCount
+    return quadraticPoints.toFloatArray()
 }
 
-private class Point(val x: Float, val y: Float) {
-    fun isFinite() = x.isFinite() && y.isFinite()
+private typealias Point = FloatFloatPair
+
+private val Point.x
+    get() = first
+
+private val Point.y
+    get() = second
+
+private fun Point.isFinite() = x.isFinite() && y.isFinite()
+
+private fun ArrayList<Float>.add(p: Point) {
+    add(p.x)
+    add(p.y)
 }
 
-private fun add(a: Point, b: Point) = Point(a.x + b.x, a.y + b.y)
+private fun FloatArray.toConic(offset: Int, weight: Float): Conic =
+    Conic(
+        arrayOf(
+            Point(this[0 + offset], this[1 + offset]),
+            Point(this[2 + offset], this[3 + offset]),
+            Point(this[4 + offset], this[5 + offset]),
+        ),
+        weight,
+    )
 
-private fun mul(a: Point, b: Point) = Point(a.x * b.x, a.y * b.y)
+private operator fun Point.plus(b: Point) = Point(x + b.x, y + b.y)
+
+private operator fun Point.times(b: Point) = Point(x * b.x, y * b.y)
 
 private fun approxEquals(a: Float, b: Float): Boolean = abs(a - b) < 0.0001f
 
@@ -71,7 +72,7 @@ private fun approxEquals(a: Point, b: Point) = approxEquals(a.x, b.x) && approxE
 
 private fun between(a: Float, b: Float, c: Float): Boolean = (a - b) * (c - b) <= 0.0f
 
-private fun subdivide(src: Conic, pts: ArrayList<Point>, level: Int) {
+private fun subdivide(src: Conic, pts: ArrayList<Float>, level: Int) {
     if (level == 0) {
         pts.add(src.points[1])
         pts.add(src.points[2])
@@ -128,8 +129,8 @@ private class Conic(val points: Array<Point>, val weight: Float) {
         val p2 = points[2]
         val ww = Point(weight, weight)
 
-        val wp1 = mul(ww, p1)
-        var m = mul(mul(add(add(p0, add(wp1, wp1)), p2), scale), Point(0.5f, 0.5f))
+        val wp1 = ww * p1
+        var m = (p0 + wp1 + wp1 + p2) * scale * Point(0.5f, 0.5f)
         if (!m.isFinite()) {
             val wD = weight.toDouble()
             val w2 = wD * 2.0
@@ -143,14 +144,13 @@ private class Conic(val points: Array<Point>, val weight: Float) {
                 )
         }
         return SplitResult(
-            Conic(arrayOf(p0, mul(add(p0, wp1), scale), m), newW),
-            Conic(arrayOf(m, mul(add(wp1, p2), scale), p2), newW),
+            Conic(arrayOf(p0, (p0 + wp1) * scale, m), newW),
+            Conic(arrayOf(m, (wp1 + p2) * scale, p2), newW),
         )
     }
 
-    fun commonFinitePointCheck(dstPoints: ArrayList<Point>, count: Int): Int {
+    fun commonFinitePointCheck(dstPoints: ArrayList<Float>, count: Int): Int {
         val quadCount = 1 shl count
-        val pointCount = 2 * quadCount + 1
 
         var isFinite = true
         for (p in dstPoints) {
@@ -161,32 +161,20 @@ private class Conic(val points: Array<Point>, val weight: Float) {
         }
 
         if (!isFinite) {
+            val pointCount = dstPoints.size / 2
+            val p1 = points[1]
             for (i in 1..<pointCount) {
-                dstPoints[i] = points[1]
+                val index = i * 2
+                dstPoints[index] = p1.x
+                dstPoints[index + 1] = p1.y
             }
         }
 
         return quadCount
     }
 
-    fun splitIntoQuadratics(dstPoints: ArrayList<Point>, count: Int): Int {
+    fun splitIntoQuadratics(dstPoints: ArrayList<Float>, count: Int): Int {
         dstPoints.add(points[0])
-
-        if (count > MAX_CONIC_TO_QUAD_COUNT) {
-            val s = split()
-
-            if (
-                approxEquals(s.a.points[1], s.a.points[2]) &&
-                    approxEquals(s.b.points[0], s.b.points[1])
-            ) {
-                dstPoints.add(s.a.points[1])
-                dstPoints.add(s.a.points[1])
-                dstPoints.add(s.a.points[1])
-                dstPoints.add(s.b.points[2])
-                return commonFinitePointCheck(dstPoints, 1)
-            }
-        }
-
         subdivide(this, dstPoints, count)
         return commonFinitePointCheck(dstPoints, count)
     }

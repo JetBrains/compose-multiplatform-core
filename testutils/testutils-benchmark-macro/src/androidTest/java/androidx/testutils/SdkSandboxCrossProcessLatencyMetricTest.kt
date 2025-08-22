@@ -24,12 +24,14 @@ import androidx.benchmark.macro.assertEqualMeasurements
 import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.benchmark.traceprocessor.TraceProcessor
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class SdkSandboxCrossProcessLatencyMetricTest {
+    @SdkSuppress(minSdkVersion = 24) // b/438214932
     @OptIn(ExperimentalMetricApi::class)
     @Test
     fun fixedTrace35() {

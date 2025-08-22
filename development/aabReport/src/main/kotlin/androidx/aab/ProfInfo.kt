@@ -31,11 +31,12 @@ import java.util.zip.Inflater
  * Ideally, we'd use Profgen to extract dex checksums and other similar metadata so we wouldn't need
  * to reimplement this.
  */
-data class ProfInfo(val dexInfoList: List<DexInfo>) {
-    data class DexInfo(val checksumCrc32: String)
+data class ProfInfo(val profDexInfoList: List<ProfDexInfo>) {
+    data class ProfDexInfo(val checksumCrc32: String)
 
     companion object {
         const val BUNDLE_LOCATION = "BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof"
+        const val APK_LOCATION = "assets/dexopt/baseline.prof"
 
         internal fun byteArrayOf(vararg chars: Char) =
             ByteArray(chars.size) { chars[it].code.toByte() }
@@ -153,7 +154,7 @@ data class ProfInfo(val dexInfoList: List<DexInfo>) {
                     val dexChecksum = readUInt32()
                     val numMethodIds = readUInt32()
                     val profileKey = readString(profileKeySize)
-                    DexInfo(
+                    ProfDexInfo(
                         // profileKeySize = profileKeySize,
                         // typeIdSetSize = typeIdSetSize,
                         // hotMethodRegionSize = hotMethodRegionSize,
@@ -189,7 +190,7 @@ data class ProfInfo(val dexInfoList: List<DexInfo>) {
             return if (VERBOSE) {
                 listOf(
                     (this != null).toString(),
-                    (this?.dexInfoList
+                    (this?.profDexInfoList
                             ?.map { it.checksumCrc32 }
                             ?.sorted()
                             ?.joinToString(INTERNAL_CSV_SEPARATOR))

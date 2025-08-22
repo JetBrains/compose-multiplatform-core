@@ -35,11 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.width
 
 class MovableToggleApp : ComponentActivity() {
@@ -53,7 +53,10 @@ class MovableToggleApp : ComponentActivity() {
     private fun SpatialContent() {
         var enabled by remember { mutableStateOf(true) }
 
-        SpatialPanel(SubspaceModifier.height(200.dp).width(200.dp).movable(enabled = enabled)) {
+        SpatialPanel(
+            SubspaceModifier.height(200.dp).width(200.dp),
+            dragPolicy = MovePolicy(isEnabled = enabled),
+        ) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),
                 contentAlignment = Alignment.Center,

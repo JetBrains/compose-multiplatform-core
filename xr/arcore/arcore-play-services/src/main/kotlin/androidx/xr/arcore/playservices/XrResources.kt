@@ -36,6 +36,7 @@ internal class XrResources() {
     private val _trackables = ConcurrentHashMap<ArCoreTrackable, Trackable>()
     internal val trackables: Map<ArCoreTrackable, Trackable> = _trackables
     internal val earth: ArCoreEarth = ArCoreEarth(this)
+    internal val arDevice: ArCoreDevice = ArCoreDevice()
 
     /**
      * Adds a [Trackable] to the map.

@@ -83,7 +83,8 @@ public final class SearchSessionStatsExtractor {
      * @param currSearchAction the current search action {@link SearchActionGenericDocument}.
      * @param prevSearchAction the previous search action {@link SearchActionGenericDocument}.
      */
-    public static @SearchIntentStats.QueryCorrectionType int getQueryCorrectionType(
+    @SearchIntentStats.QueryCorrectionType
+    public static int getQueryCorrectionType(
             @NonNull SearchActionGenericDocument currSearchAction,
             @Nullable SearchActionGenericDocument prevSearchAction) {
         Objects.requireNonNull(currSearchAction);
@@ -106,6 +107,9 @@ public final class SearchSessionStatsExtractor {
         // strings.
         String prevQuery = prevSearchAction.getQuery();
         String currQuery = currSearchAction.getQuery();
+        if (prevQuery == null || currQuery == null) {
+            return SearchIntentStats.QUERY_CORRECTION_TYPE_UNKNOWN;
+        }
         int commonPrefixLength = getCommonPrefixLength(prevQuery, currQuery);
         // If the user hits backspace >= QUERY_ABANDONMENT_BACKSPACE_COUNT times, then it is query
         // abandonment. Otherwise, it is query refinement.

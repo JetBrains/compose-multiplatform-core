@@ -1,8 +1,16 @@
 // Baseline format: 1.0
+AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp):
+    Source breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,androidx.compose.ui.unit.Dp,androidx.compose.ui.unit.Dp)
+AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp):
+    Source breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,androidx.compose.ui.unit.Dp,androidx.compose.ui.unit.Dp)
 AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
     Binary breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
 AddedAbstractMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
     Binary breaking change: Added method androidx.constraintlayout.compose.BaselineAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float)
+AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp):
+    Source breaking change: Added method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,androidx.compose.ui.unit.Dp,androidx.compose.ui.unit.Dp)
+AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp):
+    Source breaking change: Added method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,androidx.compose.ui.unit.Dp,androidx.compose.ui.unit.Dp)
 AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
     Binary breaking change: Added method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
 AddedAbstractMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
@@ -11,6 +19,8 @@ AddedAbstractMethod: androidx.constraintlayout.compose.MotionCarouselScope#items
     Binary breaking change: Added method androidx.constraintlayout.compose.MotionCarouselScope.items(int,kotlin.jvm.functions.Function3<? super java.lang.Integer,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
 AddedAbstractMethod: androidx.constraintlayout.compose.MotionCarouselScope#itemsWithProperties(int, kotlin.jvm.functions.Function4<? super java.lang.Integer,? super androidx.compose.runtime.State<androidx.constraintlayout.compose.MotionLayoutScope.MotionProperties>,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>):
     Binary breaking change: Added method androidx.constraintlayout.compose.MotionCarouselScope.itemsWithProperties(int,kotlin.jvm.functions.Function4<? super java.lang.Integer,? super androidx.compose.runtime.State<androidx.constraintlayout.compose.MotionLayoutScope.MotionProperties>,? super androidx.compose.runtime.Composer,? super java.lang.Integer,kotlin.Unit>)
+AddedAbstractMethod: androidx.constraintlayout.compose.VerticalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp):
+    Source breaking change: Added method androidx.constraintlayout.compose.VerticalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,androidx.compose.ui.unit.Dp,androidx.compose.ui.unit.Dp)
 AddedAbstractMethod: androidx.constraintlayout.compose.VerticalAnchorable#linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, float, float):
     Binary breaking change: Added method androidx.constraintlayout.compose.VerticalAnchorable.linkTo-VpY3zN4(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,float,float)
 
@@ -29,6 +39,10 @@ ParameterNameChange: androidx.constraintlayout.compose.ConstraintLayoutBaseScope
     Source breaking change: Attempted to change parameter name from offset to fraction in method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createGuidelineFromTop
 
 
+RemovedDeprecatedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#atLeastWrapContent(androidx.constraintlayout.compose.Dimension.MinCoercible, float):
+    Binary breaking change: Removed deprecated method androidx.constraintlayout.compose.ConstraintLayoutKt.atLeastWrapContent(androidx.constraintlayout.compose.Dimension.MinCoercible,float)
+
+
 RemovedFromBytecode: androidx.constraintlayout.compose.DebugFlags#DebugFlags(boolean, boolean, boolean):
     Binary breaking change: constructor androidx.constraintlayout.compose.DebugFlags(boolean,boolean,boolean) has been removed from bytecode
 RemovedFromBytecode: androidx.constraintlayout.compose.Skip#Skip(int, int):
@@ -43,12 +57,26 @@ RemovedFromBytecode: androidx.constraintlayout.compose.Span#Span(int, int, int):
     Binary breaking change: constructor androidx.constraintlayout.compose.Span(int,int,int) has been removed from bytecode
 
 
+RemovedMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.BaselineAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
+RemovedMethod: androidx.constraintlayout.compose.BaselineAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.BaselineAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#asDimension(float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.asDimension(float)
+RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#circular(androidx.constraintlayout.compose.ConstrainedLayoutReference, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.circular(androidx.constraintlayout.compose.ConstrainedLayoutReference,float,float)
 RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#getTranslationX():
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.getTranslationX()
 RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#getTranslationY():
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.getTranslationY()
 RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#getTranslationZ():
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.getTranslationZ()
+RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float,float,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float, float, float, float, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float,float,float,float,float,float,float,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,float,float,float,float,float)
 RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#setTranslationX(float):
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.setTranslationX(float)
 RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#setTranslationY(float):
@@ -57,15 +85,73 @@ RemovedMethod: androidx.constraintlayout.compose.ConstrainScope#setTranslationZ(
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainScope.setTranslationZ(float)
 RemovedMethod: androidx.constraintlayout.compose.ConstrainedLayoutReference#getId():
     Binary breaking change: Removed method androidx.constraintlayout.compose.ConstrainedLayoutReference.getId()
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createAbsoluteLeftBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createAbsoluteLeftBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createAbsoluteRightBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createAbsoluteRightBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createBottomBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createBottomBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createColumn(androidx.constraintlayout.compose.LayoutReference[], float, float[]):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createColumn(androidx.constraintlayout.compose.LayoutReference[],float,float[])
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createEndBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createEndBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createFlow(androidx.constraintlayout.compose.LayoutReference[], boolean, float, float, int, float, androidx.constraintlayout.compose.Wrap, androidx.constraintlayout.compose.VerticalAlign, androidx.constraintlayout.compose.HorizontalAlign, float, float, androidx.constraintlayout.compose.FlowStyle, androidx.constraintlayout.compose.FlowStyle):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createFlow(androidx.constraintlayout.compose.LayoutReference[],boolean,float,float,int,float,androidx.constraintlayout.compose.Wrap,androidx.constraintlayout.compose.VerticalAlign,androidx.constraintlayout.compose.HorizontalAlign,float,float,androidx.constraintlayout.compose.FlowStyle,androidx.constraintlayout.compose.FlowStyle)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createFlow(androidx.constraintlayout.compose.LayoutReference[], boolean, float, float, int, float, float, androidx.constraintlayout.compose.Wrap, androidx.constraintlayout.compose.VerticalAlign, androidx.constraintlayout.compose.HorizontalAlign, float, float, androidx.constraintlayout.compose.FlowStyle, androidx.constraintlayout.compose.FlowStyle):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createFlow(androidx.constraintlayout.compose.LayoutReference[],boolean,float,float,int,float,float,androidx.constraintlayout.compose.Wrap,androidx.constraintlayout.compose.VerticalAlign,androidx.constraintlayout.compose.HorizontalAlign,float,float,androidx.constraintlayout.compose.FlowStyle,androidx.constraintlayout.compose.FlowStyle)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createFlow(androidx.constraintlayout.compose.LayoutReference[], boolean, float, float, int, float, float, float, float, androidx.constraintlayout.compose.Wrap, androidx.constraintlayout.compose.VerticalAlign, androidx.constraintlayout.compose.HorizontalAlign, float, float, androidx.constraintlayout.compose.FlowStyle, androidx.constraintlayout.compose.FlowStyle):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createFlow(androidx.constraintlayout.compose.LayoutReference[],boolean,float,float,int,float,float,float,float,androidx.constraintlayout.compose.Wrap,androidx.constraintlayout.compose.VerticalAlign,androidx.constraintlayout.compose.HorizontalAlign,float,float,androidx.constraintlayout.compose.FlowStyle,androidx.constraintlayout.compose.FlowStyle)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createGrid(androidx.constraintlayout.compose.LayoutReference[], int, int, boolean, float, float, float[], float[], androidx.constraintlayout.compose.Skip[], androidx.constraintlayout.compose.Span[], int):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createGrid(androidx.constraintlayout.compose.LayoutReference[],int,int,boolean,float,float,float[],float[],androidx.constraintlayout.compose.Skip[],androidx.constraintlayout.compose.Span[],int)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createRow(androidx.constraintlayout.compose.LayoutReference[], float, float[]):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createRow(androidx.constraintlayout.compose.LayoutReference[],float,float[])
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createStartBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createStartBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#createTopBarrier(androidx.constraintlayout.compose.LayoutReference[], float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.createTopBarrier(androidx.constraintlayout.compose.LayoutReference[],float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#withChainParams(androidx.constraintlayout.compose.LayoutReference, float, float, float, float, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.withChainParams(androidx.constraintlayout.compose.LayoutReference,float,float,float,float,float,float,float,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#withHorizontalChainParams(androidx.constraintlayout.compose.LayoutReference, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.withHorizontalChainParams(androidx.constraintlayout.compose.LayoutReference,float,float,float,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#withVerticalChainParams(androidx.constraintlayout.compose.LayoutReference, float, float, float, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutBaseScope.withVerticalChainParams(androidx.constraintlayout.compose.LayoutReference,float,float,float,float,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#atLeast(androidx.constraintlayout.compose.Dimension.Coercible, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutKt.atLeast(androidx.constraintlayout.compose.Dimension.Coercible,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#atLeast(androidx.constraintlayout.compose.Dimension.MinCoercible, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutKt.atLeast(androidx.constraintlayout.compose.Dimension.MinCoercible,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#atMost(androidx.constraintlayout.compose.Dimension.Coercible, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutKt.atMost(androidx.constraintlayout.compose.Dimension.Coercible,float)
+RemovedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#atMost(androidx.constraintlayout.compose.Dimension.MaxCoercible, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.ConstraintLayoutKt.atMost(androidx.constraintlayout.compose.Dimension.MaxCoercible,float)
 RemovedMethod: androidx.constraintlayout.compose.DebugFlags.Companion#getAll():
     Binary breaking change: Removed method androidx.constraintlayout.compose.DebugFlags.Companion.getAll()
 RemovedMethod: androidx.constraintlayout.compose.DebugFlags.Companion#getNone():
     Binary breaking change: Removed method androidx.constraintlayout.compose.DebugFlags.Companion.getNone()
+RemovedMethod: androidx.constraintlayout.compose.Dimension.Companion#preferredValue(float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.Dimension.Companion.preferredValue(float)
+RemovedMethod: androidx.constraintlayout.compose.Dimension.Companion#value(float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.Dimension.Companion.value(float)
+RemovedMethod: androidx.constraintlayout.compose.GridFlag#or(int):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.GridFlag.or(int)
 RemovedMethod: androidx.constraintlayout.compose.GridFlag.Companion#getNone():
     Binary breaking change: Removed method androidx.constraintlayout.compose.GridFlag.Companion.getNone()
 RemovedMethod: androidx.constraintlayout.compose.GridFlag.Companion#getPlaceLayoutsOnSpansFirst():
     Binary breaking change: Removed method androidx.constraintlayout.compose.GridFlag.Companion.getPlaceLayoutsOnSpansFirst()
+RemovedMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor,float,float)
+RemovedMethod: androidx.constraintlayout.compose.HorizontalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.HorizontalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor,float,float)
+RemovedMethod: androidx.constraintlayout.compose.InvalidationStrategySpecification#shouldInvalidateOnFixedHeight(long, long, int, int):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.InvalidationStrategySpecification.shouldInvalidateOnFixedHeight(long,long,int,int)
+RemovedMethod: androidx.constraintlayout.compose.InvalidationStrategySpecification#shouldInvalidateOnFixedWidth(long, long, int, int):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.InvalidationStrategySpecification.shouldInvalidateOnFixedWidth(long,long,int,int)
+RemovedMethod: androidx.constraintlayout.compose.Measurer#applyRootSize(long):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.Measurer.applyRootSize(long)
+RemovedMethod: androidx.constraintlayout.compose.Measurer#performMeasure(long, androidx.compose.ui.unit.LayoutDirection, androidx.constraintlayout.compose.ConstraintSet, java.util.List<? extends androidx.compose.ui.layout.Measurable>, int):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.Measurer.performMeasure(long,androidx.compose.ui.unit.LayoutDirection,androidx.constraintlayout.compose.ConstraintSet,java.util.List<? extends androidx.compose.ui.layout.Measurable>,int)
 RemovedMethod: androidx.constraintlayout.compose.State#getRootIncomingConstraints():
     Binary breaking change: Removed method androidx.constraintlayout.compose.State.getRootIncomingConstraints()
 RemovedMethod: androidx.constraintlayout.compose.State#setRootIncomingConstraints(long):
     Binary breaking change: Removed method androidx.constraintlayout.compose.State.setRootIncomingConstraints(long)
+RemovedMethod: androidx.constraintlayout.compose.VerticalAnchorable#linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor, float, float):
+    Binary breaking change: Removed method androidx.constraintlayout.compose.VerticalAnchorable.linkTo(androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor,float,float)

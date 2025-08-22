@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.library.abi.AbiModality
 import org.jetbrains.kotlin.library.abi.AbiProperty
 import org.jetbrains.kotlin.library.abi.AbiQualifiedName
 import org.jetbrains.kotlin.library.abi.AbiSignatureVersion
+import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 import org.jetbrains.kotlin.library.abi.LibraryAbi
 import org.junit.Test
@@ -38,6 +39,12 @@ class KlibDumpParserTest {
     private val annotationDump = getJavaResource("annotation.txt").readText()
     private val datastorePreferencesDump = getJavaResource("datastore-preferences.txt").readText()
     private val uniqueTargetDump = getJavaResource("unique_targets.txt").readText()
+
+    private fun AbiFunction.hasExtensionReceiverParameter(): Boolean =
+        valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }
+
+    private fun AbiFunction.contextReceiverParametersCount(): Int =
+        valueParameters.count { it.kind == AbiValueParameterKind.CONTEXT }
 
     @Test
     fun parseASimpleClass() {
@@ -185,7 +192,7 @@ class KlibDumpParserTest {
 
         assertThat(parsed.qualifiedName.toString())
             .isEqualTo("androidx.compose.ui.text/withBulletListItem")
-        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(parsed.hasExtensionReceiverParameter()).isTrue()
     }
 
     @Test
@@ -194,7 +201,7 @@ class KlibDumpParserTest {
         val parsed = KlibDumpParser(input).parseFunction()
         assertThat(parsed).isNotNull()
 
-        assertThat(parsed.contextReceiverParametersCount).isEqualTo(1)
+        assertThat(parsed.contextReceiverParametersCount()).isEqualTo(1)
         assertThat(parsed.valueParameters.first().type.className.toString()).isEqualTo("kotlin/Int")
     }
 
@@ -205,8 +212,8 @@ class KlibDumpParserTest {
         val parsed = KlibDumpParser(input).parseFunction()
         assertThat(parsed).isNotNull()
 
-        assertThat(parsed.contextReceiverParametersCount).isEqualTo(2)
-        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(parsed.contextReceiverParametersCount()).isEqualTo(2)
+        assertThat(parsed.hasExtensionReceiverParameter()).isTrue()
         assertThat(parsed.valueParameters.map { it.type.className.toString() })
             .isEqualTo(listOf("kotlin/Int", "kotlin/String", "kotlin/Int", "kotlin/Double"))
     }
@@ -229,7 +236,10 @@ class KlibDumpParserTest {
         val parentQName =
             AbiQualifiedName(AbiCompoundName("androidx.collection"), AbiCompoundName("ObjectList"))
         val parsed = KlibDumpParser(input).parseFunction(parentQName, isGetterOrSetter = true)
-        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(
+                parsed.valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }
+            )
+            .isTrue()
     }
 
     @Test
@@ -238,7 +248,10 @@ class KlibDumpParserTest {
             "final inline fun <#A: androidx.datastore.core/Closeable, #B: kotlin/Any?> " +
                 "(#A).androidx.datastore.core/use(kotlin/Function1<#A, #B>): #B"
         val parsed = KlibDumpParser(input).parseFunction()
-        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(
+                parsed.valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }
+            )
+            .isTrue()
         assertThat(parsed.typeParameters).hasSize(2)
     }
 
@@ -330,7 +343,12 @@ class KlibDumpParserTest {
                 .trimIndent()
         val parsed = KlibDumpParser(input).parseProperty()
         assertThat(parsed.getter).isNotNull()
-        assertThat(parsed.getter?.hasExtensionReceiverParameter).isTrue()
+        assertThat(
+                parsed.getter?.valueParameters?.any {
+                    it.kind == AbiValueParameterKind.EXTENSION_RECEIVER
+                }
+            )
+            .isTrue()
     }
 
     @Test

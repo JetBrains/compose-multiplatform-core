@@ -30,8 +30,8 @@ dependencies {
 
     compileOnly(project(":annotation:annotation-sampled"))
 
-    implementation("androidx.compose.runtime:runtime:1.8.0-rc02")
-    implementation("androidx.compose.foundation:foundation-layout:1.8.0-rc02")
+    implementation("androidx.compose.runtime:runtime:1.8.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.8.0")
     implementation("androidx.compose.ui:ui:1.7.0")
 }
 

@@ -31,6 +31,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
+    api(project(":preference:preference"))
     api(project(":privacysandbox:databridge:databridge-core"))
     api(project(":privacysandbox:sdkruntime:sdkruntime-client"))
     api(project(":privacysandbox:sdkruntime:sdkruntime-core"))
@@ -42,6 +43,7 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesTest)
 
     implementation("androidx.datastore:datastore-core:1.1.4")
     implementation("androidx.datastore:datastore-preferences:1.1.4")

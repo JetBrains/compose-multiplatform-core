@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -40,10 +41,10 @@ import androidx.xr.compose.platform.LocalCoreEntity
 import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.rememberComposeView
-import androidx.xr.compose.subspace.rememberCorePanelEntity
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.meters
@@ -113,15 +114,22 @@ internal fun ElevatedPanel(
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
     val view = rememberComposeView()
-    val panelEntity =
-        rememberCorePanelEntity(shape = shape) {
-            PanelEntity.create(
-                session = session,
-                view = view,
-                pixelDimensions = contentSize.run { IntSize2d(width, height) },
-                name = "ElevatedPanel:${view.id}",
+    val density = LocalDensity.current
+
+    val panelEntity: CorePanelEntity = remember {
+        CorePanelEntity(
+                PanelEntity.create(
+                    session = session,
+                    view = view,
+                    pixelDimensions = contentSize.run { IntSize2d(width, height) },
+                    name = "ElevatedPanel:${view.id}",
+                )
             )
-        }
+            .also { it.setShape(shape, density) }
+    }
+
+    LaunchedEffect(shape, density) { panelEntity.setShape(shape, density) }
+
     view.setContent {
         CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) { Box { content() } }
     }
@@ -130,7 +138,7 @@ internal fun ElevatedPanel(
 
     LaunchedEffect(pose) {
         if (pose != null) {
-            panelEntity.entity.setPose(pose)
+            panelEntity.poseInMeters = pose
         }
     }
 
@@ -141,7 +149,7 @@ internal fun ElevatedPanel(
         panelEntity.size = IntVolumeSize(width = width, height = height, depth = 0)
     }
 
-    LaunchedEffect(parentEntity) { panelEntity.entity.parent = parentEntity.entity }
+    LaunchedEffect(parentEntity) { panelEntity.parent = parentEntity }
 }
 
 /** A 3D vector where each coordinate is [Meter]s. */

@@ -27,4 +27,4 @@ import android.net.Uri
  * @param bounds: Bounds which envelop the URI.
  * @param uri: Uri embedded in the PDF document.
  */
-public class PdfPageLinkContent(public val bounds: List<RectF>, public val uri: Uri)
+public class PdfPageLinkContent(bounds: List<RectF>, public val uri: Uri) : PdfPageContent(bounds)

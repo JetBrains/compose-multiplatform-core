@@ -58,6 +58,7 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.Logger;
@@ -803,5 +804,13 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
 
         return capabilitySet;
+    }
+
+    @OptIn(markerClass = ExperimentalLensFacing.class)
+    @Override
+    public boolean isExternalCamera() {
+        return getLensFacing() == CameraSelector.LENS_FACING_EXTERNAL
+                || getSupportedHardwareLevel()
+                == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL;
     }
 }

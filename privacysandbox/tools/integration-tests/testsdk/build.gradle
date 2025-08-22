@@ -14,73 +14,18 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.devtools.ksp.gradle.KspAATask
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
+    id("androidx.privacysandboxplugin")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-}
-
-abstract class AidlInput implements CommandLineArgumentProvider {
-    // Use the version of the build tools as the input to allow caching across platforms
-    @Internal
-    abstract RegularFileProperty getAidl()
-
-    @Input
-    abstract Property<String> getBuildToolsVersion()
-
-    @Override
-    Iterable<String> asArguments() {
-        return Collections.singleton("aidl_compiler_path=" + getAidl().get().asFile.absolutePath)
-    }
-}
-
-abstract class FrameworkAidlInput implements CommandLineArgumentProvider {
-
-    @Internal
-    abstract RegularFileProperty getFrameworkAidl()
-
-    @Input
-    abstract Property<String> getPlatformSdk()
-
-    @Override
-    Iterable<String> asArguments() {
-        return Collections.singleton(
-                "framework_aidl_path=" + getFrameworkAidl().get().asFile.absolutePath
-        )
-    }
-}
-
-AidlInput aidlInput = project.objects.newInstance(AidlInput)
-FrameworkAidlInput frameworkAidlInput = project.objects.newInstance(FrameworkAidlInput)
-
-androidComponents {
-    finalizeDsl { dsl ->
-        aidlInput.aidl.set(androidComponents.sdkComponents.aidl.flatMap { it.executable })
-        aidlInput.buildToolsVersion.set(androidComponents.sdkComponents.aidl.flatMap { it.version })
-
-        frameworkAidlInput.frameworkAidl.set(
-                androidComponents.sdkComponents.aidl.flatMap { it.framework })
-        frameworkAidlInput.platformSdk.set(
-                frameworkAidlInput.frameworkAidl.map {
-                    it.asFile.parentFile.absolutePath.toString()
-                }
-        )
-    }
 }
 
 android {
     namespace = "androidx.privacysandbox.tools.integration.testsdk"
-
     compileSdk = 36
-
-    defaultConfig {
-        ksp {
-            arg(aidlInput)
-            arg(frameworkAidlInput)
-        }
-    }
 }
 
 dependencies {
@@ -94,5 +39,10 @@ dependencies {
     implementation(libs.kotlinCoroutinesCore)
 }
 
-androidx {
+// TODO(b/430983364): Fix when incremental doesn't break compileReleaseKotlin
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

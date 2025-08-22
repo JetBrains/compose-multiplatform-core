@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
@@ -46,7 +47,6 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.width
@@ -89,12 +89,11 @@ class MovableScalable : ComponentActivity() {
             SpatialRow {
                 val density = LocalDensity.current
                 SpatialPanel(
-                    SubspaceModifier.height(200.dp)
-                        .width(200.dp)
-                        .scale(scaleForPanel)
-                        .movable(
-                            enabled = true,
-                            scaleWithDistance = true,
+                    SubspaceModifier.height(200.dp).width(200.dp).scale(scaleForPanel),
+                    dragPolicy =
+                        MovePolicy(
+                            isEnabled = true,
+                            shouldScaleWithDistance = true,
                             onMove = { moveEvent ->
                                 with(density) {
                                     zOffset = moveEvent.pose.translation.z.toDp()
@@ -102,7 +101,7 @@ class MovableScalable : ComponentActivity() {
                                 }
                                 false
                             },
-                        )
+                        ),
                 ) {
                     Box(
                         modifier = Modifier.background(Purple80).fillMaxSize(),
@@ -131,7 +130,8 @@ class MovableScalable : ComponentActivity() {
                     }
                 }
                 SpatialPanel(
-                    SubspaceModifier.offset(z = zOffset).height(200.dp).width(200.dp).movable()
+                    SubspaceModifier.offset(z = zOffset).height(200.dp).width(200.dp),
+                    dragPolicy = MovePolicy(),
                 ) {
                     Box(
                         modifier = Modifier.background(Purple80).fillMaxSize(),

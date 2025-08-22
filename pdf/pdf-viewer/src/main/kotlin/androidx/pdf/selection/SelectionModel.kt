@@ -23,9 +23,8 @@ import android.os.Parcelable
 import androidx.annotation.VisibleForTesting
 import androidx.core.util.isEmpty
 import androidx.pdf.PdfPoint
-import androidx.pdf.PdfRect
 import androidx.pdf.content.PageSelection
-import androidx.pdf.selection.model.TextSelection
+import androidx.pdf.content.toViewSelection
 import androidx.pdf.view.pdfPointFromParcel
 import androidx.pdf.view.writeToParcel
 import kotlin.collections.firstOrNull
@@ -125,22 +124,11 @@ internal constructor(
             newPageSelections.forEach { newPageSelection ->
                 if (newPageSelection != null) {
                     currentSelection.selectedContents[newPageSelection.page] =
-                        listOf(newPageSelection.toViewSelection())
+                        newPageSelection.toViewSelection()
                 }
             }
 
             return DocumentSelection(currentSelection.selectedContents)
-        }
-
-        /**
-         * Returns a [Selection] as exposed in the [androidx.pdf.view.PdfView] API from a
-         * [PageSelection] as produced by the [androidx.pdf.PdfDocument] API
-         */
-        private fun PageSelection.toViewSelection(): Selection {
-            val flattenedBounds =
-                this.selectedTextContents.map { it.bounds }.flatten().map { PdfRect(this.page, it) }
-            val concatenatedText = this.selectedTextContents.joinToString(" ") { it.text }
-            return TextSelection(concatenatedText, flattenedBounds)
         }
 
         @JvmField

@@ -21,9 +21,14 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SceneManager
-import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -40,7 +45,12 @@ import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 import org.mockito.Mockito.mock
 import org.robolectric.shadows.ShadowDisplay
 
-/** Custom test class that should be used for testing [SubspaceComposable] content. */
+/**
+ * Custom test class that should be used for testing [SubspaceComposable] content.
+ *
+ * TODO(b/436320533): Deprecate SubspaceTestingActivity in favor of using
+ *   setContentWithCompatibilityForXr
+ */
 @Suppress("ForbiddenSuperClass")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SubspaceTestingActivity : ComponentActivity() {
@@ -64,51 +74,144 @@ public class SubspaceTestingActivity : ComponentActivity() {
     }
 }
 
-/** Analog to [AndroidComposeTestRule.setContent] for testing [SubspaceComposable] content. */
+/**
+ * Analog to [AndroidComposeTestRule.setContent] for testing content in XR. This creates the minimum
+ * environment necessary for testing content in XR.
+ *
+ * If an XR [Session] is not already created and assigned using [AndroidComposeTestRule.session],
+ * then a test XR [Session] will be created.
+ *
+ * @param content The content to render to the test [Activity].
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent(
-    content: @Composable @SubspaceComposable () -> Unit
+public fun AndroidComposeTestRule<*, *>.setContentWithCompatibilityForXr(
+    content: @Composable () -> Unit
 ) {
-    setContent { TestSetup { Subspace { content() } } }
-}
+    SceneManager.start()
+    ShadowConfig.extract(XrExtensionsProvider.getXrExtensions()!!.config!!)
+        .setDefaultDpPerMeter(1151.856f)
 
-/** Analog to [AndroidComposeTestRule.setContent] for testing [SubspaceComposable] content. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent(
-    uiContent: @Composable () -> Unit,
-    content: @Composable @SubspaceComposable () -> Unit,
-) {
-    setContent {
-        TestSetup {
-            uiContent()
-            Subspace { content() }
+    if (session == null) {
+        session = createFakeSession(activity)
+    }
+
+    activity.lifecycle.addObserver(
+        object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                SceneManager.stop()
+                activity.session = null
+                owner.lifecycle.removeObserver(this)
+                super.onDestroy(owner)
+            }
         }
+    )
+
+    setContent {
+        CompositionLocalProvider(
+            LocalSession provides session!!,
+            LocalSpatialConfiguration provides TestSessionSpatialConfiguration(session!!),
+            LocalSpatialCapabilities provides TestSessionSpatialCapabilities(session!!),
+            content = content,
+        )
     }
 }
 
-/** Subspace version of onNode in Compose. */
+/**
+ * The XR [Session] for the current [androidx.compose.ui.test.junit4.AndroidComposeTestRule].
+ *
+ * This will be null until the value is set or [setContentWithCompatibilityForXr] is called, after
+ * which the value will be non-null and return the current [Session]. Setting this value after
+ * calling [setContentWithCompatibilityForXr] will not change the Session that is used for that
+ * content block. Setting the value to null will indicate that the default test Session should be
+ * used.
+ */
+public var AndroidComposeTestRule<*, *>.session: Session?
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) get() = activity.session
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    set(value) {
+        activity.session = value
+    }
+
+private var Activity.session: Session?
+    get() = window.decorView.getTag(R.id.xr_session) as? Session
+    set(value) {
+        window.decorView.setTag(R.id.xr_session, value)
+    }
+
+/**
+ * Finds a semantics node (in the Subspace hierarchy) that matches the given condition.
+ *
+ * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
+ * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
+ * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ *
+ * Any subsequent operation on its result will expect exactly one element found (unless
+ * [SubspaceSemanticsNodeInteraction.assertDoesNotExist] is used) and will throw an [AssertionError]
+ * if none or more than one element is found.
+ *
+ * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
+ *
+ * @param matcher Matcher used for filtering
+ * @see onAllSubspaceNodes to work with multiple elements
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onSubspaceNode(
+public fun AndroidComposeTestRule<*, *>.onSubspaceNode(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteraction =
     SubspaceSemanticsNodeInteraction(SubspaceTestContext(this), matcher)
 
-/** Subspace version of onAllNodes in Compose. */
+/**
+ * Finds all semantics nodes (in the Subspace hierarchy) that match the given condition.
+ *
+ * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
+ * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
+ * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ *
+ * If you are working with elements that are not supposed to occur multiple times use
+ * [onSubspaceNode] instead.
+ *
+ * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
+ *
+ * @param matcher Matcher used for filtering.
+ * @see onSubspaceNode
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodes(
+public fun AndroidComposeTestRule<*, *>.onAllSubspaceNodes(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteractionCollection =
     SubspaceSemanticsNodeInteractionCollection(SubspaceTestContext(this), matcher)
 
-/** Subspace version of onNodeWithTag in Compose. */
+/**
+ * Finds a semantics node (in the Subspace hierarchy) identified by the given tag.
+ *
+ * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
+ * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
+ * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ *
+ * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
+ *
+ * @param testTag The tag to search for. Looks for an exact match only.
+ * @see onSubspaceNode for more information.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onSubspaceNodeWithTag(
+public fun AndroidComposeTestRule<*, *>.onSubspaceNodeWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteraction = onSubspaceNode(hasTestTag(testTag))
 
-/** Subspace version of onAllNodesWithTag in Compose. */
+/**
+ * Finds all semantics nodes (in the Subspace hierarchy) identified by the given tag.
+ *
+ * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
+ * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
+ * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ *
+ * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
+ *
+ * @param testTag The tag to search for. Looks for an exact matches only.
+ * @see onSubspaceNode for more information.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodesWithTag(
+public fun AndroidComposeTestRule<*, *>.onAllSubspaceNodesWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteractionCollection = onAllSubspaceNodes(hasTestTag(testTag))
 
@@ -123,7 +226,7 @@ public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodes
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun createFakeSession(
-    activity: SubspaceTestingActivity,
+    activity: Activity,
     runtime: JxrPlatformAdapter = createFakeRuntime(activity),
 ): Session =
     Session(
@@ -145,7 +248,7 @@ public fun createFakeRuntime(activity: Activity): JxrPlatformAdapter =
     JxrPlatformAdapterAxr.create(
         /* activity = */ activity,
         /* executor = */ FakeScheduledExecutorService(),
-        /* extensions = */ (activity as SubspaceTestingActivity).extensions,
+        /* extensions = */ XrExtensionsProvider.getXrExtensions()!!,
         /* impressApi = */ FakeImpressApiImpl(),
         /* perceptionLibrary = */ PerceptionLibrary(),
         /* splitEngineSubspaceManager = */ mock(SplitEngineSubspaceManager::class.java),

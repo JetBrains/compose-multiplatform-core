@@ -25,7 +25,7 @@ import androidx.xr.runtime.internal.TextureResource as RtTextureResource
 /** [CubeMapTexture] represents a cube map texture that can be used with materials. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CubeMapTexture internal constructor(texture: RtTextureResource, session: Session) :
-    Texture(texture, TextureSampler.create(), session) {
+    Texture(texture, session) {
 
     public companion object {
         internal fun borrowReflectionTexture(

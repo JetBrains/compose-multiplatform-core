@@ -322,7 +322,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var selectionActionModeCallback: SelectionActionModeCallback? = null
 
     /** Interface to customize the set of actions in the selection menu */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface SelectionMenuItemPreparer {
         /**
          * Customize the text selection menu, by adding items to or removing items from
@@ -331,16 +330,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         public fun onPrepareSelectionMenuItems(components: MutableList<ContextMenuComponent>)
     }
 
-    internal var selectionMenuItemPreparer: SelectionMenuItemPreparer? = null
-        private set
+    internal val selectionMenuItemPreparers = mutableListOf<SelectionMenuItemPreparer>()
 
     /**
-     * The [SelectionMenuItemPreparer] for this View. If null, a default set of selection menu
-     * actions will be provided in all cases
+     * Adds the specified listener to the chain of [SelectionMenuItemPreparer]. The listener will be
+     * invoked in the order they've been added.
+     *
+     * @param selectionMenuItemPreparer: The [SelectionMenuItemPreparer] to add to the chain.
+     * @see removeSelectionMenuItemPreparer
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun setSelectionMenuItemPreparer(selectionMenuItemPreparer: SelectionMenuItemPreparer?) {
-        this.selectionMenuItemPreparer = selectionMenuItemPreparer
+    public fun addSelectionMenuItemPreparer(selectionMenuItemPreparer: SelectionMenuItemPreparer) {
+        selectionMenuItemPreparers.add(selectionMenuItemPreparer)
+    }
+
+    /**
+     * Removes the specified listener from the chain of [SelectionMenuItemPreparer].
+     *
+     * @param selectionMenuItemPreparer: The [SelectionMenuItemPreparer] to remove from the chain.
+     */
+    public fun removeSelectionMenuItemPreparer(
+        selectionMenuItemPreparer: SelectionMenuItemPreparer
+    ) {
+        selectionMenuItemPreparers.remove(selectionMenuItemPreparer)
     }
 
     /** The currently selected PDF content, as [Selection] */

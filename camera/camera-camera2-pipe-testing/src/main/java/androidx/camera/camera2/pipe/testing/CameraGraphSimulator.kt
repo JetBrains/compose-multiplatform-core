@@ -59,7 +59,7 @@ internal constructor(
 
     public companion object {
         /**
-         * Create a CameraGraphSimulator using the current [TestScope] provided by a Kotlin
+         * Create a [CameraGraphSimulator] using the current [TestScope] provided by a Kotlin
          * `runTest` block. This will create the [CameraPipe] and [CameraGraph] using the parent
          * test scope, which helps ensure all long running operations are wrapped up by the time the
          * test completes and allows the test to provide more fine grained control over the
@@ -71,8 +71,30 @@ internal constructor(
             cameraMetadata: CameraMetadata,
             graphConfig: CameraGraph.Config,
         ): CameraGraphSimulator {
+
             val cameraPipeSimulator =
                 CameraPipeSimulator.create(testScope, testContext, listOf(cameraMetadata))
+            return cameraPipeSimulator.createCameraGraphSimulator(graphConfig)
+        }
+
+        /**
+         * Create a single [CameraGraphSimulator] instance using the provided [Context] and
+         * [CameraPipe.ThreadConfig]. This creates a unique [CameraGraph] and [CameraPipe] instance
+         * for each test, while allowing all executors/dispatchers to be controlled from outside the
+         * simulator instances.
+         */
+        public fun create(
+            testContext: Context,
+            testThreads: CameraPipe.ThreadConfig,
+            testCamera: CameraMetadata,
+            graphConfig: CameraGraph.Config,
+        ): CameraGraphSimulator {
+            val cameraPipeSimulator =
+                CameraPipeSimulator.create(
+                    testContext = testContext,
+                    testThreads = testThreads,
+                    testCameras = listOf(testCamera),
+                )
             return cameraPipeSimulator.createCameraGraphSimulator(graphConfig)
         }
     }

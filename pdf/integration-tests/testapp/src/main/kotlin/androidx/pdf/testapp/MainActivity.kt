@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabsViewButton: MaterialButton
     private lateinit var pdfFragmentV2Button: MaterialButton
     private lateinit var tabsViewV2Button: MaterialButton
+    private lateinit var editableFragmentButton: MaterialButton
     private lateinit var styledPdfFragmentButton: MaterialButton
     private lateinit var xmlStyledPdfFragmentButton: MaterialButton
     private lateinit var pageObjectPdfButton: MaterialButton
@@ -68,6 +69,7 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton = scenarioButtons.tabView
         pdfFragmentV2Button = scenarioButtons.pdfFragmentV2
         tabsViewV2Button = scenarioButtons.tabViewV2
+        editableFragmentButton = scenarioButtons.editablePdfFragment
         styledPdfFragmentButton = scenarioButtons.styledPdfFragment
         xmlStyledPdfFragmentButton = scenarioButtons.xmlStyledPdfFragment
         composePdfButton = scenarioButtons.composeFragment
@@ -82,6 +84,9 @@ class MainActivity : AppCompatActivity() {
             launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.BASIC_FRAGMENT)
         }
         tabsViewV2Button.setOnClickListener { loadFragment(TabbedPdfViewerFragment()) }
+        editableFragmentButton.setOnClickListener {
+            launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.EDITABLE_FRAGMENT)
+        }
         styledPdfFragmentButton.setOnClickListener {
             launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.STYLED_FRAGMENT)
         }
@@ -162,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton.visibility = View.VISIBLE
         tabsViewV2Button.visibility = View.VISIBLE
         pdfFragmentV2Button.visibility = View.VISIBLE
+        editableFragmentButton.visibility = View.VISIBLE
         styledPdfFragmentButton.visibility = View.VISIBLE
         xmlStyledPdfFragmentButton.visibility = View.VISIBLE
         pageObjectPdfButton.visibility = View.VISIBLE
@@ -172,6 +178,7 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton.visibility = View.GONE
         tabsViewV2Button.visibility = View.GONE
         pdfFragmentV2Button.visibility = View.GONE
+        editableFragmentButton.visibility = View.GONE
         styledPdfFragmentButton.visibility = View.GONE
         xmlStyledPdfFragmentButton.visibility = View.GONE
         pageObjectPdfButton.visibility = View.GONE

@@ -30,7 +30,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +75,9 @@ import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.AnchorPolicy
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
@@ -89,16 +91,13 @@ import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.anchorable
 import androidx.xr.compose.subspace.layout.aspectRatio
 import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
@@ -248,8 +247,9 @@ class SpatialComposeAppActivity : ComponentActivity() {
         var moveResizeLocked by remember { mutableStateOf(true) }
         var showArrows by remember { mutableStateOf(false) }
         SpatialPanel(
-            modifier =
-                modifier.movable(enabled = !moveResizeLocked).resizable(enabled = !moveResizeLocked)
+            modifier = modifier,
+            dragPolicy = MovePolicy(isEnabled = !moveResizeLocked),
+            resizePolicy = ResizePolicy(isEnabled = !moveResizeLocked),
         ) {
             PanelContent {
                 Text(text)
@@ -325,8 +325,8 @@ class SpatialComposeAppActivity : ComponentActivity() {
 
         if (hasAnchorPermission) {
             SpatialPanel(
-                modifier =
-                    modifier.anchorable(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
+                modifier = modifier,
+                dragPolicy = AnchorPolicy(anchorPlaneOrientations = setOf(PlaneOrientation.Any)),
             ) {
                 Column(
                     modifier = Modifier.background(Color.LightGray).padding(24.dp),

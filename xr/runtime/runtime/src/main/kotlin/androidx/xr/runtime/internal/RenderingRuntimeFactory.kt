@@ -22,6 +22,12 @@ import androidx.annotation.RestrictTo
 /** Factory for creating instances of a RenderingRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface RenderingRuntimeFactory : Service {
-    /** Creates a [RenderingRuntime] instance */
+    /**
+     * Creates a [RenderingRuntime].
+     *
+     * @param sceneRuntime The [SceneRuntime] for the session. This instance must also implement the
+     *   [RenderingEntityFactory] interface.
+     * @param activity The host [Activity] for the session.
+     */
     public fun create(sceneRuntime: SceneRuntime, activity: Activity): RenderingRuntime
 }

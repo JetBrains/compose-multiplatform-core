@@ -27,5 +27,5 @@ import androidx.xr.runtime.internal.SceneRuntimeFactory
 public class FakeSceneRuntimeFactory() : SceneRuntimeFactory {
     override val requirements: Set<Feature> = emptySet()
 
-    override fun create(activity: Activity): SceneRuntime = FakeSceneRuntime(activity)
+    override fun create(activity: Activity): SceneRuntime = FakeSceneRuntime()
 }

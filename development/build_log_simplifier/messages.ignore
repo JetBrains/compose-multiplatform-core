@@ -235,6 +235,8 @@ WARN: .*\/unzippedMultiplatformSources/jvmNativeMain/androidx/room/RoomDatabase\
 # b/376423687
 WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateDecoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction decodeFromSavedState\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
 WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateEncoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction encodeToSavedState\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
+WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateDecoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction decodeFromSavedStateNullable\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
+WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateEncoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction encodeToSavedStateNullable\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
 WARN: File location could not be determined\. Failed to resolve See <a href="https:\/\/developer\.android\.com\/training\/transitions">Transition API Guide<\/a> in DPackage androidx\.transition
 [0-9]+ cpus, so not storing build metrics.
 64 cpus, so storing build metrics.
@@ -395,9 +397,13 @@ In Dokka K[0-9]+ it will be an error\. Also, please consider reporting your user
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/CredentialAuthExtensions\.kt:[0-9]+ Failed to resolve See CredentialAuthPrompt\.authenticate in DFunction authenticate\. Did you mean CredentialAuthPrompt\#authenticate\?
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/Class[0-9]+BiometricOrCredentialAuthExtensions\.kt:[0-9]+ Failed to resolve See Class[0-9]+BiometricOrCredentialAuthPrompt\.authenticate in DFunction authenticate\. Did you mean Class[0-9]+BiometricOrCredentialAuthPrompt\#authenticate\?
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/Class[0-9]+BiometricAuthExtensions\.kt:[0-9]+ Failed to resolve See Class[0-9]+BiometricAuthPrompt\.authenticate in DFunction authenticate\. Did you mean Class[0-9]+BiometricAuthPrompt\#authenticate\?
+.*This code uses error suppression for '(UPPER_BOUND_VIOLATED)'.*
+# https://youtrack.jetbrains.com/issue/KT-77220
+w: file://\$SUPPORT/compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/text/CoreTextField\.kt:[0-9]+:[0-9]+ Inconsistent target list for lambda annotation: \+androidx\.compose\.runtime\.DontMemoize \[EXPRESSION\] on androidx\.compose\.foundation\.text\.CoreTextField\$lambda\$[0-9]+
+# work/work-runtime/build.gradle b/407640603 and buildSrc:imports:binary-compatibility-validator:compileKotlin b/410631668
+w: Language version 1\.9 is deprecated and its support will be removed in a future version of Kotlin
 # Remove UNSAFE_CALL when b/409324917 is fixed
 .*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|UNSAFE_CALL|WRONG_ANNOTATION_TARGET)'.*
-.*FakeNoOpAnalyticsService\.kt:.* This code uses error suppression for 'UPPER_BOUND_VIOLATED'.*
 # Remove when https://youtrack.jetbrains.com/issue/KT-70013 is fixed, o/w anytime a new entry is added to this list, this message will be printed.
 Calculating task graph as configuration cache cannot be reused because the set of paths ignored in file-system-check input tracking.*
 # b/414775532
@@ -405,3 +411,8 @@ Calculating task graph as configuration cache cannot be reused because the set o
 w: \[ksp\] LibraryGlideModules \[\] are included more than once, keeping only one\!
 # > Tracing - Driver warnings (https://youtrack.jetbrains.com/issue/KTIJ-22326)
 w[:] file[:]//[$]SUPPORT/tracing/.* This code uses error suppression for 'OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE'.*
+# > Task :glance:glance-wear-tiles:compileReleaseKotlin
+w: file://\$SUPPORT/glance/glance\-wear\-tiles/integration.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
+w: file://\$SUPPORT/glance/glance\-wear\-tiles/src/.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
+
+

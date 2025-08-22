@@ -39,6 +39,7 @@ import androidx.wear.compose.material3.internal.Plurals
 import androidx.wear.compose.material3.internal.Strings
 import androidx.wear.compose.material3.samples.TimePickerSample
 import androidx.wear.compose.material3.samples.TimePickerWith12HourClockSample
+import androidx.wear.compose.material3.samples.TimePickerWithMinutesAndSecondsSample
 import androidx.wear.compose.material3.samples.TimePickerWithSecondsSample
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalTime
@@ -72,6 +73,7 @@ class TimePickerTest {
             TimePickerSample()
             TimePickerWithSecondsSample()
             TimePickerWith12HourClockSample()
+            TimePickerWithMinutesAndSecondsSample()
         }
     }
 
@@ -105,6 +107,8 @@ class TimePickerTest {
                 selectionMode = SelectionMode.Second,
             )
             .assertIsDisplayed()
+        rule.onNodeWithText("AM", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithText("PM", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -131,6 +135,48 @@ class TimePickerTest {
                 selectionMode = SelectionMode.Minute,
             )
             .assertIsDisplayed()
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.second,
+                selectionMode = SelectionMode.Second,
+            )
+            .assertDoesNotExist()
+        rule.onNodeWithText("AM", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithText("PM", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun timePicker_mmss_initial_state() {
+        val initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23, /* second= */ 45)
+        rule.setContentWithTheme {
+            TimePicker(
+                onTimePicked = {},
+                initialTime = initialTime,
+                timePickerType = TimePickerType.MinutesSeconds,
+            )
+        }
+
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.minute,
+                selectionMode = SelectionMode.Minute,
+            )
+            .assertIsDisplayed()
+            .assertIsFocused()
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.second,
+                selectionMode = SelectionMode.Second,
+            )
+            .assertIsDisplayed()
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.hour,
+                selectionMode = SelectionMode.Hour,
+            )
+            .assertDoesNotExist()
+        rule.onNodeWithText("AM", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithText("PM", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -158,6 +204,12 @@ class TimePickerTest {
                 selectionMode = SelectionMode.Minute,
             )
             .assertIsDisplayed()
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.second,
+                selectionMode = SelectionMode.Second,
+            )
+            .assertDoesNotExist()
         rule.onNodeWithText("AM", useUnmergedTree = true).assertIsDisplayed()
         rule.onNodeWithText("PM", useUnmergedTree = true).assertIsDisplayed()
     }
@@ -247,8 +299,8 @@ class TimePickerTest {
     @Test
     fun timePicker_hhmm_confirmed() {
         lateinit var confirmedTime: LocalTime
-        val initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23)
-        val expectedTime = LocalTime.of(/* hour= */ 9, /* minute= */ 11)
+        val initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23, /* second= */ 31)
+        val expectedTime = LocalTime.of(/* hour= */ 9, /* minute= */ 11, /* second= */ 0)
         rule.setContentWithTheme {
             TimePicker(
                 onTimePicked = { confirmedTime = it },
@@ -278,8 +330,8 @@ class TimePickerTest {
     @Test
     fun timePicker_12h_confirmed() {
         lateinit var confirmedTime: LocalTime
-        val initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23)
-        val expectedTime = LocalTime.of(/* hour= */ 9, /* minute= */ 11)
+        val initialTime = LocalTime.of(/* hour= */ 14, /* minute= */ 23, /* second= */ 31)
+        val expectedTime = LocalTime.of(/* hour= */ 9, /* minute= */ 11, /* second= */ 0)
         rule.setContentWithTheme {
             TimePicker(
                 onTimePicked = { confirmedTime = it },
@@ -301,6 +353,37 @@ class TimePickerTest {
             )
             .performScrollToIndex(expectedTime.minute)
         rule.onNodeWithContentDescription("PM").performScrollToIndex(0)
+        rule.confirmButton().performClick()
+        rule.waitForIdle()
+
+        assertThat(confirmedTime).isEqualTo(expectedTime)
+    }
+
+    @Test
+    fun timePicker_mmss_confirmed() {
+        lateinit var confirmedTime: LocalTime
+        val initialTime = LocalTime.of(/* hour= */ 10, /* minute= */ 23, /* second= */ 45)
+        val expectedTime = LocalTime.of(/* hour= */ 0, /* minute= */ 11, /* second= */ 20)
+        rule.setContentWithTheme {
+            TimePicker(
+                onTimePicked = { confirmedTime = it },
+                initialTime = initialTime,
+                timePickerType = TimePickerType.MinutesSeconds,
+            )
+        }
+
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.minute,
+                selectionMode = SelectionMode.Minute,
+            )
+            .performScrollToIndex(expectedTime.minute)
+        rule
+            .onNodeWithTimeValue(
+                selectedValue = initialTime.second,
+                selectionMode = SelectionMode.Second,
+            )
+            .performScrollToIndex(expectedTime.second)
         rule.confirmButton().performClick()
         rule.waitForIdle()
 

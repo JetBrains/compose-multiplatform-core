@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.arcore.projected
 
 import android.app.Activity
@@ -21,17 +20,17 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Runtime
 import androidx.xr.runtime.internal.RuntimeFactory
+import kotlin.coroutines.CoroutineContext
 
 /** Factory for creating instances of [ProjectionRuntime]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedRuntimeFactory() : RuntimeFactory {
     override val requirements: Set<Feature> = setOf(Feature.PROJECTED)
 
-    override fun createRuntime(activity: Activity): Runtime {
+    override fun createRuntime(activity: Activity, coroutineContext: CoroutineContext): Runtime {
         val timeSource = ProjectedTimeSource()
         val perceptionManager = ProjectedPerceptionManager(timeSource)
-        val manager = ProjectedManager(activity, perceptionManager, timeSource)
-
+        val manager = ProjectedManager(activity, perceptionManager, timeSource, coroutineContext)
         return ProjectedRuntime(manager, perceptionManager)
     }
 }

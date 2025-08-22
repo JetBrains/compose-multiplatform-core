@@ -16,8 +16,11 @@
 
 package androidx.xr.runtime.internal
 
+import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
+import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /**
  * Defines the contract for a platform-agnostic runtime that manages the scene graph and spatial
@@ -40,6 +43,33 @@ public interface SceneRuntime {
     public val activitySpace: ActivitySpace
 
     /**
+     * Returns the CameraViewActivityPose for the specified camera type or null if it is not
+     * ready/available.
+     *
+     * @param cameraType The type of camera to retrieve the pose for.
+     */
+    public fun getCameraViewActivityPose(
+        @CameraViewActivityPose.CameraType cameraType: Int
+    ): CameraViewActivityPose?
+
+    /**
+     * Factory function to create ActivityPanel to launch/move activity into.
+     *
+     * @param pose Initial pose of the panel.
+     * @param windowBoundsPx Boundary for the window
+     * @param name Name of the panel.
+     * @param hostActivity Activity to host the panel.
+     * @param parent Parent entity.
+     */
+    public fun createActivityPanelEntity(
+        pose: Pose,
+        windowBoundsPx: PixelDimensions,
+        name: String,
+        hostActivity: Activity,
+        parent: Entity,
+    ): ActivityPanelEntity
+
+    /**
      * A factory function to create a group entity. This entity is used as a connection point for
      * attaching children entities and managing them (i.e. setPose()) as a group.
      *
@@ -48,6 +78,28 @@ public interface SceneRuntime {
      * @param parent Parent entity.
      */
     public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
+
+    /**
+     * Adds the given {@link Consumer} as a listener to be invoked when this Session's current
+     * SpatialCapabilities change. {@link Consumer#accept(SpatialCapabilities)} will be invoked on
+     * the given Executor.
+     *
+     * @param callbackExecutor Executor on which the listener will be invoked.
+     * @param listener Listener to be invoked when the Session's SpatialCapabilities change.
+     */
+    @Suppress("ExecutorRegistration")
+    public fun addSpatialCapabilitiesChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<SpatialCapabilities>,
+    )
+
+    /**
+     * Releases the given {@link Consumer} from receiving updates when the Session's {@link
+     * SpatialCapabilities} change.
+     *
+     * @param listener Listener to be removed from the list of listeners.
+     */
+    public fun removeSpatialCapabilitiesChangedListener(listener: Consumer<SpatialCapabilities>)
 
     /** Disposes of the resources used by this runtime */
     public fun dispose()

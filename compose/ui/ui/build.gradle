@@ -24,6 +24,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import androidx.build.ProjectLayoutType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.Family
@@ -414,10 +415,12 @@ androidx {
     enableRobolectric()
 }
 
-androidComponents {
-    onVariants(selector().all(), { variant ->
-        packageInspector(variant, project, project(":compose:ui:ui-inspection"))
-    })
+if (!ProjectLayoutType.isPlayground(project)) {
+    androidComponents {
+        onVariants(selector().all(), { variant ->
+            packageInspector(variant, project, project(":compose:ui:ui-inspection"))
+        })
+    }
 }
 
 // TODO(b/407725586): Remove this block when AndroidAssistTest passes on API Level 21

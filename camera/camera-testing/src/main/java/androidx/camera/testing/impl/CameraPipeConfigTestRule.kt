@@ -139,8 +139,12 @@ public class CameraPipeConfigTestRule(public val active: Boolean) : TestRule {
                 "androidx.camera.video.",
                 // Benchmark
                 "androidx.camera.integration.benchmark.",
-                // CoreTestApps
+                // CoreTestApp
                 "androidx.camera.integration.core.",
+                // FeatureGroupTestApp
+                "androidx.camera.integration.featurecombo",
+                // Macrobenchmark
+                "androidx.camera.integration.macrobenchmark.",
                 // UIWidgets
                 "androidx.camera.integration.uiwidgets.",
             )

@@ -68,6 +68,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -229,13 +230,13 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
     fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
         when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO,
-            SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
-            SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
+            SurfaceEntity.StereoMode.STEREO_MODE_MONO,
+            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY ->
                 return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
                 return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
                 return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
@@ -246,7 +247,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         videoUri: String,
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
+        shape: SurfaceEntity.Shape,
         loop: Boolean = true,
         protected: Boolean = false,
     ) {
@@ -254,20 +255,26 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         if (surfaceEntity == null) {
             val surfaceContentLevel =
                 if (protected) {
-                    SurfaceEntity.ContentSecurityLevel.PROTECTED
+                    SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
                 } else {
-                    SurfaceEntity.ContentSecurityLevel.NONE
+                    SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE
                 }
 
             surfaceEntity =
-                SurfaceEntity.create(session, stereoMode, pose, canvasShape, surfaceContentLevel)
+                SurfaceEntity.create(
+                    session = session,
+                    pose = pose,
+                    shape = shape,
+                    stereoMode = stereoMode,
+                    surfaceProtection = surfaceContentLevel,
+                )
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances) (only on quad canvas)
             movableComponent = MovableComponent.createSystemMovable(session)
             // The quad has a radius of 1.0 meters
             movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
-            if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
+            if (shape is SurfaceEntity.Shape.Quad) {
                 val unused = surfaceEntity!!.addComponent(movableComponent!!)
             }
         }
@@ -306,10 +313,14 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     // Resize the canvas to match the video aspect ratio - accounting for
                     // the stereo mode.
                     val dimensions = getCanvasAspectRatio(stereoMode, width, height)
-                    // Set the dimensions of the Quad canvas to the video dimensions
-                    if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
-                        surfaceEntity?.canvasShape =
-                            SurfaceEntity.CanvasShape.Quad(dimensions.width, dimensions.height)
+                    // Set the dimensions of the Quad canvas to the video dimensions and
+                    // attach the
+                    // a MovableComponent.
+                    if (shape is SurfaceEntity.Shape.Quad) {
+                        surfaceEntity?.shape =
+                            SurfaceEntity.Shape.Quad(
+                                FloatSize2d(dimensions.width, dimensions.height)
+                            )
                         movableComponent?.size =
                             surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f)
                     }
@@ -392,7 +403,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         videoUri: String,
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
+        shape: SurfaceEntity.Shape,
         buttonText: String,
         enabled: Boolean = true,
         loop: Boolean = true,
@@ -414,7 +425,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             enabled = enabled,
             onClick = {
                 // Create SurfaceEntity and MovableComponent if they don't exist.
-                playVideo(session, videoUri, stereoMode, pose, canvasShape, loop, protected)
+                playVideo(session, videoUri, stereoMode, pose, shape, loop, protected)
             },
         ) {
             Text(text = buttonText, fontSize = 20.sp)
@@ -452,9 +463,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             playVideo(
                 session = session,
                 videoUri = videoUri,
-                stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+                stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
                 pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-                canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
                 loop = true,
                 protected = false,
             )
@@ -499,9 +510,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             playVideo(
                 session = session,
                 videoUri = videoUri,
-                stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
                 pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-                canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
                 loop = true,
                 protected = true,
             )

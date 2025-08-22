@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.arcore.playservices
 
 import android.app.Activity
@@ -21,18 +20,18 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Runtime
 import androidx.xr.runtime.internal.RuntimeFactory
+import kotlin.coroutines.CoroutineContext
 
 /** Factory for creating instances of [ArCoreXrRuntime]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreRuntimeFactory() : RuntimeFactory {
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK)
 
-    override fun createRuntime(activity: Activity): Runtime {
+    override fun createRuntime(activity: Activity, coroutineContext: CoroutineContext): Runtime {
         // b/396235304 -- Provide a way to configure the session.
         val timeSource = ArCoreTimeSource()
         val perceptionManager = ArCorePerceptionManager(timeSource)
         val manager = ArCoreManager(activity, perceptionManager, timeSource)
-
         return ArCoreRuntime(manager, perceptionManager)
     }
 }

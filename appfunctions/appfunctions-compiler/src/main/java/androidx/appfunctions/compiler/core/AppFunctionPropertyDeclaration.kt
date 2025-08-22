@@ -29,22 +29,27 @@ data class AppFunctionPropertyDeclaration(
     val description: String,
     val isRequired: Boolean,
     val propertyAnnotations: Sequence<KSAnnotation> = emptySequence(),
+    val qualifiedName: String,
 ) {
     /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
     constructor(
         property: KSPropertyDeclaration,
         isDescribedByKdoc: Boolean,
         isRequired: Boolean,
+        sharedDataTypeDescriptionMap: Map<String, String>,
     ) : this(
         checkNotNull(property.simpleName).asString(),
         property.type,
         if (isDescribedByKdoc) {
-            property.docString.orEmpty()
+            property.docString?.ifEmpty {
+                sharedDataTypeDescriptionMap[property.getQualifiedName()]
+            } ?: ""
         } else {
             ""
         },
         isRequired,
         property.annotations,
+        property.getQualifiedName(),
     )
 
     /** Indicates whether the [type] is a generic type or not. */

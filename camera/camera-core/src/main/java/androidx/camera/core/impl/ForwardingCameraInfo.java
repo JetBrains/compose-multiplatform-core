@@ -130,6 +130,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    public boolean isExternalCamera() {
+        return mCameraInfoInternal.isExternalCamera();
+    }
+
+    @Override
     public float getIntrinsicZoomRatio() {
         return mCameraInfoInternal.getIntrinsicZoomRatio();
     }

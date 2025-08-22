@@ -169,7 +169,7 @@ public class SearchSupportFragmentTest extends SingleSupportFragmentTestBase {
         SingleSupportFragmentTestActivity activity = launchAndWaitActivity(
                 SpeechRecognizerDisabledFragment.class, 1000);
 
-        assertTrue(activity.findViewById(R.id.lb_search_text_editor).hasFocus());
+        assertTrue(activity.findViewById(androidx.leanback.R.id.lb_search_text_editor).hasFocus());
 
         sendKeys(KeyEvent.KEYCODE_A);
         sendKeys(KeyEvent.KEYCODE_ENTER);
@@ -186,7 +186,8 @@ public class SearchSupportFragmentTest extends SingleSupportFragmentTestBase {
         PollingCheck.waitFor(new PollingCheck.PollingCheckCondition() {
             @Override
             public boolean canProceed() {
-                return activity.findViewById(R.id.lb_search_text_editor).hasFocus();
+                return activity.findViewById(androidx.leanback.R.id.lb_search_text_editor)
+                        .hasFocus();
             }
         });
     }
@@ -204,11 +205,12 @@ public class SearchSupportFragmentTest extends SingleSupportFragmentTestBase {
         SingleSupportFragmentTestActivity activity = launchAndWaitActivity(
                 SpeechRecognizerEnabledFragment.class, 1000);
 
-        assertTrue(activity.findViewById(R.id.lb_search_bar_speech_orb).hasFocus());
+        assertTrue(activity.findViewById(androidx.leanback.R.id.lb_search_bar_speech_orb)
+                .hasFocus());
 
         sendKeys(KeyEvent.KEYCODE_DPAD_RIGHT);
 
-        assertTrue(activity.findViewById(R.id.lb_search_text_editor).hasFocus());
+        assertTrue(activity.findViewById(androidx.leanback.R.id.lb_search_text_editor).hasFocus());
 
         sendKeys(KeyEvent.KEYCODE_A);
         sendKeys(KeyEvent.KEYCODE_ENTER);
@@ -224,7 +226,8 @@ public class SearchSupportFragmentTest extends SingleSupportFragmentTestBase {
         Thread.sleep(1000);
 
         sendKeys(KeyEvent.KEYCODE_DPAD_UP);
-        assertTrue(activity.findViewById(R.id.lb_search_bar_speech_orb).hasFocus());
+        assertTrue(activity.findViewById(androidx.leanback.R.id.lb_search_bar_speech_orb)
+                .hasFocus());
     }
 
     static class SearchSupportTestFragment extends SearchSupportFragment

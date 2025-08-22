@@ -16,10 +16,12 @@
 
 package androidx.xr.runtime.testing
 
-import android.app.Activity
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.internal.ExrImageResource
+import androidx.xr.runtime.internal.GltfModelResource
 import androidx.xr.runtime.internal.KhronosPbrMaterialSpec
 import androidx.xr.runtime.internal.MaterialResource
+import androidx.xr.runtime.internal.RenderingEntityFactory
 import androidx.xr.runtime.internal.RenderingRuntime
 import androidx.xr.runtime.internal.SceneRuntime
 import androidx.xr.runtime.internal.TextureResource
@@ -31,17 +33,39 @@ import com.google.common.util.concurrent.Futures.immediateFailedFuture
 import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 
-/** Test-only implementation of [SceneRuntime] */
+/**
+ * Test-only implementation of [RenderingRuntime].
+ *
+ * @param entityFactory The factory used to create rendering-related entities. This is typically the
+ *   [SceneRuntime] instance, which must also implement [RenderingEntityFactory].
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeRenderingRuntime(
-    private val sceneRuntime: SceneRuntime,
-    private val activity: Activity,
-) : RenderingRuntime {
+public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFactory) :
+    RenderingRuntime {
+
     @Suppress("AsyncSuffixFuture")
-    override fun loadTexture(
-        assetName: String,
-        sampler: TextureSampler,
-    ): ListenableFuture<TextureResource> = immediateFailedFuture(NotImplementedError())
+    override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
+        immediateFuture(FakeGltfModelResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadGltfByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<GltfModelResource> = immediateFuture(FakeGltfModelResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
+        immediateFuture(FakeExrImageResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadExrImageByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<ExrImageResource> = immediateFuture(FakeExrImageResource(1))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadTexture(assetName: String): ListenableFuture<TextureResource> =
+        immediateFailedFuture(NotImplementedError())
 
     /**
      * For test purposes only.
@@ -64,6 +88,10 @@ public class FakeRenderingRuntime(
         reflectionTexture = null
     }
 
+    override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? {
+        return reflectionTexture
+    }
+
     /**
      * For test purposes only.
      *
@@ -80,11 +108,14 @@ public class FakeRenderingRuntime(
      */
     public class FakeWaterMaterial(public val isAlphaMapVersion: Boolean) : MaterialResource {
         public var reflectionMap: TextureResource? = null
+        public var reflectionMapSampler: TextureSampler? = null
         public var normalMap: TextureResource? = null
+        public var normalMapSampler: TextureSampler? = null
         public var normalTiling: Float = 0.0f
         public var normalSpeed: Float = 0.0f
         public var alphaStepMultiplier: Float = 0.0f
         public var alphaMap: TextureResource? = null
+        public var alphaMapSampler: TextureSampler? = null
         public var normalZ: Float = 0.0f
         public var normalBoundary: Float = 0.0f
     }
@@ -116,32 +147,43 @@ public class FakeRenderingRuntime(
     public class FakeKhronosPbrMaterial(public val spec: KhronosPbrMaterialSpec) :
         MaterialResource {
         public var baseColorTexture: TextureResource? = null
+        public var baseColorTextureSampler: TextureSampler? = null
         public var baseColorUvTransform: Matrix3? = null
         public var baseColorFactors: Vector4? = null
         public var metallicRoughnessTexture: TextureResource? = null
+        public var metallicRoughnessTextureSampler: TextureSampler? = null
         public var metallicRoughnessUvTransform: Matrix3? = null
         public var metallicFactor: Float? = null
         public var roughnessFactor: Float? = null
         public var normalTexture: TextureResource? = null
+        public var normalTextureSampler: TextureSampler? = null
         public var normalUvTransform: Matrix3? = null
         public var normalFactor: Float? = null
         public var ambientOcclusionTexture: TextureResource? = null
+        public var ambientOcclusionTextureSampler: TextureSampler? = null
         public var ambientOcclusionUvTransform: Matrix3? = null
         public var ambientOcclusionFactor: Float? = null
         public var emissiveTexture: TextureResource? = null
+        public var emissiveTextureSampler: TextureSampler? = null
         public var emissiveUvTransform: Matrix3? = null
         public var emissiveFactors: Vector3? = null
         public var clearcoatTexture: TextureResource? = null
+        public var clearcoatTextureSampler: TextureSampler? = null
         public var clearcoatNormalTexture: TextureResource? = null
+        public var clearcoatNormalTextureSampler: TextureSampler? = null
         public var clearcoatRoughnessTexture: TextureResource? = null
+        public var clearcoatRoughnessTextureSampler: TextureSampler? = null
         public var clearcoatIntensity: Float? = null
         public var clearcoatRoughness: Float? = null
         public var clearcoatNormalFactor: Float? = null
         public var sheenColorTexture: TextureResource? = null
+        public var sheenColorTextureSampler: TextureSampler? = null
         public var sheenColorFactors: Vector3? = null
         public var sheenRoughnessTexture: TextureResource? = null
+        public var sheenRoughnessTextureSampler: TextureSampler? = null
         public var sheenRoughnessFactor: Float? = null
         public var transmissionTexture: TextureResource? = null
+        public var transmissionTextureSampler: TextureSampler? = null
         public var transmissionUvTransform: Matrix3? = null
         public var transmissionFactor: Float? = null
         public var indexOfRefraction: Float? = null
@@ -167,15 +209,19 @@ public class FakeRenderingRuntime(
     override fun setReflectionMapOnWaterMaterial(
         material: MaterialResource,
         reflectionMap: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeWaterMaterial)?.reflectionMap = reflectionMap
+        (material as? FakeWaterMaterial)?.reflectionMapSampler = sampler
     }
 
     override fun setNormalMapOnWaterMaterial(
         material: MaterialResource,
         normalMap: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeWaterMaterial)?.normalMap = normalMap
+        (material as? FakeWaterMaterial)?.normalMapSampler = sampler
     }
 
     override fun setNormalTilingOnWaterMaterial(material: MaterialResource, normalTiling: Float) {
@@ -193,8 +239,13 @@ public class FakeRenderingRuntime(
         (material as? FakeWaterMaterial)?.alphaStepMultiplier = alphaStepMultiplier
     }
 
-    override fun setAlphaMapOnWaterMaterial(material: MaterialResource, alphaMap: TextureResource) {
+    override fun setAlphaMapOnWaterMaterial(
+        material: MaterialResource,
+        alphaMap: TextureResource,
+        sampler: TextureSampler,
+    ) {
         (material as? FakeWaterMaterial)?.alphaMap = alphaMap
+        (material as? FakeWaterMaterial)?.alphaMapSampler = sampler
     }
 
     override fun setNormalZOnWaterMaterial(material: MaterialResource, normalZ: Float) {
@@ -224,8 +275,10 @@ public class FakeRenderingRuntime(
     override fun setBaseColorTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         baseColor: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.baseColorTexture = baseColor
+        (material as? FakeKhronosPbrMaterial)?.baseColorTextureSampler = sampler
     }
 
     override fun setBaseColorUvTransformOnKhronosPbrMaterial(
@@ -245,8 +298,10 @@ public class FakeRenderingRuntime(
     override fun setMetallicRoughnessTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         metallicRoughness: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.metallicRoughnessTexture = metallicRoughness
+        (material as? FakeKhronosPbrMaterial)?.metallicRoughnessTextureSampler = sampler
     }
 
     override fun setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
@@ -267,8 +322,10 @@ public class FakeRenderingRuntime(
     override fun setNormalTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         normal: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.normalTexture = normal
+        (material as? FakeKhronosPbrMaterial)?.normalTextureSampler = sampler
     }
 
     override fun setNormalUvTransformOnKhronosPbrMaterial(
@@ -285,8 +342,10 @@ public class FakeRenderingRuntime(
     override fun setAmbientOcclusionTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         ambientOcclusion: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.ambientOcclusionTexture = ambientOcclusion
+        (material as? FakeKhronosPbrMaterial)?.ambientOcclusionTextureSampler = sampler
     }
 
     override fun setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
@@ -306,8 +365,10 @@ public class FakeRenderingRuntime(
     override fun setEmissiveTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         emissive: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.emissiveTexture = emissive
+        (material as? FakeKhronosPbrMaterial)?.emissiveTextureSampler = sampler
     }
 
     override fun setEmissiveUvTransformOnKhronosPbrMaterial(
@@ -327,22 +388,28 @@ public class FakeRenderingRuntime(
     override fun setClearcoatTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         clearcoat: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.clearcoatTexture = clearcoat
+        (material as? FakeKhronosPbrMaterial)?.clearcoatTextureSampler = sampler
     }
 
     override fun setClearcoatNormalTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         clearcoatNormal: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.clearcoatNormalTexture = clearcoatNormal
+        (material as? FakeKhronosPbrMaterial)?.clearcoatNormalTextureSampler = sampler
     }
 
     override fun setClearcoatRoughnessTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         clearcoatRoughness: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.clearcoatRoughnessTexture = clearcoatRoughness
+        (material as? FakeKhronosPbrMaterial)?.clearcoatRoughnessTextureSampler = sampler
     }
 
     override fun setClearcoatFactorsOnKhronosPbrMaterial(
@@ -359,8 +426,10 @@ public class FakeRenderingRuntime(
     override fun setSheenColorTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         sheenColor: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.sheenColorTexture = sheenColor
+        (material as? FakeKhronosPbrMaterial)?.sheenColorTextureSampler = sampler
     }
 
     override fun setSheenColorFactorsOnKhronosPbrMaterial(
@@ -373,8 +442,10 @@ public class FakeRenderingRuntime(
     override fun setSheenRoughnessTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         sheenRoughness: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.sheenRoughnessTexture = sheenRoughness
+        (material as? FakeKhronosPbrMaterial)?.sheenRoughnessTextureSampler = sampler
     }
 
     override fun setSheenRoughnessFactorOnKhronosPbrMaterial(
@@ -387,8 +458,10 @@ public class FakeRenderingRuntime(
     override fun setTransmissionTextureOnKhronosPbrMaterial(
         material: MaterialResource,
         transmission: TextureResource,
+        sampler: TextureSampler,
     ) {
         (material as? FakeKhronosPbrMaterial)?.transmissionTexture = transmission
+        (material as? FakeKhronosPbrMaterial)?.transmissionTextureSampler = sampler
     }
 
     override fun setTransmissionUvTransformOnKhronosPbrMaterial(

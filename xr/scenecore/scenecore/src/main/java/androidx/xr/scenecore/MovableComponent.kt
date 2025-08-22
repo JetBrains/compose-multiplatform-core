@@ -29,6 +29,17 @@ import java.util.concurrent.Executor
  * This [Component] can be attached to a single instance of an [Entity]. When attached, this
  * Component will enable the user to translate the Entity by pointing and dragging on it.
  *
+ * Creating this Component with [MovableComponent.createCustomMovable] will create the Component but
+ * not move the attached Entity. It requires an [EntityMoveListener] which will provide suggested
+ * Poses from the system that an application can use to move the attached Entity. This should be
+ * used if the application wants to add custom logic for the Entity's movement.
+ * [MovableComponent.createSystemMovable] will create the Component and move the attached Entity
+ * when the user drags it to a position recommended by the system.
+ * [MovableComponent.createAnchorable] will create the Component, move the attached Entity when the
+ * user drags it, and also potentially reparent the Entity to a new [AnchorEntity]. This will occur
+ * if the user lets go of the Entity near a perception plane that matches the settings in the
+ * provided [AnchorPlacement].
+ *
  * This component cannot be attached to an [AnchorEntity] or to the [ActivitySpace]. Calling
  * [Entity.addComponent] to an Entity with these types will return false.
  *

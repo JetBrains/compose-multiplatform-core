@@ -781,8 +781,10 @@ public class SearchSpecCtsTest {
                         .setRankingStrategy(SearchSpec.RANKING_STRATEGY_JOIN_AGGREGATE_SCORE)
                         .build());
 
-        assertThat(e.getMessage()).isEqualTo("Attempting to rank based on joined documents, but"
-                + " no JoinSpec provided");
+        assertThat(e)
+                .hasMessageThat()
+                .isEqualTo("Attempting to rank based on joined documents, but"
+                                + " no JoinSpec provided");
 
         JoinSpec joinSpec = new JoinSpec.Builder("childProp")
                 .setAggregationScoringStrategy(
@@ -792,9 +794,12 @@ public class SearchSpecCtsTest {
                 .setRankingStrategy(SearchSpec.RANKING_STRATEGY_CREATION_TIMESTAMP)
                 .setJoinSpec(joinSpec)
                 .build());
-        assertThat(e.getMessage()).isEqualTo("Aggregate scoring strategy has been set in the "
-                + "nested JoinSpec, but ranking strategy is not "
-                + "RANKING_STRATEGY_JOIN_AGGREGATE_SCORE");
+        assertThat(e)
+                .hasMessageThat()
+                .isEqualTo(
+                        "Aggregate scoring strategy has been set in the "
+                                + "nested JoinSpec, but ranking strategy is not "
+                                + "RANKING_STRATEGY_JOIN_AGGREGATE_SCORE");
     }
 
     @Test
@@ -845,9 +850,8 @@ public class SearchSpecCtsTest {
         // Should not crash
         SearchSpec searchSpec = new SearchSpec.Builder()
                 .addFilterSchemas("ParentType")
-                .addProjection(SearchSpec.SCHEMA_TYPE_WILDCARD, Collections.singletonList("TypeA"))
-                .addFilterProperties(SearchSpec.SCHEMA_TYPE_WILDCARD,
-                        Collections.singletonList("TypeB"))
+                .addProjection(SearchSpec.SCHEMA_TYPE_WILDCARD, ImmutableList.of("TypeA"))
+                .addFilterProperties(SearchSpec.SCHEMA_TYPE_WILDCARD, ImmutableList.of("TypeB"))
                 .build();
 
         assertThat(searchSpec.getFilterSchemas()).containsExactly("ParentType");
@@ -884,7 +888,7 @@ public class SearchSpecCtsTest {
 
         assertThat(rebuild.getJoinSpec()).isNotNull();
         assertThat(rebuild.getJoinSpec().getChildPropertyExpression()).isEqualTo("entitySchema");
-        assertThat(rebuild.getJoinSpec().getNestedQuery()).isEqualTo("");
+        assertThat(rebuild.getJoinSpec().getNestedQuery()).isEmpty();
         assertThat(rebuild.getJoinSpec().getNestedSearchSpec().getFilterSchemas())
                 .containsExactly("CallAction");
     }

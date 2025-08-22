@@ -25,8 +25,8 @@ import androidx.xr.runtime.internal.Face as RuntimeFace
 import androidx.xr.runtime.internal.Hand as RuntimeHand
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.Plane as RuntimePlane
+import androidx.xr.runtime.internal.RenderViewpoint as RuntimeRenderViewpoint
 import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
-import androidx.xr.runtime.internal.ViewCamera as RuntimeViewCamera
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -60,8 +60,15 @@ internal class XrResourcesManager {
     lateinit var arDevice: ArDevice
         private set
 
-    /** The view camera data */
-    lateinit var viewCameras: List<ViewCamera>
+    /** The render viewpoint data */
+    var monoRenderViewpoint: RenderViewpoint? = null
+        private set
+
+    var leftRenderViewpoint: RenderViewpoint? = null
+        private set
+
+    var rightRenderViewpoint: RenderViewpoint? = null
+        private set
 
     /** The data of the user's face */
     private var _userFace: RuntimeFace? = null
@@ -88,12 +95,22 @@ internal class XrResourcesManager {
         _rightRuntimeHand = rightRuntimeHand
     }
 
-    internal fun initiateArDeviceAndViewCameras(
+    internal fun initiateArDeviceAndRenderViewpoints(
         runtimeArDevice: RuntimeArDevice,
-        runtimeViewCameras: List<RuntimeViewCamera>,
+        runtimeLeftRenderViewpoint: RuntimeRenderViewpoint?,
+        runtimeRightRenderViewpoint: RuntimeRenderViewpoint?,
+        runtimeMonoRenderViewpoint: RuntimeRenderViewpoint?,
     ) {
         arDevice = ArDevice(runtimeArDevice)
-        viewCameras = runtimeViewCameras.map { ViewCamera(it, runtimeArDevice) }
+        runtimeLeftRenderViewpoint?.let {
+            leftRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
+        runtimeRightRenderViewpoint?.let {
+            rightRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
+        runtimeMonoRenderViewpoint?.let {
+            monoRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
     }
 
     internal fun initiateDepthMaps(runtimeDepthMaps: List<RuntimeDepthMap>) {

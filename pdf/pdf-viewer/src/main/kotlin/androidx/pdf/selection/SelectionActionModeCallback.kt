@@ -45,7 +45,11 @@ internal class SelectionActionModeCallback(
         actionMode = mode
         // Start afresh with the default menu items
         selectionMenuItems = menuItems.toMutableList()
-        pdfView.selectionMenuItemPreparer?.onPrepareSelectionMenuItems(selectionMenuItems)
+        // Invoke selection menu item preparer(s) to customize selection menu
+        for (selectionMenuItemPreparer in pdfView.selectionMenuItemPreparers) {
+            selectionMenuItemPreparer.onPrepareSelectionMenuItems(selectionMenuItems)
+        }
+
         selectionMenuItems.forEachIndexed { index, component ->
             when (component) {
                 is DefaultSelectionMenuComponent -> {

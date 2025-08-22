@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
@@ -51,11 +52,11 @@ import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
+import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.recommendedSizeIfUnbounded
 import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
-import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
@@ -121,10 +122,13 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
  * 3D content areas, use the [Subspace] composable. The [ApplicationSubspace] will inherit its
  * position and scale from the system's recommended position and scale.
  *
- * By default, with no `constraints` provided, this Subspace is bounded by a recommended content
- * box. This box represents a comfortable, human-scale area in front of the user, sized to occupy a
+ * By default, this Subspace is automatically bounded by the system's recommended content box. This
+ * box represents a comfortable, human-scale area in front of the user, sized to occupy a
  * significant portion of their view on any given device. Using this default is the suggested way to
  * create responsive spatial layouts that look great without hardcoding dimensions.
+ * SubspaceModifiers like SubspaceModifier.fillMaxSize will expand to fill this recommended box.
+ * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
+ * set `[allowUnboundedSubspace] = true`.
  *
  * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
  * Tablet).
@@ -136,16 +140,18 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
  * events that cause the compose runtime to lose state (app process killed or configuration change)
  * will also cause the ApplicationSubspace to lose its state.
  *
- * @param constraints The volume constraints to apply to this [ApplicationSubspace]. If `null` (the
- *   default), the Subspace will be sized based on the system's recommended content box. This
- *   default provides a device-specific volume appropriate for comfortable viewing and interaction.
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
+ * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
+ *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
+ *   space.
  * @param content The 3D content to render within this Subspace.
  */
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 public fun ApplicationSubspace(
-    constraints: VolumeConstraints? = null,
+    modifier: SubspaceModifier = SubspaceModifier,
+    allowUnboundedSubspace: Boolean = false,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If not in XR, do nothing
@@ -158,7 +164,8 @@ public fun ApplicationSubspace(
         throw IllegalStateException("ApplicationSubspace cannot be nested within another Subspace.")
     } else {
         ApplicationSubspace(
-            constraints = constraints,
+            modifier = modifier,
+            allowUnboundedSubspace = allowUnboundedSubspace,
             subspaceRootNode = LocalSubspaceRootNode.current,
             content = content,
         )
@@ -179,7 +186,8 @@ public fun ApplicationSubspace(
  */
 @Composable
 private fun ApplicationSubspace(
-    constraints: VolumeConstraints?,
+    modifier: SubspaceModifier,
+    allowUnboundedSubspace: Boolean,
     subspaceRootNode: Entity? = LocalSubspaceRootNode.current,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
@@ -202,35 +210,23 @@ private fun ApplicationSubspace(
         ) {
             it.dispose()
             subspaceRoot.dispose()
-            session.scene.mainPanelEntity.setEnabled(true)
+            if (lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                session.scene.mainPanelEntity.setEnabled(true)
+            }
         }
     }
 
-    val density = LocalDensity.current
-    scene.rootVolumeConstraints =
-        remember(constraints, density) {
-            constraints
-                ?: run {
-                    val box: BoundingBox =
-                        session.scene.activitySpace.recommendedContentBoxInFullSpace
-                    val widthMeters = Meter(box.max.x - box.min.x)
-                    val heightMeters = Meter(box.max.y - box.min.y)
-                    val depthMeters = Meter(box.max.z - box.min.z)
-
-                    VolumeConstraints(
-                        minWidth = 0,
-                        maxWidth = widthMeters.roundToPx(density),
-                        minHeight = 0,
-                        maxHeight = heightMeters.roundToPx(density),
-                        minDepth = 0,
-                        maxDepth = depthMeters.roundToPx(density),
-                    )
-                }
-        }
+    scene.rootVolumeConstraints = remember { VolumeConstraints() }
 
     scene.setContent {
         CompositionLocalProvider(LocalIsInApplicationSubspace provides true) {
-            SpatialBox(content = content)
+            val finalModifier =
+                if (allowUnboundedSubspace) {
+                    modifier
+                } else {
+                    modifier.then(SubspaceModifier.recommendedSizeIfUnbounded())
+                }
+            SpatialBox(modifier = finalModifier, content = content)
         }
     }
 }
@@ -250,9 +246,9 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
     // subspace properly.
     val subspaceRootContainer by remember {
         disposableValueOf(
-            GroupEntity.create(session, "SubspaceRootContainer").apply {
-                parent = coreEntity.entity
-                setEnabled(false)
+            CoreGroupEntity(GroupEntity.create(session, "SubspaceRootContainer")).apply {
+                enabled = false
+                parent = coreEntity
             }
         ) {
             it.dispose()
@@ -260,14 +256,16 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
     }
     val scene by remember {
         val subspaceRoot =
-            GroupEntity.create(session, "SubspaceRoot").apply { parent = subspaceRootContainer }
+            CoreGroupEntity(GroupEntity.create(session, "SubspaceRoot")).apply {
+                parent = subspaceRootContainer
+            }
         disposableValueOf(
             SpatialComposeScene(
                 lifecycleOwner = lifecycleOwner,
                 context = context,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = CoreGroupEntity(subspaceRoot),
+                rootEntity = subspaceRoot,
             )
         ) {
             it.dispose()
@@ -338,29 +336,34 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
                 val contentOffset = coordinates?.positionInRoot() ?: return@layout
                 val nextPose =
                     calculatePose(contentOffset, parentSize, measuredPlaceholderSize, density)
-                if (subspaceRootContainer.getPose() != nextPose) {
-                    subspaceRootContainer.setPose(nextPose)
-                }
-                // This needs to be checked aside from the pose check since the pose may not change.
-                if (!subspaceRootContainer.isEnabled(false)) {
-                    subspaceRootContainer.setEnabled(true)
-                }
+                subspaceRootContainer.poseInMeters = nextPose
+                subspaceRootContainer.enabled = true
             }
         }
     }
 }
 
 /**
- * A [Subspace] that does not match the scaling, alignment, and placement suggested by the system.
+ * A Subspace that does not match the scaling, alignment, and placement suggested by the system.
  * Instead it will align itself to gravity (perpendicular to the floor) and have a scale value equal
  * to the scale of the [androidx.xr.scenecore.ActivitySpace] of the application (1:1 with OpenXR
  * Unbounded Reference Space).
  *
- * [GravityAlignedSubspace] should be used to create a topmost [Subspace] in your application's
+ * [GravityAlignedSubspace] should be used to create a topmost Subspace in your application's
  * spatial UI hierarchy.
  *
- * @param constraints The volume constraints to apply to this [GravityAlignedSubspace]. If `null`
- *   (the default), the recommended content box constraints from the system will be used.
+ * By default, this Subspace is automatically bounded by the system's recommended content box. This
+ * box represents a comfortable, human-scale area in front of the user, sized to occupy a
+ * significant portion of their view on any given device. Using this default is the suggested way to
+ * create responsive spatial layouts that look great without hardcoding dimensions.
+ * SubspaceModifiers like SubspaceModifier.fillMaxSize will expand to fill this recommended box.
+ * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
+ * set `[allowUnboundedSubspace] = true`.
+ *
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
+ * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
+ *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
+ *   space.
  * @param content The 3D content to render within this Subspace.
  * @throws [IllegalStateException] - If the activity in which it is hosted is not a
  *   [ComponentActivity]
@@ -378,7 +381,8 @@ private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxSc
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun GravityAlignedSubspace(
-    constraints: VolumeConstraints? = null,
+    modifier: SubspaceModifier = SubspaceModifier,
+    allowUnboundedSubspace: Boolean = false,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If we are not in XR, do nothing
@@ -389,6 +393,11 @@ public fun GravityAlignedSubspace(
             "GravityAlignedSubspace cannot be nested within another Subspace."
         )
     } else {
-        ApplicationSubspace(constraints = constraints, subspaceRootNode = null, content = content)
+        ApplicationSubspace(
+            modifier = modifier,
+            allowUnboundedSubspace = allowUnboundedSubspace,
+            subspaceRootNode = null,
+            content = content,
+        )
     }
 }

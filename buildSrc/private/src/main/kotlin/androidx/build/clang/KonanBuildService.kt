@@ -152,7 +152,6 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                         debug = false,
                         kind = parameters.linkerOutputKind.get(),
                         outputDsymBundle = "unused",
-                        mimallocEnabled = false,
                         sanitizer = null,
                     )
                     .finalLinkCommands()

@@ -56,9 +56,7 @@ dependencies {
     androidTestImplementation(project(":appsearch:appsearch-play-services-storage"))
     androidTestImplementation(project(":appsearch:appsearch-test-util"))
     // Needed to check if PlayServicesAppSearch throws ApiException.
-    androidTestImplementation("com.google.android.gms:play-services-basement:18.1.0", {
-        exclude group: "androidx.core", module: "core"
-    })
+    androidTestImplementation("com.google.android.gms:play-services-basement:18.1.0")
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)

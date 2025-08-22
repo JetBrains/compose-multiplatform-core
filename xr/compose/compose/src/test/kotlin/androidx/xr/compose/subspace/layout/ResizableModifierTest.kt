@@ -74,6 +74,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_componentIsNotNullAndOnlyContainsSingleResizable() {
         composeTestRule.setContent {
             TestSetup {
@@ -89,6 +90,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierIsDisabledAndComponentDoesNotExist() {
         composeTestRule.setContent {
             TestSetup {
@@ -104,6 +106,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierDoesNotChangeAndComponentDoesNotUpdate() {
         composeTestRule.setContent {
             TestSetup {
@@ -134,6 +137,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierEnabledToDisabledAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -162,6 +166,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierOnSizeChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -191,6 +196,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierDisableWithOnSizeChangeUpdateAndComponentRemoved() {
         composeTestRule.setContent {
             TestSetup {
@@ -227,6 +233,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -263,6 +270,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierDisabledThenEnabledAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -296,6 +304,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierOnSizeChangeTwiceUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -330,6 +339,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierDisabledThenEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -371,6 +381,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierEnabledThenDisabledWithOnSizeChangeUpdateAndComponentUpdates() {
         composeTestRule.setContent {
             TestSetup {
@@ -412,6 +423,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsSet() {
         val maxSize = DpVolumeSize(500.dp, 500.dp, 500.dp)
         composeTestRule.setContent {
@@ -427,6 +439,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsNotSet() {
         composeTestRule.setContent {
             TestSetup {
@@ -437,6 +450,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsSet() {
         val minSize = DpVolumeSize(100.dp, 100.dp, 100.dp)
         composeTestRule.setContent {
@@ -452,6 +466,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsNotSet() {
         composeTestRule.setContent {
             TestSetup {
@@ -462,6 +477,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentByDefault() {
         composeTestRule.setContent {
             TestSetup {
@@ -482,6 +498,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentWhenResizableIsEnabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -496,6 +513,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentWhenResizableIsDisabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -510,6 +528,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentByDefault() {
         composeTestRule.setContent {
             TestSetup {
@@ -530,6 +549,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentWhenResizableIsEnabled() {
         composeTestRule.setContent {
             TestSetup {
@@ -544,6 +564,7 @@ class ResizableModifierTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentWhenResizableIsDisabled() {
         composeTestRule.setContent {
             TestSetup {

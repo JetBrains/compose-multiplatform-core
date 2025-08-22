@@ -16,15 +16,19 @@
 
 package androidx.pdf.ink.util
 
+import android.graphics.Path
 import android.graphics.RectF
 import android.os.Build
 import androidx.annotation.RequiresExtension
+import androidx.ink.geometry.PartitionedMesh
+import androidx.ink.geometry.outlinesToPath
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
 import androidx.pdf.annotation.models.PathPdfObject
 import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.ink.EditablePdfViewerFragment.PageBoundsProvider
+import androidx.pdf.utils.getPathInputsFromPath
 import kotlin.math.max
 import kotlin.math.min
 
@@ -87,16 +91,44 @@ internal class StrokeProcessor(private val pageBoundsProvider: PageBoundsProvide
     }
 
     /**
-     * Converts a [Stroke] object into a [StampAnnotation].
+     * Converts this [Stroke] into a [StampAnnotation].
      *
-     * The stroke's inputs are used to create [PathPdfObject]s, and the bounds are calculated from
-     * the min/max x and y coordinates of the stroke inputs.
+     * The outline of the stroke is extracted from its shape's mesh and used to create
+     * [PathPdfObject]s.
      *
      * @param pageNum The page number where this annotation will be placed.
-     * @return A [StampAnnotation] representing the given stroke.
+     * @return A [StampAnnotation] representing this stroke.
      */
     private fun Stroke.toStampAnnotation(pageNum: Int): StampAnnotation {
-        val pathInputs = mutableListOf<PathPdfObject.PathInput>()
+        val strokeMesh: PartitionedMesh = shape
+        val renderGroupPaths: List<Path> =
+            (0 until strokeMesh.getRenderGroupCount()).map { groupIndex ->
+                strokeMesh.outlinesToPath(groupIndex)
+            }
+        val pathInputs: List<PathPdfObject.PathInput> =
+            renderGroupPaths.flatMap { it.getPathInputsFromPath() }
+
+        val pathPdfObject =
+            PathPdfObject(
+                brushColor = brush.colorIntArgb,
+                brushWidth = brush.size,
+                inputs = pathInputs,
+            )
+        val bounds = getBounds()
+        return StampAnnotation(
+            pageNum = pageNum,
+            bounds = bounds,
+            pdfObjects = listOf(pathPdfObject),
+        )
+    }
+
+    /**
+     * Calculates the bounding box of this [Stroke] based on the minimum and maximum x and y
+     * coordinates of its inputs.
+     *
+     * @return A [RectF] representing the bounding box of the stroke.
+     */
+    private fun Stroke.getBounds(): RectF {
         var minX = Float.MAX_VALUE
         var minY = Float.MAX_VALUE
         var maxX = Float.MIN_VALUE
@@ -108,20 +140,7 @@ internal class StrokeProcessor(private val pageBoundsProvider: PageBoundsProvide
             maxX = max(maxX, strokeInput.x)
             minY = min(minY, strokeInput.y)
             maxY = max(maxY, strokeInput.y)
-            pathInputs.add(PathPdfObject.PathInput(strokeInput.x, strokeInput.y))
         }
-
-        val pathPdfObject =
-            PathPdfObject(
-                brushColor = this.brush.colorIntArgb,
-                brushWidth = this.brush.size,
-                inputs = pathInputs,
-            )
-        val bounds = RectF(minX, minY, maxX, maxY)
-        return StampAnnotation(
-            pageNum = pageNum,
-            bounds = bounds,
-            pdfObjects = listOf(pathPdfObject),
-        )
+        return RectF(minX, minY, maxX, maxY)
     }
 }

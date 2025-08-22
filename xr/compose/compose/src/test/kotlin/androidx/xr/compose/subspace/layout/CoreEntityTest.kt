@@ -37,8 +37,9 @@ import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.session
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
@@ -62,9 +63,9 @@ class CoreEntityTest {
 
     @Test
     fun coreEntity_coreGroupEntity_shouldThrowIfNotGroupEntity() {
-        composeTestRule.setContent { TestSetup {} }
+        composeTestRule.setContentWithCompatibilityForXr {}
 
-        val session = composeTestRule.activity.session
+        val session = composeTestRule.session
         assertNotNull(session)
         assertFailsWith<IllegalArgumentException> { CoreGroupEntity(session.scene.activitySpace) }
     }
@@ -76,29 +77,27 @@ class CoreEntityTest {
         var sizeCount = 0
         var mutableSizeCount = 0
 
-        composeTestRule.setContent {
-            TestSetup {
-                val coreEntity = remember {
-                    CoreGroupEntity(
-                            GroupEntity.create(
-                                session = assertNotNull(composeTestRule.activity.session),
-                                name = "Test",
-                            )
+        composeTestRule.setContentWithCompatibilityForXr {
+            val coreEntity = remember {
+                CoreGroupEntity(
+                        GroupEntity.create(
+                            session = assertNotNull(composeTestRule.session),
+                            name = "Test",
                         )
-                        .apply { this.size = IntVolumeSize(size, size, size) }
-                }
+                    )
+                    .apply { this.size = IntVolumeSize(size, size, size) }
+            }
 
-                SizeWatcher(coreEntity) { sizeCount++ }
-                MutableSizeWatcher(coreEntity) { mutableSizeCount++ }
+            SizeWatcher(coreEntity) { sizeCount++ }
+            MutableSizeWatcher(coreEntity) { mutableSizeCount++ }
 
-                Button(
-                    onClick = {
-                        size += 100
-                        coreEntity.size = IntVolumeSize(size, size, size)
-                    }
-                ) {
-                    Text("Increase")
+            Button(
+                onClick = {
+                    size += 100
+                    coreEntity.size = IntVolumeSize(size, size, size)
                 }
+            ) {
+                Text("Increase")
             }
         }
 
@@ -127,14 +126,12 @@ class CoreEntityTest {
     @Test
     fun coreBasePanelEntity_androidViewPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialAndroidViewPanel(
-                        factory = { View(it) },
-                        SubspaceModifier.width(size).height(size).testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.width(size).height(size).testTag("panel"),
+                )
             }
         }
 
@@ -157,11 +154,9 @@ class CoreEntityTest {
     @Test
     fun coreBasePanelEntity_spatialPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {}
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {}
             }
         }
 
@@ -181,11 +176,9 @@ class CoreEntityTest {
     @Test
     fun coreBasePanelEntity_mainPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialMainPanel(SubspaceModifier.width(size).height(size).testTag("panel"))
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialMainPanel(SubspaceModifier.width(size).height(size).testTag("panel"))
             }
         }
 
@@ -205,14 +198,12 @@ class CoreEntityTest {
     @Test
     fun coreBasePanelEntity_activityPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
-        composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace {
-                    SpatialActivityPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        SubspaceModifier.width(size).height(size).testTag("panel"),
-                    )
-                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialActivityPanel(
+                    intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                    SubspaceModifier.width(size).height(size).testTag("panel"),
+                )
             }
         }
 

@@ -213,6 +213,7 @@ public class Event extends Thing {
             return (T) this;
         }
 
+        @Override
         public @NonNull Event build() {
             return new Event(
                 mNamespace,

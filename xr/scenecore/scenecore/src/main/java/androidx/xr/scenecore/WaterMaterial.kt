@@ -62,12 +62,14 @@ internal constructor(
      * https://developer.android.com/guide/components/processes-and-threads
      *
      * @param reflectionMap The [CubeMapTexture] to be used as the reflection cube.
+     * @param sampler The [TextureSampler] to be used when sampling the reflection map texture.
      */
     @MainThread
-    public fun setReflectionMap(reflectionMap: CubeMapTexture) {
+    public fun setReflectionMap(reflectionMap: CubeMapTexture, sampler: TextureSampler) {
         session.platformAdapter.setReflectionMapOnWaterMaterial(
             materialResource,
             reflectionMap.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -78,10 +80,15 @@ internal constructor(
      * https://developer.android.com/guide/components/processes-and-threads
      *
      * @param normalMap The [Texture] to be used as the normal map.
+     * @param sampler The [TextureSampler] to be used when sampling the normal map texture.
      */
     @MainThread
-    public fun setNormalMap(normalMap: Texture) {
-        session.platformAdapter.setNormalMapOnWaterMaterial(materialResource, normalMap.texture)
+    public fun setNormalMap(normalMap: Texture, sampler: TextureSampler) {
+        session.platformAdapter.setNormalMapOnWaterMaterial(
+            materialResource,
+            normalMap.texture,
+            sampler.toRtTextureSampler(),
+        )
     }
 
     /**
@@ -140,12 +147,17 @@ internal constructor(
      * https://developer.android.com/guide/components/processes-and-threads
      *
      * @param alphaMap The alpha map.
+     * @param sampler The [TextureSampler] to be used when sampling the alpha map texture.
      * @throws IllegalStateException if the water material is not the alpha map version.
      */
     @MainThread
-    public fun setAlphaMap(alphaMap: Texture) {
+    public fun setAlphaMap(alphaMap: Texture, sampler: TextureSampler) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setAlphaMapOnWaterMaterial(materialResource, alphaMap.texture)
+            session.platformAdapter.setAlphaMapOnWaterMaterial(
+                materialResource,
+                alphaMap.texture,
+                sampler.toRtTextureSampler(),
+            )
         } else {
             throw IllegalStateException(
                 "The alpha map can only be set for alpha map version of the water material."
@@ -210,8 +222,7 @@ internal constructor(
             val materialResourceFuture = platformAdapter.createWaterMaterial(isAlphaMapVersion)
             val materialFuture = ResolvableFuture.create<WaterMaterial>()
 
-            // TODO: b/375070346 - remove this `!!` when we're sure the future is non-null.
-            materialResourceFuture!!.addListener(
+            materialResourceFuture.addListener(
                 {
                     try {
                         val material = materialResourceFuture.get()

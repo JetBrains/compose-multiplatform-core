@@ -28,15 +28,20 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +66,7 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
     fun verifyFocusIsSetCorrectlyAtEachScrollStep() = runTest {
         val state = ListState()
         val density = Density(1f)
-        rule.setContentAndSaveScope {
+        rule.setContentForTestCase {
             CompositionLocalProvider(LocalDensity provides density) {
                 FocusableTestList(state, testCase)
             }
@@ -130,6 +135,18 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
     private suspend fun ListState.scrollAndWaitForIdle(delta: Float) {
         val job = rule.runOnIdle { scope.launch { scrollBy(delta) } }
         job.join()
+        rule.waitForIdle()
+    }
+
+    private fun ComposeContentTestRule.setContentForTestCase(content: @Composable () -> Unit) {
+        lateinit var focusManager: FocusManager
+        setContent {
+            focusManager = LocalFocusManager.current
+            scope = rememberCoroutineScope()
+            content()
+        }
+        // Move focus to the list.
+        rule.runOnUiThread { focusManager.moveFocus(FocusDirection.Next) }
         rule.waitForIdle()
     }
 

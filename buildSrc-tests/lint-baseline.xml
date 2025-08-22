@@ -337,24 +337,6 @@
     <issue
         id="GradleProjectIsolation"
         message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="    rootProject.extensions.findByType(YarnRootEnvSpec::class.java)?.let {"
-        errorLine2="    ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
-        errorLine1="    rootProject.extensions.findByType&lt;BinaryenRootExtension>()?.let { binaryen ->"
-        errorLine2="    ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Use isolated.rootProject instead of getRootProject"
         errorLine1="                project.rootProject.tasks.named(NAME).configure { it.dependsOn(task) }"
         errorLine2="                        ~~~~~~~~~~~">
         <location

@@ -395,8 +395,7 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void loadTexture_loadsTexture() throws ExecutionException, InterruptedException {
-        ListenableFuture<Texture> textureFuture =
-                mFakeImpressApi.loadTexture("FakeAsset.exr", null);
+        ListenableFuture<Texture> textureFuture = mFakeImpressApi.loadTexture("FakeAsset.exr");
         assertThat(textureFuture).isNotNull();
         Texture texture = textureFuture.get();
         assertThat(texture).isNotNull();
@@ -410,7 +409,6 @@ public final class FakeImpressApiImplTest {
                 new Texture.Builder()
                         .setImpressApi(mFakeImpressApi)
                         .setNativeTexture(texture.getNativeHandle())
-                        .setTextureSampler(null)
                         .build();
         assertThat(texture2).isNotNull();
     }
@@ -423,7 +421,6 @@ public final class FakeImpressApiImplTest {
                 new Texture.Builder()
                         .setImpressApi(mFakeImpressApi)
                         .setNativeTexture(texture.getNativeHandle())
-                        .setTextureSampler(null)
                         .build();
         assertThat(texture2).isNotNull();
     }
@@ -443,7 +440,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setReflectionMapOnWaterMaterial(0, 0));
+                        () -> mFakeImpressApi.setReflectionMapOnWaterMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -452,7 +449,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setNormalMapOnWaterMaterial(0, 0));
+                        () -> mFakeImpressApi.setNormalMapOnWaterMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -488,7 +485,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setAlphaMapOnWaterMaterial(0, 0));
+                        () -> mFakeImpressApi.setAlphaMapOnWaterMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -545,7 +542,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setBaseColorTextureOnKhronosPbrMaterial(0, 0));
+                        () -> mFakeImpressApi.setBaseColorTextureOnKhronosPbrMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -578,7 +575,7 @@ public final class FakeImpressApiImplTest {
                         IllegalArgumentException.class,
                         () ->
                                 mFakeImpressApi.setMetallicRoughnessTextureOnKhronosPbrMaterial(
-                                        0, 0));
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -616,7 +613,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setNormalTextureOnKhronosPbrMaterial(0, 0));
+                        () -> mFakeImpressApi.setNormalTextureOnKhronosPbrMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -645,7 +642,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setAmbientOcclusionTextureOnKhronosPbrMaterial(0, 0));
+                        () ->
+                                mFakeImpressApi.setAmbientOcclusionTextureOnKhronosPbrMaterial(
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -674,7 +673,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setEmissiveTextureOnKhronosPbrMaterial(0, 0));
+                        () -> mFakeImpressApi.setEmissiveTextureOnKhronosPbrMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -703,7 +702,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setClearcoatTextureOnKhronosPbrMaterial(0, 0));
+                        () -> mFakeImpressApi.setClearcoatTextureOnKhronosPbrMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -712,7 +711,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setClearcoatNormalTextureOnKhronosPbrMaterial(0, 0));
+                        () ->
+                                mFakeImpressApi.setClearcoatNormalTextureOnKhronosPbrMaterial(
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -723,7 +724,7 @@ public final class FakeImpressApiImplTest {
                         IllegalArgumentException.class,
                         () ->
                                 mFakeImpressApi.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-                                        0, 0));
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -741,7 +742,7 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setSheenColorTextureOnKhronosPbrMaterial(0, 0));
+                        () -> mFakeImpressApi.setSheenColorTextureOnKhronosPbrMaterial(0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -759,7 +760,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setSheenRoughnessTextureOnKhronosPbrMaterial(0, 0));
+                        () ->
+                                mFakeImpressApi.setSheenRoughnessTextureOnKhronosPbrMaterial(
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -777,7 +780,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setTransmissionTextureOnKhronosPbrMaterial(0, 0));
+                        () ->
+                                mFakeImpressApi.setTransmissionTextureOnKhronosPbrMaterial(
+                                        0, 0, null));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -833,7 +838,7 @@ public final class FakeImpressApiImplTest {
     @Test
     public void destroyNativeObject_destroysNativeTextureObject()
             throws ExecutionException, InterruptedException {
-        Texture texture = mFakeImpressApi.loadTexture("FakeAsset.exr", null).get();
+        Texture texture = mFakeImpressApi.loadTexture("FakeAsset.exr").get();
         long nativeHandle = texture.getNativeHandle();
         int initialTextureCount = mFakeImpressApi.getTextureImages().size();
         mFakeImpressApi.destroyNativeObject(nativeHandle);
@@ -902,7 +907,7 @@ public final class FakeImpressApiImplTest {
                 mFakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment");
         int unused2 = mFakeImpressApi.createImpressNode();
         ListenableFuture<Long> unused3 = mFakeImpressApi.loadGltfAsset("fakeAsset");
-        ListenableFuture<Texture> unused4 = mFakeImpressApi.loadTexture("FakeAsset.exr", null);
+        ListenableFuture<Texture> unused4 = mFakeImpressApi.loadTexture("FakeAsset.exr");
         ListenableFuture<WaterMaterial> unused5 = mFakeImpressApi.createWaterMaterial(false);
         mFakeImpressApi.disposeAllResources();
         assertThat(mFakeImpressApi.getImageBasedLightingAssets()).isEmpty();

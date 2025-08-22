@@ -76,7 +76,7 @@ class ProtoLayoutScopeTest {
         scope.registerResource("2", image2)
         val collectedResources = scope.collectResources()
         val resVersion = collectedResources.version
-        scope.clear()
+        scope.clearAll()
 
         scope.registerResource("2", image2)
         scope.registerResource("1", image1)
@@ -107,7 +107,7 @@ class ProtoLayoutScopeTest {
         scope.registerResource("2", image2)
         val collectedResources = scope.collectResources()
         val resVersion = collectedResources.version
-        scope.clear()
+        scope.clearAll()
 
         scope.registerResource("11", image1)
         scope.registerResource("2", image2)
@@ -154,7 +154,7 @@ class ProtoLayoutScopeTest {
 
         scope.registerResource("id", image)
         scope.registerPendingIntent("id", intent)
-        scope.clear()
+        scope.clearAll()
 
         assertThat(scope.resources).isEmpty()
         assertThat(scope.hasResources()).isFalse()

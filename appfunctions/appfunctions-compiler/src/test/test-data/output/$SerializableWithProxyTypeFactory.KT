@@ -1,5 +1,6 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import androidx.appfunctions.`internal`.serializableproxies.`$LocalDateTimeFactory`
@@ -7,6 +8,7 @@ import androidx.appfunctions.`internal`.serializableproxies.`$UriFactory`
 import java.time.LocalDateTime
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactory<SerializableWithProxyType> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): SerializableWithProxyType {

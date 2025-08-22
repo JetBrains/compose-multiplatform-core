@@ -420,24 +420,24 @@ public class LocalStorage {
 
         executor.execute(() -> {
             long totalOptimizeLatencyStartMillis = SystemClock.elapsedRealtime();
-            OptimizeStats.Builder builder = null;
+            OptimizeStats.Builder optimizeStatsBuilder = null;
             try {
                 if (logger != null) {
-                    builder = new OptimizeStats.Builder();
+                    optimizeStatsBuilder = new OptimizeStats.Builder();
                 }
-                mAppSearchImpl.checkForOptimize(builder);
+                mAppSearchImpl.checkForOptimize(optimizeStatsBuilder, /*callStatsBuilder=*/ null);
             } catch (AppSearchException e) {
                 Log.w(TAG, "Error occurred when check for optimize", e);
             } finally {
-                if (builder != null) {
-                    OptimizeStats oStats = builder
+                if (optimizeStatsBuilder != null) {
+                    OptimizeStats oStats = optimizeStatsBuilder
                             .setTotalLatencyMillis(
                                     (int) (SystemClock.elapsedRealtime()
                                             - totalOptimizeLatencyStartMillis))
                             .build();
                     if (logger != null && oStats.getOriginalDocumentCount() > 0) {
                         // see if optimize has been run by checking originalDocumentCount
-                        logger.logStats(builder.build());
+                        logger.logStats(optimizeStatsBuilder.build());
                     }
                 }
             }

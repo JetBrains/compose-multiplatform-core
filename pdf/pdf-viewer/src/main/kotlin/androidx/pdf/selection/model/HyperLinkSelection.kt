@@ -19,35 +19,37 @@ package androidx.pdf.selection.model
 import android.net.Uri
 import android.os.Parcel
 import android.text.TextUtils
+import androidx.annotation.RestrictTo
 import androidx.pdf.PdfRect
-import androidx.pdf.selection.Selection
+import androidx.pdf.selection.LinkSelection
 import androidx.pdf.view.pdfRectFromParcel
 import androidx.pdf.view.writeToParcel
 
 /**
- * A [Selection] for a hyperlink.
+ * A [androidx.pdf.selection.Selection] for a hyperlink.
  *
  * This represents a text range that is also a hyperlink, containing both the link and the text that
  * is displayed.
  *
  * @property link The URL of the hyperlink.
- * @property text The text that is displayed as a hyperlink.
+ * @property linkText The text that is displayed as a hyperlink.
  * @property bounds The list of bounding boxes for the text.
  */
-internal class HyperLinkSelection(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class HyperLinkSelection(
     public val link: Uri,
-    public val text: CharSequence,
+    override val linkText: CharSequence,
     override val bounds: List<PdfRect>,
-) : Selection {
-    /** Returns [text] as a [String] */
-    public fun textAsString(): String = text.toString()
+) : LinkSelection {
+    /** Returns [linkText] as a [String] */
+    public fun textAsString(): String = linkText.toString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is HyperLinkSelection) return false
 
         if (other.link != this.link) return false
-        if (other.text != this.text) return false
+        if (other.linkText != this.linkText) return false
         if (other.bounds != this.bounds) return false
 
         return true
@@ -55,19 +57,19 @@ internal class HyperLinkSelection(
 
     override fun hashCode(): Int {
         var result = link.hashCode()
-        result = 31 * result + text.hashCode()
+        result = 31 * result + linkText.hashCode()
         result = 31 * result + bounds.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "HyperLinkSelection: link $link text $text bounds $bounds"
+        return "HyperLinkSelection: link $link text $linkText bounds $bounds"
     }
 
     /** Writes a [HyperLinkSelection] to [dest]. */
     internal fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeParcelable(link, flags)
-        TextUtils.writeToParcel(text, dest, flags)
+        TextUtils.writeToParcel(linkText, dest, flags)
         dest.writeInt(bounds.size)
         for (bound in bounds) {
             bound.writeToParcel(dest)

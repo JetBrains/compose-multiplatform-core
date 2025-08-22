@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LocalContentColor
@@ -44,6 +46,7 @@ import androidx.xr.compose.material3.tokens.XrTokens
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /**
  * <a href="https://m3.material.io/components/navigation-rail/overview" class="external"
@@ -84,30 +87,34 @@ public fun NavigationRail(
     header: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val orbiterProperties = LocalNavigationRailOrbiterProperties.current
+    val orbiterProperties =
+        LocalNavigationRailOrbiterProperties.current.copy(
+            shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
+        )
     VerticalOrbiter(orbiterProperties) {
-        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
-            Column(
-                // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
-                // which do not produce the desired result in XR.
-                Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
-                    .padding(vertical = XrNavigationRailTokens.VerticalPadding)
-                    .selectableGroup(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
-                content = content,
-            )
-        }
-    }
-    // Header goes inside a separate top-aligned Orbiter without an outline shape, as this is
-    // generally a FAB.
-    if (header != null) {
-        VerticalOrbiter(orbiterProperties.copy(alignment = Alignment.Top)) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
-                content = header,
-            )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
+        ) {
+            header?.let { it() }
+            Surface(
+                shape = CircleShape,
+                color = containerColor,
+                contentColor = contentColor,
+                modifier = modifier,
+            ) {
+                Column(
+                    // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
+                    // which do not produce the desired result in XR.
+                    Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
+                        .padding(vertical = XrNavigationRailTokens.VerticalPadding)
+                        .selectableGroup(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement =
+                        Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
+                    content = content,
+                )
+            }
         }
     }
 }

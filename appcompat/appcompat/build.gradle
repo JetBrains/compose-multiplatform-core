@@ -51,20 +51,10 @@ dependencies {
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
-    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1", {
-        // Needed to ensure that the same version of lifecycle-runtime-ktx
-        // is pulled into main and androidTest configurations. Otherwise,
-        // potentially leads to confusing errors about resolution
-        // ambiguity, especially from playground build which replaces
-        // project dependency with snapshot artifacts.
-        exclude group: "androidx.lifecycle", module: "lifecycle-runtime-ktx"
-    })
+    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1")
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-lifecycle"))
-    androidTestImplementation(project(":internal-testutils-appcompat"), {
-        exclude group: "androidx.appcompat", module: "appcompat"
-        exclude group: "androidx.core", module: "core"
-    })
+    androidTestImplementation(project(":internal-testutils-appcompat"))
     androidTestImplementation(project(":internal-testutils-fonts"))
 
     testImplementation(libs.kotlinStdlib)

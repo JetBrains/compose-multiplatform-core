@@ -152,7 +152,7 @@ public object Intersection {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramShearFactor = parallelogram.skew,
         )
     }
 
@@ -244,7 +244,7 @@ public object Intersection {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramShearFactor = parallelogram.skew,
         )
     }
 
@@ -314,7 +314,7 @@ public object Intersection {
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
             parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramShearFactor = parallelogram.skew,
         )
     }
 
@@ -350,9 +350,8 @@ public object Intersection {
     public fun Parallelogram.intersects(other: Parallelogram): Boolean {
         // Return true without calling the native code when this [Parallelogram] and [other] are
         // equal
-        // --- i.e.
-        // when they have same parameters like [center], [width], [height], [rotation] and
-        // [shearFactor].
+        // (when they have the same parameters like [center], [width], [height], [rotation] and
+        // [skew]).
         if (this == other) return true
         return nativeParallelogramParallelogramIntersects(
             parallelogram1CenterX = this.center.x,
@@ -360,13 +359,13 @@ public object Intersection {
             parallelogram1Width = this.width,
             parallelogram1Height = this.height,
             parallelogram1AngleInRadian = this.rotation,
-            parallelogram1ShearFactor = this.shearFactor,
+            parallelogram1ShearFactor = this.skew,
             parallelogram2CenterX = other.center.x,
             parallelogram2CenterY = other.center.y,
             parallelogram2Width = other.width,
             parallelogram2Height = other.height,
             parallelogram2AngleInRadian = other.rotation,
-            parallelogram2ShearFactor = other.shearFactor,
+            parallelogram2ShearFactor = other.skew,
         )
     }
 
@@ -390,7 +389,7 @@ public object Intersection {
             parallelogramWidth = this.width,
             parallelogramHeight = this.height,
             parallelogramAngleInRadian = this.rotation,
-            parallelogramShearFactor = this.shearFactor,
+            parallelogramShearFactor = this.skew,
             meshToParallelogramA = meshToParallelogram.m00,
             meshToParallelogramB = meshToParallelogram.m10,
             meshToParallelogramC = meshToParallelogram.m20,
@@ -507,7 +506,7 @@ public object Intersection {
             parallelogramWidth = width,
             parallelogramHeight = height,
             parallelogramAngleInRadian = rotation,
-            parallelogramShearFactor = shearFactor,
+            parallelogramShearFactor = skew,
         )
 
     /**

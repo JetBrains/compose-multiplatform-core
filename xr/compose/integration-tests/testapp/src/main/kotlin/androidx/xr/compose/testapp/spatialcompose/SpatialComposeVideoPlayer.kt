@@ -75,6 +75,8 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialExternalSurface
@@ -93,10 +95,8 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
@@ -105,6 +105,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.Dimensions
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -114,7 +115,6 @@ import androidx.xr.scenecore.SpatialMediaPlayer
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import java.io.File
-import kotlin.getValue
 import kotlin.math.roundToInt
 
 class SpatialComposeVideoPlayer : ComponentActivity() {
@@ -311,7 +311,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         } else {
 
             SpatialColumn {
-                SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).movable()) {
+                SpatialPanel(
+                    SubspaceModifier.height(600.dp).width(600.dp),
+                    dragPolicy = MovePolicy(),
+                ) {
                     CommonTestScaffold(
                         title = "Video Player Tests",
                         showBottomBar = true,
@@ -706,31 +709,23 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     fun VideoInSpatialPanel(isAudioSpatialized: Boolean) {
         val session = LocalSession.current
 
+        val player = remember { MediaPlayer() }
         SpatialPanel(
             modifier =
-                SubspaceModifier.width(600.dp)
-                    .height(600.dp)
-                    .onPointSourceParamsAvailable {
-                        mediaPlayer = MediaPlayer()
-                        if (isAudioSpatialized) {
-                            SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
-                        }
-
-                        mediaPlayer.setDataSource(
-                            this@SpatialComposeVideoPlayer,
-                            mediaUriState.value!!,
-                        )
-                        mediaPlayer.prepare()
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.start()
+                SubspaceModifier.width(600.dp).height(600.dp).onPointSourceParamsAvailable {
+                    if (isAudioSpatialized) {
+                        SpatialMediaPlayer.setPointSourceParams(session!!, player, it)
                     }
-                    .movable(enabled = true)
+                    player.setDataSource(this@SpatialComposeVideoPlayer, mediaUriState.value!!)
+                    player.prepare()
+                    player.isLooping = true
+                    player.start()
+                },
+            dragPolicy = MovePolicy(isEnabled = true),
         ) {
-            DisposableEffect(Unit) { onDispose { releaseMediaPlayer() } }
+            DisposableEffect(Unit) { onDispose { player.release() } }
 
-            AndroidExternalSurface {
-                onSurface { surface, _, _ -> mediaPlayer.setSurface(surface) }
-            }
+            AndroidExternalSurface { onSurface { surface, _, _ -> player.setSurface(surface) } }
         }
     }
 
@@ -778,7 +773,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 SpatialPanel(
                     modifier =
                         SubspaceModifier.size(1000.dp)
-                            .align(SpatialAlignment.CenterLeft)
+                            .align(SpatialAlignment.CenterStart)
                             .rotate(axisAngle = Vector3(y = 1.0f), 90f)
                 ) {
                     Box(
@@ -800,9 +795,9 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             onClick = {
                 surfaceEntity =
                     SurfaceEntity.create(
-                        session,
-                        SurfaceEntity.StereoMode.TOP_BOTTOM,
-                        Pose(Vector3(0f, -0.45f, 0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+                        session = session,
+                        pose = Pose(Vector3(0f, -0.45f, 0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
                     )
                 // Make the video player movable (to make it easier to look at it from different
                 // angles and distances)
@@ -826,8 +821,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     // Resize the canvas to match the video aspect ratio - accounting for the stereo
                     // mode.
                     var dimensions = getCanvasAspectRatio(surfaceEntity!!.stereoMode, width, height)
-                    surfaceEntity!!.canvasShape =
-                        SurfaceEntity.CanvasShape.Quad(dimensions.width, dimensions.height)
+                    surfaceEntity!!.shape =
+                        SurfaceEntity.Shape.Quad(FloatSize2d(dimensions.width, dimensions.height))
 
                     // Resize the MovableComponent to match the canvas dimensions.
                     movableComponent!!.size = surfaceEntity!!.dimensions
@@ -870,9 +865,9 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     )
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
-                    )
-                    .movable()
-                    .resizable(),
+                    ),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
             stereoMode = stereoMode,
             featheringEffect = getFeatheringEffect(animatedFeatheringValue, featheringType),
             surfaceProtection =
@@ -910,7 +905,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             } else {
                 SpatialBox(
                     modifier = SubspaceModifier.fillMaxSize(),
-                    alignment = SpatialAlignment.TopRight,
+                    alignment = SpatialAlignment.TopEnd,
                 ) {
                     SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
                         Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
@@ -955,39 +950,39 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                 1.0f
                             }
 
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Quad(1.0f, canvasHeight)
+                        surfaceEntity!!.shape =
+                            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, canvasHeight))
                     }
                 ) {
                     Text(text = "Set Quad", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Sphere(5.0f) }) {
                     Text(text = "Set Vr360", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Hemisphere(5.0f) }) {
                     Text(text = "Set Vr180", fontSize = 10.sp)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO }) {
+                Button(
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO
+                    }
+                ) {
                     Text(text = "Mono", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM }
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+                    }
                 ) {
                     Text(text = "Top-Bottom", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE }
+                    onClick = {
+                        surfaceEntity!!.stereoMode =
+                            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE
+                    }
                 ) {
                     Text(text = "Side-by-Side", fontSize = 10.sp)
                 }
@@ -1008,11 +1003,11 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
 
     fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): Dimensions {
         when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO ->
+            SurfaceEntity.StereoMode.STEREO_MODE_MONO ->
                 return Dimensions(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
                 return Dimensions(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
                 return Dimensions(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }

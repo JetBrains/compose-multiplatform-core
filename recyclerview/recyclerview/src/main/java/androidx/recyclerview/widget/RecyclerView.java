@@ -847,12 +847,11 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         // Create the layoutManager if specified.
         createLayoutManager(context, layoutManagerName, attrs, defStyleAttr, 0);
 
-        boolean nestedScrollingEnabled = true;
         a = context.obtainStyledAttributes(attrs, NESTED_SCROLLING_ATTRS,
                 defStyleAttr, 0);
         ViewCompat.saveAttributeDataForStyleable(this,
                 context, NESTED_SCROLLING_ATTRS, attrs, a, defStyleAttr, 0);
-        nestedScrollingEnabled = a.getBoolean(0, true);
+        boolean nestedScrollingEnabled = a.getBoolean(0, true);
         a.recycle();
         // Re-set whether nested scrolling is enabled so that it is set on all API levels
         setNestedScrollingEnabled(nestedScrollingEnabled);

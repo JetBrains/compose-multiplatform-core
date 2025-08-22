@@ -111,6 +111,24 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
             .isEqualTo(original.firstVisibleItemScrollOffset)
     }
 
+    @Test
+    fun respectCanScrollForwardAndCanScrollBackward() {
+        val state = ListState(firstVisibleItemIndex = 10)
+        rule.setGlimmerThemeContent { TestList(state = state) { Text("Item ($it)") } }
+        assertThat(state.canScrollForward).isTrue()
+        assertThat(state.canScrollBackward).isTrue()
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(0) } }
+
+        assertThat(state.canScrollForward).isTrue()
+        assertThat(state.canScrollBackward).isFalse()
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(Int.MAX_VALUE - 1) } }
+
+        assertThat(state.canScrollForward).isFalse()
+        assertThat(state.canScrollBackward).isTrue()
+    }
+
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")

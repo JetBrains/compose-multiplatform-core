@@ -69,7 +69,7 @@ fun Project.configureErrorProneForAndroid() {
                 .extendsFrom(errorProneConfiguration)
 
             log.info("Configuring error-prone for ${variant.name}'s java compile")
-            androidComponents.finalizeDsl {
+            afterEvaluate {
                 makeErrorProneTask(
                     compileTaskProvider =
                         tasks
@@ -290,6 +290,8 @@ private fun Project.makeErrorProneTask(
         tasks.register("$ERROR_PRONE_TASK$taskSuffix", JavaCompile::class.java) {
             it.onlyIf { compileTaskProviderExists.get() }
             val compileTask = compileTaskProvider?.get() ?: return@register
+            it.group = "Build"
+            it.description = "Compile this project's Java code with Error-prone compiler"
             it.classpath = compileTask.classpath
             it.source = compileTask.source
             it.destinationDirectory.set(layout.buildDirectory.dir("errorProne/$taskSuffix"))

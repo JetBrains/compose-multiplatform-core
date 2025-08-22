@@ -363,4 +363,47 @@ public interface Profile {
     @UiThread
     @ExperimentalOriginMatchedHeader
     void clearAllOriginMatchedHeaders();
+
+    /**
+     * Denotes that the Profile#preconnect API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    @interface ExperimentalPreconnect {
+    }
+
+    /**
+     * Preconnects to the given origin, this can speed up future loads.
+     * <p>
+     * Opens a connection to the provided origin, performing DNS lookup and TCP/TLS handshakes. This
+     * can speed up future loads to the origin which could use the open connection. The connection
+     * will remain open (and can be reused by future loads) until it times out (roughly 30s).
+     * <p>
+     * The main benefit of this API is to preconnect to origins that haven't yet been visited by a
+     * WebView - it provides no further performance benefit to origins that have already been
+     * loaded.
+     * <p>
+     * Note: Preconnect operates on origins, but for convenience full URLs can be provided. A call
+     * with a full URL (such as `https://www.example.com/index.html`) will be treated as a call to
+     * the origin (`https://www.example.com`).
+     * <p>
+     * Multiple origins can be connected to by calling this API multiple times.
+     * <p>
+     * See: <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preconnect">HTML Preconnect Specification</a>
+     *
+     * @param url A url containing the origin to open a connection to.
+     */
+    @RequiresFeature(name = WebViewFeature.PRECONNECT,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalPreconnect
+    default void preconnect(@NonNull String url) {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#preconnect is not implemented.");
+    }
 }

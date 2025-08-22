@@ -75,6 +75,8 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialExternalSurface
@@ -92,15 +94,14 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -284,7 +285,10 @@ class VideoPlayerActivity : ComponentActivity() {
             }
         } else {
             SpatialColumn {
-                SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).movable()) {
+                SpatialPanel(
+                    SubspaceModifier.height(600.dp).width(600.dp),
+                    dragPolicy = MovePolicy(),
+                ) {
                     Column(modifier = Modifier.background(Color.LightGray).fillMaxSize()) {
                         when (menu) {
                             VideoMenuState.HOME -> {
@@ -598,20 +602,18 @@ class VideoPlayerActivity : ComponentActivity() {
 
         SpatialPanel(
             modifier =
-                SubspaceModifier.width(600.dp)
-                    .height(600.dp)
-                    .onPointSourceParamsAvailable {
-                        mediaPlayer = MediaPlayer()
-                        if (isAudioSpatialized) {
-                            SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
-                        }
-
-                        mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
-                        mediaPlayer.prepare()
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.start()
+                SubspaceModifier.width(600.dp).height(600.dp).onPointSourceParamsAvailable {
+                    mediaPlayer = MediaPlayer()
+                    if (isAudioSpatialized) {
+                        SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
                     }
-                    .movable(enabled = true)
+
+                    mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
+                    mediaPlayer.prepare()
+                    mediaPlayer.isLooping = true
+                    mediaPlayer.start()
+                },
+            dragPolicy = MovePolicy(isEnabled = true),
         ) {
             DisposableEffect(Unit) { onDispose { releaseMediaPlayer() } }
 
@@ -665,7 +667,7 @@ class VideoPlayerActivity : ComponentActivity() {
                 SpatialPanel(
                     modifier =
                         SubspaceModifier.size(1000.dp)
-                            .align(SpatialAlignment.CenterLeft)
+                            .align(SpatialAlignment.CenterStart)
                             .rotate(axisAngle = Vector3(y = 1.0f), 90f)
                 ) {
                     Box(
@@ -688,15 +690,16 @@ class VideoPlayerActivity : ComponentActivity() {
                 surfaceEntity =
                     SurfaceEntity.create(
                         session = session,
-                        stereoMode = SurfaceEntity.StereoMode.MONO,
+                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
                         pose =
                             Pose(
                                 Vector3(0f, -0.45f, 0f),
                                 rotation = Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                             ),
-                        contentSecurityLevel =
-                            if (useDrmState.value) SurfaceEntity.ContentSecurityLevel.PROTECTED
-                            else SurfaceEntity.ContentSecurityLevel.NONE,
+                        surfaceProtection =
+                            if (useDrmState.value)
+                                SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
+                            else SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE,
                     )
                 // Make the video player movable (to make it easier to look at it from different
                 // angles and distances)
@@ -720,10 +723,9 @@ class VideoPlayerActivity : ComponentActivity() {
                             if (height > 0 && width > 0) {
                                 var dimensions =
                                     getCanvasAspectRatio(surfaceEntity!!.stereoMode, width, height)
-                                surfaceEntity!!.canvasShape =
-                                    SurfaceEntity.CanvasShape.Quad(
-                                        dimensions.width,
-                                        dimensions.height,
+                                surfaceEntity!!.shape =
+                                    SurfaceEntity.Shape.Quad(
+                                        FloatSize2d(dimensions.width, dimensions.height)
                                     )
 
                                 // Resize the MovableComponent to match the canvas dimensions.
@@ -770,9 +772,9 @@ class VideoPlayerActivity : ComponentActivity() {
                     )
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
-                    )
-                    .movable()
-                    .resizable(),
+                    ),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
             stereoMode = stereoMode,
             featheringEffect = getFeatheringEffect(animatedFeatheringValue, featheringType),
             surfaceProtection =
@@ -807,7 +809,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
             SpatialBox(
                 modifier = SubspaceModifier.fillMaxSize(),
-                alignment = SpatialAlignment.TopRight,
+                alignment = SpatialAlignment.TopStart,
             ) {
                 SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
                     Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
@@ -865,39 +867,39 @@ class VideoPlayerActivity : ComponentActivity() {
                                 1.0f
                             }
 
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Quad(1.0f, canvasHeight)
+                        surfaceEntity!!.shape =
+                            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, canvasHeight))
                     }
                 ) {
                     Text(text = "Set Quad", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Sphere(1.0f) }) {
                     Text(text = "Set Vr360", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(5.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Hemisphere(1.0f) }) {
                     Text(text = "Set Vr180", fontSize = 10.sp)
                 }
             } // end row
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO }) {
+                Button(
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO
+                    }
+                ) {
                     Text(text = "Mono", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM }
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+                    }
                 ) {
                     Text(text = "Top-Bottom", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE }
+                    onClick = {
+                        surfaceEntity!!.stereoMode =
+                            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE
+                    }
                 ) {
                     Text(text = "Side-by-Side", fontSize = 10.sp)
                 }
@@ -918,11 +920,11 @@ class VideoPlayerActivity : ComponentActivity() {
 
     fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
         when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO ->
+            SurfaceEntity.StereoMode.STEREO_MODE_MONO ->
                 return FloatSize3d(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
                 return FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
-            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
                 return FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }

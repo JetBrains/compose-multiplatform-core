@@ -170,7 +170,6 @@ private fun Project.configureComponentPublishing(
             val addStubAar = isKmpAnchor && pomPlatform == PlatformIdentifier.ANDROID.id
             val buildDir = project.layout.buildDirectory
             if (addStubAar) {
-                @Suppress("DEPRECATION") // TODO(aurimas): migrate to new API
                 val minSdk =
                     project.extensions.findByType<LibraryExtension>()?.defaultConfig?.minSdk
                         ?: extensions
@@ -242,14 +241,18 @@ private fun Project.configureComponentPublishing(
         }
     }
 
+    val buildIdProvider = project.providers.getBuildId()
     // Workaround for https://github.com/gradle/gradle/issues/31218
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
         task.doLast {
-            val metadata = task.outputFile.asFile.get()
-            val text = metadata.readText()
-            metadata.writeText(
-                text.replace("\"buildId\": .*".toRegex(), "\"buildId:\": \"${getBuildId()}\"")
-            )
+            if (buildIdProvider.isPresent) {
+                val buildId = buildIdProvider.get()
+                val metadata = task.outputFile.asFile.get()
+                val text = metadata.readText()
+                metadata.writeText(
+                    text.replace("\"buildId\": .*".toRegex(), "\"buildId:\": \"${buildId}\"")
+                )
+            }
         }
     }
 }

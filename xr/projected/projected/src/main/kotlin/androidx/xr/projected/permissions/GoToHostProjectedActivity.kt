@@ -26,11 +26,14 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RestrictTo
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.xr.glimmer.GlimmerTheme
-import androidx.xr.glimmer.Text
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.xr.projected.R
 
 /**
@@ -47,7 +50,7 @@ public class GoToHostProjectedActivity :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { GlimmerTheme { Ui() } }
+        setContent { Ui() }
 
         val storedPermissionResultReceiver =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -140,7 +143,12 @@ public class GoToHostProjectedActivity :
     private fun Ui() {
         Text(
             text = stringResource(R.string.go_to_host_projected_activity_text),
+            fontWeight = FontWeight(750),
+            color = Color.White,
             textAlign = TextAlign.Center,
+            fontSize = 24.sp,
+            lineHeight = 32.sp,
+            letterSpacing = 0.0525.em,
         )
     }
 

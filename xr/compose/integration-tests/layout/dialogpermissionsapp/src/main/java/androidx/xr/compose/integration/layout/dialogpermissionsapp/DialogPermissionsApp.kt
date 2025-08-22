@@ -24,11 +24,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 
@@ -54,6 +54,10 @@ class DialogPermissionsApp : ComponentActivity() {
     @Composable
     @SubspaceComposable
     private fun SpatialContent() {
-        SpatialMainPanel(modifier = SubspaceModifier.size(600.dp).movable().resizable())
+        SpatialMainPanel(
+            modifier = SubspaceModifier.size(600.dp),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
+        )
     }
 }

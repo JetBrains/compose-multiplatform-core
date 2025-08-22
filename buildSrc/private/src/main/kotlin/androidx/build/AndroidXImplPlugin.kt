@@ -48,7 +48,6 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
@@ -232,7 +231,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.disallowAccidentalAndroidDependenciesInKmpProject(androidXKmpExtension)
         TaskUpToDateValidator.setup(project, registry)
 
-        project.workaroundPrebuiltTakingPrecedenceOverProject()
+        project.workaroundAndroidXDependencyResolutions()
         project.configureSamplesProject()
         project.configureMaxDepVersions(androidXExtension)
         project.configureUnzipChromeBuildService()
@@ -428,6 +427,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
+                        // Replace with compilation.compileJavaTaskProvider?.configure {}
+                        // when b/438995010 is fixed
+                        @Suppress("DEPRECATION")
+                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }
@@ -558,7 +561,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun configureWithAppPlugin(project: Project, androidXExtension: AndroidXExtension) {
         project.extensions.getByType<ApplicationExtension>().apply {
             configureAndroidBaseOptions(project, androidXExtension)
-            @Suppress("deprecation") // TODO(aurimas): migrate to new API
             defaultConfig.targetSdk = project.defaultAndroidConfig.targetSdk
             val debugSigningConfig = signingConfigs.getByName("debug")
             // Use a local debug keystore to avoid build server issues.
@@ -590,13 +592,11 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             isTestApp = true,
         )
         project.buildOnServerDependsOnAssembleRelease()
-        project.buildOnServerDependsOnLint()
     }
 
     private fun configureWithTestPlugin(project: Project, androidXExtension: AndroidXExtension) {
         project.extensions.getByType<TestExtension>().apply {
             configureAndroidBaseOptions(project, androidXExtension)
-            @Suppress("deprecation") // TODO(aurimas): migrate to new API
             defaultConfig.targetSdk = project.defaultAndroidConfig.targetSdk
             val debugSigningConfig = signingConfigs.getByName("debug")
             // Use a local debug keystore to avoid build server issues.
@@ -829,12 +829,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.addToBuildOnServer("assembleRelease")
     }
 
-    private fun Project.buildOnServerDependsOnLint() {
-        if (!project.usingMaxDepVersions().get()) {
-            project.addToBuildOnServer("lint")
-        }
-    }
-
     private fun HasDeviceTests.configureTests() {
         deviceTests.forEach { (_, deviceTest) ->
             deviceTest.packaging.resources.apply {
@@ -889,7 +883,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
-                @Suppress("deprecation") // TODO(aurimas): migrate to new API
                 it.defaultConfig.aarMetadata.configure(it.compileSdk)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 it.testOptions.targetSdk = project.defaultAndroidConfig.targetSdk
@@ -944,7 +937,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.addToBuildOnServer(verifyELFRegionAlignmentTaskProvider)
         }
         project.buildOnServerDependsOnAssembleRelease()
-        project.buildOnServerDependsOnLint()
     }
 
     private fun configureGradlePluginPlugin(project: Project) {
@@ -1038,10 +1030,16 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         afterEvaluate { androidXExtension.validateMavenVersion() }
     }
 
-    private fun CommonExtension<*, *, *, *, *, *>.configureAndroidBaseOptions(
+    private fun Any.configureAndroidBaseOptions(
         project: Project,
         androidXExtension: AndroidXExtension,
     ) {
+        // Workaround to avoid specifying the parametrized types of CommonExtension explicitly
+        // So we can clean up the parameters in AGP
+        // The compiler can infer that this is CommonExtension from these checks
+        if (this !is ApplicationExtension && this !is LibraryExtension && this !is TestExtension) {
+            throw IllegalArgumentException("Unexpected extension: $this")
+        }
         compileOptions.apply {
             sourceCompatibility = VERSION_1_8
             targetCompatibility = VERSION_1_8
@@ -1053,19 +1051,16 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        @Suppress("deprecation") // TODO(aurimas): migrate to new API
         compileSdk = project.defaultAndroidConfig.compileSdk
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
         defaultConfig.ndk.abiFilters.addAll(SUPPORTED_BUILD_ABIS)
-        @Suppress("DEPRECATION") // TODO(aurimas): migrate to new API
         defaultConfig.minSdk = defaultMinSdk
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testOptions.animationsDisabled = !project.isMacrobenchmark()
 
-        @Suppress("deprecation") // TODO(aurimas): migrate to new API
         project.afterEvaluate {
             check(
                 !androidXExtension.shouldPublish() || !compileOptions.isCoreLibraryDesugaringEnabled
@@ -1686,10 +1681,21 @@ fun AndroidXExtension.validateMavenVersion() {
     }
 }
 
-/** Workaround for https://github.com/gradle/gradle/issues/27407 */
-fun Project.workaroundPrebuiltTakingPrecedenceOverProject() {
+/** Workarounds for configuration resolution */
+fun Project.workaroundAndroidXDependencyResolutions() {
     project.configurations.configureEach { configuration ->
+        // https://github.com/gradle/gradle/issues/27407
         configuration.resolutionStrategy.preferProjectModules()
+
+        // https://github.com/gradle/gradle/issues/7594
+        configuration.resolutionStrategy.eachDependency { dependency ->
+            if (dependency.requested.group.startsWith("androidx.")) {
+                // Drop aar classifier that comes from <type>aar</type> in POM files
+                // as it causes a bug in Gradle. Gradle does not actually need the
+                // classifiers for Android libraries for them to work correctly.
+                dependency.artifactSelection { it.withoutArtifactSelectors() }
+            }
+        }
     }
 }
 

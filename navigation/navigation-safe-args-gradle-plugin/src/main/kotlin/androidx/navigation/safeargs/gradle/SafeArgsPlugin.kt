@@ -97,10 +97,10 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
         val componentsExtension =
             project.extensions.findByType(AndroidComponentsExtension::class.java)
                 ?: throw GradleException("safeargs plugin must be used with android plugin")
-        if (componentsExtension.pluginVersion < AndroidPluginVersion(7, 3)) {
+        if (componentsExtension.pluginVersion < AndroidPluginVersion(8, 4)) {
             throw GradleException(
                 "safeargs Gradle plugin is only compatible with Android " +
-                    "Gradle plugin (AGP) version 7.3.0 or higher (found " +
+                    "Gradle plugin (AGP) version 8.4.0 or higher (found " +
                     "${componentsExtension.pluginVersion})."
             )
         }

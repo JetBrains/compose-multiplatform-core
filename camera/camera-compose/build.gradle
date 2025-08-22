@@ -62,6 +62,17 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.espressoCore)
+
+    testImplementation(libs.testRunner)
+    testImplementation(libs.kotlinStdlib)
+    testImplementation(libs.truth)
+    testImplementation(libs.testRules)
+    testImplementation(libs.testCore)
+    testImplementation(libs.junit)
+    testImplementation(project(":camera:camera-testing")) {
+        // Ensure camera-testing does not pull in androidx.test dependencies
+        exclude(group:"androidx.test")
+    }
 }
 
 android {
@@ -75,4 +86,5 @@ androidx {
     samples(project(":camera:camera-compose:camera-compose-samples"))
     inceptionYear = "2024"
     description = "Jetpack Compose tools for users of the Jetpack Camera camera-core library"
+    enableRobolectric()
 }

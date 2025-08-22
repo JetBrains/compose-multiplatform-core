@@ -45,11 +45,11 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.Volume
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.testTag
@@ -87,14 +87,13 @@ class PanelVolumeApp : ComponentActivity() {
                 typeConverter = Dp.VectorConverter,
                 animationSpec = infiniteRepeatable(animation = tween(2000)),
             )
-
         SpatialPanel(
             modifier =
                 SubspaceModifier.width(200.dp)
                     .height(200.dp)
                     .offset(y = panelYOffset)
-                    .movable()
-                    .testTag("RootPanel")
+                    .testTag("RootPanel"),
+            dragPolicy = MovePolicy(),
         ) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),

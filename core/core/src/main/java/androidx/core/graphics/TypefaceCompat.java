@@ -440,20 +440,6 @@ public class TypefaceCompat {
     }
 
     /**
-     * Retrieves the best matching font from the family specified by the {@link Typeface} object
-     */
-    private static @Nullable Typeface getBestFontFromFamily(final Context context,
-            final Typeface typeface, final int style) {
-        final FontFamilyFilesResourceEntry families = sTypefaceCompatImpl.getFontFamily(typeface);
-        if (families == null) {
-            return null;
-        }
-
-        return sTypefaceCompatImpl.createFromFontFamilyFilesResourceEntry(context, families,
-                context.getResources(), style);
-    }
-
-    /**
      * Retrieves the best matching typeface given the family, style and context.
      * If null is passed for the family, then the "default" font will be chosen.
      *

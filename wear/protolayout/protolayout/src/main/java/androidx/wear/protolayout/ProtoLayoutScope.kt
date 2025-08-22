@@ -31,7 +31,8 @@ import java.util.Objects
  * A scope object responsible for handling internal details of ProtoLayout layouts and Tiles.
  *
  * Object of this class, in Tiles cases, can be obtained via
- * `androidx.wear.tiles.RequestBuilders#TileRequest.getScope`.
+ * `androidx.wear.tiles.RequestBuilders#TileRequest.getScope` and shouldn't be created manually as
+ * it could lead to wrong tile behaviour, such as not correctly rendering resources.
  *
  * Some example of usage:
  * * Used for registering Android resources automatically instead of manually via
@@ -40,7 +41,7 @@ import java.util.Objects
  * This class is not thread safe and should only be used from one thread, [MainThread].
  */
 @MainThread
-public class ProtoLayoutScope @RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public constructor() {
+public class ProtoLayoutScope() {
     /**
      * Maps String key to the [ImageResource] type describing it in ProtoLayout terms.
      *
@@ -110,15 +111,20 @@ public class ProtoLayoutScope @RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public con
      */
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
-    /** Clears mappings for resources and pending intents. */
-    @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
-    public fun clear() {
+    /**
+     * Clears all collected mappings from the scope, such as mappings for resources and pending
+     * intents.
+     *
+     * This should only be used by the system, otherwise tile can have unexpected behaviour, such as
+     * not showing any resources.
+     */
+    public fun clearAll() {
         resources.clear()
         pendingIntents.clear()
     }
 
     /** Returns whether this scope has any registered [Resources] or not. */
-    @RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public fun hasResources() = !resources.isEmpty()
+    public fun hasResources() = !resources.isEmpty()
 
     /**
      * Generates String version of hash codes for all [resources].

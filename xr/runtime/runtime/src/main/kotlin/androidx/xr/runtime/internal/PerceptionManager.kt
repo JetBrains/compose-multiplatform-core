@@ -68,8 +68,17 @@ public interface PerceptionManager {
     /** AR device tracking information. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice
 
-    /** View Cameras information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>
+    /** Left View Camera information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val leftRenderViewpoint: RenderViewpoint?
+
+    /** Right View Camera information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val rightRenderViewpoint: RenderViewpoint?
+
+    /** Mono View Camera information. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val monoRenderViewpoint: RenderViewpoint?
 
     /** [Earth] tracking information. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val earth: Earth

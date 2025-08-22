@@ -191,12 +191,10 @@ abstract class StudioTask : DefaultTask() {
     }
 
     private fun installKtfmtPlugin() {
-        // TODO: When upgrading to ktfmt_idea_plugin 1.2.x.x, remove the `instrumented-` prefix from
-        // the plugin jar name
         if (
             File(
                     studioPluginDir,
-                    "ktfmt_idea_plugin/lib/instrumented-ktfmt_idea_plugin-$studioKtfmtPluginVersion.jar",
+                    "ktfmt_idea_plugin/lib/ktfmt_idea_plugin-$studioKtfmtPluginVersion.jar",
                 )
                 .exists()
         ) {

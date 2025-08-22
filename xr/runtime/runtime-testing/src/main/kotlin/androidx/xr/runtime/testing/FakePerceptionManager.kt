@@ -29,7 +29,9 @@ import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
 import androidx.xr.runtime.internal.Trackable
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
+import androidx.xr.runtime.math.Vector3
 import java.util.UUID
 
 /** Test-only implementation of [PerceptionManager] used to validate state transitions. */
@@ -46,7 +48,16 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     override val arDevice: FakeRuntimeArDevice = FakeRuntimeArDevice()
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override val viewCameras: List<FakeRuntimeViewCamera> = listOf(FakeRuntimeViewCamera())
+    override val leftRenderViewpoint: FakeRuntimeRenderViewpoint? =
+        FakeRuntimeRenderViewpoint(Pose(Vector3(1f, 0f, 0f), Quaternion.Identity))
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val rightRenderViewpoint: FakeRuntimeRenderViewpoint? =
+        FakeRuntimeRenderViewpoint(Pose(Vector3(0f, 1f, 0f), Quaternion.Identity))
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val monoRenderViewpoint: FakeRuntimeRenderViewpoint? =
+        FakeRuntimeRenderViewpoint(Pose(Vector3(0f, 0f, 1f), Quaternion.Identity))
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val userFace: Face? = FakeRuntimeFace()

@@ -252,7 +252,7 @@ public class LayoutInflaterFactoryTestCase {
 
     private static TypedValue getColorAccentValue(final Resources.Theme theme) {
         final TypedValue typedValue = new TypedValue();
-        theme.resolveAttribute(R.attr.colorAccent, typedValue, true);
+        theme.resolveAttribute(androidx.appcompat.R.attr.colorAccent, typedValue, true);
         return typedValue;
     }
 }

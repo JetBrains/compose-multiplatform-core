@@ -69,7 +69,10 @@ import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.AnchorPolicy
 import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
@@ -83,16 +86,13 @@ import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.anchorable
 import androidx.xr.compose.subspace.layout.aspectRatio
 import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
@@ -265,10 +265,8 @@ class SpatialCompose : ComponentActivity() {
                     SpatialActivityPanel(
                         intent = intent,
                         modifier =
-                            SubspaceModifier.width(800.dp)
-                                .height(600.dp)
-                                .movable(true)
-                                .testTag("ActivityPanel"),
+                            SubspaceModifier.width(800.dp).height(600.dp).testTag("ActivityPanel"),
+                        dragPolicy = MovePolicy(true),
                     )
                 }
                 SpatialColumn(
@@ -289,11 +287,9 @@ class SpatialCompose : ComponentActivity() {
     fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         var moveResizeLocked by remember { mutableStateOf(true) }
         SpatialPanel(
-            modifier =
-                modifier
-                    .testTag(text)
-                    .movable(enabled = !moveResizeLocked)
-                    .resizable(enabled = !moveResizeLocked)
+            modifier = modifier.testTag(text),
+            dragPolicy = MovePolicy(isEnabled = !moveResizeLocked),
+            resizePolicy = ResizePolicy(isEnabled = !moveResizeLocked),
         ) {
             PanelContent { Text(text) }
 
@@ -323,7 +319,8 @@ class SpatialCompose : ComponentActivity() {
         // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
         // not compatible with each other.
         SpatialPanel(
-            modifier = modifier.anchorable(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
+            modifier = modifier,
+            dragPolicy = AnchorPolicy(anchorPlaneOrientations = setOf(PlaneOrientation.Any)),
         ) {
             Column(
                 modifier = Modifier.background(Color.LightGray).padding(24.dp).fillMaxSize(),

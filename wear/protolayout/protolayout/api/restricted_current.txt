@@ -1286,11 +1286,11 @@ package androidx.wear.protolayout {
   }
 
   @MainThread public final class ProtoLayoutScope {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public ProtoLayoutScope();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void clear();
+    ctor public ProtoLayoutScope();
+    method public void clearAll();
     method public android.os.Bundle collectPendingIntents();
     method public androidx.wear.protolayout.ResourceBuilders.Resources collectResources();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean hasResources();
+    method public boolean hasResources();
   }
 
   public final class ResourceBuilders {
@@ -1326,6 +1326,7 @@ package androidx.wear.protolayout {
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static final class ResourceBuilders.AndroidLottieResourceByResId {
+    method public static int getMaxPropertiesCount();
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? getProgress();
     method public java.util.List<androidx.wear.protolayout.ResourceBuilders.LottieProperty!> getProperties();
     method @RawRes public int getRawResourceId();

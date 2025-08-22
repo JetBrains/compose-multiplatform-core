@@ -29,7 +29,6 @@ import androidx.pdf.annotation.drawer.PdfAnnotationDrawerFactoryImpl
 import androidx.pdf.annotation.drawer.PdfDocumentAnnotationsDrawerImpl
 import androidx.pdf.annotation.drawer.PdfObjectDrawerFactory
 import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.PdfObject
 
 /**
  * A custom Android [View] responsible for drawing a collection of annotations onto a Canvas. Each
@@ -51,15 +50,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             invalidate()
         }
 
-    /** Used by the view to draw different types of [PdfObject]s. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public var pdfObjectDrawerFactory: PdfObjectDrawerFactory = DefaultPdfObjectDrawerFactoryImpl
-        set(value) {
-            field = value
-            annotationDrawerFactory = PdfAnnotationDrawerFactoryImpl(value)
-            invalidate()
-        }
+    private var pdfObjectDrawerFactory: PdfObjectDrawerFactory = DefaultPdfObjectDrawerFactoryImpl
 
     private var annotationDrawerFactory: PdfAnnotationDrawerFactory =
         PdfAnnotationDrawerFactoryImpl(pdfObjectDrawerFactory)

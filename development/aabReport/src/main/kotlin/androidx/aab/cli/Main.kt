@@ -16,7 +16,9 @@
 
 package androidx.aab.cli
 
+import androidx.aab.ApkInfo
 import androidx.aab.BundleInfo
+import androidx.aab.analysis.AnalyzedApkInfo
 import androidx.aab.analysis.AnalyzedBundleInfo
 import java.io.File
 import kotlin.system.exitProcess
@@ -28,7 +30,47 @@ import kotlinx.coroutines.runBlocking
 var VERBOSE = false
 const val CSV_PATH_PREFIX = "--csv="
 
-@OptIn(ExperimentalCoroutinesApi::class)
+// this is a simple way to abstract the difference between the two, but should probably define
+// interfaces
+internal abstract class PackageProcessor<T>(val typeLabel: String) {
+    abstract fun getCsvHeader(): String
+
+    abstract fun getCsvLine(item: T): String
+
+    abstract fun transform(file: File): T
+
+    abstract fun printAnalysis(item: T)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun process(files: List<File>, csvFile: File?) {
+        println("Analyzing ${files.size} ${typeLabel}s...")
+        val items =
+            files
+                .asFlow()
+                .flatMapMerge { file ->
+                    flow {
+                            try {
+                                emit(transform(file))
+                            } catch (t: Throwable) {
+                                println("ERROR during parsing ${file.absolutePath}, skipping")
+                                t.printStackTrace()
+                            }
+                        }
+                        .flowOn(Dispatchers.IO)
+                }
+                .toList()
+        if (csvFile != null) {
+            println("$typeLabel parsing complete, constructing CSV...")
+            csvFile.writeText(getCsvHeader() + "\n")
+            items.forEach { csvFile.appendText(getCsvLine(it) + "\n") }
+            println("Analysis complete, CSV saved to ${csvFile.absolutePath}")
+        } else {
+            println("$typeLabel parsing complete, reporting problems...")
+            items.forEach { printAnalysis(it) }
+        }
+    }
+}
+
 fun main(args: Array<String>) = runBlocking {
     val csvPath =
         args
@@ -67,32 +109,30 @@ fun main(args: Array<String>) = runBlocking {
             }
             .filter { it.name != ".DS_Store" }
 
-    println("Analyzing ${files.size} bundles...")
-    val analyzedBundleInfoList =
-        files
-            .asFlow()
-            .flatMapMerge { bundleFile ->
-                flow {
-                        try {
-                            emit(AnalyzedBundleInfo(BundleInfo.Companion.from(bundleFile)))
-                        } catch (t: Throwable) {
-                            println(
-                                "ERROR during parsing ${bundleFile.absolutePath}, skipping bundle"
-                            )
-                            t.printStackTrace()
-                        }
-                    }
-                    .flowOn(Dispatchers.IO)
-            }
-            .toList()
+    val processor =
+        if (files.any { it.name.endsWith(".apk") }) {
+            object : PackageProcessor<AnalyzedApkInfo>("APK") {
+                override fun getCsvHeader(): String = AnalyzedApkInfo.CSV_HEADER
 
-    if (csvFile != null) {
-        println("Bundle parsing complete, constructing CSV...")
-        csvFile.writeText(AnalyzedBundleInfo.CSV_HEADER + "\n")
-        analyzedBundleInfoList.forEach { csvFile.appendText(it.toCsvLine() + "\n") }
-        println("Analysis complete, CSV saved to ${csvFile.absolutePath}")
-    } else {
-        println("Bundle parsing complete, reporting problems...")
-        analyzedBundleInfoList.forEach { it.printAnalysis() }
-    }
+                override fun getCsvLine(item: AnalyzedApkInfo): String = item.toCsvLine()
+
+                override fun transform(file: File): AnalyzedApkInfo =
+                    AnalyzedApkInfo(ApkInfo.from(file))
+
+                override fun printAnalysis(item: AnalyzedApkInfo) = item.printAnalysis()
+            }
+        } else {
+            object : PackageProcessor<AnalyzedBundleInfo>("Bundle") {
+                override fun getCsvHeader(): String = AnalyzedBundleInfo.CSV_HEADER
+
+                override fun getCsvLine(item: AnalyzedBundleInfo): String = item.toCsvLine()
+
+                override fun transform(file: File): AnalyzedBundleInfo =
+                    AnalyzedBundleInfo(BundleInfo.from(file))
+
+                override fun printAnalysis(item: AnalyzedBundleInfo) = item.printAnalysis()
+            }
+        }
+
+    processor.process(files, csvFile)
 }

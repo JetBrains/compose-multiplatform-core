@@ -226,26 +226,29 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
-    fun update_updatesViewCameras() = initOpenXrManagerAndRunTest {
+    fun update_updatesRenderViewpoints() = initOpenXrManagerAndRunTest {
         check(underTest.xrResources.updatables.size == 1)
-        check(underTest.viewCameras.size == 2)
-        check(underTest.viewCameras[0].pose == Pose())
-        check(underTest.viewCameras[1].pose == Pose())
-        check(underTest.viewCameras[0].fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
-        check(underTest.viewCameras[1].fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
+        check(underTest.leftRenderViewpoint != null)
+        check(underTest.rightRenderViewpoint != null)
+        check(underTest.leftRenderViewpoint!!.pose == Pose())
+        check(underTest.rightRenderViewpoint!!.pose == Pose())
+        check(underTest.leftRenderViewpoint!!.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
+        check(underTest.rightRenderViewpoint!!.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
 
         underTest.update(XR_TIME)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
         // they come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
-        val viewCameras = underTest.viewCameras
-        assertThat(viewCameras.size).isEqualTo(2)
-        assertThat(viewCameras[0].pose)
+        val leftRenderViewpoint = underTest.leftRenderViewpoint
+        val rightRenderViewpoint = underTest.rightRenderViewpoint
+        assertThat(leftRenderViewpoint).isNotNull()
+        assertThat(rightRenderViewpoint).isNotNull()
+        assertThat(leftRenderViewpoint!!.pose)
             .isEqualTo(Pose(Vector3(2f, 0f, 0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
-        assertThat(viewCameras[0].fieldOfView).isEqualTo(FieldOfView(1f, 2f, 3f, 4f))
-        assertThat(viewCameras[1].pose)
+        assertThat(leftRenderViewpoint!!.fieldOfView).isEqualTo(FieldOfView(1f, 2f, 3f, 4f))
+        assertThat(rightRenderViewpoint!!.pose)
             .isEqualTo(Pose(Vector3(0f, 2f, 0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
-        assertThat(viewCameras[1].fieldOfView).isEqualTo(FieldOfView(2f, 1f, 3f, 4f))
+        assertThat(rightRenderViewpoint!!.fieldOfView).isEqualTo(FieldOfView(2f, 1f, 3f, 4f))
     }
 
     @Test

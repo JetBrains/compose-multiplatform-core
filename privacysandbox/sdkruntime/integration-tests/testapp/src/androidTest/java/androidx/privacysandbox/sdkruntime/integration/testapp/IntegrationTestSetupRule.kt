@@ -19,6 +19,7 @@ package androidx.privacysandbox.sdkruntime.integration.testapp
 import androidx.core.os.BuildCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import androidx.testutils.withActivity
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -34,6 +35,10 @@ class IntegrationTestSetupRule : ExternalResource() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val assets = context.assets.list("") ?: emptyArray()
         assets.contains("RuntimeEnabledSdkTable.xml") // Present only in compat runs
+    }
+
+    val uiDevice: UiDevice by lazy {
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     }
 
     override fun before() {

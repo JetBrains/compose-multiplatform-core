@@ -17,7 +17,10 @@
 package androidx.xr.glimmer.list
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusTargetModifierNode
+import androidx.compose.ui.focus.Focusability
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
@@ -56,17 +59,24 @@ private class GlimmerListAutoFocusNodeElement(
 }
 
 private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFocusBehaviour) :
-    Modifier.Node(), GlobalPositionAwareModifierNode {
+    DelegatingNode(), GlobalPositionAwareModifierNode {
+
+    private val focusTargetModifierNode =
+        delegate(FocusTargetModifierNode(focusability = Focusability.Never))
 
     fun update(behaviour: GlimmerListAutoFocusBehaviour) {
         this.behaviour = behaviour
     }
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        // The focus should only be requested once all of the node's children have been laid out.
-        // We don't have a dedicated callback for `onAfterLayout` or `onPreDraw` yet. So far, we've
-        // been using the `onGloballyPositioned` callback for that purpose. If a better callback is
-        // introduced, we should replace it.
-        behaviour.onAfterLayout(this)
+        // A list should only request the focus for its child if the focus already belongs to the
+        // list. Otherwise, the list will "steal" the focus from other elements.
+        if (focusTargetModifierNode.focusState.hasFocus) {
+            // The focus should only be requested once all of the node's children have been laid
+            // out. We don't have a dedicated callback for `onAfterLayout` or `onPreDraw` yet. So
+            // far, we've been using the `onGloballyPositioned` callback for that purpose. If a
+            // better callback is introduced, we should replace it.
+            behaviour.onAfterLayout(this)
+        }
     }
 }

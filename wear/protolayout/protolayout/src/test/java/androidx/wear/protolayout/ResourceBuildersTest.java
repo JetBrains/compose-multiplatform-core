@@ -131,7 +131,7 @@ public class ResourceBuildersTest {
     }
 
     @Test
-    public void lottieAnimation_moreThan10Properties_throws() {
+    public void lottieAnimation_exceedsPropertiesLimit_throws() {
         LottieProperty[] properties = new LottieProperty[LOTTIE_PROPERTIES_LIMIT + 1];
 
         assertThrows(
@@ -293,5 +293,11 @@ public class ResourceBuildersTest {
 
         assertThat(image1).isEqualTo(image2);
         assertThat(image1.hashCode()).isEqualTo(image2.hashCode());
+    }
+
+    @Test
+    public void lottieProperties_limitReturned() {
+        assertThat(AndroidLottieResourceByResId.getMaxPropertiesCount())
+                .isEqualTo(LOTTIE_PROPERTIES_LIMIT);
     }
 }

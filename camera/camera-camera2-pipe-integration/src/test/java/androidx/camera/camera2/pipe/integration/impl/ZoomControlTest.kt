@@ -30,6 +30,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
@@ -70,6 +71,59 @@ class ZoomControlTest {
         assertWithMessage("zoomCompat not updated with correct zoom ratio")
             .that(zoomCompat.zoomRatio)
             .isEqualTo(3.0f)
+    }
+
+    @Test
+    fun initRequestControl_compatReset() {
+        var resetCalled = false
+        val zoomCompat =
+            object : FakeZoomCompat(1.0f, 5.0f) {
+                override fun resetAsync(
+                    requestControl: UseCaseCameraRequestControl
+                ): Deferred<Unit> {
+                    resetCalled = true
+                    return super.resetAsync(requestControl)
+                }
+            }
+        ZoomControl(zoomCompat).apply { requestControl = FakeUseCaseCameraRequestControl() }
+
+        assertWithMessage("zoomCompat not reset during initialization").that(resetCalled).isTrue()
+    }
+
+    @Test
+    fun applyDefaultZoomState_compatNotResetAndSetToDefault() {
+        // Arrange.
+        var zoomRatioToUpdate = 0.0f
+        var resetCalled = false
+        val zoomCompat =
+            object : FakeZoomCompat(1.0f, 5.0f) {
+                override fun applyAsync(
+                    zoomRatio: Float,
+                    requestControl: UseCaseCameraRequestControl,
+                ): Deferred<Unit> {
+                    zoomRatioToUpdate = zoomRatio
+                    return super.applyAsync(zoomRatio, requestControl)
+                }
+
+                override fun resetAsync(
+                    requestControl: UseCaseCameraRequestControl
+                ): Deferred<Unit> {
+                    resetCalled = true
+                    return super.resetAsync(requestControl)
+                }
+            }
+        val zoomControl =
+            ZoomControl(zoomCompat).apply { requestControl = FakeUseCaseCameraRequestControl() }
+        resetCalled = false
+
+        // Act.
+        zoomControl.applyZoomState(zoomControl.defaultZoomState)[3, TimeUnit.SECONDS]
+
+        // Assert.
+        assertWithMessage("default zoom ratio is not set to zoomCompat")
+            .that(zoomRatioToUpdate == zoomControl.defaultZoomState.zoomRatio)
+            .isTrue()
+        assertWithMessage("zoomCompat reset by default zoom state").that(resetCalled).isFalse()
     }
 
     @Test

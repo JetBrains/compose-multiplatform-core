@@ -270,7 +270,7 @@ class AppFunctionMetadataCreatorHelper(
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     annotatedAppFunctionSerializable,
                     annotatedAppFunctionSerializable
-                        .getProperties()
+                        .getProperties(sharedDataTypeDescriptionMap)
                         .associateBy { checkNotNull(it.name).toString() }
                         .toMutableMap(),
                     sharedDataTypeMap,
@@ -294,7 +294,7 @@ class AppFunctionMetadataCreatorHelper(
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     annotatedAppFunctionSerializable,
                     annotatedAppFunctionSerializable
-                        .getProperties()
+                        .getProperties(sharedDataTypeDescriptionMap)
                         .associateBy { checkNotNull(it.name).toString() }
                         .toMutableMap(),
                     sharedDataTypeMap,
@@ -323,7 +323,7 @@ class AppFunctionMetadataCreatorHelper(
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     targetSerializableProxy,
                     targetSerializableProxy
-                        .getProperties()
+                        .getProperties(sharedDataTypeDescriptionMap)
                         .associateBy { checkNotNull(it.name).toString() }
                         .toMutableMap(),
                     sharedDataTypeMap,
@@ -349,7 +349,7 @@ class AppFunctionMetadataCreatorHelper(
                 addSerializableTypeMetadataToSharedDataTypeMap(
                     targetSerializableProxy,
                     targetSerializableProxy
-                        .getProperties()
+                        .getProperties(sharedDataTypeDescriptionMap)
                         .associateBy { checkNotNull(it.name).toString() }
                         .toMutableMap(),
                     sharedDataTypeMap,
@@ -419,14 +419,7 @@ class AppFunctionMetadataCreatorHelper(
         seenDataTypeQualifiers.add(serializableTypeQualifiedName)
 
         val serializableDescription =
-            when {
-                appFunctionSerializableType.description.isNotEmpty() ->
-                    appFunctionSerializableType.description
-                appFunctionSerializableType is AnnotatedParameterizedAppFunctionSerializable ->
-                    sharedDataTypeDescriptionMap[
-                        appFunctionSerializableType.unparameterizedJvmQualifiedName] ?: ""
-                else -> sharedDataTypeDescriptionMap[serializableTypeQualifiedName] ?: ""
-            }
+            appFunctionSerializableType.getDescription(sharedDataTypeDescriptionMap)
 
         val superTypesWithSerializableAnnotation =
             appFunctionSerializableType.findSuperTypesWithSerializableAnnotation()
@@ -441,7 +434,7 @@ class AppFunctionMetadataCreatorHelper(
                 serializableTypeQualifiedName,
                 buildObjectTypeMetadataForObjectParameters(
                     serializableTypeQualifiedName,
-                    appFunctionSerializableType.getProperties(),
+                    appFunctionSerializableType.getProperties(sharedDataTypeDescriptionMap),
                     unvisitedSerializableProperties,
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
@@ -492,6 +485,7 @@ class AppFunctionMetadataCreatorHelper(
                                         // no existing API to tell if the interface property has
                                         // default value or not.
                                         isRequired = true,
+                                        sharedDataTypeDescriptionMap,
                                     )
                                 }
                                 .toList(),

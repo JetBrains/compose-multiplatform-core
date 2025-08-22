@@ -62,6 +62,7 @@ import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraCompone
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -732,6 +733,7 @@ class UseCaseManagerTest {
                 cameraProperties = cameraProperties,
                 displayInfoManager =
                     DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
+                cameraXConfig = CameraXConfig.Builder().build(),
             )
             .also { useCaseManagerList.add(it) }
     }

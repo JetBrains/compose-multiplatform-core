@@ -20,59 +20,55 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 /**
- * The class is used to create a scrim when a levitated pane is shown, to block the user interaction
- * from the underlying layout. See [AdaptStrategy.Levitate] for more detailed info.
+ * The default scrim implementation shown with a levitated pane to block the user interaction from
+ * the underlying layout. See [AdaptStrategy.Levitate] for more detailed info.
  *
- * @sample androidx.compose.material3.adaptive.samples.levitateAdaptStrategySample
+ * @sample androidx.compose.material3.adaptive.samples.levitateAsDialogSample
+ * @param modifier the additional modifiers to apply to the scrim; note that we will set up the
+ *   size, color, and clicking behavior of the scrim via default modifiers, and custom modifiers
+ *   provided here might interfere with the default behavior.
+ * @param onClick the on-click listener of the scrim; usually used to dismiss the levitated pane;
+ *   i.e. remove the pane from the top of the destination history. By default this will be an empty
+ *   lambda, which simply blocks the user interaction from the underlying layout.
  * @param color the color of scrim, by default if [Color.Unspecified] is provided, the pane scaffold
  *   implementation will use a translucent black color.
- * @param onClick the on-click listener of the scrim; usually used to dismiss the levitated pane;
- *   i.e. remove the pane from the top of the destination history.
  */
-@Immutable
-class Scrim(val color: Color = Color.Unspecified, val onClick: (() -> Unit)? = null) {
-    @Composable
-    internal fun Content(defaultColor: Color, enabled: Boolean) {
-        val color = if (this.color.isSpecified) this.color else defaultColor
-        Box(
-            modifier =
-                Modifier.fillMaxSize()
-                    .background(color)
-                    .then(
-                        if (onClick != null) {
-                            Modifier.clickable(
-                                interactionSource = null,
-                                indication = null,
-                                enabled = enabled,
-                                onClick = onClick,
-                            )
-                        } else {
-                            Modifier
-                        }
-                    )
-        )
-    }
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun Scrim(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit) = ScrimDefaults.onClickAction,
+    color: Color = ScrimDefaults.color,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(color)
+                .then(
+                    if (onClick === ScrimDefaults.onClickAction) {
+                        Modifier
+                    } else {
+                        // Disable a11y for the scrim to respect the no-op default onClick action.
+                        Modifier.clearAndSetSemantics {}
+                    }
+                )
+                .clickable(interactionSource = null, indication = null, onClick = onClick)
+    )
+}
 
-    override fun toString() = "Scrim[color=$color, onClick=$onClick]"
+/** The objet to provide default values of [Scrim]. */
+@ExperimentalMaterial3AdaptiveApi
+object ScrimDefaults {
+    /** The default color of the scrim, which is a translucent black. */
+    val color = Color.Black.copy(alpha = 0.32f)
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Scrim) return false
-        if (color != other.color) return false
-        if (onClick !== other.onClick) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = color.hashCode()
-        result = 31 * result + onClick.hashCode()
-        return result
-    }
+    internal val onClickAction: () -> Unit = {}
 }

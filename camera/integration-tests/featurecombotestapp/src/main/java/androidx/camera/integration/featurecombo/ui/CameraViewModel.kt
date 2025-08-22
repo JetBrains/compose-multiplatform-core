@@ -110,12 +110,12 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             imageFormat = ImageFormat.JPEG,
         )
 
-    data class FeatureCombination(
+    data class FeatureCombo(
         val requiredFeatures: Set<GroupableFeature> = emptySet(),
         val preferredFeatures: List<GroupableFeature> = emptyList(),
     )
 
-    private var featureCombination: FeatureCombination? = null
+    private var featureCombo: FeatureCombo? = null
 
     private var bindStartTime: Long = Long.MIN_VALUE
 
@@ -141,7 +141,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                     return@launch
                 }
 
-                updateFeatureCombination(lifecycleOwner)
+                reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
             }
         }
     }
@@ -167,10 +167,12 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         Log.d(
             TAG,
             "bindCamera: isVideoMode.value = ${isVideoMode.value}" +
-                ", featureCombination = $featureCombination, appFeatures = $appFeatures",
+                ", featureCombo = $featureCombo, appFeatures = $appFeatures",
         )
 
-        if (featureCombination == null) {
+        val featureCombo = featureCombo // snapshot for nullability
+
+        if (featureCombo == null) {
             showToast("No feature combination found!")
             return
         }
@@ -180,15 +182,15 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         val sessionConfig =
             SessionConfig(
                     useCases = useCases,
-                    requiredFeatureGroup = featureCombination!!.requiredFeatures,
-                    preferredFeatureGroup = featureCombination!!.preferredFeatures,
+                    requiredFeatureGroup = featureCombo.requiredFeatures,
+                    preferredFeatureGroup = featureCombo.preferredFeatures,
                 )
                 .apply {
                     setFeatureSelectionListener { features ->
                         val duration = System.currentTimeMillis() - bindStartTime
                         if (features.isNotEmpty()) {
                             showToast(
-                                "Default feature combination selected by CameraX" +
+                                "Features selected" +
                                     (if (bindStartTime != Long.MIN_VALUE) " in $duration ms"
                                     else "")
                             )
@@ -214,6 +216,19 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             updateAppFeatures(selectedFeatures.await().toAppFeatures())
             updateUnsupportedFeatures()
         }
+
+        val previewSize = preview.resolutionInfo?.resolution
+        if (isVideoMode.value) {
+            val videoCaptureSize = videoCapture.resolutionInfo?.resolution
+            _useCaseDetails.value =
+                "Preview (${previewSize?.width} x ${previewSize?.height})" +
+                    "\nVideoCapture (${videoCaptureSize?.width} x ${videoCaptureSize?.height})"
+        } else {
+            val imageCaptureSize = imageCapture.resolutionInfo?.resolution
+            _useCaseDetails.value =
+                "Preview (${previewSize?.width} x ${previewSize?.height})" +
+                    "\nImageCapture (${imageCaptureSize?.width} x ${imageCaptureSize?.height})"
+        }
     }
 
     fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider) {
@@ -236,7 +251,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                 // If the use case has already been bound to the previous camera, it may throw an
                 // exception if not unbound first
                 cameraProvider().unbindAll() // TODO
-                updateFeatureCombination(lifecycleOwner)
+                reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
             } else {
                 showToast("newCamera($newCamera) is not supported!")
             }
@@ -246,12 +261,12 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     fun toggleVideoMode(lifecycleOwner: LifecycleOwner) {
         viewModelScope.launch {
             _isVideoMode.value = !_isVideoMode.value
-            updateFeatureCombination(lifecycleOwner)
+            reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
         }
     }
 
-    fun resetFeatureCombination(lifecycleOwner: LifecycleOwner) {
-        viewModelScope.launch { updateFeatureCombination(lifecycleOwner) }
+    fun resetUseCasesAndFeatureCombo(lifecycleOwner: LifecycleOwner) {
+        viewModelScope.launch { reconfigureUseCasesAndFeatureCombo(lifecycleOwner) }
     }
 
     fun updateFeature(featureUi: FeatureUi, newValueIndex: Int, lifecycleOwner: LifecycleOwner) {
@@ -274,9 +289,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         viewModelScope.launch {
             if (candidateAppFeatures.isSupported()) {
                 updateAppFeatures(candidateAppFeatures)
-                featureCombination = appFeatures.toFeatureCombination()
+                featureCombo = appFeatures.toFeatureCombo()
                 bindCamera(lifecycleOwner)
-                showToast("Camera configured with feature combination!")
                 updateUnsupportedFeatures()
             } else {
                 showToast("New feature combination not supported!")
@@ -360,7 +374,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         }
     }
 
-    private suspend fun updateFeatureCombination(lifecycleOwner: LifecycleOwner) {
+    private suspend fun reconfigureUseCasesAndFeatureCombo(lifecycleOwner: LifecycleOwner) {
         useCases.clear()
         useCases.add(preview)
         if (isVideoMode.value) {
@@ -370,8 +384,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         }
 
         if (isVideoMode.value) {
-            featureCombination =
-                FeatureCombination(
+            featureCombo =
+                FeatureCombo(
                     preferredFeatures =
                         listOf(
                             GroupableFeature.HDR_HLG10,
@@ -380,8 +394,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                         )
                 )
         } else {
-            featureCombination =
-                FeatureCombination(
+            featureCombo =
+                FeatureCombo(
                     preferredFeatures =
                         listOf(
                             GroupableFeature.IMAGE_ULTRA_HDR,
@@ -393,19 +407,6 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         }
 
         bindCamera(lifecycleOwner)
-
-        val previewSize = preview.resolutionInfo?.resolution
-        if (isVideoMode.value) {
-            val videoCaptureSize = videoCapture.resolutionInfo?.resolution
-            _useCaseDetails.value =
-                "Preview (${previewSize?.width} x ${previewSize?.height})" +
-                    "\nVideoCapture (${videoCaptureSize?.width} x ${videoCaptureSize?.height})"
-        } else {
-            val imageCaptureSize = imageCapture.resolutionInfo?.resolution
-            _useCaseDetails.value =
-                "Preview (${previewSize?.width} x ${previewSize?.height})" +
-                    "\nImageCapture (${imageCaptureSize?.width} x ${imageCaptureSize?.height})"
-        }
     }
 
     private fun showToast(text: String) {
@@ -487,14 +488,14 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     }
 
     private suspend fun AppFeatures.isSupported(): Boolean {
-        return this.toFeatureCombination().isSupported()
+        return this.toFeatureCombo().isSupported()
     }
 
     @OptIn(ExperimentalSessionConfig::class)
-    private suspend fun FeatureCombination.isSupported(): Boolean {
+    private suspend fun FeatureCombo.isSupported(): Boolean {
         Log.d(TAG, "isSupported: cameraSelector lensFacing = ${cameraSelector.lensFacing}")
         Log.d(TAG, "isSupported: useCases = $useCases")
-        Log.d(TAG, "isSupported: featureCombination = $this")
+        Log.d(TAG, "isSupported: featureCombo = $this")
 
         val isSupported =
             cameraSelector
@@ -508,8 +509,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         return isSupported
     }
 
-    private fun AppFeatures.toFeatureCombination(): FeatureCombination {
-        return FeatureCombination(requiredFeatures = toCameraXFeatures())
+    private fun AppFeatures.toFeatureCombo(): FeatureCombo {
+        return FeatureCombo(requiredFeatures = toCameraXFeatures())
     }
 
     private fun AppFeatures.toCameraXFeatures(): Set<GroupableFeature> {

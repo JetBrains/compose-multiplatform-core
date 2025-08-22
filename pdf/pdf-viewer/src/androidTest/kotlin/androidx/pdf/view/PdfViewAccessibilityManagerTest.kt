@@ -18,7 +18,6 @@ package androidx.pdf.view
 
 import android.graphics.RectF
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.pdf.R
 import androidx.pdf.view.PdfViewAccessibilityManager.Companion.FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET
@@ -50,18 +49,16 @@ class PdfViewAccessibilityManagerTest {
     fun setupPdfView() {
         // Setup the test activity to host the PdfView
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container =
-                FrameLayout(activity).apply {
-                    addView(
-                        PdfView(activity).apply {
-                            isFormFillingEnabled = true
-                            this.pdfDocument = pdfDocument
-                            id = PDF_VIEW_ID
-                        },
-                        ViewGroup.LayoutParams(100, 1000),
-                    )
-                }
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        isFormFillingEnabled = true
+                        this.pdfDocument = pdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(100, 1000),
+                )
+            }
         }
 
         activityScenario =

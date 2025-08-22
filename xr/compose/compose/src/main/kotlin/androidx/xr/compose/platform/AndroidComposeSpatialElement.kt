@@ -20,11 +20,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceOwner
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.PanelEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -117,8 +117,8 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun onAttach(node: SubspaceLayoutNode) {
-        node.coreEntity?.entity.let { entity ->
-            if (entity is PanelEntity && entity.isMainPanelEntity) {
+        node.coreEntity?.let { entity ->
+            if (entity is CoreMainPanelEntity) {
                 check(windowLeashLayoutNode == null) {
                     "Cannot add $node as there is already another SubspaceLayoutNode for the Window Leash Node"
                 }
@@ -128,8 +128,8 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun onDetach(node: SubspaceLayoutNode) {
-        node.coreEntity?.entity.let { entity ->
-            if (entity is PanelEntity && entity.isMainPanelEntity) {
+        node.coreEntity?.let { entity ->
+            if (entity is CoreMainPanelEntity) {
                 windowLeashLayoutNode = null
             }
         }

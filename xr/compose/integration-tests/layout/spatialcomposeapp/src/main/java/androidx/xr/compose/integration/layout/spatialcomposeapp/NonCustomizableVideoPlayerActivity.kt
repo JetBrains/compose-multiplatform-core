@@ -40,6 +40,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialExternalSurface
 import androidx.xr.compose.subspace.SpatialPanel
@@ -49,9 +51,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
@@ -93,7 +93,6 @@ class NonCustomizableVideoPlayerActivity : ComponentActivity() {
     fun VideoInSpatialExternalSurface(stereoMode: StereoMode) {
         var videoWidth by remember { mutableStateOf(600.dp) }
         var videoHeight by remember { mutableStateOf(600.dp) }
-
         SpatialExternalSurface(
             modifier =
                 SubspaceModifier.width(
@@ -101,9 +100,9 @@ class NonCustomizableVideoPlayerActivity : ComponentActivity() {
                     )
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
-                    )
-                    .movable()
-                    .resizable(),
+                    ),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
             stereoMode = stereoMode,
             surfaceProtection =
                 if (useDrmState.value) SurfaceProtection.Protected else SurfaceProtection.None,
@@ -137,7 +136,7 @@ class NonCustomizableVideoPlayerActivity : ComponentActivity() {
 
             SpatialBox(
                 modifier = SubspaceModifier.fillMaxSize(),
-                alignment = SpatialAlignment.TopRight,
+                alignment = SpatialAlignment.TopStart,
             ) {
                 SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
                     Button(onClick = { finish() }) { Text("Close") }

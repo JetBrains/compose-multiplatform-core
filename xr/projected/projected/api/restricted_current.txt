@@ -26,6 +26,7 @@ package androidx.xr.projected {
     method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String? getProjectedDeviceName(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static kotlinx.coroutines.flow.StateFlow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static boolean isProjectedDeviceContext(android.content.Context context);
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
   }

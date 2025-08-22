@@ -34,14 +34,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onGloballyPositioned
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
@@ -54,13 +54,7 @@ class ModifierOrderApp : ComponentActivity() {
 
     @Composable
     private fun SpatialContent() {
-        val panelSize =
-            SubspaceModifier.movable()
-                .offset(x = 10.dp)
-                .width(200.dp)
-                .alpha(1f)
-                .height(200.dp)
-                .resizable()
+        val panelSize = SubspaceModifier.offset(x = 10.dp).width(200.dp).alpha(1f).height(200.dp)
 
         SpatialPanel(
             modifier =
@@ -71,7 +65,9 @@ class ModifierOrderApp : ComponentActivity() {
                         Log.i("ModifierOrderApp", "BackPanel position: ${it.poseInRoot}")
                     }
                     .offset(y = (-100).dp)
-                    .testTag("Back Panel")
+                    .testTag("Back Panel"),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
         ) {
             PanelContent(Color.Red, "Back Panel")
         }
@@ -82,7 +78,9 @@ class ModifierOrderApp : ComponentActivity() {
                         Log.i("ModifierOrderApp", "MiddlePanel position: ${it.poseInRoot}")
                     }
                     .scale(0.9f)
-                    .testTag("Middle Panel")
+                    .testTag("Middle Panel"),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
         ) {
             PanelContent(Color.White, "Middle Panel")
         }
@@ -95,7 +93,9 @@ class ModifierOrderApp : ComponentActivity() {
                         Log.i("ModifierOrderApp", "FrontPanel position: ${it.poseInRoot}")
                     }
                     .offset(y = 100.dp)
-                    .testTag("Front Panel")
+                    .testTag("Front Panel"),
+            dragPolicy = MovePolicy(),
+            resizePolicy = ResizePolicy(),
         ) {
             PanelContent(Color.Blue, "Front Panel")
         }

@@ -15,7 +15,6 @@
  */
 package androidx.build
 
-import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -168,7 +167,9 @@ object Release {
             name = FULL_ARCHIVE_TASK_NAME,
             onConfigure = { task: GMavenZipTask ->
                 task.archiveFile.set(
-                    File(project.getDistributionDirectory(), "${getZipName(GLOBAL_ZIP_PREFIX)}.zip")
+                    project
+                        .getDistributionDirectoryProperty()
+                        .file("${getZipName(GLOBAL_ZIP_PREFIX)}.zip")
                 )
                 task.projectRepositoryDir.set(project.getRepositoryDirectory())
             },
@@ -185,7 +186,7 @@ object Release {
         val taskProvider =
             project.tasks.register(PROJECT_ARCHIVE_ZIP_TASK_NAME, GMavenZipTask::class.java) {
                 it.archiveFile.set(
-                    File(project.getDistributionDirectory(), project.getProjectZipPath())
+                    project.getDistributionDirectoryProperty().file(project.getProjectZipPath())
                 )
                 it.projectRepositoryDir.set(project.getPerProjectRepositoryDirectory())
             }
@@ -198,7 +199,7 @@ private fun Project.projectZipPrefix(): String {
     return "${project.group}-${project.name}"
 }
 
-private fun getZipName(fileNamePrefix: String) = "$fileNamePrefix-all-${getBuildId()}"
+private fun getZipName(fileNamePrefix: String) = "$fileNamePrefix-all"
 
 fun Project.getProjectZipPath(): String {
     return Release.PROJECT_ZIPS_FOLDER +

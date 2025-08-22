@@ -25,3 +25,7 @@ RemovedFromJava: androidx.health.connect.client.permission.HealthPermission.Comp
     Source breaking change: method androidx.health.connect.client.permission.HealthPermission.Companion.getWritePermission() can no longer be resolved from Java source
 RemovedFromJava: androidx.health.connect.client.request.ReadRecordsRequestKt#ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter, java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>, boolean, int, String):
     Source breaking change: method androidx.health.connect.client.request.ReadRecordsRequestKt.ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter,java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin>,boolean,int,String) can no longer be resolved from Java source
+
+
+RemovedMethod: androidx.health.connect.client.time.TimeRangeFilter#TimeRangeFilter():
+    Binary breaking change: Removed constructor androidx.health.connect.client.time.TimeRangeFilter()

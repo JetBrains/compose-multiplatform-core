@@ -160,7 +160,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // been set. The spatial state is kept updated in the SpatialStateCallback.
     private final Supplier<SpatialState> mLazySpatialStateProvider;
 
-    private @Nullable Activity mActivity;
+    private Activity mActivity;
     private SplitEngineSubspaceManager mSplitEngineSubspaceManager;
     private ImpSplitEngineRenderer mSplitEngineRenderer;
     private boolean mFrameLoopStarted;
@@ -728,7 +728,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<GltfModelResource> loadGltfByAssetName(@NonNull String name) {
+    public @NonNull ListenableFuture<GltfModelResource> loadGltfByAssetName(@NonNull String name) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Loading glTFs is not supported without SplitEngine.");
@@ -739,7 +739,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<GltfModelResource> loadGltfByByteArray(
+    public @NonNull ListenableFuture<GltfModelResource> loadGltfByByteArray(
             byte @NonNull [] assetData, @NonNull String assetKey) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
@@ -754,7 +754,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<ExrImageResource> loadExrImageByAssetName(
+    public @NonNull ListenableFuture<ExrImageResource> loadExrImageByAssetName(
             @NonNull String assetName) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
@@ -766,7 +766,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<ExrImageResource> loadExrImageByByteArray(
+    public @NonNull ListenableFuture<ExrImageResource> loadExrImageByByteArray(
             byte @NonNull [] assetData, @NonNull String assetKey) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
@@ -781,8 +781,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<TextureResource> loadTexture(
-            @NonNull String path, @NonNull TextureSampler sampler) {
+    public @NonNull ListenableFuture<TextureResource> loadTexture(@NonNull String path) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Loading textures is not supported without SplitEngine.");
@@ -799,12 +798,11 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         ListenableFuture<Texture> textureFuture;
         try {
-            textureFuture = mImpressApi.loadTexture(path, sampler);
+            textureFuture = mImpressApi.loadTexture(path);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to load texture with error: " + e.getMessage());
-            // TODO:b/375070346 - make this method NonNull and set the textureResourceFuture to an
-            // exception and return that.
-            return null;
+            textureResourceFuture.setException(e);
+            return textureResourceFuture;
         }
 
         textureFuture.addListener(
@@ -862,7 +860,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     @Override
-    public @Nullable ListenableFuture<MaterialResource> createWaterMaterial(
+    public @NonNull ListenableFuture<MaterialResource> createWaterMaterial(
             boolean isAlphaMapVersion) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
@@ -883,9 +881,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             materialFuture = mImpressApi.createWaterMaterial(isAlphaMapVersion);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to load water material with error: " + e.getMessage());
-            // TODO:b/375070346 - make this method NonNull and set the textureResourceFuture to an
-            // exception and return that.
-            return null;
+            materialResourceFuture.setException(e);
+            return materialResourceFuture;
         }
 
         materialFuture.addListener(
@@ -929,7 +926,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setReflectionMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource reflectionMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource reflectionMap,
+            @NonNull TextureSampler sampler) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Setting material parameters is not supported without SplitEngine.");
@@ -942,12 +941,15 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setReflectionMapOnWaterMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) reflectionMap).getNativeHandle());
+                ((Texture) reflectionMap).getNativeHandle(),
+                sampler);
     }
 
     @Override
     public void setNormalMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource normalMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource normalMap,
+            @NonNull TextureSampler sampler) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Setting material parameters is not supported without SplitEngine.");
@@ -959,7 +961,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setNormalMapOnWaterMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) normalMap).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) normalMap).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1006,7 +1010,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setAlphaMapOnWaterMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource alphaMap) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource alphaMap,
+            @NonNull TextureSampler sampler) {
         if (!mUseSplitEngine) {
             throw new UnsupportedOperationException(
                     "Setting material parameters is not supported without SplitEngine.");
@@ -1018,7 +1024,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setAlphaMapOnWaterMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) alphaMap).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) alphaMap).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1049,7 +1057,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @SuppressWarnings("AsyncSuffixFuture")
     @Override
-    public @Nullable ListenableFuture<MaterialResource> createKhronosPbrMaterial(
+    public @NonNull ListenableFuture<MaterialResource> createKhronosPbrMaterial(
             @NonNull KhronosPbrMaterialSpec spec) {
         ResolvableFuture<MaterialResource> materialResourceFuture = ResolvableFuture.create();
         // TODO:b/374216912 - Consider calling setFuture() here to catch if the application calls
@@ -1066,9 +1074,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             materialFuture = mImpressApi.createKhronosPbrMaterial(spec);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to load Khronos PBR material with error: " + e.getMessage());
-            // TODO:b/375070346 - make this method NonNull and set the textureResourceFuture to an
-            // exception and return that.
-            return null;
+            materialResourceFuture.setException(e);
+            return materialResourceFuture;
         }
 
         materialFuture.addListener(
@@ -1115,7 +1122,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setBaseColorTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource baseColor) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource baseColor,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1123,7 +1132,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setBaseColorTextureOnKhronosPbrMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) baseColor).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) baseColor).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1162,7 +1173,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setMetallicRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource metallicRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource metallicRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1171,7 +1184,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setMetallicRoughnessTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) metallicRoughness).getNativeHandle());
+                ((Texture) metallicRoughness).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1216,7 +1230,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setNormalTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource normal) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource normal,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1224,7 +1240,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setNormalTextureOnKhronosPbrMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) normal).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) normal).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1259,7 +1277,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setAmbientOcclusionTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource ambientOcclusion) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource ambientOcclusion,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1268,7 +1288,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setAmbientOcclusionTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) ambientOcclusion).getNativeHandle());
+                ((Texture) ambientOcclusion).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1303,7 +1324,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setEmissiveTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource emissive) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource emissive,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1311,7 +1334,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setEmissiveTextureOnKhronosPbrMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) emissive).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) emissive).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1349,7 +1374,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setClearcoatTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoat) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoat,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1357,12 +1384,16 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setClearcoatTextureOnKhronosPbrMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) clearcoat).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) clearcoat).getNativeHandle(),
+                sampler);
     }
 
     @Override
     public void setClearcoatNormalTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoatNormal) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoatNormal,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1371,12 +1402,15 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setClearcoatNormalTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) clearcoatNormal).getNativeHandle());
+                ((Texture) clearcoatNormal).getNativeHandle(),
+                sampler);
     }
 
     @Override
     public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource clearcoatRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource clearcoatRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1385,7 +1419,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) clearcoatRoughness).getNativeHandle());
+                ((Texture) clearcoatRoughness).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1400,7 +1435,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setSheenColorTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource sheenColor) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource sheenColor,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1408,7 +1445,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             throw new IllegalArgumentException("TextureResource is not a Texture");
         }
         mImpressApi.setSheenColorTextureOnKhronosPbrMaterial(
-                ((Material) material).getNativeHandle(), ((Texture) sheenColor).getNativeHandle());
+                ((Material) material).getNativeHandle(),
+                ((Texture) sheenColor).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1426,7 +1465,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setSheenRoughnessTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource sheenRoughness) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource sheenRoughness,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1435,7 +1476,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setSheenRoughnessTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) sheenRoughness).getNativeHandle());
+                ((Texture) sheenRoughness).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1450,7 +1492,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setTransmissionTextureOnKhronosPbrMaterial(
-            @NonNull MaterialResource material, @NonNull TextureResource transmission) {
+            @NonNull MaterialResource material,
+            @NonNull TextureResource transmission,
+            @NonNull TextureSampler sampler) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
@@ -1459,7 +1503,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         mImpressApi.setTransmissionTextureOnKhronosPbrMaterial(
                 ((Material) material).getNativeHandle(),
-                ((Texture) transmission).getNativeHandle());
+                ((Texture) transmission).getNativeHandle(),
+                sampler);
     }
 
     @Override
@@ -1543,8 +1588,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public @NonNull SurfaceEntity createSurfaceEntity(
             @SurfaceEntity.StereoMode int stereoMode,
             @NonNull Pose pose,
-            SurfaceEntity.@NonNull CanvasShape canvasShape,
-            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
+            SurfaceEntity.@NonNull Shape shape,
+            @SurfaceEntity.SurfaceProtection int surfaceProtection,
             @SurfaceEntity.SuperSampling int superSampling,
             @NonNull Entity parentEntity) {
         if (!mUseSplitEngine) {
@@ -1552,12 +1597,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                     "SurfaceEntity is not supported without SplitEngine.");
         } else {
             return createSurfaceEntitySplitEngine(
-                    stereoMode,
-                    canvasShape,
-                    contentSecurityLevel,
-                    superSampling,
-                    pose,
-                    parentEntity);
+                    stereoMode, shape, surfaceProtection, superSampling, pose, parentEntity);
         }
     }
 
@@ -1912,8 +1952,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     private SurfaceEntity createSurfaceEntitySplitEngine(
             @SurfaceEntity.StereoMode int stereoMode,
-            SurfaceEntity.CanvasShape canvasShape,
-            @SurfaceEntity.ContentSecurityLevel int contentSecurityLevel,
+            SurfaceEntity.Shape shape,
+            @SurfaceEntity.SurfaceProtection int surfaceProtection,
             @SurfaceEntity.SuperSampling int superSampling,
             Pose pose,
             @NonNull Entity parentEntity) {
@@ -1932,8 +1972,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         mEntityManager,
                         mExecutor,
                         stereoMode,
-                        canvasShape,
-                        contentSecurityLevel,
+                        shape,
+                        surfaceProtection,
                         superSampling);
         entity.setPose(pose, Space.PARENT);
         return entity;
@@ -2050,9 +2090,9 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public void setSpatialModeChangeListener(
-            @NonNull SpatialModeChangeListener SpatialModeChangeListener) {
-        mSpatialModeChangeListener = SpatialModeChangeListener;
-        mActivitySpace.setSpatialModeChangeListener(SpatialModeChangeListener);
+            @NonNull SpatialModeChangeListener spatialModeChangeListener) {
+        mSpatialModeChangeListener = spatialModeChangeListener;
+        mActivitySpace.setSpatialModeChangeListener(spatialModeChangeListener);
     }
 
     @Override

@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -63,9 +65,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.size
@@ -85,7 +85,9 @@ class NestedSubspaceActivity : ComponentActivity() {
             Subspace {
                 SpatialCurvedRow(alignment = SpatialAlignment.Center, curveRadius = 1024.dp) {
                     SpatialPanel(
-                        SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()
+                        SubspaceModifier.height(400.dp).width(800.dp),
+                        dragPolicy = MovePolicy(),
+                        resizePolicy = ResizePolicy(),
                     ) {
                         Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                             Spacer(
@@ -133,8 +135,10 @@ class NestedSubspaceActivity : ComponentActivity() {
                     }
 
                     SpatialLayoutSpacer(SubspaceModifier.size(100.dp))
-
-                    SpatialPanel(SubspaceModifier.height(800.dp).width(400.dp).movable()) {
+                    SpatialPanel(
+                        SubspaceModifier.height(800.dp).width(400.dp),
+                        dragPolicy = MovePolicy(),
+                    ) {
                         Box(Modifier.border(30.dp, Color.White, RoundedCornerShape(10.dp))) {
                             Subspace {
                                 SpatialPanel(SubspaceModifier.offset(z = (-200).dp)) {

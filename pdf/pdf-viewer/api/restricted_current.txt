@@ -110,22 +110,25 @@ package androidx.pdf.content {
   }
 
   public final class PageSelection {
-    ctor public PageSelection(int page, androidx.pdf.content.SelectionBoundary start, androidx.pdf.content.SelectionBoundary stop, java.util.List<androidx.pdf.content.PdfPageTextContent> selectedTextContents);
+    ctor public PageSelection(int page, androidx.pdf.content.SelectionBoundary start, androidx.pdf.content.SelectionBoundary stop, java.util.List<? extends androidx.pdf.content.PdfPageContent> selectedContents);
     method public int getPage();
-    method public java.util.List<androidx.pdf.content.PdfPageTextContent> getSelectedTextContents();
+    method public java.util.List<androidx.pdf.content.PdfPageContent> getSelectedContents();
     method public androidx.pdf.content.SelectionBoundary getStart();
     method public androidx.pdf.content.SelectionBoundary getStop();
     property public int page;
-    property public java.util.List<androidx.pdf.content.PdfPageTextContent> selectedTextContents;
+    property public java.util.List<androidx.pdf.content.PdfPageContent> selectedContents;
     property public androidx.pdf.content.SelectionBoundary start;
     property public androidx.pdf.content.SelectionBoundary stop;
   }
 
-  public final class PdfPageGotoLinkContent {
+  public abstract class PdfPageContent {
+    method public final java.util.List<android.graphics.RectF> getBounds();
+    property public final java.util.List<android.graphics.RectF> bounds;
+  }
+
+  public final class PdfPageGotoLinkContent extends androidx.pdf.content.PdfPageContent {
     ctor public PdfPageGotoLinkContent(java.util.List<? extends android.graphics.RectF> bounds, androidx.pdf.content.PdfPageGotoLinkContent.Destination destination);
-    method public java.util.List<android.graphics.RectF> getBounds();
     method public androidx.pdf.content.PdfPageGotoLinkContent.Destination getDestination();
-    property public java.util.List<android.graphics.RectF> bounds;
     property public androidx.pdf.content.PdfPageGotoLinkContent.Destination destination;
   }
 
@@ -147,19 +150,15 @@ package androidx.pdf.content {
     property public String altText;
   }
 
-  public final class PdfPageLinkContent {
+  public final class PdfPageLinkContent extends androidx.pdf.content.PdfPageContent {
     ctor public PdfPageLinkContent(java.util.List<? extends android.graphics.RectF> bounds, android.net.Uri uri);
-    method public java.util.List<android.graphics.RectF> getBounds();
     method public android.net.Uri getUri();
-    property public java.util.List<android.graphics.RectF> bounds;
     property public android.net.Uri uri;
   }
 
-  public final class PdfPageTextContent {
+  public final class PdfPageTextContent extends androidx.pdf.content.PdfPageContent {
     ctor public PdfPageTextContent(java.util.List<? extends android.graphics.RectF> bounds, String text);
-    method public java.util.List<android.graphics.RectF> getBounds();
     method public String getText();
-    property public java.util.List<android.graphics.RectF> bounds;
     property public String text;
   }
 
@@ -178,9 +177,38 @@ package androidx.pdf.content {
 
 package androidx.pdf.selection {
 
+  public abstract class ContextMenuComponent {
+    method public final Object getKey();
+    property public final Object key;
+  }
+
+  public final class PdfSelectionMenuKeys {
+    property public Object CopyKey;
+    property public Object SelectAllKey;
+    property public Object SmartActionKey;
+    field public static final Object CopyKey;
+    field public static final androidx.pdf.selection.PdfSelectionMenuKeys INSTANCE;
+    field public static final Object SelectAllKey;
+    field public static final Object SmartActionKey;
+  }
+
   public interface Selection {
     method public java.util.List<androidx.pdf.PdfRect> getBounds();
     property public abstract java.util.List<androidx.pdf.PdfRect> bounds;
+  }
+
+  public final class SelectionMenuComponent extends androidx.pdf.selection.ContextMenuComponent {
+    ctor public SelectionMenuComponent(Object key, String label, optional String? contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
+    method public String? getContentDescription();
+    method public String getLabel();
+    method public kotlin.jvm.functions.Function1<androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> getOnClick();
+    property public String? contentDescription;
+    property public String label;
+    property public kotlin.jvm.functions.Function1<androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick;
+  }
+
+  public interface SelectionMenuSession {
+    method public void close();
   }
 
 }
@@ -215,6 +243,7 @@ package androidx.pdf.view {
     method public final void addOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void addOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void addOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
+    method public final void addSelectionMenuItemPreparer(androidx.pdf.view.PdfView.SelectionMenuItemPreparer selectionMenuItemPreparer);
     method public final void clearSelection();
     method public final androidx.pdf.selection.Selection? getCurrentSelection();
     method public final android.graphics.drawable.Drawable getFastScrollPageIndicatorBackgroundDrawable();
@@ -232,6 +261,7 @@ package androidx.pdf.view {
     method public final void removeOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void removeOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void removeOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
+    method public final void removeSelectionMenuItemPreparer(androidx.pdf.view.PdfView.SelectionMenuItemPreparer selectionMenuItemPreparer);
     method public final void scrollToPage(int pageNum);
     method public final void scrollToPosition(androidx.pdf.PdfPoint position);
     method public final void setFastScrollPageIndicatorBackgroundDrawable(android.graphics.drawable.Drawable);
@@ -284,6 +314,10 @@ package androidx.pdf.view {
 
   public static interface PdfView.OnViewportChangedListener {
     method public void onViewportChanged(int firstVisiblePage, int visiblePagesCount, android.util.SparseArray<android.graphics.RectF> pageLocations, float zoomLevel);
+  }
+
+  public static interface PdfView.SelectionMenuItemPreparer {
+    method public void onPrepareSelectionMenuItems(java.util.List<androidx.pdf.selection.ContextMenuComponent> components);
   }
 
 }

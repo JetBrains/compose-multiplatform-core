@@ -27,9 +27,9 @@ package androidx.xr.arcore.rxjava3 {
     property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Plane.State> androidx.xr.arcore.Plane.stateAsFlowable;
   }
 
-  public final class RxJava3ViewCamera {
-    method public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.ViewCamera.State> getStateAsFlowable(androidx.xr.arcore.ViewCamera);
-    property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.ViewCamera.State> androidx.xr.arcore.ViewCamera.stateAsFlowable;
+  public final class RxJava3RenderViewpoint {
+    method public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.RenderViewpoint.State> getStateAsFlowable(androidx.xr.arcore.RenderViewpoint);
+    property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.RenderViewpoint.State> androidx.xr.arcore.RenderViewpoint.stateAsFlowable;
   }
 
 }

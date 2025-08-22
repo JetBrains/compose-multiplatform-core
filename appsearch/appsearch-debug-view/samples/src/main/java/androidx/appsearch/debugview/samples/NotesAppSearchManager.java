@@ -28,7 +28,6 @@ import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.appsearch.debugview.samples.model.Note;
 import androidx.appsearch.exceptions.AppSearchException;
-import androidx.appsearch.localstorage.LocalStorage;
 import androidx.appsearch.platformstorage.PlatformStorage;
 
 import com.google.common.util.concurrent.Futures;
@@ -174,14 +173,6 @@ public class NotesAppSearchManager implements Closeable {
                     mExecutor);
         }, mExecutor);
     }
-
-    private ListenableFuture<AppSearchSession> createLocalSession() {
-        return LocalStorage.createSearchSessionAsync(
-                new LocalStorage.SearchContext.Builder(mContext, DB_NAME)
-                        .build()
-        );
-    }
-
 
     private @NonNull ListenableFuture<AppSearchSession> createPlatformSession() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

@@ -45,10 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.width
 import kotlin.math.roundToInt
@@ -60,7 +60,10 @@ class UxTestApp : ComponentActivity() {
 
         setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.width(2000.dp).height(400.dp).movable()) {
+                SpatialPanel(
+                    SubspaceModifier.width(2000.dp).height(400.dp),
+                    dragPolicy = MovePolicy(),
+                ) {
                     Row(
                         Modifier.background(Color.DarkGray),
                         verticalAlignment = Alignment.CenterVertically,

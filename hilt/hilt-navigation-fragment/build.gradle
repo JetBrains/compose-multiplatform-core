@@ -55,9 +55,7 @@ dependencies {
     androidTestImplementation(libs.hiltAndroidTesting)
     kspAndroidTest(libs.hiltCompiler)
     androidTestImplementation(project(":internal-testutils-runtime"))
-    androidTestImplementation(project(":internal-testutils-navigation"), {
-        exclude group: 'androidx.navigation', module: 'navigation-common'
-    })
+    androidTestImplementation(project(":internal-testutils-navigation"))
 }
 
 hilt {

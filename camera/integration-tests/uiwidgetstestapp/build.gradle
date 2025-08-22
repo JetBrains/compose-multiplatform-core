@@ -69,9 +69,7 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation(project(":window:window"))
     implementation(libs.constraintLayout)
-    implementation(libs.material) {
-        exclude group: "androidx.viewpager2", module: "viewpager2"
-    }
+    implementation(libs.material)
 
     // Guava
     implementation(libs.guavaAndroid)

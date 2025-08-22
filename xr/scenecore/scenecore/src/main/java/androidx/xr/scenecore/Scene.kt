@@ -19,7 +19,6 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
-import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.Entity as RtEntity
@@ -72,18 +71,12 @@ public class Scene : SessionConnector {
         private set
 
     /**
-     * The ActivitySpace is a special entity that represents the space in which the application is
+     * The [ActivitySpace] is a special entity that represents the space in which the application is
      * launched. It is the default parent of all entities in the scene.
      *
-     * The ActivitySpace is created automatically when the Session is created.
+     * The ActivitySpace is created automatically when the [Session] is created.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public lateinit var activitySpace: ActivitySpace
-        private set
-
-    // TODO: 378706624 - Remove this method once we have a better way to handle the root entity.
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public lateinit var activitySpaceRoot: Entity
         private set
 
     /**
@@ -125,36 +118,41 @@ public class Scene : SessionConnector {
         get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
 
     /**
-     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
-     * location provided by the system thinks is an optimal placement for content when the scene
-     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
-     * attention between sequential FULL_SPACE_MANAGED sessions.
+     * The primary [Entity] that acts as a spatial reference for the scene's content.
      *
-     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
+     * The default behavior on a spatial mode change uses this Entity to maintain a consistent
+     * spatial context for the user. When the scene enters Full Space Mode or is re-centered, the
+     * system provides a recommended pose and scale. This ensures continuity of the user's attention
+     * across spatial mode changes such as during transitions into Full Space Mode.
+     *
+     * Unmovable Entities, such as [AnchorEntity] or [ActivitySpace], cannot be set as the
+     * [Scene.keyEntity] and will throw [IllegalArgumentException] if set.
+     *
+     * This field can be `null` if no key entity has been set (default), or if the key entity was
+     * cleared by setting this value to `null`. When `null`, the default listener takes no action
+     * during spatial mode changes.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public var keyEntity: Entity? = null
-        private set
-
-    /**
-     * The [SpatialModeChangeListener] used to handle scenegraph updates when the spatial mode for
-     * the scene changes.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public var spatialModeChangeListener: SpatialModeChangeListener =
-        /**
-         * The default [spatialModeChangeListener], which translates the key entity to the
-         * recommended pose when the scene encounters spatial mode change, and applies the
-         * recommended scale. This default handler can be replaced with the client's own
-         * [SpatialModeChangeListener] by updating the [Scene.spatialModeChangeListener] property.
-         */
-        object : SpatialModeChangeListener {
-            override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Float) {
-                keyEntity?.setPose(recommendedPose, Space.ACTIVITY)
-                keyEntity?.setScale(recommendedScale, Space.ACTIVITY)
+    public var keyEntity: Entity?
+        get() = _keyEntity
+        set(value) {
+            when (value) {
+                is AnchorEntity ->
+                    throw IllegalArgumentException("AnchorEntity cannot be set as the keyEntity.")
+                is ActivitySpace ->
+                    throw IllegalArgumentException("ActivitySpace cannot be set as the keyEntity.")
+                else -> _keyEntity = value
             }
         }
+
+    private var _keyEntity: Entity? = null
+
+    private val defaultSpatialModeChangedListener =
+        Consumer<SpatialModeChangeEvent> { event ->
+            keyEntity?.setPose(event.recommendedPose, Space.ACTIVITY)
+            keyEntity?.setScale(event.recommendedScale, Space.ACTIVITY)
+        }
+    private var spatialModeChangedListener = defaultSpatialModeChangedListener
+    private var spatialModeChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
 
     private val spatialCapabilitiesListeners:
         ConcurrentMap<Consumer<SpatialCapabilities>, Consumer<RtSpatialCapabilities>> =
@@ -171,18 +169,14 @@ public class Scene : SessionConnector {
         activitySpace = ActivitySpace.create(platformAdapter, entityManager)
         spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
         mainPanelEntity = MainPanelEntity.create(lifecycleManager, platformAdapter, entityManager)
-        activitySpaceRoot =
-            entityManager.getEntityForRtEntity(platformAdapter.activitySpaceRootImpl)!!
         platformAdapter.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(
                     recommendedPose: Pose,
                     recommendedScale: Vector3,
                 ) {
-                    spatialModeChangeListener.onSpatialModeChanged(
-                        recommendedPose,
-                        recommendedScale.x,
-                    )
+                    val event = SpatialModeChangeEvent(recommendedPose, recommendedScale.x)
+                    spatialModeChangedExecutor.execute { spatialModeChangedListener.accept(event) }
                 }
             }
     }
@@ -263,70 +257,6 @@ public class Scene : SessionConnector {
     }
 
     /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode through
-     * [Activity.startActivity]. If there's a bundle used for customizing how the Activity should be
-     * started by [android.app.ActivityOptions.toBundle] or
-     * [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to call
-     * this method.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the bundle, or it is not started from a focused Activity context.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * @param bundle the input bundle to set with the Full Space Mode flag.
-     * @return the input bundle with the Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunch(bundle: Bundle): Bundle =
-        platformAdapter.setFullSpaceMode(bundle)
-
-    /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode while inheriting the environment from the launching activity.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode while
-     * inherit the existing environment through [Activity.startActivity]. If there's a bundle used
-     * for customizing how the Activity should be started by [android.app.ActivityOptions.toBundle]
-     * or [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to
-     * call this method.
-     *
-     * When launched, the Activity will be in Full Space Mode and will inherit the environment from
-     * the launching activity. If the inherited environment needs to be animated, the launching
-     * activity has to continue updating the environment even after the activity is put into the
-     * stopped state.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the intent, or it is not started from a focused Activity context.
-     *
-     * The flag will also be ignored when there is no environment to inherit or when the activity
-     * has its own environment set already.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * For security reasons, Z-testing for the new activity is disabled, and the activity is always
-     * drawn on top of the inherited environment. Because Z-testing is disabled, the activity should
-     * not spatialize itself.
-     *
-     * @param bundle the input bundle to configure with the inherit Full Space Mode environment
-     *   flag.
-     * @return the input bundle with the inherit Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(
-        bundle: Bundle
-    ): Bundle = platformAdapter.setFullSpaceModeWithEnvironmentInherited(bundle)
-
-    /**
      * Returns all entities of the given type or its subtypes.
      *
      * @param type the type of [Entity] to return.
@@ -402,28 +332,47 @@ public class Scene : SessionConnector {
         platformAdapter.clearSpatialVisibilityChangedListener()
 
     /**
-     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
-     * location provided by the system thinks is an optimal placement for content when the scene
-     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
-     * attention between sequential FULL_SPACE_MANAGED sessions.
+     * Sets the listener to be invoked when the spatial mode for the scene has changed.
      *
-     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
+     * The listener is invoked on the provided [Executor].
      *
-     * Setting null as key is allowed - in which case the default spatial mode change handler will
-     * be no-op.
+     * There can only be one listener set at a time. If a new listener is set, the previous listener
+     * will be released.
      *
-     * @param entity the entity to set as the key.
-     * @return true if the entity was successfully set as the key, false otherwise.
+     * @param callbackExecutor The [Executor] to run the listener on.
+     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
+     *   whenever the spatial mode has changed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun setKeyEntity(entity: Entity?): Boolean {
-        when (entity) {
-            is AnchorEntity -> return false
-            else -> {
-                keyEntity = entity
-                return true
-            }
-        }
+    public fun setSpatialModeChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<SpatialModeChangeEvent>,
+    ) {
+        spatialModeChangedListener = listener
+        spatialModeChangedExecutor = callbackExecutor
+    }
+
+    /**
+     * Sets the listener to be invoked on the main thread executor when the spatial mode for the
+     * scene has changed.
+     *
+     * There can only be one listener set at a time. If a new listener is set, the previous listener
+     * will be released.
+     *
+     * @param listener The [Consumer] to be invoked asynchronously on the main thread whenever the
+     *   spatial mode has changed.
+     */
+    public fun setSpatialModeChangedListener(listener: Consumer<SpatialModeChangeEvent>) {
+        setSpatialModeChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+    }
+
+    /**
+     * Releases the listener previously set by [setSpatialModeChangedListener] and reinstates the
+     * default behavior of automatically updating the [keyEntity]'s pose and scale on the main
+     * thread executor.
+     */
+    public fun clearSpatialModeChangedListener() {
+        spatialModeChangedListener = defaultSpatialModeChangedListener
+        spatialModeChangedExecutor = HandlerExecutor.mainThreadExecutor
     }
 
     /**

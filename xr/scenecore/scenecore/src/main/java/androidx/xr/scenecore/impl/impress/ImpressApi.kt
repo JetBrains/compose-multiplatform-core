@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -414,10 +414,9 @@ public interface ImpressApi {
      * JNI calls.
      *
      * @param path The name of the texture file to load or the URL of the remote texture.
-     * @param sampler The sampler to use when loading the texture.
      * @return A future that resolves to the texture when it is loaded.
      */
-    public fun loadTexture(path: String, sampler: TextureSampler): ListenableFuture<Texture>
+    public fun loadTexture(path: String): ListenableFuture<Texture>
 
     /**
      * This method borrows the reflection texture from the currently set environment IBL.
@@ -448,16 +447,26 @@ public interface ImpressApi {
      *
      * @param nativeWaterMaterial The native handle of the water material to be updated.
      * @param reflectionMap The native handle of the texture to be used as the reflection map.
+     * @param sampler The sampler used for the reflection map.
      */
-    public fun setReflectionMapOnWaterMaterial(nativeWaterMaterial: Long, reflectionMap: Long)
+    public fun setReflectionMapOnWaterMaterial(
+        nativeWaterMaterial: Long,
+        reflectionMap: Long,
+        sampler: TextureSampler,
+    )
 
     /**
      * This method sets the normal map for the water material.
      *
      * @param nativeWaterMaterial The native handle of the water material to be updated.
      * @param normalMap The native handle of the texture to be used as the normal map.
+     * @param sampler The sampler used for the normal map.
      */
-    public fun setNormalMapOnWaterMaterial(nativeWaterMaterial: Long, normalMap: Long)
+    public fun setNormalMapOnWaterMaterial(
+        nativeWaterMaterial: Long,
+        normalMap: Long,
+        sampler: TextureSampler,
+    )
 
     /**
      * This method sets the normal tiling for the water material.
@@ -491,8 +500,13 @@ public interface ImpressApi {
      *
      * @param nativeWaterMaterial The native handle of the water material to be updated.
      * @param alphaMap The native handle of the texture to be used as the alpha map.
+     * @param sampler The sampler used for the alpha map.
      */
-    public fun setAlphaMapOnWaterMaterial(nativeWaterMaterial: Long, alphaMap: Long)
+    public fun setAlphaMapOnWaterMaterial(
+        nativeWaterMaterial: Long,
+        alphaMap: Long,
+        sampler: TextureSampler,
+    )
 
     /**
      * This method sets the normal z for the water material.
@@ -561,10 +575,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param baseColorTexture The native handle of the base color texture.
+     * @param sampler The sampler used for the base color texture.
      */
     public fun setBaseColorTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         baseColorTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -603,10 +619,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param metallicRoughnessTexture The native handle of the metallic-roughness texture.
+     * @param sampler The sampler used for the metallic roughness texture.
      */
     public fun setMetallicRoughnessTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         metallicRoughnessTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -648,10 +666,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param normalTexture The native handle of the normal map texture.
+     * @param sampler The sampler used for the normal map texture.
      */
     public fun setNormalTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         normalTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -685,10 +705,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param ambientOcclusionTexture The native handle of the ambient occlusion texture.
+     * @param sampler The sampler used for the ambient occlusion texture.
      */
     public fun setAmbientOcclusionTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         ambientOcclusionTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -725,10 +747,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param emissiveTexture The native handle of the emissive texture.
+     * @param sampler The sampler used for the emissive texture.
      */
     public fun setEmissiveTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         emissiveTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -766,10 +790,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param clearcoatTexture The native handle of the clearcoat texture.
+     * @param sampler The sampler used for the clearcoat texture.
      */
     public fun setClearcoatTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         clearcoatTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -777,10 +803,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param clearcoatNormalTexture The native handle of the clearcoat normal texture.
+     * @param sampler The sampler used for the clearcoat normal texture.
      */
     public fun setClearcoatNormalTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         clearcoatNormalTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -788,10 +816,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param clearcoatRoughnessTexture The native handle of the clearcoat roughness texture.
+     * @param sampler The sampler used for the clearcoat roughness texture.
      */
     public fun setClearcoatRoughnessTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         clearcoatRoughnessTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -814,10 +844,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param sheenColorTexture The native handle of the sheen color texture.
+     * @param sampler The sampler used for the sheen color texture.
      */
     public fun setSheenColorTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         sheenColorTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -837,10 +869,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param sheenRoughnessTexture The native handle of the sheen roughness texture.
+     * @param sampler The sampler used for the sheen roughness texture.
      */
     public fun setSheenRoughnessTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         sheenRoughnessTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**
@@ -859,10 +893,12 @@ public interface ImpressApi {
      *
      * @param nativeKhronosPbrMaterial The native handle of the Khronos PBR material.
      * @param transmissionTexture The native handle of the transmission texture.
+     * @param sampler The sampler used for the transmission texture.
      */
     public fun setTransmissionTextureOnKhronosPbrMaterial(
         nativeKhronosPbrMaterial: Long,
         transmissionTexture: Long,
+        sampler: TextureSampler,
     )
 
     /**

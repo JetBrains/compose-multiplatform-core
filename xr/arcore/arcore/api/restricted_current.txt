@@ -265,10 +265,10 @@ package androidx.xr.arcore {
 
   public static final class Hand.State {
     method public java.util.Map<androidx.xr.runtime.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.nio.FloatBuffer getHandJointsBuffer();
+    method public java.nio.FloatBuffer getHandJointsBuffer();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.runtime.HandJointType,androidx.xr.runtime.math.Pose> handJoints;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.nio.FloatBuffer handJointsBuffer;
+    property public java.nio.FloatBuffer handJointsBuffer;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -290,19 +290,23 @@ package androidx.xr.arcore {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.ArDevice getArDevice();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.DepthMap> getDepthMaps();
     method public androidx.xr.arcore.Hand? getLeftHand();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? getLeftRenderViewpoint();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? getMonoRenderViewpoint();
     method public androidx.xr.arcore.Hand? getRightHand();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? getRightRenderViewpoint();
     method public kotlin.time.ComparableTimeMark getTimeMark();
     method public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? getUserFace();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.ViewCamera> getViewCameras();
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.ArDevice arDevice;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.DepthMap> depthMaps;
     property public androidx.xr.arcore.Hand? leftHand;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? leftRenderViewpoint;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? monoRenderViewpoint;
     property public androidx.xr.arcore.Hand? rightHand;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.RenderViewpoint? rightRenderViewpoint;
     property public kotlin.time.ComparableTimeMark timeMark;
     property public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> trackables;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? userFace;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.ViewCamera> viewCameras;
   }
 
   public final class PerceptionStateExtenderKt {
@@ -369,6 +373,32 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Plane.Type VERTICAL;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class RenderViewpoint {
+    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> getState();
+    method public static androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
+    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> state;
+    field public static final androidx.xr.arcore.RenderViewpoint.Companion Companion;
+  }
+
+  public static final class RenderViewpoint.Companion {
+    method public androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
+  }
+
+  public static final class RenderViewpoint.State {
+    ctor public RenderViewpoint.State(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.math.Pose localPose, androidx.xr.runtime.FieldOfView fieldOfView);
+    method public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method public androidx.xr.runtime.math.Pose getLocalPose();
+    method public androidx.xr.runtime.math.Pose getPose();
+    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.Pose localPose;
+    property public androidx.xr.runtime.math.Pose pose;
+  }
+
   public interface Trackable<State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();
@@ -378,28 +408,6 @@ package androidx.xr.arcore {
   public static interface Trackable.State {
     method public androidx.xr.runtime.TrackingState getTrackingState();
     property public abstract androidx.xr.runtime.TrackingState trackingState;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ViewCamera {
-    method public static java.util.List<androidx.xr.arcore.ViewCamera> getAll(androidx.xr.runtime.Session session);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ViewCamera.State> getState();
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ViewCamera.State> state;
-    field public static final androidx.xr.arcore.ViewCamera.Companion Companion;
-  }
-
-  public static final class ViewCamera.Companion {
-    method public java.util.List<androidx.xr.arcore.ViewCamera> getAll(androidx.xr.runtime.Session session);
-  }
-
-  public static final class ViewCamera.State {
-    ctor public ViewCamera.State(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.math.Pose localPose, androidx.xr.runtime.FieldOfView fieldOfView);
-    method public androidx.xr.runtime.FieldOfView getFieldOfView();
-    method public androidx.xr.runtime.math.Pose getLocalPose();
-    method public androidx.xr.runtime.math.Pose getPose();
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
-    property public androidx.xr.runtime.math.Pose localPose;
-    property public androidx.xr.runtime.math.Pose pose;
   }
 
 }

@@ -18,17 +18,17 @@ package androidx.camera.camera2.pipe.integration.testing
 
 import android.graphics.Rect
 import androidx.camera.camera2.pipe.integration.compat.ZoomCompat
+import androidx.camera.camera2.pipe.integration.impl.DEFAULT_ZOOM_RATIO
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
-class FakeZoomCompat
-constructor(
+open class FakeZoomCompat(
     override val minZoomRatio: Float = 0f,
     override val maxZoomRatio: Float = 0f,
     var croppedSensorArea: Rect = Rect(0, 0, 640, 480),
 ) : ZoomCompat {
-    var zoomRatio = 0f
+    var zoomRatio = DEFAULT_ZOOM_RATIO
     var applyAsyncResult = CompletableDeferred(Unit) // already completed deferred
 
     override fun applyAsync(
@@ -38,6 +38,11 @@ constructor(
         return applyAsyncResult.also { result ->
             result.invokeOnCompletion { this.zoomRatio = zoomRatio }
         }
+    }
+
+    override fun resetAsync(requestControl: UseCaseCameraRequestControl): Deferred<Unit> {
+        zoomRatio = DEFAULT_ZOOM_RATIO
+        return CompletableDeferred(Unit)
     }
 
     override fun getCropSensorRegion() = croppedSensorArea

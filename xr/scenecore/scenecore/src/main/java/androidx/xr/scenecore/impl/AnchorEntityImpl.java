@@ -70,11 +70,13 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     private static final String TAG = "AnchorEntityImpl";
     private final ActivitySpaceImpl mActivitySpace;
     private final AndroidXrEntity mActivitySpaceRoot;
+    @SuppressWarnings("HidingField") // super class AndroidXrEntity has mEntityManager
     private final EntityManager mEntityManager;
     private final PerceptionLibrary mPerceptionLibrary;
     private OnStateChangedListener mOnStateChangedListener;
     private @State int mState = State.UNANCHORED;
     private Anchor mAnchor;
+    @SuppressWarnings("UnusedVariable")
     private UUID mUuid = null;
     private final OpenXrActivityPoseHelper mOpenXrActivityPoseHelper;
 

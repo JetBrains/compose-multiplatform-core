@@ -41,6 +41,8 @@ import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SpatialWindow
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunch
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunchWithEnvironmentInherited
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
@@ -230,7 +232,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button_launch_settings_app).also {
             it.setOnClickListener {
                 var (intent, bundle) = createIntent()
-                bundle = session!!.scene.configureBundleForFullSpaceModeLaunch(bundle)
+                bundle = createBundleForFullSpaceModeLaunch(session!!, bundle)
                 startActivity(intent, bundle)
             }
         }
@@ -240,9 +242,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
             it.setOnClickListener {
                 var (intent, bundle) = createIntent()
                 bundle =
-                    session!!
-                        .scene
-                        .configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(bundle)
+                    createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session!!, bundle)
                 startActivity(intent, bundle)
             }
         }

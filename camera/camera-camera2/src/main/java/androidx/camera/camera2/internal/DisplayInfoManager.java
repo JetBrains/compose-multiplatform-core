@@ -121,6 +121,7 @@ public class DisplayInfoManager {
     /**
      * Gets the singleton instance of DisplayInfoManager.
      */
+    @SuppressWarnings("GuardedBy")
     public static @NonNull DisplayInfoManager getInstance(@NonNull Context context) {
         if (sInstance == null) {
             synchronized (INSTANCE_LOCK) {

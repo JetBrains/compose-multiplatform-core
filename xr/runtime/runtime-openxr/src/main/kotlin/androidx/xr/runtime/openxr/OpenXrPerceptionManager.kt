@@ -28,8 +28,8 @@ import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
 import androidx.xr.runtime.internal.Plane
+import androidx.xr.runtime.internal.RenderViewpoint
 import androidx.xr.runtime.internal.Trackable
-import androidx.xr.runtime.internal.ViewCamera
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -110,8 +110,14 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val arDevice: OpenXrDevice
         get() = xrResources.arDevice
 
-    override val viewCameras: List<ViewCamera>
-        get() = xrResources.viewCameras
+    override val leftRenderViewpoint: RenderViewpoint?
+        get() = xrResources.leftRenderViewpoint
+
+    override val rightRenderViewpoint: RenderViewpoint?
+        get() = xrResources.rightRenderViewpoint
+
+    // Mono render viewpoint is not supported in OpenXR.
+    override val monoRenderViewpoint: RenderViewpoint? = null
 
     override val userFace: Face?
         get() = xrResources.userFace
@@ -136,7 +142,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
 
         // View Cameras data are fetch within one JNI call, so they are updated separately.
         // TODO(b/421191332): Add the View Camera config and apply it for poseInUnboundedSpace.
-        updateViewCameras(xrTime, false)
+        updateRenderViewpoints(xrTime, false)
 
         if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
             val depthMapBuffers = nativeGetDepthImagesDataBuffers(xrTime)
@@ -182,12 +188,12 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         }
     }
 
-    internal fun updateViewCameras(xrTime: Long, poseInUnboundedSpace: Boolean) {
+    internal fun updateRenderViewpoints(xrTime: Long, poseInUnboundedSpace: Boolean) {
         val viewCameraStates = nativeGetViewCameras(poseInUnboundedSpace, xrTime)
         if (viewCameraStates != null) {
             check(viewCameraStates.size == 2)
-            xrResources.viewCameras[0].update(viewCameraStates[0])
-            xrResources.viewCameras[1].update(viewCameraStates[1])
+            xrResources.leftRenderViewpoint.update(viewCameraStates[0])
+            xrResources.rightRenderViewpoint.update(viewCameraStates[1])
         }
     }
 

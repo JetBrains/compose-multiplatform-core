@@ -36,10 +36,19 @@ public interface ZoomCompat {
     public val minZoomRatio: Float
     public val maxZoomRatio: Float
 
+    /** Applies the zoom ratio settings to the request control. */
     public fun applyAsync(
         zoomRatio: Float,
         requestControl: UseCaseCameraRequestControl,
     ): Deferred<Unit>
+
+    /**
+     * Removes the zoom ratio settings from the request control.
+     *
+     * This call only clears the settings, which makes the camera to remain in the original state
+     * rather than sets it to the default.
+     */
+    public fun resetAsync(requestControl: UseCaseCameraRequestControl): Deferred<Unit>
 
     /**
      * Returns the current crop sensor region which should be used for converting
@@ -100,6 +109,12 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
         )
     }
 
+    override fun resetAsync(requestControl: UseCaseCameraRequestControl): Deferred<Unit> {
+        return requestControl.removeParametersAsync(
+            keys = listOf(CaptureRequest.SCALER_CROP_REGION)
+        )
+    }
+
     override fun getCropSensorRegion(): Rect =
         currentCropRect
             ?: cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
@@ -148,6 +163,15 @@ public class AndroidRZoomCompat(
             Api34Compat.setSettingsOverrideZoom(parameters)
         }
         return requestControl.setParametersAsync(values = parameters)
+    }
+
+    override fun resetAsync(requestControl: UseCaseCameraRequestControl): Deferred<Unit> {
+        val keys: MutableList<CaptureRequest.Key<*>> =
+            mutableListOf(CaptureRequest.CONTROL_ZOOM_RATIO)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            keys.add(CaptureRequest.CONTROL_SETTINGS_OVERRIDE)
+        }
+        return requestControl.removeParametersAsync(keys = keys)
     }
 
     override fun getCropSensorRegion(): Rect =

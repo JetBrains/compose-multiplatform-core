@@ -21,11 +21,12 @@ import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 
 /**
- * Represents the current state of a [ViewCamera].
+ * Represents the current state of a [RenderViewpoint].
  *
  * @property pose the pose of the view camera.
  * @property fieldOfView the field of view of the view camera.
  */
+// TODO(b/439895601): Rename ViewCameraState to RenderViewpointState
 @Suppress("DataClassDefinition")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 internal data class ViewCameraState(

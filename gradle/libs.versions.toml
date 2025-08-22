@@ -33,7 +33,7 @@ builder = "8.6.0-alpha05"
 byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
-composeCompilerPlugin = "2.1.22-338"
+composeCompilerPlugin = "2.2.0-custom-branch-20"
 dagger = "2.54"
 datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "2.11.0"
@@ -52,17 +52,18 @@ kotlin18 = "1.8.22"
 kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
-kotlin21 = "2.1.20"
-kotlin = "2.1.21"
+kotlin21 = "2.1.21"
+kotlin22 = "2.2.0"
+kotlin = "2.2.0"
 kotlinBenchmark = "0.4.11"
-kotlinGradlePluginAnnotations = "2.1.21"
-kotlinGradlePluginApi = "2.1.21"
+kotlinGradlePluginAnnotations = "2.2.0"
+kotlinGradlePluginApi = "2.2.0"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.8.1"
-kotlinNativeUtils = "2.1.21"
+kotlinNativeUtils = "2.2.0"
 kotlinSerialization = "1.8.0"
-kotlinToolingCore = "2.1.21"
-ksp = "2.1.21-2.0.1"
+kotlinToolingCore = "2.2.0"
+ksp = "2.2.0-2.0.2"
 ktfmt = "0.54"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -216,15 +217,10 @@ kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serializ
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
-# The Kotlin/JS and Kotlin/Wasm standard library must match the compiler
-kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js", version.ref = "kotlin" }
-kotlinStdlibWasm = { module = "org.jetbrains.kotlin:kotlin-stdlib-wasm-js", version.ref = "kotlin" }
-kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common", version.ref = "kotlin" }
-kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common", version.ref = "kotlin" }
-kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
-kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js", version.ref = "kotlin" }
+kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test" }
+kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
+kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
+kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }

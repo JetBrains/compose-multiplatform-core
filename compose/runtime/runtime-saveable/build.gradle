@@ -67,14 +67,8 @@ androidXMultiplatform {
             }
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(commonMain)
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
             }
@@ -109,6 +103,30 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
             }
+        }
+
+        webMain {
+            dependsOn(commonMain)
+        }
+
+        webTest {
+            dependsOn(commonTest)
+        }
+
+        jsMain {
+            dependsOn(webMain)
+        }
+
+        jsTest {
+            dependsOn(webTest)
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+        }
+
+        wasmJsTest {
+            dependsOn(webTest)
         }
     }
 }

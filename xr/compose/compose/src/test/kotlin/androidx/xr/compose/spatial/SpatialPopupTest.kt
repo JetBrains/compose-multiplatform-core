@@ -83,9 +83,11 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
-import androidx.xr.compose.testing.createFakeRuntime
+import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.session
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
+import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlin.test.Ignore
@@ -105,23 +107,21 @@ class SpatialPopupTest {
     @Ignore("Fix underline implementation first")
     @Test
     fun spatialPopup_HSM_dismissOnBackPressTrue_invokesDismissRequest() {
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showPopup by remember { mutableStateOf(true) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showPopup by remember { mutableStateOf(true) }
 
-                        if (showPopup) {
-                            SpatialPopup(
-                                onDismissRequest = { showPopup = false },
-                                properties = PopupProperties(dismissOnBackPress = true),
-                            ) {
-                                Box(modifier = Modifier.size(330.dp).background(Color.Black)) {
-                                    Text("Spatial Popup")
-                                }
+                    if (showPopup) {
+                        SpatialPopup(
+                            onDismissRequest = { showPopup = false },
+                            properties = PopupProperties(dismissOnBackPress = true),
+                        ) {
+                            Box(modifier = Modifier.size(330.dp).background(Color.Black)) {
+                                Text("Spatial Popup")
                             }
                         }
                     }
@@ -139,20 +139,17 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_FSM_dismissOnBackPressTrue_invokesDismissRequest() {
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                var showPopup by remember { mutableStateOf(true) }
-                if (showPopup) {
-                    SpatialPopup(
-                        onDismissRequest = { showPopup = false },
-                        properties = PopupProperties(dismissOnBackPress = true),
-                    ) {
-                        Text("Spatial Popup")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            var showPopup by remember { mutableStateOf(true) }
+            if (showPopup) {
+                SpatialPopup(
+                    onDismissRequest = { showPopup = false },
+                    properties = PopupProperties(dismissOnBackPress = true),
+                ) {
+                    Text("Spatial Popup")
                 }
             }
         }
@@ -168,19 +165,16 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_HSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                if (showPopup) {
-                    SpatialPopup(
-                        onDismissRequest = { showPopup = false },
-                        properties = PopupProperties(dismissOnBackPress = false),
-                    ) {
-                        Text("Spatial Popup")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            if (showPopup) {
+                SpatialPopup(
+                    onDismissRequest = { showPopup = false },
+                    properties = PopupProperties(dismissOnBackPress = false),
+                ) {
+                    Text("Spatial Popup")
                 }
             }
         }
@@ -196,19 +190,16 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_FSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                if (showPopup) {
-                    SpatialPopup(
-                        onDismissRequest = { showPopup = false },
-                        properties = PopupProperties(dismissOnBackPress = false),
-                    ) {
-                        Text("Spatial Popup")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            if (showPopup) {
+                SpatialPopup(
+                    onDismissRequest = { showPopup = false },
+                    properties = PopupProperties(dismissOnBackPress = false),
+                ) {
+                    Text("Spatial Popup")
                 }
             }
         }
@@ -227,29 +218,26 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(Color.Blue)
-                                    .testTag("background")
-                                    .clickable { outsideClicked = true }
-                        ) {
-                            if (showPopup) {
-                                SpatialPopup(
-                                    onDismissRequest = { showPopup = false },
-                                    properties = PopupProperties(dismissOnClickOutside = true),
-                                ) {
-                                    Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
-                                        Text("Popup Content")
-                                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Blue)
+                                .testTag("background")
+                                .clickable { outsideClicked = true }
+                    ) {
+                        if (showPopup) {
+                            SpatialPopup(
+                                onDismissRequest = { showPopup = false },
+                                properties = PopupProperties(dismissOnClickOutside = true),
+                            ) {
+                                Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
+                                    Text("Popup Content")
                                 }
                             }
                         }
@@ -274,29 +262,26 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(Color.Blue)
-                                    .testTag("background")
-                                    .clickable { outsideClicked = true }
-                        ) {
-                            if (showPopup) {
-                                SpatialPopup(
-                                    onDismissRequest = { showPopup = false },
-                                    properties = PopupProperties(dismissOnClickOutside = true),
-                                ) {
-                                    Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
-                                        Text("Popup Content")
-                                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Blue)
+                                .testTag("background")
+                                .clickable { outsideClicked = true }
+                    ) {
+                        if (showPopup) {
+                            SpatialPopup(
+                                onDismissRequest = { showPopup = false },
+                                properties = PopupProperties(dismissOnClickOutside = true),
+                            ) {
+                                Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
+                                    Text("Popup Content")
                                 }
                             }
                         }
@@ -319,29 +304,26 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(Color.Blue)
-                                    .testTag("background")
-                                    .clickable { outsideClicked = true }
-                        ) {
-                            if (showPopup) {
-                                SpatialPopup(
-                                    onDismissRequest = { showPopup = false },
-                                    properties = PopupProperties(dismissOnClickOutside = false),
-                                ) {
-                                    Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
-                                        Text("Popup Content")
-                                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Blue)
+                                .testTag("background")
+                                .clickable { outsideClicked = true }
+                    ) {
+                        if (showPopup) {
+                            SpatialPopup(
+                                onDismissRequest = { showPopup = false },
+                                properties = PopupProperties(dismissOnClickOutside = false),
+                            ) {
+                                Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
+                                    Text("Popup Content")
                                 }
                             }
                         }
@@ -364,29 +346,26 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(Color.Blue)
-                                    .testTag("background")
-                                    .clickable { outsideClicked = true }
-                        ) {
-                            if (showPopup) {
-                                SpatialPopup(
-                                    onDismissRequest = { showPopup = false },
-                                    properties = PopupProperties(dismissOnClickOutside = false),
-                                ) {
-                                    Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
-                                        Text("Popup Content")
-                                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Blue)
+                                .testTag("background")
+                                .clickable { outsideClicked = true }
+                    ) {
+                        if (showPopup) {
+                            SpatialPopup(
+                                onDismissRequest = { showPopup = false },
+                                properties = PopupProperties(dismissOnClickOutside = false),
+                            ) {
+                                Box(modifier = Modifier.size(100.dp).background(Color.Red)) {
+                                    Text("Popup Content")
                                 }
                             }
                         }
@@ -408,48 +387,37 @@ class SpatialPopupTest {
     // TODO(b/431096310): Test alignment not only the existence.
     @Test
     fun spatialPopup_allAlignmentOptions_exists() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(modifier = Modifier.size(300.dp)) {
-                            // Test all alignments in one composition
-                            SpatialPopup(alignment = Alignment.TopStart) {
-                                Text("TopStart", modifier = Modifier.testTag("popup_TopStart"))
-                            }
-                            SpatialPopup(alignment = Alignment.TopCenter) {
-                                Text("TopCenter", modifier = Modifier.testTag("popup_TopCenter"))
-                            }
-                            SpatialPopup(alignment = Alignment.TopEnd) {
-                                Text("TopEnd", modifier = Modifier.testTag("popup_TopEnd"))
-                            }
-                            SpatialPopup(alignment = Alignment.CenterStart) {
-                                Text(
-                                    "CenterStart",
-                                    modifier = Modifier.testTag("popup_CenterStart"),
-                                )
-                            }
-                            SpatialPopup(alignment = Alignment.Center) {
-                                Text("Center", modifier = Modifier.testTag("popup_Center"))
-                            }
-                            SpatialPopup(alignment = Alignment.CenterEnd) {
-                                Text("CenterEnd", modifier = Modifier.testTag("popup_CenterEnd"))
-                            }
-                            SpatialPopup(alignment = Alignment.BottomStart) {
-                                Text(
-                                    "BottomStart",
-                                    modifier = Modifier.testTag("popup_BottomStart"),
-                                )
-                            }
-                            SpatialPopup(alignment = Alignment.BottomCenter) {
-                                Text(
-                                    "BottomCenter",
-                                    modifier = Modifier.testTag("popup_BottomCenter"),
-                                )
-                            }
-                            SpatialPopup(alignment = Alignment.BottomEnd) {
-                                Text("BottomEnd", modifier = Modifier.testTag("popup_BottomEnd"))
-                            }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(modifier = Modifier.size(300.dp)) {
+                        // Test all alignments in one composition
+                        SpatialPopup(alignment = Alignment.TopStart) {
+                            Text("TopStart", modifier = Modifier.testTag("popup_TopStart"))
+                        }
+                        SpatialPopup(alignment = Alignment.TopCenter) {
+                            Text("TopCenter", modifier = Modifier.testTag("popup_TopCenter"))
+                        }
+                        SpatialPopup(alignment = Alignment.TopEnd) {
+                            Text("TopEnd", modifier = Modifier.testTag("popup_TopEnd"))
+                        }
+                        SpatialPopup(alignment = Alignment.CenterStart) {
+                            Text("CenterStart", modifier = Modifier.testTag("popup_CenterStart"))
+                        }
+                        SpatialPopup(alignment = Alignment.Center) {
+                            Text("Center", modifier = Modifier.testTag("popup_Center"))
+                        }
+                        SpatialPopup(alignment = Alignment.CenterEnd) {
+                            Text("CenterEnd", modifier = Modifier.testTag("popup_CenterEnd"))
+                        }
+                        SpatialPopup(alignment = Alignment.BottomStart) {
+                            Text("BottomStart", modifier = Modifier.testTag("popup_BottomStart"))
+                        }
+                        SpatialPopup(alignment = Alignment.BottomCenter) {
+                            Text("BottomCenter", modifier = Modifier.testTag("popup_BottomCenter"))
+                        }
+                        SpatialPopup(alignment = Alignment.BottomEnd) {
+                            Text("BottomEnd", modifier = Modifier.testTag("popup_BottomEnd"))
                         }
                     }
                 }
@@ -470,30 +438,16 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if elevation parameter is actually applied.
     @Test
     fun spatialPopup_allElevationLevels_exists() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Column {
-                            SpatialPopup(elevation = SpatialElevationLevel.Level0) {
-                                Text("Level0")
-                            }
-                            SpatialPopup(elevation = SpatialElevationLevel.Level1) {
-                                Text("Level1")
-                            }
-                            SpatialPopup(elevation = SpatialElevationLevel.Level2) {
-                                Text("Level2")
-                            }
-                            SpatialPopup(elevation = SpatialElevationLevel.Level3) {
-                                Text("Level3")
-                            }
-                            SpatialPopup(elevation = SpatialElevationLevel.Level4) {
-                                Text("Level4")
-                            }
-                            SpatialPopup(elevation = SpatialElevationLevel.Level5) {
-                                Text("Level5")
-                            }
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Column {
+                        SpatialPopup(elevation = SpatialElevationLevel.Level0) { Text("Level0") }
+                        SpatialPopup(elevation = SpatialElevationLevel.Level1) { Text("Level1") }
+                        SpatialPopup(elevation = SpatialElevationLevel.Level2) { Text("Level2") }
+                        SpatialPopup(elevation = SpatialElevationLevel.Level3) { Text("Level3") }
+                        SpatialPopup(elevation = SpatialElevationLevel.Level4) { Text("Level4") }
+                        SpatialPopup(elevation = SpatialElevationLevel.Level5) { Text("Level5") }
                     }
                 }
             }
@@ -512,38 +466,35 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_withMovableContent_movesContentWithoutRecomposition() {
         var observedCompositionId: String? = null
+        composeTestRule.session =
+            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showInPopup by remember { mutableStateOf(true) }
 
-        composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showInPopup by remember { mutableStateOf(true) }
+                    val movableContent = remember {
+                        movableContentOf {
+                            val compositionId = remember { UUID.randomUUID().toString() }
+                            observedCompositionId = compositionId
+                            Text("Movable Content")
+                        }
+                    }
 
-                        val movableContent = remember {
-                            movableContentOf {
-                                val compositionId = remember { UUID.randomUUID().toString() }
-                                observedCompositionId = compositionId
-                                Text("Movable Content")
-                            }
+                    Column {
+                        Button(
+                            onClick = { showInPopup = !showInPopup },
+                            modifier = Modifier.testTag("toggleButton"),
+                        ) {
+                            Text(if (showInPopup) "Move to Panel" else "Move to Popup")
                         }
 
-                        Column {
-                            Button(
-                                onClick = { showInPopup = !showInPopup },
-                                modifier = Modifier.testTag("toggleButton"),
-                            ) {
-                                Text(if (showInPopup) "Move to Panel" else "Move to Popup")
-                            }
-
-                            Box {
-                                if (showInPopup) {
-                                    SpatialPopup { movableContent() }
-                                } else {
-                                    movableContent()
-                                }
+                        Box {
+                            if (showInPopup) {
+                                SpatialPopup { movableContent() }
+                            } else {
+                                movableContent()
                             }
                         }
                     }
@@ -574,11 +525,9 @@ class SpatialPopupTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalSpatialCapabilities provides spatialCapabilities) {
-                TestSetup {
-                    SpatialPopup {
-                        Box(modifier = Modifier.testTag("nonSpatialPopup")) {
-                            Text("Non-Spatial Popup")
-                        }
+                SpatialPopup {
+                    Box(modifier = Modifier.testTag("nonSpatialPopup")) {
+                        Text("Non-Spatial Popup")
                     }
                 }
             }
@@ -590,15 +539,13 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_nestedPopups_bothExist() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialPopup {
-                            Column {
-                                Text("Outer Popup")
-                                SpatialPopup { Text("Inner Popup") }
-                            }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialPopup {
+                        Column {
+                            Text("Outer Popup")
+                            SpatialPopup { Text("Inner Popup") }
                         }
                     }
                 }
@@ -613,14 +560,12 @@ class SpatialPopupTest {
     fun spatialPopup_contentSizeChanges_updatesCorrectly() {
         var contentSize by mutableStateOf(100.dp)
 
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialPopup {
-                            Box(modifier = Modifier.size(contentSize).testTag("resizableContent")) {
-                                Text("Resizable")
-                            }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialPopup {
+                        Box(modifier = Modifier.size(contentSize).testTag("resizableContent")) {
+                            Text("Resizable")
                         }
                     }
                 }
@@ -639,13 +584,11 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_emptyContent_doesNotCrash() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialPopup {
-                            // Empty content
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialPopup {
+                        // Empty content
                     }
                 }
             }
@@ -656,12 +599,10 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_zeroSizeContent_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                SpatialPopup {
-                    Box(modifier = Modifier.size(0.dp).testTag("zeroSizeBox")) {
-                        // Content with zero size
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            SpatialPopup {
+                Box(modifier = Modifier.size(0.dp).testTag("zeroSizeBox")) {
+                    // Content with zero size
                 }
             }
         }
@@ -671,14 +612,12 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargeContent_rendersCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialPopup {
-                            Box(modifier = Modifier.size(2000.dp).testTag("largeContent")) {
-                                Text("Very Large Content")
-                            }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialPopup {
+                        Box(modifier = Modifier.size(2000.dp).testTag("largeContent")) {
+                            Text("Very Large Content")
                         }
                     }
                 }
@@ -694,13 +633,11 @@ class SpatialPopupTest {
     fun spatialPopup_rapidToggle_handlesCorrectly() = runTest {
         var showPopup by mutableStateOf(false)
 
-        composeTestRule.setContent {
-            TestSetup {
-                Column {
-                    Button(onClick = { showPopup = !showPopup }) { Text("Toggle") }
-                    if (showPopup) {
-                        SpatialPopup { Text("Rapid Toggle Popup") }
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Column {
+                Button(onClick = { showPopup = !showPopup }) { Text("Toggle") }
+                if (showPopup) {
+                    SpatialPopup { Text("Rapid Toggle Popup") }
                 }
             }
         }
@@ -720,15 +657,13 @@ class SpatialPopupTest {
     fun spatialPopup_withNullOnDismissRequest_doesNotCrash() {
         var showPopup by mutableStateOf(true)
 
-        composeTestRule.setContent {
-            TestSetup {
-                if (showPopup) {
-                    SpatialPopup(
-                        onDismissRequest = null,
-                        properties = PopupProperties(dismissOnBackPress = true),
-                    ) {
-                        Text("Popup with null dismiss")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            if (showPopup) {
+                SpatialPopup(
+                    onDismissRequest = null,
+                    properties = PopupProperties(dismissOnBackPress = true),
+                ) {
+                    Text("Popup with null dismiss")
                 }
             }
         }
@@ -745,16 +680,14 @@ class SpatialPopupTest {
     fun spatialPopup_onDispose_called() {
         var popupDisposed = false
 
-        composeTestRule.setContent {
-            TestSetup {
-                var showPopup by remember { mutableStateOf(true) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            var showPopup by remember { mutableStateOf(true) }
 
-                if (showPopup) {
-                    SpatialPopup {
-                        DisposableEffect(Unit) { onDispose { popupDisposed = true } }
-                        Text("Disposable Popup")
-                        Button(onClick = { showPopup = false }) { Text("Close") }
-                    }
+            if (showPopup) {
+                SpatialPopup {
+                    DisposableEffect(Unit) { onDispose { popupDisposed = true } }
+                    Text("Disposable Popup")
+                    Button(onClick = { showPopup = false }) { Text("Close") }
                 }
             }
         }
@@ -767,24 +700,22 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_complexContent_rendersCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialPopup {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Complex Popup Title")
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialPopup {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Complex Popup Title")
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Row {
+                                Button(onClick = {}) { Text("Action 1") }
                                 Spacer(modifier = Modifier.size(8.dp))
-                                Row {
-                                    Button(onClick = {}) { Text("Action 1") }
-                                    Spacer(modifier = Modifier.size(8.dp))
-                                    Button(onClick = {}) { Text("Action 2") }
-                                }
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Text(
-                                    "Additional content with multiple lines\nthat should render correctly"
-                                )
+                                Button(onClick = {}) { Text("Action 2") }
                             }
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                "Additional content with multiple lines\nthat should render correctly"
+                            )
                         }
                     }
                 }
@@ -803,27 +734,22 @@ class SpatialPopupTest {
     fun spatialPopup_withManyConcurrentPopups_areAllCreated() = runTest {
         val popupCount = 100
 
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        val popups = remember { mutableStateListOf<Int>() }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    val popups = remember { mutableStateListOf<Int>() }
 
-                        Column {
-                            Button(
-                                onClick = { popups.addAll(0 until popupCount) },
-                                modifier = Modifier.testTag("addPopups"),
-                            ) {
-                                Text("Add $popupCount Popups")
-                            }
+                    Column {
+                        Button(
+                            onClick = { popups.addAll(0 until popupCount) },
+                            modifier = Modifier.testTag("addPopups"),
+                        ) {
+                            Text("Add $popupCount Popups")
+                        }
 
-                            popups.forEach { index ->
-                                SpatialPopup(offset = IntOffset(index * 10, index * 10)) {
-                                    Text(
-                                        "Popup $index",
-                                        modifier = Modifier.testTag("popup_$index"),
-                                    )
-                                }
+                        popups.forEach { index ->
+                            SpatialPopup(offset = IntOffset(index * 10, index * 10)) {
+                                Text("Popup $index", modifier = Modifier.testTag("popup_$index"))
                             }
                         }
                     }
@@ -841,13 +767,11 @@ class SpatialPopupTest {
     fun spatialPopup_densityChange_adaptsCorrectly() {
         var currentDensity by mutableStateOf(Density(1f))
 
-        composeTestRule.setContent {
+        composeTestRule.setContentWithCompatibilityForXr {
             CompositionLocalProvider(LocalDensity provides currentDensity) {
-                TestSetup {
-                    SpatialPopup(offset = IntOffset(50, 50)) {
-                        Box(modifier = Modifier.size(100.dp).testTag("densityPopup")) {
-                            Text("Density Test")
-                        }
+                SpatialPopup(offset = IntOffset(50, 50)) {
+                    Box(modifier = Modifier.size(100.dp).testTag("densityPopup")) {
+                        Text("Density Test")
                     }
                 }
             }
@@ -867,19 +791,17 @@ class SpatialPopupTest {
         var contentLoaded by mutableStateOf(false)
         composeTestRule.mainClock.autoAdvance = false
 
-        composeTestRule.setContent {
-            TestSetup {
-                SpatialPopup {
-                    if (!contentLoaded) {
-                        CircularProgressIndicator(modifier = Modifier.testTag("loadingIndicator"))
+        composeTestRule.setContentWithCompatibilityForXr {
+            SpatialPopup {
+                if (!contentLoaded) {
+                    CircularProgressIndicator(modifier = Modifier.testTag("loadingIndicator"))
 
-                        LaunchedEffect(Unit) {
-                            delay(500) // Simulate async loading
-                            contentLoaded = true
-                        }
-                    } else {
-                        Text("Async Content Loaded", modifier = Modifier.testTag("asyncContent"))
+                    LaunchedEffect(Unit) {
+                        delay(500) // Simulate async loading
+                        contentLoaded = true
                     }
+                } else {
+                    Text("Async Content Loaded", modifier = Modifier.testTag("asyncContent"))
                 }
             }
         }
@@ -896,37 +818,35 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withSpatialDialog_coexistCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(false) }
-                        var showPopup by remember { mutableStateOf(false) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showDialog by remember { mutableStateOf(false) }
+                    var showPopup by remember { mutableStateOf(false) }
 
-                        Column {
-                            Button(
-                                onClick = {
-                                    showDialog = true
-                                    showPopup = true
-                                },
-                                modifier = Modifier.testTag("showBoth"),
+                    Column {
+                        Button(
+                            onClick = {
+                                showDialog = true
+                                showPopup = true
+                            },
+                            modifier = Modifier.testTag("showBoth"),
+                        ) {
+                            Text("Show Dialog and Popup")
+                        }
+
+                        if (showDialog) {
+                            SpatialDialog(onDismissRequest = { showDialog = false }) {
+                                Text("Spatial Dialog Content")
+                            }
+                        }
+
+                        if (showPopup) {
+                            SpatialPopup(
+                                alignment = Alignment.TopEnd,
+                                elevation = SpatialElevationLevel.Level4,
                             ) {
-                                Text("Show Dialog and Popup")
-                            }
-
-                            if (showDialog) {
-                                SpatialDialog(onDismissRequest = { showDialog = false }) {
-                                    Text("Spatial Dialog Content")
-                                }
-                            }
-
-                            if (showPopup) {
-                                SpatialPopup(
-                                    alignment = Alignment.TopEnd,
-                                    elevation = SpatialElevationLevel.Level4,
-                                ) {
-                                    Text("Spatial Popup Content")
-                                }
+                                Text("Spatial Popup Content")
                             }
                         }
                     }
@@ -948,29 +868,27 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if elevation parameter is applied.
     @Test
     fun spatialPopup_withMultiplePopups_layersCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            SpatialPopup(elevation = SpatialElevationLevel.Level2) {
-                                Box(modifier = Modifier.size(200.dp).background(Color.Blue)) {
-                                    Text("Elevated Content", color = Color.White)
-                                }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        SpatialPopup(elevation = SpatialElevationLevel.Level2) {
+                            Box(modifier = Modifier.size(200.dp).background(Color.Blue)) {
+                                Text("Elevated Content", color = Color.White)
                             }
+                        }
 
-                            SpatialPopup(
-                                alignment = Alignment.Center,
-                                elevation = SpatialElevationLevel.Level4,
+                        SpatialPopup(
+                            alignment = Alignment.Center,
+                            elevation = SpatialElevationLevel.Level4,
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier.size(100.dp)
+                                        .background(Color.Red)
+                                        .testTag("popupAboveElevation")
                             ) {
-                                Box(
-                                    modifier =
-                                        Modifier.size(100.dp)
-                                            .background(Color.Red)
-                                            .testTag("popupAboveElevation")
-                                ) {
-                                    Text("Popup Above", color = Color.White)
-                                }
+                                Text("Popup Above", color = Color.White)
                             }
                         }
                     }
@@ -987,29 +905,22 @@ class SpatialPopupTest {
     fun spatialPopup_withAnimatedContent_animatesCorrectly() {
         composeTestRule.mainClock.autoAdvance = false
 
-        composeTestRule.setContent {
-            TestSetup {
-                var expanded by remember { mutableStateOf(false) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            var expanded by remember { mutableStateOf(false) }
 
-                SpatialPopup {
-                    val animatedSize by
-                        animateDpAsState(
-                            targetValue = if (expanded) 200.dp else 100.dp,
-                            label = "size",
-                        )
+            SpatialPopup {
+                val animatedSize by
+                    animateDpAsState(targetValue = if (expanded) 200.dp else 100.dp, label = "size")
 
-                    Box(
-                        modifier =
-                            Modifier.size(animatedSize)
-                                .background(Color.Green)
-                                .testTag("animatedBox")
+                Box(
+                    modifier =
+                        Modifier.size(animatedSize).background(Color.Green).testTag("animatedBox")
+                ) {
+                    Button(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.align(Alignment.Center).testTag("toggleAnimation"),
                     ) {
-                        Button(
-                            onClick = { expanded = !expanded },
-                            modifier = Modifier.align(Alignment.Center).testTag("toggleAnimation"),
-                        ) {
-                            Text(if (expanded) "Collapse" else "Expand")
-                        }
+                        Text(if (expanded) "Collapse" else "Expand")
                     }
                 }
             }
@@ -1034,33 +945,31 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withDropdownMenu_behavesCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                var showDropdown by remember { mutableStateOf(false) }
-                var selectedItem by remember { mutableStateOf("None") }
+        composeTestRule.setContentWithCompatibilityForXr {
+            var showDropdown by remember { mutableStateOf(false) }
+            var selectedItem by remember { mutableStateOf("None") }
 
-                SpatialPopup(alignment = Alignment.TopCenter) {
-                    Column {
-                        Button(
-                            onClick = { showDropdown = true },
-                            modifier = Modifier.testTag("dropdownButton"),
-                        ) {
-                            Text("Selected: $selectedItem")
-                        }
+            SpatialPopup(alignment = Alignment.TopCenter) {
+                Column {
+                    Button(
+                        onClick = { showDropdown = true },
+                        modifier = Modifier.testTag("dropdownButton"),
+                    ) {
+                        Text("Selected: $selectedItem")
+                    }
 
-                        DropdownMenu(
-                            expanded = showDropdown,
-                            onDismissRequest = { showDropdown = false },
-                        ) {
-                            listOf("Option 1", "Option 2", "Option 3").forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option) },
-                                    onClick = {
-                                        selectedItem = option
-                                        showDropdown = false
-                                    },
-                                )
-                            }
+                    DropdownMenu(
+                        expanded = showDropdown,
+                        onDismissRequest = { showDropdown = false },
+                    ) {
+                        listOf("Option 1", "Option 2", "Option 3").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    selectedItem = option
+                                    showDropdown = false
+                                },
+                            )
                         }
                     }
                 }
@@ -1080,61 +989,59 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_withModalBottomSheet_interactsCorrectly() {
         var popupTextString = "N/A"
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        val scope = rememberCoroutineScope()
-                        val sheetState = rememberModalBottomSheetState()
-                        var showBottomSheet by remember { mutableStateOf(false) }
-                        var popupText by remember { mutableStateOf("Initial Text") }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    val scope = rememberCoroutineScope()
+                    val sheetState = rememberModalBottomSheetState()
+                    var showBottomSheet by remember { mutableStateOf(false) }
+                    var popupText by remember { mutableStateOf("Initial Text") }
 
-                        Scaffold {
-                            Column(modifier = Modifier.padding(it)) {
-                                // Popup that can be updated from bottom sheet
-                                SpatialPopup(alignment = Alignment.TopStart) {
-                                    Card {
-                                        Column(modifier = Modifier.padding(16.dp)) {
-                                            Text(
-                                                text = popupText,
-                                                modifier = Modifier.testTag("popup_text"),
-                                            )
-                                            Button(
-                                                onClick = { showBottomSheet = true },
-                                                modifier = Modifier.testTag("showSheet"),
-                                            ) {
-                                                Text("Edit in Sheet")
-                                            }
+                    Scaffold {
+                        Column(modifier = Modifier.padding(it)) {
+                            // Popup that can be updated from bottom sheet
+                            SpatialPopup(alignment = Alignment.TopStart) {
+                                Card {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = popupText,
+                                            modifier = Modifier.testTag("popup_text"),
+                                        )
+                                        Button(
+                                            onClick = { showBottomSheet = true },
+                                            modifier = Modifier.testTag("showSheet"),
+                                        ) {
+                                            Text("Edit in Sheet")
                                         }
                                     }
                                 }
+                            }
 
-                                if (showBottomSheet) {
-                                    ModalBottomSheet(
-                                        onDismissRequest = { showBottomSheet = false },
-                                        sheetState = sheetState,
-                                    ) {
-                                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                                            TextField(
-                                                value = popupText,
-                                                onValueChange = {
-                                                    popupText = it
-                                                    popupTextString = it
-                                                },
-                                                label = { Text("Edit Popup Text") },
-                                                modifier = Modifier.testTag("textField"),
-                                            )
-                                            Button(
-                                                onClick = {
-                                                    scope.launch {
-                                                        sheetState.hide()
-                                                        showBottomSheet = false
-                                                    }
-                                                },
-                                                modifier = Modifier.testTag("applyChanges"),
-                                            ) {
-                                                Text("Apply")
-                                            }
+                            if (showBottomSheet) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { showBottomSheet = false },
+                                    sheetState = sheetState,
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                        TextField(
+                                            value = popupText,
+                                            onValueChange = {
+                                                popupText = it
+                                                popupTextString = it
+                                            },
+                                            label = { Text("Edit Popup Text") },
+                                            modifier = Modifier.testTag("textField"),
+                                        )
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    sheetState.hide()
+                                                    showBottomSheet = false
+                                                }
+                                            },
+                                            modifier = Modifier.testTag("applyChanges"),
+                                        ) {
+                                            Text("Apply")
                                         }
                                     }
                                 }
@@ -1158,29 +1065,25 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withLazyList_scrollsIndependently() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        val items = List(50) { "Item $it" }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    val items = List(50) { "Item $it" }
 
-                        Box {
-                            LazyColumn(modifier = Modifier.testTag("mainList")) {
+                    Box {
+                        LazyColumn(modifier = Modifier.testTag("mainList")) {
+                            items(items) { item -> Text(item, modifier = Modifier.padding(16.dp)) }
+                        }
+
+                        SpatialPopup(offset = IntOffset(70, 70)) {
+                            LazyColumn(
+                                modifier =
+                                    Modifier.size(200.dp, 300.dp)
+                                        .background(Color.LightGray)
+                                        .testTag("popupList")
+                            ) {
                                 items(items) { item ->
-                                    Text(item, modifier = Modifier.padding(16.dp))
-                                }
-                            }
-
-                            SpatialPopup(offset = IntOffset(70, 70)) {
-                                LazyColumn(
-                                    modifier =
-                                        Modifier.size(200.dp, 300.dp)
-                                            .background(Color.LightGray)
-                                            .testTag("popupList")
-                                ) {
-                                    items(items) { item ->
-                                        Text("Popup $item", modifier = Modifier.padding(8.dp))
-                                    }
+                                    Text("Popup $item", modifier = Modifier.padding(8.dp))
                                 }
                             }
                         }
@@ -1204,27 +1107,22 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withAnimatedVisibility_transitionsCorrectly() {
-        composeTestRule.setContent {
-            TestSetup {
-                var visible by remember { mutableStateOf(false) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            var visible by remember { mutableStateOf(false) }
 
-                Column {
-                    Button(
-                        onClick = { visible = !visible },
-                        modifier = Modifier.testTag("toggleVisibility"),
-                    ) {
-                        Text(if (visible) "Hide" else "Show")
-                    }
+            Column {
+                Button(
+                    onClick = { visible = !visible },
+                    modifier = Modifier.testTag("toggleVisibility"),
+                ) {
+                    Text(if (visible) "Hide" else "Show")
+                }
 
-                    AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
-                        SpatialPopup(offset = IntOffset(200, 200), alignment = Alignment.Center) {
-                            Card(modifier = Modifier.size(200.dp).testTag("animatedPopup")) {
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    Text(
-                                        "Animated Popup",
-                                        modifier = Modifier.align(Alignment.Center),
-                                    )
-                                }
+                AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+                    SpatialPopup(offset = IntOffset(200, 200), alignment = Alignment.Center) {
+                        Card(modifier = Modifier.size(200.dp).testTag("animatedPopup")) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Text("Animated Popup", modifier = Modifier.align(Alignment.Center))
                             }
                         }
                     }
@@ -1281,39 +1179,34 @@ class SpatialPopupTest {
                 ),
             )
 
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            popupConfigs.forEach { config ->
-                                var dismissed by remember { mutableStateOf(false) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        popupConfigs.forEach { config ->
+                            var dismissed by remember { mutableStateOf(false) }
 
-                                if (!dismissed) {
-                                    SpatialPopup(
-                                        alignment = config.alignment,
-                                        offset = config.offset,
-                                        elevation = config.elevation,
-                                        onDismissRequest = { dismissed = true },
-                                        properties =
-                                            PopupProperties(
-                                                dismissOnClickOutside = true,
-                                                dismissOnBackPress = true,
-                                            ),
-                                    ) {
-                                        Card(modifier = Modifier.size(100.dp).testTag(config.tag)) {
-                                            Column(
-                                                modifier = Modifier.fillMaxSize().padding(8.dp)
+                            if (!dismissed) {
+                                SpatialPopup(
+                                    alignment = config.alignment,
+                                    offset = config.offset,
+                                    elevation = config.elevation,
+                                    onDismissRequest = { dismissed = true },
+                                    properties =
+                                        PopupProperties(
+                                            dismissOnClickOutside = true,
+                                            dismissOnBackPress = true,
+                                        ),
+                                ) {
+                                    Card(modifier = Modifier.size(100.dp).testTag(config.tag)) {
+                                        Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                                            Text(config.tag)
+                                            Text("Level: ${config.elevation}")
+                                            Button(
+                                                onClick = { dismissed = true },
+                                                modifier = Modifier.testTag("dismiss_${config.tag}"),
                                             ) {
-                                                Text(config.tag)
-                                                Text("Level: ${config.elevation}")
-                                                Button(
-                                                    onClick = { dismissed = true },
-                                                    modifier =
-                                                        Modifier.testTag("dismiss_${config.tag}"),
-                                                ) {
-                                                    Text("X")
-                                                }
+                                                Text("X")
                                             }
                                         }
                                     }
@@ -1343,34 +1236,32 @@ class SpatialPopupTest {
         var popupTapped = false
         var backgroundTapped = false
 
-        composeTestRule.setContent {
-            TestSetup {
-                Box(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .background(Color.Gray)
-                            .clickable { backgroundTapped = true }
-                            .testTag("background")
-                ) {
-                    Text(
-                        "Background Tap Area",
-                        modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
-                    )
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(Color.Gray)
+                        .clickable { backgroundTapped = true }
+                        .testTag("background")
+            ) {
+                Text(
+                    "Background Tap Area",
+                    modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
+                )
 
-                    SpatialPopup(
-                        alignment = Alignment.Center,
-                        properties = PopupProperties(dismissOnClickOutside = false),
+                SpatialPopup(
+                    alignment = Alignment.Center,
+                    properties = PopupProperties(dismissOnClickOutside = false),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(200.dp).background(Color.Blue).testTag("popupContent")
                     ) {
-                        Box(
-                            modifier =
-                                Modifier.size(200.dp).background(Color.Blue).testTag("popupContent")
+                        Button(
+                            onClick = { popupTapped = true },
+                            modifier = Modifier.align(Alignment.Center).testTag("popupButton"),
                         ) {
-                            Button(
-                                onClick = { popupTapped = true },
-                                modifier = Modifier.align(Alignment.Center).testTag("popupButton"),
-                            ) {
-                                Text("Tap Me", color = Color.White)
-                            }
+                            Text("Tap Me", color = Color.White)
                         }
                     }
                 }
@@ -1388,27 +1279,22 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if the elevation param is applied.
     @Test
     fun spatialPopup_differentAlignmentsWithOffset_exist() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.size(400.dp)) {
-                    Box(modifier = Modifier.size(200.dp).align(Alignment.Center)) {
-                        SpatialPopup(alignment = Alignment.TopStart, offset = IntOffset(10, 10)) {
-                            Text(
-                                "TopStart with offset",
-                                modifier = Modifier.testTag("popup_TopStart"),
-                            )
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.size(400.dp)) {
+                Box(modifier = Modifier.size(200.dp).align(Alignment.Center)) {
+                    SpatialPopup(alignment = Alignment.TopStart, offset = IntOffset(10, 10)) {
+                        Text("TopStart with offset", modifier = Modifier.testTag("popup_TopStart"))
+                    }
 
-                        SpatialPopup(alignment = Alignment.Center, offset = IntOffset(10, 10)) {
-                            Text("Center with offset", modifier = Modifier.testTag("popup_Center"))
-                        }
+                    SpatialPopup(alignment = Alignment.Center, offset = IntOffset(10, 10)) {
+                        Text("Center with offset", modifier = Modifier.testTag("popup_Center"))
+                    }
 
-                        SpatialPopup(alignment = Alignment.BottomEnd, offset = IntOffset(10, 10)) {
-                            Text(
-                                "BottomEnd with offset",
-                                modifier = Modifier.testTag("popup_BottomEnd"),
-                            )
-                        }
+                    SpatialPopup(alignment = Alignment.BottomEnd, offset = IntOffset(10, 10)) {
+                        Text(
+                            "BottomEnd with offset",
+                            modifier = Modifier.testTag("popup_BottomEnd"),
+                        )
                     }
                 }
             }
@@ -1421,12 +1307,10 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_maxIntOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(offset = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)) {
-                        Text("Max Int Offset", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(offset = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)) {
+                    Text("Max Int Offset", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1436,15 +1320,13 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_minIntOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(
-                        alignment = Alignment.Center,
-                        offset = IntOffset(Int.MIN_VALUE, Int.MIN_VALUE),
-                    ) {
-                        Text("Min Int Offset", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(
+                    alignment = Alignment.Center,
+                    offset = IntOffset(Int.MIN_VALUE, Int.MIN_VALUE),
+                ) {
+                    Text("Min Int Offset", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1454,15 +1336,13 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_maxXMinYOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(
-                        alignment = Alignment.Center,
-                        offset = IntOffset(Int.MAX_VALUE, Int.MIN_VALUE),
-                    ) {
-                        Text("Max X Min Y", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(
+                    alignment = Alignment.Center,
+                    offset = IntOffset(Int.MAX_VALUE, Int.MIN_VALUE),
+                ) {
+                    Text("Max X Min Y", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1472,15 +1352,13 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_minXMaxYOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(
-                        alignment = Alignment.Center,
-                        offset = IntOffset(Int.MIN_VALUE, Int.MAX_VALUE),
-                    ) {
-                        Text("Min X Max Y", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(
+                    alignment = Alignment.Center,
+                    offset = IntOffset(Int.MIN_VALUE, Int.MAX_VALUE),
+                ) {
+                    Text("Min X Max Y", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1490,12 +1368,10 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargePositiveOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(alignment = Alignment.Center, offset = IntOffset(10000, 10000)) {
-                        Text("Very Large Positive", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(alignment = Alignment.Center, offset = IntOffset(10000, 10000)) {
+                    Text("Very Large Positive", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1504,12 +1380,10 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargeNegativeOffset_handlesGracefully() {
-        composeTestRule.setContent {
-            TestSetup {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    SpatialPopup(offset = IntOffset(-10000, -10000)) {
-                        Text("Very Large Negative", modifier = Modifier.testTag("popup"))
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SpatialPopup(offset = IntOffset(-10000, -10000)) {
+                    Text("Very Large Negative", modifier = Modifier.testTag("popup"))
                 }
             }
         }
@@ -1541,47 +1415,49 @@ class SpatialPopupTest {
     }
 
     private fun correctPositionTest(isHomeSpace: Boolean, layoutDirection: LayoutDirection) {
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        if (isHomeSpace) runtime.requestHomeSpaceMode() else runtime.requestFullSpaceMode()
+        composeTestRule.session = createFakeSession(composeTestRule.activity)
+        if (isHomeSpace) {
+            composeTestRule.session?.scene?.requestHomeSpaceMode()
+        } else {
+            composeTestRule.session?.scene?.requestFullSpaceMode()
+        }
 
         val parentSize = 300.dp
         val subParentSize = 140.dp
         val popupSize = 100.dp
         val popupOffset = 20.dp
 
-        composeTestRule.setContent {
+        composeTestRule.setContentWithCompatibilityForXr {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                TestSetup(runtime = runtime) {
-                    Subspace {
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
+                Subspace {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Box(
+                            modifier =
+                                Modifier.size(parentSize)
+                                    .background(color = Color.Gray)
+                                    .testTag("parent_box_$layoutDirection")
+                        ) {
+                            val valueInPx =
+                                with(LocalDensity.current) { popupOffset.toPx().toInt() }
                             Box(
                                 modifier =
-                                    Modifier.size(parentSize)
-                                        .background(color = Color.Gray)
-                                        .testTag("parent_box_$layoutDirection")
+                                    Modifier.size(subParentSize)
+                                        .background(color = Color.Black)
+                                        .testTag("sub_box_$layoutDirection")
                             ) {
-                                val valueInPx =
-                                    with(LocalDensity.current) { popupOffset.toPx().toInt() }
-                                Box(
-                                    modifier =
-                                        Modifier.size(subParentSize)
-                                            .background(color = Color.Black)
-                                            .testTag("sub_box_$layoutDirection")
-                                ) {
-                                    SpatialPopup(offset = IntOffset(valueInPx, valueInPx)) {
-                                        Box(
+                                SpatialPopup(offset = IntOffset(valueInPx, valueInPx)) {
+                                    Box(
+                                        modifier =
+                                            Modifier.size(popupSize)
+                                                .background(color = Color.Blue)
+                                                .testTag("box_popup_$layoutDirection")
+                                    ) {
+                                        Text(
+                                            "$layoutDirection",
                                             modifier =
-                                                Modifier.size(popupSize)
-                                                    .background(color = Color.Blue)
-                                                    .testTag("box_popup_$layoutDirection")
-                                        ) {
-                                            Text(
-                                                "$layoutDirection",
-                                                modifier =
-                                                    Modifier.testTag("popup_text_$layoutDirection")
-                                                        .align(Alignment.CenterStart),
-                                            )
-                                        }
+                                                Modifier.testTag("popup_text_$layoutDirection")
+                                                    .align(Alignment.CenterStart),
+                                        )
                                     }
                                 }
                             }

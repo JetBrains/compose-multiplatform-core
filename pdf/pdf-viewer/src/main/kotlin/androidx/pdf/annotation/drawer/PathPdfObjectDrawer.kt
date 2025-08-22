@@ -42,7 +42,7 @@ internal fun PathPdfObject.createPath(): Path {
 internal object PathPdfObjectDrawer : PdfObjectDrawer<PathPdfObject> {
     val paint =
         Paint().apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL
             isAntiAlias = true
         }
 

@@ -2389,7 +2389,6 @@ package androidx.health.connect.client.response {
 package androidx.health.connect.client.time {
 
   public final class TimeRangeFilter {
-    ctor public TimeRangeFilter();
     method public static androidx.health.connect.client.time.TimeRangeFilter after(java.time.Instant startTime);
     method public static androidx.health.connect.client.time.TimeRangeFilter after(java.time.LocalDateTime startTime);
     method public static androidx.health.connect.client.time.TimeRangeFilter before(java.time.Instant endTime);

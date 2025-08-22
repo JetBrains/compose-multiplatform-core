@@ -22,6 +22,7 @@ import androidx.credentials.registry.provider.digitalcredentials.VerificationFie
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -38,15 +39,33 @@ class MdocEntryTest {
     }
 
     @Test
+    fun construction_longId_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            MdocEntry(
+                docType = "org.iso.18013.5.1.mDL",
+                fields = listOf(),
+                entryDisplayPropertySet = setOf(ENTRY_DISPLAY_DATA),
+                id = "a".repeat(65),
+            )
+        }
+    }
+
+    @Test
     fun construction_success() {
         val mdocField1 =
             MdocField(
-                "fieldName1",
+                "namespace1",
+                "id1",
                 "fieldVal1",
                 setOf(VerificationFieldDisplayProperties("displayName1")),
             )
         val mdocField2 =
-            MdocField("fieldName2", null, setOf(VerificationFieldDisplayProperties("displayName2")))
+            MdocField(
+                "namespace2",
+                "id2",
+                null,
+                setOf(VerificationFieldDisplayProperties("displayName2")),
+            )
 
         val entry =
             MdocEntry(

@@ -106,9 +106,15 @@ import java.util.Locale
  * Example of a 12 hour clock [TimePicker]:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWith12HourClockSample
+ *
+ * Example of a [TimePicker] with just minutes and seconds:
+ *
+ * @sample androidx.wear.compose.material3.samples.TimePickerWithMinutesAndSecondsSample
  * @param initialTime The initial time to be displayed in the TimePicker.
  * @param onTimePicked The callback that is called when the user confirms the time selection. It
- *   provides the selected time as [LocalTime].
+ *   provides the selected time as [LocalTime]. Note that any time components not displayed in the
+ *   picker (e.g. the hour for [TimePickerType.MinutesSeconds], or the second for
+ *   [TimePickerType.HoursMinutes24H]) will have a default value of 0 in the returned [LocalTime].
  * @param modifier Modifier to be applied to the `Box` containing the UI elements.
  * @param timePickerType The different [TimePickerType] supported by this time picker. It indicates
  *   whether to show seconds or AM/PM selector as well as hours and minutes.
@@ -147,17 +153,19 @@ public fun TimePicker(
     }
 
     val hourState =
-        if (localeConfig.is12hour) {
-            rememberPickerState(
-                initialNumberOfOptions = 12,
-                initiallySelectedIndex =
-                    initialTime[ChronoField.CLOCK_HOUR_OF_AMPM] - localeConfig.hourValueOffset,
-            )
-        } else {
-            rememberPickerState(
-                initialNumberOfOptions = 24,
-                initiallySelectedIndex = initialTime.hour - localeConfig.hourValueOffset,
-            )
+        when {
+            timePickerType == TimePickerType.MinutesSeconds -> null
+            localeConfig.is12hour ->
+                rememberPickerState(
+                    initialNumberOfOptions = 12,
+                    initiallySelectedIndex =
+                        initialTime[ChronoField.CLOCK_HOUR_OF_AMPM] - localeConfig.hourValueOffset,
+                )
+            else ->
+                rememberPickerState(
+                    initialNumberOfOptions = 24,
+                    initiallySelectedIndex = initialTime.hour - localeConfig.hourValueOffset,
+                )
         }
     val minuteState =
         rememberPickerState(
@@ -165,13 +173,14 @@ public fun TimePicker(
             initiallySelectedIndex = initialTime.minute,
         )
     val secondState =
-        if (timePickerType == TimePickerType.HoursMinutesSeconds24H) {
-            rememberPickerState(
-                initialNumberOfOptions = 60,
-                initiallySelectedIndex = initialTime.second,
-            )
-        } else {
-            null
+        when (timePickerType) {
+            TimePickerType.HoursMinutesSeconds24H,
+            TimePickerType.MinutesSeconds ->
+                rememberPickerState(
+                    initialNumberOfOptions = 60,
+                    initiallySelectedIndex = initialTime.second,
+                )
+            else -> null
         }
     val periodState =
         if (timePickerType == TimePickerType.HoursMinutesAmPm12H) {
@@ -194,7 +203,7 @@ public fun TimePicker(
         createDescription(
             context,
             selectedElement,
-            hourState.selectedOptionIndex + localeConfig.hourValueOffset,
+            hourState?.run { selectedOptionIndex + localeConfig.hourValueOffset } ?: 0,
             hourString,
             Plurals.TimePickerHoursContentDescription,
         )
@@ -265,9 +274,9 @@ public fun TimePicker(
                         FocusableElement.Hour -> hourString
                         FocusableElement.Minute -> minuteString
                         FocusableElement.Second -> secondString
-                        FocusableElement.Period -> ""
-                        else ->
+                        FocusableElement.None ->
                             if (touchExplorationServicesEnabled) instructionHeadingString else ""
+                        else -> ""
                     }
 
                 FadeLabel(
@@ -307,24 +316,21 @@ public fun TimePicker(
             }
             EdgeButton(
                 onClick = {
+                    val timeWithoutPeriod =
+                        LocalTime.of(
+                            hourState?.run { selectedOptionIndex + localeConfig.hourValueOffset }
+                                ?: 0,
+                            minuteState.selectedOptionIndex,
+                            secondState?.selectedOptionIndex ?: 0,
+                        )
                     val confirmedTime =
                         if (localeConfig.is12hour) {
-                            LocalTime.of(
-                                    hourState.selectedOptionIndex + localeConfig.hourValueOffset,
-                                    minuteState.selectedOptionIndex,
-                                    0,
-                                )
-                                .with(
-                                    ChronoField.AMPM_OF_DAY,
-                                    (periodState?.selectedOptionIndex ?: 0).toLong(),
-                                )
-                        } else {
-                            LocalTime.of(
-                                hourState.selectedOptionIndex + localeConfig.hourValueOffset,
-                                minuteState.selectedOptionIndex,
-                                secondState?.selectedOptionIndex ?: 0,
+                            timeWithoutPeriod.with(
+                                ChronoField.AMPM_OF_DAY,
+                                (periodState?.selectedOptionIndex ?: 0).toLong(),
                             )
-                        }
+                        } else timeWithoutPeriod
+
                     onTimePicked(confirmedTime)
                 },
                 modifier =
@@ -365,6 +371,8 @@ public value class TimePickerType internal constructor(internal val value: Int) 
         public val HoursMinutesSeconds24H: TimePickerType = TimePickerType(1)
         /** Displays three columns for hours (12-hour format), minutes and AM/PM label. */
         public val HoursMinutesAmPm12H: TimePickerType = TimePickerType(2)
+        /** Displays two columns for minutes and seconds */
+        public val MinutesSeconds: TimePickerType = TimePickerType(3)
     }
 
     override fun toString(): String =
@@ -372,6 +380,7 @@ public value class TimePickerType internal constructor(internal val value: Int) 
             HoursMinutes24H -> "HoursMinutes24H"
             HoursMinutesSeconds24H -> "HoursMinutesSeconds24H"
             HoursMinutesAmPm12H -> "HoursMinutesAmPm12H"
+            MinutesSeconds -> "MinutesSeconds"
             else -> "Unknown"
         }
 }
@@ -522,7 +531,7 @@ public class TimePickerColors(
 private fun ColumnScope.TimePickerContent(
     selectedElement: FocusableElement,
     onPickerSelected: (FocusableElement) -> Unit,
-    hourState: PickerState,
+    hourState: PickerState?,
     minuteState: PickerState,
     secondState: PickerState?,
     periodState: PickerState?,
@@ -600,22 +609,26 @@ private fun ColumnScope.TimePickerContent(
                                         is TimePatternPart.ComponentPart -> {
                                             when (part.component) {
                                                 FocusableElement.Hour ->
-                                                    HourPicker(
-                                                        hourState = hourState,
-                                                        selected =
-                                                            selectedElement ==
-                                                                FocusableElement.Hour,
-                                                        onSelected = {
-                                                            onPickerSelected(FocusableElement.Hour)
-                                                        },
-                                                        contentDescription =
-                                                            hoursContentDescription,
-                                                        hourValueOffset =
-                                                            localeConfig.hourValueOffset,
-                                                        layoutConfig = layoutConfig,
-                                                        colors = colors,
-                                                        locale = localeConfig.locale,
-                                                    )
+                                                    if (hourState != null) {
+                                                        HourPicker(
+                                                            hourState = hourState,
+                                                            selected =
+                                                                selectedElement ==
+                                                                    FocusableElement.Hour,
+                                                            onSelected = {
+                                                                onPickerSelected(
+                                                                    FocusableElement.Hour
+                                                                )
+                                                            },
+                                                            contentDescription =
+                                                                hoursContentDescription,
+                                                            hourValueOffset =
+                                                                localeConfig.hourValueOffset,
+                                                            layoutConfig = layoutConfig,
+                                                            colors = colors,
+                                                            locale = localeConfig.locale,
+                                                        )
+                                                    }
                                                 FocusableElement.Minute ->
                                                     MinutePicker(
                                                         minuteState = minuteState,
@@ -1056,6 +1069,7 @@ private class PickerLocaleConfig(val locale: Locale, val timePickerType: TimePic
         when (timePickerType) {
             TimePickerType.HoursMinutesAmPm12H -> "h:mm a"
             TimePickerType.HoursMinutesSeconds24H -> "H:mm:ss"
+            TimePickerType.MinutesSeconds -> "mm:ss"
             else -> "H:mm"
         }
 

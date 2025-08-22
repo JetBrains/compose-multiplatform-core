@@ -354,14 +354,31 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         contentView?.alpha = alpha
     }
 
-    internal fun closeClient() {
-        client?.close()
-        client = null
+    /**
+     * Schedules the client to close the UI session and release its resources.
+     *
+     * If [viewTreeObserver] is not set or is not alive, the UI session is closed immediately.
+     */
+    internal fun scheduleClientClose(viewTreeObserver: ViewTreeObserver? = this.viewTreeObserver) {
+        if (viewTreeObserver == null || !viewTreeObserver.isAlive) {
+            client?.close()
+            return
+        } else {
+            val clientScheduledForClose = this.client
+            CompatImpl.registerFrameCommitCallback(
+                viewTreeObserver,
+                { clientScheduledForClose?.close() },
+            )
+        }
+        this.client = null
         sessionData = null
     }
 
     private fun maybeAttachPoolingContainerListener() {
-        poolingContainerListenerDelegate.maybeAttachListener { closeClient() }
+        poolingContainerListenerDelegate.maybeAttachListener {
+            val viewTreeObserver = poolingContainerListenerDelegate.poolingContainerViewTreeObserver
+            scheduleClientClose(viewTreeObserver)
+        }
     }
 
     override fun onAttachedToWindow() {
@@ -374,9 +391,10 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         signalMeasurer?.resumeMeasuringIfNecessary()
     }
 
+    // TODO(b/421851884): add e2e tests to validate the session is closed on detach.
     override fun onDetachedFromWindow() {
-        if (!this.isWithinPoolingContainer && closeSessionOnWindowDetachment) {
-            closeClient()
+        if (closeSessionOnWindowDetachment && !this.isWithinPoolingContainer) {
+            scheduleClientClose()
         }
         signalMeasurer?.stopMeasuring()
         removeCallbacksOnWindowDetachment()

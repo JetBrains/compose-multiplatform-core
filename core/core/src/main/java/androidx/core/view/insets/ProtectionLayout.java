@@ -99,7 +99,6 @@ public class ProtectionLayout extends FrameLayout {
         mProtections.clear();
         mProtections.addAll(protections);
         if (isAttachedToWindow()) {
-            removeProtectionViews();
             addProtectionViews();
             requestApplyInsets();
         }
@@ -136,12 +135,6 @@ public class ProtectionLayout extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (mGroup != null) {
-            // This is a rare case that onAttachedToWindow might be called twice without an
-            // onDetachedFromWindow call in between. Here removes the existing ProtectionGroup, or
-            // the new ProtectionGroup will throw IllegalStateException.
-            removeProtectionViews();
-        }
         addProtectionViews();
         requestApplyInsets();
     }
@@ -155,9 +148,11 @@ public class ProtectionLayout extends FrameLayout {
 
     private void addProtectionViews() {
         if (mProtections.isEmpty()) {
+            removeProtectionViews();
             return;
         }
         final SystemBarStateMonitor monitor = getOrInstallSystemBarStateMonitor();
+        removeProtectionViews();
         mGroup = new ProtectionGroup(monitor, mProtections);
         final int nonProtectionChildCount = getChildCount();
         for (int i = 0, size = mGroup.size(); i < size; i++) {
@@ -220,7 +215,7 @@ public class ProtectionLayout extends FrameLayout {
         view.setTranslationX(attrs.getTranslationX());
         view.setTranslationY(attrs.getTranslationY());
         view.setAlpha(attrs.getAlpha());
-        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.INVISIBLE);
+        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.GONE);
         view.setBackground(attrs.getDrawable());
         final Protection.Attributes.Callback callback =
                 new Protection.Attributes.Callback() {
@@ -248,7 +243,7 @@ public class ProtectionLayout extends FrameLayout {
 
                     @Override
                     public void onVisibilityChanged(boolean visible) {
-                        view.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                        view.setVisibility(visible ? View.VISIBLE : View.GONE);
                     }
 
                     @Override

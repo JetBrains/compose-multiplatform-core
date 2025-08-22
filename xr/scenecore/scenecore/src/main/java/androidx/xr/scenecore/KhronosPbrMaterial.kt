@@ -66,12 +66,14 @@ internal constructor(
      * @param texture The [Texture] to be used as the base color texture. The texture parameter
      *   defines the diffuse albedo for non-metallic surfaces and the specular color for metallic
      *   surfaces, typically in sRGB color space.
+     * @param sampler The [TextureSampler] to be used when sampling the base color texture.
      */
     @MainThread
-    public fun setBaseColorTexture(texture: Texture) {
+    public fun setBaseColorTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setBaseColorTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -115,12 +117,14 @@ internal constructor(
      * @param texture The [Texture] to be used as the metallic-roughness texture. The texture
      *   typically uses its blue channel for metallic and green channel for roughness, in linear
      *   space.
+     * @param sampler The [TextureSampler] to be used when sampling the metallic-roughness texture.
      */
     @MainThread
-    public fun setMetallicRoughnessTexture(texture: Texture) {
+    public fun setMetallicRoughnessTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setMetallicRoughnessTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -177,12 +181,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the normal map. The texture provides normal
      *   information, typically in tangent space and linear color.
+     * @param sampler The [TextureSampler] to be used when sampling the normal texture.
      */
     @MainThread
-    public fun setNormalTexture(texture: Texture) {
+    public fun setNormalTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setNormalTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -226,12 +232,14 @@ internal constructor(
      * @param texture The [Texture] to be used as the ambient occlusion texture. The texture defines
      *   how much ambient light reaches surface points, typically using the red channel in linear
      *   space.
+     * @param sampler The [TextureSampler] to be used when sampling the ambient occlusion texture.
      */
     @MainThread
-    public fun setAmbientOcclusionTexture(texture: Texture) {
+    public fun setAmbientOcclusionTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setAmbientOcclusionTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -277,12 +285,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the emissive texture. The texture is typically in
      *   sRGB color space.
+     * @param sampler The [TextureSampler] to be used when sampling the emissive texture.
      */
     @MainThread
-    public fun setEmissiveTexture(texture: Texture) {
+    public fun setEmissiveTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setEmissiveTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -325,12 +335,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the clearcoat texture. The texture defines the
      *   clearcoat layer's strength, typically using the red channel in linear space.
+     * @param sampler The [TextureSampler] to be used when sampling the clearcoat texture.
      */
     @MainThread
-    public fun setClearcoatTexture(texture: Texture) {
+    public fun setClearcoatTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setClearcoatTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -342,12 +354,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the clearcoat normal texture. The texture provides
      *   surface normal details for the clearcoat, in tangent space and linear color.
+     * @param sampler The [TextureSampler] to be used when sampling the clearcoat normal texture.
      */
     @MainThread
-    public fun setClearcoatNormalTexture(texture: Texture) {
+    public fun setClearcoatNormalTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setClearcoatNormalTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -359,12 +373,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the clearcoat roughness texture. The texture
      *   defines the clearcoat layer's roughness, typically using the green channel in linear space.
+     * @param sampler The [TextureSampler] to be used when sampling the clearcoat roughness texture.
      */
     @MainThread
-    public fun setClearcoatRoughnessTexture(texture: Texture) {
+    public fun setClearcoatRoughnessTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -396,12 +412,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the sheen color texture. The texture defines the
      *   sheen layer's color, typically in sRGB.
+     * @param sampler The [TextureSampler] to be used when sampling the sheen color texture.
      */
     @MainThread
-    public fun setSheenColorTexture(texture: Texture) {
+    public fun setSheenColorTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setSheenColorTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -427,12 +445,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the sheen roughness texture. The texture defines
      *   the sheen layer's roughness, typically using the alpha channel in linear space.
+     * @param sampler The [TextureSampler] to be used when sampling the sheen roughness texture.
      */
     @MainThread
-    public fun setSheenRoughnessTexture(texture: Texture) {
+    public fun setSheenRoughnessTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setSheenRoughnessTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -461,12 +481,14 @@ internal constructor(
      *
      * @param texture The [Texture] to be used as the transmission texture. The texture typically
      *   uses the red channel for the transmission factor, in linear space.
+     * @param sampler The [TextureSampler] to be used when sampling the transmission texture.
      */
     @MainThread
-    public fun setTransmissionTexture(texture: Texture) {
+    public fun setTransmissionTexture(texture: Texture, sampler: TextureSampler) {
         session.platformAdapter.setTransmissionTextureOnKhronosPbrMaterial(
             materialResource,
             texture.texture,
+            sampler.toRtTextureSampler(),
         )
     }
 
@@ -546,8 +568,7 @@ internal constructor(
                 platformAdapter.createKhronosPbrMaterial(spec.toRtKhronosPbrMaterialSpec())
             val materialFuture = ResolvableFuture.create<KhronosPbrMaterial>()
 
-            // TODO: b/375070346 - remove this `!!` when we're sure the future is non-null.
-            materialResourceFuture!!.addListener(
+            materialResourceFuture.addListener(
                 {
                     try {
                         val material = materialResourceFuture.get()

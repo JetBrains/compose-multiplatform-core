@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -214,7 +214,7 @@ public final class ImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     public ListenableFuture<Long> loadImageBasedLightingAsset(
-            @NonNull byte[] data, @NonNull String key) {
+            byte @NonNull [] data, @NonNull String key) {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     // TODO: b/374216912 - Add a cancellationListener to the completer here when the
@@ -305,7 +305,7 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     @NonNull
-    public ListenableFuture<Long> loadGltfAsset(@NonNull byte[] data, @NonNull String key) {
+    public ListenableFuture<Long> loadGltfAsset(byte @NonNull [] data, @NonNull String key) {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     // TODO: b/374216912 - Add a cancellationListener to the completer here when the
@@ -567,8 +567,7 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     @NonNull
-    public ListenableFuture<Texture> loadTexture(
-            @NonNull String path, @NonNull TextureSampler sampler) {
+    public ListenableFuture<Texture> loadTexture(@NonNull String path) {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     // TODO: b/374216912 - Add a cancellationListener to the completer here when the
@@ -587,7 +586,6 @@ public final class ImpressApiImpl implements ImpressApi {
                                             new Texture.Builder()
                                                     .setImpressApi(ImpressApiImpl.this)
                                                     .setNativeTexture(value)
-                                                    .setTextureSampler(sampler)
                                                     .build();
                                     completer.set(texture);
                                 }
@@ -613,15 +611,7 @@ public final class ImpressApiImpl implements ImpressApi {
                                     completer.setCancelled();
                                 }
                             },
-                            path,
-                            sampler.getMinFilter(),
-                            sampler.getMagFilter(),
-                            sampler.getWrapModeS(),
-                            sampler.getWrapModeT(),
-                            sampler.getWrapModeR(),
-                            sampler.getCompareMode(),
-                            sampler.getCompareFunc(),
-                            sampler.getAnisotropyLog2());
+                            path);
                     return "LoadTexture Operation";
                 });
     }
@@ -698,14 +688,37 @@ public final class ImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setReflectionMapOnWaterMaterial(long nativeWaterMaterial, long reflectionMap) {
+    public void setReflectionMapOnWaterMaterial(
+            long nativeWaterMaterial, long reflectionMap, @NonNull TextureSampler sampler) {
         nSetReflectionMapOnWaterMaterial(
-                getViewNativeHandle(view), nativeWaterMaterial, reflectionMap);
+                getViewNativeHandle(view),
+                nativeWaterMaterial,
+                reflectionMap,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
-    public void setNormalMapOnWaterMaterial(long nativeWaterMaterial, long normalMap) {
-        nSetNormalMapOnWaterMaterial(getViewNativeHandle(view), nativeWaterMaterial, normalMap);
+    public void setNormalMapOnWaterMaterial(
+            long nativeWaterMaterial, long normalMap, @NonNull TextureSampler sampler) {
+        nSetNormalMapOnWaterMaterial(
+                getViewNativeHandle(view),
+                nativeWaterMaterial,
+                normalMap,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -727,8 +740,20 @@ public final class ImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setAlphaMapOnWaterMaterial(long nativeWaterMaterial, long alphaMap) {
-        nSetAlphaMapOnWaterMaterial(getViewNativeHandle(view), nativeWaterMaterial, alphaMap);
+    public void setAlphaMapOnWaterMaterial(
+            long nativeWaterMaterial, long alphaMap, @NonNull TextureSampler sampler) {
+        nSetAlphaMapOnWaterMaterial(
+                getViewNativeHandle(view),
+                nativeWaterMaterial,
+                alphaMap,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -810,9 +835,19 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setBaseColorTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long baseColorTexture) {
+            long nativeKhronosPbrMaterial, long baseColorTexture, @NonNull TextureSampler sampler) {
         nSetBaseColorTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, baseColorTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                baseColorTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -850,9 +885,21 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setMetallicRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long metallicRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long metallicRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         nSetMetallicRoughnessTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, metallicRoughnessTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                metallicRoughnessTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -896,9 +943,19 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setNormalTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long normalTexture) {
+            long nativeKhronosPbrMaterial, long normalTexture, @NonNull TextureSampler sampler) {
         nSetNormalTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, normalTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                normalTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -935,9 +992,21 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setAmbientOcclusionTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long ambientOcclusionTexture) {
+            long nativeKhronosPbrMaterial,
+            long ambientOcclusionTexture,
+            @NonNull TextureSampler sampler) {
         nSetAmbientOcclusionTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, ambientOcclusionTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                ambientOcclusionTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -975,9 +1044,19 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setEmissiveTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long emissiveTexture) {
+            long nativeKhronosPbrMaterial, long emissiveTexture, @NonNull TextureSampler sampler) {
         nSetEmissiveTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, emissiveTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                emissiveTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -1015,23 +1094,57 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setClearcoatTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatTexture) {
+            long nativeKhronosPbrMaterial, long clearcoatTexture, @NonNull TextureSampler sampler) {
         nSetClearcoatTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, clearcoatTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                clearcoatTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
     public void setClearcoatNormalTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatNormalTexture) {
+            long nativeKhronosPbrMaterial,
+            long clearcoatNormalTexture,
+            @NonNull TextureSampler sampler) {
         nSetClearcoatNormalTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, clearcoatNormalTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                clearcoatNormalTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
     public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long clearcoatRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long clearcoatRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         nSetClearcoatRoughnessTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, clearcoatRoughnessTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                clearcoatRoughnessTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -1043,9 +1156,21 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setSheenColorTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long sheenColorTexture) {
+            long nativeKhronosPbrMaterial,
+            long sheenColorTexture,
+            @NonNull TextureSampler sampler) {
         nSetSheenColorTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, sheenColorTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                sheenColorTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -1057,9 +1182,21 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setSheenRoughnessTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long sheenRoughnessTexture) {
+            long nativeKhronosPbrMaterial,
+            long sheenRoughnessTexture,
+            @NonNull TextureSampler sampler) {
         nSetSheenRoughnessTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, sheenRoughnessTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                sheenRoughnessTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -1071,9 +1208,21 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setTransmissionTextureOnKhronosPbrMaterial(
-            long nativeKhronosPbrMaterial, long transmissionTexture) {
+            long nativeKhronosPbrMaterial,
+            long transmissionTexture,
+            @NonNull TextureSampler sampler) {
         nSetTransmissionTextureOnGenericMaterial(
-                getViewNativeHandle(view), nativeKhronosPbrMaterial, transmissionTexture);
+                getViewNativeHandle(view),
+                nativeKhronosPbrMaterial,
+                transmissionTexture,
+                sampler.getMinFilter(),
+                sampler.getMagFilter(),
+                sampler.getWrapModeS(),
+                sampler.getWrapModeT(),
+                sampler.getWrapModeR(),
+                sampler.getCompareMode(),
+                sampler.getCompareFunc(),
+                sampler.getAnisotropyLog2());
     }
 
     @Override
@@ -1234,18 +1383,7 @@ public final class ImpressApiImpl implements ImpressApi {
     private static native void nSetAuxiliaryAlphaMaskForStereoSurfaceEntity(
             long view, int panelImpressNode, long alphaMask);
 
-    private static native void nLoadTexture(
-            long view,
-            AssetLoader assetLoader,
-            String path,
-            int minFilter,
-            int magFilter,
-            int wrapModeS,
-            int wrapModeT,
-            int wrapModeR,
-            int compareMode,
-            int compareFunc,
-            int anisotropyLog2);
+    private static native void nLoadTexture(long view, AssetLoader assetLoader, String path);
 
     private static native long nBorrowReflectionTexture(long view);
 
@@ -1255,10 +1393,30 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, AssetLoader assetLoader, boolean isAlphaMapVersion);
 
     private static native void nSetReflectionMapOnWaterMaterial(
-            long view, long nativeWaterMaterial, long reflectionMap);
+            long view,
+            long nativeWaterMaterial,
+            long reflectionMap,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private static native void nSetNormalMapOnWaterMaterial(
-            long view, long nativeWaterMaterial, long normalMap);
+            long view,
+            long nativeWaterMaterial,
+            long normalMap,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private static native void nSetNormalTilingOnWaterMaterial(
             long view, long nativeWaterMaterial, float normalTiling);
@@ -1276,7 +1434,17 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeWaterMaterial, float alphaStepMultiplier);
 
     private static native void nSetAlphaMapOnWaterMaterial(
-            long view, long nativeWaterMaterial, long alphaMap);
+            long view,
+            long nativeWaterMaterial,
+            long alphaMap,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private static native void nSetNormalZOnWaterMaterial(
             long view, long nativeWaterMaterial, float normalZ);
@@ -1292,7 +1460,17 @@ public final class ImpressApiImpl implements ImpressApi {
             int doubleSidedMode);
 
     private native void nSetBaseColorTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long baseColorTexture);
+            long view,
+            long nativeGenericMaterial,
+            long baseColorTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetBaseColorUvTransformOnGenericMaterial(
             long view,
@@ -1311,7 +1489,17 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeGenericMaterial, float x, float y, float z, float w);
 
     private native void nSetMetallicRoughnessTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long metallicRoughnessTexture);
+            long view,
+            long nativeGenericMaterial,
+            long metallicRoughnessTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetMetallicRoughnessUvTransformOnGenericMaterial(
             long view,
@@ -1333,7 +1521,17 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeGenericMaterial, float factor);
 
     private native void nSetNormalTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long normalTexture);
+            long view,
+            long nativeGenericMaterial,
+            long normalTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetNormalUvTransformOnGenericMaterial(
             long view,
@@ -1352,7 +1550,17 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeGenericMaterial, float factor);
 
     private native void nSetAmbientOcclusionTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long ambientOcclusionTexture);
+            long view,
+            long nativeGenericMaterial,
+            long ambientOcclusionTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetAmbientOcclusionUvTransformOnGenericMaterial(
             long view,
@@ -1371,7 +1579,17 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeGenericMaterial, float factor);
 
     private native void nSetEmissiveTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long emissiveTexture);
+            long view,
+            long nativeGenericMaterial,
+            long emissiveTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetEmissiveUvTransformOnGenericMaterial(
             long view,
@@ -1390,31 +1608,91 @@ public final class ImpressApiImpl implements ImpressApi {
             long view, long nativeGenericMaterial, float x, float y, float z);
 
     private native void nSetClearcoatTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long clearcoatTexture);
+            long view,
+            long nativeGenericMaterial,
+            long clearcoatTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetClearcoatNormalTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long clearcoatNormalTexture);
+            long view,
+            long nativeGenericMaterial,
+            long clearcoatNormalTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetClearcoatRoughnessTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long clearcoatRoughnessTexture);
+            long view,
+            long nativeGenericMaterial,
+            long clearcoatRoughnessTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetClearcoatFactorsOnGenericMaterial(
             long view, long nativeGenericMaterial, float intensity, float roughness, float normal);
 
     private native void nSetSheenColorTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long sheenColorTexture);
+            long view,
+            long nativeGenericMaterial,
+            long sheenColorTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetSheenColorFactorsOnGenericMaterial(
             long view, long nativeGenericMaterial, float x, float y, float z);
 
     private native void nSetSheenRoughnessTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long sheenRoughnessTexture);
+            long view,
+            long nativeGenericMaterial,
+            long sheenRoughnessTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetSheenRoughnessFactorOnGenericMaterial(
             long view, long nativeGenericMaterial, float factor);
 
     private native void nSetTransmissionTextureOnGenericMaterial(
-            long view, long nativeGenericMaterial, long transmissionTexture);
+            long view,
+            long nativeGenericMaterial,
+            long transmissionTexture,
+            int minFilter,
+            int magFilter,
+            int wrapModeS,
+            int wrapModeT,
+            int wrapModeR,
+            int compareMode,
+            int compareFunc,
+            int anisotropyLog2);
 
     private native void nSetTransmissionUvTransformOnGenericMaterial(
             long view,

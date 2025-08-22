@@ -55,6 +55,8 @@ package androidx.sqlite {
     method public boolean step();
   }
 
+  public typealias SQLiteException = android.database.SQLException;
+
 }
 
 package androidx.sqlite.db {

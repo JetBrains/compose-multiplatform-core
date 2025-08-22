@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -57,7 +58,6 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
@@ -148,14 +148,16 @@ class MovablePanelApp : ComponentActivity() {
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
-                        modifier = SubspaceModifier.width(200.dp).height(200.dp).movable()
+                        modifier = SubspaceModifier.width(200.dp).height(200.dp),
+                        dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE]")
                     }
 
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
-                        modifier = SubspaceModifier.width(200.dp).height(200.dp).movable()
+                        modifier = SubspaceModifier.width(200.dp).height(200.dp),
+                        dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE]")
                     }
@@ -178,8 +180,10 @@ class MovablePanelApp : ComponentActivity() {
                             SubspaceModifier.offset(xValueMovable, yValueMovable, zValueMovable)
                                 .width(panelWidth)
                                 .height(200.dp)
-                                .rotate(rotateValueMovable)
-                                .movable { poseChangeEvent ->
+                                .rotate(rotateValueMovable),
+                        dragPolicy =
+                            MovePolicy(
+                                onMove = { poseChangeEvent ->
                                     with(density) {
                                         xValueMovable = poseChangeEvent.pose.translation.x.toDp()
                                         yValueMovable = poseChangeEvent.pose.translation.y.toDp()
@@ -187,8 +191,9 @@ class MovablePanelApp : ComponentActivity() {
                                         rotateValueMovable = poseChangeEvent.pose.rotation
                                         true // This true is to indicate that the callback will
                                         // handle the moving of the
-                                    } // panel.
+                                    }
                                 }
+                            ),
                     ) {
                         PanelContent("[MOVABLE WITH CUSTOM LISTENER]")
                     }
@@ -197,8 +202,8 @@ class MovablePanelApp : ComponentActivity() {
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
-                                .height(panelHeight)
-                                .movable(true)
+                                .height(panelHeight),
+                        dragPolicy = MovePolicy(true),
                     )
                 }
                 SpatialColumn(
@@ -220,8 +225,8 @@ class MovablePanelApp : ComponentActivity() {
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
                                 .height(200.dp)
-                                .movable(true)
                                 .testTag("ActivityPanel"),
+                        dragPolicy = MovePolicy(true),
                     )
                 }
             }

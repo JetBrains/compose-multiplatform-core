@@ -113,6 +113,7 @@ androidXMultiplatform {
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
+                implementation(project(":internal-testutils-navigation"))
 
                 // Compose test dependencies
                 implementation(project(":compose:animation:animation"))
@@ -130,9 +131,7 @@ androidXMultiplatform {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:ui:ui-tooling"))
-                implementation(project(":internal-testutils-navigation"), {
-                    exclude group: "androidx.navigation", module: "navigation-common"
-                })
+                implementation(project(":internal-testutils-navigation"))
             }
         }
 

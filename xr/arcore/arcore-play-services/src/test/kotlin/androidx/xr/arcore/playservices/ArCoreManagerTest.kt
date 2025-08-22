@@ -33,11 +33,13 @@ import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedEx
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
+import com.google.ar.core.Camera
 import com.google.ar.core.CameraConfig
 import com.google.ar.core.Config as ArConfig
 import com.google.ar.core.Config.PlaneFindingMode
 import com.google.ar.core.Config.TextureUpdateMode
 import com.google.ar.core.Frame
+import com.google.ar.core.Pose as ARCorePose
 import com.google.ar.core.Session
 import com.google.ar.core.exceptions.FineLocationPermissionNotGrantedException
 import com.google.ar.core.exceptions.GooglePlayServicesLocationLibraryNotLinkedException as ARCore1xGooglePlayServicesLocationLibraryNotLinkedException
@@ -68,6 +70,8 @@ import org.mockito.kotlin.whenever
 class ArCoreManagerTest {
 
     private lateinit var mockSession: Session
+    private lateinit var mockCamera: Camera
+    private lateinit var mockCameraPose: ARCorePose
 
     private val timeSource = ArCoreTimeSource()
 
@@ -90,6 +94,9 @@ class ArCoreManagerTest {
         }
 
         mockSession = mock<Session>()
+        mockCamera = mock<Camera>()
+        mockCameraPose = mock<ARCorePose>()
+        whenever(mockCamera.pose).thenReturn(mockCameraPose)
     }
 
     @Test
@@ -260,6 +267,7 @@ class ArCoreManagerTest {
     fun update_updatesPerceptionManager() {
         val mockFrame = mock<Frame>()
         val mockCameraConfig = mock<CameraConfig>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)
         whenever(mockCameraConfig.fpsRange).thenReturn(Range(MIN_FPS, MAX_FPS))
@@ -284,6 +292,8 @@ class ArCoreManagerTest {
         val secondTimestampNs = 2000L
         whenever(mockFrame1.timestamp).thenReturn(firstTimestampNs)
         whenever(mockFrame2.timestamp).thenReturn(secondTimestampNs)
+        whenever(mockFrame1.camera).thenReturn(mockCamera)
+        whenever(mockFrame2.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame1, mockFrame2)
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)
         whenever(mockCameraConfig.fpsRange).thenReturn(Range(MIN_FPS, MAX_FPS))
@@ -303,6 +313,7 @@ class ArCoreManagerTest {
     @Test
     fun update_delaysForExpectedTimeBetweenFrames() {
         val mockFrame = mock<Frame>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
         val mockCameraConfig = mock<CameraConfig>()
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)

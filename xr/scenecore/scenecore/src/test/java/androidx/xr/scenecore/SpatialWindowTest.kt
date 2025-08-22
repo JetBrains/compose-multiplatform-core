@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -33,8 +33,8 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SpatialWindowTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activityController = Robolectric.buildActivity(Activity::class.java)
-    private val activity: Activity = activityController.create().start().get()
+    private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+    private val activity = activityController.create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
 

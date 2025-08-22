@@ -98,21 +98,19 @@ apply(plugin: "com.android.settings")
 
 apply(from: "buildSrc/ndk.gradle")
 
-def BUILD_NUMBER = System.getenv("BUILD_NUMBER")
+def buildNumberProvider = providers.environmentVariable("BUILD_NUMBER").orElse("unset")
 develocity {
     server = "https://ge.androidx.dev"
 
     buildScan {
         capture {
             fileFingerprints.set(true)
+            buildLogging.set(false)
+            testLogging.set(false)
         }
         obfuscation {
             hostname { host -> "unset" }
             ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0"} }
-        }
-        if (BUILD_NUMBER != null) {
-            value("BUILD_NUMBER", BUILD_NUMBER)
-            link("ci.android.com build", "https://ci.android.com/builds/branches/aosp-androidx-main/grid?head=$BUILD_NUMBER&tail=$BUILD_NUMBER")
         }
         value("androidx.projects", getRequestedProjectSubsetName() ?: "Unset")
         value("androidx.useMaxDepVersions", providers.gradleProperty("androidx.useMaxDepVersions").isPresent().toString())
@@ -120,9 +118,20 @@ develocity {
         // Do not publish scan for androidx-platform-dev
         publishing.onlyIf { it.authenticated }
     }
+
+    // TODO(https://github.com/gradle/gradle/issues/34584): Avoid setting buildFinished via Gradle magic:
+    //  buildScan {  buildFinished {  buildScan.value("X", "Y") } }
+    //  as it fails on uploading scans if the config cache is resued and only the BUILD_NUMBER changes
+    //  Use alternative below:
+    def buildScanConfig = buildScan
+    buildScanConfig.buildFinished {
+        buildScanConfig.value("BUILD_NUMBER", buildNumberProvider.get())
+        buildScanConfig.link("ci.android.com build", "https://ci.android.com/builds/branches/aosp-androidx-main/grid?head=${buildNumberProvider.get()}&tail=${buildNumberProvider.get()}")
+    }
 }
 
 def cacheSetting = System.getenv("USE_ANDROIDX_REMOTE_BUILD_CACHE")
+def pushSetting = providers.environmentVariable("IS_POSTSUBMIT")
 switch (cacheSetting) {
     case ["true", "gcp"]:
         settings.buildCache {
@@ -137,7 +146,8 @@ switch (cacheSetting) {
                 messageOnAuthenticationFailure = "Your GCP Credentials have expired.\n" +
                         "Please regenerate credentials following the steps below and try again:\n" +
                         "gcloud auth application-default login --project androidx-ge"
-                push = (BUILD_NUMBER != null && !BUILD_NUMBER.startsWith("P"))
+                //TODO(https://github.com/gradle/gradle/issues/34578): Move to lazy API when supported
+                push = pushSetting.map { it.toBoolean() }.getOrElse(false)
             }
         }
         break
@@ -598,7 +608,9 @@ includeProject(":compose:remote:remote-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-view", [BuildType.MAIN])
+includeProject(":compose:remote:remote-player-compose", [BuildType.MAIN])
 includeProject(":compose:remote:remote-frontend", [BuildType.MAIN])
+includeProject(":compose:remote:remote-foundation", [BuildType.MAIN])
 includeProject(":compose:remote:test-utils", [BuildType.MAIN])
 includeProject(":compose:runtime:runtime", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation", [BuildType.COMPOSE, BuildType.KMP])
@@ -797,6 +809,7 @@ includeProject(":glance:glance-material3", [BuildType.GLANCE])
 includeProject(":glance:glance-testing", [BuildType.GLANCE])
 includeProject(":glance:glance-wear-tiles:integration-tests:demos", [BuildType.GLANCE])
 includeProject(":glance:glance-wear-tiles", [BuildType.GLANCE])
+includeProject(":glance:wear:wear", [BuildType.GLANCE])
 includeProject(":graphics:filters:filters", [BuildType.MAIN])
 includeProject(":graphics:graphics-core:graphics-core-samples", "graphics/graphics-core/samples", [BuildType.MAIN])
 includeProject(":graphics:graphics-path", [BuildType.MAIN, BuildType.COMPOSE])
@@ -897,6 +910,7 @@ includeProject(":metrics:metrics-integration-tests", "metrics/integration-tests"
 includeProject(":metrics:metrics-integration-tests:janktest", "metrics/integration-tests/janktest", [BuildType.MAIN])
 includeProject(":navigationevent:navigationevent", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":navigationevent:navigationevent-compose", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
+includeProject(":navigationevent:navigationevent-samples", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":navigationevent:navigationevent-testing", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":navigation:navigation-benchmark", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":navigation:navigation-common", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE, BuildType.KMP])
@@ -1229,9 +1243,10 @@ includeProject(":work:work-rxjava3", [BuildType.MAIN])
 includeProject(":work:work-testing", [BuildType.MAIN])
 includeProject(":xr:arcore:arcore", [BuildType.XR])
 includeProject(":xr:arcore:arcore-guava", [BuildType.XR])
+includeProject(":xr:arcore:arcore-openxr", [BuildType.XR])
 includeProject(":xr:arcore:arcore-play-services", [BuildType.XR])
 includeProject(":xr:arcore:arcore-rxjava3", [BuildType.XR])
-includeProject(":xr:arcore:integration-tests:whitebox", [BuildType.XR])
+includeProject(":xr:arcore:integration-tests:whitebox-mobile", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:projected-testapp", [BuildType.XR])
 includeProject(":xr:arcore:arcore-projected", [BuildType.XR])
@@ -1280,27 +1295,11 @@ includeProject(":xr:scenecore:scenecore-guava", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-spatial-core", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-spatial-rendering", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-testing", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:activitypanel", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:anchortest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:commontestview", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:environmenttest", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:fieldofviewvisibility", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:fsm-hsm-transition", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:headlocked-ui", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:hittest", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:inputmoveresize", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:movable", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:panelroundedcorner", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:spatialaudiotest", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:spatialcapabilities", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:spatialuser", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:splitenginetest", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:standalone", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:svxr-example", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:transformationtests", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:videoplayertest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:videoplayerdrmtest", [BuildType.XR])
-includeProject(":xr:scenecore:integration-tests:visibilitytest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:testapp", [BuildType.XR])
 
 /////////////////////////////

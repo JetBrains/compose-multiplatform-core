@@ -214,7 +214,9 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 val group = project.group.toString()
                 val artifactId = variant.artifactId
                 task.outputFile.set(
-                    File(project.getBuildInfoDirectory(), "${group}_${artifactId}_build_info.txt")
+                    project.getBuildInfoDirectory().map {
+                        it.file("${group}_${artifactId}_build_info.txt")
+                    }
                 )
                 task.artifactId.set(artifactId)
                 task.groupId.set(group)

@@ -33,9 +33,9 @@ internal const val ANNOTATION_VIEW_SQUARE_TRANSLATED = "annotation_view_square_t
 internal const val ANNOTATION_VIEW_SQUARE_SCALED = "annotation_view_square_scaled"
 internal const val ANNOTATION_VIEW_SQUARE_COMBINED_TRANSFORM =
     "annotation_view_square_combined_transform"
-internal const val ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_NO_TRANSFORM =
-    "annotation_view_multiple_shapes_same_page_no_transform"
-internal const val ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_SHARED_TRANSFORM =
-    "annotation_view_multiple_shapes_same_page_shared_transform"
+internal const val ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_NO_TRANSFORM =
+    "annotation_view_multiple_squares_same_page_no_transform"
+internal const val ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_SHARED_TRANSFORM =
+    "annotation_view_multiple_squares_same_page_shared_transform"
 internal const val ANNOTATION_VIEW_MULTI_PAGE_DIFFERENT_TRANSFORMS =
     "annotation_view_multi_page_different_transforms"
