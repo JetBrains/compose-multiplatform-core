@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.testing
+package androidx.compose.ui
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmName
 
-internal actual fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T =
-    runBlocking(context = dispatcher) { block() }
+internal object SkikoComposeUiFlags {
+    @Suppress("MutableBareField")
+    @JvmField
+    var useLegacyRenderNodeLayers: Boolean = false
+}
+
+/**
+ * Use legacy (pre 1.8) render node layers for cases without
+ * [androidx.compose.ui.graphics.layer.GraphicsLayer]. `false` by default.
+ *
+ * Note that it's a temporary flag for compatibility purposes, it will be removed in the future.
+ */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.useLegacyRenderNodeLayers by SkikoComposeUiFlags::useLegacyRenderNodeLayers
