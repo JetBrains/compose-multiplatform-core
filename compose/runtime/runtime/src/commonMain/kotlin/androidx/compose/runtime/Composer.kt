@@ -3249,7 +3249,7 @@ internal class ComposerImpl(
             val callback = shouldPauseCallback ?: return true
             val scope = currentRecomposeScope ?: return true
             val pausing = callback.shouldPause()
-            if (pausing) {
+            if (pausing && !scope.resuming) {
                 scope.used = true
                 // Force the composer back into the reusing state when this scope restarts.
                 scope.reusing = reusing

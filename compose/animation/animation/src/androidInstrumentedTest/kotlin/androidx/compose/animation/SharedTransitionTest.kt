@@ -3443,6 +3443,93 @@ class SharedTransitionTest {
             assert(position1!!.y <= 81f)
         }
     }
+
+    @Test
+    fun NewlyAddedSharedElementWithCallerManagedVisibilityTriggersAnimation() {
+        var state by mutableStateOf(State.Start)
+        val targetSizes = mutableListOf<IntSize>()
+        val initialSizes = mutableListOf<IntSize>()
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+                    AnimatedContent(modifier = Modifier.fillMaxSize(), targetState = state) {
+                        currentState ->
+                        when (currentState) {
+                            State.Start ->
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    Box(
+                                        modifier =
+                                            Modifier.align(Alignment.TopEnd)
+                                                .sharedElementWithCallerManagedVisibility(
+                                                    sharedContentState =
+                                                        rememberSharedContentState(
+                                                            State
+                                                                .SharedElementWithUserManagedVisibility
+                                                        ),
+                                                    visible =
+                                                        transition.targetState ==
+                                                            EnterExitState.Visible,
+                                                    boundsTransform =
+                                                        BoundsTransform { _, _ ->
+                                                            tween(160, easing = LinearEasing)
+                                                        },
+                                                )
+                                                .onGloballyPositioned { initialSizes.add(it.size) }
+                                                .background(Color.Blue)
+                                                .size(60.dp)
+                                    )
+                                }
+
+                            State.SharedElementWithUserManagedVisibility ->
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    Box(
+                                        modifier =
+                                            Modifier.sharedElementWithCallerManagedVisibility(
+                                                    sharedContentState =
+                                                        rememberSharedContentState(
+                                                            State
+                                                                .SharedElementWithUserManagedVisibility
+                                                        ),
+                                                    visible =
+                                                        transition.targetState ==
+                                                            EnterExitState.Visible,
+                                                    boundsTransform =
+                                                        BoundsTransform { _, _ ->
+                                                            tween(160, easing = LinearEasing)
+                                                        },
+                                                )
+                                                .onGloballyPositioned { targetSizes.add(it.size) }
+                                                .background(Color.Blue)
+                                                .size(160.dp)
+                                    )
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        rule.runOnIdle { state = State.SharedElementWithUserManagedVisibility }
+        rule.waitForIdle()
+
+        // Check sizes
+        val start = targetSizes.indexOfFirst { it.width > 60 } - 1
+        for (i in start until targetSizes.size) {
+            val frameCount = i - start
+            if (frameCount <= 10) {
+                assertEquals(IntSize(60 + frameCount * 10, 60 + frameCount * 10), targetSizes[i])
+            }
+        }
+        /// Assert that all 10 frames are run.
+        assertTrue(targetSizes.size - start > 10)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+    }
+
+    private enum class State {
+        Start,
+        SharedElementWithUserManagedVisibility,
+    }
 }
 
 private fun assertEquals(a: IntSize, b: IntSize, delta: IntSize) {
