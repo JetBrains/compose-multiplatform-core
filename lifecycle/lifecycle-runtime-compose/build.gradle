@@ -62,7 +62,7 @@ kotlin {
                 api(project(":annotation:annotation"))
                 implementation(project(":lifecycle:lifecycle-common"))
                 api project(":lifecycle:lifecycle-runtime")
-                api("org.jetbrains.compose.runtime:runtime:1.7.1")
+                api("org.jetbrains.compose.runtime:runtime:1.8.2")
 
                 implementation(libs.kotlinStdlib)
             }
