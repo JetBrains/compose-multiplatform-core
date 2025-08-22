@@ -929,7 +929,24 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                 @Suppress("UNCHECKED_CAST")
                                 val targetState = (visible as (Unit) -> Boolean).invoke(Unit)
                                 val transitionState =
-                                    remember { MutableTransitionState(initialState = targetState) }
+                                    remember {
+                                            val initialState =
+                                                if (sharedElement.states.isEmpty()) {
+                                                    targetState
+                                                } else {
+                                                    // If there's already shared elements of the
+                                                    // same key
+                                                    // already declared, we likely will need to
+                                                    // animate.
+                                                    // Hence, set the initial state to be different
+                                                    // than
+                                                    // target. If no animation is needed, this will
+                                                    // finish
+                                                    // right away.
+                                                    !targetState
+                                                }
+                                            MutableTransitionState(initialState = initialState)
+                                        }
                                         .also { it.targetState = targetState }
                                 rememberTransition(transitionState)
                             }
