@@ -25,6 +25,7 @@ import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
 import platform.UIKit.UITextContentType
+import platform.UIKit.UIView
 
 private class PlatformImeOptionsImpl(
     val keyboardType: UIKeyboardType?,
@@ -35,7 +36,8 @@ private class PlatformImeOptionsImpl(
     val enablesReturnKeyAutomatically: Boolean,
     val autocapitalizationType: UITextAutocapitalizationType?,
     val autocorrectionType: UITextAutocorrectionType?,
-    val hasExplicitTextContentType: Boolean
+    val hasExplicitTextContentType: Boolean,
+    val inputView: UIView?
 ): PlatformImeOptions()
 
 /**
@@ -52,6 +54,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var autocapitalizationType: UITextAutocapitalizationType? = null
     private var autocorrectionType: UITextAutocorrectionType? = null
     private var hasExplicitTextContentType: Boolean = false
+    private var inputView: UIView? = null
 
     /**
      * Sets the keyboard type to be used for the text input field.
@@ -139,6 +142,12 @@ class PlatformImeOptionsConfiguration internal constructor() {
         autocorrectionType = value
     }
 
+    // TODO add doc
+    @ExperimentalComposeUiApi
+    fun inputView(value: UIView?): PlatformImeOptionsConfiguration = apply {
+        inputView = value
+    }
+
     /**
      * Builds the final PlatformImeOptions instance with the configured values.
      */
@@ -152,7 +161,8 @@ class PlatformImeOptionsConfiguration internal constructor() {
             enablesReturnKeyAutomatically = enablesReturnKeyAutomatically,
             autocapitalizationType = autocapitalizationType,
             autocorrectionType = autocorrectionType,
-            hasExplicitTextContentType = hasExplicitTextContentType
+            hasExplicitTextContentType = hasExplicitTextContentType,
+            inputView = inputView,
         )
     }
 }
@@ -206,3 +216,7 @@ val PlatformImeOptions.autocorrectionType: UITextAutocorrectionType?
 @ExperimentalComposeUiApi
 val PlatformImeOptions.hasExplicitTextContentType: Boolean
     get() = (this as? PlatformImeOptionsImpl)?.hasExplicitTextContentType ?: false
+
+@ExperimentalComposeUiApi
+val PlatformImeOptions.inputView: UIView?
+    get() = (this as? PlatformImeOptionsImpl)?.inputView
