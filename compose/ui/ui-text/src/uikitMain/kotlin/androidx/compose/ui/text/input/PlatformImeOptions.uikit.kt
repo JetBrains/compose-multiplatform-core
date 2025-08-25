@@ -142,7 +142,12 @@ class PlatformImeOptionsConfiguration internal constructor() {
         autocorrectionType = value
     }
 
-    // TODO add doc
+    /**
+     * Sets a custom input view to be presented instead of the system keyboard when IME becomes first responder.
+     * Default value is `null`.
+     *
+     * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uiresponder/inputview)
+     */
     @ExperimentalComposeUiApi
     fun inputView(value: UIView?): PlatformImeOptionsConfiguration = apply {
         inputView = value
