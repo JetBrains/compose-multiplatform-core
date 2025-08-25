@@ -56,6 +56,7 @@ import platform.UIKit.UITextContentTypePassword
 import platform.UIKit.UITextContentTypeTelephoneNumber
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UIView
+import platform.UIKit.inputAccessoryView
 import platform.UIKit.inputView
 
 internal class ImeOptionsTest {
@@ -327,6 +328,7 @@ internal class ImeOptionsTest {
     fun testInputViewDefault() = runUIKitInstrumentedTest {
         val input = setContentAndFindInputView(keyboardOptions = KeyboardOptions.Default)
 
+        assertNull(input.inputAccessoryView)
         assertNull(input.inputView)
     }
 
@@ -339,7 +341,46 @@ internal class ImeOptionsTest {
             platformImeOptions = PlatformImeOptions { inputView(customInputView) }
         ))
 
+        assertNull(input.inputAccessoryView)
         assertSame(customInputView, input.inputView)
+    }
+
+    @Test
+    fun testInputAccessoryViewDefault() = runUIKitInstrumentedTest {
+        val input = setContentAndFindInputView(keyboardOptions = KeyboardOptions.Default)
+
+        assertNull(input.inputView)
+        assertNull(input.inputAccessoryView)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testInputAccessoryViewCustom() = runUIKitInstrumentedTest {
+        val customInputAccessoryView = object: UIView(frame = CGRectZero.readValue()) {}
+
+        val input = setContentAndFindInputView(keyboardOptions = KeyboardOptions(
+            platformImeOptions = PlatformImeOptions { inputAccessoryView(customInputAccessoryView) }
+        ))
+
+        assertNull(input.inputView)
+        assertSame(customInputAccessoryView, input.inputAccessoryView)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testInputAccessoryViewCustomAndInputViewCustom() = runUIKitInstrumentedTest {
+        val customInputView = object: UIInputView(frame = CGRectZero.readValue(), inputViewStyle = UIInputViewStyle.UIInputViewStyleKeyboard) {}
+        val customInputAccessoryView = object: UIView(frame = CGRectZero.readValue()) {}
+
+        val input = setContentAndFindInputView(keyboardOptions = KeyboardOptions(
+            platformImeOptions = PlatformImeOptions {
+                inputView(customInputView)
+                inputAccessoryView(customInputAccessoryView)
+            }
+        ))
+
+        assertSame(customInputView, input.inputView)
+        assertSame(customInputAccessoryView, input.inputAccessoryView)
     }
 
     private fun UIKitInstrumentedTest.setContentAndFindInputView(keyboardOptions: KeyboardOptions): UIView {
