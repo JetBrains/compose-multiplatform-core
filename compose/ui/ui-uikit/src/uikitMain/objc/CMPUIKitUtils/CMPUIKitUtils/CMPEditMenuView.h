@@ -48,4 +48,6 @@
 
 - (UIView*)inputView;
 
+- (UIView*)inputAccessoryView;
+
 @end
