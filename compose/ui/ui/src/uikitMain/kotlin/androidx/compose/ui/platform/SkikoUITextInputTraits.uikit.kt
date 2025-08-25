@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.autocapitalizationType
 import androidx.compose.ui.text.input.autocorrectionType
 import androidx.compose.ui.text.input.enablesReturnKeyAutomatically
 import androidx.compose.ui.text.input.hasExplicitTextContentType
+import androidx.compose.ui.text.input.inputAccessoryView
 import androidx.compose.ui.text.input.inputView
 import androidx.compose.ui.text.input.isSecureTextEntry
 import androidx.compose.ui.text.input.keyboardAppearance
@@ -75,6 +76,8 @@ internal interface SkikoUITextInputTraits {
         UITextAutocorrectionType.UITextAutocorrectionTypeYes
 
     fun inputView(): UIView? = null
+
+    fun inputAccessoryView(): UIView? = null
 }
 
 internal object EmptyInputTraits : SkikoUITextInputTraits
@@ -189,6 +192,10 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
 
         override fun inputView(): UIView? {
             return currentImeOptions?.platformImeOptions?.inputView
+        }
+
+        override fun inputAccessoryView(): UIView? {
+            return currentImeOptions?.platformImeOptions?.inputAccessoryView
         }
     }
 
