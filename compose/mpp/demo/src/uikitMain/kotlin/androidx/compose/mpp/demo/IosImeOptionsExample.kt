@@ -16,6 +16,7 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
@@ -31,6 +32,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PlatformImeOptions
+import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.readValue
+import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSSelectorFromString
+import platform.UIKit.NSLayoutConstraint
+import platform.UIKit.UIButton
+import platform.UIKit.UIColor
+import platform.UIKit.UIControlEventTouchUpInside
+import platform.UIKit.UIControlStateNormal
+import platform.UIKit.UIInputView
+import platform.UIKit.UIInputViewAudioFeedbackProtocol
+import platform.UIKit.UIInputViewStyle
 import platform.UIKit.UIKeyboardAppearanceDark
 import platform.UIKit.UIKeyboardAppearanceDefault
 import platform.UIKit.UIKeyboardAppearanceLight
@@ -46,6 +60,7 @@ import platform.UIKit.UIKeyboardTypeWebSearch
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
+import platform.UIKit.constraintEqualToSystemSpacingBelowAnchor
 
 private val keyboardTypes = listOf(
     "Default" to UIKeyboardTypeDefault,
@@ -163,6 +178,21 @@ private val IosImeOptionsAutocorrectionTypeExample = Screen.Example("Autocapital
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
+private val IosImeOptionsInputViewExample = Screen.Example("Input View") {
+    Column {
+        Item("Null Input View", PlatformImeOptions { inputView(null) })
+
+        val randomCharacterInput = rememberSaveable { mutableStateOf("") }
+        Item(
+            "Random Character Input View",
+            options = PlatformImeOptions { inputView(CustomActionInputView(action = { randomCharacterInput.value += ('a'..'z').random().toString() })) },
+            value = randomCharacterInput.value,
+            onValueChange = { randomCharacterInput.value = it }
+        )
+    }
+}
+
 val IosImeOptionsExample = Screen.Selection(
     "iOS Platform IME Options",
     IosImeOptionsKeyboardTypeExample,
@@ -171,7 +201,8 @@ val IosImeOptionsExample = Screen.Selection(
     IosImeOptionsIsSecureTextEntryExample,
     IosImeOptionsEnablesReturnKeyTypeAutomaticallyExample,
     IosImeOptionsAutocapitalizationTypeExample,
-    IosImeOptionsAutocorrectionTypeExample
+    IosImeOptionsAutocorrectionTypeExample,
+    IosImeOptionsInputViewExample,
 )
 
 @Composable
@@ -179,26 +210,63 @@ private fun Item(
     title: String,
     options: PlatformImeOptions
 ) {
+    val state = rememberSaveable { mutableStateOf("") }
     Text(title)
-    EditLine(options)
+    EditLine(options, value = state.value, onValueChange = { state.value = it })
+}
+
+@Composable
+private fun Item(
+    title: String,
+    options: PlatformImeOptions,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    Text(title)
+    EditLine(options, value = value, onValueChange = onValueChange)
 }
 
 @Composable
 private fun EditLine(
     options: PlatformImeOptions,
-    text: String = ""
+    value: String,
+    onValueChange: (String) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    val state = rememberSaveable { mutableStateOf(text) }
     BasicTextField(
         modifier = demoTextFieldModifiers,
-        value = state.value,
+        value = value,
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             platformImeOptions = options
         ),
         keyboardActions = KeyboardActions { keyboardController?.hide() },
-        onValueChange = { state.value = it },
+        onValueChange = onValueChange,
         textStyle = TextStyle(fontSize = fontSize8),
     )
+}
+
+private class CustomActionInputView(
+    val action: () -> Unit
+) : UIInputView(frame = CGRectMake(0.0, 0.0, 0.0, 300.0), inputViewStyle = UIInputViewStyle.UIInputViewStyleKeyboard), UIInputViewAudioFeedbackProtocol {
+    init {
+        val button = UIButton(frame = CGRectZero.readValue())
+        button.setTitle( "TAP", forState = UIControlStateNormal)
+        button.backgroundColor = UIColor.redColor
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(this, NSSelectorFromString(::handleTap.name), UIControlEventTouchUpInside)
+        addSubview(button)
+
+        NSLayoutConstraint.activateConstraints(listOf(
+            button.topAnchor.constraintEqualToSystemSpacingBelowAnchor(safeAreaLayoutGuide.topAnchor, multiplier = 1.0),
+            button.bottomAnchor.constraintEqualToAnchor(safeAreaLayoutGuide.bottomAnchor, constant = -10.0),
+            button.leftAnchor.constraintEqualToAnchor(leftAnchor, constant = 10.0),
+            button.rightAnchor.constraintEqualToAnchor(rightAnchor, constant = -10.0),
+        ))
+    }
+
+    @ObjCAction
+    fun handleTap() = action()
+
+    override fun enableInputClicksWhenVisible(): Boolean = true
 }
