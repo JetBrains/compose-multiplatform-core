@@ -372,15 +372,20 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
         semanticsOwnerListener = semanticsOwnerListener,
         coroutineDispatcher = testDispatcher
     ) {
-        semanticsOwnerListener.accessibilityControllers.forEach {
-            it.launchSyncLoop(testDispatcher)
+        try {
+            semanticsOwnerListener.accessibilityControllers.forEach {
+                it.launchSyncLoop(testDispatcher)
+            }
+            val scope = ComposeA11yTestScope(
+                test = this,
+                sceneAccessible = composeSceneAccessible
+            )
+            block(scope)
+        } finally {
+//            semanticsOwnerListener.accessibilityControllers.forEach {
+//                it.dispose()
+//            }
         }
-
-        val scope = ComposeA11yTestScope(
-            test = this,
-            sceneAccessible = composeSceneAccessible
-        )
-        block(scope)
     }
 }
 
