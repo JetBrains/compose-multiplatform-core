@@ -186,9 +186,15 @@ private val IosImeOptionsInputViewExample = Screen.Example("Input View") {
         val randomCharacterInput = rememberSaveable { mutableStateOf("") }
         Item(
             "Random Character Input View",
-            options = PlatformImeOptions { inputView(CustomActionInputView(action = { randomCharacterInput.value += ('a'..'z').random().toString() })) },
+            options = PlatformImeOptions { inputView(ActionInputView("Random Character", action = { randomCharacterInput.value += ('a'..'z').random().toString() })) },
             value = randomCharacterInput.value,
             onValueChange = { randomCharacterInput.value = it }
+        )
+
+        val keyboardController = LocalSoftwareKeyboardController.current
+        Item(
+            title = "Action Input Accessory View",
+            options = PlatformImeOptions { inputAccessoryView(ActionButton("Hide", action = { keyboardController?.hide() })) }
         )
     }
 }
@@ -246,15 +252,27 @@ private fun EditLine(
     )
 }
 
-private class CustomActionInputView(
+private class ActionButton(
+    title: String,
+    val action: () -> Unit
+): UIButton(frame = CGRectZero.readValue()) {
+    init {
+        setTitle(title, forState = UIControlStateNormal)
+        backgroundColor = UIColor.redColor
+        translatesAutoresizingMaskIntoConstraints = false
+        addTarget(this, NSSelectorFromString(::handleTap.name), UIControlEventTouchUpInside)
+    }
+
+    @ObjCAction
+    fun handleTap() = action()
+}
+
+private class ActionInputView(
+    title: String,
     val action: () -> Unit
 ) : UIInputView(frame = CGRectMake(0.0, 0.0, 0.0, 300.0), inputViewStyle = UIInputViewStyle.UIInputViewStyleKeyboard), UIInputViewAudioFeedbackProtocol {
     init {
-        val button = UIButton(frame = CGRectZero.readValue())
-        button.setTitle( "TAP", forState = UIControlStateNormal)
-        button.backgroundColor = UIColor.redColor
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(this, NSSelectorFromString(::handleTap.name), UIControlEventTouchUpInside)
+        val button = ActionButton(title, action)
         addSubview(button)
 
         NSLayoutConstraint.activateConstraints(listOf(
@@ -264,9 +282,6 @@ private class CustomActionInputView(
             button.rightAnchor.constraintEqualToAnchor(rightAnchor, constant = -10.0),
         ))
     }
-
-    @ObjCAction
-    fun handleTap() = action()
 
     override fun enableInputClicksWhenVisible(): Boolean = true
 }
