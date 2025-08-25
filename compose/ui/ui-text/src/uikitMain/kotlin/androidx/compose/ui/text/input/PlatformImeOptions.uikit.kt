@@ -37,7 +37,8 @@ private class PlatformImeOptionsImpl(
     val autocapitalizationType: UITextAutocapitalizationType?,
     val autocorrectionType: UITextAutocorrectionType?,
     val hasExplicitTextContentType: Boolean,
-    val inputView: UIView?
+    val inputView: UIView?,
+    val inputAccessoryView: UIView?,
 ): PlatformImeOptions()
 
 /**
@@ -55,7 +56,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var autocorrectionType: UITextAutocorrectionType? = null
     private var hasExplicitTextContentType: Boolean = false
     private var inputView: UIView? = null
-
+    private var inputAccessoryView: UIView? = null
     /**
      * Sets the keyboard type to be used for the text input field.
      * If not set, the value will be derived from [ImeOptions].
@@ -154,6 +155,17 @@ class PlatformImeOptionsConfiguration internal constructor() {
     }
 
     /**
+     * Sets a custom accessory view to be attached to system keyboard or custom [inputView] when IME becomes first responder.
+     * Default value is `null`.
+     *
+     * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uiresponder/inputaccessoryview)
+     */
+    @ExperimentalComposeUiApi
+    fun inputAccessoryView(value: UIView?): PlatformImeOptionsConfiguration = apply {
+        inputAccessoryView = value
+    }
+
+    /**
      * Builds the final PlatformImeOptions instance with the configured values.
      */
     internal fun build(): PlatformImeOptions {
@@ -168,6 +180,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
             autocorrectionType = autocorrectionType,
             hasExplicitTextContentType = hasExplicitTextContentType,
             inputView = inputView,
+            inputAccessoryView = inputAccessoryView,
         )
     }
 }
@@ -225,3 +238,7 @@ val PlatformImeOptions.hasExplicitTextContentType: Boolean
 @ExperimentalComposeUiApi
 val PlatformImeOptions.inputView: UIView?
     get() = (this as? PlatformImeOptionsImpl)?.inputView
+
+@ExperimentalComposeUiApi
+val PlatformImeOptions.inputAccessoryView: UIView?
+    get() = (this as? PlatformImeOptionsImpl)?.inputAccessoryView
