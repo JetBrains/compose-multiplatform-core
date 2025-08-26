@@ -318,7 +318,6 @@ COMPOSE_COMPILER = { group = "org.jetbrains.compose.compiler", atomicGroupVersio
 COMPOSE_DESKTOP = { group = "org.jetbrains.compose.desktop", atomicGroupVersion = "versions.COMPOSE" }
 COMPOSE_MATERIAL_NAVIGATION = { group = "org.jetbrains.compose.material", atomicGroupVersion = "versions.COMPOSE_MATERIAL_NAVIGATION", overrideInclude = [ ":compose:material:material-navigation" ] }
 
-PERFORMANCE_JETBRAINS = { group = "org.jetbrains.androidx.performance", atomicGroupVersion = "versions.PERFORMANCE", overrideInclude = [ ":performance:performance-annotation" ] }
 WINDOW_CORE_JETBRAINS = { group = "org.jetbrains.androidx.window", atomicGroupVersion = "versions.WINDOW", overrideInclude = [ ":window:window-core" ]  }
 
 [groups.LIFECYCLE_JETBRAINS]
