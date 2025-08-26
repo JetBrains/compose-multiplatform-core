@@ -107,39 +107,38 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Sync names: nonAndroidMain
-        jbMain {
+        nonAndroidMain {
             dependsOn(commonMain)
         }
 
-        jbTest {
+        nonAndroidTest {
             dependsOn(commonTest)
         }
 
         desktopMain {
             dependsOn(jvmMain)
-            dependsOn(jbMain)
+            dependsOn(nonAndroidMain)
         }
 
         desktopTest {
             dependsOn(jvmTest)
-            dependsOn(jbTest)
+            dependsOn(nonAndroidTest)
         }
 
         nativeMain {
-            dependsOn(jbMain)
+            dependsOn(nonAndroidMain)
         }
 
         nativeTest {
-            dependsOn(jbTest)
+            dependsOn(nonAndroidTest)
         }
 
         webMain {
-            dependsOn(jbMain)
+            dependsOn(nonAndroidMain)
         }
 
         webTest {
-            dependsOn(jbTest)
+            dependsOn(nonAndroidTest)
         }
 
         targets.configureEach { target ->
