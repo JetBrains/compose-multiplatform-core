@@ -423,15 +423,14 @@ internal class UIKitTextInputService(
         focusManager = { null }
     }
 
-    private fun hasFocusedViewInWindowHierarchy(): Boolean {
-        fun hasFocusedView(view: UIView): Boolean {
-            return if (view.isFirstResponder && view !is IntermediateTextInputUIView) {
-                true
-            } else {
-                view.subviews.any { it is UIView && hasFocusedView(it) }
+    private fun hasFocusedNonComposeInputViewInWindowHierarchy(): Boolean {
+        fun hasFocusedNonComposeInputView(view: UIView): Boolean {
+            if (view.isFirstResponder) {
+                return view !is IntermediateTextInputUIView
             }
+            return view.subviews.any { it is UIView && hasFocusedNonComposeInputView(it) }
         }
-        return view.window?.let { hasFocusedView(it) } ?: false
+        return view.window?.let { hasFocusedNonComposeInputView(it) } ?: false
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {
@@ -441,7 +440,7 @@ internal class UIKitTextInputService(
         override fun onResignFocus() {
             textInputServiceInvalidationsCount++
             mainScope.launch {
-                if (hasFocusedViewInWindowHierarchy()) {
+                if (hasFocusedNonComposeInputViewInWindowHierarchy()) {
                     focusManager()?.releaseFocus()
                 }
                 textInputServiceInvalidationsCount--
