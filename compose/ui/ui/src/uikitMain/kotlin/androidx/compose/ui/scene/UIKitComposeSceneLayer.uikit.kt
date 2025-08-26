@@ -59,7 +59,7 @@ internal class UIKitComposeSceneLayer(
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
-    focusedViewsList: FocusedViewsList?,
+    private val focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
@@ -96,10 +96,10 @@ internal class UIKitComposeSceneLayer(
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher,
-        isLayer = true,
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
+        focusedViewsList?.addAndFocus(it.inputView)
     }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =
@@ -162,6 +162,8 @@ internal class UIKitComposeSceneLayer(
     fun prepareAndGetSizeTransitionAnimation() = mediator.prepareAndGetSizeTransitionAnimation()
 
     override fun close() {
+        focusedViewsList?.remove(mediator.inputView)
+
         onClosed(this)
 
         dispose()

@@ -440,7 +440,7 @@ internal class UIKitTextInputService(
         override fun onResignFocus() {
             textInputServiceInvalidationsCount++
             mainScope.launch {
-                if (hasFocusedNonComposeInputViewInWindowHierarchy()) {
+                if (textUIView != null && hasFocusedNonComposeInputViewInWindowHierarchy()) {
                     focusManager()?.releaseFocus()
                 }
                 textInputServiceInvalidationsCount--

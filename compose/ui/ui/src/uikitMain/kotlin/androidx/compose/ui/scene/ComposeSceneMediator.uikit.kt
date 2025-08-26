@@ -189,7 +189,6 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
-    private val isLayer: Boolean,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
@@ -527,10 +526,6 @@ internal class ComposeSceneMediator(
 
     fun setContent(content: @Composable () -> Unit) {
         _overlayView.runOnceOnAppeared {
-            if (isLayer) {
-                focusedViewsList?.addAndFocus(userInputView)
-            }
-
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
                     FocusAboveKeyboardIfNeeded {
@@ -623,9 +618,6 @@ internal class ComposeSceneMediator(
         _overlayView.dispose()
         textInputService.stopInput()
         applicationForegroundStateListener.dispose()
-        if (isLayer) {
-            focusedViewsList?.remove(userInputView)
-        }
         keyboardManager.dispose()
         userInputView.dispose()
 
