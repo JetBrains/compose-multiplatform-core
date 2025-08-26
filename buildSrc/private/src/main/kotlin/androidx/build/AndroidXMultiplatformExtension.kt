@@ -312,7 +312,7 @@ open class AndroidXMultiplatformExtension(val project: Project) {
     fun wasm(
         block: Action<KotlinJsBrowserDsl>? = null
     ): KotlinJsTargetDsl? {
-        requestedPlatforms.add(PlatformIdentifier.WASM)
+        requestedPlatforms.add(PlatformIdentifier.WASM_JS)
         return if (project.enableWasm()) {
             kotlinExtension.wasmJs().also {
                 it.browser {
