@@ -236,7 +236,6 @@ includeProject(":kruth:kruth")
 includeProject(":lint-checks")
 includeProject(":lint-checks:integration-tests")
 
-includeProject(":graphics:graphics-shapes")
 includeProject(":lifecycle:lifecycle-runtime-compose")
 includeProject(":lifecycle:lifecycle-runtime-lint")
 includeProject(":lifecycle:lifecycle-viewmodel-compose")
