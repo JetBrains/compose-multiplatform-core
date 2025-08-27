@@ -1502,4 +1502,38 @@ class OnGlobalRectChangedTest {
             rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(30, 30)) }
         }
     }
+
+    @Test
+    fun testLayoutModifierPlacingWithOffsetAndScale() {
+        var actualPosition: IntOffset = IntOffset.Max
+        var actualPositionChild: IntOffset = IntOffset.Max
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    placeable.placeWithLayer(10, 10) {
+                                        scaleX = 2f
+                                        scaleY = 2f
+                                    }
+                                }
+                            }
+                            .onLayoutRectChanged(0, 0) { actualPosition = it.positionInRoot }
+                    ) {
+                        Box(
+                            Modifier.onLayoutRectChanged(0, 0) {
+                                    actualPositionChild = it.positionInRoot
+                                }
+                                .size(10.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(5, 5)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(IntOffset(5, 5)) }
+    }
 }
