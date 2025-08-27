@@ -401,7 +401,10 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
         return null
     }
 
-    return windowScene.windows.reversed().firstNotNullOfOrNull {
+    return windowScene.windows.reversed().filter {
+        it as UIWindow
+        it.isKeyWindow() && !it.isHidden()
+    }.firstNotNullOfOrNull {
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
 }
