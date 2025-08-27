@@ -147,6 +147,7 @@ internal class UIKitComposeSceneLayer(
     private fun onDidMoveToWindow(window: UIWindow?) {
         if (window != null) {
             focusSceneIfNeeded()
+            focusSceneIfNeeded = {}
         }
         backGestureDispatcher.onDidMoveToWindow(window, interactionView)
     }
