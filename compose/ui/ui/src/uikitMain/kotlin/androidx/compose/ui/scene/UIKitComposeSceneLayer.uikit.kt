@@ -99,7 +99,10 @@ internal class UIKitComposeSceneLayer(
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
-        focusedViewsList?.addAndFocus(it.inputView)
+    }
+
+    private var focusSceneIfNeeded = {
+        focusedViewsList?.addAndFocus(mediator.inputView)
     }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =
@@ -142,6 +145,9 @@ internal class UIKitComposeSceneLayer(
     private val scrimPaint = Paint()
 
     private fun onDidMoveToWindow(window: UIWindow?) {
+        if (window != null) {
+            focusSceneIfNeeded()
+        }
         backGestureDispatcher.onDidMoveToWindow(window, interactionView)
     }
 
@@ -170,6 +176,7 @@ internal class UIKitComposeSceneLayer(
     }
 
     internal fun dispose() {
+        focusSceneIfNeeded = {}
         mediator.dispose()
         interactionView.removeFromSuperview()
         interactionView.dispose()
