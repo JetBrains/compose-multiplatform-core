@@ -58,10 +58,6 @@ internal class ComposeView(
         return true
     }
 
-    override fun becomeFirstResponder(): Boolean {
-        return false
-    }
-
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
