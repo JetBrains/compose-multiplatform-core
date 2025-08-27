@@ -143,6 +143,7 @@ internal class ComposeSceneMediator(
     var fullscreen by skiaLayerComponent::fullscreen
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
+    val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerListener::semanticsOwners
 
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -666,6 +667,9 @@ internal class ComposeSceneMediator(
          */
         private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
         val accessibilityControllers get() = _accessibilityControllers.values.reversed()
+
+        val semanticsOwners: Collection<SemanticsOwner>
+            get() = _accessibilityControllers.keys
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             check(semanticsOwner !in _accessibilityControllers)

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -153,7 +154,26 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         containerSize = imageSize
     }
 
-    private val _platformContext = object : PlatformContext by PlatformContext.Empty {
+    private val _platformContext = object : PlatformContext by PlatformContext.Empty,
+        PlatformContext.SemanticsOwnerListener {
+
+        val semanticsOwners = linkedSetOf<SemanticsOwner>()
+
+        override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
+            semanticsOwners.add(semanticsOwner)
+        }
+
+        override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
+            semanticsOwners.remove(semanticsOwner)
+        }
+
+        override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
+
+        override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
+
+        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener
+            get() = this
+
         override val windowInfo: WindowInfo
             get() = _windowInfo
     }
@@ -173,6 +193,14 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      */
     @ExperimentalComposeUiApi
     var layoutDirection: LayoutDirection by scene::layoutDirection
+
+    /**
+     * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
+     * [ImageComposeScene].
+     */
+    @ExperimentalComposeUiApi
+    val semanticsOwners: Collection<SemanticsOwner>
+        get() = _platformContext.semanticsOwners
 
     /**
      * Close all resources and subscriptions. Not calling this method when [ImageComposeScene] is no
