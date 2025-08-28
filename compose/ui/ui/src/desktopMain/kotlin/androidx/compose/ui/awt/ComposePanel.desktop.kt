@@ -217,6 +217,9 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     /**
      * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
      * [ComposePanel].
+     *
+     * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
+     * composable function) will cause the function to restart when set of semantics owners changes.
      */
     @ExperimentalComposeUiApi
     val semanticsOwners: Collection<SemanticsOwner>
