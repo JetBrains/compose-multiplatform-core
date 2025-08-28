@@ -20,6 +20,7 @@ package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
@@ -157,7 +158,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     private val _platformContext = object : PlatformContext by PlatformContext.Empty,
         PlatformContext.SemanticsOwnerListener {
 
-        val semanticsOwners = linkedSetOf<SemanticsOwner>()
+        val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             semanticsOwners.add(semanticsOwner)
@@ -197,6 +198,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     /**
      * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
      * [ImageComposeScene].
+     *
+     * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
+     * composable function) will cause the function to restart when set of semantics owners changes.
      */
     @ExperimentalComposeUiApi
     val semanticsOwners: Collection<SemanticsOwner>
