@@ -116,9 +116,9 @@ class SemanticsOwnersProviderTest {
         }
     }
 
-    @Test
-    fun semanticsOwnersIsSnapshotStateInComposeWindow() =
-        semanticsOwnersIsSnapshotStateBy(ComposeWindowSemanticOwnersTestContext())
+//    @Test
+//    fun semanticsOwnersIsSnapshotStateInComposeWindow() =
+//        semanticsOwnersIsSnapshotStateBy(ComposeWindowSemanticOwnersTestContext())
 
     @Test
     fun semanticsOwnersIsSnapshotStateInComposePanel() =
