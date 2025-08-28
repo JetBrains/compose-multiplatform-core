@@ -669,7 +669,7 @@ internal class ComposeSceneMediator(
         private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
         val accessibilityControllers get() = _accessibilityControllers.values.reversed()
 
-        val semanticsOwners = mutableSetOf<SemanticsOwner>()
+        val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             check(semanticsOwner !in _accessibilityControllers)
