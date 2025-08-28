@@ -18,7 +18,6 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
@@ -669,7 +668,8 @@ internal class ComposeSceneMediator(
         private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
         val accessibilityControllers get() = _accessibilityControllers.values.reversed()
 
-        val semanticsOwners: Collection<SemanticsOwner> get() = _accessibilityControllers.keys
+        val semanticsOwners: Collection<SemanticsOwner>
+            get() = _accessibilityControllers.keys
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             check(semanticsOwner !in _accessibilityControllers)
