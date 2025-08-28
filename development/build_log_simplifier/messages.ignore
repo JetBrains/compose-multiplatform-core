@@ -392,3 +392,20 @@ WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometri
 # Remove OPT_IN_MARKER_ON_WRONG_TARGET from this list and from all instances in code when b/174708311 is fixed
 # Remove UNSAFE_CALL when b/409324917 is fixed
 .*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|OPT_IN_MARKER_ON_WRONG_TARGET|UNSAFE_CALL|UPPER_BOUND_VIOLATED|WRONG_ANNOTATION_TARGET)'.*
+# Remove when https://youtrack.jetbrains.com/issue/KT-70013 is fixed, o/w anytime a new entry is added to this list, this message will be printed.
+Calculating task graph as configuration cache cannot be reused because the set of paths ignored in file-system-check input tracking.*
+# b/414775532
+# > Task :compose-hero-benchmarks:poxedex-compose:app:kspReleaseKotlin
+w: \[ksp\] LibraryGlideModules \[\] are included more than once, keeping only one\!
+# > Tracing - Driver warnings (https://youtrack.jetbrains.com/issue/KTIJ-22326)
+w[:] file[:]//[$]SUPPORT/tracing/.* This code uses error suppression for 'OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE'.*
+# > Task :glance:glance-wear-tiles:compileReleaseKotlin
+w: file://\$SUPPORT/glance/glance\-wear\-tiles/integration.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
+w: file://\$SUPPORT/glance/glance\-wear\-tiles/src/.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
+# > Configure project :savedstate:savedstate-compose
+w: ⚠️ Unused Kotlin Source Sets
+The following Kotlin source sets were configured but not added to any Kotlin compilation:
+\* androidInstrumentedTest
+\* androidUnitTest
+You can add a source set to a target's compilation by connecting it with the compilation's default source set using 'dependsOn'\.
+See https://kotl\.in/connecting\-source\-sets
