@@ -59,7 +59,7 @@ internal class UIKitComposeSceneLayer(
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
-    private val focusedViewsList: FocusedViewsList?,
+    private var focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
     private val enableBackGesture: Boolean,
@@ -99,10 +99,6 @@ internal class UIKitComposeSceneLayer(
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
-    }
-
-    private var focusSceneIfNeeded = {
-        focusedViewsList?.addAndFocus(mediator.inputView)
     }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =
@@ -146,8 +142,7 @@ internal class UIKitComposeSceneLayer(
 
     private fun onDidMoveToWindow(window: UIWindow?) {
         if (window != null) {
-            focusSceneIfNeeded()
-            focusSceneIfNeeded = {}
+            focusedViewsList?.addAndFocus(mediator.inputView)
         }
         backGestureDispatcher.onDidMoveToWindow(window, interactionView)
     }
@@ -169,15 +164,14 @@ internal class UIKitComposeSceneLayer(
     fun prepareAndGetSizeTransitionAnimation() = mediator.prepareAndGetSizeTransitionAnimation()
 
     override fun close() {
-        focusedViewsList?.remove(mediator.inputView)
-
         onClosed(this)
 
         dispose()
     }
 
     internal fun dispose() {
-        focusSceneIfNeeded = {}
+        focusedViewsList?.disposeChild()
+        focusedViewsList = null
         mediator.dispose()
         interactionView.removeFromSuperview()
         interactionView.dispose()
