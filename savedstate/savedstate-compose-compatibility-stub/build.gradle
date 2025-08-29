@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryType
+import androidx.build.Publish
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -59,35 +59,25 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":annotation:annotation"))
-                implementation(project(":lifecycle:lifecycle-common"))
-                api project(":lifecycle:lifecycle-runtime")
-                api project(":compose:runtime:runtime")
+                def version = project.findProperty('artifactRedirection.version.androidx.savedstate')
+                api("androidx.savedstate:savedstate-compose:$version")
 
-                implementation(libs.kotlinStdlib)
-            }
-        }
-
-        nonAndroidMain.dependsOn(commonMain)
-
-        targets.all { target ->
-            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonAndroidMain)
-                }
+                // Keep direct reference to Compose multiplatform 1.9.x to correctly resolve
+                // New redirections to Google's artifacts
+                implementation(project(":compose:runtime:runtime"))
             }
         }
     }
 }
 
-androidx {
-    name = "Lifecycle Runtime Compose"
-    type = LibraryType.PUBLISHED_LIBRARY
-    inceptionYear = "2021"
-    description = "Compose integration with Lifecycle"
-    metalavaK2UastEnabled = true
+android {
+    namespace = "androidx.savedstate.compose"
 }
 
-android {
-    namespace "androidx.lifecycle.runtime.compose"
+androidx {
+    name = "Saved State Compose"
+    publish = Publish.SNAPSHOT_AND_RELEASE
+    inceptionYear = "2024"
+    description = "Compose integration with Saved State"
+    metalavaK2UastEnabled = false
 }
