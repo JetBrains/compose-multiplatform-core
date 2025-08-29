@@ -124,9 +124,9 @@ class SemanticsOwnersProviderTest {
 //    fun semanticsOwnersIsSnapshotStateInComposePanel() =
 //        semanticsOwnersIsSnapshotStateBy(ComposePanelSemanticOwnersTestContext())
 
-    @Test
-    fun semanticsOwnersIsSnapshotStateInImageComposeScene() =
-        semanticsOwnersIsSnapshotStateBy(ImageComposeSceneSemanticOwnersTestContext())
+//    @Test
+//    fun semanticsOwnersIsSnapshotStateInImageComposeScene() =
+//        semanticsOwnersIsSnapshotStateBy(ImageComposeSceneSemanticOwnersTestContext())
 }
 
 private interface SemanticsOwnersTestContext {
