@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
 /**
  * The default scrim opacity.
  */
-private const val DefaultScrimOpacity = 0.78f
+private const val DefaultScrimOpacity = 0.6f
 private val DefaultScrimColor = Color.Black.copy(alpha = DefaultScrimOpacity)
 private const val AnimatedLayerAppearanceOffsetDp = 16f
 private const val AnimatedLayerDisappearanceOffsetDp = 8f
