@@ -17,14 +17,23 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.animation.easeInTimingFunction
+import androidx.compose.ui.animation.easeOutTimingFunction
+import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -33,6 +42,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
@@ -46,12 +56,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
+import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * The default scrim opacity.
  */
 private const val DefaultScrimOpacity = 0.6f
 private val DefaultScrimColor = Color.Black.copy(alpha = DefaultScrimOpacity)
+private const val AnimatedLayerAppearanceOffsetDp = 16f
+private const val AnimatedLayerDisappearanceOffsetDp = 8f
+private const val AnimatedLayerInitialAlphaProgress = 0.6f
 
 /**
  * Properties used to customize the behavior of a [Dialog].
@@ -169,14 +186,24 @@ private fun DialogLayout(
     content: @Composable () -> Unit
 ) {
     val currentContent by rememberUpdatedState(content)
+    val compositionContext = rememberCompositionContext()
+    var layerAlpha by remember { mutableStateOf(0f) }
+    var layerTranslation by remember { mutableStateOf(0.dp) }
 
     val layer = rememberComposeSceneLayer(
         focusable = true
     )
-    layer.scrimColor = properties.scrimColor
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     layer.Content {
+        val density = LocalDensity.current
+        LaunchedEffect(Unit) {
+            withAnimationProgress(0.15.seconds, timingFunction = ::easeOutTimingFunction) {
+                layerAlpha = AnimatedLayerInitialAlphaProgress + it * (1f - AnimatedLayerInitialAlphaProgress)
+                layer.scrimColor = properties.scrimColor.copy(properties.scrimColor.alpha * layerAlpha)
+                layerTranslation = (AnimatedLayerAppearanceOffsetDp * (1f - it)).dp
+            }
+        }
         val platformInsets = properties.platformInsets
         val containerSize = LocalWindowInfo.current.containerSize
         val measurePolicy = rememberDialogMeasurePolicy(
@@ -192,9 +219,25 @@ private fun DialogLayout(
         ) {
             Layout(
                 content = currentContent,
-                modifier = modifier,
+                modifier = Modifier.graphicsLayer {
+                    alpha = layerAlpha
+                    translationY = with(density) { layerTranslation.toPx() }
+                }.then(modifier),
                 measurePolicy = measurePolicy
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            CoroutineScope(compositionContext.effectCoroutineContext).launch {
+                withAnimationProgress(0.10.seconds, timingFunction = ::easeInTimingFunction) {
+                    layerAlpha = 1f - it * AnimatedLayerInitialAlphaProgress
+                    layer.scrimColor = properties.scrimColor.copy(properties.scrimColor.alpha * layerAlpha)
+                    layerTranslation = (-AnimatedLayerDisappearanceOffsetDp * it).dp
+                }
+                layer.close()
+            }
         }
     }
 }

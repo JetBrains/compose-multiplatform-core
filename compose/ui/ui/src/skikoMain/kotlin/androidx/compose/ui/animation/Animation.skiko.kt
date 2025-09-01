@@ -27,6 +27,14 @@ internal fun easeInOutTimingFunction(progress: Float): Float = if (progress < 0.
     (-2f * progress * progress) + (4f * progress) - 1f
 }
 
+internal fun easeOutTimingFunction(progress: Float): Float {
+    return -progress * (progress - 2f)
+}
+
+internal fun easeInTimingFunction(progress: Float): Float {
+    return progress * progress
+}
+
 internal suspend fun withAnimationProgress(
     duration: Duration,
     timingFunction: (Float) -> Float = ::easeInOutTimingFunction,

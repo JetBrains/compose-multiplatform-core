@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -450,6 +451,12 @@ private fun PopupLayout(
                 modifier = modifier,
                 measurePolicy = measurePolicy
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            layer.close()
         }
     }
 }
