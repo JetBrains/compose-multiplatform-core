@@ -126,8 +126,10 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     val usePlatformInsets: Boolean = true,
     val useSoftwareKeyboardInset: Boolean = true,
     val scrimColor: Color = DefaultScrimColor,
+    @property:ExperimentalComposeUiApi
     val onAppearEffect: suspend DialogAnimationScope.() -> Unit =
         DialogAnimationScope::defaultDialogAppearEffect,
+    @property:ExperimentalComposeUiApi
     val onDisappearEffect: suspend DialogAnimationScope.() -> Unit =
         DialogAnimationScope::defaultDialogDisappearEffect,
 ) {
