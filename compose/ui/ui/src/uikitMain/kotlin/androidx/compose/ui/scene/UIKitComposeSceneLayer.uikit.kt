@@ -20,14 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
-import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.navigationevent.UIKitNavigationEventDispatcherOwner
+import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -82,11 +83,13 @@ internal class UIKitComposeSceneLayer(
 
     val overlayView: UIView get() = mediator.overlayView
 
-    private val backGestureDispatcher = UIKitBackGestureDispatcher(
-        enableBackGesture = enableBackGesture,
+    private val navigationEventInput = UIKitNavigationEventInput(
         density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft }
     )
+    private val navigationEventDispatcherOwner = UIKitNavigationEventDispatcherOwner().apply {
+        navigationEventDispatcher.addInput(navigationEventInput)
+    }
 
     private val mediator = ComposeSceneMediator(
         onFocusBehavior = onFocusBehavior,
@@ -95,7 +98,7 @@ internal class UIKitComposeSceneLayer(
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
-        backGestureDispatcher = backGestureDispatcher,
+        navigationEventInput = navigationEventInput,
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.inputView)
@@ -141,7 +144,7 @@ internal class UIKitComposeSceneLayer(
     private val scrimPaint = Paint()
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        backGestureDispatcher.onDidMoveToWindow(window, interactionView)
+        navigationEventInput.onDidMoveToWindow(window, interactionView)
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
@@ -176,7 +179,7 @@ internal class UIKitComposeSceneLayer(
     private fun ProvideComposeSceneLayerCompositionLocals(
         content: @Composable () -> Unit
     ) = CompositionLocalProvider(
-        LocalBackGestureDispatcher provides backGestureDispatcher,
+        LocalInternalNavigationEventDispatcherOwner provides navigationEventDispatcherOwner,
         LocalUIViewController provides layersViewController,
         content = content
     )
