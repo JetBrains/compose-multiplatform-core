@@ -45,6 +45,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.sendCharTypedEvents
 import androidx.compose.ui.sendKeyEvent
 import androidx.compose.ui.sendMouseEvent
@@ -67,6 +68,7 @@ import javax.swing.JPanel
 import junit.framework.TestCase.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -685,5 +687,30 @@ class ComposePanelTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `ComposePanel content is composed and placed when added to hierarchy`() = runApplicationTest {
+        var isComposed = false
+        var isPlaced = false
+
+        val composePanel = ComposePanel()
+        composePanel.setContent {
+            isComposed = true
+            Box(Modifier.size(100.dp).onPlaced { isPlaced = true })
+        }
+
+        val window = JFrame()
+        try {
+            window.size = Dimension(200, 200)
+            window.isVisible = true
+            window.contentPane.add(composePanel, BorderLayout.CENTER)
+
+            assertTrue(isComposed, "Content was not immediately composed")
+            assertTrue(isPlaced, "Content was not immediately placed")
+        } finally {
+            window.dispose()
+        }
+
     }
 }

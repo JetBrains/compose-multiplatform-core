@@ -140,10 +140,8 @@ internal abstract class BaseComposeScene(
             check(!isClosed) { "setContent called after ComposeScene is closed" }
             inputHandler.onChangeContent()
 
-            /*
-         * It's required before setting content to apply changed parameters
-         * before first recomposition. Otherwise, it can lead to double recomposition.
-         */
+            // It's required before setting content to apply changed parameters
+            // before the first recomposition. Otherwise, it can lead to double recomposition.
             recomposer.performScheduledRecomposerTasks()
 
             composition?.dispose()
@@ -157,6 +155,9 @@ internal abstract class BaseComposeScene(
                     content = content
                 )
             }
+
+            // Need to measure and layout too, to keep the correct order of render phases
+            doMeasureAndLayout()
 
             recomposer.performScheduledRecomposerTasks()
         }
