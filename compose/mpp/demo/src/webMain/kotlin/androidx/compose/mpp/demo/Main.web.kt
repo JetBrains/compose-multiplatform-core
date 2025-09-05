@@ -33,23 +33,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.OnGloballyPositionedModifier
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.rememberNavController
-import kotlin.collections.remove
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.resume
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 private const val notoColorEmoji = "./NotoColorEmoji.ttf"
 private const val notoSansSC = "./NotoSansSC-Regular.ttf"
@@ -134,29 +127,3 @@ private fun App() {
 
 }
 
-private class AwaitFirstLayoutModifier : OnGloballyPositionedModifier {
-    private var wasPositioned = false
-    private val continuations = mutableListOf<Continuation<Unit>>()
-
-    suspend fun waitForFirstLayout() {
-        if (!wasPositioned) {
-            var continuation: Continuation<Unit>? = null
-            try {
-                suspendCancellableCoroutine<Unit> {
-                    continuation = it
-                    continuations.add(it)
-                }
-            } finally {
-                continuations.remove(continuation)
-            }
-        }
-    }
-
-    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        if (!wasPositioned) {
-            wasPositioned = true
-            continuations.fastForEach { it.resume(Unit) }
-            continuations.clear()
-        }
-    }
-}
