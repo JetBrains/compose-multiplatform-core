@@ -23,7 +23,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-internal class AwaitFirstLayoutModifier : OnGloballyPositionedModifier {
+internal class BugReproducer8615LayoutModifier : OnGloballyPositionedModifier {
     private var wasPositioned = false
     private val continuations = mutableListOf<Continuation<Unit>>()
 

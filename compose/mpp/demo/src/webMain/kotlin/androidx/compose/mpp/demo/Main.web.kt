@@ -62,7 +62,7 @@ private fun BoxList() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(AwaitFirstLayoutModifier())
+                    .then(BugReproducer8615LayoutModifier())
                     .verticalScroll(scrollState)
                     .padding(16.dp)
             ) {
