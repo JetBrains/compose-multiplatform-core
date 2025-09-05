@@ -29,10 +29,7 @@ import androidx.compose.ui.awt.AwtEventFilter
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
-import androidx.compose.ui.backhandler.DesktopBackGestureDispatcher
-import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.navigationevent.DesktopNavigationEventDispatcherOwner
 import androidx.compose.ui.navigationevent.DesktopNavigationEventInput
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
@@ -204,8 +201,6 @@ internal class ComposeContainer(
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateController.savedStateRegistry
     override val viewModelStore = ViewModelStore()
-
-    private val backGestureDispatcher = DesktopBackGestureDispatcher()
 
     override val navigationEventDispatcher = NavigationEventDispatcher()
     private val navigationEventInput = DesktopNavigationEventInput()
@@ -386,16 +381,14 @@ internal class ComposeContainer(
         mediator.setKeyEventListeners(
             onPreviewKeyEvent = onPreviewKeyEvent,
             onKeyEvent = {
-                onKeyEvent(it) ||
-                    navigationEventInput.onKeyEvent(it) ||
-                    backGestureDispatcher.onKeyEvent(it)
+                onKeyEvent(it) || navigationEventInput.onKeyEvent(it)
             }
         )
     }
 
     fun setContent(content: @Composable () -> Unit) {
         mediator.setContent {
-            ProvideContainerCompositionLocals(this, backGestureDispatcher) {
+            ProvideContainerCompositionLocals(this) {
                 content()
             }
         }
@@ -582,7 +575,6 @@ internal class ComposeContainer(
 @Composable
 private fun ProvideContainerCompositionLocals(
     composeContainer: ComposeContainer,
-    backGestureDispatcher: DesktopBackGestureDispatcher,
     content: @Composable () -> Unit,
 ) {
     val saveableStateRegistry = remember {
@@ -595,7 +587,6 @@ private fun ProvideContainerCompositionLocals(
         LocalSavedStateRegistryOwner provides composeContainer,
         LocalSaveableStateRegistry provides saveableStateRegistry,
         LocalInternalViewModelStoreOwner provides composeContainer,
-        LocalBackGestureDispatcher provides backGestureDispatcher,
         LocalInternalNavigationEventDispatcherOwner provides composeContainer,
         content = content,
     )
