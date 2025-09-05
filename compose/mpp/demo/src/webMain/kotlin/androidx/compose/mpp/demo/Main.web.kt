@@ -20,7 +20,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -85,8 +88,15 @@ private fun BoxList() {
                     "Elvis Presley", "Jerry Lee Lewis", "Janis Joplin", "Jim Morrison"
                 )
 
-                rockMusicians.forEachIndexed { index, rockMusician ->
-                    Text(text = "[#$index] $rockMusician", modifier = Modifier.padding(vertical = 8.dp))
+                val colors = listOf(  Color(0xFF880E4F), Color(0xFF9C27B0), Color(0xFFAB47BC), Color(0xFFBA68C8), Color(0xFFCE93D8),
+                    Color(0xFFD1C4E9), Color(0xFFE1BEE7), Color(0xFFF8BBD0), Color(0xFFFF80AB), Color(0xFFFF4081),
+                    Color(0xFFFF80AB), Color(0xFFFFE082), Color(0xFFFFD180), Color(0xFFFFB74D), Color(0xFFFFA726),
+                    Color(0xFFFF8A65), Color(0xFFFF7043), Color(0xFFFF5722), Color(0xFFF4511E), Color(0xFFF44336),
+                    Color(0xFFE53935), Color(0xFFD32F2F), Color(0xFFC62828), Color(0xFFB71C1C), Color(0xFF880E4F),)
+
+                colors.forEachIndexed { index, color ->
+                    //Text(text = "[#$index] $rockMusician", modifier = Modifier.padding(vertical = 8.dp))
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(color)) { }
                 }
             }
         }
