@@ -16,6 +16,14 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Text
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
@@ -23,15 +31,25 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.OnGloballyPositionedModifier
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.rememberNavController
+import kotlin.collections.remove
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 private const val notoColorEmoji = "./NotoColorEmoji.ttf"
 private const val notoSansSC = "./NotoSansSC-Regular.ttf"
@@ -39,6 +57,33 @@ private const val notoSansSC = "./NotoSansSC-Regular.ttf"
 @OptIn(ExperimentalComposeUiApi::class)
 @ExperimentalBrowserHistoryApi
 fun main() {
+    BoxList()
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalBrowserHistoryApi
+private fun BoxList() {
+    ComposeViewport(viewportContainerId = "composeApplication") {
+        val scrollState = rememberScrollState()
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFEEEEEE))) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(AwaitFirstLayoutModifier())
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+            ) {
+                repeat(100) { index ->
+                    Text(text = "Item #$index", modifier = Modifier.padding(vertical = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalBrowserHistoryApi
+private fun App() {
     ComposeViewport(viewportContainerId = "composeApplication") {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
@@ -84,6 +129,34 @@ fun main() {
 
         LaunchedEffect(Unit) {
             setupBackingTextAreaDebugHints()
+        }
+    }
+
+}
+
+private class AwaitFirstLayoutModifier : OnGloballyPositionedModifier {
+    private var wasPositioned = false
+    private val continuations = mutableListOf<Continuation<Unit>>()
+
+    suspend fun waitForFirstLayout() {
+        if (!wasPositioned) {
+            var continuation: Continuation<Unit>? = null
+            try {
+                suspendCancellableCoroutine<Unit> {
+                    continuation = it
+                    continuations.add(it)
+                }
+            } finally {
+                continuations.remove(continuation)
+            }
+        }
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        if (!wasPositioned) {
+            wasPositioned = true
+            continuations.fastForEach { it.resume(Unit) }
+            continuations.clear()
         }
     }
 }
