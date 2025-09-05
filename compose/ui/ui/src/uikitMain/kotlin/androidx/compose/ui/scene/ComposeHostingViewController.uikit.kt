@@ -25,12 +25,13 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
+import androidx.compose.ui.navigationevent.UIKitNavigationEventDispatcherOwner
+import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.IOSLifecycleOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
@@ -59,6 +60,7 @@ import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -122,12 +124,13 @@ internal class ComposeHostingViewController(
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
     }
-
-    private val backGestureDispatcher = UIKitBackGestureDispatcher(
-        enableBackGesture = configuration.enableBackGesture,
+    private val navigationEventInput = UIKitNavigationEventInput(
         density = rootView.density,
         getTopLeftOffsetInWindow = { IntOffset.Zero } //full screen
     )
+    private val navigationEventDispatcherOwner = UIKitNavigationEventDispatcherOwner().apply {
+        navigationEventDispatcher.addInput(navigationEventInput)
+    }
 
     fun hasInvalidations(): Boolean {
         return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
@@ -207,7 +210,7 @@ internal class ComposeHostingViewController(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        backGestureDispatcher.onDidMoveToWindow(window, rootView)
+        navigationEventInput.onDidMoveToWindow(window, rootView)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
         val windowContainer = window ?: return
@@ -265,7 +268,7 @@ internal class ComposeHostingViewController(
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        navigationEventInput.onDidMoveToWindow(view.window, rootView)
     }
 
     @Suppress("DEPRECATION")
@@ -274,7 +277,7 @@ internal class ComposeHostingViewController(
         mediator?.sceneWillDisappear()
         configuration.delegate.viewWillDisappear(animated)
 
-        backGestureDispatcher.onDidMoveToWindow(null, rootView)
+        navigationEventInput.onDidMoveToWindow(null, rootView)
     }
 
     @Suppress("DEPRECATION")
@@ -322,7 +325,7 @@ internal class ComposeHostingViewController(
             composeSceneFactory = { invalidate, context ->
                 createComposeScene(invalidate, context, holder)
             },
-            backGestureDispatcher = backGestureDispatcher,
+            navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
             rootView.embedSubview(mediator.inputView)
@@ -342,7 +345,7 @@ internal class ComposeHostingViewController(
         }
         interfaceOrientationObserver.isObservingEnabled = true
 
-        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        navigationEventInput.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
 
@@ -358,7 +361,7 @@ internal class ComposeHostingViewController(
         )
 
         rootView.updateMetalView(metalView = null)
-        backGestureDispatcher.onDidMoveToWindow(null, rootView)
+        navigationEventInput.onDidMoveToWindow(null, rootView)
 
         mediator?.dispose()
         mediator = null
@@ -512,7 +515,7 @@ internal class ComposeHostingViewController(
             LocalSystemTheme provides systemThemeState.value,
             LocalLifecycleOwner provides lifecycleOwner,
             LocalInternalViewModelStoreOwner provides lifecycleOwner,
-            LocalBackGestureDispatcher provides backGestureDispatcher,
+            LocalInternalNavigationEventDispatcherOwner provides navigationEventDispatcherOwner,
             LocalSaveableStateRegistry provides savableStateRegistry,
             content = content
         )
