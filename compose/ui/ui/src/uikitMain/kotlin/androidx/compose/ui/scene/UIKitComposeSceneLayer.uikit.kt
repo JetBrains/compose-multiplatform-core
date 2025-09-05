@@ -63,7 +63,6 @@ internal class UIKitComposeSceneLayer(
     focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
-    private val enableBackGesture: Boolean,
     private val interfaceOrientationState: State<InterfaceOrientation>
 ) : ComposeSceneLayer {
 

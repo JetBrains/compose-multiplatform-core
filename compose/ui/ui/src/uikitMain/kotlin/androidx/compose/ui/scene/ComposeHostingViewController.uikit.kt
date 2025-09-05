@@ -60,7 +60,6 @@ import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -465,7 +464,6 @@ internal class ComposeHostingViewController(
                     focusedViewsList = if (focusable) focusedViewsList else null,
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
-                    enableBackGesture = configuration.enableBackGesture,
                     interfaceOrientationState = interfaceOrientationState
                 )
 
