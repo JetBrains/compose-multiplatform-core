@@ -62,12 +62,31 @@ private fun BoxList() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(BugReproducer8615LayoutModifier())
                     .verticalScroll(scrollState)
                     .padding(16.dp)
             ) {
-                repeat(100) { index ->
-                    Text(text = "Item #$index", modifier = Modifier.padding(vertical = 8.dp))
+                val rockMusicians = listOf(
+                    "Jimi Hendrix", "Eric Clapton", "Jimmy Page", "Jeff Beck", "Keith Richards",
+                    "Brian Jones", "Mick Jagger", "Robert Plant", "John Bonham", "David Gilmour", "Roger Waters",
+                    "Pete Townshend", "Roger Daltrey", "Kurt Cobain", "Eddie Vedder", "Chris Cornell", "Layne Staley", "Axl Rose",
+                    "Slash", "Steven Tyler", "Joe Perry", "Freddie Mercury", "Brian May", "John Deacon",
+                    "Bono", "The Edge", "Adam Clayton", "Larry Mullen Jr.", "Bruce Springsteen", "Bob Dylan",
+                    "Chuck Berry", "Elvis Presley", "Little Richard", "Jerry Lee Lewis", "Janis Joplin",
+                    "Jim Morrison", "John Lennon", "Paul McCartney", "George Harrison", "Ringo Starr",
+                    "David Bowie", "Iggy Pop", "Lou Reed", "Patti Smith", "Johnny Ramone", "Joey Ramone",
+                    "Dee Dee Ramone", "Marky Ramone", "Sid Vicious", "Steve Jones", "Paul Simonon", "Billy Idol",
+                    "Ozzy Osbourne", "Tony Iommi", "Geezer Butler", "Bill Ward", "Robert Trujillo", "Angus Young",
+                    "Malcolm Young", "Brian Johnson", "Bon Scott", "Lemmy Kilmister", "Phil Campbell", "Mikkey Dee",
+                    "Prince", "Stevie Ray Vaughan", "Jeff Beck", "Eric Clapton", "Carlos Santana", "Jack White",
+                    "Dave Grohl", "Eddie Van Halen", "Alex Van Halen", "David Lee Roth", "Sammy Hagar",
+                    "Robert Plant", "Jimmy Page", "John Paul Jones", "Keith Richards", "Mick Jagger", "Brian Jones",
+                    "Bruce Springsteen", "Stevie Wonder", "Bob Marley", "John Lennon", "Paul McCartney", "George Harrison",
+                    "Ringo Starr", "Freddie Mercury", "Brian May", "Roger Taylor", "Chuck Berry", "Little Richard",
+                    "Elvis Presley", "Jerry Lee Lewis", "Janis Joplin", "Jim Morrison"
+                )
+
+                rockMusicians.forEachIndexed { index, rockMusician ->
+                    Text(text = "[#$index] $rockMusician", modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
         }
