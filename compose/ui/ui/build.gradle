@@ -206,7 +206,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     api(project(":compose:ui:ui-text"))
                     api(libs.skikoCommon)
                     implementation(libs.atomicFu)
-                    implementation(project(":compose:ui:ui-backhandler"))
                     implementation("androidx.navigationevent:navigationevent:1.0.0-alpha07")
                 }
             }
