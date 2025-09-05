@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import kotlin.js.Promise
 import kotlinx.browser.document
 import org.jetbrains.skiko.wasm.onWasmReady
 import org.w3c.dom.DocumentReadyState
