@@ -206,7 +206,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     api(project(":compose:ui:ui-text"))
                     api(libs.skikoCommon)
                     implementation(libs.atomicFu)
-                    implementation("androidx.navigationevent:navigationevent:1.0.0-alpha07")
+                    def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                    implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 }
             }
             uikitMain {
