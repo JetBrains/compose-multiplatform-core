@@ -425,6 +425,8 @@ private fun PopupLayout(
         // This will be called before the popup measure policy is actually asked to calculate
         // the popup's position, so it will never see the initial value of IntRect.Zero
         childCoordinates.parentCoordinates?.let {
+            // Nodes which read layout coordinates (including, e.g., positionInWindow) in
+            // layout/placement get invalidated when these coordinates change
             val layoutPosition = it.positionInWindow().round()
             val layoutSize = it.size
             parentBoundsInWindow.value = IntRect(layoutPosition, layoutSize)
