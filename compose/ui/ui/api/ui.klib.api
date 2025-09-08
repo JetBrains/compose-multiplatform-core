@@ -4965,12 +4965,6 @@ final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx
 }
 
 // Targets: [ios]
-final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop|#static{}androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop[0]
-
-// Targets: [ios]
-final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop|#static{}androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop // androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop|#static{}androidx_compose_ui_draganddrop_DropSessionContext$stableprop[0]
 
 // Targets: [ios]
@@ -4985,6 +4979,15 @@ final val androidx.compose.ui.interop/LocalUIViewController // androidx.compose.
 
 // Targets: [ios]
 final val androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop // androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop|#static{}androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop|#static{}androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop[0]
@@ -5173,12 +5176,6 @@ final fun <#A: platform.UIKit/UIViewController> androidx.compose.ui.interop/UIKi
 final fun <#A: platform.UIKit/UIViewController> androidx.compose.ui.viewinterop/UIKitViewController(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.ui.viewinterop/UIKitInteropProperties?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/UIKitViewController|UIKitViewController(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.ui.viewinterop.UIKitInteropProperties?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<platform.UIKit.UIViewController>}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter|androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter(){}[0]
-
-// Targets: [ios]
-final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter|androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter(){}[0]
-
-// Targets: [ios]
 final fun androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter(): kotlin/Int // androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter|androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -5192,6 +5189,15 @@ final fun androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegat
 
 // Targets: [ios]
 final fun androidx.compose.ui.main/defaultUIKitMain(kotlin/String, platform.UIKit/UIViewController) // androidx.compose.ui.main/defaultUIKitMain|defaultUIKitMain(kotlin.String;platform.UIKit.UIViewController){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter|androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter|androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter|androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter|androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(){}[0]
