@@ -18,6 +18,7 @@ package androidx.compose.ui.backhandler
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationEventHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,7 @@ actual fun PredictiveBackHandler(
     enabled: Boolean,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 ) {
+    LocalNavigationEventDispatcherOwner.current ?: return
     NavigationEventHandler(enabled) { progress ->
         val compatProgress = progress.map { navEvent ->
             BackEventCompat(navEvent.touchX, navEvent.touchY, navEvent.progress, navEvent.swipeEdge)
