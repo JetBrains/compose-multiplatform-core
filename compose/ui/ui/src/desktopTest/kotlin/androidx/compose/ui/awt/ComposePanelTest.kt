@@ -46,10 +46,14 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.sendCharTypedEvents
 import androidx.compose.ui.sendKeyEvent
 import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.ThrowUncaughtExceptionRule
@@ -66,10 +70,11 @@ import java.awt.event.MouseEvent
 import javax.swing.JFrame
 import javax.swing.JPanel
 import junit.framework.TestCase.assertTrue
+import kotlin.math.roundToInt
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -708,6 +713,38 @@ class ComposePanelTest {
 
             assertTrue(isComposed, "Content was not immediately composed")
             assertTrue(isPlaced, "Content was not immediately placed")
+        } finally {
+            window.dispose()
+        }
+    }
+
+    @Test
+    fun `first composition happens with correct LocalWindowInfo containerSize`() = runApplicationTest {
+        val sizes = mutableListOf<IntSize>()
+        lateinit var density: Density
+
+        val composePanel = ComposePanel().apply {
+            setContent {
+                sizes.add(LocalWindowInfo.current.containerSize)
+                density = LocalDensity.current
+            }
+            size = Dimension(100, 200)
+        }
+
+        val window = JFrame()
+        try {
+            window.size = Dimension(500, 500)
+            window.isVisible = true
+            window.contentPane.layout = null
+            window.contentPane.add(composePanel)
+
+            awaitIdle()
+            assertThat(sizes).containsExactly(
+                IntSize(
+                    width = (density.density * 100).roundToInt(),
+                    height = (density.density * 200).roundToInt()
+                )
+            )
         } finally {
             window.dispose()
         }

@@ -206,6 +206,10 @@ internal class ComposeContainer(
     private var isMinimized = false
     private var isFocused = false
 
+    // The content lambda stored temporarily between `setContent` and when the container is ready
+    // to actually create a composition. See `applyContentIfReady`.
+    private var contentToApply: (@Composable () -> Unit)? = null
+
     init {
         savedStateController.performAttach()
         savedStateController.performRestore(savedState)
@@ -329,6 +333,8 @@ internal class ComposeContainer(
         onWindowContainerSizeChanged()
         onWindowContainerPositionChanged()
 
+        applyContentIfReady()
+
         isDetached = false
         updateLifecycleState()
     }
@@ -346,6 +352,8 @@ internal class ComposeContainer(
         // so re-checking the actual size on container resize too.
         onWindowContainerSizeChanged()
         onWindowContainerPositionChanged()
+
+        applyContentIfReady()
     }
 
     private fun setWindow(window: Window?) {
@@ -381,6 +389,17 @@ internal class ComposeContainer(
     }
 
     fun setContent(content: @Composable () -> Unit) {
+        this.contentToApply = content
+        applyContentIfReady()
+    }
+
+    private fun applyContentIfReady() {
+        val content = this.contentToApply ?: return
+        if (!contentComponent.isDisplayable) return
+        if (contentComponent.let { it.width <= 0 || it.height <= 0 }) return
+
+        contentToApply = null
+
         mediator.setContent {
             ProvideContainerCompositionLocals(this, backGestureDispatcher) {
                 content()

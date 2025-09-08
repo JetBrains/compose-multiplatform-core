@@ -118,7 +118,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private val _focusListeners = mutableSetOf<FocusListener?>()
 
     private var _composeContainer: ComposeContainer? = null
-    private var _composeContent: (@Composable () -> Unit)? = null
 
     /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
@@ -181,12 +180,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * @param content Composable content of the ComposePanel.
      */
     fun setContent(content: @Composable () -> Unit) {
-        // The window (or root container) may not be ready to render composable content, so we need
-        // to keep the lambda describing composable content and set the content only when
-        // everything is ready to avoid accidental crashes and memory leaks on all supported OS
-        // types.
-        _composeContent = content
-        _composeContainer?.setContent(content)
+        val composeContainer = _composeContainer ?: createComposeContainer()
+        composeContainer.setContent(content)
     }
 
     /**
@@ -236,17 +231,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     override fun addNotify() {
         super.addNotify()
 
-        // After [super.addNotify] is called we can safely initialize the bridge and composable
-        // content.
-        val composeContainer = _composeContainer ?: createComposeContainer().also {
-            _composeContainer = it
-            val composeContent = _composeContent
-            if (composeContent != null) {
-                it.setContent(composeContent)
-            }
-            savedState = null
-        }
-        composeContainer.addNotify()
+        _composeContainer?.addNotify()
     }
 
     private fun createComposeContainer(): ComposeContainer {
@@ -256,20 +241,21 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             savedState = savedState,
             windowContainer = windowContainer,
             renderSettings = renderSettings,
-        ).apply {
-            setBounds(0, 0, width, height)
-            contentComponent.isFocusable = isFocusable
-            contentComponent.isRequestFocusEnabled = isRequestFocusEnabled
-            exceptionHandler = this@ComposePanel.exceptionHandler
+        ).also { cc ->
+            _composeContainer = cc
+            cc.setBounds(0, 0, width, height)
+            cc.contentComponent.isFocusable = isFocusable
+            cc.contentComponent.isRequestFocusEnabled = isRequestFocusEnabled
+            cc.exceptionHandler = this@ComposePanel.exceptionHandler
 
-            _focusListeners.forEach(contentComponent::addFocusListener)
-            contentComponent.addFocusListener(object : FocusListener {
+            _focusListeners.forEach { cc.contentComponent.addFocusListener(it) }
+            cc.contentComponent.addFocusListener(object : FocusListener {
                 override fun focusGained(e: FocusEvent) {
                     if (!e.isTemporary && !e.isFocusGainedHandledBySwingPanel(this@ComposePanel)) {
                         when (e.cause) {
                             FocusEvent.Cause.UNKNOWN, FocusEvent.Cause.ACTIVATION -> {
-                                if (!focusManager.hasFocus) {
-                                    focusManager.takeFocus(FocusDirection.Next)
+                                if (!cc.focusManager.hasFocus) {
+                                    cc.focusManager.takeFocus(FocusDirection.Next)
                                 }
                             }
                             else -> Unit
@@ -279,6 +265,12 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
                 override fun focusLost(e: FocusEvent) = Unit
             })
+
+            if (isDisplayable) {
+                cc.addNotify()
+            }
+
+            savedState = null
         }
     }
 

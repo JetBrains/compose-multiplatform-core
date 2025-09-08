@@ -41,6 +41,7 @@ import androidx.compose.ui.isLinux
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.toInt
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.*
@@ -765,5 +766,26 @@ class WindowTest {
 
         awaitIdle()
         assertThat(isDisplayableInInit).isFalse()
+    }
+
+    @Test
+    fun `first composition happens with correct LocalWindowInfo containerSize`() = runApplicationTest {
+        val sizes = mutableListOf<IntSize>()
+        lateinit var density: Density
+        launchTestWindowApplication(
+            state = WindowState(size = DpSize(100.dp, 200.dp))
+        ) {
+            sizes.add(LocalWindowInfo.current.containerSize)
+            density = LocalDensity.current
+        }
+
+        awaitIdle()
+        val windowInsets = window.insets
+        assertThat(sizes).containsExactly(
+            IntSize(
+                width = (density.density * (100 - windowInsets.left - windowInsets.right)).roundToInt(),
+                height = (density.density * (200 - windowInsets.top - windowInsets.bottom)).roundToInt()
+            )
+        )
     }
 }

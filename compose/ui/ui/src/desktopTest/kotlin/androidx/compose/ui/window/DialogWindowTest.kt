@@ -42,13 +42,16 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.sendKeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.toInt
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.IntSize
@@ -60,6 +63,7 @@ import java.awt.Dimension
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import kotlin.math.roundToInt
 import kotlin.test.assertEquals
 import org.junit.Test
 
@@ -710,6 +714,32 @@ class DialogWindowTest {
 
         awaitIdle()
         assertThat(isDisplayableInInit).isFalse()
+    }
+
+    @Test
+    fun `first composition happens with correct LocalWindowInfo containerSize`() = runApplicationTest {
+        val sizes = mutableListOf<IntSize>()
+        lateinit var density: Density
+        lateinit var dialog: ComposeDialog
+        launchTestApplication {
+            DialogWindow(
+                state = DialogState(size = DpSize(100.dp, 200.dp)),
+                onCloseRequest = ::exitApplication
+            ) {
+                sizes.add(LocalWindowInfo.current.containerSize)
+                density = LocalDensity.current
+                dialog = this.window
+            }
+        }
+
+        awaitIdle()
+        val dialogInsets = dialog.insets
+        assertThat(sizes).containsExactly(
+            IntSize(
+                width = (density.density * (100 - dialogInsets.left - dialogInsets.right)).roundToInt(),
+                height = (density.density * (200 - dialogInsets.top - dialogInsets.bottom)).roundToInt()
+            )
+        )
     }
 }
 
