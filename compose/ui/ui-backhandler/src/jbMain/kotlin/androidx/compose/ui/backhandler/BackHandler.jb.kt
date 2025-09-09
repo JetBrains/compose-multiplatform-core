@@ -17,15 +17,14 @@
 package androidx.compose.ui.backhandler
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationEventHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+@Deprecated("Use NavigationEventHandler instead")
 @Composable
-@ExperimentalComposeUiApi
 actual fun PredictiveBackHandler(
     enabled: Boolean,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
@@ -39,8 +38,8 @@ actual fun PredictiveBackHandler(
     }
 }
 
+@Deprecated("Use NavigationEventHandler instead")
 @Composable
-@ExperimentalComposeUiApi
 actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
     PredictiveBackHandler(enabled) { progress ->
         try {

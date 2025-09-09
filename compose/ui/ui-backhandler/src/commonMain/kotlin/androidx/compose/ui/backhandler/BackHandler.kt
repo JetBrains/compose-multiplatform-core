@@ -17,7 +17,6 @@
 package androidx.compose.ui.backhandler
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -48,7 +47,7 @@ import kotlinx.coroutines.flow.Flow
  * @param enabled if this BackHandler should be enabled, true by default
  * @param onBack the action invoked by back gesture
  */
-@ExperimentalComposeUiApi
+@Deprecated("Use NavigationEventHandler instead")
 @Composable
 expect fun PredictiveBackHandler(
     enabled: Boolean = true,
@@ -67,6 +66,6 @@ expect fun PredictiveBackHandler(
  * @param enabled if this BackHandler should be enabled
  * @param onBack the action invoked by system back event
  */
-@ExperimentalComposeUiApi
+@Deprecated("Use NavigationEventHandler instead")
 @Composable
 expect fun BackHandler(enabled: Boolean = true, onBack: () -> Unit)

@@ -6,6 +6,28 @@
 // - Show declarations: true
 
 // Library unique name: <org.jetbrains.compose.ui:ui-backhandler>
+final class androidx.compose.ui.backhandler/BackEventCompat { // androidx.compose.ui.backhandler/BackEventCompat|null[0]
+    constructor <init>(kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Int) // androidx.compose.ui.backhandler/BackEventCompat.<init>|<init>(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Int){}[0]
+
+    final val progress // androidx.compose.ui.backhandler/BackEventCompat.progress|{}progress[0]
+        final fun <get-progress>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.progress.<get-progress>|<get-progress>(){}[0]
+    final val swipeEdge // androidx.compose.ui.backhandler/BackEventCompat.swipeEdge|{}swipeEdge[0]
+        final fun <get-swipeEdge>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.swipeEdge.<get-swipeEdge>|<get-swipeEdge>(){}[0]
+    final val touchX // androidx.compose.ui.backhandler/BackEventCompat.touchX|{}touchX[0]
+        final fun <get-touchX>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.touchX.<get-touchX>|<get-touchX>(){}[0]
+    final val touchY // androidx.compose.ui.backhandler/BackEventCompat.touchY|{}touchY[0]
+        final fun <get-touchY>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.touchY.<get-touchY>|<get-touchY>(){}[0]
+
+    final object Companion { // androidx.compose.ui.backhandler/BackEventCompat.Companion|null[0]
+        final const val EDGE_LEFT // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_LEFT|{}EDGE_LEFT[0]
+            final fun <get-EDGE_LEFT>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_LEFT.<get-EDGE_LEFT>|<get-EDGE_LEFT>(){}[0]
+        final const val EDGE_RIGHT // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_RIGHT|{}EDGE_RIGHT[0]
+            final fun <get-EDGE_RIGHT>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_RIGHT.<get-EDGE_RIGHT>|<get-EDGE_RIGHT>(){}[0]
+    }
+}
+
 final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop|#static{}androidx_compose_ui_backhandler_BackEventCompat$stableprop[0]
 
+final fun androidx.compose.ui.backhandler/BackHandler(kotlin/Boolean, kotlin/Function0<kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.backhandler/BackHandler|BackHandler(kotlin.Boolean;kotlin.Function0<kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun androidx.compose.ui.backhandler/PredictiveBackHandler(kotlin/Boolean, kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.flow/Flow<androidx.compose.ui.backhandler/BackEventCompat>, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.backhandler/PredictiveBackHandler|PredictiveBackHandler(kotlin.Boolean;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.flow.Flow<androidx.compose.ui.backhandler.BackEventCompat>,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter|androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter(){}[0]

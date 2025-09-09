@@ -18,9 +18,8 @@ package androidx.compose.ui.backhandler
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import androidx.compose.ui.ExperimentalComposeUiApi
 
-@ExperimentalComposeUiApi
+@Deprecated("Use NavigationEvent instead")
 actual class BackEventCompat(
     actual val touchX: Float,
     actual val touchY: Float,

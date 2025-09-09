@@ -45,8 +45,6 @@ kotlin {
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(project(":annotation:annotation"))
                 implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:ui:ui-util"))
-                implementation(project(":lifecycle:lifecycle-runtime-compose"))
             }
         }
 
