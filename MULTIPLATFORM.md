@@ -194,7 +194,7 @@ Now the project will build with the locally published Compose.
 
 ### Run mpp/demo-swiftui sample on iOS with Xcode
 
-Open the iosApp.xcodeproj with XCode and press the Run button.
+Open the `iosApp.xcodeproj` with XCode and press the Run button.
 
 ### Run mpp/demo sample on iOS with Xcode
 
