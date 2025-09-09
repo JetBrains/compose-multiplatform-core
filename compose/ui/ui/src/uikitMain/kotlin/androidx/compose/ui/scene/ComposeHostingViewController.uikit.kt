@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.navigationevent.UIKitNavigationEventDispatcherOwner
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.IOSLifecycleOwner
+import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
@@ -99,9 +99,9 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val lifecycleOwner: IOSLifecycleOwner = IOSLifecycleOwner(),
+    private val archComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
     coroutineContext: CoroutineContext = Dispatchers.Main
-) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner)) {
+) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(archComponentsOwner)) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
     private val rootView = ComposeView(
@@ -126,10 +126,7 @@ internal class ComposeHostingViewController(
     private val navigationEventInput = UIKitNavigationEventInput(
         density = rootView.density,
         getTopLeftOffsetInWindow = { IntOffset.Zero } //full screen
-    )
-    private val navigationEventDispatcherOwner = UIKitNavigationEventDispatcherOwner().apply {
-        navigationEventDispatcher.addInput(navigationEventInput)
-    }
+    ).also { eventInput -> archComponentsOwner.navigationEventDispatcher.addInput(eventInput) }
 
     fun hasInvalidations(): Boolean {
         return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
@@ -511,9 +508,9 @@ internal class ComposeHostingViewController(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
             LocalSystemTheme provides systemThemeState.value,
-            LocalLifecycleOwner provides lifecycleOwner,
-            LocalInternalViewModelStoreOwner provides lifecycleOwner,
-            LocalInternalNavigationEventDispatcherOwner provides navigationEventDispatcherOwner,
+            LocalLifecycleOwner provides archComponentsOwner,
+            LocalInternalViewModelStoreOwner provides archComponentsOwner,
+            LocalInternalNavigationEventDispatcherOwner provides archComponentsOwner,
             LocalSaveableStateRegistry provides savableStateRegistry,
             content = content
         )

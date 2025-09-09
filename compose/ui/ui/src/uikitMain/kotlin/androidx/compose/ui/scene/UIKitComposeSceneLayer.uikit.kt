@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -86,9 +87,6 @@ internal class UIKitComposeSceneLayer(
         density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft }
     )
-    private val navigationEventDispatcherOwner = UIKitNavigationEventDispatcherOwner().apply {
-        navigationEventDispatcher.addInput(navigationEventInput)
-    }
 
     private val mediator = ComposeSceneMediator(
         onFocusBehavior = onFocusBehavior,
@@ -182,11 +180,21 @@ internal class UIKitComposeSceneLayer(
     @Composable
     private fun ProvideComposeSceneLayerCompositionLocals(
         content: @Composable () -> Unit
-    ) = CompositionLocalProvider(
-        LocalInternalNavigationEventDispatcherOwner provides navigationEventDispatcherOwner,
-        LocalUIViewController provides layersViewController,
-        content = content
-    )
+    ) {
+        val navigationEventDispatcherOwner = LocalInternalNavigationEventDispatcherOwner.current
+        DisposableEffect(navigationEventDispatcherOwner) {
+            val dispatcher = navigationEventDispatcherOwner?.navigationEventDispatcher
+            dispatcher?.addInput(navigationEventInput)
+            onDispose {
+                dispatcher?.removeInput(navigationEventInput)
+            }
+        }
+
+        CompositionLocalProvider(
+            LocalUIViewController provides layersViewController,
+            content = content
+        )
+    }
 
     override fun setContent(content: @Composable () -> Unit) {
         mediator.setContent {

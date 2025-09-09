@@ -17,7 +17,6 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
