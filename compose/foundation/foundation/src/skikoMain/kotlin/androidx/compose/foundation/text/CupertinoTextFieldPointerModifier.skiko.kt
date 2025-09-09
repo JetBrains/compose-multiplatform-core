@@ -21,9 +21,9 @@ import androidx.compose.foundation.gestures.detectRepeatingTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
+import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.getTextFieldSelectionLayout
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
-import androidx.compose.foundation.text.selection.selectionGestureInput
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -67,10 +67,12 @@ internal fun Modifier.cupertinoTextFieldPointer(
             .pointerHoverIcon(PointerIcon.Text)
     } else {
         this
-            .selectionGestureInput(
-                mouseSelectionObserver = manager.mouseSelectionObserver,
-                textDragObserver = manager.touchSelectionObserver,
-            )
+            .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
+                awaitSelectionGestures(
+                    manager.mouseSelectionObserver,
+                    manager.touchSelectionObserver,
+                )
+            }
             .pointerHoverIcon(PointerIcon.Text)
     }
 } else {
@@ -110,28 +112,17 @@ private fun getTapHandlerModifier(
                     )
                     if (currentState.handleState != HandleState.Selection) {
                         currentState.layoutResult?.let { layoutResult ->
-                            // TODO: Research native behavior with any text transformations (which adds symbols like with using NSNumberFormatter)
-                            if (currentManager.visualTransformation != VisualTransformation.None) {
-                                TextFieldDelegate.setCursorOffset(
-                                    touchPointOffset,
-                                    layoutResult,
-                                    currentState.processor,
-                                    currentOffsetMapping,
-                                    currentState.onValueChange
-                                )
-                            } else {
-                                TextFieldDelegate.cupertinoSetCursorOffsetFocused(
-                                    position = touchPointOffset,
-                                    textLayoutResult = layoutResult,
-                                    editProcessor = currentState.processor,
-                                    offsetMapping = currentOffsetMapping,
-                                    showContextMenu = { show ->
-                                        // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
-                                        if (show) { currentManager.enterSelectionMode() } else { currentManager.exitSelectionMode() }
-                                    },
-                                    onValueChange = currentState.onValueChange
-                                )
-                            }
+                            TextFieldDelegate.cupertinoSetCursorOffsetFocused(
+                                position = touchPointOffset,
+                                textLayoutResult = layoutResult,
+                                editProcessor = currentState.processor,
+                                offsetMapping = currentOffsetMapping,
+                                showContextMenu = { show ->
+                                    // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
+                                    if (show) { currentManager.enterSelectionMode() } else { currentManager.exitSelectionMode() }
+                                },
+                                onValueChange = currentState.onValueChange
+                            )
                         }
                     } else {
                         currentManager.deselect(touchPointOffset)

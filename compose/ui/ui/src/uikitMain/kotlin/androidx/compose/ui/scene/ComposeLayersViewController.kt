@@ -106,12 +106,12 @@ internal class ComposeLayersViewController(
         windowContext.setWindowContainer(window)
         window.rootViewController = this
         window.windowLevel = UIWindowLevelAlert + 1
-        window.makeKeyAndVisible()
+        window.setHidden(false)
     }
 
     private fun hide() {
         window.rootViewController = null
-        window.resignKeyWindow()
+        window.setHidden(true)
     }
 
     fun dispose() {
@@ -314,6 +314,6 @@ internal class ComposeLayersViewController(
 
 private class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        return super.hitTest(point, withEvent).takeUnless { it == this }
+        return rootViewController?.view?.hitTest(point, withEvent)
     }
 }

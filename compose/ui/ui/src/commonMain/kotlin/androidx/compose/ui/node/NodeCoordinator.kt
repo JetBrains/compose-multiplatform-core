@@ -33,7 +33,9 @@ import androidx.compose.ui.graphics.DefaultCameraDistance
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.input.pointer.MatrixPositionCalculator
@@ -50,6 +52,8 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -279,7 +283,23 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     final override val parentLayoutCoordinates: LayoutCoordinates?
         get() {
-            checkPrecondition(isAttached) { ExpectAttachedLayoutCoordinates }
+            checkPrecondition(isAttached) {
+                val builder = StringBuilder(ExpectAttachedLayoutCoordinates)
+                var node: LayoutNode? = layoutNode
+                while (node != null) {
+                    builder.appendLine()
+                    builder.append("|")
+                    builder.append(node)
+                    builder.append(" isAttached=")
+                    builder.append(node.isAttached)
+                    builder.append(" modifier=")
+                    builder.append(node.modifier)
+                    builder.append(" tail=")
+                    builder.append(tail)
+                    node = node.parent
+                }
+                builder.toString()
+            }
             onCoordinatesUsed()
             return layoutNode.outerCoordinator.wrappedBy
         }
@@ -303,6 +323,13 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     internal val lastMeasurementConstraints: Constraints
         get() = measurementConstraints
+
+    /** [lastShape] is accessed in the graphics layer modifier node and propagated to semantics. */
+    internal var lastShape: Shape = RectangleShape
+    /** [lastClip] is accessed in the graphics layer modifier node for semantics. */
+    internal var lastClip: Boolean = false
+    /** Whether layer block was invoked, used for semantics invalidation and property access. */
+    internal var wasLayerBlockInvoked: Boolean = false
 
     protected inline fun performingMeasure(
         constraints: Constraints,
@@ -573,6 +600,19 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
+                val hasShapeChanged = lastShape !== graphicsLayerScope.shape
+                val hasClipChanged = lastClip != graphicsLayerScope.clip
+                if (hasShapeChanged || hasClipChanged) {
+                    lastShape = graphicsLayerScope.shape
+                    lastClip = graphicsLayerScope.clip
+                    if (wasLayerBlockInvoked && (hasClipChanged || (lastClip && hasShapeChanged))) {
+                        // Semantics are already applied by the time the layer block is invoked for
+                        // the first time, so we only invalidate semantics after subsequent layer
+                        // block invocations and if clip changed or shape changed and clip == true.
+                        layoutNode.invalidateSemantics()
+                    }
+                }
+                wasLayerBlockInvoked = true
                 graphicsLayerScope.updateOutline()
             }
             val layerPositionalProperties =
@@ -1417,6 +1457,9 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
          */
         fun shouldHitTestChildren(parentLayoutNode: LayoutNode): Boolean
 
+        /** Returns true if the hit test should ignore the hit node and continue the hit test. */
+        fun shouldIgnoreHitNode(layoutNode: LayoutNode): Boolean
+
         /** Calls a hit test on [layoutNode]. */
         fun childHitTest(
             layoutNode: LayoutNode,
@@ -1432,28 +1475,30 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             "LayoutCoordinate operations are only valid " + "when isAttached is true"
         const val UnmeasuredError = "Asking for measurement result of unmeasured layout modifier"
         private val onCommitAffectingLayerParams: (NodeCoordinator) -> Unit = { coordinator ->
-            if (coordinator.isValidOwnerScope) {
-                // coordinator.layerPositionalProperties should always be non-null here, but
-                // we'll just be careful with a null check.
-                val positionalPropertiesChanged = coordinator.updateLayerParameters()
-                if (positionalPropertiesChanged) {
-                    val layoutNode = coordinator.layoutNode
-                    val layoutDelegate = layoutNode.layoutDelegate
-                    if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
-                        if (
-                            layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
-                                layoutDelegate.coordinatesAccessedDuringPlacement
-                        ) {
-                            layoutNode.requestRelayout()
+            withComposeStackTrace(coordinator.layoutNode) {
+                if (coordinator.isValidOwnerScope) {
+                    // coordinator.layerPositionalProperties should always be non-null here, but
+                    // we'll just be careful with a null check.
+                    val positionalPropertiesChanged = coordinator.updateLayerParameters()
+                    if (positionalPropertiesChanged) {
+                        val layoutNode = coordinator.layoutNode
+                        val layoutDelegate = layoutNode.layoutDelegate
+                        if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
+                            if (
+                                layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
+                                    layoutDelegate.coordinatesAccessedDuringPlacement
+                            ) {
+                                layoutNode.requestRelayout()
+                            }
+                            layoutDelegate.measurePassDelegate
+                                .notifyChildrenUsingCoordinatesWhilePlacing()
                         }
-                        layoutDelegate.measurePassDelegate
-                            .notifyChildrenUsingCoordinatesWhilePlacing()
-                    }
-                    layoutNode.invalidateOffsetFromRoot()
-                    val owner = layoutNode.requireOwner()
-                    owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                    if (layoutNode.globallyPositionedObservers > 0) {
-                        owner.requestOnPositionedCallback(layoutNode)
+                        layoutNode.invalidateOffsetFromRoot()
+                        val owner = layoutNode.requireOwner()
+                        owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
+                        if (layoutNode.globallyPositionedObservers > 0) {
+                            owner.requestOnPositionedCallback(layoutNode)
+                        }
                     }
                 }
             }
@@ -1482,6 +1527,8 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) = true
 
+                override fun shouldIgnoreHitNode(layoutNode: LayoutNode) = false
+
                 override fun childHitTest(
                     layoutNode: LayoutNode,
                     pointerPosition: Offset,
@@ -1500,6 +1547,14 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) =
                     parentLayoutNode.semanticsConfiguration?.isClearingSemantics != true
+
+                override fun shouldIgnoreHitNode(layoutNode: LayoutNode): Boolean {
+                    if (!layoutNode.nodes.has(Nodes.Semantics)) return true
+                    // The node below is not added to the tree; it's a wrapper around outer
+                    // semantics to use the methods available to the SemanticsNode
+                    val semanticsNode = SemanticsNode(layoutNode, mergingEnabled = false)
+                    return !semanticsNode.isImportantForAccessibility()
+                }
 
                 override fun childHitTest(
                     layoutNode: LayoutNode,

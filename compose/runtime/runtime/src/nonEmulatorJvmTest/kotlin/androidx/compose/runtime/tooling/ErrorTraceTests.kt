@@ -228,6 +228,20 @@ class ErrorTraceTests {
         }
 
     @Test
+    fun setContentNestedSubcomposition() =
+        exceptionTest(
+            "<lambda>(ErrorTraceTests.kt:<unknown line>)",
+            "<lambda>(ErrorTraceComposables.kt:66)",
+            "Subcompose(ErrorTraceComposables.kt:62)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+            "<lambda>(ErrorTraceComposables.kt:66)",
+            "Subcompose(ErrorTraceComposables.kt:62)",
+            "<lambda>(ErrorTraceTests.kt:<line number>)",
+        ) {
+            compose { Subcompose { Subcompose { throwTestException() } } }
+        }
+
+    @Test
     fun recomposeSubcomposition() =
         exceptionTest(
             "<lambda>(ErrorTraceTests.kt:<unknown line>)",
@@ -645,11 +659,15 @@ private fun assertTrace(expected: List<String>, block: () -> Unit) {
                 if (trace.contains(TestFile)) {
                     trace
                 } else {
-                    val line = trace.substringAfter(':').substringBefore(')')
+                    // Ignore differences due to composer implementation change
+                    val effectiveTrace =
+                        trace.replace("GapComposer", "Composer").replace("LinkComposer", "Composer")
+                    val line = effectiveTrace.substringAfter(':').substringBefore(')')
+                    @Suppress("SimplifyBooleanWithConstants")
                     if (line == "<unknown line>" || DebugKeepLineNumbers) {
-                        trace
+                        effectiveTrace
                     } else {
-                        trace.replace(line, "<line number>")
+                        effectiveTrace.replace(line, "<line number>")
                     }
                 }
             }

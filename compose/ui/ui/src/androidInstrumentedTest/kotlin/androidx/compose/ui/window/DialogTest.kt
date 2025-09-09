@@ -35,7 +35,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.TextField
@@ -67,7 +68,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.TestActivity
+import androidx.compose.ui.test.TestActivity2
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyChild
@@ -99,7 +100,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DialogTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity2>()
 
     lateinit var activity: ComponentActivity
 
@@ -801,7 +802,7 @@ class DialogTest {
         rule.setContent {
             Dialog(onDismissRequest = {}) {
                 val density = LocalDensity.current
-                val insets = WindowInsets.safeContent
+                val insets = WindowInsets.safeDrawing
                 Box(
                     Modifier.fillMaxSize().onPlaced {
                         top = insets.getTop(density)
@@ -823,9 +824,13 @@ class DialogTest {
             focusRequester.requestFocus()
         }
 
-        rule.runOnIdle {
-            assertThat(top).isEqualTo(0)
-            assertThat(bottom).isEqualTo(0)
+        // On 35+, the IME WindowInsets are still passed, even though the content automatically
+        // avoids the IME. b/430601578
+        if (Build.VERSION.SDK_INT < 35) {
+            rule.runOnIdle {
+                assertThat(top).isEqualTo(0)
+                assertThat(bottom).isEqualTo(0)
+            }
         }
     }
 
@@ -926,12 +931,12 @@ class DialogTest {
         var dialogWidth = 0
         var dialogHeight = 0
         rule.activityRule.scenario.onActivity {
-            WindowCompat.setDecorFitsSystemWindows(it.window, true)
+            WindowCompat.setDecorFitsSystemWindows(it.window, false)
         }
         rule.setContent {
             Box(
                 modifier =
-                    Modifier.fillMaxSize().onGloballyPositioned {
+                    Modifier.safeDrawingPadding().fillMaxSize().onGloballyPositioned {
                         mainContentWidth = it.size.width
                         mainContentHeight = it.size.height
                     }

@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.KeyboardVisibilityObserver
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -388,7 +389,7 @@ internal class KeyboardInsetsTest {
             Column(modifier = Modifier.fillMaxSize().imePadding().onGloballyPositioned {
                 contentFrames.add(it.boundsInRoot().toDpRect(density))
             }) {
-                Spacer(Modifier.weight(100f))
+                Spacer(Modifier.weight(1f))
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -459,7 +460,7 @@ internal class KeyboardInsetsTest {
             Column(modifier = Modifier.fillMaxSize().imePadding().onGloballyPositioned {
                 contentFrames.add(it.boundsInRoot().toDpRect(density))
             }) {
-                Spacer(Modifier.weight(100f))
+                Spacer(Modifier.weight(1f))
                 TextField(
                     value = "",
                     onValueChange = {},

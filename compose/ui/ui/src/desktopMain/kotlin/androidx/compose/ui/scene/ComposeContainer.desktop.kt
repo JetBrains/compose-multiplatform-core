@@ -190,6 +190,7 @@ internal class ComposeContainer(
     val windowHandle by mediator::windowHandle
     val renderApi by mediator::renderApi
     val preferredSize by mediator::preferredSize
+    val semanticsOwners by mediator::semanticsOwners
 
     override val lifecycle = LifecycleRegistry(this)
 
@@ -281,7 +282,7 @@ internal class ComposeContainer(
         if (!container.isDisplayable) return
 
         windowContext.setContainerSize(windowContainer.sizeInPx)
-        mediator.onComponentSizeChanged()
+        mediator.onContainerSizeChanged()
         layers.fastForEach(DesktopComposeSceneLayer::onWindowContainerSizeChanged)
 
         // Sometimes Swing displays interop views in incorrect order after resizing,

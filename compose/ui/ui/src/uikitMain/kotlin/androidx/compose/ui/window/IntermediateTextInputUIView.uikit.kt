@@ -100,9 +100,13 @@ internal class IntermediateTextInputUIView(
 
     var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 
+    override fun inputView(): UIView? = inputTraits.inputView()
+    override fun inputAccessoryView(): UIView? = inputTraits.inputAccessoryView()
+
     override fun canBecomeFirstResponder() = true
 
     override fun resignFirstResponder(): Boolean {
+        input?.onResignFocus()
         hideTextMenu()
         return super.resignFirstResponder()
     }
@@ -355,11 +359,8 @@ internal class IntermediateTextInputUIView(
     }
 
     override fun offsetFromPosition(from: UITextPosition, toPosition: UITextPosition): NSInteger {
-        if (from !is IntermediateTextPosition) {
-            error("from !is IntermediateTextPosition: $from")
-        }
-        if (toPosition !is IntermediateTextPosition) {
-            error("toPosition !is IntermediateTextPosition: $toPosition")
+        if (from !is IntermediateTextPosition || toPosition !is IntermediateTextPosition) {
+            return 0
         }
         return (toPosition.position - from.position).toLong()
     }

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.fromColorLong
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -65,6 +66,15 @@ internal object ClipboardUtils {
         if (clipEntry == null) return false
         return clipEntry.clipData.description.hasMimeType("text/*")
     }
+
+    /**
+     * This method allows to check if there is a text in the Clipboard without triggering the toast
+     * "APP pasted from the clipboard" on Android (unlike, clipboard.getClipEntry())
+     */
+    @JvmStatic
+    fun hasText(clipboard: Clipboard): Boolean {
+        return clipboard.nativeClipboard.primaryClipDescription?.hasMimeType("text/*") == true
+    }
 }
 
 internal actual suspend fun ClipEntry.readText(): String? {
@@ -82,6 +92,10 @@ internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
 internal actual fun ClipEntry?.hasText(): Boolean {
     return ClipboardUtils.hasText(this)
 }
+
+internal actual fun Clipboard.isReadSupported(): Boolean = true
+
+internal actual fun Clipboard.isWriteSupported(): Boolean = true
 
 // Copy pasted from ui module
 internal fun AnnotatedString.convertToCharSequence(): CharSequence {
@@ -554,3 +568,6 @@ private const val BASELINE_SHIFT_SIZE = FLOAT_SIZE
 private const val TEXT_GEOMETRIC_TRANSFORM_SIZE = FLOAT_SIZE * 2
 private const val TEXT_DECORATION_SIZE = INT_SIZE
 private const val SHADOW_SIZE = COLOR_SIZE + FLOAT_SIZE * 3
+
+internal actual fun Clipboard.isReadSupported(): Boolean = true
+internal actual fun Clipboard.isWriteSupported(): Boolean = true

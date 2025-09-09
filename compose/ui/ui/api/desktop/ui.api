@@ -423,6 +423,19 @@ public final class androidx/compose/ui/autofill/ContentType$Companion {
 	public final fun getUsername ()Landroidx/compose/ui/autofill/ContentType;
 }
 
+public abstract interface class androidx/compose/ui/autofill/FillableData {
+	public fun getBooleanValue ()Ljava/lang/Boolean;
+	public fun getListIndexOrDefault (I)I
+	public fun getListIndexValue ()Ljava/lang/Integer;
+	public fun getTextValue ()Ljava/lang/CharSequence;
+}
+
+public final class androidx/compose/ui/autofill/FillableDataKt {
+	public static final fun FillableData (I)Landroidx/compose/ui/autofill/FillableData;
+	public static final fun FillableData (Ljava/lang/CharSequence;)Landroidx/compose/ui/autofill/FillableData;
+	public static final fun FillableData (Z)Landroidx/compose/ui/autofill/FillableData;
+}
+
 public final class androidx/compose/ui/awt/AwtEvents_desktopKt {
 	public static final fun getAwtEventOrNull (Landroidx/compose/ui/input/pointer/PointerEvent;)Ljava/awt/event/MouseEvent;
 	public static final fun getAwtEventOrNull-ZmokQxo (Ljava/lang/Object;)Ljava/awt/event/KeyEvent;
@@ -905,9 +918,11 @@ public final class androidx/compose/ui/focus/FocusOrderModifierKt {
 }
 
 public abstract interface class androidx/compose/ui/focus/FocusProperties {
+	public static final field Companion Landroidx/compose/ui/focus/FocusProperties$Companion;
 	public abstract fun getCanFocus ()Z
 	public fun getDown ()Landroidx/compose/ui/focus/FocusRequester;
 	public fun getEnd ()Landroidx/compose/ui/focus/FocusRequester;
+	public fun getFocusRect ()Landroidx/compose/ui/geometry/Rect;
 	public fun getLeft ()Landroidx/compose/ui/focus/FocusRequester;
 	public fun getNext ()Landroidx/compose/ui/focus/FocusRequester;
 	public fun getOnEnter ()Lkotlin/jvm/functions/Function1;
@@ -919,6 +934,7 @@ public abstract interface class androidx/compose/ui/focus/FocusProperties {
 	public abstract fun setCanFocus (Z)V
 	public fun setDown (Landroidx/compose/ui/focus/FocusRequester;)V
 	public fun setEnd (Landroidx/compose/ui/focus/FocusRequester;)V
+	public fun setFocusRect (Landroidx/compose/ui/geometry/Rect;)V
 	public fun setLeft (Landroidx/compose/ui/focus/FocusRequester;)V
 	public fun setNext (Landroidx/compose/ui/focus/FocusRequester;)V
 	public fun setOnEnter (Lkotlin/jvm/functions/Function1;)V
@@ -927,6 +943,10 @@ public abstract interface class androidx/compose/ui/focus/FocusProperties {
 	public fun setRight (Landroidx/compose/ui/focus/FocusRequester;)V
 	public fun setStart (Landroidx/compose/ui/focus/FocusRequester;)V
 	public fun setUp (Landroidx/compose/ui/focus/FocusRequester;)V
+}
+
+public final class androidx/compose/ui/focus/FocusProperties$Companion {
+	public final fun getUnsetFocusRect ()Landroidx/compose/ui/geometry/Rect;
 }
 
 public final class androidx/compose/ui/focus/FocusPropertiesKt {
@@ -1032,6 +1052,7 @@ public final class androidx/compose/ui/focus/FocusTargetModifierNodeKt {
 	public static final synthetic fun FocusTargetModifierNode ()Landroidx/compose/ui/focus/FocusTargetModifierNode;
 	public static final fun FocusTargetModifierNode-PYyLHbc (ILkotlin/jvm/functions/Function2;)Landroidx/compose/ui/focus/FocusTargetModifierNode;
 	public static synthetic fun FocusTargetModifierNode-PYyLHbc$default (ILkotlin/jvm/functions/Function2;ILjava/lang/Object;)Landroidx/compose/ui/focus/FocusTargetModifierNode;
+	public static final fun getFocusedRect (Landroidx/compose/ui/focus/FocusTargetModifierNode;)Landroidx/compose/ui/geometry/Rect;
 }
 
 public final class androidx/compose/ui/focus/Focusability {
@@ -1051,6 +1072,10 @@ public final class androidx/compose/ui/focus/Focusability$Companion {
 	public final fun getAlways-LCbbffg ()I
 	public final fun getNever-LCbbffg ()I
 	public final fun getSystemDefined-LCbbffg ()I
+}
+
+public final class androidx/compose/ui/focus/RequestChildFocusKt {
+	public static final fun requestFocusForChildInRootBounds (Landroidx/compose/ui/node/DelegatableNode;IIII)Z
 }
 
 public final class androidx/compose/ui/graphics/CompositingStrategy {
@@ -1493,8 +1518,28 @@ public abstract interface class androidx/compose/ui/input/InputModeManager {
 
 public abstract interface class androidx/compose/ui/input/indirect/IndirectTouchEvent {
 	public abstract fun getPosition-F1C5BW0 ()J
+	public abstract fun getPrimaryDirectionalMotionAxis-ifgRr6E ()I
 	public abstract fun getType-LxEHWp8 ()I
 	public abstract fun getUptimeMillis ()J
+}
+
+public final class androidx/compose/ui/input/indirect/IndirectTouchEventPrimaryDirectionalMotionAxis {
+	public static final field Companion Landroidx/compose/ui/input/indirect/IndirectTouchEventPrimaryDirectionalMotionAxis$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/input/indirect/IndirectTouchEventPrimaryDirectionalMotionAxis;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/input/indirect/IndirectTouchEventPrimaryDirectionalMotionAxis$Companion {
+	public final fun getNone-ifgRr6E ()I
+	public final fun getX-ifgRr6E ()I
+	public final fun getY-ifgRr6E ()I
 }
 
 public final class androidx/compose/ui/input/indirect/IndirectTouchEventType {
@@ -2618,7 +2663,9 @@ public final class androidx/compose/ui/layout/LayoutCoordinates$DefaultImpls {
 public final class androidx/compose/ui/layout/LayoutCoordinatesKt {
 	public static final fun boundsInParent (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
 	public static final fun boundsInRoot (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
-	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
+	public static final synthetic fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
+	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;Z)Landroidx/compose/ui/geometry/Rect;
+	public static synthetic fun boundsInWindow$default (Landroidx/compose/ui/layout/LayoutCoordinates;ZILjava/lang/Object;)Landroidx/compose/ui/geometry/Rect;
 	public static final fun findRootCoordinates (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/layout/LayoutCoordinates;
 	public static final fun positionInParent (Landroidx/compose/ui/layout/LayoutCoordinates;)J
 	public static final fun positionInRoot (Landroidx/compose/ui/layout/LayoutCoordinates;)J
@@ -2695,6 +2742,7 @@ public final class androidx/compose/ui/layout/LookaheadScopeKt {
 	public static final fun LookaheadScope (Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;I)V
 	public static final fun approachLayout (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun approachLayout$default (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun lookaheadScopeCoordinates (Landroidx/compose/ui/layout/LayoutCoordinates;Landroidx/compose/ui/layout/LookaheadScope;)Landroidx/compose/ui/layout/LayoutCoordinates;
 }
 
 public abstract interface class androidx/compose/ui/layout/Measurable : androidx/compose/ui/layout/IntrinsicMeasurable {
@@ -3233,6 +3281,7 @@ public abstract interface class androidx/compose/ui/node/ComposeUiNode {
 }
 
 public final class androidx/compose/ui/node/ComposeUiNode$Companion {
+	public final fun getApplyOnDeactivatedNodeAssertion ()Lkotlin/jvm/functions/Function1;
 	public final fun getConstructor ()Lkotlin/jvm/functions/Function0;
 	public final fun getSetCompositeKeyHash ()Lkotlin/jvm/functions/Function2;
 	public final fun getSetDensity ()Lkotlin/jvm/functions/Function2;
@@ -3263,6 +3312,8 @@ public abstract interface class androidx/compose/ui/node/DelegatableNode$Registr
 
 public final class androidx/compose/ui/node/DelegatableNodeKt {
 	public static final fun dispatchOnScrollChanged-Uv8p0NA (Landroidx/compose/ui/node/DelegatableNode;J)V
+	public static final fun invalidateDrawForSubtree (Landroidx/compose/ui/node/DelegatableNode;)V
+	public static final fun invalidateLayoutForSubtree (Landroidx/compose/ui/node/DelegatableNode;)V
 	public static final fun invalidateSubtree (Landroidx/compose/ui/node/DelegatableNode;)V
 	public static final fun requestAutofill (Landroidx/compose/ui/node/DelegatableNode;)V
 	public static final fun requireDensity (Landroidx/compose/ui/node/DelegatableNode;)Landroidx/compose/ui/unit/Density;
@@ -3311,6 +3362,7 @@ public abstract interface class androidx/compose/ui/node/DrawModifierNode : andr
 }
 
 public final class androidx/compose/ui/node/DrawModifierNodeKt {
+	public static final fun dispatchDraw (Landroidx/compose/ui/node/DelegatableNode;Landroidx/compose/ui/graphics/drawscope/ContentDrawScope;)V
 	public static final fun invalidateDraw (Landroidx/compose/ui/node/DrawModifierNode;)V
 }
 
@@ -3339,6 +3391,7 @@ public final class androidx/compose/ui/node/LayoutModifierNodeKt {
 	public static final fun invalidateMeasurement (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun invalidatePlacement (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun remeasureSync (Landroidx/compose/ui/node/LayoutModifierNode;)V
+	public static final fun updateLayerBlock (Landroidx/compose/ui/node/LayoutModifierNode;Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract class androidx/compose/ui/node/ModifierNodeElement : androidx/compose/ui/Modifier$Element, androidx/compose/ui/platform/InspectableValue {
@@ -3915,6 +3968,7 @@ public final class androidx/compose/ui/semantics/SemanticsActions {
 	public final fun getInsertTextAtCursor ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getOnAutofillText ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getOnClick ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getOnFillData ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getOnImeAction ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getOnLongClick ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getPageDown ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4020,6 +4074,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getDisabled ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getEditableText ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getError ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getFillableData ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getFocused ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getHeading ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getHideFromAccessibility ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4078,6 +4133,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun getContentType (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/autofill/ContentType;
 	public static final fun getCustomActions (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Ljava/util/List;
 	public static final fun getEditableText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/text/AnnotatedString;
+	public static final fun getFillableData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/autofill/FillableData;
 	public static final fun getFocused (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
 	public static final fun getHorizontalScrollAxisRange (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/semantics/ScrollAxisRange;
 	public static final fun getImeAction (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)I
@@ -4116,6 +4172,8 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static synthetic fun onAutofillText$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun onClick (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun onClick$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun onFillData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun onFillData$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun onImeAction-9UiTYpY (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;ILjava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun onImeAction-9UiTYpY$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;ILjava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static final fun onLongClick (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
@@ -4151,6 +4209,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun setCustomActions (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/util/List;)V
 	public static final fun setEditable (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setEditableText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/text/AnnotatedString;)V
+	public static final fun setFillableData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/autofill/FillableData;)V
 	public static final fun setFocused (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setHorizontalScrollAxisRange (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/semantics/ScrollAxisRange;)V
 	public static final fun setImeAction-4L7nppU (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;I)V

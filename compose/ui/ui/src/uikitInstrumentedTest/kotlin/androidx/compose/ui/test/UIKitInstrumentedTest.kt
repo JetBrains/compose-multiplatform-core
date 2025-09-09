@@ -63,7 +63,9 @@ import platform.UIKit.UIInterfaceOrientationMaskPortraitUpsideDown
 import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
+import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITouch
+import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -329,10 +331,13 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        val allWindows = scene?.windows ?: emptyList<UIWindow>()
+
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
-        window.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        window.windowScene = scene
         dispatch_async(dispatch_get_main_queue()) {
             window.windowScene = null
             window.resignKeyWindow()
@@ -342,6 +347,10 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
         _window = null
+
+        allWindows.forEach {
+            (it as UIWindow).setHidden(true)
+        }
     }
 
     /**
@@ -377,4 +386,25 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     ): UIInterfaceOrientationMask {
         return supportedInterfaceOrientations
     }
+}
+
+internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol? {
+    val windowScene = hostingViewController.view.window?.windowScene ?: return null
+
+    fun findFirstResponder(view: UIView): UIView? {
+        if (view.isFirstResponder) {
+            return view
+        }
+        view.subviews.forEach {
+            findFirstResponder(it as UIView)?.let { return it }
+        }
+        return null
+    }
+
+    return windowScene.windows.reversed().filter {
+        it as UIWindow
+        it.isKeyWindow() && !it.isHidden()
+    }.firstNotNullOfOrNull {
+        findFirstResponder(view = it as UIView)
+    } as? UITextInputProtocol
 }

@@ -16,14 +16,12 @@
 
 package androidx.compose.material3
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.internal.Icons
 import androidx.compose.material3.internal.Strings
@@ -106,7 +104,8 @@ internal fun TimePickerDialogLayout(
     Surface(
         shape = shape,
         tonalElevation = DialogTokens.ContainerElevation,
-        modifier = modifier.background(shape = shape, color = containerColor),
+        modifier = modifier,
+        color = containerColor,
     ) {
         TimePickerCustomLayout(
             title = title,
@@ -257,31 +256,36 @@ object TimePickerDialogDefaults {
      * @param displayMode the current display mode of the time picker
      * @param modifier the [Modifier] to be applied to this button
      */
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun DisplayModeToggle(
         onDisplayModeChange: () -> Unit,
         displayMode: TimePickerDisplayMode,
         modifier: Modifier = Modifier,
     ) {
-        IconButton(modifier = modifier, onClick = onDisplayModeChange) {
-            val icon =
+        val contentDescription =
+            getString(
                 if (displayMode == TimePickerDisplayMode.Picker) {
-                    Icons.Outlined.Keyboard
+                    Strings.TimePickerToggleKeyboard
                 } else {
-                    Icons.Outlined.Schedule
+                    Strings.TimePickerToggleTouch
                 }
-
-            Icon(
-                imageVector = icon,
-                contentDescription =
-                    getString(
-                        if (displayMode == TimePickerDisplayMode.Picker) {
-                            Strings.TimePickerToggleTouch
-                        } else {
-                            Strings.TimePickerToggleKeyboard
-                        }
-                    ),
             )
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(contentDescription) } },
+            state = rememberTooltipState(),
+        ) {
+            IconButton(modifier = modifier, onClick = onDisplayModeChange) {
+                val icon =
+                    if (displayMode == TimePickerDisplayMode.Picker) {
+                        Icons.Outlined.Keyboard
+                    } else {
+                        Icons.Outlined.Schedule
+                    }
+                Icon(imageVector = icon, contentDescription = contentDescription)
+            }
         }
     }
 

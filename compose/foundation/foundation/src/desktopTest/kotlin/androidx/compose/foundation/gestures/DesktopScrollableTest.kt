@@ -281,6 +281,9 @@ class DesktopScrollableTest {
                 scrollDelta = Offset(0f, -5f),
                 nativeEvent = awtWheelEvent(),
             )
+        }
+        waitForIdle()
+        scope.launch {
             scene.sendPointerEvent(
                 eventType = PointerEventType.Scroll,
                 position = Offset.Zero,

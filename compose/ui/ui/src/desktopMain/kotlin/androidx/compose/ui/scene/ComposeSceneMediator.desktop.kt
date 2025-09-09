@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
@@ -143,6 +144,7 @@ internal class ComposeSceneMediator(
     var fullscreen by skiaLayerComponent::fullscreen
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
+    val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerListener::semanticsOwners
 
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -290,10 +292,11 @@ internal class ComposeSceneMediator(
         private set
 
     /**
-     * The bounds of scene relative to [container]. Might be null if it's equal to [container] size.
+     * The bounds of [scene] relative to [container]. Might be null if it's equal to [container]
+     * size.
      *
      * It makes sense in cases when real [container] size doesn't match desired value.
-     * For example if we want to show dialog in a separate window with size of this
+     * For example, if we want to show a dialog in a separate window with the size of this
      * dialog, but constrains (and scene size) should remain the size of the main window.
      */
     var sceneBoundsInPx: Rect? = null
@@ -561,7 +564,7 @@ internal class ComposeSceneMediator(
         offsetInWindow = windowContext.offsetInWindow(container)
     }
 
-    fun onComponentSizeChanged() = catchExceptions {
+    fun onContainerSizeChanged() = catchExceptions {
         if (!container.isDisplayable) return
 
         val size = sceneBoundsInPx?.size ?: container.sizeInPx
@@ -579,7 +582,7 @@ internal class ComposeSceneMediator(
     fun onChangeDensity(density: Density = container.density) = catchExceptions {
         if (scene.density != density) {
             scene.density = density
-            onComponentSizeChanged()
+            onContainerSizeChanged()
         }
     }
 
@@ -641,7 +644,7 @@ internal class ComposeSceneMediator(
                             ?: policy.getDefaultComponent(root)
                     }
                     val hasFocus = toFocus?.hasFocus() == true
-                    !hasFocus && toFocus?.requestFocusInWindow(FocusEvent.Cause.TRAVERSAL_FORWARD) == true
+                    !hasFocus && toFocus?.requestFocusInWindow(TRAVERSAL_FORWARD) == true
                 }
 
                 FocusDirection.Previous -> {
@@ -651,7 +654,7 @@ internal class ComposeSceneMediator(
                             ?: policy.getDefaultComponent(root)
                     }
                     val hasFocus = toFocus?.hasFocus() == true
-                    !hasFocus && toFocus?.requestFocusInWindow(FocusEvent.Cause.TRAVERSAL_BACKWARD) == true
+                    !hasFocus && toFocus?.requestFocusInWindow(TRAVERSAL_BACKWARD) == true
                 }
 
                 else -> false
@@ -666,6 +669,8 @@ internal class ComposeSceneMediator(
         private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
         val accessibilityControllers get() = _accessibilityControllers.values.reversed()
 
+        val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
+
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             check(semanticsOwner !in _accessibilityControllers)
             _accessibilityControllers[semanticsOwner] = AccessibilityController(
@@ -677,10 +682,12 @@ internal class ComposeSceneMediator(
             ).also {
                 it.launchSyncLoop(coroutineContext)
             }
+            semanticsOwners.add(semanticsOwner)
         }
 
         override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
             _accessibilityControllers.remove(semanticsOwner)?.dispose()
+            semanticsOwners.remove(semanticsOwner)
         }
 
         override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {

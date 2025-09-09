@@ -63,6 +63,10 @@ fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
                     composition.setContent(block)
                 }
 
+                override fun hasPendingWork(): Boolean {
+                    return recomposer.hasPendingWork
+                }
+
                 @OptIn(ExperimentalComposeRuntimeApi::class)
                 override fun compose(
                     observer: CompositionObserver,
@@ -132,6 +136,8 @@ interface CompositionTestScope : CoroutineScope {
         block: @Composable () -> Unit,
     ): CompositionObserverHandle?
 
+    fun hasPendingWork(): Boolean
+
     /**
      * Advance the state which executes any pending compositions, if any. Returns true if advancing
      * resulted in changes being applied.
@@ -158,16 +164,20 @@ interface CompositionTestScope : CoroutineScope {
 }
 
 /** Create a mock view validator and validate the view. */
-fun CompositionTestScope.validate(block: MockViewValidator.() -> Unit) =
+fun CompositionTestScope.validate(block: MockViewValidator.() -> Unit) {
+    verifyConsistent()
     MockViewListValidator(root.children).validate(block).also { validator = block }
+}
 
 /** Revalidate using the last validator */
 fun CompositionTestScope.revalidate() = validate(validator ?: error("validate was not called"))
 
 /** Advance and expect changes */
 fun CompositionTestScope.expectChanges() {
+    verifyConsistent()
     val changes = advance()
     assertTrue(actual = changes, message = "Expected changes but none were found")
+    verifyConsistent()
 }
 
 /** Advance and expect no changes */

@@ -135,6 +135,8 @@ public final class androidx/compose/ui/test/FiltersKt {
 	public static final fun isFocusable ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isFocused ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isHeading ()Landroidx/compose/ui/test/SemanticsMatcher;
+	public static final fun isHiddenFromAccessibility ()Landroidx/compose/ui/test/SemanticsMatcher;
+	public static final fun isInHiddenAccessibilitySubtree ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isNotEnabled ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isNotFocusable ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isNotFocused ()Landroidx/compose/ui/test/SemanticsMatcher;
@@ -419,6 +421,7 @@ public abstract interface class androidx/compose/ui/test/MouseInjectionScope : a
 	public static synthetic fun release-SMKQcqU$default (Landroidx/compose/ui/test/MouseInjectionScope;IILjava/lang/Object;)V
 	public abstract fun scroll-I7Dg0i0 (FI)V
 	public static synthetic fun scroll-I7Dg0i0$default (Landroidx/compose/ui/test/MouseInjectionScope;FIILjava/lang/Object;)V
+	public fun scroll-k-4lQ0M (J)V
 	public fun updatePointerBy-k-4lQ0M (J)V
 	public abstract fun updatePointerTo-k-4lQ0M (J)V
 }

@@ -19,6 +19,7 @@ package androidx.compose.ui.semantics
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.state.ToggleableState
@@ -130,6 +131,16 @@ object SemanticsProperties {
             name = "ContentDataType",
             mergePolicy = { parentValue, _ ->
                 // Never merge autofill data types
+                parentValue
+            },
+        )
+
+    /** @see SemanticsPropertyReceiver.fillableData */
+    val FillableData =
+        SemanticsPropertyKey<FillableData>(
+            name = "FillableData",
+            mergePolicy = { parentValue, _ ->
+                // Never merge autofill types
                 parentValue
             },
         )
@@ -298,6 +309,9 @@ object SemanticsActions {
 
     /** @see SemanticsPropertyReceiver.onAutofillText */
     val OnAutofillText = ActionPropertyKey<(AnnotatedString) -> Boolean>("OnAutofillText")
+
+    /** @see SemanticsPropertyReceiver.onFillData */
+    val OnFillData = ActionPropertyKey<(FillableData) -> Boolean>("OnFillData")
 
     /** @see SemanticsPropertyReceiver.setProgress */
     val SetProgress = ActionPropertyKey<(progress: Float) -> Boolean>("SetProgress")
@@ -971,6 +985,20 @@ var SemanticsPropertyReceiver.contentType by SemanticsProperties.ContentType
 var SemanticsPropertyReceiver.contentDataType by SemanticsProperties.ContentDataType
 
 /**
+ * The current value of a component that can be autofilled.
+ *
+ * This property is used to expose the component's current data *to* the autofill service. The
+ * service can then read this value, for example, to save it for future autofill suggestions.
+ *
+ * This is the counterpart to the [onFillData] action, which is used to *receive* data from the
+ * autofill service.
+ *
+ * @sample androidx.compose.ui.samples.AutofillableTextFieldWithFillableDataSemantics
+ * @see SemanticsProperties.FillableData
+ */
+var SemanticsPropertyReceiver.fillableData by SemanticsProperties.FillableData
+
+/**
  * A value to manually control screenreader traversal order.
  *
  * This API can be used to customize TalkBack traversal order. When the `traversalIndex` property is
@@ -1149,7 +1177,7 @@ fun SemanticsPropertyReceiver.indexForKey(mapping: (Any) -> Int) {
  */
 var SemanticsPropertyReceiver.maxTextLength by SemanticsProperties.MaxTextLength
 
-/** The shape of the UI element if it's different from the bounding rectangle. */
+/** The shape of the UI element. */
 var SemanticsPropertyReceiver.shape by SemanticsProperties.Shape
 
 /**
@@ -1258,6 +1286,27 @@ fun SemanticsPropertyReceiver.onAutofillText(
     action: ((AnnotatedString) -> Boolean)?,
 ) {
     this[SemanticsActions.OnAutofillText] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action that an autofill service can invoke to fill the component with data.
+ *
+ * The [action] will be called by the system, passing the [FillableData] that should be used to
+ * update the component's state.
+ *
+ * This is the counterpart to the [fillableData] property, which is used to *provide* the
+ * component's current data to the autofill service.
+ *
+ * @sample androidx.compose.ui.samples.AutofillableTextFieldWithFillableDataSemantics
+ * @param label Optional label for this action.
+ * @param action Action to be performed when [SemanticsActions.OnFillData] is called. The lambda
+ *   receives the [FillableData] from the autofill service.
+ */
+fun SemanticsPropertyReceiver.onFillData(
+    label: String? = null,
+    action: ((FillableData) -> Boolean)?,
+) {
+    this[SemanticsActions.OnFillData] = AccessibilityAction(label, action)
 }
 
 /**

@@ -39,6 +39,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
@@ -64,6 +65,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.IntSize
@@ -275,37 +277,117 @@ class SemanticsTests {
     @Test
     fun contentTypeProperty() {
         rule.setContent {
-            Box(
-                Modifier.testTag(TestTag).semantics {
-                    testProperty = ContentType.Username.toString()
-                }
-            )
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics { contentType = ContentType.Username }
+            ) {}
         }
 
         rule
-            .onNodeWithTag(TestTag)
-            .assertUnmergedTestPropertyEquals(ContentType.Username.toString())
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.ContentType, ContentType.Username)
+            )
 
-        rule.onNodeWithTag(TestTag).assertTestPropertyEquals(ContentType.Username.toString())
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.ContentType, ContentType.Username)
+            )
     }
 
     @Test
     fun contentDataTypeProperty() {
         rule.setContent {
-            Surface {
-                Box(
-                    Modifier.testTag(TestTag).semantics {
-                        testProperty = ContentDataType.Text.toString()
-                    }
-                )
-            }
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics { contentDataType = ContentDataType.Text }
+            ) {}
         }
 
         rule
-            .onNodeWithTag(TestTag)
-            .assertUnmergedTestPropertyEquals(ContentDataType.Text.toString())
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.ContentDataType,
+                    ContentDataType.Text,
+                )
+            )
 
-        rule.onNodeWithTag(TestTag).assertTestPropertyEquals(ContentDataType.Text.toString())
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.ContentDataType,
+                    ContentDataType.Text,
+                )
+            )
+    }
+
+    @Test
+    fun fillableDataProperty() {
+        rule.setContent {
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics {
+                    FillableData("foo")?.let { fillableData = it }
+                }
+            ) {}
+        }
+
+        rule
+            .onNodeWithTag(TestTag, useUnmergedTree = true)
+            .assert(
+                SemanticsMatcher("fillableData") {
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.textValue == "foo"
+                }
+            )
+
+        rule
+            .onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher("fillableData") {
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.textValue == "foo"
+                }
+            )
+    }
+
+    @Test
+    fun onFillDataAction() {
+        val actionLabel = "fill"
+        var receivedData: FillableData? = null
+        rule.setContent {
+            SimpleTestLayout(
+                Modifier.testTag(TestTag).semantics {
+                    onFillData(
+                        label = actionLabel,
+                        action = {
+                            receivedData = it
+                            true
+                        },
+                    )
+                }
+            ) {}
+        }
+
+        val fillableData = FillableData("foo")
+        rule.onNodeWithTag(TestTag).performSemanticsAction(SemanticsActions.OnFillData) {
+            fillableData?.let { data -> it(data) }
+        }
+
+        assertThat(receivedData?.textValue).isEqualTo("foo")
+        fillableData?.let { data ->
+            val fillMatcher =
+                SemanticsMatcher("fill") { node ->
+                    // Assert that the SemanticsAction.OnFillData exists,
+                    node.config.getOrNull(SemanticsActions.OnFillData)?.let { action ->
+                        // has the correct label and,
+                        action.label == actionLabel
+                        // when invoked with the provided data, the action returns true.
+                        && action.action?.invoke(data) == true
+                    } ?: false
+                }
+
+            rule.onNodeWithTag(TestTag, useUnmergedTree = true).assert(fillMatcher)
+            rule.onNodeWithTag(TestTag).assert(fillMatcher)
+        }
     }
 
     @Test
@@ -718,7 +800,7 @@ class SemanticsTests {
         rule
             .onNodeWithTag(TestTag)
             .assertDoesNotHaveProperty(SemanticsProperties.ContentDescription)
-        rule.onNodeWithContentDescription(label) // assert exists
+        rule.onNodeWithContentDescription(label).assertExists()
     }
 
     @Test
@@ -1235,6 +1317,16 @@ class SemanticsTests {
 
 private fun SemanticsNodeInteraction.assertDoesNotHaveProperty(property: SemanticsPropertyKey<*>) {
     assert(SemanticsMatcher.keyNotDefined(property))
+}
+
+fun SemanticsNodeInteraction.assertContentDataTypeEquals(
+    expected: ContentDataType
+): SemanticsNodeInteraction {
+    val actual = fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDataType)
+    assert(actual == expected) {
+        "ContentDataType assertion failed.\nExpected: '$expected'\nActual: '$actual'"
+    }
+    return this
 }
 
 private val TestProperty =
