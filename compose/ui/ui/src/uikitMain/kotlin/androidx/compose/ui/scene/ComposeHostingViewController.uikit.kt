@@ -27,7 +27,6 @@ import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
-import androidx.compose.ui.navigationevent.UIKitNavigationEventDispatcherOwner
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback

@@ -4984,9 +4984,6 @@ final val androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegat
 final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop[0]
 
 // Targets: [ios]
@@ -5032,9 +5029,6 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop|#static{}androidx_compose_ui_platform_EmptyInputTraits$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop|#static{}androidx_compose_ui_platform_IOSLifecycleOwner$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop|#static{}androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop[0]
 
 // Targets: [ios]
@@ -5042,6 +5036,9 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 
 // Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop|#static{}androidx_compose_ui_platform_Translations$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop|#static{}androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop|#static{}androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop[0]
@@ -5194,9 +5191,6 @@ final fun androidx.compose.ui.main/defaultUIKitMain(kotlin/String, platform.UIKi
 final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter|androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(){}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter|androidx_compose_ui_navigationevent_UIKitNavigationEventDispatcherOwner$stableprop_getter(){}[0]
-
-// Targets: [ios]
 final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter|androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -5242,9 +5236,6 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter|androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter(){}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter|androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter(){}[0]
-
-// Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter|androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -5252,6 +5243,9 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter|androidx_compose_ui_platform_Translations$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter|androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter|androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(){}[0]
