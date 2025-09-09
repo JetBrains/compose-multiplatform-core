@@ -88,7 +88,7 @@ fun CanvasLayersComposeScene(
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     platformContext: PlatformContext = PlatformContext.Empty,
-    invalidate: () -> Unit = {},
+    invalidate: (onNextFrame: Boolean) -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
     density = density,
     layoutDirection = layoutDirection,
@@ -104,7 +104,7 @@ private class CanvasLayersComposeSceneImpl(
     size: IntSize?,
     coroutineContext: CoroutineContext,
     override val platformContext: PlatformContext,
-    invalidate: () -> Unit = {},
+    invalidate: (onNextFrame: Boolean) -> Unit = {},
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
     invalidate = invalidate

@@ -127,7 +127,8 @@ internal class SwingSkiaLayerComponent(
         contentComponent.requestNativeFocusOnAccessible(accessible)
     }
 
-    override fun onComposeInvalidation() {
+    override fun onComposeInvalidation(onNextFrame: Boolean) {
+        // TODO: if onNextFrame is true, delay until next frame
         contentComponent.repaint()
     }
 

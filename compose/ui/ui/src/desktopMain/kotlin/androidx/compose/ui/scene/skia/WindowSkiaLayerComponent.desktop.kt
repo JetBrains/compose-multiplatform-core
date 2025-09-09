@@ -163,8 +163,8 @@ internal class WindowSkiaLayerComponent(
     override fun requestNativeFocusOnAccessible(accessible: Accessible) =
         contentComponent.requestNativeFocusOnAccessible(accessible)
 
-    override fun onComposeInvalidation() {
-        contentComponent.needRedraw()
+    override fun onComposeInvalidation(onNextFrame: Boolean) {
+        contentComponent.needRedraw(throttledToVsync = onNextFrame)
     }
 
     override fun onRenderApiChanged(action: () -> Unit) {

@@ -68,7 +68,7 @@ fun PlatformLayersComposeScene(
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     composeSceneContext: ComposeSceneContext = ComposeSceneContext.Empty,
-    invalidate: () -> Unit = {},
+    invalidate: (onNextFrame: Boolean) -> Unit = {},
 ): ComposeScene = PlatformLayersComposeSceneImpl(
     density = density,
     layoutDirection = layoutDirection,
@@ -84,7 +84,7 @@ private class PlatformLayersComposeSceneImpl(
     size: IntSize?,
     coroutineContext: CoroutineContext,
     override val composeSceneContext: ComposeSceneContext,
-    invalidate: () -> Unit,
+    invalidate: (onNextFrame: Boolean) -> Unit,
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
     invalidate = invalidate
