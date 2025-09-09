@@ -62,9 +62,6 @@ internal class UIKitNavigationEventInput(
         private const val BACK_GESTURE_VELOCITY = 100
     }
 
-    private var dispatcher: NavigationEventDispatcher? = null
-    private val isEnabled get() = dispatcher?.isEnabled == true
-
     private val iosGestureHandler = UiKitScreenEdgePanGestureHandler()
 
     private val leftEdgePanGestureRecognizer = UIKitBackGestureRecognizer(
@@ -72,7 +69,6 @@ internal class UIKitNavigationEventInput(
         action = NSSelectorFromString(UiKitScreenEdgePanGestureHandler::handleEdgePan.name + ":")
     ).apply {
         edges = UIRectEdgeLeft
-        enabled = isEnabled
     }
 
     private val rightEdgePanGestureRecognizer = UIKitBackGestureRecognizer(
@@ -80,27 +76,24 @@ internal class UIKitNavigationEventInput(
         action = NSSelectorFromString(UiKitScreenEdgePanGestureHandler::handleEdgePan.name + ":")
     ).apply {
         edges = UIRectEdgeRight
-        enabled = isEnabled
     }
 
     override fun onAdded(dispatcher: NavigationEventDispatcher) {
         super.onAdded(dispatcher)
-        this.dispatcher = dispatcher
-        updateRecognizersEnabledState()
+        updateRecognizersEnabledState(dispatcher.hasEnabledCallbacks())
     }
 
     override fun onHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {
         super.onHasEnabledCallbacksChanged(hasEnabledCallbacks)
-        updateRecognizersEnabledState()
+        updateRecognizersEnabledState(hasEnabledCallbacks)
     }
 
     override fun onRemoved() {
         super.onRemoved()
-        this.dispatcher = null
-        updateRecognizersEnabledState()
+        updateRecognizersEnabledState(false)
     }
 
-    private fun updateRecognizersEnabledState() {
+    private fun updateRecognizersEnabledState(isEnabled: Boolean) {
         leftEdgePanGestureRecognizer.enabled = isEnabled
         rightEdgePanGestureRecognizer.enabled = isEnabled
     }
