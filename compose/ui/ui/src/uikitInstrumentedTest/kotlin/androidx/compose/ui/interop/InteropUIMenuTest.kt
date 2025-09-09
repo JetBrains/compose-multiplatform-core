@@ -28,13 +28,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
-import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.cinterop.CValue
@@ -49,205 +45,9 @@ import platform.UIKit.UIContextMenuConfiguration
 import platform.UIKit.UIContextMenuInteraction
 import platform.UIKit.UIContextMenuInteractionAnimatingProtocol
 import platform.UIKit.UIContextMenuInteractionDelegateProtocol
-import platform.UIKit.UIEvent
 import platform.UIKit.UIMenu
 
-internal class InteropTest {
-
-    @Test
-    fun testUIButtonTapCooperativeDefault() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(
-                    UIKitInteropInteractionMode.Cooperative()
-                )
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-
-        delay(UIKitInteropInteractionMode.Cooperative.DefaultDelayMillis + 5L)
-
-        assertEquals(1, beganCount)
-        assertEquals(0, endedCount)
-
-        touch.up()
-
-        assertEquals(1, beganCount)
-        assertEquals(1, endedCount)
-    }
-
-    @Test
-    fun testUIButtonCooperativeTouchUpBeforeDelay() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(
-                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 1000)
-                )
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-
-        delay(500)
-
-        touch.up()
-
-        assertEquals(1, beganCount)
-        assertEquals(1, endedCount)
-    }
-
-    @Test
-    fun testUIButtonCooperativeTouchUpAfterDelay() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(
-                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 800)
-                )
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-
-        delay(500)
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-
-        delay(350)
-
-        assertEquals(1, beganCount)
-        assertEquals(0, endedCount)
-
-        touch.up()
-
-        assertEquals(1, beganCount)
-        assertEquals(1, endedCount)
-    }
-
-    @Test
-    fun testUIButtonNonInteractive() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(null)
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-
-        touch.up()
-
-        assertEquals(0, beganCount)
-        assertEquals(0, endedCount)
-    }
-
-    @Test
-    fun testUIButtonTapNonCooperative() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(1, beganCount)
-        assertEquals(0, endedCount)
-
-        touch.up()
-
-        assertEquals(1,beganCount)
-        assertEquals(1, endedCount)
-    }
-
-    @Test
-    fun testUIButtonLongTapNonCooperative() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
-            )
-        }
-
-        val touch = findNodeWithTag("Button")
-            .touchDown()
-
-        assertEquals(1, beganCount)
-        assertEquals(0, endedCount)
-
-        delay(500)
-
-        touch.up()
-
-        assertEquals(1,beganCount)
-        assertEquals(1, endedCount)
-    }
-
-    @Test
-    fun testUIButtonDoubleTapNonCooperative() = runUIKitInstrumentedTest {
-        var beganCount = 0
-        var endedCount = 0
-
-        setContent {
-            UIKitView(
-                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
-                properties = UIKitInteropProperties(UIKitInteropInteractionMode.NonCooperative)
-            )
-        }
-
-        findNodeWithTag("Button")
-            .doubleTap()
-
-        assertEquals(2, beganCount)
-        assertEquals(2, endedCount)
-    }
+internal class InteropUIMenuTest {
 
     @Test
     fun testUIMenuDismissByTapOnComposeView() = runUIKitInstrumentedTest {
@@ -453,21 +253,5 @@ private class ContextMenuButton(
         animator: UIContextMenuInteractionAnimatingProtocol?
     ) {
         isMenuOpen = false
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private class TouchReactingView(
-    val onTouchBegin: () -> Unit,
-    val onTouchEnd: () -> Unit,
-): UIButton(frame = CGRectZero.readValue()) {
-    override fun touchesBegan(touches: Set<*>, withEvent: UIEvent?) {
-        super.touchesBegan(touches, withEvent)
-        onTouchBegin()
-    }
-
-    override fun touchesEnded(touches: Set<*>, withEvent: UIEvent?) {
-        super.touchesEnded(touches, withEvent)
-        onTouchEnd()
     }
 }
