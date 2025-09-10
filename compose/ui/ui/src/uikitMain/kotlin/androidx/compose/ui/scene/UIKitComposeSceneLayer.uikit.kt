@@ -19,7 +19,6 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -28,7 +27,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.window.FocusedViewsList
+import androidx.navigationevent.NavigationEventDispatcher
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
 import platform.CoreGraphics.CGPoint
@@ -63,7 +62,8 @@ internal class UIKitComposeSceneLayer(
     private var focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
     private val coroutineContext: CoroutineContext,
-    private val interfaceOrientationState: State<InterfaceOrientation>
+    private val interfaceOrientationState: State<InterfaceOrientation>,
+    private val navigationEventDispatcher: NavigationEventDispatcher,
 ) : ComposeSceneLayer {
 
     override var focusable: Boolean = focusedViewsList != null
@@ -85,7 +85,7 @@ internal class UIKitComposeSceneLayer(
     private val navigationEventInput = UIKitNavigationEventInput(
         density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft }
-    )
+    ).also { navigationEventDispatcher.addInput(it) }
 
     private val mediator = ComposeSceneMediator(
         onFocusBehavior = onFocusBehavior,
@@ -169,6 +169,7 @@ internal class UIKitComposeSceneLayer(
     }
 
     internal fun dispose() {
+        navigationEventDispatcher.removeInput(navigationEventInput)
         focusedViewsList?.disposeChild()
         focusedViewsList = null
         mediator.dispose()
@@ -179,21 +180,10 @@ internal class UIKitComposeSceneLayer(
     @Composable
     private fun ProvideComposeSceneLayerCompositionLocals(
         content: @Composable () -> Unit
-    ) {
-        val navigationEventDispatcherOwner = LocalInternalNavigationEventDispatcherOwner.current
-        DisposableEffect(navigationEventDispatcherOwner) {
-            val dispatcher = navigationEventDispatcherOwner?.navigationEventDispatcher
-            dispatcher?.addInput(navigationEventInput)
-            onDispose {
-                dispatcher?.removeInput(navigationEventInput)
-            }
-        }
-
-        CompositionLocalProvider(
-            LocalUIViewController provides layersViewController,
-            content = content
-        )
-    }
+    ) = CompositionLocalProvider(
+        LocalUIViewController provides layersViewController,
+        content = content
+    )
 
     override fun setContent(content: @Composable () -> Unit) {
         mediator.setContent {

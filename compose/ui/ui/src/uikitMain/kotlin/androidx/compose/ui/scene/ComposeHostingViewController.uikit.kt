@@ -125,7 +125,7 @@ internal class ComposeHostingViewController(
     private val navigationEventInput = UIKitNavigationEventInput(
         density = rootView.density,
         getTopLeftOffsetInWindow = { IntOffset.Zero } //full screen
-    ).also { eventInput -> archComponentsOwner.navigationEventDispatcher.addInput(eventInput) }
+    )
 
     fun hasInvalidations(): Boolean {
         return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
@@ -340,6 +340,7 @@ internal class ComposeHostingViewController(
         }
         interfaceOrientationObserver.isObservingEnabled = true
 
+        archComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         navigationEventInput.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
@@ -357,6 +358,7 @@ internal class ComposeHostingViewController(
 
         rootView.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, rootView)
+        archComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
 
         mediator?.dispose()
         mediator = null
@@ -460,7 +462,8 @@ internal class ComposeHostingViewController(
                     focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
-                    interfaceOrientationState = interfaceOrientationState
+                    interfaceOrientationState = interfaceOrientationState,
+                    navigationEventDispatcher = archComponentsOwner.navigationEventDispatcher,
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
