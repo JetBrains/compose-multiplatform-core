@@ -108,7 +108,7 @@ private class IOSAppDelegate : UIResponder, UIApplicationDelegateProtocol {
         configurationForConnectingSceneSession: UISceneSession,
         options: UISceneConnectionOptions
     ): UISceneConfiguration {
-        val config = UISceneConfiguration() // UISceneConfiguration(name = null, sessionRole = configurationForConnectingSceneSession.role)
+        val config = UISceneConfiguration()
         config.delegateClass = IOSSceneDelegate.`class`()
         config.sceneClass = UIWindowScene.`class`()
         return config
