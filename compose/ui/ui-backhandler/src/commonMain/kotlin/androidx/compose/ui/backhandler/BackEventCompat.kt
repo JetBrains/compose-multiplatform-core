@@ -18,6 +18,7 @@ package androidx.compose.ui.backhandler
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
+import androidx.compose.ui.ExperimentalComposeUiApi
 
 /**
  * Object used to report back gesture progress.
@@ -25,6 +26,7 @@ import androidx.annotation.IntRange
  * that predictive back animations should seek to.
  */
 @Deprecated("Use NavigationEvent instead")
+@ExperimentalComposeUiApi
 expect class BackEventCompat {
 
     /**
