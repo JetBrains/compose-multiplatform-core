@@ -20,6 +20,7 @@ package androidx.compose.material3.internal
 
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastMap
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -46,7 +47,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         listOf(
             7 to listOf("TH", "ET", "SG", "JM", "BT", "IN", "US", "MO", "KE", "DO", "AU", "IL", "AS", "TW", "MZ", "MM", "CN", "PR", "PK", "BD", "NP", "HN", "BR", "HK", "TT", "ZA", "VE", "MT", "PH", "PE", "ID", "DM", "WS", "ZW", "UM", "LA", "BZ", "JP", "SV", "SA", "CO", "GT", "BW", "KR", "PA", "YE", "BS", "MX", "MH", "GU", "PY", "AG", "CA", "KH", "PT", "VI", "NI"),
             6 to listOf("EG", "AF", "SY", "IR", "OM", "IQ", "DZ", "DJ", "AE", "SD", "KW", "JO", "BH", "QA", "LY")
-        ).fastMap { (day, tags) -> tags.fastMap { it to day } }.flatten().toMap()
+        ).fastFlatMap { (day, tags) -> tags.fastMap { it to day } }.toMap()
     }
 
     private val regionsWith12HourFormat by lazy {

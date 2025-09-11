@@ -191,8 +191,8 @@ internal class SyntheticEventSender(
         return result
     }
 
-    private fun PointerInputEvent.pressedIds(): Sequence<PointerId> =
-        pointers.fastMapNotNull { if (it.down) it.id else null }.asSequence()
+    private fun PointerInputEvent.pressedIds(): List<PointerId> =
+        pointers.fastMapNotNull { if (it.down) it.id else null }
 
 
     private fun sendInternal(event: PointerInputEvent): PointerEventResult {
