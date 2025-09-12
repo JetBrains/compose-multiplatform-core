@@ -37,6 +37,7 @@ kotlin {
 }
 
 tasks.register('runScaffold', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass = "androidx.compose.desktop.examples.material3.Scaffold_jvmKt"
     systemProperty("skiko.fps.enabled", "true")
     def compilation = kotlin.jvm().compilations["main"]
