@@ -409,3 +409,5 @@ The following Kotlin source sets were configured but not added to any Kotlin com
 \* androidUnitTest
 You can add a source set to a target's compilation by connecting it with the compilation's default source set using 'dependsOn'\.
 See https://kotl\.in/connecting\-source\-sets
+# > Task :navigation3:navigation3:compileTestKotlinLinuxx64Stubs
+w: KLIB resolver: Could not find "androidx\.lifecycle:lifecycle\-runtime\-compose" in \[\$SUPPORT, \$GRADLE_USER_HOME/\.konan/kotlin\-native\-prebuilt\-linux\-x[0-9]+_[0-9]+\-[0-9]+\.[0-9]+\.[0-9]+/klib/common, \$GRADLE_USER_HOME/\.konan/kotlin\-native\-prebuilt\-linux\-x[0-9]+_[0-9]+\-[0-9]+\.[0-9]+\.[0-9]+/klib/platform/linux_x[0-9]+\]
