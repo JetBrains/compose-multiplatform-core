@@ -68,7 +68,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     @get:Inject abstract val buildFeatures: BuildFeatures
 
-    var enableBinaryCompatibilityValidator = true
+    var enableBinaryCompatibilityValidator = project.path.startsWith(":savedstate:")
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {
