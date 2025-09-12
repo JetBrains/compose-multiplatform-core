@@ -228,7 +228,7 @@ internal class ComposeWebSemanticsListener(
 
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
-            htmlNode.innerText = text.fastJoinToString ("\n") { it.text }
+            htmlNode.innerText = text.fastJoinToString("\n") { it.text }
         }
 
         if (config.contains(SemanticsProperties.ContentDescription)) {
