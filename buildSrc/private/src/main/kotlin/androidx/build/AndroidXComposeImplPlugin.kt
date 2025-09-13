@@ -24,12 +24,15 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinNativeCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 const val zipComposeReportsTaskName = "zipComposeCompilerReports"
 const val zipComposeMetricsTaskName = "zipComposeCompilerMetrics"
@@ -185,13 +188,13 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         val enableMetrics = project.enableComposeCompilerMetrics()
         val enableReports = project.enableComposeCompilerReports()
 
-        val compileTasks = project.tasks.withType(KotlinCompile::class.java)
+        val compileTasks = project.tasks.withType(KotlinCompilationTask::class.java)
 
         compileTasks.configureEach { compile ->
             compile.inputs.property("composeMetricsEnabled", enableMetrics)
             compile.inputs.property("composeReportsEnabled", enableReports)
 
-            compile.pluginClasspath.from(kotlinPluginProvider.get())
+            compile.applyPlugin(kotlinPluginProvider.get())
 
             compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
             compile.enableFeatureFlag(ComposeFeatureFlag.PausableComposition)
@@ -228,25 +231,34 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
     }
 }
 
-private fun KotlinCompile.addPluginOption(
-    composeCompileOptions: ComposeCompileOptions,
-    value: String
-) =
-    pluginOptions.add(
-        CompilerPluginConfig().apply {
-            addPluginArgument(
-                composeCompileOptions.pluginId,
-                SubpluginOption(composeCompileOptions.key, value)
-            )
-        }
-    )
-
-private fun KotlinCompile.enableFeatureFlag(featureFlag: ComposeFeatureFlag) {
-    addPluginOption(ComposeCompileOptions.FeatureFlagOption, featureFlag.featureName)
+private fun KotlinCompilationTask<*>.applyPlugin(plugins: FileCollection) {
+    when (this) {
+        is AbstractKotlinCompile<*> -> pluginClasspath.from(plugins)
+        is AbstractKotlinNativeCompile<*, *> -> compilerPluginClasspath = plugins
+        else -> throw IllegalStateException("Unsupported Kotlin compilation task type")
+    }
 }
 
-private fun KotlinCompile.disableFeatureFlag(featureFlag: ComposeFeatureFlag) {
-    addPluginOption(ComposeCompileOptions.FeatureFlagOption, "-${featureFlag.featureName}")
+private fun KotlinCompilationTask<*>.addPluginArgument(pluginId: String, option: SubpluginOption) =
+    when (this) {
+        is AbstractKotlinCompile<*> ->
+            pluginOptions.add(CompilerPluginConfig().apply { addPluginArgument(pluginId, option) })
+        is AbstractKotlinNativeCompile<*, *> ->
+            compilerPluginOptions.addPluginArgument(pluginId, option)
+        else -> throw IllegalStateException("Unsupported Kotlin compilation task type")
+    }
+
+private fun KotlinCompilationTask<*>.addPluginOption(
+    composeCompileOptions: ComposeCompileOptions,
+    value: String,
+) =
+    addPluginArgument(
+        pluginId = composeCompileOptions.pluginId,
+        option = SubpluginOption(composeCompileOptions.key, value),
+    )
+
+private fun KotlinCompilationTask<*>.enableFeatureFlag(featureFlag: ComposeFeatureFlag) {
+    addPluginOption(ComposeCompileOptions.FeatureFlagOption, featureFlag.featureName)
 }
 
 internal fun Project.zipComposeCompilerMetrics() {
