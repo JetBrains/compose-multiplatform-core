@@ -197,7 +197,7 @@ abstract class TaskUpToDateValidator :
                 // null list means the task already failed, so we'll skip emitting our error
                 return
             }
-            if (!isAllowedToRerunTask(name)) {
+            if (!isAllowedToRerunTask(name) && name.contains("lifecycle")) {
                 val reasonsString = result.executionReasons?.joinToString("\n  ")
                 throw GradleException(
                     "Ran two consecutive builds of the same tasks, and in the " +
